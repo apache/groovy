@@ -78,16 +78,19 @@ public class MethodNodeUtils {
      */
     public static String getPropertyName(MethodNode mNode) {
         String name = mNode.getName();
-        if (name.startsWith("set") || name.startsWith("get") || name.startsWith("is")) {
-            String pname = decapitalize(name.substring(name.startsWith("is") ? 2 : 3));
-            if (!pname.isEmpty()) {
-                if (name.startsWith("set")) {
+        final boolean startsWithSet = name.startsWith("set");
+        final boolean startsWithGet = name.startsWith("get");
+        final boolean startsWithIs = name.startsWith("is");
+        if (startsWithGet || startsWithSet || startsWithIs) {
+            final String tmpPname = name.substring(startsWithIs ? 2 : 3);
+            if (!tmpPname.isEmpty()) {
+                if (startsWithSet) {
                     if (mNode.getParameters().length == 1) {
-                        return pname;
+                        return decapitalize(tmpPname);
                     }
                 } else if (mNode.getParameters().length == 0 && !ClassHelper.VOID_TYPE.equals(mNode.getReturnType())) {
-                    if (name.startsWith("get") || ClassHelper.boolean_TYPE.equals(mNode.getReturnType())) {
-                        return pname;
+                    if (startsWithGet || ClassHelper.boolean_TYPE.equals(mNode.getReturnType())) {
+                        return decapitalize(tmpPname);
                     }
                 }
             }
