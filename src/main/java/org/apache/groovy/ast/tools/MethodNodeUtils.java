@@ -77,11 +77,15 @@ public class MethodNodeUtils {
      * @return the property name without the get/set/is prefix if a property or null
      */
     public static String getPropertyName(MethodNode mNode) {
+        boolean startsWithGet = false;
+        boolean startsWithSet = false;
+        boolean startsWithIs = false;
         String name = mNode.getName();
-        final boolean startsWithSet = name.startsWith("set");
-        final boolean startsWithGet = name.startsWith("get");
-        final boolean startsWithIs = name.startsWith("is");
-        if (startsWithGet || startsWithSet || startsWithIs) {
+
+        if ((startsWithGet = name.startsWith("get"))
+                || (startsWithSet = name.startsWith("set"))
+                || (startsWithIs = name.startsWith("is"))) {
+
             final String tmpPname = name.substring(startsWithIs ? 2 : 3);
             if (!tmpPname.isEmpty()) {
                 if (startsWithSet) {
@@ -95,6 +99,7 @@ public class MethodNodeUtils {
                 }
             }
         }
+
         return null;
     }
 
