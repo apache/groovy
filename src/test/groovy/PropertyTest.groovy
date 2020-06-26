@@ -235,6 +235,31 @@ class PropertyTest extends GroovyTestCase {
         '''
     }
 
+    void testPropertyWithOverrideGetterAndSetter() {
+        assertScript '''
+            abstract class Base {
+                abstract String getName()
+                abstract void setName(String name)
+            }
+            class A extends Base {
+                private String name = 'AA'
+            
+                @Override
+                String getName() {
+                    this.name
+                }
+                @Override
+                void setName(String name) {
+                    this.name = name
+                }
+            }
+            Base a = new A()
+            assert 'AA' == a.name
+            a.name = 'BB'
+            assert 'BB' == a.name
+        '''
+    }
+
     void testOverrideMultiSetterThroughMetaClass() {
         assertScript '''
         class A {
@@ -250,6 +275,7 @@ class PropertyTest extends GroovyTestCase {
         assert a.field == '100100'
         '''
     }
+
 }
 
 class Base {
