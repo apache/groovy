@@ -180,9 +180,10 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         for (MethodNode mn : cn.getMethods()) {
             if (name.equals(getPropertyName(mn))) {
                 PropertyNode property = new PropertyNode(name, mn.getModifiers(), ClassHelper.OBJECT_TYPE, cn, null, null, null);
-                property.getField().setHasNoRealSourcePosition(true);
-                property.getField().setSynthetic(true);
-                property.getField().setDeclaringClass(cn);
+                final FieldNode field = property.getField();
+                field.setHasNoRealSourcePosition(true);
+                field.setSynthetic(true);
+                field.setDeclaringClass(cn);
                 property.setDeclaringClass(cn);
                 return property;
             }
