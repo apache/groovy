@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.parser.antlr4;
 
-import groovy.lang.Tuple;
 import groovy.lang.Tuple2;
 import groovy.lang.Tuple3;
 import groovy.transform.Trait;
@@ -114,6 +113,7 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.ast.tools.ClosureUtils;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
@@ -2068,6 +2068,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                             || baseExpr instanceof GStringExpression /* e.g. "$m" 1, 2 */
                             || (baseExpr instanceof ConstantExpression && isTrue(baseExpr, IS_STRING)) /* e.g. "m" 1, 2 */)
             ) {
+                validateInvalidMethodDefinition(baseExpr, arguments);
+
                 methodCallExpression =
                         configureAST(
                                 this.createMethodCallExpression(baseExpr, arguments),
@@ -2099,6 +2101,47 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                                 }
                         ),
                 ctx);
+    }
+
+    /* Validate the following invalid cases:
+     *  1) void m() {}
+     *  2) String m() {}
+     *  Note: if the text of `VariableExpression` does not start with upper case character, e.g. task m() {}
+     *        ,it may be a command expression
+     */
+    private void validateInvalidMethodDefinition(Expression baseExpr, Expression arguments) {
+        if (baseExpr instanceof VariableExpression) {
+            if (isBuiltInType(baseExpr) || Character.isUpperCase(baseExpr.getText().codePointAt(0))) {
+                if (arguments instanceof ArgumentListExpression) {
+                    List<Expression> expressionList = ((ArgumentListExpression) arguments).getExpressions();
+                    if (1 == expressionList.size()) {
+                        final Expression expression = expressionList.get(0);
+                        if (expression instanceof MethodCallExpression) {
+                            MethodCallExpression mce = (MethodCallExpression) expression;
+                            final Expression methodCallArguments = mce.getArguments();
+
+                            // check the method call tails with a closure
+                            if (methodCallArguments instanceof ArgumentListExpression) {
+                                List<Expression> methodCallArgumentExpressionList = ((ArgumentListExpression) methodCallArguments).getExpressions();
+                                final int argumentCnt = methodCallArgumentExpressionList.size();
+                                if (argumentCnt > 0) {
+                                    final Expression lastArgumentExpression = methodCallArgumentExpressionList.get(argumentCnt - 1);
+                                    if (lastArgumentExpression instanceof ClosureExpression) {
+                                        if (ClosureUtils.hasImplicitParameter(((ClosureExpression) lastArgumentExpression))) {
+                                            throw createParsingFailedException(
+                                                    "Method definition not expected here",
+                                                    tuple(baseExpr.getLineNumber(), baseExpr.getColumnNumber()),
+                                                    tuple(expression.getLastLineNumber(), expression.getLastColumnNumber())
+                                            );
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -3169,7 +3212,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public Tuple3<Expression, List<AnnotationNode>, TerminalNode> visitDim(DimContext ctx) {
-        return Tuple.tuple((Expression) this.visit(ctx.expression()), this.visitAnnotationsOpt(ctx.annotationsOpt()), ctx.LBRACK());
+        return tuple((Expression) this.visit(ctx.expression()), this.visitAnnotationsOpt(ctx.annotationsOpt()), ctx.LBRACK());
     }
 
     private static String nextAnonymousClassName(ClassNode outerClass) {
@@ -3323,7 +3366,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             throw createParsingFailedException("Unsupported built-in type: " + ctx, ctx);
         }
 
-        return configureAST(new VariableExpression(text), ctx);
+        final VariableExpression variableExpression = new VariableExpression(text);
+        variableExpression.setNodeMetaData(IS_BUILT_IN_TYPE, true);
+
+        return configureAST(variableExpression, ctx);
     }
 
     @Override
@@ -4411,6 +4457,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return insideParenLevel != null && insideParenLevel > 0;
     }
 
+    private boolean isBuiltInType(Expression expression) {
+        if (!(expression instanceof VariableExpression)) return false;
+
+        return isTrue(expression, IS_BUILT_IN_TYPE);
+    }
+
     private org.codehaus.groovy.syntax.Token createGroovyTokenByType(Token token, int type) {
         if (token == null) {
             throw new IllegalArgumentException("token should not be null");
@@ -4480,6 +4532,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                         ctx.start.getCharPositionInLine() + 1,
                         ctx.stop.getLine(),
                         ctx.stop.getCharPositionInLine() + 1 + ctx.stop.getText().length()));
+    }
+
+    CompilationFailedException createParsingFailedException(String msg, Tuple2<Integer, Integer> start, Tuple2<Integer, Integer> end) {
+        return createParsingFailedException(
+                new SyntaxException(msg,
+                        start.getV1(),
+                        start.getV2(),
+                        end.getV1(),
+                        end.getV2()));
     }
 
     CompilationFailedException createParsingFailedException(String msg, ASTNode node) {
@@ -4657,6 +4718,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private static final String IS_INTERFACE_WITH_DEFAULT_METHODS = "_IS_INTERFACE_WITH_DEFAULT_METHODS";
     private static final String IS_INSIDE_CONDITIONAL_EXPRESSION = "_IS_INSIDE_CONDITIONAL_EXPRESSION";
     private static final String IS_COMMAND_EXPRESSION = "_IS_COMMAND_EXPRESSION";
+    private static final String IS_BUILT_IN_TYPE = "_IS_BUILT_IN_TYPE";
     private static final String PATH_EXPRESSION_BASE_EXPR = "_PATH_EXPRESSION_BASE_EXPR";
     private static final String PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES = "_PATH_EXPRESSION_BASE_EXPR_GENERICS_TYPES";
     private static final String PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN = "_PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN";

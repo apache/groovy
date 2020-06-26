@@ -106,6 +106,9 @@ scriptStatements
 scriptStatement
     :   importDeclaration // Import statement.  Can be used in any scope.  Has "import x as y" also.
     |   typeDeclaration
+    // validate the method in the AstBuilder#visitMethodDeclaration, e.g. method without method body is not allowed
+    |   { !SemanticPredicates.isInvalidMethodDeclaration(_input) }?
+        methodDeclaration[3, 9]
     |   statement
     ;
 
@@ -634,11 +637,6 @@ statement
     |   identifier COLON nls statement                                                                      #labeledStmtAlt
     |   assertStatement                                                                                     #assertStmtAlt
     |   localVariableDeclaration                                                                            #localVariableDeclarationStmtAlt
-
-    // validate the method in the AstBuilder#visitMethodDeclaration, e.g. method without method body is not allowed
-    |   { !SemanticPredicates.isInvalidMethodDeclaration(_input) }?
-        methodDeclaration[3, 9]                                                                             #methodDeclarationStmtAlt
-
     |   statementExpression                                                                                 #expressionStmtAlt
     |   SEMI                                                                                                #emptyStmtAlt
     ;
