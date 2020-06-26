@@ -122,7 +122,7 @@ final class GenericsUsageTest extends CompilableTestSupport {
     void testGenericsDiamondShortcutIllegalPosition() {
         shouldFailCompilationWithAnyMessage '''
             List<> list4 = []
-        ''', ['unexpected token: <', 'Unexpected input: \'<>\'']
+        ''', ['unexpected token: <', 'Unexpected input: \'List<>\'']
     }
 
     void testGenericsInAsType() {

@@ -30,7 +30,7 @@ class MethodInBadPositionTest extends CompilableTestSupport {
                 }
             }()
         ''')
-        assert msg.contains('Method definition not expected here')
+        assert msg.contains('Method definition not expected here') || msg.contains("Unexpected input: '('")
     }
 
     /** GROOVY-4215 */
@@ -40,6 +40,6 @@ class MethodInBadPositionTest extends CompilableTestSupport {
                 case 1: def say(){}
             }
         ''')
-        assert msg.contains('Method definition not expected here')
+        assert msg.contains('Method definition not expected here')  || msg.contains("Unexpected input: '('")
     }
 }
