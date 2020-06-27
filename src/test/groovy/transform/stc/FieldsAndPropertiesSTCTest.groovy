@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
+
 /**
  * Unit tests for static type checking : fields and properties.
  */
@@ -115,6 +117,20 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         ''', 'No such property: x for class: A'
     }
 
+    @NotYetImplemented
+    void testShouldComplainAboutMissingProperty3() {
+        shouldFailWithMessages '''
+            class A {
+                private x
+            }
+            class B extends A {
+                void test() {
+                    this.x
+                }
+            }
+        ''', 'The field A.x is not accessible'
+    }
+
     void testShouldComplainAboutMissingAttribute() {
         shouldFailWithMessages '''
             Object o = new Object()
@@ -149,6 +165,19 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             A a = new A()
             a.@x = 0
         ''', 'No such attribute: x for class: A'
+    }
+
+    void testShouldComplainAboutMissingAttribute5() {
+        shouldFailWithMessages '''
+            class A {
+                private x
+            }
+            class B extends A {
+                void test() {
+                    this.@x
+                }
+            }
+        ''', 'The field A.x is not accessible'
     }
 
     void testPropertyWithInheritance() {

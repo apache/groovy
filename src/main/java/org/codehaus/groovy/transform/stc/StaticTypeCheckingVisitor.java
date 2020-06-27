@@ -127,7 +127,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -1475,7 +1474,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 return true;
             }
 
-            Queue<ClassNode> queue = new LinkedList<>();
+            LinkedList<ClassNode> queue = new LinkedList<>();
             queue.add(receiverType);
             if (isPrimitiveType(receiverType)) {
                 queue.add(getWrapper(receiverType));
@@ -1487,7 +1486,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 FieldNode field = current.getDeclaredField(propertyName);
                 if (field == null) {
                     if (current.getSuperClass() != null) {
-                        queue.add(current.getUnresolvedSuperClass());
+                        queue.addFirst(current.getUnresolvedSuperClass());
                     }
                     for (ClassNode face : current.getAllInterfaces()) {
                         queue.add(GenericsUtils.parameterizeType(current, face));
@@ -1792,6 +1791,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private boolean storeField(final FieldNode field, final PropertyExpression expressionToStoreOn, final ClassNode receiver, final ClassCodeVisitorSupport visitor, final String delegationData, final boolean lhsOfAssignment) {
         if (visitor != null) visitor.visitField(field);
         checkOrMarkPrivateAccess(expressionToStoreOn, field, lhsOfAssignment);
+
+        if (expressionToStoreOn instanceof AttributeExpression) { // TODO: expand to include PropertyExpression
+            if (!hasAccessToField(isSuperExpression(expressionToStoreOn.getObjectExpression()) ? typeCheckingContext.getEnclosingClassNode() : receiver, field)) {
+                addStaticTypeError("The field " + field.getDeclaringClass().getNameWithoutPackage() + "." + field.getName() + " is not accessible", expressionToStoreOn.getProperty());
+            }
+        }
+
         storeWithResolve(field.getOriginType(), receiver, field.getDeclaringClass(), field.isStatic(), expressionToStoreOn);
         if (delegationData != null) {
             expressionToStoreOn.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);

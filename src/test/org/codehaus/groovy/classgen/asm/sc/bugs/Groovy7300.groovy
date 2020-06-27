@@ -66,7 +66,7 @@ final class Groovy7300 extends StaticTypeCheckingTestCase implements StaticCompi
     }
 
     void testUseSuperToBypassOverride2a() {
-        def err = shouldFail '''
+        shouldFailWithMessages '''
             abstract class A {
                 private x = 1
                 def getX() { 2 }
@@ -75,9 +75,7 @@ final class Groovy7300 extends StaticTypeCheckingTestCase implements StaticCompi
                 @Override
                 def getX() { super.@x }
             }
-            assert new B().getX() == 1
-        '''
-
-        assert err =~ /No such field: x for class: A/ // TODO: Replace run-time error with compile-time error.
+            assert false
+        ''', 'The field A.x is not accessible'
     }
 }
