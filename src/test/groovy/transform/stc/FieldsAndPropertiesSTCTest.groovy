@@ -99,14 +99,14 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testShouldComplainAboutMissingField() {
+    void testShouldComplainAboutMissingProperty() {
         shouldFailWithMessages '''
             Object o = new Object()
             o.x = 0
         ''', 'No such property: x for class: java.lang.Object'
     }
 
-    void testShouldComplainAboutMissingField2() {
+    void testShouldComplainAboutMissingProperty2() {
         shouldFailWithMessages '''
             class A {
             }
@@ -115,19 +115,59 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         ''', 'No such property: x for class: A'
     }
 
-    void testFieldWithInheritance() {
+    void testShouldComplainAboutMissingAttribute() {
+        shouldFailWithMessages '''
+            Object o = new Object()
+            o.@x = 0
+        ''', 'No such attribute: x for class: java.lang.Object'
+    }
+
+    void testShouldComplainAboutMissingAttribute2() {
+        shouldFailWithMessages '''
+            class A {
+            }
+            A a = new A()
+            a.@x = 0
+        ''', 'No such attribute: x for class: A'
+    }
+
+    void testShouldComplainAboutMissingAttribute3() {
+        shouldFailWithMessages '''
+            class A {
+                def getX() { }
+            }
+            A a = new A()
+            println a.@x
+        ''', 'No such attribute: x for class: A'
+    }
+
+    void testShouldComplainAboutMissingAttribute4() {
+        shouldFailWithMessages '''
+            class A {
+                def setX(x) { }
+            }
+            A a = new A()
+            a.@x = 0
+        ''', 'No such attribute: x for class: A'
+    }
+
+    void testPropertyWithInheritance() {
         assertScript '''
             class A {
                 int x
             }
             class B extends A {
             }
+
             B b = new B()
+            assert b.x == 0
+
             b.x = 2
+            assert b.x == 2
         '''
     }
 
-    void testFieldTypeWithInheritance() {
+    void testPropertyTypeWithInheritance() {
         shouldFailWithMessages '''
             class A {
                 int x
@@ -139,7 +179,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot assign value of type java.lang.String to variable of type int'
     }
 
-    void testFieldWithInheritanceFromAnotherSourceUnit() {
+    void testPropertyWithInheritanceFromAnotherSourceUnit() {
         assertScript '''
             class B extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass {
             }
@@ -148,7 +188,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testFieldWithInheritanceFromAnotherSourceUnit2() {
+    void testPropertyWithInheritanceFromAnotherSourceUnit2() {
         shouldFailWithMessages '''
             class B extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass {
             }
@@ -157,7 +197,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot assign value of type java.lang.String to variable of type int'
     }
 
-    void testFieldWithSuperInheritanceFromAnotherSourceUnit() {
+    void testPropertyWithSuperInheritanceFromAnotherSourceUnit() {
         assertScript '''
             class B extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass2 {
             }
