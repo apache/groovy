@@ -2828,13 +2828,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * Retrieves the value of an attribute (field). This method is to support the Groovy runtime and not for general client API usage.
      *
      * @param sender The class of the object that requested the attribute
-     * @param receiver The instance
-     * @param messageName The name of the attribute
+     * @param object The instance
+     * @param attribute The name of the attribute
      * @param useSuper Whether to look-up on the super class or not
      * @return The attribute value
      */
-    public Object getAttribute(Class sender, Object receiver, String messageName, boolean useSuper) {
-        return getAttribute(receiver, messageName);
+    public Object getAttribute(Class sender, Object object, String attribute, boolean useSuper) {
+        return getAttribute(sender, object, attribute, useSuper, false);
     }
 
     /**
@@ -2872,7 +2872,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
 
-        throw new MissingFieldException(attribute, theClass);
+        throw new MissingFieldException(attribute, !useSuper ? theClass : theClass.getSuperclass());
     }
 
     /**
@@ -2912,7 +2912,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
 
-        throw new MissingFieldException(attribute, theClass);
+        throw new MissingFieldException(attribute, !useSuper ? theClass : theClass.getSuperclass());
     }
 
     /**
@@ -3318,10 +3318,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * Complete the initialisation process. After this method
      * is called no methods should be added to the meta class.
      * Invocation of methods or access to fields/properties is
-     * forbidden unless this method is called. This method 
+     * forbidden unless this method is called. This method
      * should contain any initialisation code, taking a longer
-     * time to complete. An example is the creation of the 
-     * Reflector. It is suggested to synchronize this 
+     * time to complete. An example is the creation of the
+     * Reflector. It is suggested to synchronize this
      * method.
      */
     public synchronized void initialize() {
@@ -3424,7 +3424,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     protected void dropMethodCache(String name) {
         metaMethodIndex.clearCaches(name);
     }
-    
+
     /**
      * Create a CallSite
      */
@@ -3784,7 +3784,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * <p>Retrieves a property on the given object for the specified arguments. 
+     * <p>Retrieves a property on the given object for the specified arguments.
      *
      *
      * @param object The Object which the property is being retrieved from
@@ -3796,9 +3796,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public Object getProperty(Object object, String property) {
         return getProperty(theClass, object, property, false, false);
     }
- 
+
     /**
-     * <p>Sets a property on the given object for the specified arguments. 
+     * <p>Sets a property on the given object for the specified arguments.
      *
      *
      * @param object The Object which the property is being retrieved from
