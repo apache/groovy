@@ -2800,13 +2800,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * Retrieves the value of an attribute (field). This method is to support the Groovy runtime and not for general client API usage.
      *
      * @param sender The class of the object that requested the attribute
-     * @param receiver The instance
-     * @param messageName The name of the attribute
+     * @param object The instance
+     * @param attribute The name of the attribute
      * @param useSuper Whether to look-up on the super class or not
      * @return The attribute value
      */
-    public Object getAttribute(Class sender, Object receiver, String messageName, boolean useSuper) {
-        return getAttribute(receiver, messageName);
+    public Object getAttribute(Class sender, Object object, String attribute, boolean useSuper) {
+        return getAttribute(sender, object, attribute, useSuper, false);
     }
 
     /**
@@ -2844,7 +2844,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
 
-        throw new MissingFieldException(attribute, theClass);
+        throw new MissingFieldException(attribute, !useSuper ? theClass : theClass.getSuperclass());
     }
 
     /**
@@ -2884,7 +2884,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
 
-        throw new MissingFieldException(attribute, theClass);
+        throw new MissingFieldException(attribute, !useSuper ? theClass : theClass.getSuperclass());
     }
 
     /**
