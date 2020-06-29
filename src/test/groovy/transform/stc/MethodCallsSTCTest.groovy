@@ -423,6 +423,56 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             ''', 'Reference to method is ambiguous'
     }
 
+    // GROOVY-7971
+    void testShouldNotFailWithMultiplePossibleMethods() {
+        assertScript '''
+            import groovy.json.JsonOutput
+
+            def test(value) {
+                def out = new StringBuilder()
+                def isString = value.class == String
+                if (isString || value instanceof Map) {
+                    out.append(JsonOutput.toJson(value))
+                }
+                return out.toString()
+            }
+
+            def string = test('two')
+            assert string == '"two"'
+        '''
+    }
+
+    // GROOVY-7971
+    void testShouldNotFailWithUnionTypeLUB() {
+        assertScript '''
+            class Foo extends AbstractCollection {
+                def peek() { 3 }
+                int size() { -1 }
+                void clear() { }
+                Iterator iterator() { null }
+            }
+            
+            def method(idx) {
+                def component = idx == 1 ? new ArrayDeque() : new Stack()
+                if (idx == 3) component = new Foo()
+                component.clear() // 'clear' in LUB (AbstractCollection or Serializable or Cloneable)
+                if (component instanceof ArrayDeque) {
+                    component.addFirst(1) // 'addFirst' only in ArrayDeque
+                } else if (component instanceof Stack) {
+                    component.addElement(2) // 'addElement' only in Stack
+                }
+                if (component instanceof Foo || component instanceof ArrayDeque || component instanceof Stack) {
+                    // checked duck typing
+                    assert component.peek() in 1..3 // 'peek' in ArrayDeque and Stack but not LUB
+                }
+            }
+
+            method(1)
+            method(2)
+            method(3)
+        '''
+    }
+
     void testInstanceOfOnExplicitParameter() {
         assertScript '''
                 1.with { obj ->

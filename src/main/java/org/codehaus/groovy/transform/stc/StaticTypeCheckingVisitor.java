@@ -52,6 +52,7 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.AttributeExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BitwiseNegationExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
@@ -184,6 +185,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
@@ -218,6 +220,7 @@ import static org.codehaus.groovy.syntax.Types.INTDIV_EQUAL;
 import static org.codehaus.groovy.syntax.Types.KEYWORD_IN;
 import static org.codehaus.groovy.syntax.Types.KEYWORD_INSTANCEOF;
 import static org.codehaus.groovy.syntax.Types.LEFT_SQUARE_BRACKET;
+import static org.codehaus.groovy.syntax.Types.LOGICAL_OR;
 import static org.codehaus.groovy.syntax.Types.MINUS_MINUS;
 import static org.codehaus.groovy.syntax.Types.MOD;
 import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
@@ -3798,21 +3801,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitIfElse(final IfStatement ifElse) {
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
-
         try {
-            // create a new temporary element in the if-then-else type info
-            typeCheckingContext.pushTemporaryTypeInfo();
-            visitStatement(ifElse);
-            ifElse.getBooleanExpression().visit(this);
-            ifElse.getIfBlock().visit(this);
-
-            // pop if-then-else temporary type info
-            typeCheckingContext.popTemporaryTypeInfo();
-
-            // GROOVY-6099: restore assignment info as before the if branch
-            restoreTypeBeforeConditional();
-
-            ifElse.getElseBlock().visit(this);
+            visitIfElseMaybeOrBranches(ifElse, true);
         } finally {
             popAssignmentTracking(oldTracker);
         }
@@ -3825,6 +3815,52 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 visitInstanceofNot(instanceOfExpression);
             }
         }
+    }
+
+    private void visitIfElseMaybeOrBranches(IfStatement ifElse, boolean topLevel) {
+        BooleanExpression condition = ifElse.getBooleanExpression();
+        BinaryExpression lor = null;
+        if (condition.getExpression() instanceof BinaryExpression) {
+            lor = (BinaryExpression) condition.getExpression();
+            if (lor.getOperation().getType() != LOGICAL_OR) {
+                lor = null;
+            }
+        }
+        // for logical OR, any one branch may be true branch, so traverse separately
+        if (lor != null) {
+            IfStatement left = ifElseS(lor.getLeftExpression(), ifElse.getIfBlock(), ifElse.getElseBlock());
+//            left.setSourcePosition(ifElse);
+            typeCheckingContext.pushTemporaryTypeInfo();
+            visitIfElseMaybeOrBranches(left, false);
+            typeCheckingContext.popTemporaryTypeInfo();
+            restoreTypeBeforeConditional();
+            IfStatement right = ifElseS(lor.getRightExpression(), ifElse.getIfBlock(), ifElse.getElseBlock());
+//            right.setSourcePosition(ifElse);
+            typeCheckingContext.pushTemporaryTypeInfo();
+            visitIfElseMaybeOrBranches(right, false);
+            typeCheckingContext.popTemporaryTypeInfo();
+            restoreTypeBeforeConditional();
+        }
+        if (topLevel || lor == null) {
+            // do it all again to get correct union type for casting (hush warnings?)
+            visitIfElseBranches(ifElse);
+        }
+    }
+
+    private void visitIfElseBranches(IfStatement ifElse) {
+        // create a new temporary element in the if-then-else type info
+        typeCheckingContext.pushTemporaryTypeInfo();
+        visitStatement(ifElse);
+        ifElse.getBooleanExpression().visit(this);
+        ifElse.getIfBlock().visit(this);
+
+        // pop if-then-else temporary type info
+        typeCheckingContext.popTemporaryTypeInfo();
+
+        // GROOVY-6099: restore assignment info as before the if branch
+        restoreTypeBeforeConditional();
+
+        ifElse.getElseBlock().visit(this);
     }
 
     protected void visitInstanceofNot(final BinaryExpression be) {

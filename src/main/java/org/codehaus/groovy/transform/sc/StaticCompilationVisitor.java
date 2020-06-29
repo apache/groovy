@@ -408,10 +408,17 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     public void visitMethodCallExpression(final MethodCallExpression call) {
         super.visitMethodCallExpression(call);
 
-        MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-        if (target != null) {
-            call.setMethodTarget(target);
-            memorizeInitialExpressions(target);
+        MethodNode newTarget = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        if (newTarget != null) {
+            MethodNode existingTarget = call.getMethodTarget();
+            if (existingTarget != null)
+                if (!(newTarget.getDeclaringClass().equals(existingTarget.getDeclaringClass())) || !(newTarget.getTypeDescriptor().equals(existingTarget.getTypeDescriptor()))) {
+                    // avoid cast class exception
+                    newTarget.putNodeMetaData(DYNAMIC_RESOLUTION, Boolean.TRUE);
+                    call.putNodeMetaData(DYNAMIC_RESOLUTION, OBJECT_TYPE);
+                }
+            call.setMethodTarget(newTarget);
+            memorizeInitialExpressions(newTarget);
         }
 
         if (call.getMethodTarget() == null && call.getLineNumber() > 0) {
