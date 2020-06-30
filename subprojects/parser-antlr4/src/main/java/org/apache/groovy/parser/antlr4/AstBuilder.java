@@ -1582,7 +1582,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
 
         boolean isAbstractMethod = methodNode.isAbstract();
-        boolean hasMethodBody = asBoolean(methodNode.getCode());
+        boolean hasMethodBody =
+                asBoolean(methodNode.getCode())
+                        && !(methodNode.getCode() instanceof ExpressionStatement);
 
         if (9 == ctx.ct) { // script
             if (isAbstractMethod || !hasMethodBody) { // method should not be declared abstract in the script
@@ -1592,6 +1594,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             if (4 == ctx.ct) { // trait
                 if (isAbstractMethod && hasMethodBody) {
                     throw createParsingFailedException("Abstract method should not have method body", ctx);
+                }
+            }
+
+            if (3 == ctx.ct) { // annotation
+                if (hasMethodBody) {
+                    throw createParsingFailedException("Annotation type element should not have body", ctx);
                 }
             }
 

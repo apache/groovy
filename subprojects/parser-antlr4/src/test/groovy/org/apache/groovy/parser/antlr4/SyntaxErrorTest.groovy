@@ -272,6 +272,23 @@ final class SyntaxErrorTest extends GroovyTestCase {
             |'''.stripMargin()
     }
 
+    void 'test groovy core - AnnotationDeclaration 5'() {
+        def err = expectParseError '''\
+            |@interface A {
+            |    String a() {
+            |    }
+            |}'''.stripMargin()
+        println err
+        assert err == '''\
+            |startup failed:
+            |test.groovy: 2: Annotation type element should not have body @ line 2, column 5.
+            |       String a() {
+            |       ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
     void 'test groovy core - MethodDeclaration'() {
         TestUtils.shouldFail('fail/MethodDeclaration_01.groovy')
         TestUtils.doRunAndShouldFail('fail/MethodDeclaration_02x.groovy')
