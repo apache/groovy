@@ -906,39 +906,42 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private Object invokeMissingMethod(Object instance, String methodName, Object[] arguments, RuntimeException original, boolean isCallToSuper) {
-        if (!isCallToSuper) {
-            Class instanceKlazz = instance.getClass();
-            if (theClass != instanceKlazz && theClass.isAssignableFrom(instanceKlazz))
-                instanceKlazz = theClass;
+        if (isCallToSuper) {
+            MetaClass metaClass = InvokerHelper.getMetaClass(theClass.getSuperclass());
+            return metaClass.invokeMissingMethod(instance, methodName, arguments);
+        }
 
-            Class[] argClasses = MetaClassHelper.castArgumentsToClassArray(arguments);
+        Class instanceKlazz = instance.getClass();
+        if (theClass != instanceKlazz && theClass.isAssignableFrom(instanceKlazz))
+            instanceKlazz = theClass;
 
-            MetaMethod method = findMixinMethod(methodName, argClasses);
+        Class[] argClasses = MetaClassHelper.castArgumentsToClassArray(arguments);
+
+        MetaMethod method = findMixinMethod(methodName, argClasses);
+        if (method != null) {
+            onMixinMethodFound(method);
+            return method.invoke(instance, arguments);
+        }
+
+        method = findMethodInClassHierarchy(instanceKlazz, methodName, argClasses, this);
+        if (method != null) {
+            onSuperMethodFoundInHierarchy(method);
+            return method.invoke(instance, arguments);
+        }
+
+        // still not method here, so see if there is an invokeMethod method up the hierarchy
+        final Class[] invokeMethodArgs = {String.class, Object[].class};
+        method = findMethodInClassHierarchy(instanceKlazz, INVOKE_METHOD_METHOD, invokeMethodArgs, this);
+        if (method instanceof ClosureMetaMethod) {
+            onInvokeMethodFoundInHierarchy(method);
+            return method.invoke(instance, invokeMethodArgs);
+        }
+
+        // last resort look in the category
+        if (method == null && GroovyCategorySupport.hasCategoryInCurrentThread()) {
+            method = getCategoryMethodMissing(instanceKlazz);
             if (method != null) {
-                onMixinMethodFound(method);
-                return method.invoke(instance, arguments);
-            }
-
-            method = findMethodInClassHierarchy(instanceKlazz, methodName, argClasses, this);
-            if (method != null) {
-                onSuperMethodFoundInHierarchy(method);
-                return method.invoke(instance, arguments);
-            }
-
-            // still not method here, so see if there is an invokeMethod method up the hierarchy
-            final Class[] invokeMethodArgs = {String.class, Object[].class};
-            method = findMethodInClassHierarchy(instanceKlazz, INVOKE_METHOD_METHOD, invokeMethodArgs, this);
-            if (method instanceof ClosureMetaMethod) {
-                onInvokeMethodFoundInHierarchy(method);
-                return method.invoke(instance, invokeMethodArgs);
-            }
-
-            // last resort look in the category
-            if (method == null && GroovyCategorySupport.hasCategoryInCurrentThread()) {
-                method = getCategoryMethodMissing(instanceKlazz);
-                if (method != null) {
-                    return method.invoke(instance, new Object[]{methodName, arguments});
-                }
+                return method.invoke(instance, new Object[]{methodName, arguments});
             }
         }
 
