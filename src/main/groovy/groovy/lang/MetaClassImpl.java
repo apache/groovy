@@ -910,39 +910,42 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private Object invokeMissingMethod(Object instance, String methodName, Object[] arguments, RuntimeException original, boolean isCallToSuper) {
-        if (!isCallToSuper) {
-            Class instanceKlazz = instance.getClass();
-            if (theClass != instanceKlazz && theClass.isAssignableFrom(instanceKlazz))
-              instanceKlazz = theClass;
+        if (isCallToSuper) {
+            MetaClass metaClass = InvokerHelper.getMetaClass(theClass.getSuperclass());
+            return metaClass.invokeMissingMethod(instance, methodName, arguments);
+        }
 
-            Class[] argClasses = MetaClassHelper.castArgumentsToClassArray(arguments);
+        Class instanceKlazz = instance.getClass();
+        if (theClass != instanceKlazz && theClass.isAssignableFrom(instanceKlazz))
+            instanceKlazz = theClass;
 
-            MetaMethod method = findMixinMethod(methodName, argClasses);
-            if(method != null) {
-                onMixinMethodFound(method);
-                return method.invoke(instance, arguments);
-            }
+        Class[] argClasses = MetaClassHelper.castArgumentsToClassArray(arguments);
 
-            method = findMethodInClassHierarchy(instanceKlazz, methodName, argClasses, this);
-            if(method != null) {
-                onSuperMethodFoundInHierarchy(method);
-                return method.invoke(instance, arguments);
-            }
+        MetaMethod method = findMixinMethod(methodName, argClasses);
+        if (method != null) {
+            onMixinMethodFound(method);
+            return method.invoke(instance, arguments);
+        }
 
-            // still not method here, so see if there is an invokeMethod method up the hierarchy
-            final Class[] invokeMethodArgs = {String.class, Object[].class};
-            method = findMethodInClassHierarchy(instanceKlazz, INVOKE_METHOD_METHOD, invokeMethodArgs, this );
-            if(method instanceof ClosureMetaMethod) {
-                onInvokeMethodFoundInHierarchy(method);
-                return method.invoke(instance, invokeMethodArgs);
-            }
+        method = findMethodInClassHierarchy(instanceKlazz, methodName, argClasses, this);
+        if (method != null) {
+            onSuperMethodFoundInHierarchy(method);
+            return method.invoke(instance, arguments);
+        }
 
-            // last resort look in the category
-            if (method == null && GroovyCategorySupport.hasCategoryInCurrentThread()) {
-                method = getCategoryMethodMissing(instanceKlazz);
-                if (method != null) {
-                    return method.invoke(instance, new Object[]{methodName, arguments});
-                }
+        // still not method here, so see if there is an invokeMethod method up the hierarchy
+        final Class[] invokeMethodArgs = {String.class, Object[].class};
+        method = findMethodInClassHierarchy(instanceKlazz, INVOKE_METHOD_METHOD, invokeMethodArgs, this);
+        if (method instanceof ClosureMetaMethod) {
+            onInvokeMethodFoundInHierarchy(method);
+            return method.invoke(instance, invokeMethodArgs);
+        }
+
+        // last resort look in the category
+        if (method == null && GroovyCategorySupport.hasCategoryInCurrentThread()) {
+            method = getCategoryMethodMissing(instanceKlazz);
+            if (method != null) {
+                return method.invoke(instance, new Object[]{methodName, arguments});
             }
         }
 
@@ -951,20 +954,24 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 return methodMissing.invoke(instance, new Object[]{methodName, arguments});
             } catch (InvokerInvocationException iie) {
                 if (methodMissing instanceof ClosureMetaMethod && iie.getCause() instanceof MissingMethodException) {
-                    MissingMethodException mme =  (MissingMethodException) iie.getCause();
+                    MissingMethodException mme = (MissingMethodException) iie.getCause();
                     throw new MissingMethodExecutionFailed(mme.getMethod(), mme.getClass(),
-                                                            mme.getArguments(),mme.isStatic(),mme);
+                            mme.getArguments(), mme.isStatic(), mme);
                 }
                 throw iie;
             } catch (MissingMethodException mme) {
-                if (methodMissing instanceof ClosureMetaMethod)
+                if (methodMissing instanceof ClosureMetaMethod) {
                     throw new MissingMethodExecutionFailed(mme.getMethod(), mme.getClass(),
-                                                        mme.getArguments(),mme.isStatic(),mme);
-                else
+                            mme.getArguments(), mme.isStatic(), mme);
+                } else {
                     throw mme;
+                }
             }
-        } else if (original != null) throw original;
-        else throw new MissingMethodExceptionNoStack(methodName, theClass, arguments, false);
+        } else if (original != null) {
+            throw original;
+        } else {
+            throw new MissingMethodExceptionNoStack(methodName, theClass, arguments, false);
+        }
     }
 
     protected void onSuperPropertyFoundInHierarchy(MetaBeanProperty property) {
