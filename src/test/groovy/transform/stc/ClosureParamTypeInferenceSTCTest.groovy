@@ -1375,4 +1375,56 @@ method()
             new C('blah', { list -> list.get(0) })
         '''
     }
+
+    void testGroovy9597a() {
+        assertScript '''
+            import groovy.transform.stc.*
+
+            class A {
+                def <T> void proc(Collection<T> values, @ClosureParams(FirstParam.FirstGenericType) Closure<String> block) {
+                }
+            }
+
+            class B {
+                List<Integer> list
+                void test(A a) {
+                    a.proc(this.list) { it.toBigDecimal().toString() } // works
+                    a.with {
+                      proc(this.list) { it.toBigDecimal().toString() } // error
+                    }
+                }
+            }
+
+            new B().test(new A())
+        '''
+    }
+
+    void testGroovy9597b() {
+        assertScript '''
+            import groovy.transform.stc.*
+
+            class A {
+                static A of(@DelegatesTo(A) Closure x) {
+                    new A().tap {
+                        x.delegate = it
+                        x.call()
+                    }
+                }
+                def <T> void proc(Collection<T> values, @ClosureParams(FirstParam.FirstGenericType) Closure<String> block) {
+                }
+            }
+
+            class B {
+              List<Integer> list
+              A a = A.of {
+                  proc(
+                      this.list,
+                      { it.toBigDecimal().toString() } // Cannot find matching method java.lang.Object#toBigDecimal()
+                  )
+              }
+            }
+
+            new B()
+        '''
+    }
 }
