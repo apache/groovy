@@ -2936,7 +2936,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
 
-        throw new MissingFieldException(attribute, theClass);
+        throw new MissingFieldException(attribute, !useSuper ? theClass : theClass.getSuperclass());
     }
 
     /**
@@ -2976,7 +2976,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
 
-        throw new MissingFieldException(attribute, theClass);
+        throw new MissingFieldException(attribute, !useSuper ? theClass : theClass.getSuperclass());
     }
 
     /**

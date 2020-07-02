@@ -141,8 +141,8 @@ public class AsmClassGenerator extends ClassGenerator {
     // fields
     public  static final MethodCallerMultiAdapter setField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setField", false, false);
     public  static final MethodCallerMultiAdapter getField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getField", false, false);
-  //private static final MethodCallerMultiAdapter setFieldOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setFieldOnSuper", false, false);
-  //private static final MethodCallerMultiAdapter getFieldOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getFieldOnSuper", false, false);
+    private static final MethodCallerMultiAdapter setFieldOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setFieldOnSuper", false, false);
+    private static final MethodCallerMultiAdapter getFieldOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getFieldOnSuper", false, false);
     public  static final MethodCallerMultiAdapter setGroovyObjectField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setGroovyObjectField", false, false);
     public  static final MethodCallerMultiAdapter getGroovyObjectField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getGroovyObjectField", false, false);
 
@@ -1126,8 +1126,6 @@ public class AsmClassGenerator extends ClassGenerator {
                 if (fieldNode != null) {
                     fieldX(fieldNode).visit(this);
                     visited = true;
-                } else if (isSuperExpression(objectExpression)) {
-                    visited = tryPropertyOfSuperClass(expression, name);
                 }
             }
         }
@@ -1135,9 +1133,9 @@ public class AsmClassGenerator extends ClassGenerator {
         if (!visited) {
             MethodCallerMultiAdapter adapter;
             if (controller.getCompileStack().isLHS()) {
-                adapter = isGroovyObject(objectExpression) ? setGroovyObjectField : setField;
+                adapter = isSuperExpression(objectExpression) ? setFieldOnSuper : isGroovyObject(objectExpression) ? setGroovyObjectField : setField;
             } else {
-                adapter = isGroovyObject(objectExpression) ? getGroovyObjectField : getField;
+                adapter = isSuperExpression(objectExpression) ? getFieldOnSuper : isGroovyObject(objectExpression) ? getGroovyObjectField : getField;
             }
             visitAttributeOrProperty(expression, adapter);
         }
