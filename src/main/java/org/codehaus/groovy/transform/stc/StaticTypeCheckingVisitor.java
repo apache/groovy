@@ -3463,6 +3463,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 // so we store the information so that the static compiler may reuse it
                                 call.putNodeMetaData(IMPLICIT_RECEIVER, data);
                             }
+                            receiver = chosenReceiver.getType();
+
                             // if the object expression is a closure shared variable, we will have to perform a second pass
                             if (objectExpression instanceof VariableExpression) {
                                 VariableExpression var = (VariableExpression) objectExpression;
