@@ -225,6 +225,12 @@ public class TypeCheckingContext {
         return Collections.unmodifiableList(enclosingBinaryExpressions);
     }
 
+    public boolean isTargetOfEnclosingAssignment(final Expression expression) {
+        return Optional.ofNullable(getEnclosingBinaryExpression()).filter(be ->
+            be.getLeftExpression() == expression && StaticTypeCheckingSupport.isAssignment(be.getOperation().getType())
+        ).isPresent();
+    }
+
     /**
      * Pushes a closure expression into the closure expression stack.
      */
