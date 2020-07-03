@@ -740,7 +740,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         }
     }
 
-    @Deprecated // backwards compat only
+    @Deprecated // backwards compatibility only
     void exit$$bridge(EventObject evt) {
         exit(evt)
     }
