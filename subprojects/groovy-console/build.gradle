@@ -40,3 +40,12 @@ task console(type: JavaExec, dependsOn:classes) {
     main = 'groovy.ui.Console'
     classpath = sourceSets.main.runtimeClasspath
 }
+
+compileGroovy {
+    doLast {
+        ant.java(classname:'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
+            arg(value: "${sourceSets.main.groovy.outputDir.canonicalPath}/groovy/ui/Console.class")
+        }
+        ant.echo('Bridger (groovy-console): ' + ant.properties.stdout)
+    }
+}

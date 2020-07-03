@@ -740,6 +740,11 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         }
     }
 
+    @Deprecated
+    void exit$$bridge(EventObject evt) {
+        exit(evt)
+    }
+
     boolean exit(EventObject evt = null) {
         if (askToInterruptScript()) {
             def exit = askToSaveFile()
