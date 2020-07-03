@@ -19,7 +19,6 @@
 dependencies {
     api rootProject // TestNgRunner implements GroovyRunner...
     runtime('org.testng:testng:7.1.0') {
-        exclude(group: 'com.google.inject', module: 'guice')
         exclude(group: 'org.yaml', module: 'snakeyaml')
     }
     testImplementation project(':groovy-test')
