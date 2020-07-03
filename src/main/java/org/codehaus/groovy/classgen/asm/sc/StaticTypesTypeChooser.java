@@ -34,7 +34,7 @@ import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
     @Override
     public ClassNode resolveType(final Expression exp, final ClassNode current) {
-        Expression target = exp instanceof VariableExpression && !((VariableExpression) exp).isClosureSharedVariable() ? getTarget((VariableExpression) exp) : exp;
+        Expression target = exp instanceof VariableExpression ? getTarget((VariableExpression) exp) : exp;
 
         ClassNode inferredType = target.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE);
         if (inferredType == null) {
