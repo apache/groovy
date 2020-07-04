@@ -18,14 +18,22 @@
  */
 
 ext {
-    junit5Version = '5.4.0'
-    junit5PlatformVersion = '1.4.0'
+    junit5Version = '5.4.2'
+    junit5PlatformVersion = '1.4.2'
 }
 
 dependencies {
     compile rootProject
-    compile "org.junit.platform:junit-platform-launcher:$junit5PlatformVersion"
-    runtime "org.junit.jupiter:junit-jupiter-engine:$junit5Version"
+    compile("org.junit.jupiter:junit-jupiter-api:$junit5Version") {
+        exclude(group: 'org.apiguardian', module: 'apiguardian-api')
+        exclude(group: 'org.junit.platform', module: 'junit-platform-commons')
+    }
+    compile("org.junit.platform:junit-platform-launcher:$junit5PlatformVersion") {
+        exclude(group: 'org.apiguardian', module: 'apiguardian-api')
+    }
+    runtime("org.junit.jupiter:junit-jupiter-engine:$junit5Version") {
+        exclude(group: 'org.apiguardian', module: 'apiguardian-api')
+    }
     testCompile "org.junit.jupiter:junit-jupiter-params:$junit5Version"
     testRuntime "org.junit.platform:junit-platform-engine:$junit5PlatformVersion"
     testRuntime "org.junit.platform:junit-platform-runner:$junit5PlatformVersion"
