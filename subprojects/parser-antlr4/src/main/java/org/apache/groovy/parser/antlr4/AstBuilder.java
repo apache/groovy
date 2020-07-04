@@ -2243,7 +2243,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public Expression visitPathExpression(PathExpressionContext ctx) {
-        return this.createPathExpression((Expression) this.visit(ctx.primary()), ctx.pathElement());
+        final TerminalNode staticTerminalNode = ctx.STATIC();
+        Expression primaryExpr;
+        if (asBoolean(staticTerminalNode)) {
+            primaryExpr = configureAST(new VariableExpression(staticTerminalNode.getText()), staticTerminalNode);
+        } else {
+            primaryExpr = (Expression) this.visit(ctx.primary());
+        }
+
+        return this.createPathExpression(primaryExpr, ctx.pathElement());
     }
 
     @Override
