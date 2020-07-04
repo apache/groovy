@@ -4302,10 +4302,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private List<MethodNode> disambiguateMethods(List<MethodNode> methods, ClassNode receiver, ClassNode[] argTypes, final Expression expr) {
         if (methods.size() > 1 && receiver != null && argTypes != null) {
-            List<MethodNode> filteredWithGenerics = new LinkedList<MethodNode>();
+            List<MethodNode> filteredWithGenerics = new LinkedList<>();
             for (MethodNode methodNode : methods) {
                 if (typeCheckMethodsWithGenerics(receiver, argTypes, methodNode)) {
-                    filteredWithGenerics.add(methodNode);
+                    if ((methodNode.getModifiers() & Opcodes.ACC_BRIDGE) == 0) {
+                        filteredWithGenerics.add(methodNode);
+                    }
                 }
             }
             if (filteredWithGenerics.size() == 1) {
