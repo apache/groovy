@@ -29,6 +29,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.RangeInfo;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -65,8 +66,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * Defines new Groovy methods which appear on normal JDK 8
- * classes inside the Groovy environment.
+ * Defines new Groovy methods which appear on standard Java 8 classes within the
+ * Groovy environment.
  *
  * @since 2.5.0
  */
@@ -275,10 +276,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 3.0.0
      */
     public static <T> OptionalInt mapToInt(final Optional<T> self, final ToIntFunction<? super T> mapper) {
-        if (!self.isPresent()) {
-            return OptionalInt.empty();
-        }
-        return OptionalInt.of(mapper.applyAsInt(self.get()));
+        return self.map(t -> OptionalInt.of(mapper.applyAsInt(t))).orElseGet(OptionalInt::empty);
     }
 
     /**
@@ -292,10 +290,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 3.0.0
      */
     public static <T> OptionalLong mapToLong(final Optional<T> self, final ToLongFunction<? super T> mapper) {
-        if (!self.isPresent()) {
-            return OptionalLong.empty();
-        }
-        return OptionalLong.of(mapper.applyAsLong(self.get()));
+        return self.map(t -> OptionalLong.of(mapper.applyAsLong(t))).orElseGet(OptionalLong::empty);
     }
 
     /**
@@ -309,10 +304,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 3.0.0
      */
     public static <T> OptionalDouble mapToDouble(final Optional<T> self, final ToDoubleFunction<? super T> mapper) {
-        if (!self.isPresent()) {
-            return OptionalDouble.empty();
-        }
-        return OptionalDouble.of(mapper.applyAsDouble(self.get()));
+        return self.map(t -> OptionalDouble.of(mapper.applyAsDouble(t))).orElseGet(OptionalDouble::empty);
     }
 
     /**
@@ -332,10 +324,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <S,T> Optional<T> collect(final Optional<S> self, @ClosureParams(FirstParam.FirstGenericType.class) final Closure<T> transform) {
         Objects.requireNonNull(self);
         Objects.requireNonNull(transform);
-        if (!self.isPresent()) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(transform.call(self.get()));
+        return self.map(transform::call);
     }
 
     /**
@@ -362,12 +351,13 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * This method is called by the ++ operator for enums. It will invoke
-     * Groovy's default next behaviour for enums do not have their own
-     * next method.
+     * Overloads the {@code ++} operator for enums. It will invoke Groovy's
+     * default next behaviour for enums that do not have their own next method.
      *
      * @param self an Enum
      * @return the next defined enum from the enum class
+     *
+     * @since 1.5.2
      */
     public static Object next(final Enum self) {
         for (Method method : self.getClass().getMethods()) {
@@ -381,12 +371,13 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * This method is called by the -- operator for enums. It will invoke
-     * Groovy's default previous behaviour for enums that do not have
-     * their own previous method.
+     * Overloads the {@code --} operator for enums. It will invoke Groovy's
+     * default previous behaviour for enums that do not have their own previous method.
      *
      * @param self an Enum
      * @return the previous defined enum from the enum class
+     *
+     * @since 1.5.2
      */
     public static Object previous(final Enum self) {
         for (Method method : self.getClass().getMethods()) {
@@ -400,13 +391,18 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Standard Groovy size() method for StringBuilders.
+     * Provides the standard Groovy <code>size()</code> method for <code>StringBuilder</code>.
      *
-     * @param builder a StringBuilder
+     * @param self a StringBuilder
      * @return the length of the StringBuilder
+     *
+     * @since 1.5.2
+     *
+     * @see org.codehaus.groovy.runtime.StringGroovyMethods#size(CharSequence)
      */
-    public static int size(final StringBuilder builder) {
-        return builder.length();
+    @Deprecated
+    public static int size(final StringBuilder self) {
+        return self.length();
     }
 
     /**
@@ -416,6 +412,8 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  a StringBuilder
      * @param value a value to append
      * @return the StringBuilder on which this operation was invoked
+     *
+     * @since 1.5.2
      */
     public static StringBuilder leftShift(final StringBuilder self, final Object value) {
         if (value instanceof GString) {
@@ -431,12 +429,14 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the range subscript operator for StringBuilder.
+     * Supports the range subscript operator for StringBuilder.
      * Index values are treated as characters within the builder.
      *
      * @param self  a StringBuilder
      * @param range a Range
      * @param value the object that's toString() will be inserted
+     *
+     * @since 1.5.2
      */
     public static void putAt(final StringBuilder self, final IntRange range, final Object value) {
         RangeInfo info = DefaultGroovyMethodsSupport.subListBorders(self.length(), range);
@@ -444,11 +444,13 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the range subscript operator for StringBuilder.
+     * Supports the range subscript operator for StringBuilder.
      *
      * @param self  a StringBuilder
      * @param range a Range
      * @param value the object that's toString() will be inserted
+     *
+     * @since 1.5.2
      */
     public static void putAt(final StringBuilder self, final EmptyRange range, final Object value) {
         RangeInfo info = DefaultGroovyMethodsSupport.subListBorders(self.length(), range);
@@ -461,6 +463,8 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  a StringBuilder
      * @param value a String
      * @return a String
+     *
+     * @since 1.5.2
      */
     public static String plus(final StringBuilder self, final String value) {
         return self + value;
@@ -502,8 +506,47 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns an array containing the elements of the stream.
+     * <pre class="groovyTestCase">
+     * import static groovy.test.GroovyAssert.shouldFail
+     *
+     * assert Arrays.equals([].stream().toArray(Object), new Object[0])
+     * assert Arrays.equals([].stream().toArray(String), new String[0])
+     * assert Arrays.equals([].stream().toArray(String[]), new String[0][])
+     * assert Arrays.equals(['x'].stream().toArray(Object), ['x'].toArray())
+     * assert Arrays.equals(['x'].stream().toArray(String), ['x'] as String[])
+     * assert Arrays.deepEquals([['x'] as String[]].stream().toArray(String[]), [['x'] as String[]] as String[][])
+     * assert Arrays.equals(['x'].stream().toArray(CharSequence), ['x'] as CharSequence[])
+     *
+     * shouldFail(ArrayStoreException) {
+     *     ['x'].stream().toArray(Thread)
+     * }
+     *
+     * shouldFail(IllegalArgumentException) {
+     *     ['x'].stream().toArray((Class) null)
+     * }
+     *
+     * // Stream#toArray(IntFunction) should still be used for closure literal:
+     * assert Arrays.equals(['x'].stream().toArray { n -> new String[n] }, ['x'] as String[])
+     *
+     * // Stream#toArray(IntFunction) should still be used for method reference:
+     * assert Arrays.equals(['x'].stream().toArray(String[]::new), ['x'] as String[])
+     * </pre>
+     *
+     * @param self the stream
+     * @param type the array element type
+     *
+     * @since 3.0.4
+     */
+    public static <T> T[] toArray(final Stream<? extends T> self, final Class<T> type) {
+        if (type == null) throw new IllegalArgumentException("type cannot be null");
+        return self.toArray(length -> (T[]) Array.newInstance(type, length));
+    }
+
+    /**
      * Accumulates the elements of stream into a new List.
-     * @param self the Stream
+     *
+     * @param self the stream
      * @param <T> the type of element
      * @return a new {@code java.util.List} instance
      *
@@ -515,7 +558,8 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Accumulates the elements of stream into a new Set.
-     * @param self the Stream
+     *
+     * @param self the stream
      * @param <T> the type of element
      * @return a new {@code java.util.Set} instance
      *
@@ -527,6 +571,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Accumulates the elements of stream into a new List.
+     *
      * @param self the {@code java.util.stream.BaseStream}
      * @param <T> the type of element
      * @return a new {@code java.util.List} instance
@@ -539,6 +584,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Accumulates the elements of stream into a new Set.
+     *
      * @param self the {@code java.util.stream.BaseStream}
      * @param <T> the type of element
      * @return a new {@code java.util.Set} instance
@@ -551,6 +597,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns an empty sequential {@link Stream}.
+     *
      * <pre class="groovyTestCase">
      * def item = null
      * assert item.stream().toList() == []
@@ -565,6 +612,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns a sequential {@link Stream} containing a single element.
+     *
      * <pre class="groovyTestCase">
      * def item = 'string'
      * assert item.stream().toList() == ['string']
@@ -601,7 +649,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static Stream<Integer> stream(final int[] self) {
-        return Arrays.stream(self).mapToObj(Integer::valueOf);
+        return Arrays.stream(self).boxed();
     }
 
     /**
@@ -614,7 +662,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static Stream<Long> stream(final long[] self) {
-        return Arrays.stream(self).mapToObj(Long::valueOf);
+        return Arrays.stream(self).boxed();
     }
 
     /**
@@ -627,7 +675,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static Stream<Double> stream(final double[] self) {
-        return Arrays.stream(self).mapToObj(Double::valueOf);
+        return Arrays.stream(self).boxed();
     }
 
     /**
@@ -727,6 +775,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns a sequential {@link Stream} with the specified element(s) as its
      * source.
+     *
      * <pre class="groovyTestCase">
      * class Items implements Iterable<String> {
      *   Iterator<String> iterator() {
@@ -746,6 +795,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns a sequential {@link Stream} with the specified element(s) as its
      * source.
+     *
      * <pre class="groovyTestCase">
      * [].iterator().stream().toList().isEmpty()
      * ['one', 'two'].iterator().stream().toList() == ['one', 'two']
@@ -760,6 +810,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns a sequential {@link Stream} with the specified element(s) as its
      * source.
+     *
      * <pre class="groovyTestCase">
      * [].spliterator().stream().toList().isEmpty()
      * ['one', 'two'].spliterator().stream().toList() == ['one', 'two']

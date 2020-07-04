@@ -925,7 +925,8 @@ public abstract class StaticTypeCheckingSupport {
             }
             ref = ref.getSuperClass();
             dist += 1;
-            if (ref == null) dist += 1;
+            if (OBJECT_TYPE.equals(ref))
+                dist += 1;
             dist = (dist + 1) << 1;
         }
         return dist;

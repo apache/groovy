@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform
 
+import groovy.transform.AutoFinal
 import groovy.transform.TimedInterrupt
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotatedNode
@@ -35,6 +36,7 @@ import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.DoWhileStatement
 import org.codehaus.groovy.ast.stmt.ForStatement
+import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.ast.stmt.WhileStatement
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.SourceUnit
@@ -44,6 +46,7 @@ import java.util.concurrent.TimeoutException
 
 import static org.codehaus.groovy.ast.ClassHelper.make
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX
@@ -63,7 +66,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
  * @see groovy.transform.ThreadInterrupt
  * @since 1.8.0
  */
-@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
+@AutoFinal @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
 
     private static final ClassNode MY_TYPE = make(TimedInterrupt)
@@ -150,7 +153,7 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
     }
 
     private static class TimedInterruptionVisitor extends ClassCodeVisitorSupport {
-        final private SourceUnit source
+        final SourceUnit sourceUnit
         final private boolean checkOnMethodStart
         final private boolean applyToAllClasses
         final private boolean applyToAllMembers
@@ -162,8 +165,8 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
         private final String basename
 
         @SuppressWarnings('ParameterCount')
-        TimedInterruptionVisitor(source, checkOnMethodStart, applyToAllClasses, applyToAllMembers, maximum, unit, thrown, hash) {
-            this.source = source
+        TimedInterruptionVisitor(SourceUnit source, checkOnMethodStart, applyToAllClasses, applyToAllMembers, maximum, unit, thrown, hash) {
+            this.sourceUnit = source
             this.checkOnMethodStart = checkOnMethodStart
             this.applyToAllClasses = applyToAllClasses
             this.applyToAllMembers = applyToAllMembers
@@ -176,9 +179,8 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
         /**
          * @return Returns the interruption check statement.
          */
-        final createInterruptStatement() {
+        private Statement createInterruptStatement() {
             ifS(
-
                     ltX(
                             propX(varX('this'), basename + '$expireTime'),
                             callX(make(System), 'nanoTime')
@@ -210,10 +212,10 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
          * second one the statement to be wrapped.
          */
         private wrapBlock(statement) {
-            def stmt = new BlockStatement()
-            stmt.addStatement(createInterruptStatement())
-            stmt.addStatement(statement)
-            stmt
+            block().tap {
+                addStatement(createInterruptStatement())
+                addStatement(statement)
+            }
         }
 
         @Override
@@ -234,10 +236,11 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
                     )
             )
             expireTimeField.synthetic = true
+            ClassNode dateClass = make(Date)
             startTimeField = node.addField(basename + '$startTime',
                     ACC_FINAL | ACC_PRIVATE,
-                    make(Date),
-                    ctorX(make(Date))
+                    dateClass,
+                    ctorX(dateClass)
             )
             startTimeField.synthetic = true
 
@@ -293,13 +296,13 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
         }
 
         @Override
-        void visitDoWhileLoop(final DoWhileStatement doWhileStatement) {
+        void visitDoWhileLoop(DoWhileStatement doWhileStatement) {
             visitLoop(doWhileStatement)
             super.visitDoWhileLoop(doWhileStatement)
         }
 
         @Override
-        void visitWhileLoop(final WhileStatement whileStatement) {
+        void visitWhileLoop(WhileStatement whileStatement) {
             visitLoop(whileStatement)
             super.visitWhileLoop(whileStatement)
         }
@@ -313,10 +316,6 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
             if (!node.isSynthetic() && !node.isStatic()) {
                 super.visitMethod(node)
             }
-        }
-
-        protected SourceUnit getSourceUnit() {
-            source
         }
     }
 }

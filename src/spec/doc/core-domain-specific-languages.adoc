@@ -707,9 +707,10 @@ For a complete list of options, please refer to gapi:org.codehaus.groovy.control
 === Secure AST customizer
 
 This customizer will allow the developer of a DSL to restrict the
-*grammar* of the language, to prevent users from using some constructs,
-for example. It is only ``secure'' in that sense only and it is very
-important to understand that it does *not* replace a security manager.
+*grammar* of the language, for example, to prevent users from using particular constructs.
+It is only ``secure'' in that one aspect, i.e. limiting the allowable constructs within a DSL.
+It does *not* replace a security manager which might additionally
+be needed as an orthogonal aspect of overall security.
 The only reason for it to exist is to limit the expressiveness of the
 language. This customizer only works at the AST (abstract syntax tree)
 level, not at runtime! It can be strange at first glance, but it makes
@@ -727,12 +728,12 @@ allows arithmetic operations, but this customizer allows you to:
 * restrict the tokens (grammar-wise) a user can use
 * restrict the types of the constants that can be used in code
 
-For all those features, the secure AST customizer works using either a
-whitelist (list of elements that are allowed) *or* a blacklist (list of
-elements that are disallowed). For each type of feature (imports,
-tokens, …) you have the choice to use either a whitelist or a blacklist,
-but you can mix whitelists and blacklists for distinct features. In
-general, you will choose whitelists (disallow all, allow selected).
+For all those features, the secure AST customizer works using either an
+allowed list (list of elements that are permitted) *or* a disallowed list (list of
+elements that are not permitted). For each type of feature (imports,
+tokens, …) you have the choice to use either an allowed or disallowed list,
+but you can mix dis/allowed lists for distinct features. Typically,
+you will choose allowed lists (which permits only the constructs listed and disallows all others).
 
 [source,groovy]
 -------------------------------------------------------------------------------------
@@ -1045,11 +1046,11 @@ link:type-checking-extensions.html[type checking extensions].
 
 ==== MarkupBuilder
 
-See <<_markupbuilder,Creating Xml - MarkupBuilder>>.
+See <<xml-userguide.adoc#_markupbuilder,Creating Xml - MarkupBuilder>>.
 
 ==== StreamingMarkupBuilder
 
-See <<_streamingmarkupbuilder,Creating Xml - StreamingMarkupBuilder>>.
+See <<xml-userguide.adoc#_streamingmarkupbuilder,Creating Xml - StreamingMarkupBuilder>>.
 
 include::{projectdir}/subprojects/groovy-xml/{specfolder}/sax-builder.adoc[leveloffset=+3]
 
@@ -1114,10 +1115,9 @@ def options = cli.parse(args)                              <5>
 if (options.h) cli.usage()                                 <6>
 else println "Hello ${options.a ? options.a : 'World'}"    <7>
 ---------------------------
-<1> Earlier versions of Groovy had a CliBuilder in the groovy.util package and no import was necessary.
-While still supported, this approach is now deprecated and you should instead choose the groovy.cli.picocli
-or groovy.cli.commons version. The groovy.util version points to the commons-cli version for backwards compatibility
-but will be removed in a future version of Groovy.
+<1> Earlier versions of Groovy had a CliBuilder in the `groovy.util` package and no import was necessary.
+In Groovy 2.5, this approach became deprecated: applications should instead choose the `groovy.cli.picocli` or `groovy.cli.commons` version.
+The groovy.util version in Groovy 2.5 points to the commons-cli version for backwards compatibility but has been removed in Groovy 3.0.
 <2> define a new `CliBuilder` instance specifying an optional usage string
 <3> specify a `-a` option taking a single argument with an optional long variant `--audience`
 <4> specify a `-h` option taking no arguments with an optional long variant `--help`
@@ -1600,9 +1600,29 @@ Gives this output:
 
 image::assets/img/usageMessageSpec.png[]
 
-*New property: parser*
+*Property: parser*
 
 The `parser` property gives access to the picocli `ParserSpec` object that can be used to customize the parser behavior.
+
+This can be useful when the `CliBuilder` options to control the parser are not fine-grained enough.
+For example, for backward compatibility with the Commons CLI implementation of `CliBuilder`, by default `CliBuilder` stops looking for options when an unknown option is encountered, and subsequent command line arguments are treated as positional parameters.
+`CliBuilder` provides a `stopAtNonOption` property, and by setting this to `false` you can make the parser more strict, so an unknown option results in `error: Unknown option: '-x'`.
+
+But what if you want to treat unknown options as positional parameters, and still process subsequent command line arguments as options?
+
+This can be accomplished with the `parser` property.
+For example:
+
+[source,groovy]
+----
+def cli = new CliBuilder()
+cli.parser.stopAtPositional(false)
+cli.parser.unmatchedOptionsArePositionalParams(true)
+// ...
+def opts = cli.parse(args)
+// ...
+----
+
 See the http://picocli.info/apidocs/picocli/CommandLine.Model.ParserSpec.html[documentation] for details.
 
 *Map options*
@@ -1623,6 +1643,19 @@ include::{projectdir}/subprojects/groovy-cli-picocli/src/spec/test/builder/CliBu
 <6> Picocli returns the key-value pairs as a `Map`
 <7> Both keys and values of the map can be strongly typed
 
+*Controlling the Picocli version*
+
+To use a specific version of picocli, add a dependency to that version in your build configuration.
+If running scripts using a pre-installed version of Groovy, use the `@Grab` annotation to control the version of picocli to use in `CliBuilder`.
+
+[source,groovy]
+----
+@GrabConfig(systemClassLoader=true)
+@Grab('info.picocli:picocli:4.2.0')
+import groovy.cli.picocli.CliBuilder
+
+def cli = new CliBuilder()
+----
 
 ==== ObjectGraphBuilder
 

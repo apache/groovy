@@ -38,9 +38,7 @@ import org.codehaus.groovy.ast.tools.BeanUtils;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
-import org.codehaus.groovy.syntax.SyntaxException;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.annotation.Retention;
@@ -227,11 +225,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     }
 
     public void addError(String msg, ASTNode expr) {
-        sourceUnit.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
-                        new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(),
-                                expr.getLastLineNumber(), expr.getLastColumnNumber()),
-                        sourceUnit)
-        );
+        sourceUnit.getErrorCollector().addErrorAndContinue(msg + '\n', expr, sourceUnit);
     }
 
     protected boolean checkNotInterface(ClassNode cNode, String annotationName) {

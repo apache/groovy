@@ -44,8 +44,6 @@ import static org.apache.groovy.parser.antlr4.GroovyLangParser.VOLATILE;
 
 /**
  * Process modifiers for AST nodes
- * <p>
- * Created by Daniel.Sun on 2016/08/27.
  */
 class ModifierManager {
     private static final Map<Class, List<Integer>> INVALID_MODIFIERS_MAP = Maps.of(

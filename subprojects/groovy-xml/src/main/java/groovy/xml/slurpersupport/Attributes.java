@@ -107,9 +107,8 @@ public class Attributes extends NodeChildren {
 
     public String text() {
         final StringBuilder sb = new StringBuilder();
-        final Iterator iter = iterator();
-        while (iter.hasNext()) {
-            sb.append(iter.next());
+        for (Object o : this) {
+            sb.append(o);
         }
         return sb.toString();
     }

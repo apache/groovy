@@ -19,8 +19,6 @@
 package groovy.bugs
 
 import groovy.transform.CompileStatic
-import org.codehaus.groovy.antlr.AntlrParserPluginFactory
-import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.shouldFail
@@ -28,8 +26,7 @@ import static groovy.test.GroovyAssert.shouldFail
 @CompileStatic
 final class Groovy8446 {
 
-    private GroovyShell shell = new GroovyShell(
-        new CompilerConfiguration(pluginFactory: new AntlrParserPluginFactory()))
+    private GroovyShell shell = new GroovyShell()
 
     @Test
     void testVoidArray0() {
@@ -50,7 +47,7 @@ final class Groovy8446 {
                 }
             '''
         }
-        assert err =~ /void\[\] is an invalid type/
+        assert err =~ /void\[\] is an invalid type/ || err =~ /Unexpected input: '\('/
     }
 
     @Test

@@ -51,7 +51,7 @@ public class StringBufferWriter extends Writer {
      * @param offset Offset from which to start writing characters
      * @param length Number of characters to write
      */
-    public void write(char text[], int offset, int length) {
+    public void write(char[] text, int offset, int length) {
         if ((offset < 0) || (offset > text.length) || (length < 0) || ((offset + length) > text.length) || ((offset + length) < 0)) {
             throw new IndexOutOfBoundsException();
         }

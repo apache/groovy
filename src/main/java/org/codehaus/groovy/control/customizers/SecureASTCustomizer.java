@@ -94,24 +94,28 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This customizer allows securing source code by controlling what code constructs are allowed. For example, if you only
- * want to allow arithmetic operations in a groovy shell, you can configure this customizer to restrict package imports,
- * method calls and so on.
+ * This customizer allows securing source code by controlling what code constructs are permitted.
+ * This is typically done when using Groovy for its scripting or domain specific language (DSL) features.
+ * For example, if you only want to allow arithmetic operations in a groovy shell,
+ * you can configure this customizer to restrict package imports, method calls and so on.
  * <p>
- * Most of the security customization options found in this class work with either blacklist or whitelist. This means that, for a
- * single option, you can set a whitelist OR a blacklist, but not both. You can mix whitelist/blacklist strategies for
- * different options. For example, you can have import whitelist and tokens blacklist.
+ * Most of the security customization options found in this class work with either <i>allowed</i> or <i>disallowed</i> lists.
+ * This means that, for a single option, you can set an allowed list OR a disallowed list, but not both.
+ * You can mix allowed/disallowed strategies for different options.
+ * For example, you can have an allowed import list and a disallowed tokens list.
  * <p>
- * The recommended way of securing shells is to use whitelists because it is guaranteed that future features of the
- * Groovy language won't be allowed by defaut. Using blacklists, you can limit the features of the languages by opting
- * out, but new language features would require you to update your configuration.
+ * The recommended way of securing shells is to use allowed lists because it is guaranteed that future features of the
+ * Groovy language won't be accidentally allowed unless explicitly added to the allowed list.
+ * Using disallowed lists, you can limit the features of the language constructs supported by your shell by opting
+ * out, but new language features are then implicitly also available and this may not be desirable.
+ * The implication is that you might need to update your configuration with each new release.
  * <p>
- * If you set neither a whitelist nor a blacklist, then everything is authorized.
+ * If neither an allowed list nor a disallowed list is set, then everything is permitted.
  * <p>
- * Combinations of import and star imports constraints are authorized as long as you use the same type of list for both.
- * For example, you may use an import whitelist and a star import whitelist together, but you cannot use an import white
- * list with a star import blacklist. static imports are handled separately, meaning that blacklisting an import <b>
- * does not</b> prevent from using a static import.
+ * Combinations of import and star import constraints are authorized as long as you use the same type of list for both.
+ * For example, you may use an import allowed list and a star import allowed list together, but you cannot use an import
+ * allowed list with a star import disallowed list. Static imports are handled separately, meaning that disallowing an
+ * import <b>does not</b> prevent from allowing a static import.
  * <p>
  * Eventually, if the features provided here are not sufficient, you may implement custom AST filtering handlers, either
  * implementing the {@link StatementChecker} interface or {@link ExpressionChecker} interface then register your
@@ -120,60 +124,60 @@ import java.util.Map;
  * methods.
  * <p>
  * Here is an example of usage. We will create a groovy classloader which only supports arithmetic operations and imports
- * the java.lang.Math classes by default.
+ * the {@code java.lang.Math} classes by default.
  *
  * <pre>
  * final ImportCustomizer imports = new ImportCustomizer().addStaticStars('java.lang.Math') // add static import of java.lang.Math
- *             final SecureASTCustomizer secure = new SecureASTCustomizer()
- *             secure.with {
- *                 closuresAllowed = false
- *                 methodDefinitionAllowed = false
+ *     final SecureASTCustomizer secure = new SecureASTCustomizer()
+ *     secure.with {
+ *         closuresAllowed = false
+ *         methodDefinitionAllowed = false
  *
- *                 importsWhitelist = []
- *                 staticImportsWhitelist = []
- *                 staticStarImportsWhitelist = ['java.lang.Math'] // only java.lang.Math is allowed
+ *         allowedImports = []
+ *         allowedStaticImports = []
+ *         allowedStaticStarImports = ['java.lang.Math'] // only java.lang.Math is allowed
  *
- *                 tokensWhitelist = [
- *                         PLUS,
- *                         MINUS,
- *                         MULTIPLY,
- *                         DIVIDE,
- *                         MOD,
- *                         POWER,
- *                         PLUS_PLUS,
- *                         MINUS_MINUS,
- *                         COMPARE_EQUAL,
- *                         COMPARE_NOT_EQUAL,
- *                         COMPARE_LESS_THAN,
- *                         COMPARE_LESS_THAN_EQUAL,
- *                         COMPARE_GREATER_THAN,
- *                         COMPARE_GREATER_THAN_EQUAL,
- *                 ].asImmutable()
+ *         allowedTokens = [
+ *                 PLUS,
+ *                 MINUS,
+ *                 MULTIPLY,
+ *                 DIVIDE,
+ *                 MOD,
+ *                 POWER,
+ *                 PLUS_PLUS,
+ *                 MINUS_MINUS,
+ *                 COMPARE_EQUAL,
+ *                 COMPARE_NOT_EQUAL,
+ *                 COMPARE_LESS_THAN,
+ *                 COMPARE_LESS_THAN_EQUAL,
+ *                 COMPARE_GREATER_THAN,
+ *                 COMPARE_GREATER_THAN_EQUAL,
+ *         ].asImmutable()
  *
- *                 constantTypesClassesWhiteList = [
- *                         Integer,
- *                         Float,
- *                         Long,
- *                         Double,
- *                         BigDecimal,
- *                         Integer.TYPE,
- *                         Long.TYPE,
- *                         Float.TYPE,
- *                         Double.TYPE
- *                 ].asImmutable()
+ *         allowedConstantTypesClasses = [
+ *                 Integer,
+ *                 Float,
+ *                 Long,
+ *                 Double,
+ *                 BigDecimal,
+ *                 Integer.TYPE,
+ *                 Long.TYPE,
+ *                 Float.TYPE,
+ *                 Double.TYPE
+ *         ].asImmutable()
  *
- *                 receiversClassesWhiteList = [
- *                         Math,
- *                         Integer,
- *                         Float,
- *                         Double,
- *                         Long,
- *                         BigDecimal
- *                 ].asImmutable()
- *             }
- *             CompilerConfiguration config = new CompilerConfiguration()
- *             config.addCompilationCustomizers(imports, secure)
- *             GroovyClassLoader loader = new GroovyClassLoader(this.class.classLoader, config)
+ *         allowedReceiversClasses = [
+ *                 Math,
+ *                 Integer,
+ *                 Float,
+ *                 Double,
+ *                 Long,
+ *                 BigDecimal
+ *         ].asImmutable()
+ *     }
+ *     CompilerConfiguration config = new CompilerConfiguration()
+ *     config.addCompilationCustomizers(imports, secure)
+ *     GroovyClassLoader loader = new GroovyClassLoader(this.class.classLoader, config)
  *  </pre>
  *
  * @since 1.8.0
@@ -185,20 +189,20 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     private boolean isMethodDefinitionAllowed = true;
 
     // imports
-    private List<String> importsWhitelist;
-    private List<String> importsBlacklist;
+    private List<String> allowedImports;
+    private List<String> disallowedImports;
 
     // static imports
-    private List<String> staticImportsWhitelist;
-    private List<String> staticImportsBlacklist;
+    private List<String> allowedStaticImports;
+    private List<String> disallowedStaticImports;
 
     // star imports
-    private List<String> starImportsWhitelist;
-    private List<String> starImportsBlacklist;
+    private List<String> allowedStarImports;
+    private List<String> disallowedStarImports;
 
     // static star imports
-    private List<String> staticStarImportsWhitelist;
-    private List<String> staticStarImportsBlacklist;
+    private List<String> allowedStaticStarImports;
+    private List<String> disallowedStaticStarImports;
 
     // indirect import checks
     // if set to true, then security rules on imports will also be applied on classnodes.
@@ -206,26 +210,26 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     private boolean isIndirectImportCheckEnabled;
 
     // statements
-    private List<Class<? extends Statement>> statementsWhitelist;
-    private List<Class<? extends Statement>> statementsBlacklist;
+    private List<Class<? extends Statement>> allowedStatements;
+    private List<Class<? extends Statement>> disallowedStatements;
     private final List<StatementChecker> statementCheckers = new LinkedList<>();
 
     // expressions
-    private List<Class<? extends Expression>> expressionsWhitelist;
-    private List<Class<? extends Expression>> expressionsBlacklist;
+    private List<Class<? extends Expression>> allowedExpressions;
+    private List<Class<? extends Expression>> disallowedExpressions;
     private final List<ExpressionChecker> expressionCheckers = new LinkedList<>();
 
     // tokens from Types
-    private List<Integer> tokensWhitelist;
-    private List<Integer> tokensBlacklist;
+    private List<Integer> allowedTokens;
+    private List<Integer> disallowedTokens;
 
     // constant types
-    private List<String> constantTypesWhiteList;
-    private List<String> constantTypesBlackList;
+    private List<String> allowedConstantTypes;
+    private List<String> disallowedConstantTypes;
 
     // receivers
-    private List<String> receiversWhiteList;
-    private List<String> receiversBlackList;
+    private List<String> allowedReceivers;
+    private List<String> disallowedReceivers;
 
     public SecureASTCustomizer() {
         super(CompilePhase.CANONICALIZATION);
@@ -255,50 +259,114 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         isPackageAllowed = packageAllowed;
     }
 
+    public List<String> getDisallowedImports() {
+        return disallowedImports;
+    }
+
+    /**
+     * Legacy alias for {@link #getDisallowedImports()}
+     */
+    @Deprecated
     public List<String> getImportsBlacklist() {
-        return importsBlacklist;
+        return getDisallowedImports();
     }
 
-    public void setImportsBlacklist(final List<String> importsBlacklist) {
-        if (importsWhitelist != null || starImportsWhitelist != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
+    public void setDisallowedImports(final List<String> disallowedImports) {
+        if (allowedImports != null || allowedStarImports != null) {
+            throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
         }
-        this.importsBlacklist = importsBlacklist;
+        this.disallowedImports = disallowedImports;
     }
 
+    /**
+     * Legacy alias for {@link #setDisallowedImports(List)}
+     */
+    @Deprecated
+    public void setImportsBlacklist(final List<String> disallowedImports) {
+        setDisallowedImports(disallowedImports);
+    }
+
+    public List<String> getAllowedImports() {
+        return allowedImports;
+    }
+
+    /**
+     * Legacy alias for {@link #getAllowedImports()}
+     */
+    @Deprecated
     public List<String> getImportsWhitelist() {
-        return importsWhitelist;
+        return getAllowedImports();
     }
 
-    public void setImportsWhitelist(final List<String> importsWhitelist) {
-        if (importsBlacklist != null || starImportsBlacklist != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
+    public void setAllowedImports(final List<String> allowedImports) {
+        if (disallowedImports != null || disallowedStarImports != null) {
+            throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
         }
-        this.importsWhitelist = importsWhitelist;
+        this.allowedImports = allowedImports;
     }
 
+    /**
+     * Legacy alias for {@link #setAllowedImports(List)}
+     */
+    @Deprecated
+    public void setImportsWhitelist(final List<String> allowedImports) {
+        setAllowedImports(allowedImports);
+    }
+
+    public List<String> getDisallowedStarImports() {
+        return disallowedStarImports;
+    }
+
+    /**
+     * Legacy alias for {@link #getDisallowedStarImports()}
+     */
+    @Deprecated
     public List<String> getStarImportsBlacklist() {
-        return starImportsBlacklist;
+        return getDisallowedStarImports();
     }
 
-    public void setStarImportsBlacklist(final List<String> starImportsBlacklist) {
-        if (importsWhitelist != null || starImportsWhitelist != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
+    public void setDisallowedStarImports(final List<String> disallowedStarImports) {
+        if (allowedImports != null || allowedStarImports != null) {
+            throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
         }
-        this.starImportsBlacklist = normalizeStarImports(starImportsBlacklist);
-        if (this.importsBlacklist == null) importsBlacklist = Collections.emptyList();
+        this.disallowedStarImports = normalizeStarImports(disallowedStarImports);
+        if (this.disallowedImports == null) disallowedImports = Collections.emptyList();
     }
 
+    /**
+     * Legacy alias for {@link #setDisallowedStarImports(List)}
+     */
+    @Deprecated
+    public void setStarImportsBlacklist(final List<String> disallowedStarImports) {
+        setDisallowedStarImports(disallowedStarImports);
+    }
+
+    public List<String> getAllowedStarImports() {
+        return allowedStarImports;
+    }
+
+    /**
+     * Legacy alias for {@link #getAllowedStarImports()}
+     */
+    @Deprecated
     public List<String> getStarImportsWhitelist() {
-        return starImportsWhitelist;
+        return getAllowedStarImports();
     }
 
-    public void setStarImportsWhitelist(final List<String> starImportsWhitelist) {
-        if (importsBlacklist != null || starImportsBlacklist != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
+    public void setAllowedStarImports(final List<String> allowedStarImports) {
+        if (disallowedImports != null || disallowedStarImports != null) {
+            throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
         }
-        this.starImportsWhitelist = normalizeStarImports(starImportsWhitelist);
-        if (this.importsWhitelist == null) importsWhitelist = Collections.emptyList();
+        this.allowedStarImports = normalizeStarImports(allowedStarImports);
+        if (this.allowedImports == null) allowedImports = Collections.emptyList();
+    }
+
+    /**
+     * Legacy alias for {@link #setAllowedStarImports(List)}
+     */
+    @Deprecated
+    public void setStarImportsWhitelist(final List<String> allowedStarImports) {
+        setAllowedStarImports(allowedStarImports);
     }
 
     private static List<String> normalizeStarImports(List<String> starImports) {
@@ -317,98 +385,222 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return Collections.unmodifiableList(result);
     }
 
+    public List<String> getDisallowedStaticImports() {
+        return disallowedStaticImports;
+    }
+
+    /**
+     * Legacy alias for {@link #getDisallowedStaticImports()}
+     */
+    @Deprecated
     public List<String> getStaticImportsBlacklist() {
-        return staticImportsBlacklist;
+        return getDisallowedStaticImports();
     }
 
-    public void setStaticImportsBlacklist(final List<String> staticImportsBlacklist) {
-        if (staticImportsWhitelist != null || staticStarImportsWhitelist != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
+    public void setDisallowedStaticImports(final List<String> disallowedStaticImports) {
+        if (allowedStaticImports != null || allowedStaticStarImports != null) {
+            throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
         }
-        this.staticImportsBlacklist = staticImportsBlacklist;
+        this.disallowedStaticImports = disallowedStaticImports;
     }
 
+    /**
+     * Legacy alias for {@link #setDisallowedStaticImports(List)}
+     */
+    @Deprecated
+    public void setStaticImportsBlacklist(final List<String> disallowedStaticImports) {
+        setDisallowedStaticImports(disallowedStaticImports);
+    }
+
+    public List<String> getAllowedStaticImports() {
+        return allowedStaticImports;
+    }
+
+    /**
+     * Legacy alias for {@link #getAllowedStaticImports()}
+     */
+    @Deprecated
     public List<String> getStaticImportsWhitelist() {
-        return staticImportsWhitelist;
+        return getAllowedStaticImports();
     }
 
-    public void setStaticImportsWhitelist(final List<String> staticImportsWhitelist) {
-        if (staticImportsBlacklist != null || staticStarImportsBlacklist != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
+    public void setAllowedStaticImports(final List<String> allowedStaticImports) {
+        if (disallowedStaticImports != null || disallowedStaticStarImports != null) {
+            throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
         }
-        this.staticImportsWhitelist = staticImportsWhitelist;
+        this.allowedStaticImports = allowedStaticImports;
     }
 
+    /**
+     * Legacy alias for {@link #setAllowedStaticImports(List)}
+     */
+    @Deprecated
+    public void setStaticImportsWhitelist(final List<String> allowedStaticImports) {
+        setAllowedStaticImports(allowedStaticImports);
+    }
+
+    public List<String> getDisallowedStaticStarImports() {
+        return disallowedStaticStarImports;
+    }
+
+    /**
+     * Legacy alias for {@link #getDisallowedStaticStarImports()}
+     */
+    @Deprecated
     public List<String> getStaticStarImportsBlacklist() {
-        return staticStarImportsBlacklist;
+        return getDisallowedStaticStarImports();
     }
 
-    public void setStaticStarImportsBlacklist(final List<String> staticStarImportsBlacklist) {
-        if (staticImportsWhitelist != null || staticStarImportsWhitelist != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
+    public void setDisallowedStaticStarImports(final List<String> disallowedStaticStarImports) {
+        if (allowedStaticImports != null || allowedStaticStarImports != null) {
+            throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
         }
-        this.staticStarImportsBlacklist = normalizeStarImports(staticStarImportsBlacklist);
-        if (this.staticImportsBlacklist == null) this.staticImportsBlacklist = Collections.emptyList();
+        this.disallowedStaticStarImports = normalizeStarImports(disallowedStaticStarImports);
+        if (this.disallowedStaticImports == null) this.disallowedStaticImports = Collections.emptyList();
     }
 
+    /**
+     * Legacy alias for {@link #setDisallowedStaticStarImports(List)}
+     */
+    @Deprecated
+    public void setStaticStarImportsBlacklist(final List<String> disallowedStaticStarImports) {
+        setDisallowedStaticStarImports(disallowedStaticStarImports);
+    }
+
+    public List<String> getAllowedStaticStarImports() {
+        return allowedStaticStarImports;
+    }
+
+    /**
+     * Legacy alias for {@link #getAllowedStaticStarImports()}
+     */
+    @Deprecated
     public List<String> getStaticStarImportsWhitelist() {
-        return staticStarImportsWhitelist;
+        return getAllowedStaticStarImports();
     }
 
-    public void setStaticStarImportsWhitelist(final List<String> staticStarImportsWhitelist) {
-        if (staticImportsBlacklist != null || staticStarImportsBlacklist != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
+    public void setAllowedStaticStarImports(final List<String> allowedStaticStarImports) {
+        if (disallowedStaticImports != null || disallowedStaticStarImports != null) {
+            throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
         }
-        this.staticStarImportsWhitelist = normalizeStarImports(staticStarImportsWhitelist);
-        if (this.staticImportsWhitelist == null) this.staticImportsWhitelist = Collections.emptyList();
+        this.allowedStaticStarImports = normalizeStarImports(allowedStaticStarImports);
+        if (this.allowedStaticImports == null) this.allowedStaticImports = Collections.emptyList();
     }
 
+    /**
+     * Legacy alias for {@link #setAllowedStaticStarImports(List)}
+     */
+    @Deprecated
+    public void setStaticStarImportsWhitelist(final List<String> allowedStaticStarImports) {
+        setAllowedStaticStarImports(allowedStaticStarImports);
+    }
+
+    public List<Class<? extends Expression>> getDisallowedExpressions() {
+        return disallowedExpressions;
+    }
+
+    /**
+     * Legacy alias for {@link #getDisallowedExpressions()}
+     */
+    @Deprecated
     public List<Class<? extends Expression>> getExpressionsBlacklist() {
-        return expressionsBlacklist;
+        return getDisallowedExpressions();
     }
 
-    public void setExpressionsBlacklist(final List<Class<? extends Expression>> expressionsBlacklist) {
-        if (expressionsWhitelist != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
+    public void setDisallowedExpressions(final List<Class<? extends Expression>> disallowedExpressions) {
+        if (allowedExpressions != null) {
+            throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
         }
-        this.expressionsBlacklist = expressionsBlacklist;
+        this.disallowedExpressions = disallowedExpressions;
     }
 
+    /**
+     * Legacy alias for {@link #setDisallowedExpressions(List)}
+     */
+    @Deprecated
+    public void setExpressionsBlacklist(final List<Class<? extends Expression>> disallowedExpressions) {
+        setDisallowedExpressions(disallowedExpressions);
+    }
+
+    public List<Class<? extends Expression>> getAllowedExpressions() {
+        return allowedExpressions;
+    }
+
+    /**
+     * Legacy alias for {@link #getAllowedExpressions()}
+     */
+    @Deprecated
     public List<Class<? extends Expression>> getExpressionsWhitelist() {
-        return expressionsWhitelist;
+        return getAllowedExpressions();
     }
 
-    public void setExpressionsWhitelist(final List<Class<? extends Expression>> expressionsWhitelist) {
-        if (expressionsBlacklist != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
+    public void setAllowedExpressions(final List<Class<? extends Expression>> allowedExpressions) {
+        if (disallowedExpressions != null) {
+            throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
         }
-        this.expressionsWhitelist = expressionsWhitelist;
+        this.allowedExpressions = allowedExpressions;
     }
 
+    /**
+     * Legacy alias for {@link #setAllowedExpressions(List)}
+     */
+    @Deprecated
+    public void setExpressionsWhitelist(final List<Class<? extends Expression>> allowedExpressions) {
+        setAllowedExpressions(allowedExpressions);
+    }
+
+    public List<Class<? extends Statement>> getDisallowedStatements() {
+        return disallowedStatements;
+    }
+
+    /**
+     * Legacy alias for {@link #getDisallowedStatements()}
+     */
+    @Deprecated
     public List<Class<? extends Statement>> getStatementsBlacklist() {
-        return statementsBlacklist;
+        return getDisallowedStatements();
     }
 
-    public void setStatementsBlacklist(final List<Class<? extends Statement>> statementsBlacklist) {
-        if (statementsWhitelist != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
+    public void setDisallowedStatements(final List<Class<? extends Statement>> disallowedStatements) {
+        if (allowedStatements != null) {
+            throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
         }
-        this.statementsBlacklist = statementsBlacklist;
+        this.disallowedStatements = disallowedStatements;
     }
 
+    /**
+     * Legacy alias for {@link #setDisallowedStatements(List)}
+     */
+    @Deprecated
+    public void setStatementsBlacklist(final List<Class<? extends Statement>> disallowedStatements) {
+        setDisallowedStatements(disallowedStatements);
+    }
+
+    public List<Class<? extends Statement>> getAllowedStatements() {
+        return allowedStatements;
+    }
+
+    /**
+     * Legacy alias for {@link #getAllowedStatements()}
+     */
+    @Deprecated
     public List<Class<? extends Statement>> getStatementsWhitelist() {
-        return statementsWhitelist;
+        return getAllowedStatements();
     }
 
-    public void setStatementsWhitelist(final List<Class<? extends Statement>> statementsWhitelist) {
-        if (statementsBlacklist != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
+    public void setAllowedStatements(final List<Class<? extends Statement>> allowedStatements) {
+        if (disallowedStatements != null) {
+            throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
         }
-        this.statementsWhitelist = statementsWhitelist;
+        this.allowedStatements = allowedStatements;
     }
 
-    public List<Integer> getTokensBlacklist() {
-        return tokensBlacklist;
+    /**
+     * Legacy alias for {@link #setAllowedStatements(List)}
+     */
+    @Deprecated
+    public void setStatementsWhitelist(final List<Class<? extends Statement>> allowedStatements) {
+        setAllowedStatements(allowedStatements);
     }
 
     public boolean isIndirectImportCheckEnabled() {
@@ -426,32 +618,68 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         isIndirectImportCheckEnabled = indirectImportCheckEnabled;
     }
 
-    /**
-     * Sets the list of tokens which are blacklisted.
-     *
-     * @param tokensBlacklist the tokens. The values of the tokens must be those of {@link org.codehaus.groovy.syntax.Types}
-     */
-    public void setTokensBlacklist(final List<Integer> tokensBlacklist) {
-        if (tokensWhitelist != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
-        }
-        this.tokensBlacklist = tokensBlacklist;
+    public List<Integer> getDisallowedTokens() {
+        return disallowedTokens;
     }
 
+    /**
+     * Legacy alias for {@link #getDisallowedTokens()}
+     */
+    @Deprecated
+    public List<Integer> getTokensBlacklist() {
+        return getDisallowedTokens();
+    }
+
+    /**
+     * Sets the list of tokens which are not permitted.
+     *
+     * @param disallowedTokens the tokens. The values of the tokens must be those of {@link org.codehaus.groovy.syntax.Types}
+     */
+    public void setDisallowedTokens(final List<Integer> disallowedTokens) {
+        if (allowedTokens != null) {
+            throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
+        }
+        this.disallowedTokens = disallowedTokens;
+    }
+
+    /**
+     * Legacy alias for {@link #setDisallowedTokens(List)}.
+     */
+    @Deprecated
+    public void setTokensBlacklist(final List<Integer> disallowedTokens) {
+        setDisallowedTokens(disallowedTokens);
+    }
+
+    public List<Integer> getAllowedTokens() {
+        return allowedTokens;
+    }
+
+    /**
+     * Legacy alias for {@link #getAllowedTokens()}
+     */
+    @Deprecated
     public List<Integer> getTokensWhitelist() {
-        return tokensWhitelist;
+        return getAllowedTokens();
     }
 
     /**
-     * Sets the list of tokens which are whitelisted.
+     * Sets the list of tokens which are permitted.
      *
-     * @param tokensWhitelist the tokens. The values of the tokens must be those of {@link org.codehaus.groovy.syntax.Types}
+     * @param allowedTokens the tokens. The values of the tokens must be those of {@link org.codehaus.groovy.syntax.Types}
      */
-    public void setTokensWhitelist(final List<Integer> tokensWhitelist) {
-        if (tokensBlacklist != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
+    public void setAllowedTokens(final List<Integer> allowedTokens) {
+        if (disallowedTokens != null) {
+            throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
         }
-        this.tokensWhitelist = tokensWhitelist;
+        this.allowedTokens = allowedTokens;
+    }
+
+    /**
+     * Legacy alias for {@link #setAllowedTokens(List)}
+     */
+    @Deprecated
+    public void setTokensWhitelist(final List<Integer> allowedTokens) {
+        setAllowedTokens(allowedTokens);
     }
 
     public void addStatementCheckers(StatementChecker... checkers) {
@@ -462,118 +690,209 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         expressionCheckers.addAll(Arrays.asList(checkers));
     }
 
+    public List<String> getDisallowedConstantTypes() {
+        return disallowedConstantTypes;
+    }
+
+    /**
+     * Legacy alias for {@link #getDisallowedConstantTypes()}
+     */
+    @Deprecated
     public List<String> getConstantTypesBlackList() {
-        return constantTypesBlackList;
+        return getDisallowedConstantTypes();
     }
 
     public void setConstantTypesBlackList(final List<String> constantTypesBlackList) {
-        if (constantTypesWhiteList != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
+        if (allowedConstantTypes != null) {
+            throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
         }
-        this.constantTypesBlackList = constantTypesBlackList;
+        this.disallowedConstantTypes = constantTypesBlackList;
     }
 
+    public List<String> getAllowedConstantTypes() {
+        return allowedConstantTypes;
+    }
+
+    /**
+     * Legacy alias for {@link #getAllowedStatements()}
+     */
+    @Deprecated
     public List<String> getConstantTypesWhiteList() {
-        return constantTypesWhiteList;
+        return getAllowedConstantTypes();
     }
 
-    public void setConstantTypesWhiteList(final List<String> constantTypesWhiteList) {
-        if (constantTypesBlackList != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
+    public void setAllowedConstantTypes(final List<String> allowedConstantTypes) {
+        if (disallowedConstantTypes != null) {
+            throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
         }
-        this.constantTypesWhiteList = constantTypesWhiteList;
+        this.allowedConstantTypes = allowedConstantTypes;
+    }
+
+    /**
+     * Legacy alias for {@link #setAllowedConstantTypes(List)}
+     */
+    @Deprecated
+    public void setConstantTypesWhiteList(final List<String> allowedConstantTypes) {
+        setAllowedConstantTypes(allowedConstantTypes);
     }
 
     /**
      * An alternative way of setting constant types.
      *
-     * @param constantTypesWhiteList a list of classes.
+     * @param allowedConstantTypes a list of classes.
      */
-    public void setConstantTypesClassesWhiteList(final List<Class> constantTypesWhiteList) {
+    public void setAllowedConstantTypesClasses(final List<Class> allowedConstantTypes) {
         List<String> values = new LinkedList<>();
-        for (Class aClass : constantTypesWhiteList) {
+        for (Class aClass : allowedConstantTypes) {
             values.add(aClass.getName());
         }
         setConstantTypesWhiteList(values);
     }
 
     /**
+     * Legacy alias for {@link #setAllowedConstantTypesClasses(List)}
+     */
+    @Deprecated
+    public void setConstantTypesClassesWhiteList(final List<Class> allowedConstantTypes) {
+        setAllowedConstantTypesClasses(allowedConstantTypes);
+    }
+
+    /**
      * An alternative way of setting constant types.
      *
-     * @param constantTypesBlackList a list of classes.
+     * @param disallowedConstantTypes a list of classes.
      */
-    public void setConstantTypesClassesBlackList(final List<Class> constantTypesBlackList) {
+    public void setDisallowedConstantTypesClasses(final List<Class> disallowedConstantTypes) {
         List<String> values = new LinkedList<>();
-        for (Class aClass : constantTypesBlackList) {
+        for (Class aClass : disallowedConstantTypes) {
             values.add(aClass.getName());
         }
         setConstantTypesBlackList(values);
     }
 
+    /**
+     * Legacy alias for {@link #setDisallowedConstantTypesClasses(List)}
+     */
+    @Deprecated
+    public void setConstantTypesClassesBlackList(final List<Class> disallowedConstantTypes) {
+        setDisallowedConstantTypesClasses(disallowedConstantTypes);
+    }
+
+    public List<String> getDisallowedReceivers() {
+        return disallowedReceivers;
+    }
+
+    /**
+     * Legacy alias for {@link #getDisallowedReceivers()}
+     */
+    @Deprecated
     public List<String> getReceiversBlackList() {
-        return receiversBlackList;
+        return getDisallowedReceivers();
     }
 
     /**
      * Sets the list of classes which deny method calls.
      *
      * Please note that since Groovy is a dynamic language, and
-     * this class performs a static type check, it will be reletively
-     * simple to bypass any blacklist unless the receivers blacklist contains, at
+     * this class performs a static type check, it will be relatively
+     * simple to bypass any disallowed list unless the disallowed receivers list contains, at
      * a minimum, Object, Script, GroovyShell, and Eval. Additionally,
-     * it is necessary to also blacklist MethodPointerExpression in the
-     * expressions blacklist for the receivers blacklist to function
+     * it is necessary to also have MethodPointerExpression in the
+     * disallowed expressions list for the disallowed receivers list to function
      * as a security check.
      *
-     * @param receiversBlackList the list of refused classes, as fully qualified names
+     * @param disallowedReceivers the list of refused classes, as fully qualified names
      */
-    public void setReceiversBlackList(final List<String> receiversBlackList) {
-        if (receiversWhiteList != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
+    public void setDisallowedReceivers(final List<String> disallowedReceivers) {
+        if (allowedReceivers != null) {
+            throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
         }
-        this.receiversBlackList = receiversBlackList;
+        this.disallowedReceivers = disallowedReceivers;
     }
 
     /**
-     * An alternative way of setting {@link #setReceiversBlackList(java.util.List) receiver classes}.
-     *
-     * @param receiversBlacklist a list of classes.
+     * Legacy alias for {@link #setDisallowedReceivers(List)}
      */
-    public void setReceiversClassesBlackList(final List<Class> receiversBlacklist) {
+    @Deprecated
+    public void setReceiversBlackList(final List<String> disallowedReceivers) {
+        setDisallowedReceivers(disallowedReceivers);
+    }
+
+    /**
+     * An alternative way of setting {@link #setDisallowedReceivers(java.util.List) receiver classes}.
+     *
+     * @param disallowedReceivers a list of classes.
+     */
+    public void setDisallowedReceiversClasses(final List<Class> disallowedReceivers) {
         List<String> values = new LinkedList<>();
-        for (Class aClass : receiversBlacklist) {
+        for (Class aClass : disallowedReceivers) {
             values.add(aClass.getName());
         }
         setReceiversBlackList(values);
     }
 
+    /**
+     * Legacy alias for {@link #setDisallowedReceiversClasses(List)}.
+     */
+    @Deprecated
+    public void setReceiversClassesBlackList(final List<Class> disallowedReceivers) {
+        setDisallowedReceiversClasses(disallowedReceivers);
+    }
+
+    public List<String> getAllowedReceivers() {
+        return allowedReceivers;
+    }
+
+    /**
+     * Legacy alias for {@link #getAllowedReceivers()}
+     */
+    @Deprecated
     public List<String> getReceiversWhiteList() {
-        return receiversWhiteList;
+        return getAllowedReceivers();
     }
 
     /**
      * Sets the list of classes which may accept method calls.
      *
-     * @param receiversWhiteList the list of accepted classes, as fully qualified names
+     * @param allowedReceivers the list of accepted classes, as fully qualified names
      */
-    public void setReceiversWhiteList(final List<String> receiversWhiteList) {
-        if (receiversBlackList != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
+    public void setAllowedReceivers(final List<String> allowedReceivers) {
+        if (disallowedReceivers != null) {
+            throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
         }
-        this.receiversWhiteList = receiversWhiteList;
+        this.allowedReceivers = allowedReceivers;
+    }
+
+    /**
+     * Legacy alias for {@link #setAllowedReceivers(List)}
+     */
+    @Deprecated
+    public void setReceiversWhiteList(final List<String> allowedReceivers) {
+        if (disallowedReceivers != null) {
+            throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
+        }
+        this.allowedReceivers = allowedReceivers;
     }
 
     /**
      * An alternative way of setting {@link #setReceiversWhiteList(java.util.List) receiver classes}.
      *
-     * @param receiversWhitelist a list of classes.
+     * @param allowedReceivers a list of classes.
      */
-    public void setReceiversClassesWhiteList(final List<Class> receiversWhitelist) {
+    public void setAllowedReceiversClasses(final List<Class> allowedReceivers) {
         List<String> values = new LinkedList<>();
-        for (Class aClass : receiversWhitelist) {
+        for (Class aClass : allowedReceivers) {
             values.add(aClass.getName());
         }
         setReceiversWhiteList(values);
+    }
+
+    /**
+     * Legacy alias for {@link #setAllowedReceiversClasses(List)}
+     */
+    @Deprecated
+    public void setReceiversClassesWhiteList(final List<Class> allowedReceivers) {
+        setAllowedReceiversClasses(allowedReceivers);
     }
 
     @Override
@@ -585,7 +904,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         checkMethodDefinitionAllowed(classNode);
 
         // verify imports
-        if (importsBlacklist != null || importsWhitelist != null || starImportsBlacklist != null || starImportsWhitelist != null) {
+        if (disallowedImports != null || allowedImports != null || disallowedStarImports != null || allowedStarImports != null) {
             for (ImportNode importNode : ast.getImports()) {
                 assertImportIsAllowed(importNode.getClassName());
             }
@@ -595,7 +914,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         }
 
         // verify static imports
-        if (staticImportsBlacklist != null || staticImportsWhitelist != null || staticStarImportsBlacklist != null || staticStarImportsWhitelist != null) {
+        if (disallowedStaticImports != null || allowedStaticImports != null || disallowedStaticStarImports != null || allowedStaticStarImports != null) {
             for (Map.Entry<String, ImportNode> entry : ast.getStaticImports().entrySet()) {
                 final String className = entry.getValue().getClassName();
                 assertStaticImportIsAllowed(entry.getKey(), className);
@@ -652,37 +971,37 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     }
 
     protected void assertStarImportIsAllowed(final String packageName) {
-        if (starImportsWhitelist != null && !(starImportsWhitelist.contains(packageName)
-                || starImportsWhitelist.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith))) {
+        if (allowedStarImports != null && !(allowedStarImports.contains(packageName)
+                || allowedStarImports.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith))) {
             throw new SecurityException("Importing [" + packageName + "] is not allowed");
         }
-        if (starImportsBlacklist != null && (starImportsBlacklist.contains(packageName)
-                || starImportsBlacklist.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith))) {
+        if (disallowedStarImports != null && (disallowedStarImports.contains(packageName)
+                || disallowedStarImports.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith))) {
             throw new SecurityException("Importing [" + packageName + "] is not allowed");
         }
     }
 
     protected void assertImportIsAllowed(final String className) {
-        if (importsWhitelist != null || starImportsWhitelist != null) {
-            if (importsWhitelist != null && importsWhitelist.contains(className)) {
+        if (allowedImports != null || allowedStarImports != null) {
+            if (allowedImports != null && allowedImports.contains(className)) {
                 return;
             }
-            if (starImportsWhitelist != null) {
+            if (allowedStarImports != null) {
                 String packageName = getWildCardImport(className);
-                if (starImportsWhitelist.contains(packageName)
-                        || starImportsWhitelist.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith)) {
+                if (allowedStarImports.contains(packageName)
+                        || allowedStarImports.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith)) {
                     return;
                 }
             }
             throw new SecurityException("Importing [" + className + "] is not allowed");
         } else {
-            if (importsBlacklist != null && importsBlacklist.contains(className)) {
+            if (disallowedImports != null && disallowedImports.contains(className)) {
                 throw new SecurityException("Importing [" + className + "] is not allowed");
             }
-            if (starImportsBlacklist != null) {
+            if (disallowedStarImports != null) {
                 String packageName = getWildCardImport(className);
-                if (starImportsBlacklist.contains(packageName) ||
-                        starImportsBlacklist.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith)) {
+                if (disallowedStarImports.contains(packageName) ||
+                        disallowedStarImports.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith)) {
                     throw new SecurityException("Importing [" + className + "] is not allowed");
                 }
             }
@@ -695,26 +1014,26 @@ public class SecureASTCustomizer extends CompilationCustomizer {
 
     protected void assertStaticImportIsAllowed(final String member, final String className) {
         final String fqn = member.equals(className) ? member : className + "." + member;
-        if (staticImportsWhitelist != null && !staticImportsWhitelist.contains(fqn)) {
-            if (staticStarImportsWhitelist != null) {
+        if (allowedStaticImports != null && !allowedStaticImports.contains(fqn)) {
+            if (allowedStaticStarImports != null) {
                 // we should now check if the import is in the star imports
                 String packageName = getWildCardImport(className);
-                if (!staticStarImportsWhitelist.contains(className + ".*")
-                        && !staticStarImportsWhitelist.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith)) {
+                if (!allowedStaticStarImports.contains(className + ".*")
+                        && allowedStaticStarImports.stream().filter(it -> it.endsWith(".")).noneMatch(packageName::startsWith)) {
                     throw new SecurityException("Importing [" + fqn + "] is not allowed");
                 }
             } else {
                 throw new SecurityException("Importing [" + fqn + "] is not allowed");
             }
         }
-        if (staticImportsBlacklist != null && staticImportsBlacklist.contains(fqn)) {
+        if (disallowedStaticImports != null && disallowedStaticImports.contains(fqn)) {
             throw new SecurityException("Importing [" + fqn + "] is not allowed");
         }
         // check that there's no star import blacklist
-        if (staticStarImportsBlacklist != null) {
+        if (disallowedStaticStarImports != null) {
             String packageName = getWildCardImport(className);
-            if (staticStarImportsBlacklist.contains(className + ".*")
-                    || staticStarImportsBlacklist.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith)) {
+            if (disallowedStaticStarImports.contains(className + ".*")
+                    || disallowedStaticStarImports.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith)) {
                 throw new SecurityException("Importing [" + fqn + "] is not allowed");
             }
         }
@@ -728,16 +1047,16 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     protected class SecuringCodeVisitor implements GroovyCodeVisitor {
 
         /**
-         * Checks that a given statement is either in the whitelist or not in the blacklist.
+         * Checks that a given statement is either in the allowed list or not in the disallowed list.
          *
          * @param statement the statement to be checked
          * @throws SecurityException if usage of this statement class is forbidden
          */
         protected void assertStatementAuthorized(final Statement statement) throws SecurityException {
             final Class<? extends Statement> clazz = statement.getClass();
-            if (statementsBlacklist != null && statementsBlacklist.contains(clazz)) {
+            if (disallowedStatements != null && disallowedStatements.contains(clazz)) {
                 throw new SecurityException(clazz.getSimpleName() + "s are not allowed");
-            } else if (statementsWhitelist != null && !statementsWhitelist.contains(clazz)) {
+            } else if (allowedStatements != null && !allowedStatements.contains(clazz)) {
                 throw new SecurityException(clazz.getSimpleName() + "s are not allowed");
             }
             for (StatementChecker statementChecker : statementCheckers) {
@@ -748,16 +1067,16 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         }
 
         /**
-         * Checks that a given expression is either in the whitelist or not in the blacklist.
+         * Checks that a given expression is either in the allowed list or not in the disallowed list.
          *
          * @param expression the expression to be checked
          * @throws SecurityException if usage of this expression class is forbidden
          */
         protected void assertExpressionAuthorized(final Expression expression) throws SecurityException {
             final Class<? extends Expression> clazz = expression.getClass();
-            if (expressionsBlacklist != null && expressionsBlacklist.contains(clazz)) {
+            if (disallowedExpressions != null && disallowedExpressions.contains(clazz)) {
                 throw new SecurityException(clazz.getSimpleName() + "s are not allowed: " + expression.getText());
-            } else if (expressionsWhitelist != null && !expressionsWhitelist.contains(clazz)) {
+            } else if (allowedExpressions != null && !allowedExpressions.contains(clazz)) {
                 throw new SecurityException(clazz.getSimpleName() + "s are not allowed: " + expression.getText());
             }
             for (ExpressionChecker expressionChecker : expressionCheckers) {
@@ -797,16 +1116,16 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         }
 
         /**
-         * Checks that a given token is either in the whitelist or not in the blacklist.
+         * Checks that a given token is either in the allowed list or not in the disallowed list.
          *
          * @param token the token to be checked
          * @throws SecurityException if usage of this token is forbidden
          */
         protected void assertTokenAuthorized(final Token token) throws SecurityException {
             final int value = token.getType();
-            if (tokensBlacklist != null && tokensBlacklist.contains(value)) {
+            if (disallowedTokens != null && disallowedTokens.contains(value)) {
                 throw new SecurityException("Token " + token + " is not allowed");
-            } else if (tokensWhitelist != null && !tokensWhitelist.contains(value)) {
+            } else if (allowedTokens != null && !allowedTokens.contains(value)) {
                 throw new SecurityException("Token " + token + " is not allowed");
             }
         }
@@ -933,9 +1252,9 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             assertExpressionAuthorized(call);
             Expression receiver = call.getObjectExpression();
             final String typeName = receiver.getType().getName();
-            if (receiversWhiteList != null && !receiversWhiteList.contains(typeName)) {
+            if (allowedReceivers != null && !allowedReceivers.contains(typeName)) {
                 throw new SecurityException("Method calls not allowed on [" + typeName + "]");
-            } else if (receiversBlackList != null && receiversBlackList.contains(typeName)) {
+            } else if (disallowedReceivers != null && disallowedReceivers.contains(typeName)) {
                 throw new SecurityException("Method calls not allowed on [" + typeName + "]");
             }
             receiver.visit(this);
@@ -948,9 +1267,9 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         public void visitStaticMethodCallExpression(final StaticMethodCallExpression call) {
             assertExpressionAuthorized(call);
             final String typeName = call.getOwnerType().getName();
-            if (receiversWhiteList != null && !receiversWhiteList.contains(typeName)) {
+            if (allowedReceivers != null && !allowedReceivers.contains(typeName)) {
                 throw new SecurityException("Method calls not allowed on [" + typeName + "]");
-            } else if (receiversBlackList != null && receiversBlackList.contains(typeName)) {
+            } else if (disallowedReceivers != null && disallowedReceivers.contains(typeName)) {
                 throw new SecurityException("Method calls not allowed on [" + typeName + "]");
             }
             call.getArguments().visit(this);
@@ -1053,9 +1372,9 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             assertExpressionAuthorized(expression);
             Expression receiver = expression.getObjectExpression();
             final String typeName = receiver.getType().getName();
-            if (receiversWhiteList != null && !receiversWhiteList.contains(typeName)) {
+            if (allowedReceivers != null && !allowedReceivers.contains(typeName)) {
                 throw new SecurityException("Property access not allowed on [" + typeName + "]");
-            } else if (receiversBlackList != null && receiversBlackList.contains(typeName)) {
+            } else if (disallowedReceivers != null && disallowedReceivers.contains(typeName)) {
                 throw new SecurityException("Property access not allowed on [" + typeName + "]");
             }
             receiver.visit(this);
@@ -1078,9 +1397,9 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             assertExpressionAuthorized(expression);
             Expression receiver = expression.getObjectExpression();
             final String typeName = receiver.getType().getName();
-            if (receiversWhiteList != null && !receiversWhiteList.contains(typeName)) {
+            if (allowedReceivers != null && !allowedReceivers.contains(typeName)) {
                 throw new SecurityException("Attribute access not allowed on [" + typeName + "]");
-            } else if (receiversBlackList != null && receiversBlackList.contains(typeName)) {
+            } else if (disallowedReceivers != null && disallowedReceivers.contains(typeName)) {
                 throw new SecurityException("Attribute access not allowed on [" + typeName + "]");
             }
             receiver.visit(this);
@@ -1109,10 +1428,10 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         public void visitConstantExpression(final ConstantExpression expression) {
             assertExpressionAuthorized(expression);
             final String type = expression.getType().getName();
-            if (constantTypesWhiteList != null && !constantTypesWhiteList.contains(type)) {
+            if (allowedConstantTypes != null && !allowedConstantTypes.contains(type)) {
                 throw new SecurityException("Constant expression type [" + type + "] is not allowed");
             }
-            if (constantTypesBlackList != null && constantTypesBlackList.contains(type)) {
+            if (disallowedConstantTypes != null && disallowedConstantTypes.contains(type)) {
                 throw new SecurityException("Constant expression type [" + type + "] is not allowed");
             }
         }
@@ -1126,10 +1445,10 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         public void visitVariableExpression(final VariableExpression expression) {
             assertExpressionAuthorized(expression);
             final String type = expression.getType().getName();
-            if (constantTypesWhiteList != null && !constantTypesWhiteList.contains(type)) {
+            if (allowedConstantTypes != null && !allowedConstantTypes.contains(type)) {
                 throw new SecurityException("Usage of variables of type [" + type + "] is not allowed");
             }
-            if (constantTypesBlackList != null && constantTypesBlackList.contains(type)) {
+            if (disallowedConstantTypes != null && disallowedConstantTypes.contains(type)) {
                 throw new SecurityException("Usage of variables of type [" + type + "] is not allowed");
             }
         }
@@ -1216,7 +1535,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     }
 
     /**
-     * This interface allows the user to plugin custom expression checkers if expression blacklist or whitelist are not
+     * This interface allows the user to provide a custom expression checker if the dis/allowed expression lists are not
      * sufficient
      */
     @FunctionalInterface
@@ -1225,7 +1544,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     }
 
     /**
-     * This interface allows the user to plugin custom statement checkers if statement blacklist or whitelist are not
+     * This interface allows the user to provide a custom statement checker if the dis/allowed statement lists are not
      * sufficient
      */
     @FunctionalInterface

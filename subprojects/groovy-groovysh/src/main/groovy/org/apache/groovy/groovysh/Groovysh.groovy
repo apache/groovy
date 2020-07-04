@@ -247,11 +247,11 @@ class Groovysh extends Shell {
         // TODO antlr4 parser errors pop out here - can we rework to be like antlr2?
         (
                 t.message.contains('Unexpected input:') && !(
-                            t.message.contains('Unexpected input: \'}\';')
-                        || t.message.contains('Unexpected input: \')\';')
-                        || t.message.contains('Unexpected input: \']\';')
+                            t.message.contains('Unexpected input: \'}\'')
+                        || t.message.contains('Unexpected input: \')\'')
+                        || t.message.contains('Unexpected input: \']\'')
                 )
-        ) || t.message.contains("Missing ')'")
+        )
     }
 
     /**

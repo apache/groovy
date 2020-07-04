@@ -161,9 +161,9 @@ class CliBuilderTest extends GroovyTestCase {
         cli.parse([])
         // NB: This test is very fragile and is bound to fail on different locales and versions of commons-cli... :-(
         assert stringWriter.toString() == String.format(
-                "error: Missing required option '-x'%n" +\
+                "error: Missing required option: '-x'%n" +\
                 "Usage: groovy -x%n" +\
-                "  -x           message%n")
+                "  -x     message%n")
     }
 
     void testLongOptsOnly_nonOptionShouldStopArgProcessing() {
@@ -524,8 +524,8 @@ class CliBuilderTest extends GroovyTestCase {
         cli.writer = printWriter
         options = cli.parse(['-abacus', 'foo'])
         assert options == null
-        assertTrue(stringWriter.toString().startsWith('error: Unmatched argument'))
-        assertTrue(stringWriter.toString().contains('-us'))
+        assertTrue(stringWriter.toString(), stringWriter.toString().startsWith('error: Unmatched argument'))
+        assertTrue(stringWriter.toString(), stringWriter.toString().contains('-us'))
     }
 
     void testMixedBurstingAndLongOptions_singleHyphen() {
@@ -556,6 +556,17 @@ class CliBuilderTest extends GroovyTestCase {
         assert !options.c
         assert options.d
         assert options.arguments() == ['foo']
+    }
+
+    // GROOVY-9528
+    void testRequiredParamsWithUnknownArgumentLikeParams() {
+        def cli = new CliBuilder()
+        cli.parser.stopAtPositional(false)
+        cli.parser.unmatchedOptionsArePositionalParams(true)
+        cli.a(type: String, longOpt: 'optA', required: true, args: 1, 'Option a (required)')
+        cli.c(type: String, longOpt: 'optC', required: true, args: 1, 'Option c (required)')
+        def opts = cli.parse('-a A -b B -c C'.split(' '))
+        assert opts.arguments() == ['-b', 'B']
     }
 
     interface PersonI {
@@ -898,7 +909,6 @@ class CliBuilderTest extends GroovyTestCase {
             V(longOpt: 'version', 'cli.option.version.description')
             pa(longOpt: 'parameters', 'cli.option.parameters.description')
             pr(longOpt: 'enable-preview', 'cli.option.preview.description')
-            i(longOpt: 'indy', 'cli.option.indy.description')
             D(longOpt: 'define', args: 2, argName: 'name=value', valueSeparator: '=', 'cli.option.define.description')
             _(longOpt: 'configscript', args: 1, 'cli.option.configscript.description')
         }
@@ -918,21 +928,15 @@ class CliBuilderTest extends GroovyTestCase {
         assert cli.parse(['--enable-preview']).'enable-preview'
         assert cli.parse(['--enable-preview']).pr
 
-        assert cli.parse(['--indy']).indy
-        assert cli.parse(['--indy']).i
         resetPrintWriter()
-        cli.writer = printWriter
-        assert cli.parse(['-indy']) == null
-        assertTrue(stringWriter.toString().startsWith('error: Unmatched argument'))
-        assertTrue(stringWriter.toString().contains('-ndy'))
 
         assert cli.parse(['--help']).help
         assert cli.parse(['--help']).h
         resetPrintWriter()
         cli.writer = printWriter
         assert cli.parse(['-help']) == null
-        assertTrue(stringWriter.toString().startsWith('error: Unmatched argument'))
-        assertTrue(stringWriter.toString().contains('-elp'))
+        assertTrue(stringWriter.toString(), stringWriter.toString().startsWith('error: Unmatched argument'))
+        assertTrue(stringWriter.toString(), stringWriter.toString().contains('-elp'))
 
         assert cli.parse(['--version']).version
         assert cli.parse(['--version']).V
@@ -957,7 +961,6 @@ class CliBuilderTest extends GroovyTestCase {
             V(longOpt: 'version', 'cli.option.version.description')
             pa(longOpt: 'parameters', 'cli.option.parameters.description')
             pr(longOpt: 'enable-preview', 'cli.option.preview.description')
-            i(longOpt: 'indy', 'cli.option.indy.description')
             D(longOpt: 'define', args: 2, argName: 'name=value', valueSeparator: '=', 'cli.option.define.description')
             _(longOpt: 'configscript', args: 1, 'cli.option.configscript.description')
         }
@@ -973,10 +976,6 @@ class CliBuilderTest extends GroovyTestCase {
         assert cli.parse(['--enable-preview']).'enable-preview'
         assert cli.parse(['-enable-preview']).'enable-preview'
         assert cli.parse(['-pr']).pr
-
-        assert cli.parse(['--indy']).i
-        assert cli.parse(['-indy']).i
-        assert cli.parse(['-i']).indy
 
         assert cli.parse(['--help']).h
         assert cli.parse(['-help']).h
@@ -1023,13 +1022,12 @@ class CliBuilderTest extends GroovyTestCase {
             V(longOpt: 'version', 'cli.option.version.description')
             pa(longOpt: 'parameters', 'cli.option.parameters.description')
             pr(longOpt: 'enable-preview', 'cli.option.preview.description')
-            i(longOpt: 'indy', 'cli.option.indy.description')
             D(longOpt: 'define', args: 2, argName: 'String', valueSeparator: '=', 'cli.option.define.description')
             _(longOpt: 'configscript', args: 1, 'cli.option.configscript.description')
         }
         cli.usage()
         def expectedUsage = """\
-Usage: groovy [-hiV] [-cp] [-pa] [-pr] [-configscript=PARAM]
+Usage: groovy [-hV] [-cp] [-pa] [-pr] [-configscript=PARAM]
               [-D=<String>=<String>]...
       -configscript, --configscript=PARAM
                             cli.option.configscript.description
@@ -1038,7 +1036,6 @@ Usage: groovy [-hiV] [-cp] [-pa] [-pr] [-configscript=PARAM]
   -D, -define, --define=<String>=<String>
                             cli.option.define.description
   -h, -help, --help         cli.option.help.description
-  -i, -indy, --indy         cli.option.indy.description
       -pa, -parameters, --parameters
                             cli.option.parameters.description
       -pr, -enable-preview, --enable-preview
@@ -1054,20 +1051,18 @@ Usage: groovy [-hiV] [-cp] [-pa] [-pr] [-configscript=PARAM]
             V(longOpt: 'version', 'cli.option.version.description')
             pa(longOpt: 'parameters', 'cli.option.parameters.description')
             pr(longOpt: 'enable-preview', 'cli.option.preview.description')
-            i(longOpt: 'indy', 'cli.option.indy.description')
             D(longOpt: 'define', args: 2, argName: 'String', valueSeparator: '=', 'cli.option.define.description')
             _(longOpt: 'configscript', args: 1, 'cli.option.configscript.description')
         }
         cli.usage()
         expectedUsage = """\
-Usage: groovy [-hiV] [-cp] [-pa] [-pr] [--configscript=PARAM]
+Usage: groovy [-hV] [-cp] [-pa] [-pr] [--configscript=PARAM]
               [-D=<String>=<String>]...
       --configscript=PARAM   cli.option.configscript.description
       -cp, --classpath       cli.option.cp.description
   -D, --define=<String>=<String>
                              cli.option.define.description
   -h, --help                 cli.option.help.description
-  -i, --indy                 cli.option.indy.description
       -pa, --parameters      cli.option.parameters.description
       -pr, --enable-preview  cli.option.preview.description
   -V, --version              cli.option.version.description"""
@@ -1080,4 +1075,27 @@ Usage: groovy [-hiV] [-cp] [-pa] [-pr] [--configscript=PARAM]
         assertNull(optionAccessor)
     }
 
+    // GROOVY-9519
+    void testIntOptionWithDefaultZeroShouldNotConvertToBooleanFalse() {
+        def cli = new CliBuilder()
+        cli.i(type: Integer, longOpt: 'intTest', required: false, args: 1, defaultValue: '0', 'Testing integer with default value 0')
+
+        def opts = cli.parse([]) // no args, so defaults are applied
+        assert opts
+
+        assert Integer == opts.i.getClass()
+        assert opts.i == 0
+    }
+
+    // GROOVY-9599
+    void testStringOptionWithDefaultEmptyStringShouldNotConvertToFalseOrNullObject() {
+        def cli = new CliBuilder()
+        cli.s(type: String, longOpt: 'strTest', required: false, args: 1, defaultValue: '', 'Testing string with default empty string')
+
+        def opts = cli.parse([]) // no args, so defaults are applied
+        assert opts
+
+        assert String == opts.s.getClass()
+        assert opts.s == ''
+    }
 }

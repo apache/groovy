@@ -22,6 +22,7 @@ import org.apache.groovy.groovydoc.tools.GroovyDocUtil;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
+import org.codehaus.groovy.tools.groovydoc.antlr4.GroovyDocParser;
 import org.codehaus.groovy.tools.shell.util.Logger;
 
 import java.io.File;
@@ -35,7 +36,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
-import static org.apache.groovy.util.SystemUtil.getSystemPropertySafe;
 import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.CODE_REGEX;
 import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.LINK_REGEX;
 import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.TAG_REGEX;
@@ -121,10 +121,7 @@ public class GroovyRootDocBuilder {
             return;
         }
         try {
-            final boolean newParser = Boolean.parseBoolean(getSystemPropertySafe("groovy.antlr4", "true"));
-
-            GroovyDocParserI docParser = newParser ? new org.codehaus.groovy.tools.groovydoc.antlr4.GroovyDocParser(links, properties)
-                    : new GroovyDocParser(links, properties);
+            GroovyDocParserI docParser = new GroovyDocParser(links, properties);
             Map<String, GroovyClassDoc> classDocs = docParser.getClassDocsFromSingleSource(packagePath, file, src);
             rootDoc.putAllClasses(classDocs);
             if (isAbsolute) {

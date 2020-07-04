@@ -37,15 +37,7 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
         attrs.each {target, instruction ->
             def pi = null
             if (instruction instanceof Map) {
-                def buf = new StringBuffer()
-                instruction.each { name, value ->
-                    if (value.toString().contains('"')) {
-                        buf.append(" $name='$value'")
-                    } else {
-                        buf.append(" $name=\"$value\"" )
-                    }
-                }
-                pi = dom.document.createProcessingInstruction(target, buf.toString())
+                pi = dom.document.createProcessingInstruction(target, toMapStringClosure(instruction))
             } else {
                 pi = dom.document.createProcessingInstruction(target, instruction)
             }

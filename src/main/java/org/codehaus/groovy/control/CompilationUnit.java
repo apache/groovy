@@ -63,6 +63,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.security.CodeSource;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -73,6 +74,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
@@ -112,12 +115,12 @@ public class CompilationUnit extends ProcessingUnit {
         }
     }
 
-    /** Controls behavior of {@link #classgen} and other routines. */
+    /** Controls behavior of {@link #classgen()} and other routines. */
     protected boolean debug;
     /** True after the first {@link #configure(CompilerConfiguration)} operation. */
     protected boolean configured;
 
-    /** A callback for use during {@link #classgen} */
+    /** A callback for use during {@link #classgen()} */
     protected ClassgenCallback classgenCallback;
     /** A callback for use during {@link #compile()} */
     protected ProgressCallback progressCallback;
@@ -219,7 +222,9 @@ public class CompilationUnit extends ProcessingUnit {
             }
         }, Phases.SEMANTIC_ANALYSIS);
 
-        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> TraitComposer.doExtendTraits(classNode, source, this), Phases.CANONICALIZATION);
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            TraitComposer.doExtendTraits(classNode, source, this);
+        }, Phases.CANONICALIZATION);
 
         addPhaseOperation(source -> {
             List<ClassNode> classes = source.getAST().getClasses();
@@ -447,7 +452,7 @@ public class CompilationUnit extends ProcessingUnit {
     }
 
     /**
-     * @return the class loader for loading AST transformations
+     * Returns the class loader for loading AST transformations.
      */
     public GroovyClassLoader getTransformLoader() {
         return Optional.ofNullable(getASTTransformationsContext().getTransformLoader()).orElseGet(this::getClassLoader);
@@ -624,6 +629,10 @@ public class CompilationUnit extends ProcessingUnit {
                 if (dequeued()) continue;
             }
 
+            if (phase == Phases.CONVERSION) {
+                buildASTs();
+            }
+
             processPhaseOperations(phase);
             // Grab processing may have brought in new AST transforms into various phases, process them as well
             processNewPhaseOperations(phase);
@@ -643,6 +652,20 @@ public class CompilationUnit extends ProcessingUnit {
         }
 
         getErrorCollector().failIfErrors();
+    }
+
+    private void buildASTs() {
+        Boolean bpe = configuration.getOptimizationOptions().get(CompilerConfiguration.PARALLEL_PARSE);
+        boolean parallelParseEnabled = null != bpe && bpe;
+
+        Collection<SourceUnit> sourceUnits = sources.values();
+        Stream<SourceUnit> sourceUnitStream =
+                (!parallelParseEnabled || sourceUnits.size() < 2)
+                        ? sourceUnits.stream() // no need to build AST with parallel stream when we just have one/no source unit
+                        : sourceUnits.parallelStream();
+
+        // DON'T replace `collect(Collectors.counting())` with `count()` here, otherwise peek will NOT be triggered
+        sourceUnitStream.peek(SourceUnit::buildAST).collect(Collectors.counting());
     }
 
     private void processPhaseOperations(final int phase) {
@@ -873,8 +896,8 @@ public class CompilationUnit extends ProcessingUnit {
          */
         @Override
         default void doPhaseOperation(final CompilationUnit unit) throws CompilationFailedException {
-            for (String name : unit.sources.keySet()) {
-                SourceUnit source = unit.sources.get(name);
+            for (Map.Entry<String, SourceUnit> entry : unit.sources.entrySet()) {
+                SourceUnit source = entry.getValue();
                 if (source.phase < unit.phase || (source.phase == unit.phase && !source.phaseComplete)) {
                     try {
                         this.call(source);

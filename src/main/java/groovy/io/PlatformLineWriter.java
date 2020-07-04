@@ -41,7 +41,7 @@ public class PlatformLineWriter extends Writer {
         writer = new BufferedWriter(out, sz);
     }
 
-    public void write(char cbuf[], int off, int len) throws IOException {
+    public void write(char[] cbuf, int off, int len) throws IOException {
         for (; len > 0; len--) {
             char c = cbuf[off++];
             if (c == '\n') {

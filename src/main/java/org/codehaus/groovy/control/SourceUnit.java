@@ -18,11 +18,11 @@
  */
 package org.codehaus.groovy.control;
 
-import antlr.CharScanner;
-import antlr.MismatchedCharException;
-import antlr.MismatchedTokenException;
-import antlr.NoViableAltException;
-import antlr.NoViableAltForCharException;
+//import antlr.CharScanner;
+//import antlr.MismatchedCharException;
+//import antlr.MismatchedTokenException;
+//import antlr.NoViableAltException;
+//import antlr.NoViableAltForCharException;
 import groovy.lang.GroovyClassLoader;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -151,26 +151,27 @@ public class SourceUnit extends ProcessingUnit {
             if (last instanceof SyntaxErrorMessage) {
                 cause = ((SyntaxErrorMessage) last).getCause().getCause();
             }
-            if (cause != null) {
-                if (cause instanceof NoViableAltException) {
-                    return isEofToken(((NoViableAltException) cause).token);
-                } else if (cause instanceof NoViableAltForCharException) {
-                    char badChar = ((NoViableAltForCharException) cause).foundChar;
-                    return badChar == CharScanner.EOF_CHAR;
-                } else if (cause instanceof MismatchedCharException) {
-                    char badChar = (char) ((MismatchedCharException) cause).foundChar;
-                    return badChar == CharScanner.EOF_CHAR;
-                } else if (cause instanceof MismatchedTokenException) {
-                    return isEofToken(((MismatchedTokenException) cause).token);
-                }
-            }
+//            if (cause != null) {
+//                if (cause instanceof NoViableAltException) {
+//                    return isEofToken(((NoViableAltException) cause).token);
+//                } else if (cause instanceof NoViableAltForCharException) {
+//                    char badChar = ((NoViableAltForCharException) cause).foundChar;
+//                    return badChar == CharScanner.EOF_CHAR;
+//                } else if (cause instanceof MismatchedCharException) {
+//                    char badChar = (char) ((MismatchedCharException) cause).foundChar;
+//                    return badChar == CharScanner.EOF_CHAR;
+//                } else if (cause instanceof MismatchedTokenException) {
+//                    return isEofToken(((MismatchedTokenException) cause).token);
+//                }
+//            }
+            return true;
         }
         return false;
     }
 
-    protected boolean isEofToken(antlr.Token token) {
-        return token.getType() == antlr.Token.EOF_TYPE;
-    }
+//    protected boolean isEofToken(antlr.Token token) {
+//        return token.getType() == antlr.Token.EOF_TYPE;
+//    }
 
     //---------------------------------------------------------------------------
     // FACTORIES
@@ -239,6 +240,19 @@ public class SourceUnit extends ProcessingUnit {
 
         //
         // Build the AST
+        buildAST();
+
+        String property = (String) AccessController.doPrivileged((PrivilegedAction) () -> System.getProperty("groovy.ast"));
+
+        if ("xml".equals(property)) {
+            XStreamUtils.serialize(name, ast);
+        }
+    }
+
+    public ModuleNode buildAST() {
+        if (null != this.ast) {
+            return this.ast;
+        }
 
         try {
             this.ast = parserPlugin.buildAST(this, this.classLoader, this.cst);
@@ -251,11 +265,7 @@ public class SourceUnit extends ProcessingUnit {
             getErrorCollector().addError(new SyntaxErrorMessage(e, this));
         }
 
-        String property = (String) AccessController.doPrivileged((PrivilegedAction) () -> System.getProperty("groovy.ast"));
-
-        if ("xml".equals(property)) {
-            XStreamUtils.serialize(name, ast);
-        }
+        return this.ast;
     }
 
     //---------------------------------------------------------------------------

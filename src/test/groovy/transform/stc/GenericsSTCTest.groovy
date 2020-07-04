@@ -19,7 +19,6 @@
 package groovy.transform.stc
 
 import groovy.test.NotYetImplemented
-import org.codehaus.groovy.antlr.AntlrParserPluginFactory
 
 /**
  * Unit tests for static type checking : generics.
@@ -465,13 +464,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             new Test()
         '''
 
-        if (config.pluginFactory instanceof AntlrParserPluginFactory) {
-            shouldFailWithMessages code, 'Cannot find matching method java.lang.Object#getAt(int)'
-        } else {
-            shouldFailWithMessages code,
-                    'Cannot find matching method java.lang.Object#getAt(int)',
-                    'Cannot find matching method java.lang.Object#toInteger()'
-        }
+        shouldFailWithMessages code,
+                'Cannot find matching method java.lang.Object#getAt(int)',
+                'Cannot find matching method java.lang.Object#toInteger()'
     }
 
     void testAssignmentOfNewInstance() {
@@ -1702,42 +1697,45 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-6731
     void testContravariantMethodResolution() {
-        assertScript '''interface Function<T, R> {
+        assertScript '''
+            interface Function<T, R> {
+                R apply(T t)
+            }
 
-    R apply(T t)
+            public <I, O> void transform(Function<? super I, ? extends O> function) {
+                function.apply('')
+            }
 
-}
-public <I, O> void transform(Function<? super I, ? extends O> function) { function.apply('')}
+            String result = null
+            transform(new Function<String, String>() {
+                String apply(String input) {
+                    result = "ok"
+                }
+            })
 
-String result = null
-transform(new Function<String, String>() {
-
-    String apply(String input) {
-        result = "ok"
+            assert result == 'ok'
+        '''
     }
-})
 
-assert result == 'ok\''''
-    }
     void testContravariantMethodResolutionWithImplicitCoercion() {
-        assertScript '''interface Function<T, R> {
+        assertScript '''
+            interface Function<T, R> {
+                R apply(T t)
+            }
 
-    R apply(T t)
+            public <I, O> void transform(Function<? super I, ? extends O> function) {
+                function.apply('')
+            }
 
-}
-public <I, O> void transform(Function<? super I, ? extends O> function) { function.apply('')}
-
-String result = null
-transform {
-        result = "ok"
-}
-
-
-assert result == 'ok'
-'''
+            String result = null
+            transform {
+                result = 'ok'
+            }
+            assert result == 'ok'
+        '''
     }
 
-    void testGROOVY5981(){
+    void testGROOVY5981() {
         assertScript '''
             import javax.swing.*
             import java.awt.*
@@ -1777,6 +1775,113 @@ assert result == 'ok'
         '''
     }
 
+    // GROOVY-7691
+    void testCovariantReturnTypeInferredFromField() {
+        assertScript '''
+            import groovy.transform.*
+
+            @CompileStatic
+            @TupleConstructor(includeFields=true)
+            abstract class A<N extends Number> {
+                protected final N number
+            }
+
+            @CompileStatic
+            class C<L extends Long> extends A<L> { // further restriction of type parameter
+                C(L longNumber) {
+                    super(longNumber)
+                }
+
+                L getValue() {
+                    return number
+                }
+            }
+
+            assert new C<Long>(42L).value == 42L
+        '''
+    }
+
+    // GROOVY-7691
+    void testCovariantReturnTypeInferredFromProperty() {
+        assertScript '''
+            import groovy.transform.*
+
+            @CompileStatic
+            @TupleConstructor
+            abstract class A<N extends Number> {
+                final N number
+            }
+
+            @CompileStatic
+            class C<L extends Long> extends A<L> {
+                C(L longNumber) {
+                    super(longNumber)
+                }
+
+                L getValue() {
+                    return number
+                }
+            }
+
+            assert new C<Long>(42L).value == 42L
+        '''
+    }
+
+    void testCovariantReturnTypeInferredFromMethod1() {
+        assertScript '''
+            import groovy.transform.*
+
+            @CompileStatic
+            @TupleConstructor(includeFields=true)
+            abstract class A<N extends Number> {
+                protected final N number
+
+                protected N getNumber() {
+                    return number
+                }
+            }
+
+            @CompileStatic
+            class C<L extends Long> extends A<L> {
+                C(L longNumber) {
+                    super(longNumber)
+                }
+
+                L getValue() {
+                    return getNumber()
+                }
+            }
+
+            assert new C<Long>(42L).value == 42L
+        '''
+    }
+
+    // GROOVY-9580
+    void testCovariantReturnTypeInferredFromMethod2() {
+        assertScript '''
+            import groovy.transform.*
+
+            @CompileStatic
+            @TupleConstructor(includeFields=true)
+            abstract class A<N extends Number> {
+                final N number
+            }
+
+            @CompileStatic
+            class C<L extends Long> extends A<L> {
+                C(L longNumber) {
+                    super(longNumber)
+                }
+
+                L getValue() {
+                    return getNumber() // property method stubbed by StaticTypeCheckingVisitor
+                }
+            }
+
+            assert new C<Long>(42L).value == 42L
+        '''
+    }
+
     void testReturnTypeChecking() {
         shouldFailWithMessages '''
             class Foo {
@@ -1798,8 +1903,7 @@ assert result == 'ok'
         '''
     }
 
-
-    //GROOVY-7804
+    // GROOVY-7804
     void testParameterlessClosureToGenericSAMTypeArgumentCoercion() {
         assertScript '''
             interface Supplier<T> {
@@ -1812,7 +1916,7 @@ assert result == 'ok'
         '''
     }
 
-    //GROOVY-7713
+    // GROOVY-7713
     void testClosureReturnNull() {
         assertScript '''
             Closure<String> cl = {
@@ -1846,6 +1950,4 @@ assert result == 'ok'
         public static <T> List<T> unwrap(Collection<? extends Container<T>> list) {
         }
     }
-
 }
-

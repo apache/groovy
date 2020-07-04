@@ -253,7 +253,7 @@ will behave the same as:
 include::{projectdir}/src/spec/test/ScriptsAndClassesSpecTest.groovy[tags=script_with_untyped_variables,indent=0]
 ----
 
-However there is a semantic difference between the two:
+However, there is a semantic difference between the two:
 
 * if the variable is declared as in the first example, it is a _local variable_. It will be declared in the `run`
 method that the compiler will generate and will *not* be visible outside of the script main body. In particular, such
@@ -263,5 +263,9 @@ visible from the methods, and is especially important if you use a script to int
 share data between the script and the application. Readers might refer to the 
 <<guide-integrating.adoc#_integrating_groovy_in_a_java_application,integration guide>> for more information.
 
-TIP: If you want a variable to become a field of the class without going into the `Binding`, you can use the
+TIP: Another approach to making a variable visible to all methods, is to use the
 <<core-metaprogramming.adoc#xform-Field,@Field annotation>>.
+A variable annotated this way will become a field of the generated script class and,
+as for local variables, access won't involve the script `Binding`.
+While not recommended, if you have a local variable or script field with the same name as a binding variable,
+you can use `binding.varName` to access the binding variable.

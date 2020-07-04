@@ -292,6 +292,7 @@ public class CachedClass {
         return distance;
     }
 
+    @Override
     public int hashCode() {
         if (hashCode == 0) {
           hashCode = super.hashCode();
@@ -379,7 +380,9 @@ public class CachedClass {
           if (metaClass.getClass() == MetaClassImpl.class) {
               classInfo.setStrongMetaClass(null);
               updateSetNewMopMethods(arr);
-              classInfo.setStrongMetaClass(new MetaClassImpl(metaClass.getTheClass()));
+              MetaClassImpl mci = new MetaClassImpl(metaClass.getTheClass());
+              mci.initialize();
+              classInfo.setStrongMetaClass(mci);
               return;
           }
 
@@ -484,6 +487,7 @@ public class CachedClass {
     public static class CachedMethodComparatorWithString implements Comparator {
         public static final Comparator INSTANCE = new CachedMethodComparatorWithString();
 
+        @Override
         public int compare(Object o1, Object o2) {
             if (o1 instanceof CachedMethod)
                 return ((CachedMethod) o1).getName().compareTo((String) o2);

@@ -123,14 +123,14 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
             return depthFirst();
         } else if (property.startsWith("@")) {
             if (property.contains(":") && !this.namespaceTagHints.isEmpty()) {
-                final int i = property.indexOf(":");
+                final int i = property.indexOf(':');
                 return new Attributes(this, "@" + property.substring(i + 1), property.substring(1, i), this.namespaceTagHints);
             } else {
                 return new Attributes(this, property, this.namespaceTagHints);
             }
         } else {
             if (property.contains(":") && !this.namespaceTagHints.isEmpty()) {
-                final int i = property.indexOf(":");
+                final int i = property.indexOf(':');
                 return new NodeChildren(this, property.substring(i + 1), property.substring(0, i), this.namespaceTagHints);
             } else {
                 return new NodeChildren(this, property, this.namespaceTagHints);
@@ -147,10 +147,9 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     public void setProperty(final String property, final Object newValue) {
         if (property.startsWith("@")) {
             if (newValue instanceof String || newValue instanceof GString) {
-                final Iterator iter = iterator();
 
-                while (iter.hasNext()) {
-                    final NodeChild child = (NodeChild) iter.next();
+                for (Object o : this) {
+                    final NodeChild child = (NodeChild) o;
 
                     child.attributes().put(property.substring(1), newValue);
                 }
@@ -572,9 +571,8 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
                         List nextLevel = new ArrayList();
                         for (Object child : children) {
                             GPathResult next = (GPathResult) child;
-                            Iterator iterator = next.iterator();
-                            while (iterator.hasNext()) {
-                                nextLevel.add(iterator.next());
+                            for (Object o : next) {
+                                nextLevel.add(o);
                             }
                         }
                         this.iter = nextLevel.iterator();

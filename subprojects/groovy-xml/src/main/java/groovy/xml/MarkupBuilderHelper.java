@@ -41,7 +41,7 @@ public class MarkupBuilderHelper {
      * @param value an Object whose toString() representation is to be printed
      */
     public void yield(Object value) {
-        yield(value.toString());
+        this.yield(value.toString());
     }
 
     /**

@@ -596,11 +596,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
         }
 
         private Closure createTemplateClosure(List<StringSection> sections, final ClassLoader parentLoader, StringBuilder target) throws ClassNotFoundException {
-            final GroovyClassLoader loader = AccessController.doPrivileged(new PrivilegedAction<GroovyClassLoader>() {
-                public GroovyClassLoader run() {
-                    return new GroovyClassLoader(parentLoader);
-                }
-            });
+            final GroovyClassLoader loader = AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader));
             final Class groovyClass;
             try {
                 groovyClass = loader.parseClass(new GroovyCodeSource(target.toString(), TEMPLATE_SCRIPT_PREFIX + counter.incrementAndGet() + ".groovy", "x"));

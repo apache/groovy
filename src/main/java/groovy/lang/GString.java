@@ -53,10 +53,16 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
      */
     public static final GString EMPTY = new GString(EMPTY_OBJECT_ARRAY) {
         private static final long serialVersionUID = -7676746462783374250L;
+        private static final String EMPTY_STRING = "";
 
         @Override
         public String[] getStrings() {
-            return new String[]{""};
+            return new String[] { EMPTY_STRING };
+        }
+
+        @Override
+        public String toString() {
+            return EMPTY_STRING;
         }
     };
 
@@ -224,10 +230,10 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     @Override
     public boolean equals(Object that) {
-        if (that instanceof GString) {
-            return equals((GString) that);
-        }
-        return false;
+        if (this == that) return true;
+        if (!(that instanceof GString)) return false;
+
+        return equals((GString) that);
     }
 
     public boolean equals(GString that) {

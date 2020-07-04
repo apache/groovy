@@ -111,13 +111,7 @@ allprojects {
 
         [uploadArchives, install]*.with {
             dependsOn([grooidjar, jarjar, sourceJar, javadocJar, groovydocJar])
-            if (rootProject.indyCapable()) {
-                dependsOn jarjarWithIndy
-            }
             doFirst {
-                if (rootProject.indyCapable()) {
-                    project.artifacts.add('archives', jarjarWithIndy.outputFile)
-                }
                 def grooidJarFile = rootProject.ext.deriveFile(jarjar.outputFile, 'grooid')
                 if (grooidJarFile.exists()) {
                     project.artifacts.add('archives', grooidJarFile)
@@ -133,10 +127,6 @@ allprojects {
                 signArchiveTask(sourceJar)
                 signArchiveTask(javadocJar)
                 signArchiveTask(groovydocJar)
-                def indyJar = rootProject.ext.deriveFile(jarjar.outputFile, 'indy')
-                if (indyJar.exists()) {
-                    signWithClassifier('indy', indyJar)
-                }
                 def grooidJarFile = rootProject.ext.deriveFile(jarjar.outputFile, 'grooid')
                 if (grooidJarFile.exists()) {
                     signWithClassifier('grooid', grooidJarFile)
@@ -150,10 +140,6 @@ allprojects {
 // we don't want them in the root project so add them as artifacts with a modified name
 // we'll exclude the original artifacts during publication with an exclude pattern
 def configureAdditionalArtifacts = {
-    if (!rootProject.indyCapable()) {
-        throw new GradleException("Indy must be enabled to upload archives")
-    }
-
     project.artifacts.add('archives', distBin) { name = 'groovy-binary' }
     project.artifacts.add('archives', sourceAllJar) { name = 'groovy-all' }
     project.artifacts.add('archives', javadocAllJar) { name = 'groovy-all' }

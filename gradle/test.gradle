@@ -25,10 +25,8 @@ allprojects {
         if (JavaVersion.current().isJava9Compatible()) {
             jvmArgs (*common, *jdk9)
             systemProperty "groovy.force.illegal.access", findProperty("groovy.force.illegal.access")
-        } else if (JavaVersion.current().isJava8Compatible()) {
-            jvmArgs (*common, *jdk8)
         } else {
-            jvmArgs (*common, "-XX:PermSize=${groovyJUnit_permSize}", "-XX:MaxPermSize=${groovyJUnit_maxPermSize}")
+            jvmArgs (*common, *jdk8)
         }
         def headless = System.properties['java.awt.headless']
         if (headless == 'true') {
@@ -45,27 +43,6 @@ allprojects {
             // uncomment the following line if you need more logging
             // events "failed", "started"
         }
-    }
-
-    // create an Indy test suite
-    if (rootProject.indyCapable()) {
-        def dependencies = configurations.testRuntime.incoming.dependencies.findAll {
-            it.name.startsWith('groovy')
-        }.collect {
-            it.name
-        }
-        task testWithIndy(type: Test) {
-            systemProperties 'groovy.target.indy': true
-            dependsOn 'jarWithIndy'
-            dependencies.each { dependsOn "${it}:jarWithIndy" }
-            classpath = classpath - files(jar.archivePath, *dependencies.collect { project(it).jar }) +
-                    files({ [jarWithIndy.archivePath, *dependencies.collect { project(it).jarWithIndy }] })
-        }
-        task testAll {
-            description = "Runs both the normal and indy test suites"
-            dependsOn test, testWithIndy
-        }
-        check.dependsOn testWithIndy
     }
 
     sourceSets {
@@ -117,14 +94,6 @@ def buildExcludeFilter(boolean legacyTestSuite) {
     // if no network available, disable Grapes
     if (!System.properties['junit.network']) {
         excludes << 'groovy/grape/'
-    }
-
-    if (legacyTestSuite) {
-        // indy tests will only be executed in indy test suite
-        excludes += ['indy', 'Indy']
-    } else {
-        // tests not passing with indy : investigation required!
-        excludes += ['Log4j2Test', 'ASTTransformationCustomizerTest']
     }
 
     return { f ->

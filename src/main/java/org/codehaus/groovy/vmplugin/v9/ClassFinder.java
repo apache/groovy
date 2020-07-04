@@ -138,7 +138,7 @@ public class ClassFinder {
                     String packagePathStr = String.join("/", Arrays.copyOfRange(pathElems, prefixElemCnt + (!wfs && pathElems[0].isEmpty() ? 1 : 0), nameCount - 1));
 
                     if (recursive || packageName.equals(packagePathStr)) {
-                        Set<String> packageNameSet = result.computeIfAbsent(filename.substring(0, filename.lastIndexOf(".")), f -> new HashSet<>(2));
+                        Set<String> packageNameSet = result.computeIfAbsent(filename.substring(0, filename.lastIndexOf('.')), f -> new HashSet<>(2));
                         packageNameSet.add(packagePathStr);
                     }
 
@@ -147,7 +147,10 @@ public class ClassFinder {
             });
         } catch (UnsupportedOperationException ignored) {
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new ClassFindFailedException(
+                    String.format("Failed to find classes via uri: %s, prefix: %s, packageName: %s, recursive: %s",
+                            uri, prefix, packageName, recursive
+                    ), e);
         }
 
         return result;

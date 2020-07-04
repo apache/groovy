@@ -18,27 +18,49 @@
  */
 package org.codehaus.groovy.ast;
 
-import org.codehaus.groovy.syntax.parser.TestParserSupport;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.junit.Test;
 
-import java.util.List;
+import static org.codehaus.groovy.control.ParserPlugin.buildAST;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
- * Tests the ClassNode
+ * Tests for {@link ModuleNode}.
  */
-public class ModuleNodeTest extends TestParserSupport {
+public final class ModuleNodeTest {
 
-    public void testStatementClass_FAILS() throws Exception {
-        if (notYetImplemented()) return;
+    @Test
+    public void testStatementClass() {
+        ModuleNode mn = buildAST("x = [1, 2, 3]; println(x)", null, null, null);
 
-        ModuleNode module = parse("x = [1, 2, 3]; println(x)", "Cheese.groovy");
+        assertEquals(1, mn.getClasses().size());
+        assertTrue(mn.getClasses().get(0).getName().startsWith("Script"));
+        assertFalse("Should have statements", mn.getStatementBlock().isEmpty());
+    }
 
-        assertTrue("Should have statements", !module.getStatementBlock().isEmpty());
+    @Test // GROOVY-9194
+    public void testScriptStartingWithHash() {
+        ModuleNode mn = new ModuleNode((CompileUnit) null);
+        mn.setDescription("#script.groovy");
 
-        List classes = module.getClasses();
-        assertEquals("Number of classes", 1, classes.size());
+        assertEquals("Dummy class name should not be empty", "#script", mn.getScriptClassDummy().getName());
+    }
 
-        ClassNode classNode = (ClassNode) classes.get(0);
+    @Test // GROOVY-9577
+    public void testDuplicateImports() {
+        //@formatter:off
+        String source =
+            "import java.lang.Object\n" +
+            "import java.lang.Object\n" +
+            "import java.lang.Object as X\n";
+        //@formatter:on
+        ModuleNode mn = buildAST(source, null, null, null);
 
-        assertEquals("Class name", "Cheese", classNode.getName());
+        assertEquals(3, mn.getImports().size());
+        assertEquals(3, mn.getImport("X").getLineNumber());
+        assertEquals(2, mn.getImport("Object").getLineNumber());
+        assertEquals("X", DefaultGroovyMethods.last(mn.getImports()).getAlias());
     }
 }

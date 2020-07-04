@@ -19,12 +19,14 @@
 package gls.innerClass
 
 import groovy.test.NotYetImplemented
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
+@CompileStatic
 final class InnerClassTest {
 
     @Test
@@ -37,6 +39,7 @@ final class InnerClassTest {
 
             Timer timer = new Timer()
             timer.schedule(new TimerTask() {
+                @Override
                 void run() {
                     called.countDown()
                 }
@@ -47,23 +50,36 @@ final class InnerClassTest {
     }
 
     @Test
-    void testAICReferenceInClosure() {
+    void testAccessLocalVariableFromClosureInAIC() {
         assertScript '''
-            def y = [true]
+            def x = [true]
             def o = new Object() {
-              def foo() {
-                def c = {
-                  assert y[0]
+                def m() {
+                    def c = { ->
+                        assert x[0]
+                    }
+                    c()
                 }
-                c()
-              }
             }
-            o.foo()
+            o.m()
+        '''
+
+        shouldFail '''
+            def x = [false]
+            def o = new Object() {
+                def m() {
+                    def c = { ->
+                        assert x[0]
+                    }
+                    c()
+                }
+            }
+            o.m()
         '''
     }
 
     @Test
-    void testExtendsObjectAndAccessAFinalVariableInScope() {
+    void testAccessFinalLocalVariableFromMethodInAIC() {
         assertScript '''
             final String objName = "My name is Guillaume"
 
@@ -73,8 +89,34 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-9499
+    void testAccessStaticMethodFromAICInSuperCtorCall() {
+        assertScript '''
+            class One {
+                One(ref) {
+                    HASH_CODE = ref.hashCode()
+                }
+                public static int HASH_CODE
+            }
+
+            class Two extends One {
+              Two() {
+                super(new Object() { // AIC before special ctor call completes
+                  int hashCode() {
+                    hash() // should be able to call static method safely
+                  }
+                })
+              }
+              static int hash() { 42 }
+            }
+
+            def obj = new Two()
+            assert One.HASH_CODE == 42
+        '''
+    }
+
     @Test
-    void testExtendsObjectAndReferenceAMethodParameterWithinAGString() {
+    void testAccessMethodParameterFromGStringInAICMethod() {
         assertScript '''
             Object makeObj0(String name) {
                 new Object() {
@@ -87,7 +129,7 @@ final class InnerClassTest {
     }
 
     @Test
-    void testExtendsObjectAndReferenceAGStringPropertyDependingOnAMethodParameter() {
+    void testAccessMethodParameterFromGStringInAICProperty() {
         assertScript '''
             Object makeObj1(String name) {
                  new Object() {
@@ -393,6 +435,271 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-9501
+    void testUsageOfOuterField7() {
+        assertScript '''
+            class Main extends Outer {
+                static main(args) {
+                    newInstance().newThread()
+                    assert Outer.Inner.error == null
+                }
+            }
+
+            abstract class Outer {
+                private static volatile boolean flag
+
+                void newThread() {
+                    Thread thread = new Inner()
+                    thread.start()
+                    thread.join()
+                }
+
+                private final class Inner extends Thread {
+                    @Override
+                    void run() {
+                        try {
+                            if (!flag) {
+                                // do work
+                            }
+                        } catch (e) {
+                            error = e
+                        }
+                    }
+                    public static error
+                }
+            }
+        '''
+    }
+
+    @Test // inner class is static instead of final
+    void testUsageOfOuterField8() {
+        assertScript '''
+            class Main extends Outer {
+                static main(args) {
+                    newInstance().newThread()
+                    assert Outer.Inner.error == null
+                }
+            }
+
+            abstract class Outer {
+                private static volatile boolean flag
+
+                void newThread() {
+                    Thread thread = new Inner()
+                    thread.start()
+                    thread.join()
+                }
+
+                private static class Inner extends Thread {
+                    @Override
+                    void run() {
+                        try {
+                            if (!flag) {
+                                // do work
+                            }
+                        } catch (e) {
+                            error = e
+                        }
+                    }
+                    public static error
+                }
+            }
+        '''
+    }
+
+    @Test // GROOVY-9569
+    void testUsageOfOuterField9() {
+        assertScript '''
+            class Main extends Outer {
+                static main(args) {
+                    newInstance().newThread()
+                    assert Outer.Inner.error == null
+                }
+            }
+
+            @groovy.transform.CompileStatic
+            abstract class Outer {
+                private static volatile boolean flag
+
+                void newThread() {
+                    Thread thread = new Inner()
+                    thread.start()
+                    thread.join()
+                }
+
+                private static class Inner extends Thread {
+                    @Override
+                    void run() {
+                        try {
+                            if (!flag) {
+                                // do work
+                            }
+                        } catch (e) {
+                            error = e
+                        }
+                    }
+                    public static error
+                }
+            }
+        '''
+    }
+
+    @Test
+    void testUsageOfOuterField10() {
+        assertScript '''
+            class Outer {
+                static final String OUTER_CONSTANT = 'Constant Value'
+
+                class Inner {
+                    String access() {
+                        return OUTER_CONSTANT
+                    }
+                }
+
+                void testInnerClassAccessOuterConst() {
+                    def inner = new Inner()
+                    assert inner.access() == OUTER_CONSTANT
+                }
+            }
+
+            def outer = new Outer()
+            outer.testInnerClassAccessOuterConst()
+        '''
+    }
+
+    @Test // GROOVY-5259
+    void testUsageOfOuterField11() {
+        assertScript '''
+            class Base {
+                Base(String string) {
+                }
+            }
+
+            class Outer {
+                static final String OUTER_CONSTANT = 'Constant Value'
+
+                class Inner extends Base {
+                    Inner() {
+                        super(OUTER_CONSTANT) // "this" is not initialized yet
+                    }
+
+                    String access() {
+                        return OUTER_CONSTANT
+                    }
+                }
+
+                void testInnerClassAccessOuterConst() {
+                    def inner = new Inner()
+                    assert inner.access() == OUTER_CONSTANT
+                }
+            }
+
+            def outer = new Outer()
+            outer.testInnerClassAccessOuterConst()
+        '''
+    }
+
+    @Test
+    void testUsageOfOuterField12() {
+        def err = shouldFail '''
+            class C {
+                int count
+                static def m() {
+                    new LinkedList() {
+                        def get(int i) {
+                            count += 1
+                            super.get(i)
+                        }
+                    }
+                }
+            }
+            C.m()
+        '''
+
+        assert err =~ /Apparent variable 'count' was found in a static scope but doesn't refer to a local variable, static field or class./
+    }
+
+    @Test
+    void testUsageOfOuterSuperField() {
+        assertScript '''
+            class InnerBase {
+                InnerBase(String string) {
+                }
+            }
+
+            class OuterBase {
+                protected static final String OUTER_CONSTANT = 'Constant Value'
+            }
+
+            class Outer extends OuterBase {
+
+                class Inner extends InnerBase {
+                    Inner() {
+                        super(OUTER_CONSTANT)
+                    }
+
+                    String access() {
+                        return OUTER_CONSTANT
+                    }
+                }
+
+                void testInnerClassAccessOuterConst() {
+                    def inner = new Inner()
+                    assert inner.access() == OUTER_CONSTANT
+                }
+            }
+
+            def outer = new Outer()
+            outer.testInnerClassAccessOuterConst()
+        '''
+    }
+
+    @Test
+    void testUsageOfOuterSuperField2() {
+        assertScript '''
+            interface I {
+                String CONST = 'value'
+            }
+            class A implements I {
+                static class B {
+                    def test() {
+                        CONST
+                    }
+                }
+            }
+            def x = new A.B().test()
+            assert x == 'value'
+        '''
+    }
+
+    @Test
+    void testUsageOfOuterField_WrongCallToSuper() {
+        shouldFail '''
+            class Outer {
+                protected static final String OUTER_CONSTANT = 'Constant Value'
+
+                class Inner {
+                    Inner() {
+                        // there is no Object#<init>(String) method, but it throws a VerifyError for uninitialized this
+                        super(OUTER_CONSTANT)
+                    }
+
+                    String access() {
+                        return OUTER_CONSTANT
+                    }
+                }
+
+                void testInnerClassAccessOuterConst() {
+                    def inner = new Inner()
+                    inner.access()
+                }
+            }
+
+            def outer = new Outer()
+            outer.testInnerClassAccessOuterConst()
+        '''
+    }
+
     @Test
     void testUsageOfOuterFieldOverridden() {
         assertScript '''
@@ -633,10 +940,24 @@ final class InnerClassTest {
         '''
     }
 
-    @Test
+    @Test // GROOVY-4028
     void testImplicitThisPassingWithNamedArguments() {
-        def oc = new MyOuterClass4028()
-        assert oc.foo().propMap.size() == 2
+        assertScript '''
+            class Outer {
+                def inner() {
+                    new Inner(fName: 'Roshan', lName: 'Dawrani')
+                }
+                class Inner {
+                    Map props
+                    Inner(Map props) {
+                        this.props = props
+                    }
+                }
+            }
+            def outer = new Outer()
+            def inner = outer.inner()
+            assert inner.props.size() == 2
+        '''
     }
 
     @Test
@@ -924,6 +1245,30 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-8274
+    void testMissingMethodHandling() {
+        assertScript '''
+            class A {
+                class B {
+                    def methodMissing(String name, args) {
+                        return name
+                    }
+                }
+
+                def test(Closure c) {
+                    c.resolveStrategy = Closure.DELEGATE_ONLY
+                    c.delegate = new B()
+                    c.call()
+                }
+            }
+
+            def x = new A().test { ->
+                hello() // missing
+            }
+            assert x == 'hello'
+        '''
+    }
+
     @Test // GROOVY-6831
     void testNestedPropertyHandling() {
         assertScript '''
@@ -1123,16 +1468,4 @@ class Parent8914 {
 
 class Outer8914 {
     static class Nested extends Parent8914.Nested {}
-}
-
-class MyOuterClass4028 {
-    def foo() {
-        new MyInnerClass4028(fName: 'Roshan', lName: 'Dawrani')
-    }
-    class MyInnerClass4028 {
-        Map propMap
-        def MyInnerClass4028(Map propMap) {
-            this.propMap = propMap
-        }
-    }
 }

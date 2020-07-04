@@ -57,6 +57,9 @@ public class CompilerConfiguration {
     /** Optimization Option for enabling attaching {@link groovy.lang.Groovydoc} annotation. */
     public static final String RUNTIME_GROOVYDOC = "runtimeGroovydoc";
 
+    /** Optimization Option for enabling parallel parsing. */
+    public static final String PARALLEL_PARSE = "parallelParse";
+
     /** Joint Compilation Option for enabling generating stubs in memory. */
     public static final String MEM_STUB = "memStub";
 
@@ -122,7 +125,10 @@ public class CompilerConfiguration {
      */
     public static final String[] ALLOWED_JDKS = JDK_TO_BYTECODE_VERSION_MAP.keySet().toArray(new String[JDK_TO_BYTECODE_VERSION_MAP.size()]);
 
-    public static final int ASM_API_VERSION = Opcodes.ASM7;
+    /**
+    * The ASM api version to use when loading/parsing classes, and generating proxy adapter classes.
+    */
+    public static final int ASM_API_VERSION = Opcodes.ASM8;
 
     /**
      * The default source encoding.
@@ -433,13 +439,18 @@ public class CompilerConfiguration {
         defaultScriptExtension = getSystemPropertySafe("groovy.default.scriptExtension", ".groovy");
 
         optimizationOptions = new HashMap<>(4);
-        handleOptimizationOption(optimizationOptions, INVOKEDYNAMIC, "groovy.target.indy");
+        handleOptimizationOption(optimizationOptions, INVOKEDYNAMIC, "groovy.target.indy", "true");
         handleOptimizationOption(optimizationOptions, GROOVYDOC, "groovy.attach.groovydoc");
         handleOptimizationOption(optimizationOptions, RUNTIME_GROOVYDOC, "groovy.attach.runtime.groovydoc");
+        handleOptimizationOption(optimizationOptions, PARALLEL_PARSE, "groovy.parallel.parse", "true");
     }
 
     private void handleOptimizationOption(final Map<String, Boolean> options, final String optionName, final String sysOptionName) {
-        String propValue = getSystemPropertySafe(sysOptionName);
+        handleOptimizationOption(options, optionName, sysOptionName, null);
+    }
+
+    private void handleOptimizationOption(final Map<String, Boolean> options, final String optionName, final String sysOptionName, String def) {
+        String propValue = getSystemPropertySafe(sysOptionName, def);
         boolean optionEnabled = propValue == null
                 ? (DEFAULT != null && Boolean.TRUE.equals(DEFAULT.getOptimizationOptions().get(optionName)))
                 : Boolean.parseBoolean(propValue);
@@ -484,6 +495,8 @@ public class CompilerConfiguration {
         if (jointCompilationOptions != null) {
             jointCompilationOptions = new HashMap<>(jointCompilationOptions);
         }
+        // TODO GROOVY-9585: add line below once gradle build issues fixed
+//        compilationCustomizers.addAll(configuration.getCompilationCustomizers());
         setJointCompilationOptions(jointCompilationOptions);
         setPluginFactory(configuration.getPluginFactory());
         setDisabledGlobalASTTransformations(configuration.getDisabledGlobalASTTransformations());
@@ -677,8 +690,8 @@ public class CompilerConfiguration {
         text = configuration.getProperty("groovy.disabled.global.ast.transformations");
         if (text != null) {
             String[] classNames = text.split(",\\s*}");
-            Set<String> blacklist = new HashSet<>(Arrays.asList(classNames));
-            setDisabledGlobalASTTransformations(blacklist);
+            Set<String> disabledTransforms = new HashSet<>(Arrays.asList(classNames));
+            setDisabledGlobalASTTransformations(disabledTransforms);
         }
     }
 
@@ -1059,7 +1072,7 @@ public class CompilerConfiguration {
      */
     public boolean isIndyEnabled() {
         Boolean indyEnabled = getOptimizationOptions().get(INVOKEDYNAMIC);
-        return Optional.ofNullable(indyEnabled).orElse(Boolean.FALSE);
+        return indyEnabled != Boolean.FALSE;
     }
 
     /**

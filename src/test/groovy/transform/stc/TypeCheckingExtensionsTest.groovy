@@ -20,7 +20,6 @@ package groovy.transform.stc
 
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
-import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport
 
 /**
  * Units tests for type checking extensions.
@@ -235,7 +234,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         extension = null
         shouldFailWithMessages '''
             'str'.@FOO
-        ''', 'No such property: FOO for class: java.lang.String'
+        ''', 'No such attribute: FOO for class: java.lang.String'
 
         extension = 'groovy/transform/stc/UnresolvedAttributeTestExtension.groovy'
         assertScript '''

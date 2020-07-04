@@ -25,14 +25,13 @@ import groovy.console.ui.view.MacOSXMenuBar
 import groovy.swing.GroovySwingTestCase
 import groovy.swing.SwingBuilder
 import org.codehaus.groovy.control.CompilerConfiguration
-
-import javax.swing.JTextPane
-import java.awt.event.ActionEvent
-import java.util.prefs.Preferences
 import org.junit.rules.TemporaryFolder
 
+import javax.swing.JTextPane
 import javax.swing.SwingUtilities
 import java.awt.Color
+import java.awt.event.ActionEvent
+import java.util.prefs.Preferences
 
 class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
@@ -591,21 +590,13 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
                 def outputDocument = console.outputArea.document
                 console.inputEditor.textEditor.text = scriptSource
 
-                console.indy(new EventObject([selected: true]))
-                assert console.prefs.getBoolean('indy', false)
-                assert console.frame.title == 'GroovyConsole (Indy)'
-
                 console.runScript(new EventObject([:]))
                 assert console.config.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
                 assert outputDocument.getText(0, outputDocument.length) == 'Result: foobar'
 
-                console.indy(new EventObject([selected: false]))
-                assert !console.prefs.getBoolean('indy', true)
-                assert console.frame.title == 'GroovyConsole'
-
                 console.outputArea.text = ''
                 console.runScript(new EventObject([:]))
-                assert !console.config.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
+                assert console.config.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
                 assert outputDocument.getText(0, outputDocument.length) == 'Result: foobar'
             } finally {
                 GroovySystem.metaClassRegistry.removeMetaClass(Thread)

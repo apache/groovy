@@ -174,7 +174,7 @@ public class GroovyShell extends GroovyObjectSupport {
      */
     public Object run(final File scriptFile, String[] args) throws CompilationFailedException, IOException {
         String scriptName = scriptFile.getName();
-        int p = scriptName.lastIndexOf(".");
+        int p = scriptName.lastIndexOf('.');
         if (p++ >= 0) {
             if (scriptName.substring(p).equals("java")) {
                 throw new CompilationFailedException(0, null);

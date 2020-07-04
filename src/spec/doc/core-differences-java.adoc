@@ -75,19 +75,27 @@ Groovy will choose at runtime, when the method is actually called. Since it is c
 
 == Array initializers
 
-In Groovy, the `{ ... }` block is reserved for closures. That means that you cannot create array literals with this
-syntax:
+In Java, array initializers take either of these two forms:
 
-[source,groovy]
+[source,java]
 ----
 include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=arraycreate_fail,indent=0]
 ----
 
-You actually have to use:
+In Groovy, the `{ ... }` block is reserved for closures.
+That means that you cannot create array literals using Java's array initializer shorthand syntax.
+You instead borrow Groovy's literal list notation like this:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=arraycreate_success,indent=0]
+----
+
+For Groovy 3+, you can optionally use the Java's array initializer long syntax:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=arraycreate3_success,indent=0]
 ----
 
 == Package scope visibility
@@ -111,8 +119,7 @@ include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=packagep
 
 == ARM blocks
 
-ARM (Automatic Resource Management) block from Java 7 are not supported in Groovy. Instead, Groovy provides various
-methods relying on closures, which have the same effect while being more idiomatic. For example:
+Java 7 introduced ARM (Automatic Resource Management) blocks like this:
 
 [source,java]
 ----
@@ -129,7 +136,8 @@ try (BufferedReader reader = Files.newBufferedReader(file, charset)) {
 }
 ----
 
-can be written like this:
+Such blocks are supported from Groovy 3+.
+However, Groovy provides various methods relying on closures, which have the same effect while being more idiomatic. For example:
 
 [source,groovy]
 ----
@@ -151,16 +159,15 @@ new File('/path/to/file').withReader('UTF-8') { reader ->
 
 == Inner classes
 
-WARNING: The implementation of anonymous inner classes and nested classes follows the Java lead, but
-you should not take out the Java Language Spec and keep shaking the head
-about things that are different. The implementation done looks much like
-what we do for `groovy.lang.Closure`, with some benefits and some
-differences. Accessing private fields and methods for example can become
-a problem, but on the other hand local variables don’t have to be final.
+WARNING: The implementation of anonymous inner classes and nested classes follow Java closely,
+but there are some differences, e.g.
+local variables accessed from within such classes don't have to be final.
+We piggy-back on some implementation details we use for `groovy.lang.Closure`
+when generating inner class bytecode.
 
 === Static inner classes
 
-Here’s an example of static inner class:
+Here's an example of static inner class:
 
 [source,groovy]
 ---------------------
@@ -278,10 +285,12 @@ include::{projectdir}/src/spec/test/PrimitiveTest.groovy[tags=widening_vs_boxing
 
 == Behaviour of `==`
 
-In Java `==` means equality of primitive types or identity for objects.  In
-Groovy `==` translates to `a.compareTo(b)==0`, if they are `Comparable`, and
-`a.equals(b)` otherwise.  To check for identity, there is `is`.  E.g.
-`a.is(b)`.
+In Java `==` means equality of primitive types or identity for objects.
+In Groovy `==` means equality in all cases.
+It translates to `a.compareTo(b) == 0`, when evaluating equality for `Comparable` objects,
+and `a.equals(b)` otherwise.
+To check for identity (reference equality), use the `is` method: `a.is(b)`.
+From Groovy 3, you can also use the `===` operator (or negated version): `a === b` (or `c !== d`).
 
 == Conversions
 
@@ -342,10 +351,17 @@ Other conversions have their behavior defined by `java.lang.Number`.
 
 == Extra keywords
 
-There are a few more keywords in Groovy than in Java.  Don't use them for
-variable names etc.
+Groovy has many of the same keywords as Java and Groovy 3 also has the same `var` reserved type as Java.
+In addition, Groovy has the following keywords:
 
 * `as`
 * `def`
 * `in`
 * `trait`
+* `it` // within closures
+
+Groovy is less stringent than Java in that it allows some keywords to appear in places that would be illegal in Java,
+e.g. the following is valid: `var var = [def: 1, as: 2, in: 3, trait: 4]`.
+Never-the-less, you are discouraged from using the above keywords in places that might cause confusion even when
+the compiler might be happy. In particular, avoid using them for variable, method and class names,
+so our previous `var var` example would be considered poor style.

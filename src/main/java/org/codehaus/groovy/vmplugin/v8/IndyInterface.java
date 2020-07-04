@@ -48,6 +48,7 @@ import java.util.stream.Stream;
  */
 public class IndyInterface {
     private static final long INDY_OPTIMIZE_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.optimize.threshold", 100_000L);
+    private static final long INDY_FALLBACK_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.fallback.threshold", 100_000L);
 
     /**
      * flags for method and property calls
@@ -56,6 +57,7 @@ public class IndyInterface {
             SAFE_NAVIGATION = 1, THIS_CALL = 2,
             GROOVY_OBJECT = 4, IMPLICIT_THIS = 8,
             SPREAD_CALL = 16, UNCACHED_CALL = 32;
+    private static final MethodHandleWrapper NULL_METHOD_HANDLE_WRAPPER = MethodHandleWrapper.getNullMethodHandleWrapper();
 
     /**
      * Enum for easy differentiation between call types
@@ -250,19 +252,61 @@ public class IndyInterface {
         return mh.asCollector(Object[].class, type.parameterCount()).asType(type);
     }
 
+    private static class FallbackSupplier {
+        private final MutableCallSite callSite;
+        private final Class<?> sender;
+        private final String methodName;
+        private final int callID;
+        private final Boolean safeNavigation;
+        private final Boolean thisCall;
+        private final Boolean spreadCall;
+        private final Object dummyReceiver;
+        private final Object[] arguments;
+        private MethodHandleWrapper result;
+
+        FallbackSupplier(MutableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) {
+            this.callSite = callSite;
+            this.sender = sender;
+            this.methodName = methodName;
+            this.callID = callID;
+            this.safeNavigation = safeNavigation;
+            this.thisCall = thisCall;
+            this.spreadCall = spreadCall;
+            this.dummyReceiver = dummyReceiver;
+            this.arguments = arguments;
+        }
+
+        MethodHandleWrapper get() {
+            if (null == result) {
+                result = fallback(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
+            }
+
+            return result;
+        }
+    }
+
     /**
      * Get the cached methodhandle. if the related methodhandle is not found in the inline cache, cache and return it.
      */
     public static Object fromCache(MutableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
+        FallbackSupplier fallbackSupplier = new FallbackSupplier(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
+
         MethodHandleWrapper mhw =
                 doWithCallSite(
                         callSite, arguments,
                         (cs, receiver) ->
                                 cs.getAndPut(
                                         receiver.getClass().getName(),
-                                        c -> fallback(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments)
+                                        c -> {
+                                            MethodHandleWrapper fbMhw = fallbackSupplier.get();
+                                            return fbMhw.isCanSetTarget() ? fbMhw : NULL_METHOD_HANDLE_WRAPPER;
+                                        }
                                 )
                 );
+
+        if (NULL_METHOD_HANDLE_WRAPPER == mhw) {
+            mhw = fallbackSupplier.get();
+        }
 
         if (mhw.isCanSetTarget() && (callSite.getTarget() != mhw.getTargetMethodHandle()) && (mhw.getLatestHitCount() > INDY_OPTIMIZE_THRESHOLD)) {
             callSite.setTarget(mhw.getTargetMethodHandle());
@@ -285,7 +329,7 @@ public class IndyInterface {
 
             final MethodHandle defaultTarget = cacheableCallSite.getDefaultTarget();
             final long fallbackCount = cacheableCallSite.incrementFallbackCount();
-            if ((fallbackCount > INDY_OPTIMIZE_THRESHOLD) && (cacheableCallSite.getTarget() != defaultTarget)) {
+            if ((fallbackCount > INDY_FALLBACK_THRESHOLD) && (cacheableCallSite.getTarget() != defaultTarget)) {
                 cacheableCallSite.setTarget(defaultTarget);
                 if (LOG_ENABLED) LOG.info("call site target reset to default, preparing outside invocation");
 

@@ -17,6 +17,9 @@
  *  under the License.
  */
 import gls.CompilableTestSupport
+import groovy.text.StreamingTemplateEngine
+import groovy.text.Template
+import groovy.text.TemplateEngine
 
 class TemplateEnginesTest extends CompilableTestSupport {
 
@@ -190,6 +193,32 @@ The conference committee.'''
   </foo:to>
   How are you today?
 </document>
+'''
+    }
+
+    void testStreamingTemplateEngine_GROOVY9507() {
+        TemplateEngine engine = new StreamingTemplateEngine()
+        Template template = engine.createTemplate('''
+<ul>
+    <% items.each { %>
+    <li>${it}</li>
+    <% } %>
+</ul>
+''')
+
+        def result = template.make([items : [1,2,3,4]]).toString()
+        assert result == '''
+<ul>
+    
+    <li>1</li>
+    
+    <li>2</li>
+    
+    <li>3</li>
+    
+    <li>4</li>
+    
+</ul>
 '''
     }
 }

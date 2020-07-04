@@ -713,7 +713,7 @@ public class ConcurrentReaderHashMap
   public boolean containsValue(Object value) {
     if (value == null) throw new NullPointerException();
 
-    Entry tab[] = getTableForReading();
+    Entry[] tab = getTableForReading();
 
       for (Entry entry : tab) {
           for (Entry e = entry; e != null; e = e.next)
@@ -780,7 +780,7 @@ public class ConcurrentReaderHashMap
    * Removes all mappings from this map.
    */
   public synchronized void clear() {
-    Entry tab[] = table;
+    Entry[] tab = table;
     for (int i = 0; i < tab.length ; ++i) { 
 
       // must invalidate all to force concurrent get's to wait and then retry

@@ -60,7 +60,8 @@ public abstract class ProcessingUnit {
      * Initializes the ProcessingUnit to the empty state.
      */
     public ProcessingUnit(final CompilerConfiguration configuration, final GroovyClassLoader classLoader, final ErrorCollector errorCollector) {
-        setConfiguration(configuration != null ? configuration : CompilerConfiguration.DEFAULT); setClassLoader(classLoader);
+        setConfiguration(configuration != null ? configuration : CompilerConfiguration.DEFAULT);
+        setClassLoader(classLoader);
         this.errorCollector = errorCollector != null ? errorCollector : new ErrorCollector(getConfiguration());
         configure(getConfiguration());
     }

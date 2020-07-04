@@ -31,7 +31,7 @@ public class ConstructorSite extends MetaClassSite {
     final Class[] params;
     private final int version;
 
-    public ConstructorSite(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class params[]) {
+    public ConstructorSite(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class[] params) {
         super(site, metaClass);
         this.constructor = constructor;
         this.params = params;
@@ -74,7 +74,7 @@ public class ConstructorSite extends MetaClassSite {
      */
     public static class ConstructorSiteNoUnwrap extends ConstructorSite {
 
-        public ConstructorSiteNoUnwrap(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class params[]) {
+        public ConstructorSiteNoUnwrap(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class[] params) {
             super(site, metaClass, constructor, params);
         }
 
@@ -95,7 +95,7 @@ public class ConstructorSite extends MetaClassSite {
      */
     public static class ConstructorSiteNoUnwrapNoCoerce extends ConstructorSite {
 
-        public ConstructorSiteNoUnwrapNoCoerce(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class params[]) {
+        public ConstructorSiteNoUnwrapNoCoerce(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class[] params) {
             super(site, metaClass, constructor, params);
         }
 

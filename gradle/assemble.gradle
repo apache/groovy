@@ -173,25 +173,12 @@ allprojects {
             }
         }
     }
-    if (rootProject.indyCapable()) {
-        task jarWithIndy(type: Jar) {
-            dependsOn compileGroovyWithIndy
-            archiveClassifier = 'indy'
-            archiveAppendix = 'raw'
-            from sourceSets.main.java.outputDir
-            from sourceSets.main.groovy.outputDir
-            from compileGroovyWithIndy.destinationDir
-            from "${project.buildDir}/resources/main"
-        }
-        producedJars << jarWithIndy
-    }
     producedJars.each { arch ->
         arch.metaInf {
             from("$projectDir/licenses/LICENSE-JARJAR")
             from("$projectDir/licenses") {
                 into('licenses')
                 include('asm-license.txt')
-                include('antlr2-license.txt')
                 include('antlr4-license.txt')
             }
             from("$projectDir/notices/NOTICE-JARJAR")
@@ -223,7 +210,6 @@ allprojects {
                     'groovy/cli/picocli/OptionAccessor*.class'
             ]
             patterns = [
-                    'antlr.**': 'groovyjarjarantlr.@1', // antlr2
                     'org.antlr.**': 'groovyjarjarantlr4.@1', // antlr4
                     'org.objectweb.**': 'groovyjarjarasm.@1',
                     'picocli.**': 'groovyjarjarpicocli.@1'
@@ -291,9 +277,6 @@ allprojects {
 }
 
 def producedJars = [jar]
-if (rootProject.indyCapable()) {
-    producedJars << jarWithIndy
-}
 
 producedJars.each {
     it.dependsOn('dgmConverter')
@@ -392,12 +375,6 @@ ext.distSpec = copySpec {
         from project(':groovy-jaxb').configurations.jaxb
         from project(':groovy-jaxb').configurations.jaxbRuntime
     }
-    if (!rootProject.hasProperty('skipIndy')) {
-        into('indy') {
-            from jarjarWithIndy
-            from modules()*.jarjarWithIndy
-        }
-    }
     if (!rootProject.hasProperty('skipGrooid')) {
         into('grooid') {
             from { new File(jar.archivePath.parent, "${jar.baseName}-${jar.version}-grooid.jar") }
@@ -421,7 +398,6 @@ ext.distSpec = copySpec {
     }
     into('licenses') {
         from 'licenses'
-        include 'antlr2-license.txt'
         include 'antlr4-license.txt'
         include 'asm-license.txt'
         include 'hamcrest-license.txt'

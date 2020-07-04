@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import groovy.test.NotYetImplemented
 import groovy.transform.CompileStatic
 import org.junit.Test
 
@@ -43,7 +42,7 @@ final class StaticCompileFlowTypingTest {
         '''
     }
 
-    @NotYetImplemented @Test // GROOVY-9344
+    @Test // GROOVY-9344
     void testFlowTyping2() {
         assertScript '''
             class A {}
@@ -51,15 +50,33 @@ final class StaticCompileFlowTypingTest {
 
             @groovy.transform.CompileStatic
             String m() {
-                def var
-                var = new A()
+                def x = new A()
                 def c = { ->
-                    var = new B()
+                    x = new B()
+                    x.class.simpleName
                 }
                 c()
-                var.toString()
             }
-            assert m() != null
+            assert m() == 'B'
+        '''
+    }
+
+    @Test // GROOVY-9344
+    void testFlowTyping3() {
+        assertScript '''
+            class A {}
+            class B {}
+
+            @groovy.transform.CompileStatic
+            String m() {
+                def x = new A()
+                def c = { ->
+                    x = new B()
+                }
+                c()
+                x.class.simpleName
+            }
+            assert m() == 'B'
         '''
     }
 

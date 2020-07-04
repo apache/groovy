@@ -45,9 +45,12 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
+
 
 /**
  * Parse XML into a document tree that may be traversed similar to XPath
@@ -268,6 +271,10 @@ public class XmlSlurper extends DefaultHandler {
         return parse(new InputSource(uri));
     }
 
+    public GPathResult parse(final Path path) throws IOException, SAXException {
+       return parse(Files.newInputStream(path));
+    }
+
     /**
      * A helper method to parse the given text as XML
      *
@@ -339,11 +346,7 @@ public class XmlSlurper extends DefaultHandler {
      * @param base The URL used to resolve relative URLs
      */
     public void setEntityBaseUrl(final URL base) {
-        reader.setEntityResolver(new EntityResolver() {
-            public InputSource resolveEntity(final String publicId, final String systemId) throws IOException {
-                return new InputSource(new URL(base, systemId).openStream());
-            }
-        });
+        reader.setEntityResolver((publicId, systemId) -> new InputSource(new URL(base, systemId).openStream()));
     }
 
     /* (non-Javadoc)
@@ -420,7 +423,7 @@ public class XmlSlurper extends DefaultHandler {
         currentNode = newElement;
     }
 
-    public void ignorableWhitespace(char buffer[], int start, int len) throws SAXException {
+    public void ignorableWhitespace(char[] buffer, int start, int len) throws SAXException {
         if (keepIgnorableWhitespace) characters(buffer, start, len);
     }
 

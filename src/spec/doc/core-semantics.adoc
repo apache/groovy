@@ -463,7 +463,7 @@ As an example, you can specify a path to an object or element of interest:
 
 In both cases, the GPath expression can be viewed as a query on an object graph.  For POJOs, the object graph is most often built by the
 program being written through object instantiation and composition; for XML processing, the object graph is the result of `parsing`
-the XML text, most often with classes like XmlParser or XmlSlurper. See <<{projectdir}/subprojects/groovy-xml/{specfolder}/xml-userguide.adoc#Processing XML,Processing XML>>
+the XML text, most often with classes like XmlParser or XmlSlurper. See <<xml-userguide.adoc#Processing XML,Processing XML>>
 for more in-depth details on consuming XML in Groovy.
 
 [TIP]

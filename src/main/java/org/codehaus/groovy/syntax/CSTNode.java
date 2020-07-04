@@ -30,7 +30,6 @@ import java.io.Writer;
  * the result of parsing.  Note that the CSTNode is inextricably linked
  * with the Token in that every CSTNode has a Token as it's root.
  *
- * @see antlr.Parser
  * @see Token
  * @see org.codehaus.groovy.syntax.Reduction
  * @see org.codehaus.groovy.syntax.Types

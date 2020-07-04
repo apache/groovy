@@ -33,8 +33,12 @@ task asciidocAll(type: Copy) {
 def javadocSpec = {
     maxMemory = javaDoc_mx
     project.configure(options) {
+        if (JavaVersion.current().isJava9Compatible()) {
+            options.addBooleanOption('html5', true)
+        }
         windowTitle = doc.title
         docTitle = doc.title
+        classpath += project.file('src/main/java')
         locale = 'en_US'
         encoding = 'UTF-8'
         version = true
@@ -43,7 +47,7 @@ def javadocSpec = {
         source = '1.8'
         links('https://docs.oracle.com/javase/8/docs/api/', 'https://docs.oracle.com/javaee/7/api/',
                 'https://commons.apache.org/proper/commons-cli/javadocs/api-release/', 'https://junit.org/junit4/javadoc/latest/',
-                'https://docs.oracle.com/javaee/6/api/', 'https://www.antlr2.org/javadoc/')
+                'https://docs.oracle.com/javaee/6/api/')
     }
 }
 
@@ -60,7 +64,6 @@ def groovydocBaseSpec = {
     link 'https://docs.groovy-lang.org/docs/ant/api/', 'org.apache.ant.', 'org.apache.tools.ant.'
     link 'https://junit.org/junit4/javadoc/latest/', 'org.junit.', 'junit.'
     link 'https://junit.org/junit5/docs/current/api/', 'org.junit.jupiter.', 'org.junit.platform.'
-    link 'https://www.antlr2.org/javadoc/', 'antlr.'
     link 'https://www.antlr.org/api/Java/', 'org.antlr.v4.'
     link 'https://commons.apache.org/proper/commons-cli/javadocs/api-release/', 'org.apache.commons.cli.'
     link 'https://picocli.info/apidocs/', 'picocli.'
@@ -156,8 +159,8 @@ task docGDK {
                     arg(value: 'org.codehaus.groovy.runtime.ResourceGroovyMethods')
                     arg(value: 'org.codehaus.groovy.runtime.SocketGroovyMethods')
                     arg(value: 'org.codehaus.groovy.runtime.StringGroovyMethods')
-                    arg(value: 'org.codehaus.groovy.vmplugin.v5.PluginDefaultGroovyMethods')
                     arg(value: 'org.codehaus.groovy.vmplugin.v8.PluginDefaultGroovyMethods')
+                    arg(value: 'org.codehaus.groovy.vmplugin.v9.PluginDefaultGroovyMethods')
                     // TODO don't hard-code these
                     arg(value: 'subprojects/groovy-dateutil/src/main/java/org/apache/groovy/dateutil/extensions/DateUtilExtensions.java')
                     arg(value: 'subprojects/groovy-datetime/src/main/java/org/apache/groovy/datetime/extensions/DateTimeExtensions.java')
@@ -189,11 +192,9 @@ task docGDK {
 
 javadocAll.options.source = '1.8'
 
-if (JavaVersion.current().isJava8Compatible()) {
-    allprojects {
-        tasks.withType(Javadoc) {
-            // disable the crazy super-strict doclint tool in Java 8
-            options.addStringOption('Xdoclint:none', '-quiet')
-        }
+allprojects {
+    tasks.withType(Javadoc) {
+        // disable the crazy super-strict doclint tool in Java 8
+        options.addStringOption('Xdoclint:none', '-quiet')
     }
 }

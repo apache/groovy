@@ -49,6 +49,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
+import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
@@ -56,6 +57,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllMethods;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInterfacesAndSuperInterfaces;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
@@ -210,10 +212,10 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             String name = pNode.getField().getName();
             pNames.add(name);
             // add getter/setters since Groovy compiler hasn't added property accessors yet
-            String capitalized = Verifier.capitalize(name);
             if ((pNode.getModifiers() & ACC_FINAL) == 0) {
-                mNames.add("set" + capitalized);
+                mNames.add(getSetterName(name));
             }
+            String capitalized = capitalize(name);
             mNames.add("get" + capitalized);
             boolean isPrimBool = pNode.getOriginType().equals(ClassHelper.boolean_TYPE);
             if (isPrimBool) {

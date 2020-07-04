@@ -21,6 +21,15 @@ package org.codehaus.groovy.tools.groovydoc.testfiles;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * {@link GroovyInterface1#link() Groovy link}
+ * @see GroovyInterface1
+ */
 public abstract class JavaClassWithDiamond {
     public List<String> stringList = new ArrayList<>();
+    /**
+     * {@link GroovyInterface1#link() Groovy link}
+     * @see GroovyInterface1#link()
+     */
+    public abstract void link();
 }

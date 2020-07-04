@@ -185,7 +185,9 @@ public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
     }
 
     private String genericTypesAsString(NodeList<TypeParameter> typeParameters) {
-        return DefaultGroovyMethods.join(typeParameters, ", ");
+        if (typeParameters == null || typeParameters.size() == 0)
+            return "";
+        return "<" + DefaultGroovyMethods.join(typeParameters, ", ") + ">";
     }
 
     private SimpleGroovyClassDoc visit(TypeDeclaration<?> n) {
@@ -216,14 +218,21 @@ public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
 
     private void processAnnotations(SimpleGroovyProgramElementDoc element, NodeWithAnnotations<?> n) {
         for (AnnotationExpr an : n.getAnnotations()) {
-            element.addAnnotationRef(new SimpleGroovyAnnotationRef(an.getClass().getName(), an.getNameAsString()));
+            element.addAnnotationRef(new SimpleGroovyAnnotationRef(an.getNameAsString(), getAnnotationText(an)));
         }
     }
 
     private void processAnnotations(SimpleGroovyParameter param, NodeWithAnnotations<?> n) {
         for (AnnotationExpr an : n.getAnnotations()) {
-            param.addAnnotationRef(new SimpleGroovyAnnotationRef(an.getClass().getName(), an.getNameAsString()));
+            param.addAnnotationRef(new SimpleGroovyAnnotationRef(an.getNameAsString(), getAnnotationText(an)));
         }
+    }
+
+    private String getAnnotationText(final AnnotationExpr an) {
+        if (an != null && an.getTokenRange().isPresent()) {
+            return an.getTokenRange().get().toString();
+        }
+        return "";
     }
 
     private void setModifiers(NodeList<Modifier> modifiers, SimpleGroovyAbstractableElementDoc elementDoc) {
@@ -254,6 +263,7 @@ public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
     @Override
     public void visit(MethodDeclaration m, Object arg) {
         SimpleGroovyMethodDoc meth = new SimpleGroovyMethodDoc(m.getNameAsString(), currentClassDoc);
+        meth.setTypeParameters(genericTypesAsString(m.getTypeParameters()));
         meth.setReturnType(makeType(m.getType()));
         setConstructorOrMethodCommon(m, meth);
         currentClassDoc.add(meth);

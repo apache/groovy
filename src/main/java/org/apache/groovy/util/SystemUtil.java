@@ -31,7 +31,7 @@ public class SystemUtil {
         if (nameValue == null) throw new IllegalArgumentException("argument should not be null");
 
         String name, value;
-        int i = nameValue.indexOf("=");
+        int i = nameValue.indexOf('=');
 
         if (i == -1) {
             name = nameValue;

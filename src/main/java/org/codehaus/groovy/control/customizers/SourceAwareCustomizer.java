@@ -80,7 +80,7 @@ public class SourceAwareCustomizer extends DelegatingCustomizer {
     }
 
     public boolean accept(String fileName) {
-        int ext = fileName.lastIndexOf(".");
+        int ext = fileName.lastIndexOf('.');
         String baseName = ext<0?fileName:fileName.substring(0, ext);
         String extension = ext<0?"":fileName.substring(ext+1);
         return acceptExtension(extension) && acceptBaseName(baseName);

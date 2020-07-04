@@ -76,7 +76,7 @@ public @interface Log4j {
 
     Class<? extends LogASTTransformation.LoggingStrategy> loggingStrategy() default Log4jLoggingStrategy.class;
 
-    public static class Log4jLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategyV2 {
+    class Log4jLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategyV2 {
         private static final String LOGGER_NAME = "org.apache.log4j.Logger";
         private static final String PRIORITY_NAME = "org.apache.log4j.Priority";
 

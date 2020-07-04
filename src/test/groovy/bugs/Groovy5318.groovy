@@ -18,7 +18,6 @@
  */
 package groovy.bugs
 
-import org.codehaus.groovy.antlr.AntlrParserPluginFactory
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.Test
 
@@ -32,10 +31,6 @@ final class Groovy5318 {
             def a = new java.util<Integer>.ArrayList<ArrayList<Integer>>()
         '''
 
-        if (CompilerConfiguration.DEFAULT.pluginFactory instanceof AntlrParserPluginFactory) {
-            assert err =~ 'Unexpected type arguments found prior to: ArrayList'
-        } else {
-            assert err =~ 'Unexpected input: \'.\''
-        }
+        assert err =~ 'Unexpected input: \'.\''
     }
 }

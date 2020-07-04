@@ -45,18 +45,10 @@ public class FactorySupport {
     }
 
     public static DocumentBuilderFactory createDocumentBuilderFactory() throws ParserConfigurationException {
-        return (DocumentBuilderFactory) createFactory(new PrivilegedExceptionAction() {
-            public Object run() throws ParserConfigurationException {
-                return DocumentBuilderFactory.newInstance();
-            }
-        });
+        return (DocumentBuilderFactory) createFactory(DocumentBuilderFactory::newInstance);
     }
 
     public static SAXParserFactory createSaxParserFactory() throws ParserConfigurationException {
-        return (SAXParserFactory) createFactory(new PrivilegedExceptionAction() {
-                public Object run() throws ParserConfigurationException {
-                    return SAXParserFactory.newInstance();
-                }
-            });
+        return (SAXParserFactory) createFactory(SAXParserFactory::newInstance);
     }
 }
