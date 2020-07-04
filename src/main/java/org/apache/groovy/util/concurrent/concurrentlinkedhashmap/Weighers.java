@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A common set of {@link org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher} and {@link EntryWeigher} implementations.
+ * A common set of {@link Weigher} and {@link EntryWeigher} implementations.
  *
  * @see <a href="http://code.google.com/p/concurrentlinkedhashmap/">
  *      http://code.google.com/p/concurrentlinkedhashmap/</a>
@@ -41,10 +41,10 @@ public final class Weighers {
    * @return A entry weigher view of the specified weigher.
    */
   public static <K, V> EntryWeigher<K, V> asEntryWeigher(
-      final org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<? super V> weigher) {
+      final Weigher<? super V> weigher) {
     return (weigher == singleton())
         ? Weighers.entrySingleton()
-        : new EntryWeigherView<K, V>(weigher);
+        : new EntryWeigherView<>(weigher);
   }
 
   /**
@@ -67,8 +67,8 @@ public final class Weighers {
    * @return A weigher where a value takes one unit of capacity.
    */
   @SuppressWarnings({"cast", "unchecked"})
-  public static <V> org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<V> singleton() {
-    return (org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<V>) SingletonWeigher.INSTANCE;
+  public static <V> Weigher<V> singleton() {
+    return (Weigher<V>) SingletonWeigher.INSTANCE;
   }
 
   /**
@@ -86,7 +86,7 @@ public final class Weighers {
    *
    * @return A weigher where each byte takes one unit of capacity.
    */
-  public static org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<byte[]> byteArray() {
+  public static Weigher<byte[]> byteArray() {
     return ByteArrayWeigher.INSTANCE;
   }
 
@@ -105,8 +105,8 @@ public final class Weighers {
    * @return A weigher where each element takes one unit of capacity.
    */
   @SuppressWarnings({"cast", "unchecked"})
-  public static <E> org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<? super Iterable<E>> iterable() {
-    return (org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<Iterable<E>>) (org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<?>) IterableWeigher.INSTANCE;
+  public static <E> Weigher<? super Iterable<E>> iterable() {
+    return (Weigher<Iterable<E>>) (Weigher<?>) IterableWeigher.INSTANCE;
   }
 
   /**
@@ -123,8 +123,8 @@ public final class Weighers {
    * @return A weigher where each element takes one unit of capacity.
    */
   @SuppressWarnings({"cast", "unchecked"})
-  public static <E> org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<? super Collection<E>> collection() {
-    return (org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<Collection<E>>) (org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<?>) CollectionWeigher.INSTANCE;
+  public static <E> Weigher<? super Collection<E>> collection() {
+    return (Weigher<Collection<E>>) (Weigher<?>) CollectionWeigher.INSTANCE;
   }
 
   /**
@@ -141,8 +141,8 @@ public final class Weighers {
    * @return A weigher where each element takes one unit of capacity.
    */
   @SuppressWarnings({"cast", "unchecked"})
-  public static <E> org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<? super List<E>> list() {
-    return (org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<List<E>>) (org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<?>) ListWeigher.INSTANCE;
+  public static <E> Weigher<? super List<E>> list() {
+    return (Weigher<List<E>>) (Weigher<?>) ListWeigher.INSTANCE;
   }
 
   /**
@@ -159,8 +159,8 @@ public final class Weighers {
    * @return A weigher where each element takes one unit of capacity.
    */
   @SuppressWarnings({"cast", "unchecked"})
-  public static <E> org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<? super Set<E>> set() {
-    return (org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<Set<E>>) (org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<?>) SetWeigher.INSTANCE;
+  public static <E> Weigher<? super Set<E>> set() {
+    return (Weigher<Set<E>>) (Weigher<?>) SetWeigher.INSTANCE;
   }
 
   /**
@@ -177,15 +177,15 @@ public final class Weighers {
    * @return A weigher where each entry takes one unit of capacity.
    */
   @SuppressWarnings({"cast", "unchecked"})
-  public static <A, B> org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<? super Map<A, B>> map() {
-    return (org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<Map<A, B>>) (org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<?>) MapWeigher.INSTANCE;
+  public static <A, B> Weigher<? super Map<A, B>> map() {
+    return (Weigher<Map<A, B>>) (Weigher<?>) MapWeigher.INSTANCE;
   }
 
   static final class EntryWeigherView<K, V> implements EntryWeigher<K, V>, Serializable {
     static final long serialVersionUID = 1;
-    final org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<? super V> weigher;
+    final Weigher<? super V> weigher;
 
-    EntryWeigherView(org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<? super V> weigher) {
+    EntryWeigherView(Weigher<? super V> weigher) {
       ConcurrentLinkedHashMap.checkNotNull(weigher);
       this.weigher = weigher;
     }
@@ -205,7 +205,7 @@ public final class Weighers {
     }
   }
 
-  enum SingletonWeigher implements org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<Object> {
+  enum SingletonWeigher implements Weigher<Object> {
     INSTANCE;
 
     @Override
@@ -214,7 +214,7 @@ public final class Weighers {
     }
   }
 
-  enum ByteArrayWeigher implements org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<byte[]> {
+  enum ByteArrayWeigher implements Weigher<byte[]> {
     INSTANCE;
 
     @Override
@@ -223,7 +223,7 @@ public final class Weighers {
     }
   }
 
-  enum IterableWeigher implements org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<Iterable<?>> {
+  enum IterableWeigher implements Weigher<Iterable<?>> {
     INSTANCE;
 
     @Override
@@ -239,7 +239,7 @@ public final class Weighers {
     }
   }
 
-  enum CollectionWeigher implements org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<Collection<?>> {
+  enum CollectionWeigher implements Weigher<Collection<?>> {
     INSTANCE;
 
     @Override
@@ -248,7 +248,7 @@ public final class Weighers {
     }
   }
 
-  enum ListWeigher implements org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<List<?>> {
+  enum ListWeigher implements Weigher<List<?>> {
     INSTANCE;
 
     @Override
@@ -257,7 +257,7 @@ public final class Weighers {
     }
   }
 
-  enum SetWeigher implements org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<Set<?>> {
+  enum SetWeigher implements Weigher<Set<?>> {
     INSTANCE;
 
     @Override

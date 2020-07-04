@@ -545,7 +545,7 @@ import groovy.transform.stc.ClosureParams
             assert sum == 110
         '''
     }
-    
+
     void testInferenceForDGM_upto() {
         assertScript '''
             BigDecimal sum = 0
@@ -1338,6 +1338,93 @@ method()
             }
 
             assert foo() == ['FEE', 'FO']
+        '''
+    }
+
+    void testGroovy9518() {
+        assertScript '''
+            class C {
+                C(String s, Comparable<List<Integer>> c) {
+                }
+            }
+
+            new C('blah', { list -> list.get(0) })
+        '''
+    }
+
+    void testGroovy9518a() {
+        assertScript '''
+            class C {
+                C(String s, Comparable<List<Integer>> c) {
+                }
+            }
+
+            new C('blah', { it.get(0) })
+        '''
+    }
+
+    void testGroovy9518b() {
+        assertScript '''
+            import groovy.transform.stc.*
+
+            class C {
+                C(String s, @ClosureParams(value=SimpleType, options='java.util.List') Closure<Integer> c) {
+                }
+            }
+
+            new C('blah', { list -> list.get(0) })
+        '''
+    }
+
+    void testGroovy9597a() {
+        assertScript '''
+            import groovy.transform.stc.*
+
+            class A {
+                def <T> void proc(Collection<T> values, @ClosureParams(FirstParam.FirstGenericType) Closure<String> block) {
+                }
+            }
+
+            class B {
+                List<Integer> list
+                void test(A a) {
+                    a.proc(this.list) { it.toBigDecimal().toString() } // works
+                    a.with {
+                      proc(this.list) { it.toBigDecimal().toString() } // error
+                    }
+                }
+            }
+
+            new B().test(new A())
+        '''
+    }
+
+    void testGroovy9597b() {
+        assertScript '''
+            import groovy.transform.stc.*
+
+            class A {
+                static A of(@DelegatesTo(A) Closure x) {
+                    new A().tap {
+                        x.delegate = it
+                        x.call()
+                    }
+                }
+                def <T> void proc(Collection<T> values, @ClosureParams(FirstParam.FirstGenericType) Closure<String> block) {
+                }
+            }
+
+            class B {
+              List<Integer> list
+              A a = A.of {
+                  proc(
+                      this.list,
+                      { it.toBigDecimal().toString() } // Cannot find matching method java.lang.Object#toBigDecimal()
+                  )
+              }
+            }
+
+            new B()
         '''
     }
 }

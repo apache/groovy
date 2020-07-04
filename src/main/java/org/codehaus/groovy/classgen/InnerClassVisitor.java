@@ -170,7 +170,7 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
             // add one parameter for each expression in the constructor call
             Parameter param = new Parameter(ClassHelper.OBJECT_TYPE, "p" + additionalParamCount + i);
             parameters.add(param);
-            // add the corresponsing argument to the super constructor call
+            // add the corresponding argument to the super constructor call
             superCallArguments.add(new VariableExpression(param));
         }
 

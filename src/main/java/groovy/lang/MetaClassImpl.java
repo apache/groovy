@@ -212,7 +212,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param theClass The class
      * @param add      The methods
      */
-    public MetaClassImpl(MetaClassRegistry registry, final Class theClass, MetaMethod add[]) {
+    public MetaClassImpl(MetaClassRegistry registry, final Class theClass, MetaMethod[] add) {
         this(theClass, add);
         this.registry = registry;
         this.constructors = new FastArray(theCachedClass.getConstructors());
@@ -563,9 +563,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
 
             private String[] decomposeMopName(final String mopName) {
-                int idx = mopName.indexOf("$");
+                int idx = mopName.indexOf('$');
                 if (idx > 0) {
-                    int eidx = mopName.indexOf("$", idx + 1);
+                    int eidx = mopName.indexOf('$', idx + 1);
                     if (eidx > 0) {
                         return new String[]{
                                 mopName.substring(0, idx + 1),
@@ -620,7 +620,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private void inheritInterfaceNewMetaMethods(Set<CachedClass> interfaces) {
         // add methods declared by DGM for interfaces
         for (CachedClass cls : interfaces) {
-            MetaMethod methods[] = getNewMetaMethods(cls);
+            MetaMethod[] methods = getNewMetaMethods(cls);
             for (MetaMethod method : methods) {
                 boolean skip = false;
                 // skip DGM methods on an interface if the class already has the method
@@ -906,39 +906,42 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private Object invokeMissingMethod(Object instance, String methodName, Object[] arguments, RuntimeException original, boolean isCallToSuper) {
-        if (!isCallToSuper) {
-            Class instanceKlazz = instance.getClass();
-            if (theClass != instanceKlazz && theClass.isAssignableFrom(instanceKlazz))
-                instanceKlazz = theClass;
+        if (isCallToSuper) {
+            MetaClass metaClass = InvokerHelper.getMetaClass(theClass.getSuperclass());
+            return metaClass.invokeMissingMethod(instance, methodName, arguments);
+        }
 
-            Class[] argClasses = MetaClassHelper.castArgumentsToClassArray(arguments);
+        Class instanceKlazz = instance.getClass();
+        if (theClass != instanceKlazz && theClass.isAssignableFrom(instanceKlazz))
+            instanceKlazz = theClass;
 
-            MetaMethod method = findMixinMethod(methodName, argClasses);
+        Class[] argClasses = MetaClassHelper.castArgumentsToClassArray(arguments);
+
+        MetaMethod method = findMixinMethod(methodName, argClasses);
+        if (method != null) {
+            onMixinMethodFound(method);
+            return method.invoke(instance, arguments);
+        }
+
+        method = findMethodInClassHierarchy(instanceKlazz, methodName, argClasses, this);
+        if (method != null) {
+            onSuperMethodFoundInHierarchy(method);
+            return method.invoke(instance, arguments);
+        }
+
+        // still not method here, so see if there is an invokeMethod method up the hierarchy
+        final Class[] invokeMethodArgs = {String.class, Object[].class};
+        method = findMethodInClassHierarchy(instanceKlazz, INVOKE_METHOD_METHOD, invokeMethodArgs, this);
+        if (method instanceof ClosureMetaMethod) {
+            onInvokeMethodFoundInHierarchy(method);
+            return method.invoke(instance, invokeMethodArgs);
+        }
+
+        // last resort look in the category
+        if (method == null && GroovyCategorySupport.hasCategoryInCurrentThread()) {
+            method = getCategoryMethodMissing(instanceKlazz);
             if (method != null) {
-                onMixinMethodFound(method);
-                return method.invoke(instance, arguments);
-            }
-
-            method = findMethodInClassHierarchy(instanceKlazz, methodName, argClasses, this);
-            if (method != null) {
-                onSuperMethodFoundInHierarchy(method);
-                return method.invoke(instance, arguments);
-            }
-
-            // still not method here, so see if there is an invokeMethod method up the hierarchy
-            final Class[] invokeMethodArgs = {String.class, Object[].class};
-            method = findMethodInClassHierarchy(instanceKlazz, INVOKE_METHOD_METHOD, invokeMethodArgs, this);
-            if (method instanceof ClosureMetaMethod) {
-                onInvokeMethodFoundInHierarchy(method);
-                return method.invoke(instance, invokeMethodArgs);
-            }
-
-            // last resort look in the category
-            if (method == null && GroovyCategorySupport.hasCategoryInCurrentThread()) {
-                method = getCategoryMethodMissing(instanceKlazz);
-                if (method != null) {
-                    return method.invoke(instance, new Object[]{methodName, arguments});
-                }
+                return method.invoke(instance, new Object[]{methodName, arguments});
             }
         }
 
@@ -2893,13 +2896,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * Retrieves the value of an attribute (field). This method is to support the Groovy runtime and not for general client API usage.
      *
      * @param sender      The class of the object that requested the attribute
-     * @param receiver    The instance
-     * @param messageName The name of the attribute
+     * @param object      The instance
+     * @param attribute   The name of the attribute
      * @param useSuper    Whether to look-up on the super class or not
      * @return The attribute value
      */
-    public Object getAttribute(Class sender, Object receiver, String messageName, boolean useSuper) {
-        return getAttribute(receiver, messageName);
+    public Object getAttribute(final Class sender, final Object object, final String attribute, final boolean useSuper) {
+        return getAttribute(sender, object, attribute, useSuper, false);
     }
 
     /**
@@ -2912,7 +2915,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param fromInsideClass Whether the call was invoked from the inside or the outside of the class.
      * @return The attribute value
      */
-    public Object getAttribute(Class sender, Object object, String attribute, boolean useSuper, boolean fromInsideClass) {
+    public Object getAttribute(final Class sender, final Object object, final String attribute, final boolean useSuper, final boolean fromInsideClass) {
         checkInitalised();
 
         boolean isStatic = theClass != Class.class && object instanceof Class;
@@ -2936,7 +2939,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
 
-        throw new MissingFieldException(attribute, theClass);
+        throw new MissingFieldException(attribute, !useSuper ? theClass : theClass.getSuperclass());
     }
 
     /**
@@ -2953,7 +2956,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param useSuper        Whether the call is to a super class property
      * @param fromInsideClass Whether the call was invoked from the inside or the outside of the class
      */
-    public void setAttribute(Class sender, Object object, String attribute, Object newValue, boolean useSuper, boolean fromInsideClass) {
+    public void setAttribute(final Class sender, final Object object, final String attribute, final Object newValue, final boolean useSuper, final boolean fromInsideClass) {
         checkInitalised();
 
         boolean isStatic = theClass != Class.class && object instanceof Class;
@@ -2976,7 +2979,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
 
-        throw new MissingFieldException(attribute, theClass);
+        throw new MissingFieldException(attribute, !useSuper ? theClass : theClass.getSuperclass());
     }
 
     /**
@@ -3135,6 +3138,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return initialized;
     }
 
+    protected void setInitialized(boolean initialized) {
+        this.initialized = initialized;
+    }
+
     /**
      * @return {@code false}: add method
      *         {@code null} : ignore method
@@ -3165,7 +3172,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return;
         }
 
-        Object data[] = list.getArray();
+        Object[] data = list.getArray();
         for (int j = 0; j != len; ++j) {
             MetaMethod aMethod = (MetaMethod) data[j];
             Boolean match = getMatchKindForCategory(aMethod, method);
@@ -3213,7 +3220,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (methods instanceof FastArray) {
             FastArray m = (FastArray) methods;
             final int len = m.size;
-            final Object data[] = m.getArray();
+            final Object[] data = m.getArray();
             for (int i = 0; i != len; ++i) {
                 MetaMethod method = (MetaMethod) data[i];
                 if (method.isMethod(aMethod)) {
@@ -3274,7 +3281,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             Object matchingMethods = null;
 
             final int len = methods.size;
-            Object data[] = methods.getArray();
+            Object[] data = methods.getArray();
             for (int i = 0; i != len; ++i) {
                 Object method = data[i];
 
@@ -3391,7 +3398,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 // Introspection failure...
                 // May happen in Android
             }
-            initialized = true;
+            setInitialized(true);
         }
     }
 
@@ -3842,7 +3849,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param attribute The name of the attribute
      * @return The attribute value
      */
-    public Object getAttribute(Object object, String attribute) {
+    public Object getAttribute(final Object object, final String attribute) {
         return getAttribute(theClass, object, attribute, false, false);
     }
 
@@ -3853,7 +3860,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param attribute The name of the attribute
      * @param newValue  The new value of the attribute
      */
-    public void setAttribute(Object object, String attribute, Object newValue) {
+    public void setAttribute(final Object object, final String attribute, final Object newValue) {
         setAttribute(theClass, object, attribute, newValue, false, false);
     }
 

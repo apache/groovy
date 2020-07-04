@@ -120,8 +120,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testExpressionWhiteList() {
-        customizer.expressionsWhitelist = [BinaryExpression, ConstantExpression]
+    void testAllowedExpressions() {
+        customizer.allowedExpressions = [BinaryExpression, ConstantExpression]
         def shell = new GroovyShell(configuration)
         shell.evaluate('1+1')
         assert hasSecurityException {
@@ -133,8 +133,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testExpressionBlackList() {
-        customizer.expressionsBlacklist = [MethodCallExpression]
+    void testDisallowedExpressions() {
+        customizer.disallowedExpressions = [MethodCallExpression]
         def shell = new GroovyShell(configuration)
         shell.evaluate('1+1')
         assert hasSecurityException {
@@ -148,8 +148,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testTokenWhiteList() {
-        customizer.tokensWhitelist = [Types.PLUS, Types.MINUS]
+    void testAllowedTokens() {
+        customizer.allowedTokens = [Types.PLUS, Types.MINUS]
         def shell = new GroovyShell(configuration)
         shell.evaluate('1+1;1-1')
         assert hasSecurityException {
@@ -160,8 +160,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testTokenBlackList() {
-        customizer.tokensBlacklist = [Types.PLUS_PLUS]
+    void testDisallowedTokens() {
+        customizer.disallowedTokens = [Types.PLUS_PLUS]
         def shell = new GroovyShell(configuration)
         shell.evaluate('1+1;1-1')
         assert hasSecurityException {
@@ -172,8 +172,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testImportWhiteList() {
-        customizer.importsWhitelist = ['java.util.ArrayList']
+    void testAllowedImports() {
+        customizer.allowedImports = ['java.util.ArrayList']
         def shell = new GroovyShell(configuration)
         shell.evaluate('''
             import java.util.ArrayList
@@ -188,8 +188,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testStarImportWhiteList1() {
-        customizer.starImportsWhitelist = ['java.util.*']
+    void testAllowedStarImports1() {
+        customizer.allowedStarImports = ['java.util.*']
         def shell = new GroovyShell(configuration)
         shell.evaluate('''
             import java.util.ArrayList
@@ -212,8 +212,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testStarImportWhiteList2() {
-        customizer.starImportsWhitelist = ['java.**']
+    void testAllowedStarImports2() {
+        customizer.allowedStarImports = ['java.**']
         def shell = new GroovyShell(configuration)
         shell.evaluate('''
             import java.lang.Object
@@ -236,9 +236,9 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testStarImportWhiteListWithImportWhiteList() {
-        customizer.importsWhitelist = ['java.util.concurrent.atomic.AtomicInteger']
-        customizer.starImportsWhitelist = ['java.util.*']
+    void testAllowedStarImportsWithAllowedImports() {
+        customizer.allowedImports = ['java.util.concurrent.atomic.AtomicInteger']
+        customizer.allowedStarImports = ['java.util.*']
         def shell = new GroovyShell(configuration)
         shell.evaluate('''
             import java.util.ArrayList
@@ -257,8 +257,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testImportBlackList() {
-        customizer.importsBlacklist = ['java.util.LinkedList']
+    void testDisallowedImports() {
+        customizer.disallowedImports = ['java.util.LinkedList']
         def shell = new GroovyShell(configuration)
         shell.evaluate('''
             import java.util.ArrayList
@@ -273,8 +273,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testStarImportBlackList1() {
-        customizer.starImportsBlacklist = ['java.lang.*']
+    void testDisallowedStarImports1() {
+        customizer.disallowedStarImports = ['java.lang.*']
         def shell = new GroovyShell(configuration)
         shell.evaluate('''
             import java.util.LinkedList
@@ -291,8 +291,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testStarImportBlackList2() {
-        customizer.starImportsBlacklist = ['java.**']
+    void testDisallowedStarImports2() {
+        customizer.disallowedStarImports = ['java.**']
         def shell = new GroovyShell(configuration)
         shell.evaluate('''
             import javax.swing.Action
@@ -313,9 +313,9 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testStarImportBlackListWithImportBlackList() {
-        customizer.importsBlacklist = ['java.util.concurrent.atomic.AtomicBoolean']
-        customizer.starImportsBlacklist = ['java.util.*']
+    void testDisallowedStarImportsWithDisallowedImports() {
+        customizer.disallowedImports = ['java.util.concurrent.atomic.AtomicBoolean']
+        customizer.disallowedStarImports = ['java.util.*']
         def shell = new GroovyShell(configuration)
         assert hasSecurityException {
             shell.evaluate('''
@@ -336,8 +336,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testIndirectImportWhiteList() {
-        customizer.importsWhitelist = ['java.util.ArrayList']
+    void testAllowedIndirectImports() {
+        customizer.allowedImports = ['java.util.ArrayList']
         customizer.indirectImportCheckEnabled = true
         def shell = new GroovyShell(configuration)
         shell.evaluate('''
@@ -357,8 +357,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testIndirectStarImportWhiteList() {
-        customizer.starImportsWhitelist = ['java.util.*']
+    void testAllowedIndirectStarImports() {
+        customizer.allowedStarImports = ['java.util.*']
         customizer.indirectImportCheckEnabled = true
         def shell = new GroovyShell(configuration)
         shell.evaluate('''
@@ -381,8 +381,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testStaticImportWhiteList() {
-        customizer.staticImportsWhitelist = ['java.lang.Math.PI']
+    void testAllowedStaticImports() {
+        customizer.allowedStaticImports = ['java.lang.Math.PI']
         def shell = new GroovyShell(configuration)
         shell.evaluate('''
             import static java.lang.Math.PI
@@ -398,8 +398,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testStaticStarImportWhiteList1() {
-        customizer.staticStarImportsWhitelist = ['java.lang.Math.*']
+    void testAllowedStaticStarImports1() {
+        customizer.allowedStaticStarImports = ['java.lang.Math.*']
         def shell = new GroovyShell(configuration)
         shell.evaluate('''
             import static java.lang.Math.PI
@@ -415,8 +415,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testStaticStarImportWhiteList2() {
-        customizer.staticStarImportsWhitelist = ['java.lang.**']
+    void testAllowedStaticStarImports2() {
+        customizer.allowedStaticStarImports = ['java.lang.**']
         def shell = new GroovyShell(configuration)
         shell.evaluate('''
             import static java.lang.Math.PI
@@ -432,8 +432,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testStaticStarImportBlackList1() {
-        customizer.staticStarImportsBlacklist = ['java.lang.**']
+    void testDisallowedStaticStarImports1() {
+        customizer.disallowedStaticStarImports = ['java.lang.**']
         def shell = new GroovyShell(configuration)
         assert hasSecurityException {
             shell.evaluate('''
@@ -450,7 +450,7 @@ final class SecureASTCustomizerTest {
 
     @Test
     void testIndirectStaticImport() {
-        customizer.staticImportsWhitelist = ['java.lang.Math.PI']
+        customizer.allowedStaticImports = ['java.lang.Math.PI']
         customizer.indirectImportCheckEnabled = true
         def shell = new GroovyShell(configuration)
         assert hasSecurityException {
@@ -460,7 +460,7 @@ final class SecureASTCustomizerTest {
 
     @Test
     void testIndirectStaticStarImport() {
-        customizer.staticStarImportsWhitelist = ['java.lang.Math.*']
+        customizer.allowedStaticStarImports = ['java.lang.Math.*']
         customizer.indirectImportCheckEnabled = true
         def shell = new GroovyShell(configuration)
         shell.evaluate('java.lang.Math.cos(1)')
@@ -470,8 +470,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testConstantTypeWhiteList() {
-        customizer.constantTypesClassesWhiteList = [Integer.TYPE]
+    void testAllowedConstantTypes() {
+        customizer.allowedConstantTypesClasses = [Integer.TYPE]
         def shell = new GroovyShell(configuration)
         shell.evaluate('1')
         assert hasSecurityException {
@@ -483,8 +483,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testConstantTypeBlackList() {
-        customizer.constantTypesClassesBlackList = [String]
+    void testDisallowedConstantTypes() {
+        customizer.disallowedConstantTypesClasses = [String]
         def shell = new GroovyShell(configuration)
         shell.evaluate('1')
         shell.evaluate('2d')
@@ -494,8 +494,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testReceiverWhiteList() {
-        customizer.receiversClassesWhiteList = [Integer.TYPE]
+    void testAllowedReceivers() {
+        customizer.allowedReceiversClasses = [Integer.TYPE]
         def shell = new GroovyShell(configuration)
         shell.evaluate('1.plus(1)')
         assert hasSecurityException {
@@ -507,8 +507,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testReceiverBlackList() {
-        customizer.receiversClassesBlackList = [String]
+    void testDisallowedReceivers() {
+        customizer.disallowedReceiversClasses = [String]
         def shell = new GroovyShell(configuration)
         shell.evaluate('1.plus(1)')
         shell.evaluate('2.0.multiply(4)')
@@ -518,8 +518,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testReceiverWhiteListWithStaticMethod() {
-        customizer.receiversClassesWhiteList = [Integer.TYPE]
+    void testAllowedReceiversWithStaticMethod() {
+        customizer.allowedReceiversClasses = [Integer.TYPE]
         def shell = new GroovyShell(configuration)
         shell.evaluate('1.plus(1)')
         assert hasSecurityException {
@@ -528,8 +528,8 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testReceiverBlackListWithStaticMethod() {
-        customizer.receiversClassesBlackList = [Math]
+    void testDisallowedReceiversWithStaticMethod() {
+        customizer.disallowedReceiversClasses = [Math]
         def shell = new GroovyShell(configuration)
         shell.evaluate('1.plus(1)')
         shell.evaluate('Collections.sort([])')
@@ -540,7 +540,7 @@ final class SecureASTCustomizerTest {
 
     @Test // GROOVY-4978
     void testVisitMethodBody() {
-        customizer.importsBlacklist = [
+        customizer.disallowedImports = [
                 "java.lang.System",
                 "groovy.lang.GroovyShell",
                 "groovy.lang.GroovyClassLoader"]
@@ -565,12 +565,12 @@ final class SecureASTCustomizerTest {
     }
 
     @Test // GROOVY-6153
-    void testDeterministicWhitelistBehaviour() {
-        def classWhiteList = ["java.lang.Object", "test"]
+    void testDeterministicAllowedListBehaviour() {
+        def allowedClasses = ["java.lang.Object", "test"]
         customizer.with {
             setIndirectImportCheckEnabled(true);
-            setImportsWhitelist(classWhiteList);
-            setReceiversWhiteList(classWhiteList);
+            setAllowedImports(allowedClasses);
+            setAllowedReceivers(allowedClasses);
             setPackageAllowed(true);
             setClosuresAllowed(true);
             setMethodDefinitionAllowed(true);
@@ -584,12 +584,12 @@ final class SecureASTCustomizerTest {
     }
 
     @Test // GROOVY-6153
-    void testDeterministicWhitelistBehaviour2() {
-        def classWhiteList = ["java.lang.Object", "test"]
+    void testDeterministicAllowedListBehaviour2() {
+        def allowedClasses = ["java.lang.Object", "test"]
         customizer.with {
             setIndirectImportCheckEnabled(true);
-            setConstantTypesWhiteList(classWhiteList);
-            setReceiversWhiteList(classWhiteList);
+            setAllowedConstantTypes(allowedClasses);
+            setAllowedReceivers(allowedClasses);
             setPackageAllowed(true);
             setClosuresAllowed(true);
             setMethodDefinitionAllowed(true);
@@ -603,9 +603,9 @@ final class SecureASTCustomizerTest {
     }
 
     @Test // GROOVY-8135
-    void testStarImportsWhiteListWithIndirectImportCheckEnabled() {
+    void testStarImportsAllowedListWithIndirectImportCheckEnabled() {
         customizer.indirectImportCheckEnabled = true
-        customizer.starImportsWhitelist = ['java.lang']
+        customizer.allowedStarImports = ['java.lang']
         def shell = new GroovyShell(configuration)
         shell.evaluate('Object object = new Object()')
         shell.evaluate('Object object = new Object(); object.hashCode()')

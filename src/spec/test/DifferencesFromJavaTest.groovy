@@ -48,15 +48,20 @@ assertEquals(1, result);
         shouldFail {
             assertScript '''
                 // tag::arraycreate_fail[]
-                int[] array = {1, 2, 3}
+                int[] array = {1, 2, 3};             // Java array initializer shorthand syntax
+                int[] array2 = new int[] {4, 5, 6};  // Java array initializer long syntax
                 // end::arraycreate_fail[]
             '''
         }
         assertScript '''
             // tag::arraycreate_success[]
             int[] array = [1, 2, 3]
-            int[] array2 = new int[] {1, 2, 3} // Groovy 3.0.0 supports the Java-style array initialization
             // end::arraycreate_success[]
+            assert array instanceof int[]
+            // tag::arraycreate3_success[]
+            def array2 = new int[] {1, 2, 3} // Groovy 3.0+ supports the Java-style array initialization long syntax
+            // end::arraycreate3_success[]
+            assert array2 instanceof int[]
         '''
     }
 

@@ -26,14 +26,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Method annotation used to invert test case results. If a JUnit 3/4 test case method is
- * annotated with {@code @NotYetImplemented} the test will fail if no test failure occurs and it will pass
- * if a test failure occurs.
+ * Method annotation used to invert test case results. If a JUnit 3/4/5 test case method is
+ * annotated with {@code @NotYetImplemented}, the test will fail if no test failure occurs
+ * and it will pass if a test failure occurs.
  * <p>
  * This is helpful for tests that don't currently work but should work one day,
  * when the tested functionality has been implemented.
  * <p>
- * The idea for this AST transformation originated in {@link groovy.test.GroovyTestCase#notYetImplemented()}.
+ * Note: JUnit 3 users should use the optional {@code exception} attribute, e.g. {@code @NotYetImplemented(exception=junit.framework.AssertionFailedError)}.
  *
  * @since 3.0.0
  */
@@ -42,4 +42,11 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD})
 @GroovyASTTransformationClass("org.apache.groovy.test.transform.NotYetImplementedASTTransformation")
 public @interface NotYetImplemented {
+    /**
+     * If defined, tests which unexpectedly pass will throw this exception.
+     * The supplied exception class should have a constructor variant accepting a single String error message.
+     *
+     * @since 3.0.3
+     */
+    Class<? extends AssertionError> exception() default AssertionError.class;
 }

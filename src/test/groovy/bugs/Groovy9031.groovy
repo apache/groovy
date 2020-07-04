@@ -28,7 +28,10 @@ final class Groovy9031 {
     void testGenerics() {
         def config = new CompilerConfiguration(
             targetDirectory: File.createTempDir(),
-            jointCompilationOptions: [stubDir: File.createTempDir()]
+            jointCompilationOptions: [
+                    stubDir: File.createTempDir(),
+                    keepStubs: true   // keep stubs to read the stubs later in this test
+            ]
         )
 
         def parentDir = File.createTempDir()

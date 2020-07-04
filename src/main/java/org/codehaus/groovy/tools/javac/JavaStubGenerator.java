@@ -75,6 +75,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
@@ -152,21 +153,46 @@ public class JavaStubGenerator {
                 ),
                 Charset.forName(encoding)
         );
-        generateStubContent(classNode, writer);
+        if (classNode.getNameWithoutPackage().equals("package-info")) {
+            // should just output the package statement
+            try (PrintWriter out = new PrintWriter(writer)) {
+                printPackage(out, classNode);
+            }
+        } else {
+            generateStubContent(classNode, writer);
+        }
 
         javaStubCompilationUnitSet.add(new RawJavaFileObject(createJavaStubFile(fileName).toPath().toUri()));
     }
 
     private void generateStubContent(ClassNode classNode, Writer writer) {
         try (PrintWriter out = new PrintWriter(writer)) {
-            String packageName = classNode.getPackageName();
-            if (packageName != null) {
-                out.println("package " + packageName + ";\n");
-            }
-
+            printPackage(out, classNode);
             printImports(out, classNode);
             printClassContents(out, classNode);
         }
+    }
+
+    private void printPackage(PrintWriter out, ClassNode classNode) {
+        String packageName = classNode.getPackageName();
+        if (packageName != null) {
+            printAnnotations(out, classNode.getPackage());
+            out.println("package " + packageName + ";\n");
+        }
+    }
+
+    private static Iterable<ClassNode> findTraits(ClassNode node) {
+        Set<ClassNode> traits = new LinkedHashSet<>();
+
+        LinkedList<ClassNode> todo = new LinkedList<>();
+        Collections.addAll(todo, node.getInterfaces());
+        while (!todo.isEmpty()) {
+            ClassNode next = todo.removeLast();
+            if (Traits.isTrait(next)) traits.add(next);
+            Collections.addAll(todo, next.getInterfaces());
+        }
+
+        return traits;
     }
 
     private void printClassContents(PrintWriter out, ClassNode classNode) {
@@ -192,20 +218,6 @@ public class JavaStubGenerator {
                             traitProperty.setType(traitPropertyType);
                         }
                     }
-                }
-
-                private Iterable<ClassNode> findTraits(ClassNode node) {
-                    Set<ClassNode> traits = new LinkedHashSet<>();
-
-                    LinkedList<ClassNode> todo = new LinkedList<>();
-                    Collections.addAll(todo, node.getInterfaces());
-                    while (!todo.isEmpty()) {
-                        ClassNode next = todo.removeLast();
-                        if (Traits.isTrait(next)) traits.add(next);
-                        Collections.addAll(todo, next.getInterfaces());
-                    }
-
-                    return traits;
                 }
 
                 @Override
@@ -309,7 +321,7 @@ public class JavaStubGenerator {
 
             String className = classNode.getNameWithoutPackage();
             if (classNode instanceof InnerClassNode)
-                className = className.substring(className.lastIndexOf("$") + 1);
+                className = className.substring(className.lastIndexOf('$') + 1);
             out.println(className);
             printGenericsBounds(out, classNode, true);
 
@@ -379,9 +391,12 @@ public class JavaStubGenerator {
         }
 
         // print the methods from traits
-        for (ClassNode trait : Traits.findTraits(classNode)) {
+        for (ClassNode trait : findTraits(classNode)) {
+            Map<String, ClassNode> generics = trait.isUsingGenerics() ? createGenericsSpec(trait) : null;
             List<MethodNode> traitMethods = trait.getMethods();
-            for (MethodNode traitMethod : traitMethods) {
+            for (MethodNode traitOrigMethod : traitMethods) {
+                // GROOVY-9606: replace method return type and parameter type placeholder with resolved type from trait generics
+                MethodNode traitMethod = correctToGenericsSpec(generics, traitOrigMethod);
                 MethodNode existingMethod = classNode.getMethod(traitMethod.getName(), traitMethod.getParameters());
                 if (existingMethod != null) continue;
                 for (MethodNode propertyMethod : propertyMethods) {
@@ -539,7 +554,7 @@ public class JavaStubGenerator {
         out.print("public "); // temporary hack
         String className = clazz.getNameWithoutPackage();
         if (clazz instanceof InnerClassNode)
-            className = className.substring(className.lastIndexOf("$") + 1);
+            className = className.substring(className.lastIndexOf('$') + 1);
         out.println(className);
 
         printParams(out, constructorNode);
@@ -1023,7 +1038,8 @@ public class JavaStubGenerator {
     }
 
     public void clean() {
-        javaStubCompilationUnitSet.stream().peek(FileObject::delete);
+        // DON'T replace `collect(Collectors.counting())` with `count()` here, otherwise peek will NOT be triggered
+        javaStubCompilationUnitSet.stream().peek(FileObject::delete).collect(Collectors.counting());
         javaStubCompilationUnitSet.clear();
     }
 

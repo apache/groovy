@@ -33,9 +33,11 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.tools.groovydoc.LinkArgument;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyAnnotationRef;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc;
@@ -100,7 +102,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         if (node instanceof InnerClassNode) {
             name = name.replace('$', '.');
         }
-        currentClassDoc = new SimpleGroovyClassDoc(imports, aliases, name, links);
+        currentClassDoc = new SimpleGroovyClassDoc(withDefaultImports(imports), aliases, name, links);
         if (node.isEnum()) {
             currentClassDoc.setTokenType(SimpleGroovyDoc.ENUM_DEF);
         } else if (node.isAnnotationDefinition()) {
@@ -137,15 +139,8 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
         super.visitClass(node);
         SimpleGroovyClassDoc parent = currentClassDoc;
-        boolean explicitCons = false;
-        for (GroovyMethodDoc meth : currentClassDoc.methods()) {
-            if (meth instanceof SimpleGroovyConstructorDoc) {
-                explicitCons = true;
-                break;
-            }
-        }
-        if (!explicitCons) {
-            // add default no-arg constructor
+        if (currentClassDoc.isClass() && currentClassDoc.constructors().length == 0) {
+            // add default no-arg constructor, but not for interfaces, traits, enums, or annotation definitions
             SimpleGroovyConstructorDoc cons = new SimpleGroovyConstructorDoc(name, currentClassDoc);
             cons.setPublic(true);
             currentClassDoc.add(cons);
@@ -156,6 +151,15 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
             parent.addNested(currentClassDoc);
             currentClassDoc = parent;
         }
+    }
+
+    private List<String> withDefaultImports(List<String> imports) {
+        imports = imports != null ? imports : new ArrayList<>();
+        imports.add(packagePath + "/*");  // everything in this package
+        for (String pkg : ResolveVisitor.DEFAULT_IMPORTS) {
+            imports.add(pkg.replace('.', '/') + "*");
+        }
+        return imports;
     }
 
     private static final Pattern JAVADOC_COMMENT_PATTERN = Pattern.compile("(?s)/\\*\\*(.*?)\\*/");
@@ -174,14 +178,14 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     private void processAnnotations(SimpleGroovyProgramElementDoc element, AnnotatedNode node) {
         for (AnnotationNode an : node.getAnnotations()) {
             String name = an.getClassNode().getName();
-            element.addAnnotationRef(new SimpleGroovyAnnotationRef(name, name));
+            element.addAnnotationRef(new SimpleGroovyAnnotationRef(name, an.getText()));
         }
     }
 
     private void processAnnotations(SimpleGroovyParameter param, AnnotatedNode node) {
         for (AnnotationNode an : node.getAnnotations()) {
             String name = an.getClassNode().getName();
-            param.addAnnotationRef(new SimpleGroovyAnnotationRef(name, name));
+            param.addAnnotationRef(new SimpleGroovyAnnotationRef(name, an.getText()));
         }
     }
 
@@ -195,6 +199,8 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitMethod(MethodNode node) {
+        if (currentClassDoc.isEnum() && "$INIT".equals(node.getName()))
+            return;
         SimpleGroovyMethodDoc meth = new SimpleGroovyMethodDoc(node.getName(), currentClassDoc);
         meth.setReturnType(new SimpleGroovyType(makeType(node.getReturnType())));
         setConstructorOrMethodCommon(node, meth);
@@ -205,19 +211,9 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     }
 
     private String genericTypesAsString(GenericsType[] genericsTypes) {
-        if (genericsTypes == null) return "";
-        StringBuilder result = new StringBuilder("<");
-        boolean first = true;
-        for (GenericsType genericsType : genericsTypes) {
-            if (!first) {
-                result.append(", ");
-            } else {
-                first = false;
-            }
-            result.append(genericsType.getName());
-        }
-        result.append(">");
-        return result.toString();
+        if (genericsTypes == null || genericsTypes.length == 0)
+            return "";
+        return "<" + DefaultGroovyMethods.join(genericsTypes, ", ") + ">";
     }
 
     private void processPropertiesFromGetterSetter(SimpleGroovyMethodDoc currentMethodDoc) {
@@ -287,18 +283,23 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         String name = node.getName();
         SimpleGroovyFieldDoc fieldDoc = new SimpleGroovyFieldDoc(name, currentClassDoc);
         fieldDoc.setType(new SimpleGroovyType(makeType(node.getType())));
-        int mods = node.getField().getModifiers();
+        int mods = node.getModifiers();
         if (!hasAnno(node.getField(), "PackageScope")) {
             processModifiers(fieldDoc, node.getField(), mods);
             Groovydoc groovydoc = node.getGroovydoc();
             fieldDoc.setRawCommentText(groovydoc == null ? "" : getDocContent(groovydoc));
             currentClassDoc.addProperty(fieldDoc);
         }
+        processAnnotations(fieldDoc, node.getField());
         super.visitProperty(node);
     }
 
     private String makeType(ClassNode node) {
-        return node.getName().replace('.', '/').replace('$', '.');
+        final ClassNode cn = node.isArray() ? node.getComponentType() : node;
+        return cn.getName().replace('.', '/').replace('$', '.')
+            + genericTypesAsString(cn.getGenericsTypes())
+            + (node.isArray() ? "[]" : "")
+            ;
     }
 
     @Override

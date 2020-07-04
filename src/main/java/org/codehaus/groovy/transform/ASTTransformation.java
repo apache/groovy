@@ -45,5 +45,5 @@ public interface ASTTransformation {
      * @param source The source unit being compiled. The source unit may contain several classes. For global transformations,
      *      information about the AST can be retrieved from this object. 
      */
-    void visit(ASTNode nodes[], SourceUnit source);
+    void visit(ASTNode[] nodes, SourceUnit source);
 }

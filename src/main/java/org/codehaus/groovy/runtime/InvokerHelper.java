@@ -87,6 +87,8 @@ public class InvokerHelper {
 
     public static final MetaClassRegistry metaRegistry = GroovySystem.getMetaClassRegistry();
     public static final String MAIN_METHOD_NAME = "main";
+    private static final String XMLUTIL_CLASS_FULL_NAME = "groovy.xml.XmlUtil";
+    private static final String SERIALIZE_METHOD_NAME = "serialize";
 
     public static void removeClass(Class clazz) {
         metaRegistry.removeMetaClass(clazz);
@@ -654,7 +656,7 @@ public class InvokerHelper {
         }
         if (arguments instanceof Element) {
             try {
-                Method serialize = Class.forName("groovy.xml.XmlUtil").getMethod("serialize", Element.class);
+                Method serialize = Class.forName(XMLUTIL_CLASS_FULL_NAME).getMethod(SERIALIZE_METHOD_NAME, Element.class);
                 return (String) serialize.invoke(null, arguments);
             } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
                 throw new RuntimeException(e);
@@ -801,8 +803,8 @@ public class InvokerHelper {
         return argBuf.toString();
     }
 
-    private static Set<String> DEFAULT_IMPORT_PKGS = new HashSet<String>();
-    private static Set<String> DEFAULT_IMPORT_CLASSES = new HashSet<String>();
+    private static final Set<String> DEFAULT_IMPORT_PKGS = new HashSet<String>();
+    private static final Set<String> DEFAULT_IMPORT_CLASSES = new HashSet<String>();
     static {
         for (String pkgName : ResolveVisitor.DEFAULT_IMPORTS) {
             DEFAULT_IMPORT_PKGS.add(pkgName.substring(0, pkgName.length() - 1));

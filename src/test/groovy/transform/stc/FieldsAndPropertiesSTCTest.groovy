@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
+
 /**
  * Unit tests for static type checking : fields and properties.
  */
@@ -99,14 +101,14 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testShouldComplainAboutMissingField() {
+    void testShouldComplainAboutMissingProperty() {
         shouldFailWithMessages '''
             Object o = new Object()
             o.x = 0
         ''', 'No such property: x for class: java.lang.Object'
     }
 
-    void testShouldComplainAboutMissingField2() {
+    void testShouldComplainAboutMissingProperty2() {
         shouldFailWithMessages '''
             class A {
             }
@@ -115,19 +117,86 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         ''', 'No such property: x for class: A'
     }
 
-    void testFieldWithInheritance() {
+    @NotYetImplemented
+    void testShouldComplainAboutMissingProperty3() {
+        shouldFailWithMessages '''
+            class A {
+                private x
+            }
+            class B extends A {
+                void test() {
+                    this.x
+                }
+            }
+        ''', 'The field A.x is not accessible'
+    }
+
+    void testShouldComplainAboutMissingAttribute() {
+        shouldFailWithMessages '''
+            Object o = new Object()
+            o.@x = 0
+        ''', 'No such attribute: x for class: java.lang.Object'
+    }
+
+    void testShouldComplainAboutMissingAttribute2() {
+        shouldFailWithMessages '''
+            class A {
+            }
+            A a = new A()
+            a.@x = 0
+        ''', 'No such attribute: x for class: A'
+    }
+
+    void testShouldComplainAboutMissingAttribute3() {
+        shouldFailWithMessages '''
+            class A {
+                def getX() { }
+            }
+            A a = new A()
+            println a.@x
+        ''', 'No such attribute: x for class: A'
+    }
+
+    void testShouldComplainAboutMissingAttribute4() {
+        shouldFailWithMessages '''
+            class A {
+                def setX(x) { }
+            }
+            A a = new A()
+            a.@x = 0
+        ''', 'No such attribute: x for class: A'
+    }
+
+    void testShouldComplainAboutMissingAttribute5() {
+        shouldFailWithMessages '''
+            class A {
+                private x
+            }
+            class B extends A {
+                void test() {
+                    this.@x
+                }
+            }
+        ''', 'The field A.x is not accessible'
+    }
+
+    void testPropertyWithInheritance() {
         assertScript '''
             class A {
                 int x
             }
             class B extends A {
             }
+
             B b = new B()
+            assert b.x == 0
+
             b.x = 2
+            assert b.x == 2
         '''
     }
 
-    void testFieldTypeWithInheritance() {
+    void testPropertyTypeWithInheritance() {
         shouldFailWithMessages '''
             class A {
                 int x
@@ -139,7 +208,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot assign value of type java.lang.String to variable of type int'
     }
 
-    void testFieldWithInheritanceFromAnotherSourceUnit() {
+    void testPropertyWithInheritanceFromAnotherSourceUnit() {
         assertScript '''
             class B extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass {
             }
@@ -148,7 +217,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testFieldWithInheritanceFromAnotherSourceUnit2() {
+    void testPropertyWithInheritanceFromAnotherSourceUnit2() {
         shouldFailWithMessages '''
             class B extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass {
             }
@@ -157,7 +226,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot assign value of type java.lang.String to variable of type int'
     }
 
-    void testFieldWithSuperInheritanceFromAnotherSourceUnit() {
+    void testPropertyWithSuperInheritanceFromAnotherSourceUnit() {
         assertScript '''
             class B extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass2 {
             }
@@ -387,6 +456,53 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testOuterPropertyAccess1() {
+        assertScript '''
+            class Outer {
+                class Inner {
+                    def m() {
+                        p
+                    }
+                }
+                def p = 1
+            }
+            def i = new Outer.Inner(new Outer())
+            def x = i.m()
+            assert x == 1
+        '''
+    }
+
+    // GROOVY-9598
+    void testOuterPropertyAccess2() {
+        shouldFailWithMessages '''
+            class Outer {
+                static class Inner {
+                    def m() {
+                        p
+                    }
+                }
+                def p = 1
+            }
+            def i = new Outer.Inner()
+            def x = i.m()
+        ''', "Apparent variable 'p' was found in a static scope but doesn't refer to a local variable, static field or class."
+    }
+
+    void testOuterPropertyAccess3() {
+        shouldFailWithMessages '''
+            class Outer {
+                static class Inner {
+                    def m() {
+                        this.p
+                    }
+                }
+                def p = 1
+            }
+            def i = new Outer.Inner()
+            def x = i.m()
+        ''', 'No such property: p for class: Outer$Inner'
+    }
+
     void testPrivateFieldAccessInClosure() {
         assertScript '''
             class A {
@@ -420,6 +536,33 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             def a = new A()
             a.foo()
             a.ensure()
+        '''
+    }
+
+    // GROOVY-9562
+    void testSuperPropertyAccessInAIC() {
+        assertScript '''
+            abstract class One {
+                int prop = 1
+            }
+
+            abstract class Two {
+                int prop = 2
+
+                abstract baz()
+            }
+
+            class Foo extends One {
+                Two bar() {
+                    new Two() {
+                        def baz() {
+                            prop
+                        }
+                    }
+                }
+            }
+
+            assert new Foo().bar().baz() == 2
         '''
     }
 

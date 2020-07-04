@@ -162,4 +162,106 @@ class MethodsTest extends GroovyTestCase {
         '''
     }
 
+    void testMultiMethods() {
+        assertScript '''
+            // tag::multi_methods[]
+            def method(Object o1, Object o2) { 'o/o' }
+            def method(Integer i, String  s) { 'i/s' }
+            def method(String  s, Integer i) { 's/i' }
+            // end::multi_methods[]
+
+            // tag::call_single_method[]
+            assert method('foo', 42) == 's/i'
+            // end::call_single_method[]
+
+            // tag::call_multi_methods[]
+            List<List<Object>> pairs = [['foo', 1], [2, 'bar'], [3, 4]]
+            assert pairs.collect { a, b -> method(a, b) } == ['s/i', 'i/s', 'o/o']
+            // end::call_multi_methods[]
+        '''
+
+        assertScript '''
+            import static groovy.test.GroovyAssert.shouldFail
+            // tag::multi_method_ambiguous[]
+            def method(Date d, Object o) { 'd/o' }
+            def method(Object o, String s) { 'o/s' }
+
+            def ex = shouldFail {
+                println method(new Date(), 'baz')
+            }
+            assert ex.message.contains('Ambiguous method overloading')
+            // end::multi_method_ambiguous[]
+            // tag::multi_method_ambiguous_cast[]
+            assert method(new Date(), (Object)'baz') == 'd/o'
+            assert method((Object)new Date(), 'baz') == 'o/s'
+            // end::multi_method_ambiguous_cast[]
+        '''
+
+        assertScript '''
+            // tag::multi_method_distance_interfaces[]
+            interface I1 {}
+            interface I2 extends I1 {}
+            interface I3 {}
+            class Clazz implements I3, I2 {}
+
+            def method(I1 i1) { 'I1' }
+            def method(I3 i3) { 'I3' }
+            // end::multi_method_distance_interfaces[]
+
+            // tag::multi_method_distance_interfaces_usage[]
+            assert method(new Clazz()) == 'I3'
+            // end::multi_method_distance_interfaces_usage[]
+        '''
+
+        assertScript '''
+            // tag::non_varargs_over_vararg[]
+            def method(String s, Object... vargs) { 'vararg' }
+            def method(String s) { 'non-vararg' }
+
+            assert method('foo') == 'non-vararg'
+            // end::non_varargs_over_vararg[]
+        '''
+
+        assertScript '''
+            // tag::minimal_varargs[]
+            def method(String s, Object... vargs) { 'two vargs' }
+            def method(String s, Integer i, Object... vargs) { 'one varg' }
+
+            assert method('foo', 35, new Date()) == 'one varg'
+            // end::minimal_varargs[]
+        '''
+
+        assertScript '''
+            // tag::object_array_over_object[]
+            def method(Object[] arg) { 'array' }
+            def method(Object arg) { 'object' }
+
+            assert method([] as Object[]) == 'array'
+            // end::object_array_over_object[]
+        '''
+
+        assertScript '''
+            // tag::primitive_larger_over_smaller[]
+            def method(Long l) { 'Long' }
+            def method(Short s) { 'Short' }
+            def method(BigInteger bi) { 'BigInteger' }
+
+            assert method(35) == 'Long'
+            // end::primitive_larger_over_smaller[]
+        '''
+
+        assertScript '''
+            // tag::multi_method_distance_interface_over_super[]
+            interface I {}
+            class Base {}
+            class Child extends Base implements I {}
+
+            def method(Base b) { 'superclass' }
+            def method(I i) { 'interface' }
+
+            assert method(new Child()) == 'interface'
+            // end::multi_method_distance_interface_over_super[]
+        '''
+    }
+
 }

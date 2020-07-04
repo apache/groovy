@@ -438,7 +438,120 @@ include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=va
 
 ==== Method selection algorithm
 
-(TBD)
+Dynamic Groovy supports https://en.wikipedia.org/wiki/Multiple_dispatch[multiple dispatch] (aka multimethods).
+When calling a method, the actual method invoked is determined
+dynamically based on the run-time type of methods arguments.
+First the method name and number of arguments will be considered (including allowance for varargs),
+and then the type of each argument.
+Consider the following method definitions:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=multi_methods,indent=0]
+----
+
+Perhaps as expected, calling `method` with `String` and `Integer` parameters,
+invokes our third method definition.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=call_single_method,indent=0]
+----
+
+Of more interest here is when the types are not known at compile time.
+Perhaps the arguments are declared to be of type `Object` (a list of such objects in our case).
+Java would determine that the `method(Object, Object)` variant would be selected in all
+cases (unless casts were used) but as can be seen in the following example, Groovy uses the runtime type
+and will invoke each of our methods once (and normally, no casting is needed):
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=call_multi_methods,indent=0]
+----
+
+For each of the first two of our three method invocations an exact match of argument types was found.
+For the third invocation, an exact match of `method(Integer, Integer)` wasn't found but `method(Object, Object)`
+is still valid and will be selected.
+
+Method selection then is about finding the _closest fit_ from valid method candidates which have compatible
+parameter types.
+So, `method(Object, Object)` is also valid for the first two invocations but is not as close a match
+as the variants where types exactly match.
+To determine the closest fit, the runtime has a notion of the _distance_ an actual argument
+type is away from the declared parameter type and tries to minimise the total distance across all parameters.
+
+The following table illustrates some factors which affect the distance calculation.
+
+[cols="1,1" options="header"]
+|====
+| Aspect
+| Example
+
+| Directly implemented interfaces match more closely than ones from further up the inheritance hierarchy.
+a| Given these interface and method definitions:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=multi_method_distance_interfaces,indent=0]
+----
+
+The directly implemented interface will match:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=multi_method_distance_interfaces_usage,indent=0]
+----
+
+| An Object array is preferred over an Object.
+a|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=object_array_over_object,indent=0]
+----
+
+| Non-vararg variants are favored over vararg variants.
+a|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=non_varargs_over_vararg,indent=0]
+----
+
+| If two vararg variants are applicable, the one which uses the minimum number of vararg arguments is preferred.
+a|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=minimal_varargs,indent=0]
+----
+
+| Interfaces are preferred over super classes.
+a|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=multi_method_distance_interface_over_super,indent=0]
+----
+
+| For a primitive argument type, a declared parameter type which is the same or slightly larger is preferred.
+a|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=primitive_larger_over_smaller,indent=0]
+----
+|====
+
+In the case where two variants have exactly the same distance, this is deemed ambiguous and will cause a runtime exception:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=multi_method_ambiguous,indent=0]
+----
+
+Casting can be used to select the desired method:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=multi_method_ambiguous_cast,indent=0]
+----
+
 
 ==== Exception declaration
 

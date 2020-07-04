@@ -99,7 +99,7 @@ final class SyntaxErrorTest extends GroovyTestCase {
         // TODO: Could the character be escaped in the error message?
         assert err == '''\
             |startup failed:
-            |test.groovy: 1: Unexpected input: '\u200B'; Expecting <EOF> @ line 1, column 7.
+            |test.groovy: 1: Unexpected input: '\u200B' @ line 1, column 7.
             |   def na\u200Bme = null
             |         ^
             |
@@ -115,7 +115,7 @@ final class SyntaxErrorTest extends GroovyTestCase {
         // TODO: Could the character be escaped in the error message?
         assert err == '''\
             |startup failed:
-            |test.groovy: 1: Unexpected input: '\u000C'; Expecting <EOF> @ line 1, column 7.
+            |test.groovy: 1: Unexpected input: '\u000C' @ line 1, column 7.
             |   def na\u000Cme = null
             |         ^
             |
@@ -272,6 +272,23 @@ final class SyntaxErrorTest extends GroovyTestCase {
             |'''.stripMargin()
     }
 
+    void 'test groovy core - AnnotationDeclaration 5'() {
+        def err = expectParseError '''\
+            |@interface A {
+            |    String a() {
+            |    }
+            |}'''.stripMargin()
+        println err
+        assert err == '''\
+            |startup failed:
+            |test.groovy: 2: Annotation type element should not have body @ line 2, column 5.
+            |       String a() {
+            |       ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
     void 'test groovy core - MethodDeclaration'() {
         TestUtils.shouldFail('fail/MethodDeclaration_01.groovy')
         TestUtils.doRunAndShouldFail('fail/MethodDeclaration_02x.groovy')
@@ -386,6 +403,7 @@ final class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/Array_02x.groovy')
     }
 
+    @NotYetImplemented
     void 'test error alternative - Missing ")" 1'() {
         def err = expectParseError '''\
             |println ((int 123)
@@ -393,14 +411,15 @@ final class SyntaxErrorTest extends GroovyTestCase {
 
         assert err == '''\
             |startup failed:
-            |test.groovy: 1: Missing ')' @ line 1, column 14.
+            |test.groovy: 1: Missing ')' @ line 1, column 15.
             |   println ((int 123)
-            |                ^
+            |                 ^
             |
             |1 error
             |'''.stripMargin()
     }
 
+    @NotYetImplemented
     void 'test error alternative - Missing ")" 2'() {
         def err = expectParseError '''\
             |def x() {
@@ -413,6 +432,23 @@ final class SyntaxErrorTest extends GroovyTestCase {
             |test.groovy: 2: Missing ')' @ line 2, column 22.
             |       println((int) 123
             |                        ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @NotYetImplemented
+    void 'test error alternative - Missing ")" 3'() {
+        def err = expectParseError '''\
+            |def m( {
+            |}
+            |'''.stripMargin()
+
+        assert err == '''\
+            |startup failed:
+            |test.groovy: 1: Missing ')' @ line 1, column 8.
+            |   def m( {
+            |          ^
             |
             |1 error
             |'''.stripMargin()

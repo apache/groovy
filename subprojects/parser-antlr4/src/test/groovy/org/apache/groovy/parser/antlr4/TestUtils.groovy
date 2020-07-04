@@ -75,16 +75,16 @@ final class TestUtils {
     static doTest(String path, conf, CompilerConfiguration compilerConfiguration) {
         def file = new File("$RESOURCES_PATH/$path")
         def (newAST, newElapsedTime) = profile { buildAST(file, getAntlr4Config(compilerConfiguration)) }
-        def (oldAST, oldElapsedTime) = profile { buildAST(file, getAntlr2Config(compilerConfiguration)) }
+//        def (oldAST, oldElapsedTime) = profile { buildAST(file, getAntlr2Config(compilerConfiguration)) }
 
-        assertAST(newAST, oldAST, conf)
+//        assertAST(newAST, oldAST, conf)
 
-        def diffInMillis = newElapsedTime - oldElapsedTime
-        if (diffInMillis >= 500) {
-            log.warning "${path}\t\t\t\t\tdiff:${diffInMillis / 1000}s,\tnew:${newElapsedTime / 1000}s,\told:${oldElapsedTime / 1000}s."
-        }
+//        def diffInMillis = newElapsedTime - oldElapsedTime
+//        if (diffInMillis >= 500) {
+//            log.warning "${path}\t\t\t\t\tdiff:${diffInMillis / 1000}s,\tnew:${newElapsedTime / 1000}s,\told:${oldElapsedTime / 1000}s."
+//        }
 
-        return [newAST, oldAST]
+        return [newAST, null]
     }
 
     static void shouldFail(String path, boolean toCheckNewParserOnly = false) {
@@ -99,17 +99,17 @@ final class TestUtils {
     static void shouldFail(String path, conf, boolean toCheckNewParserOnly = false) {
         def file = new File("$RESOURCES_PATH/$path")
         def (newAST, newElapsedTime) = profile { buildAST(file, antlr4Config) }
-        def (oldAST, oldElapsedTime) = profile { buildAST(file, antlr2Config) }
+//        def (oldAST, oldElapsedTime) = profile { buildAST(file, antlr2Config) }
 
         assert (newAST == null || newAST.context.errorCollector.hasErrors())
-        if (!toCheckNewParserOnly) {
-            assert (oldAST == null || oldAST.context.errorCollector.hasErrors())
-        }
+//        if (!toCheckNewParserOnly) {
+//            assert (oldAST == null || oldAST.context.errorCollector.hasErrors())
+//        }
 
-        def diffInMillis = newElapsedTime - oldElapsedTime
-        if (diffInMillis >= 500) {
-            log.warning "${path}\t\t\t\t\tdiff:${diffInMillis / 1000}s,\tnew:${newElapsedTime / 1000}s,\told:${oldElapsedTime / 1000}s."
-        }
+//        def diffInMillis = newElapsedTime - oldElapsedTime
+//        if (diffInMillis >= 500) {
+//            log.warning "${path}\t\t\t\t\tdiff:${diffInMillis / 1000}s,\tnew:${newElapsedTime / 1000}s,\told:${oldElapsedTime / 1000}s."
+//        }
     }
 
     /*
@@ -148,17 +148,17 @@ final class TestUtils {
         }
 
         def (newAST, newElapsedTime) = profile { buildAST(text, antlr4Config) }
-        def (oldAST, oldElapsedTime) = profile { buildAST(text, antlr2Config) }
+//        def (oldAST, oldElapsedTime) = profile { buildAST(text, antlr2Config) }
 
         assert (newAST == null || newAST.context.errorCollector.hasErrors())
-        if (!toCheckNewParserOnly) {
-            assert (oldAST == null || oldAST.context.errorCollector.hasErrors())
-        }
+//        if (!toCheckNewParserOnly) {
+//            assert (oldAST == null || oldAST.context.errorCollector.hasErrors())
+//        }
 
-        def diffInMillis = newElapsedTime - oldElapsedTime
-        if (diffInMillis >= 500) {
-            log.warning "${path}!${entryName}\t\t\t\t\tdiff:${diffInMillis / 1000}s,\tnew:${newElapsedTime / 1000}s,\told:${oldElapsedTime / 1000}s."
-        }
+//        def diffInMillis = newElapsedTime - oldElapsedTime
+//        if (diffInMillis >= 500) {
+//            log.warning "${path}!${entryName}\t\t\t\t\tdiff:${diffInMillis / 1000}s,\tnew:${newElapsedTime / 1000}s,\told:${oldElapsedTime / 1000}s."
+//        }
     }
 
     static void assertAST(ModuleNode ast1, ModuleNode ast2, conf) {
@@ -169,6 +169,18 @@ final class TestUtils {
         }
 
         assert genSrc(ast1) == genSrc(ast2)
+    }
+
+    static boolean compareAST(ModuleNode ast1, ModuleNode ast2) {
+        boolean r1 = ast1 != null && ast2 != null
+        boolean r2
+        ASTComparatorCategory.apply(ASTComparatorCategory.DEFAULT_CONFIGURATION) {
+            r2 = ast1 == ast2
+        }
+
+        boolean r3 = genSrc(ast1) == genSrc(ast2)
+
+        return r1 && r2 && r3
     }
 
     static String genSrc(ModuleNode ast) {
@@ -185,7 +197,7 @@ final class TestUtils {
     }
 
     static void doRunAndTest(String path) {
-        doRunAndTestAntlr2(path)
+//        doRunAndTestAntlr2(path)
         doRunAndTestAntlr4(path)
     }
 
@@ -194,7 +206,7 @@ final class TestUtils {
     }
 
     static void doRunAndTestAntlr2(String path, CompilerConfiguration compilerConfiguration = CompilerConfiguration.DEFAULT) {
-        assert executeScript(createAntlr2Shell(compilerConfiguration), "$RESOURCES_PATH/$path")
+        throw new UnsupportedOperationException("Antlr2 is no longer supported")
     }
 
     static GroovyShell createAntlr4Shell(CompilerConfiguration compilerConfiguration = CompilerConfiguration.DEFAULT) {
@@ -202,7 +214,7 @@ final class TestUtils {
     }
 
     static GroovyShell createAntlr2Shell(CompilerConfiguration compilerConfiguration = CompilerConfiguration.DEFAULT) {
-        return new GroovyShell(getAntlr2Config(compilerConfiguration))
+        throw new UnsupportedOperationException("Antlr2 is no longer supported")
     }
 
     //--------------------------------------------------------------------------
@@ -210,12 +222,6 @@ final class TestUtils {
     private static CompilerConfiguration getAntlr4Config(CompilerConfiguration config = CompilerConfiguration.DEFAULT) {
         return new CompilerConfiguration(config).tap {
             pluginFactory = ParserPluginFactory.antlr4()
-        }
-    }
-
-    private static CompilerConfiguration getAntlr2Config(CompilerConfiguration config = CompilerConfiguration.DEFAULT) {
-        return new CompilerConfiguration(config).tap {
-            pluginFactory = ParserPluginFactory.antlr2()
         }
     }
 

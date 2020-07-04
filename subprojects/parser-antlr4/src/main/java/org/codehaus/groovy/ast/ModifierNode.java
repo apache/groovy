@@ -42,8 +42,6 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 
 /**
  * Represents a modifier
- * <p>
- * Created by Daniel.Sun on 2016/08/23.
  */
 public class ModifierNode extends ASTNode {
     private Integer type;

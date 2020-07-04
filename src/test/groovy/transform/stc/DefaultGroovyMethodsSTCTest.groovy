@@ -66,12 +66,12 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
             true.equals { it }
         '''
     }
-  
+
     void testShouldAcceptMethodFromDefaultDateMethods() {
       assertScript '''
-        def s = new Date()
-        println s.year
-        println s.format("yyyyMMdd")
+          def s = new Date()
+          println s.year
+          println s.format("yyyyMMdd")
       '''
     }
 
@@ -88,7 +88,8 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-5584
     void testEachOnMap() {
-        assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
+        assertScript '''
+            import org.codehaus.groovy.transform.stc.ExtensionMethodNode
             import org.codehaus.groovy.runtime.DefaultGroovyMethods
 
             @ASTTest(phase=INSTRUCTION_SELECTION, value= {
@@ -195,10 +196,109 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
                 def results = [:]
                 Functions.values().eachWithIndex { val, idx -> results[idx] = val.name() }
                 results
-            } 
+            }
             assert m() == ['A', 'B', 'C']
             assert m2() == [0: 'A', 1: 'B', 2: 'C']
         '''
     }
 
+    void testListGetAtNext() {
+        assertScript '''
+            def test() {
+                def list = [0, 1, 2, 3]
+                for (i in 1..2) {
+                    list[i-1]++
+                }
+                list
+            }
+            assert test() == [1, 2, 2, 3]
+        '''
+    }
+
+    // GROOVY-8840
+    void testListGetAtGetAtNext() {
+        assertScript '''
+            def test() {
+                def list = [0, 1, 2, 3]
+                List<Integer> other = [1]
+                list[other[0]]++
+                //   ^^^^^^^^ puts T on operand stack, not int/Integer
+                list
+            }
+            assert test() == [0, 2, 2, 3]
+        '''
+    }
+
+    void testListGetAtGetAtNext2() {
+        assertScript '''
+            def test() {
+                def list = [0, 1, 2, 3]
+                List<Integer> other = [1]
+                list[(int)other[0]]++
+                list
+            }
+            assert test() == [0, 2, 2, 3]
+        '''
+    }
+
+    void testListGetAtFirstNext() {
+        assertScript '''
+            def test() {
+                def list = [0, 1, 2, 3]
+                List<Integer> other = [1]
+                list[other.first()]++
+                list
+            }
+            assert test() == [0, 2, 2, 3]
+        '''
+    }
+
+    // GROOVY-9420
+    void testMapGetVsGetAt() {
+        assertScript '''
+            void check(String val) {
+                assert val == 'bar'
+            }
+
+            Object getKey() {
+                return 'foo'
+            }
+
+            void test() {
+                Map<String, String> map = [foo: 'bar']
+
+                def one = map.get(key)
+                check(one)
+
+                def two = map[key]
+                check(two)
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-9529
+    void testMapGetAtVsObjectGetAt() {
+        assertScript '''
+            interface X extends Map<Object, Object> {}
+
+            interface Y extends X {}
+
+            class C extends HashMap<Object, Object> implements Y {}
+
+            Y newMap() {
+                new C().tap {
+                    put('foo', 'bar')
+                }
+            }
+
+            void test() {
+                def map = newMap()
+                assert map['foo'] == 'bar'
+            }
+
+            test()
+        '''
+    }
 }

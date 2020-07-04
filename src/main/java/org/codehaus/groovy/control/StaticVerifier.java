@@ -87,11 +87,13 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
 
     @Override
     public void visitVariableExpression(VariableExpression ve) {
-        if (ve.getAccessedVariable() instanceof DynamicVariable
-                && (inSpecialConstructorCall || (!inClosure && ve.isInStaticContext()))) {
+        if (ve.getAccessedVariable() instanceof DynamicVariable && (ve.isInStaticContext() || inSpecialConstructorCall) && !inClosure) {
+            // GROOVY-5687: interface constants not visible to implementing sub-class in static context
             if (methodNode != null && methodNode.isStatic()) {
                 FieldNode fieldNode = getDeclaredOrInheritedField(methodNode.getDeclaringClass(), ve.getName());
-                if (fieldNode != null && fieldNode.isStatic()) return;
+                if (fieldNode != null && fieldNode.isStatic()) {
+                    return;
+                }
             }
             addError("Apparent variable '" + ve.getName() + "' was found in a static scope but doesn't refer to a local variable, static field or class. Possible causes:\n" +
                     "You attempted to reference a variable in the binding or an instance variable from a static context.\n" +

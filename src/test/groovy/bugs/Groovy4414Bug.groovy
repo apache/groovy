@@ -43,9 +43,14 @@ class Groovy4414Bug extends GroovyTestCase {
         }};
         
         assertEquals(expected, InvokerHelper.unaryMinus(actual));
-        
-        assertEquals((short)-1, InvokerHelper.unaryMinus((short)1));
-        assertEquals((byte)-1, InvokerHelper.unaryMinus((byte)1));
+
+        def negativeShortOne = InvokerHelper.unaryMinus((short) 1)
+        assert Short.class == negativeShortOne.class
+        assertEquals((short)-1, negativeShortOne);
+
+        def negativeByteOne = InvokerHelper.unaryMinus((byte) 1)
+        assert Byte.class == negativeByteOne.class
+        assertEquals((byte)-1, negativeByteOne);
     }
 
     public void testUnaryPlus() {

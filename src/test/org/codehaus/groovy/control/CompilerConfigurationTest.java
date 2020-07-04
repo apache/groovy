@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.control;
 
+import org.codehaus.groovy.control.customizers.ImportCustomizer;
 import org.codehaus.groovy.control.messages.WarningMessage;
 import org.junit.After;
 import org.junit.Before;
@@ -73,6 +74,7 @@ public final class CompilerConfigurationTest {
     public void testSetViaSystemProperties() {
         System.setProperty("groovy.warnings", "PaRaNoiA");
         System.setProperty("groovy.output.verbose", "trUE");
+        System.setProperty("groovy.mem.stub", "true");
         System.setProperty("groovy.generate.stub.in.memory", "true");
         System.setProperty("groovy.recompile.minimumInterval", "867892345");
 
@@ -110,10 +112,11 @@ public final class CompilerConfigurationTest {
         init.setTargetBytecode(CompilerConfiguration.JDK5);
         init.setRecompileGroovySource(true);
         init.setClasspath("File1" + File.pathSeparator + "Somewhere");
-        File tergetDirectory = new File("A wandering path");
-        init.setTargetDirectory(tergetDirectory);
+        File targetDirectory = new File("A wandering path");
+        init.setTargetDirectory(targetDirectory);
         init.setDefaultScriptExtension(".jpp");
         init.setJointCompilationOptions(Collections.singletonMap("somekey", "somevalue"));
+        init.addCompilationCustomizers(new ImportCustomizer().addStarImports("groovy.transform"));
         ParserPluginFactory pluginFactory = ParserPluginFactory.antlr4();
         init.setPluginFactory(pluginFactory);
 
@@ -129,10 +132,11 @@ public final class CompilerConfigurationTest {
         assertEquals(Boolean.TRUE, init.getRecompileGroovySource());
         assertEquals("File1", init.getClasspath().get(0));
         assertEquals("Somewhere", init.getClasspath().get(1));
-        assertEquals(tergetDirectory, init.getTargetDirectory());
+        assertEquals(targetDirectory, init.getTargetDirectory());
         assertEquals(".jpp", init.getDefaultScriptExtension());
         assertEquals("somevalue", init.getJointCompilationOptions().get("somekey"));
         assertEquals(pluginFactory, init.getPluginFactory());
+        assertEquals(1, init.getCompilationCustomizers().size());
 
         //
 
@@ -149,10 +153,12 @@ public final class CompilerConfigurationTest {
         assertEquals(Boolean.TRUE, config.getRecompileGroovySource());
         assertEquals("File1", config.getClasspath().get(0));
         assertEquals("Somewhere", config.getClasspath().get(1));
-        assertEquals(tergetDirectory, config.getTargetDirectory());
+        assertEquals(targetDirectory, config.getTargetDirectory());
         assertEquals(".jpp", config.getDefaultScriptExtension());
         assertEquals("somevalue", config.getJointCompilationOptions().get("somekey"));
         assertEquals(pluginFactory, config.getPluginFactory());
+        // TODO GROOVY-9585: re-enable below assertion once prod code is fixed
+//        assertEquals(1, config.getCompilationCustomizers().size());
     }
 
     @Test
@@ -170,8 +176,8 @@ public final class CompilerConfigurationTest {
         init.setTargetBytecode(CompilerConfiguration.JDK5);
         init.setRecompileGroovySource(false);
         init.setClasspath("");
-        File tergetDirectory = new File("A wandering path");
-        init.setTargetDirectory(tergetDirectory);
+        File targetDirectory = new File("A wandering path");
+        init.setTargetDirectory(targetDirectory);
 
         assertEquals(WarningMessage.POSSIBLE_ERRORS, init.getWarningLevel());
         assertEquals(Boolean.FALSE, init.getDebug());
@@ -184,7 +190,7 @@ public final class CompilerConfigurationTest {
         assertEquals(CompilerConfiguration.JDK5, init.getTargetBytecode());
         assertEquals(Boolean.FALSE, init.getRecompileGroovySource());
         assertEquals(Collections.emptyList(), init.getClasspath());
-        assertEquals(tergetDirectory, init.getTargetDirectory());
+        assertEquals(targetDirectory, init.getTargetDirectory());
 
         //
 
@@ -200,6 +206,6 @@ public final class CompilerConfigurationTest {
         assertEquals(CompilerConfiguration.JDK5, config.getTargetBytecode());
         assertEquals(Boolean.FALSE, config.getRecompileGroovySource());
         assertEquals(Collections.emptyList(), config.getClasspath());
-        assertEquals(tergetDirectory, config.getTargetDirectory());
+        assertEquals(targetDirectory, config.getTargetDirectory());
     }
 }

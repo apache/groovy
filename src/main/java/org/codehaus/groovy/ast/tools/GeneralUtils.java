@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.tools;
 
+import groovy.lang.MetaProperty;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -563,7 +564,12 @@ public class GeneralUtils {
         return sameX(getterThisX(cNode, pNode), getterX(cNode, other, pNode));
     }
 
-    public static Statement ifElseS(final Expression cond, final Statement thenStmt, final Statement elseStmt) {
+    @Deprecated
+    public static Statement ifElseS$$bridge(final Expression cond, final Statement thenStmt, final Statement elseStmt) {
+        return ifElseS(cond, thenStmt, elseStmt);
+    }
+
+    public static IfStatement ifElseS(final Expression cond, final Statement thenStmt, final Statement elseStmt) {
         return new IfStatement(
                 cond instanceof BooleanExpression ? (BooleanExpression) cond : boolX(cond),
                 thenStmt,
@@ -571,11 +577,21 @@ public class GeneralUtils {
         );
     }
 
-    public static Statement ifS(final Expression cond, final Expression trueExpr) {
+    @Deprecated
+    public static Statement ifS$$bridge(final Expression cond, final Expression trueExpr) {
+        return ifS(cond, trueExpr);
+    }
+
+    public static IfStatement ifS(final Expression cond, final Expression trueExpr) {
         return ifElseS(cond, stmt(trueExpr), EmptyStatement.INSTANCE);
     }
 
-    public static Statement ifS(final Expression cond, final Statement trueStmt) {
+    @Deprecated
+    public static Statement ifS$$bridge(final Expression cond, final Statement trueStmt) {
+        return ifS(cond, trueStmt);
+    }
+
+    public static IfStatement ifS(final Expression cond, final Statement trueStmt) {
         return ifElseS(cond, trueStmt, EmptyStatement.INSTANCE);
     }
 
@@ -610,7 +626,7 @@ public class GeneralUtils {
         return new ListExpression(args);
     }
 
-    public static ListExpression list2args(final List<? extends Object> args) {
+    public static ListExpression list2args(final List<?> args) {
         ListExpression result = new ListExpression();
         for (Object o : args) {
             result.addExpression(constX(o));
@@ -857,7 +873,7 @@ public class GeneralUtils {
     }
 
     public static String getSetterName(final String name) {
-        return "set" + capitalize(name);
+        return MetaProperty.getSetterName(name);
     }
 
     /**

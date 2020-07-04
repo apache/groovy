@@ -65,7 +65,14 @@ public class GroovyDocParser implements GroovyDocParserI {
 
     private Map<String, GroovyClassDoc> parseJava(String packagePath, String file, String src) throws RuntimeException {
         GroovydocJavaVisitor visitor = new GroovydocJavaVisitor(packagePath, links);
-        visitor.visit(StaticJavaParser.parse(src), null);
+        try {
+            visitor.visit(StaticJavaParser.parse(src), null);
+        } catch(Throwable t) {
+            System.err.println("Attempting to ignore error parsing Java source file: " + packagePath + "/" + file);
+            System.err.println("Consider reporting the error to the Groovy project: https://issues.apache.org/jira/browse/GROOVY");
+            System.err.println("... or directly to the JavaParser project: https://github.com/javaparser/javaparser/issues");
+            System.err.println("Error: " + t.getMessage());
+        }
         return visitor.getGroovyClassDocs();
     }
 
@@ -79,11 +86,7 @@ public class GroovyDocParser implements GroovyDocParserI {
         ModuleNode root = unit.getAST();
         GroovydocVisitor visitor = new GroovydocVisitor(unit, packagePath, links);
         visitor.visitClass(root.getClasses().get(0));
-        Map<String, GroovyClassDoc> groovyClassDocs = visitor.getGroovyClassDocs();
-        for (GroovyClassDoc classDoc : groovyClassDocs.values()) {
-            replaceTags((SimpleGroovyClassDoc) classDoc);
-        }
-        return groovyClassDocs;
+        return visitor.getGroovyClassDocs();
     }
 
     private void replaceTags(SimpleGroovyClassDoc sgcd) {

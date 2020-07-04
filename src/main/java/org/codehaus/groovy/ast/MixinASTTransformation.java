@@ -42,7 +42,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 public class MixinASTTransformation extends AbstractASTTransformation {
     private static final ClassNode MY_TYPE = make(Mixin.class);
 
-    public void visit(ASTNode nodes[], SourceUnit source) {
+    public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
         AnnotationNode node = (AnnotationNode) nodes[0];
         AnnotatedNode parent = (AnnotatedNode) nodes[1];

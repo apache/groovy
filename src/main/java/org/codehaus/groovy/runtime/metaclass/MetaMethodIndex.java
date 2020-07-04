@@ -92,7 +92,7 @@ public class MetaMethodIndex {
         }
     }
 
-    protected Entry table[];
+    protected Entry[] table;
 
     protected static final int DEFAULT_CAPACITY = 32;
     protected static final int MINIMUM_CAPACITY = 4;
@@ -275,7 +275,7 @@ public class MetaMethodIndex {
             FastArray oldList = (FastArray) oldListOrMethod;
             Entry e = null;
             int len1 = oldList.size();
-            Object list[] = oldList.getArray();
+            Object[] list = oldList.getArray();
             for (int j = 0; j != len1; ++j) {
                 MetaMethod method = (MetaMethod) list[j];
                 if (method.isPrivate()) continue;
@@ -298,7 +298,7 @@ public class MetaMethodIndex {
             FastArray oldList = (FastArray) oldListOrMethod;
             Entry e = null;
             int len1 = oldList.size();
-            Object list[] = oldList.getArray();
+            Object[] list = oldList.getArray();
             for (int j = 0; j != len1; ++j) {
                 MetaMethod method = (MetaMethod) list[j];
                 if (e == null)
@@ -320,7 +320,7 @@ public class MetaMethodIndex {
         if (oldListOrMethod instanceof FastArray) {
             FastArray oldList = (FastArray) oldListOrMethod;
             int len1 = oldList.size();
-            Object list[] = oldList.getArray();
+            Object[] list = oldList.getArray();
             for (int j = 0; j != len1; ++j) {
                 MetaMethod method = (MetaMethod) list[j];
                 if (method.isPrivate()) continue;
@@ -352,7 +352,7 @@ public class MetaMethodIndex {
             FastArray oldList = (FastArray) oldListOrMethod;
             Entry e = null;
             int len1 = oldList.size();
-            Object list[] = oldList.getArray();
+            Object[] list = oldList.getArray();
             for (int j = 0; j != len1; ++j) {
                 MetaMethod method = (MetaMethod) list[j];
                 if (method instanceof NewMetaMethod || method.isPrivate()) continue;
@@ -474,7 +474,7 @@ public class MetaMethodIndex {
 
     private static int findMatchingMethod(FastArray list, MetaMethod method) {
         int len = list.size();
-        Object data[] = list.getArray();
+        Object[] data = list.getArray();
         for (int j = 0; j != len; ++j) {
             MetaMethod aMethod = (MetaMethod) data[j];
             if (isMatchingMethod(aMethod, method))
@@ -513,7 +513,7 @@ public class MetaMethodIndex {
             FastArray oldList = (FastArray) oldListOrMethod;
             Entry e = null;
             int len1 = oldList.size();
-            Object list[] = oldList.getArray();
+            Object[] list = oldList.getArray();
             for (int j = 0; j != len1; ++j) {
                 MetaMethod method = (MetaMethod) list[j];
                 if (e == null)

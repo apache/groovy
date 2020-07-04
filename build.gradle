@@ -25,7 +25,7 @@ buildscript {
             maven { url 'https://maven.aliyun.com/nexus/content/groups/public' }
         }
         jcenter()
-        maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+//        maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
         maven {
             url "https://plugins.gradle.org/m2/"
         }
@@ -46,7 +46,7 @@ buildscript {
 
 plugins {
     id 'me.champeau.buildscan-recipes' version '0.2.3'
-    id 'com.github.spotbugs' version '4.0.2'
+    id 'com.github.spotbugs' version '4.2.0'
     id 'com.github.ben-manes.versions' version '0.28.0'
     id 'com.github.blindpirate.osgi' version '0.0.3'
     id 'org.sonarqube' version '2.8'
@@ -59,12 +59,11 @@ buildScanRecipes {
 }
 
 ext.modules = {
-    subprojects.findAll{ !['performance', 'binary-compatibility'].contains(it.name) }
+    subprojects.findAll{ !['performance', 'binary-compatibility', 'tests-preview'].contains(it.name) }
 }
 ext.isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
 
 apply from: 'gradle/bad-practices.gradle'
-//apply from: 'gradle/indy.gradle'
 apply from: 'gradle/publish.gradle'
 apply plugin: "com.github.jk1.dependency-license-report"
 
@@ -88,6 +87,7 @@ allprojects {
         jcenter()
 //        maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
         maven { url 'https://dl.bintray.com/melix/thirdparty-apache' } // openbeans
+//        mavenLocal()
     }
 
     ext.buildDate = isReleaseVersion?new Date():new Date(0)
@@ -100,7 +100,6 @@ allprojects {
     }
 
     apply plugin: 'groovy'
-    apply from: "${rootProject.projectDir}/gradle/indy.gradle"
     apply from: "${rootProject.projectDir}/gradle/asciidoctor.gradle"
 
     tasks.withType(org.asciidoctor.gradle.AsciidoctorTask) {
@@ -122,14 +121,12 @@ repositories {
 configurations {
     compilerCompile
     tools
-    antlr2
     spec
 }
 
 ext {
-    antVersion = '1.10.7'
-    asmVersion = '7.3.1'
-    antlrVersion = '2.7.7'
+    antVersion = '1.10.8'
+    asmVersion = '8.0.1'
     antlr4Version = '4.7.4'
     bridgerVersion = '1.5.Final'
     coberturaVersion = '1.9.4.1'
@@ -138,24 +135,24 @@ ext {
     ivyVersion = '2.5.0'
     jansiVersion = '1.18'
     jarjarVersion = '1.7.2'
-    javaParserVersion = '3.15.15'
+    javaParserVersion = '3.16.1'
     jlineVersion = '2.14.6'
     jmockVersion = '1.2.0'
     logbackVersion = '1.1.7'
     log4jVersion = '1.2.17'
-    log4j2Version = '2.8'
+    log4j2Version = '2.13.3'
     openbeansVersion = '1.0'
-    picocliVersion = '4.2.0'
+    picocliVersion = '4.3.2'
     qdoxVersion = '1.12.1'
     slf4jVersion = '1.7.25'
     xmlunitVersion = '1.6'
-    xstreamVersion = '1.4.11.1'
-    spockVersion = '2.0-groovy-3.0-SNAPSHOT' // supports up to 9.9.99
-    spotbugsVersion = '4.0.1'
-    spotbugsAnnotationsVersion = '4.0.1'
-    checkstyleVersion = '8.30'
-    junit5Version = '5.6.0'
-    junit5PlatformVersion = '1.6.0'
+    xstreamVersion = '1.4.12'
+    spockVersion = '2.0-M3-groovy-3.0' // running with Groovy 4 can be allowed with '-Dspock.iKnowWhatImDoing.disableGroovyVersionCheck=true'
+    spotbugsVersion = '4.0.3'
+    spotbugsAnnotationsVersion = '4.0.3'
+    checkstyleVersion = '8.32'
+    junit5Version = '5.6.2'
+    junit5PlatformVersion = '1.6.2'
 }
 
 dependencies {
@@ -164,7 +161,6 @@ dependencies {
     // for internal usage of things like Opcode
     api "org.ow2.asm:asm:$asmVersion" // marked as api but manually excluded later in assemble.gradle - modules will use shaded version
     // for internal usage by the parser but manually excluded later in assemble.gradle - modules will use shaded version
-    api "antlr:antlr:$antlrVersion"
     implementation "org.ow2.asm:asm-analysis:$asmVersion"
     implementation "org.ow2.asm:asm-commons:$asmVersion"
     implementation "org.ow2.asm:asm-tree:$asmVersion"
@@ -204,8 +200,6 @@ dependencies {
     tools "org.ow2.asm:asm:$asmVersion"
     tools "com.thoughtworks.qdox:qdox:$qdoxVersion"
 
-    antlr2 "org.apache.ant:ant-antlr:$antVersion"
-
     testImplementation project(':groovy-ant')
     testImplementation project(':groovy-xml')
     testImplementation project(':groovy-dateutil')
@@ -218,22 +212,13 @@ ext.generatedDirectory = "${buildDir}/generated/sources"
 sourceSets {
     main {
         java {
-            srcDir "$generatedDirectory/antlr2/src/main"
-            if (!JavaVersion.current().isJava8Compatible()) {
-                exclude '**/v8/*'
-                exclude '**/vm8/*'
-            }
             if (!JavaVersion.current().isJava9Compatible()) {
                 exclude '**/v9/*'
                 exclude '**/vm9/*'
+                exclude '**/PlatformLog.java'
             }
         }
         groovy {
-            srcDir "$generatedDirectory/antlr2/src/main"
-            if (!JavaVersion.current().isJava8Compatible()) {
-                exclude '**/v8/*'
-                exclude '**/vm8/*'
-            }
             if (!JavaVersion.current().isJava9Compatible()) {
                 exclude '**/v9/*'
                 exclude '**/vm9/*'
@@ -243,18 +228,9 @@ sourceSets {
             srcDirs = ['src/resources']
         }
     }
-    antlr2 {
-        resources {
-            srcDirs = ['src/main/antlr2']
-        }
-    }
     test {
         groovy {
             srcDirs = ['src/test']
-            if (!JavaVersion.current().isJava8Compatible()) {
-                exclude '**/v8/*'
-                exclude '**/vm8/*'
-            }
             if (!JavaVersion.current().isJava9Compatible()) {
                 exclude '**/v9/*'
                 exclude '**/vm9/*'
@@ -274,7 +250,6 @@ task sourceJar(type: Jar) {
     classifier = 'sources'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from sourceSets.main.allSource
-    from sourceSets.antlr2.allSource
 }
 
 subprojects {
@@ -287,37 +262,7 @@ subprojects {
 
 apply from: 'subprojects/parser-antlr4/build.gradle'
 
-task ensureGrammars {
-    outputs.cacheIf { true }
-    description = 'Ensure all the Antlr2 generated files are up to date.'
-    ext.antlrDirectory = "$projectDir/src/main/antlr2/org/codehaus/groovy/antlr"
-    ext.javaParserDirectory = "$ext.antlrDirectory/java"
-    ext.genPath = "$generatedDirectory/antlr2/src/main/org/codehaus/groovy/antlr"
-    ext.groovyOutDir = "$ext.genPath/parser"
-    ext.javaOutDir = "$ext.genPath/java"
-    inputs.dir(antlrDirectory)
-    outputs.dir(groovyOutDir)
-    outputs.dir(javaOutDir)
-    doFirst {
-        new File(groovyOutDir).mkdirs()
-        new File(javaOutDir).mkdirs()
-        ant {
-            taskdef(name: 'antlr2',
-                    classname: 'org.apache.tools.ant.taskdefs.optional.ANTLR',
-                    classpath: configurations.antlr2.asPath)
-
-            antlr2(target: "$ext.antlrDirectory/groovy.g", outputdirectory: ext.groovyOutDir) {
-                classpath path: configurations.compileClasspath.asPath
-            }
-            antlr2(target: "$ext.javaParserDirectory/java.g", outputdirectory: ext.javaOutDir) {
-                classpath path: configurations.compileClasspath.asPath
-            }
-        }
-    }
-}
-
 compileJava {
-    dependsOn ensureGrammars, generateGrammarSource
     options.fork(memoryMaximumSize: javacMain_mx)
 
     doLast {
@@ -384,17 +329,6 @@ allprojects {
         }
     }
 
-    if (rootProject.indyCapable()) {
-        task compileGroovyWithIndy(type: GroovyCompile) {
-            source = sourceSets.main.groovy
-            classpath = compileGroovy.classpath
-            sourceCompatibility = 1.8
-            targetCompatibility = 1.8
-            groovyOptions.optimizationOptions['indy'] = true
-            destinationDir = file("$buildDir/classes/indy")
-        }
-    }
-
     tasks.withType(GroovyCompile) {
         groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4.cache.threshold=100"]
         groovyOptions.fork(memoryMaximumSize: groovycMain_mx)
@@ -409,6 +343,7 @@ allprojects {
         classpath = (classpath != null) ? classpath + groovyClasspath : groovyClasspath
     }.configureEach {
         options.incremental = true
+        options.forkOptions.jvmArgs += ["-Dspock.iKnowWhatImDoing.disableGroovyVersionCheck=true"]
     }
 }
 

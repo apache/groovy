@@ -83,7 +83,7 @@ public @interface Log {
     /**
      * This class contains the logic of how to weave a Java Util Logging logger into the host class.
      */
-    public static class JavaUtilLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategyV2 {
+    class JavaUtilLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategyV2 {
 
         private static final ClassNode LOGGER_CLASSNODE = ClassHelper.make(java.util.logging.Logger.class);
         private static final ClassNode LEVEL_CLASSNODE = ClassHelper.make(java.util.logging.Level.class);

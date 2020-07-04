@@ -55,3 +55,7 @@ import java.lang.annotation.Target
 @interface b {
     String name()
 }
+
+@interface C {
+    String name() default ''
+}

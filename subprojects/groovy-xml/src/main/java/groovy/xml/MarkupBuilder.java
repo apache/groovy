@@ -270,7 +270,7 @@ public class MarkupBuilder extends BuilderSupport {
             this.nodeIsEmpty = false;
             out.print(">");
         }
-        if (state == 2 || state == 3) {
+        if (state == 0 || state == 2 || state == 3) {
             out.print(escaping ? escapeElementContent(value) : value);
         }
     }
@@ -316,7 +316,7 @@ public class MarkupBuilder extends BuilderSupport {
             }
         }
         if (value != null) {
-            yield(value.toString(), true);
+            this.yield(value.toString(), true);
         } else {
             nodeIsEmpty = true;
         }

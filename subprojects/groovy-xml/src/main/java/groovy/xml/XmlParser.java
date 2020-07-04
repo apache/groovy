@@ -408,7 +408,7 @@ public class XmlParser implements ContentHandler {
         }
     }
 
-    public void characters(char buffer[], int start, int length) throws SAXException {
+    public void characters(char[] buffer, int start, int length) throws SAXException {
         bodyText.append(buffer, start, length);
     }
 
@@ -418,7 +418,7 @@ public class XmlParser implements ContentHandler {
     public void endPrefixMapping(String prefix) throws SAXException {
     }
 
-    public void ignorableWhitespace(char buffer[], int start, int len) throws SAXException {
+    public void ignorableWhitespace(char[] buffer, int start, int len) throws SAXException {
         if (keepIgnorableWhitespace) characters(buffer, start, len);
     }
 
@@ -493,7 +493,7 @@ public class XmlParser implements ContentHandler {
             return name;
         }
         if (qName != null && qName.length() > 0 && namespaceAware) {
-            int index = qName.lastIndexOf(":");
+            int index = qName.lastIndexOf(':');
             if (index > 0) {
                 prefix = qName.substring(0, index);
             }

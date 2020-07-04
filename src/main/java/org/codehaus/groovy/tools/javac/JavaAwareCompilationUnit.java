@@ -73,11 +73,12 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
             String sourceEncoding = this.configuration.getSourceEncoding();
             Object memStub = options.get(CompilerConfiguration.MEM_STUB);
             if (memStub == null) {
-                memStub = SystemUtil.getSystemPropertySafe("groovy.generate.stub.in.memory", "false");
+                memStub = Boolean.parseBoolean(SystemUtil.getSystemPropertySafe("groovy.mem.stub", "false"));
+                options.put(CompilerConfiguration.MEM_STUB, memStub);
             }
 
             this.keepStubs = Boolean.TRUE.equals(options.get("keepStubs"));
-            this.memStubEnabled = Boolean.parseBoolean(memStub.toString());
+            this.memStubEnabled = Boolean.TRUE.equals(memStub);
             this.generationGoal = memStubEnabled ? null : (File) options.get("stubDir");
             this.stubGenerator = new JavaStubGenerator(generationGoal, false, atLeastJava5, sourceEncoding);
         }

@@ -26,38 +26,38 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+
 /**
  * Transformer for VariableExpression the bytecode backend wouldn't be able to
  * handle otherwise.
  */
 public class VariableExpressionTransformer {
 
-    public Expression transformVariableExpression(VariableExpression expr) {
+    public Expression transformVariableExpression(final VariableExpression expr) {
         Expression trn = tryTransformDelegateToProperty(expr);
-        if (trn != null) {
-            return trn;
+        if (trn == null) {
+            trn = tryTransformPrivateFieldAccess(expr);
         }
-        trn = tryTransformPrivateFieldAccess(expr);
-        if (trn != null) {
-            return trn;
-        }
-        return expr;
+        return trn != null ? trn : expr;
     }
 
-    private static Expression tryTransformDelegateToProperty(VariableExpression expr) {
+    private static Expression tryTransformDelegateToProperty(final VariableExpression expr) {
         // we need to transform variable expressions that go to a delegate
         // to a property expression, as ACG would lose the information in
         // processClassVariable before it reaches any makeCall, that could handle it
         Object val = expr.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
         if (val == null) return null;
 
-        // TODO handle the owner and delegate cases better for nested scenarios and potentially remove the need for the implicit this case
-        VariableExpression receiver = new VariableExpression("owner".equals(val) ? (String) val : "delegate".equals(val) ? (String) val : "this");
-        // GROOVY-9136 -- object expression should not overlap source range of property; property stands in for original varibale expression
+        // TODO: handle the owner and delegate cases better for nested scenarios and potentially remove the need for the implicit this case
+        Expression receiver = varX("owner".equals(val) ? (String) val : "delegate".equals(val) ? (String) val : "this");
+        // GROOVY-9136 -- object expression should not overlap source range of property; property stands in for original variable expression
         receiver.setLineNumber(expr.getLineNumber());
         receiver.setColumnNumber(expr.getColumnNumber());
 
-        PropertyExpression pexp = new PropertyExpression(receiver, expr.getName());
+        PropertyExpression pexp = propX(receiver, expr.getName());
         pexp.getProperty().setSourcePosition(expr);
         pexp.copyNodeMetaData(expr);
         pexp.setImplicitThis(true);
@@ -67,29 +67,23 @@ public class VariableExpressionTransformer {
             receiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, owner);
             receiver.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, val);
         }
+        pexp.removeNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
 
         return pexp;
     }
 
-    private static Expression tryTransformPrivateFieldAccess(VariableExpression expr) {
+    private static Expression tryTransformPrivateFieldAccess(final VariableExpression expr) {
         FieldNode field = expr.getNodeMetaData(StaticTypesMarker.PV_FIELDS_ACCESS);
         if (field == null) {
             field = expr.getNodeMetaData(StaticTypesMarker.PV_FIELDS_MUTATION);
         }
         if (field != null) {
-            // access to a private field from a section of code that normally doesn't have access to it, like a
-            // closure or an inner class
-            VariableExpression receiver = new VariableExpression("this");
-            PropertyExpression pexp = new PropertyExpression(
-                    receiver,
-                    expr.getName()
-            );
-            pexp.setImplicitThis(true);
+            // access to a private field from a section of code that normally doesn't have access to it, like a closure or an inner class
+            PropertyExpression pexp = thisPropX(true, expr.getName());
+            // store the declaring class so that the class writer knows that it will have to call a bridge method
+            pexp.getObjectExpression().putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, field.getDeclaringClass());
+            pexp.putNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE, field.getOriginType());
             pexp.getProperty().setSourcePosition(expr);
-            // put the receiver inferred type so that the class writer knows that it will have to call a bridge method
-            receiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, field.getDeclaringClass());
-            // add inferred type information
-            pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, field.getOriginType());
             return pexp;
         }
         return null;

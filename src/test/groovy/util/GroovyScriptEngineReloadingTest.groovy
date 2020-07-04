@@ -89,6 +89,28 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
         execute(100000, 200000, 2)
     }
 
+    void testRecompilingWithGenerics() {
+        MapFileSystem.instance.modFile('BaseClass.groovy', 'abstract class BaseClass<T> extends Script {}', gse.@time)
+
+        def subClassText = '''
+            class SubClass extends BaseClass<String> {
+                @Override
+                Object run() {
+                    null
+                }
+            }
+        '''
+        MapFileSystem.instance.modFile('SubClass.groovy', subClassText, gse.@time)
+
+        gse.loadScriptByName('SubClass.groovy')
+        sleep 1000
+
+        // make a change to the sub-class so that it gets recompiled
+        MapFileSystem.instance.modFile('SubClass.groovy', subClassText + "\n", gse.@time)
+        gse.loadScriptByName('SubClass.groovy')
+
+    }
+
     void testDeleteDependent() {
         sleep 10000
         MapFileSystem.instance.modFile('ClassA.groovy', 'DependentClass ic = new DependentClass()', gse.@time as long)

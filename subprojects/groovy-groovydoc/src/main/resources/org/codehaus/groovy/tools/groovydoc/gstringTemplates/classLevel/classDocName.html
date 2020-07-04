@@ -71,7 +71,7 @@
         (t.isStatic()?"static&nbsp;":"")
     }
     def annotations = { t, sepChar ->
-        t.annotations() ? t.annotations().collect{ it.isTypeAvailable()?'@'+linkable(it.type().typeName())+(it.description()-('@'+it.type().typeName())):it.description()}.join(sepChar) + sepChar : ''
+        t.annotations() ? t.annotations().collect{ it.isTypeAvailable()?'@'+linkable(it.type().typeName())+it.description():it.description()}.join(sepChar) + sepChar : ''
     }
     def elementTypes = [
         "required":"true",
@@ -80,7 +80,8 @@
     def isRequired = { f, v -> def req = f.constantValueExpression() == null; req.toString() == v }
     def upcase = { n -> n[0].toUpperCase() + n[1..-1] }
     def paramsOf = { n, boolean brief -> n.parameters().collect{ param -> (brief?'':annotations(param, ' ')) + linkable(param.isTypeAvailable()?param.type():param.typeName()) + (param.vararg()?'... ':' ') + param.name() + (param.defaultValue() ? " = " + param.defaultValue():"") }.join(", ") }
-    def nameFromParams = { n -> n.name() + '(' + n.parameters().collect{ param -> param.isTypeAvailable()?param.type().qualifiedTypeName():param.typeName() }.join(', ') + ')' }
+    def rawType = { n -> def g = n.indexOf("<"); g >= 0 ? n.substring(0, g) : n }
+    def nameFromParams = { n -> n.name() + '(' + n.parameters().collect{ param -> rawType(param.isTypeAvailable()?param.type().qualifiedTypeName():param.typeName()) }.join(', ') + ')' }
     def nameFromJavaParams = { n -> n.getName() + '(' + n.parameterTypes.collect{ param -> param.getName() }.join(', ') + ')' }
 %>
 <html>
@@ -178,7 +179,8 @@ if (location.href.indexOf('is-external=true') == -1) {
 <%
 def pkg = classDoc.containingPackage().nameWithDots()
 def name = classDoc.getNameWithTypeArgs() ?: classDoc.name()
-String classDesc = "${classDoc.isGroovy() ? "[Groovy]" : "[Java]"} ${classDoc.typeDescription} ${org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.encodeAngleBrackets(name)}"
+final nameEncoded = org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.encodeAngleBrackets(name)
+String classDesc = "${classDoc.isGroovy() ? "[Groovy]" : "[Java]"} ${classDoc.typeDescription} $nameEncoded"
 if (pkg != "DefaultPackage") {
 %>
     <div class="subTitle">Package: <strong>${pkg}</strong></div>
@@ -224,18 +226,30 @@ if (classDoc.isInterface()) {
                 <dt>All Implemented Interfaces and Traits:</dt>
                 <dd>${interfaces.collect{ linkable(it) }.join(', ')}</dd>
             </dl>
+    <% } %>
+<% } %>
             <!-- todo: direct known subclasses -->
             <hr>
             <br>
-<pre>${annotations(classDoc, '\n') + modifiersWithOptions(classDoc, classDoc.isGroovy(), classDoc.isInterface() || classDoc.isAnnotationType()) + classDoc.typeSourceDescription + ' ' + classDoc.name()}
-<% if (classDoc.isInterface() && classDoc.interfaces()) {
-%>extends ${classDoc.interfaces().collect{ linkable(it) }.join(', ')}
-<% } else if (classDoc.superclass()) {
-%>extends ${linkable(classDoc.superclass())}
-<% } %>
-</pre>
-<% } %>
-<% } %>
+<%
+def declaration = annotations(classDoc, '\n') +
+    modifiersWithOptions(classDoc, classDoc.isGroovy(), classDoc.isInterface() || classDoc.isAnnotationType()) +
+    classDoc.typeSourceDescription +
+    ' ' +
+    nameEncoded
+final interfaces = classDoc.interfaces().collect{ linkable(it) }.join(', ')
+if (classDoc.isInterface() && classDoc.interfaces()) {
+    if (interfaces) {
+        declaration += "\nextends $interfaces"
+    }
+} else if (classDoc.superclass()) {
+    declaration += "\nextends ${linkable(classDoc.superclass())}"
+    if (interfaces) {
+        declaration += "\nimplements $interfaces"
+    }
+}
+%>
+<pre>${declaration}</pre>
 <% if (classDoc.commentText()) { %>
     <p>${classDoc.commentText()}</p>
 <% } %>
@@ -509,7 +523,7 @@ if (classDoc.isInterface()) {
                         <% visibleMethods.eachWithIndex { method, i -> %>
                         <tr class="${i%2==0?'altColor':'rowColor'}">
                             <td class="colFirst"><code>${org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.encodeAngleBrackets(method.typeParameters()) ?: ''}</code></td>
-                            <td class="colLast"><code>${modifiersBrief(method)}${linkable(method.returnType())}</code></td>
+                            <td class="colLast"><code>${modifiers(method)}${linkable(method.returnType())}</code></td>
                             <td class="colLast"><code><strong><a href="#${nameFromParams(method)}">${method.name()}</a></strong>(${paramsOf(method, true)})</code><br>${method.firstSentenceCommentText()}</td>
                         </tr>
                         <% } %>

@@ -44,7 +44,6 @@ import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
-import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -75,6 +74,7 @@ import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.isGeneratedFunction;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
@@ -376,37 +376,48 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
 
     private boolean makeGetPrivateFieldWithBridgeMethod(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean safe, final boolean implicitThis) {
         FieldNode field = receiverType.getField(fieldName);
-        ClassNode outerClass = receiverType.getOuterClass();
-        if (field == null && implicitThis && outerClass != null && !receiverType.isStaticClass()) {
-            Expression pexp;
-            if (controller.isInGeneratedFunction()) {
-                MethodCallExpression call = callThisX("getThisObject");
-                call.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, controller.getOutermostClass());
-                call.setImplicitThis(true);
-                call.setMethodTarget(CLOSURE_GETTHISOBJECT_METHOD);
-                pexp = castX(controller.getOutermostClass(), call);
-            } else {
-                pexp = propX(classX(outerClass), "this");
-                ((PropertyExpression) pexp).setImplicitThis(true);
-            }
-            pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, outerClass);
-            pexp.setSourcePosition(receiver);
-            return makeGetPrivateFieldWithBridgeMethod(pexp, outerClass, fieldName, safe, true);
-        }
-        ClassNode classNode = controller.getClassNode();
-        if (field != null && field.isPrivate() && !receiverType.equals(classNode)
-                && (StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode) || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode, receiverType))) {
-            Map<String, MethodNode> accessors = receiverType.redirect().getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_FIELDS_ACCESSORS);
-            if (accessors != null) {
-                MethodNode methodNode = accessors.get(fieldName);
-                if (methodNode != null) {
-                    MethodCallExpression call = callX(receiver, methodNode.getName(), args(field.isStatic() ? nullX() : receiver));
-                    call.setImplicitThis(implicitThis);
-                    call.setMethodTarget(methodNode);
-                    call.setSafe(safe);
-                    call.visit(controller.getAcg());
-                    return true;
+        if (field != null) {
+            ClassNode classNode = controller.getClassNode();
+            if (field.isPrivate() && !receiverType.equals(classNode)
+                    && (StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode)
+                        || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode, receiverType))) {
+                Map<String, MethodNode> accessors = receiverType.redirect().getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_FIELDS_ACCESSORS);
+                if (accessors != null) {
+                    MethodNode methodNode = accessors.get(fieldName);
+                    if (methodNode != null) {
+                        MethodCallExpression call = callX(receiver, methodNode.getName(), args(field.isStatic() ? nullX() : receiver));
+                        call.setImplicitThis(implicitThis);
+                        call.setMethodTarget(methodNode);
+                        call.setSafe(safe);
+                        call.visit(controller.getAcg());
+                        return true;
+                    }
                 }
+            }
+        } else if (implicitThis) {
+            ClassNode outerClass = receiverType.getOuterClass();
+            if (outerClass != null && !receiverType.isStaticClass()) {
+                Expression expr;
+                ClassNode thisType = outerClass;
+                if (controller.isInGeneratedFunction()) {
+                    while (isGeneratedFunction(thisType)) {
+                        thisType = thisType.getOuterClass();
+                    }
+
+                    MethodCallExpression call = callThisX("getThisObject");
+                    call.setImplicitThis(true);
+                    call.setMethodTarget(CLOSURE_GETTHISOBJECT_METHOD);
+                    call.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, thisType);
+
+                    expr = castX(thisType, call);
+                } else {
+                    expr = propX(classX(outerClass), "this");
+                    ((PropertyExpression) expr).setImplicitThis(true);
+                }
+                expr.setSourcePosition(receiver);
+                expr.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, thisType);
+                // try again with "(Outer) getThisObject()" or "Outer.this" as receiver
+                return makeGetPrivateFieldWithBridgeMethod(expr, outerClass, fieldName, safe, true);
             }
         }
         return false;
@@ -414,29 +425,25 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
 
     @Override
     public void makeGroovyObjectGetPropertySite(final Expression receiver, final String propertyName, final boolean safe, final boolean implicitThis) {
-        TypeChooser typeChooser = controller.getTypeChooser();
-        ClassNode classNode = controller.getClassNode();
-        ClassNode receiverType = typeChooser.resolveType(receiver, classNode);
-        if (receiver instanceof VariableExpression && ((VariableExpression) receiver).isThisExpression() && !controller.isInGeneratedFunction()) {
-            receiverType = classNode;
+        ClassNode receiverType = controller.getClassNode();
+        if (!AsmClassGenerator.isThisExpression(receiver) || controller.isInGeneratedFunction()) {
+            receiverType = controller.getTypeChooser().resolveType(receiver, receiverType);
         }
 
         String property = propertyName;
-        if (implicitThis) {
-            if (controller.getInvocationWriter() instanceof StaticInvocationWriter) {
-                MethodCallExpression currentCall = ((StaticInvocationWriter) controller.getInvocationWriter()).getCurrentCall();
-                if (currentCall != null && currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) != null) {
-                    property = currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
-                    String[] props = property.split("\\.");
-                    BytecodeExpression thisLoader = bytecodeX(CLOSURE_TYPE, mv -> mv.visitVarInsn(ALOAD, 0));
-                    PropertyExpression pexp = propX(thisLoader, constX(props[0]), safe);
-                    for (int i = 1, n = props.length; i < n; i += 1) {
-                        pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, CLOSURE_TYPE);
-                        pexp = propX(pexp, props[i]);
-                    }
-                    pexp.visit(controller.getAcg());
-                    return;
+        if (implicitThis && controller.getInvocationWriter() instanceof StaticInvocationWriter) {
+            Expression currentCall = ((StaticInvocationWriter) controller.getInvocationWriter()).getCurrentCall();
+            if (currentCall != null && currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) != null) {
+                property = currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
+                String[] props = property.split("\\.");
+                BytecodeExpression thisLoader = bytecodeX(CLOSURE_TYPE, mv -> mv.visitVarInsn(ALOAD, 0));
+                PropertyExpression pexp = propX(thisLoader, constX(props[0]), safe);
+                for (int i = 1, n = props.length; i < n; i += 1) {
+                    pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, CLOSURE_TYPE);
+                    pexp = propX(pexp, props[i]);
                 }
+                pexp.visit(controller.getAcg());
+                return;
             }
         }
 
@@ -708,7 +715,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                     rType = rType.getPlainNodeReference();
                     nodes = findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), rType, message, args);
                 }
-                nodes = StaticTypeCheckingSupport.chooseBestMethod(rType, nodes, args);
                 if (nodes.size() == 1 || (nodes.size() > 1 && acceptAnyMethod)) {
                     MethodCallExpression call = callX(receiver, message, arguments);
                     call.setImplicitThis(false);

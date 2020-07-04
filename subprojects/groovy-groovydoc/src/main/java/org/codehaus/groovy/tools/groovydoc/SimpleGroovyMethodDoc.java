@@ -40,10 +40,6 @@ public class SimpleGroovyMethodDoc extends SimpleGroovyExecutableMemberDoc imple
         this.returnType = returnType;
     }
 
-    public boolean isAbstract() {/*todo*/
-        return false;
-    }
-
     public GroovyClassDoc overriddenClass() {/*todo*/
         return null;
     }

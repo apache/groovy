@@ -19,10 +19,16 @@
 
 //////////////////////////////////////////
 
+[[title-heading]]
 = AntBuilder
 
+[NOTE]
+Here we describe `AntBuilder` which lets you write Ant build scripts
+in Groovy rather than XML. You may also be interested in using Groovy
+from Ant using the <<groovy-ant-task.adoc#title-heading,Groovy Ant task>>.
+
 Despite being primarily a build tool, http://ant.apache.org/[Apache Ant] is
-a very practical tool for manipulating files including zip files, copy, resource processing, ...
+a very practical tool for manipulating files including zip files, copy, resource processing, and more.
 But if ever you’ve been working with a `build.xml` file or some _Jelly script_
 and found yourself a little restricted by all those pointy brackets, or
 found it a bit weird using XML as a scripting language and wanted

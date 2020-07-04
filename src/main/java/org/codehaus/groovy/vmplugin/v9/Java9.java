@@ -46,6 +46,7 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -54,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -63,6 +65,16 @@ import java.util.stream.Collectors;
  */
 public class Java9 extends Java8 {
     private static final Logger LOGGER = Logger.getLogger(Java9.class.getName());
+
+    private final Class<?>[] PLUGIN_DGM;
+
+    public Java9() {
+        super();
+        List<Class<?>> dgmClasses = new ArrayList<>();
+        Collections.addAll(dgmClasses, super.getPluginDefaultGroovyMethods());
+        dgmClasses.add(PluginDefaultGroovyMethods.class);
+        PLUGIN_DGM = dgmClasses.toArray(new Class<?>[0]);
+    }
 
     @Override
     public Map<String, Set<String>> getDefaultImportClasses(String[] packageNames) {
@@ -81,18 +93,19 @@ public class Java9 extends Java8 {
         }
 
         Map<String, Set<String>> result = new LinkedHashMap<>(2048);
-        try {
-            result.putAll(doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPns));
+        try (GroovyClassLoader gcl = new GroovyClassLoader(this.getClass().getClassLoader())) {
+            try {
+                URI gsLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.lang.GroovySystem")).toURI();
+                result.putAll(doFindClasses(gsLocation, "groovy", groovyPns));
 
-            GroovyClassLoader gcl = new GroovyClassLoader(this.getClass().getClassLoader());
-            URI gsLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.lang.GroovySystem")).toURI();
-            result.putAll(doFindClasses(gsLocation, "groovy", groovyPns));
-
-            // in production environment, groovy-core classes, e.g. `GroovySystem`(java class) and `GrapeIvy`(groovy class) are all packaged in the groovy-core jar file,
-            // but in Groovy development environment, groovy-core classes are distributed in different directories
-            URI giLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.grape.GrapeIvy")).toURI();
-            if (!gsLocation.equals(giLocation)) {
-                result.putAll(doFindClasses(giLocation, "groovy", groovyPns));
+                // in production environment, groovy-core classes, e.g. `GroovySystem`(java class) and `GrapeIvy`(groovy class) are all packaged in the groovy-core jar file,
+                // but in Groovy development environment, groovy-core classes are distributed in different directories
+                URI giLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.grape.GrapeIvy")).toURI();
+                if (!gsLocation.equals(giLocation)) {
+                    result.putAll(doFindClasses(giLocation, "groovy", groovyPns));
+                }
+            } finally {
+                result.putAll(doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPns));
             }
         } catch (Exception ignore) {
             if (LOGGER.isLoggable(Level.FINEST)) {
@@ -163,6 +176,11 @@ public class Java9 extends Java8 {
         } catch (final InvocationTargetException e) {
             throw new GroovyRuntimeException(e);
         }
+    }
+
+    @Override
+    public Class<?>[] getPluginDefaultGroovyMethods() {
+        return PLUGIN_DGM;
     }
 
     @Override
@@ -424,8 +442,8 @@ public class Java9 extends Java8 {
                 .map(ModuleReference::descriptor)
                 .forEach(md -> md.packages().forEach(pn -> map.putIfAbsent(pn, md)));
 
-        final Map<String, Set<String>> concealedPackagesToOpen = new HashMap<>();
-        final Map<String, Set<String>> exportedPackagesToOpen = new HashMap<>();
+        final Map<String, Set<String>> concealedPackagesToOpen = new ConcurrentHashMap<>();
+        final Map<String, Set<String>> exportedPackagesToOpen = new ConcurrentHashMap<>();
 
         Arrays.stream(JAVA8_PACKAGES())
                 .forEach(pn -> {
@@ -470,6 +488,7 @@ public class Java9 extends Java8 {
     }
 
     private static String[] JAVA8_PACKAGES() {
+        // The following package list should NOT be changed!
         return new String[] {
                 "apple.applescript",
                 "apple.laf",

@@ -29,7 +29,7 @@ public class CachedClosureClass extends CachedClass {
     public CachedClosureClass(Class klazz, ClassInfo classInfo) {
         super(klazz, classInfo);
 
-        CachedMethod methods [] = getMethods();
+        CachedMethod[] methods = getMethods();
 
         // set it to -1 for starters so parameterTypes will always get a type
         int maximumNumberOfParameters = -1;

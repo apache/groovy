@@ -102,4 +102,13 @@ class ClassFinderTest {
 
         assert (ResolveVisitor.DEFAULT_IMPORTS as List).sort() == r1.values().stream().flatMap(e -> e.stream()).collect(Collectors.toSet()).sort()
     }
+
+    @Test
+    void testGroovy9480() {
+        try {
+            ClassFinder.find(URI.create("file:/"), "NOT_EXISTS", "org/", false)
+        } catch (ClassFindFailedException e) {
+            assert e.message.contains('Failed to find classes')
+        }
+    }
 }

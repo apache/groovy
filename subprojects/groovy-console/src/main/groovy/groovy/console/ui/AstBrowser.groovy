@@ -69,7 +69,7 @@ class AstBrowser {
     private static final String NO_BYTECODE_AVAILABLE_AT_THIS_PHASE = '// No bytecode available at this phase'
 
     private inputArea, rootElement, decompiledSource, jTree, propertyTable, splitterPane, mainSplitter, bytecodeView, asmifierView
-    boolean showScriptFreeForm, showScriptClass, showClosureClasses, showTreeView, showIndyBytecode
+    boolean showScriptFreeForm, showScriptClass, showClosureClasses, showTreeView
     GeneratedBytecodeAwareGroovyClassLoader classLoader
     def prefs = new AstBrowserUiPreferences()
     Action refreshAction
@@ -118,14 +118,13 @@ class AstBrowser {
         showScriptClass = prefs.showScriptClass
         showClosureClasses = prefs.showClosureClasses
         showTreeView = prefs.showTreeView
-        showIndyBytecode = prefs.showIndyBytecode
 
         frame = swing.frame(title: 'Groovy AST Browser' + (name ? " - $name" : ''),
                 location: prefs.frameLocation,
                 size: prefs.frameSize,
                 iconImage: swing.imageIcon(Console.ICON_PATH).image,
                 defaultCloseOperation: WindowConstants.DISPOSE_ON_CLOSE,
-                windowClosing: { event -> prefs.save(frame, splitterPane, mainSplitter, showScriptFreeForm, showScriptClass, showClosureClasses, phasePicker.selectedItem, showTreeView, showIndyBytecode) }) {
+                windowClosing: { event -> prefs.save(frame, splitterPane, mainSplitter, showScriptFreeForm, showScriptClass, showClosureClasses, phasePicker.selectedItem, showTreeView) }) {
 
             menuBar {
                 menu(text: 'Show Script', mnemonic: 'S') {
@@ -144,10 +143,6 @@ class AstBrowser {
                     checkBoxMenuItem(selected: showTreeView) {
                         action(name: 'Tree View', closure: this.&showTreeView,
                                 mnemonic: 'T')
-                    }
-                    checkBoxMenuItem(selected: showIndyBytecode) {
-                        action(name: 'Generate Indy Bytecode', closure: this.&showIndyBytecode,
-                                mnemonic: 'I')
                     }
                 }
                 menu(text: 'View', mnemonic: 'V') {
@@ -435,32 +430,12 @@ class AstBrowser {
         }
     }
 
-    void showIndyBytecode(EventObject evt = null) {
-        showIndyBytecode = evt.source.selected
-        initAuxViews()
-        refreshAction.actionPerformed(null)
-        updateTabTitles()
-    }
-
-    private void updateTabTitles() {
-        def tabPane = mainSplitter.bottomComponent
-        int tabCount = tabPane.getTabCount()
-        for (int i = 0; i < tabCount; i++) {
-            def component = tabPane.getComponentAt(i)
-            if (bytecodeView.is(component)) {
-                tabPane.setTitleAt(i, getByteCodeTitle())
-            } else if (asmifierView.is(component)) {
-                tabPane.setTitleAt(i, getASMifierTitle())
-            }
-        }
-    }
-
     private String getByteCodeTitle() {
-        'Bytecode' + (showIndyBytecode ? ' (Indy)' : '')
+        'Bytecode'
     }
 
     private String getASMifierTitle() {
-        'ASMifier' + (showIndyBytecode ? ' (Indy)' : '')
+        'ASMifier'
     }
 
     void decompile(phaseId, source) {
@@ -502,7 +477,7 @@ class AstBrowser {
                 def nodeMaker = new SwingTreeNodeMaker()
                 def adapter = new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, showClosureClasses, nodeMaker, config)
                 classLoader.clearBytecodeTable()
-                def result = adapter.compile(script, compilePhase, showIndyBytecode)
+                def result = adapter.compile(script, compilePhase)
                 swing.doLater {
                     model.setRoot(result)
                     model.reload()
@@ -531,7 +506,6 @@ class AstBrowserUiPreferences {
     final boolean showTreeView
     final boolean showScriptClass
     final boolean showClosureClasses
-    final boolean showIndyBytecode
     int decompiledSourceFontSize
     final CompilePhaseAdapter selectedPhase
 
@@ -551,14 +525,13 @@ class AstBrowserUiPreferences {
         showScriptClass = prefs.getBoolean('showScriptClass', true)
         showClosureClasses = prefs.getBoolean('showClosureClasses', false)
         showTreeView = prefs.getBoolean('showTreeView', true)
-        showIndyBytecode = prefs.getBoolean('showIndyBytecode', false)
         int phase = prefs.getInt('compilerPhase', Phases.SEMANTIC_ANALYSIS)
         selectedPhase = CompilePhaseAdapter.values().find {
             it.phaseId == phase
         }
     }
 
-    def save(frame, vSplitter, hSplitter, scriptFreeFormPref, scriptClassPref, closureClassesPref, CompilePhaseAdapter phase, showTreeView, showIndyBytecode = false) {
+    def save(frame, vSplitter, hSplitter, scriptFreeFormPref, scriptClassPref, closureClassesPref, CompilePhaseAdapter phase, showTreeView) {
         Preferences prefs = Preferences.userNodeForPackage(AstBrowserUiPreferences)
         prefs.putInt('decompiledFontSize', decompiledSourceFontSize as int)
         prefs.putInt('frameX', frame.location.x as int)
@@ -571,7 +544,6 @@ class AstBrowserUiPreferences {
         prefs.putBoolean('showScriptClass', scriptClassPref)
         prefs.putBoolean('showClosureClasses', closureClassesPref)
         prefs.putBoolean('showTreeView', showTreeView)
-        prefs.putBoolean('showIndyBytecode', showIndyBytecode)
         prefs.putInt('compilerPhase', phase.phaseId)
     }
 }

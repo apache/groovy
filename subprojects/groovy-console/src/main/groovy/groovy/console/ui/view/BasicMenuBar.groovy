@@ -87,7 +87,6 @@ menuBar {
         menuItem(interruptAction)
         menuItem(compileAction)
         menuItem(compileJavaAction)
-        checkBoxMenuItem(indyAction, selected: controller.indy)
         separator()
         menuItem(addClasspathJar)
         menuItem(addClasspathDir)

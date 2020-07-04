@@ -272,7 +272,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     // These two properties are used when no ExpandoMetaClassCreationHandle is present
 
     private MetaClass myMetaClass;
-    private boolean initialized;
+    private volatile boolean initialized;
     private volatile boolean modified;
 
     private boolean initCalled;
@@ -502,6 +502,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * Checks if the meta class is initialized.
      * @see groovy.lang.MetaClassImpl#isInitialized()
      */
+    @Override
     protected boolean isInitialized() {
         try {
             readLock.lock();
@@ -511,6 +512,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         }
     }
 
+    @Override
     protected void setInitialized(boolean b) {
         this.initialized = b;
     }
@@ -1346,7 +1348,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
         public Object invokeMethod(String name, Object obj) {
             if (obj instanceof Object[]) {
-                Object args[] = (Object[]) obj;
+                Object[] args = (Object[]) obj;
                 if (args.length == 1 && args[0] instanceof Closure) {
                     registerSubclassInstanceMethod(name, klazz, (Closure) args[0]);
                     return null;
@@ -1393,7 +1395,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                         c.call((Object)null);
                         return null;
                     }
-                    Object args[] = (Object[]) obj;
+                    Object[] args = (Object[]) obj;
                     if (args.length == 1 && args[0] instanceof Closure) {
                         registerInstanceMethod(name, (Closure) args[0]);
                     } else if (args.length == 2 && args[0] instanceof Class && args[1] instanceof Closure)

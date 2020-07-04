@@ -130,7 +130,8 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
             Map<String, ClassNode> updatedGenericsSpec = new HashMap<String, ClassNode>(genericsSpec);
             while (!interfaces.isEmpty()) {
                 ClassNode origInterface = interfaces.remove(0);
-                if (!origInterface.equals(ClassHelper.OBJECT_TYPE)) {
+                // ignore java.lang.Object; also methods added by Verifier for GroovyObject are already good enough
+                if (!origInterface.equals(ClassHelper.OBJECT_TYPE) && !origInterface.equals(ClassHelper.GROOVY_OBJECT_TYPE)) {
                     updatedGenericsSpec = createGenericsSpec(origInterface, updatedGenericsSpec);
                     ClassNode correctedInterface = correctToGenericsSpecRecurse(updatedGenericsSpec, origInterface);
                     for (MethodNode nextMethod : correctedInterface.getMethods()) {

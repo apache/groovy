@@ -940,7 +940,7 @@ class CliBuilder {
             m.remove('args')
             m.remove('optionalArg')
         }
-        if (!m.defaultValue) {
+        if (!m.containsKey('defaultValue')) { // GROOVY-9599
             m.remove('defaultValue') // don't default the picocli model to empty string
         }
         def result = m.collectMany { k, v ->

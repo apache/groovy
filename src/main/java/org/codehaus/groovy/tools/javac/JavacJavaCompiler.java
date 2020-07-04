@@ -21,6 +21,7 @@ package org.codehaus.groovy.tools.javac;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import org.apache.groovy.io.StringBuilderWriter;
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
@@ -38,6 +39,7 @@ import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -92,6 +94,20 @@ public class JavacJavaCompiler implements JavaCompiler {
         javax.tools.JavaCompiler compiler = javax.tools.ToolProvider.getSystemJavaCompiler();
         try (javax.tools.StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, DEFAULT_LOCALE, charset)) {
             Set<javax.tools.JavaFileObject> compilationUnitSet = cu.getJavaCompilationUnitSet(); // java stubs already added
+
+            Map<String, Object> options = this.config.getJointCompilationOptions();
+            if (!Boolean.parseBoolean(options.get(CompilerConfiguration.MEM_STUB).toString())) {
+                // clear the java stubs in the source set of Java compilation
+                compilationUnitSet = new HashSet<>();
+
+                // use sourcepath to specify the root directory of java stubs
+                javacParameters.add("-sourcepath");
+                final File stubDir = (File) options.get("stubDir");
+                if (null == stubDir) {
+                    throw new GroovyBugError("stubDir is not specified");
+                }
+                javacParameters.add(stubDir.getAbsolutePath());
+            }
 
             // add java source files to compile
             fileManager.getJavaFileObjectsFromFiles(

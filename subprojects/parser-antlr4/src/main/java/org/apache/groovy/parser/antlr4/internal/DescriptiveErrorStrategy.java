@@ -94,8 +94,7 @@ public class DescriptiveErrorStrategy extends BailErrorStrategy {
 
     protected String createInputMismatchErrorMessage(Parser recognizer,
                                                      InputMismatchException e) {
-        return "Unexpected input: " + getTokenErrorDisplay(e.getOffendingToken(recognizer)) +
-                "; Expecting " + e.getExpectedTokens().toString(recognizer.getVocabulary());
+        return "Unexpected input: " + getTokenErrorDisplay(e.getOffendingToken(recognizer));
     }
 
     protected void reportInputMismatch(Parser recognizer,

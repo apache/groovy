@@ -446,13 +446,6 @@ selectBlockAction = action(
         shortDescription: 'Selects current Word, Line or Block in Script'
 )
 
-indyAction = action(
-        name: 'Enable Indy Compilation',
-        closure: controller.&indy,
-        mnemonic: 'I',
-        shortDescription: 'Enable InvokeDynamic (Indy) compilation for scripts'
-)
-
 preferencesAction = action(
         name: 'Preferences',
         closure: controller.&preferences,

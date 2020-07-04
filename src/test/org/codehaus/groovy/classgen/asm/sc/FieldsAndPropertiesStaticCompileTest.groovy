@@ -283,7 +283,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         // no GETFIELD in getXX
         assert (astTrees['B'][1] =~ 'GETFIELD A.x').collect().size() == 0
         // getX in getXX
-        assert (astTrees['B'][1] =~ 'INVOKEVIRTUAL A.getX').collect().size() == 1
+        assert (astTrees['B'][1] =~ 'INVOKEVIRTUAL B.getX').collect().size() == 1
     }
 
     void testUseDirectReadFieldAccess() {
@@ -470,12 +470,11 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
 
     // GROOVY-5649
     void testShouldNotThrowStackOverflowUsingThis() {
-        new GroovyShell().evaluate '''class HaveOption {
+        new GroovyShell().evaluate '''
+        class HaveOption {
 
           private String helpOption;
 
-
-          @groovy.transform.CompileStatic
           public void setHelpOption(String helpOption) {
             this.helpOption = helpOption
           }
@@ -488,12 +487,11 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     }
 
     void testShouldNotThrowStackOverflow() {
-        new GroovyShell().evaluate '''class HaveOption {
+        new GroovyShell().evaluate '''
+        class HaveOption {
 
           private String helpOption;
 
-
-          @groovy.transform.CompileStatic
           public void setHelpOption(String ho) {
             helpOption = ho
           }
@@ -791,7 +789,6 @@ import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression
     // GROOVY-8753
     void testPrivateFieldWithPublicGetter() {
         assertScript '''
-            @groovy.transform.CompileStatic
             class A {
                private List<String> fooNames = []
                public A(Collection<String> names) {

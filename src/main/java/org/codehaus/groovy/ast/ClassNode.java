@@ -142,7 +142,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private List<ConstructorNode> constructors;
     private MapOfLists methods;
     private List<MethodNode> methodsList;
-    private LinkedList<FieldNode> fields;
+    private List<FieldNode> fields;
     private List<PropertyNode> properties;
     private Map<String, FieldNode> fieldIndex;
     private ModuleNode module;
@@ -354,7 +354,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             return redirect.getFields();
         lazyClassInit();
         if (fields == null)
-            fields = new LinkedList<>();
+            fields = new ArrayList<>();
         return fields;
     }
 
@@ -516,12 +516,12 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         node.setDeclaringClass(r);
         node.setOwner(r);
         if (r.fields == null)
-            r.fields = new LinkedList<>();
+            r.fields = new ArrayList<>();
         if (r.fieldIndex == null)
             r.fieldIndex = new LinkedHashMap<>();
 
         if (isFirst) {
-            r.fields.addFirst(node);
+            r.fields.add(0, node);
         } else {
             r.fields.add(node);
         }

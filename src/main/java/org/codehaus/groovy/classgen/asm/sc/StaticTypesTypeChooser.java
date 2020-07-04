@@ -18,12 +18,12 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
-import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.StatementMetaTypeChooser;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
@@ -34,27 +34,21 @@ import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
     @Override
     public ClassNode resolveType(final Expression exp, final ClassNode current) {
-        ASTNode target = exp instanceof VariableExpression ? getTarget((VariableExpression) exp) : exp;
+        Expression target = exp instanceof VariableExpression ? getTarget((VariableExpression) exp) : exp;
+
         ClassNode inferredType = target.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE);
         if (inferredType == null) {
             inferredType = target.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-            if (inferredType == null && target instanceof VariableExpression && ((VariableExpression) target).getAccessedVariable() instanceof Parameter) {
-                target = (Parameter) ((VariableExpression) target).getAccessedVariable();
-                inferredType = ((Parameter) target).getOriginType();
-            }
         }
-        if (inferredType != null) {
-            if (ClassHelper.VOID_TYPE == inferredType) {
-                // we are in a case of a type inference failure, probably because code was generated
-                // it is better to avoid using this
-                inferredType = super.resolveType(exp, current);
-            }
+        if (inferredType != null && !ClassHelper.VOID_TYPE.equals(inferredType)) {
             return inferredType;
         }
-        if (target instanceof VariableExpression && ((VariableExpression) target).isThisExpression()) {
-            // AsmClassGenerator may create "this" expressions that the type checker knows nothing about
+
+        // AsmClassGenerator may create "this" expressions that the type checker knows nothing about
+        if (AsmClassGenerator.isThisExpression(target)) {
             return current;
         }
+
         return super.resolveType(exp, current);
     }
 
@@ -65,9 +59,11 @@ public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
      * @param ve the variable expression for which to return the target expression
      * @return the target variable expression
      */
-    private static VariableExpression getTarget(VariableExpression ve) {
-        if (ve.getAccessedVariable() == null || ve.getAccessedVariable() == ve || (!(ve.getAccessedVariable() instanceof VariableExpression)))
-            return ve;
-        return getTarget((VariableExpression) ve.getAccessedVariable());
+    private static VariableExpression getTarget(final VariableExpression ve) {
+        Variable variable = ve.getAccessedVariable();
+        if (variable != ve && variable instanceof VariableExpression) {
+            return getTarget((VariableExpression) variable);
+        }
+        return ve;
     }
 }

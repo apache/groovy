@@ -18,9 +18,6 @@
  */
 package groovy.json
 
-/**
- * Created by Richard on 2/2/14.
- */
 class JsonSlurperLaxTest extends JsonSlurperTest {
 
     void setUp() {
@@ -98,7 +95,7 @@ class JsonSlurperLaxTest extends JsonSlurperTest {
             flag : true,
             flag2 : false,
             strings : [we, are, string, here, us, roar],
-            he said : '"fire all your guns at once baby, and explode into the night"',
+            they said : '"fire all your guns at once baby, and explode into the night"',
             "going deeper" : [
                 "nestedArrays", // needs comments
                 "anotherThing" // commented
@@ -119,7 +116,7 @@ class JsonSlurperLaxTest extends JsonSlurperTest {
         assert map.flag == true
         assert map.flag2 == false
         assert map.strings == ["we", "are", "string", "here", "us", "roar"]
-        assert map["he said"] == '"fire all your guns at once baby, and explode into the night"'
+        assert map["they said"] == '"fire all your guns at once baby, and explode into the night"'
         assert map.the == "end"
     }
 

@@ -428,7 +428,7 @@ include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=gstring_mutatio
 <6> so when we evaluate the string, it returns _Sam_
 <7> if we change `p` to _Lucy_
 <8> the string still evaluates to _Sam_ because it was the *value* of `p` when the `GString` was created
-<9> so if we mutate _Sam_ to change his name to _Lucy_
+<9> so if we mutate _Sam_ to change the name to _Lucy_
 <10> this time the `GString` is correctly mutated
 
 So if you don't want to rely on mutating objects or wrapping objects, you *must* use closures in `GString` by explicitly

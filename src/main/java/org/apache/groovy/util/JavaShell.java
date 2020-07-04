@@ -85,14 +85,38 @@ public class JavaShell {
      * Run main method
      *
      * @param className the main class name
+     * @param options compiler options
      * @param src the source code
      * @param args arguments for main method
-     * @throws Throwable
      */
-    public void run(String className, String src, String... args) throws Throwable {
-        Class<?> c = compile(className, src);
+    public void run(String className, Iterable<String> options, String src, String... args) throws Throwable {
+        Class<?> c = compile(className, options, src);
         Method mainMethod = c.getMethod(MAIN_METHOD_NAME, String[].class);
         mainMethod.invoke(null, (Object) args);
+    }
+
+    /**
+     * Run main method
+     *
+     * @param className the main class name
+     * @param src the source code
+     * @param args arguments for main method
+     */
+    public void run(String className, String src, String... args) throws Throwable {
+        run(className, Collections.emptyList(), src, args);
+    }
+
+    /**
+     * Compile and return the main class
+     * @param className the main class name
+     * @param options compiler options
+     * @param src the source code
+     * @return the main class
+     */
+    public Class<?> compile(final String className, Iterable<String> options, String src) throws IOException, ClassNotFoundException {
+        doCompile(className, src, options);
+
+        return jscl.findClass(className);
     }
 
     /**
@@ -100,26 +124,21 @@ public class JavaShell {
      * @param className the main class name
      * @param src the source code
      * @return the main class
-     * @throws IOException
-     * @throws ClassNotFoundException
      */
     public Class<?> compile(final String className, String src) throws IOException, ClassNotFoundException {
-        doCompile(className, src);
-
-        return jscl.findClass(className);
+        return compile(className, Collections.emptyList(), src);
     }
 
     /**
      * Compile and return all classes
      *
      * @param className the main class name
+     * @param options compiler options
      * @param src the source code
      * @return all classes
-     * @throws IOException
-     * @throws ClassNotFoundException
      */
-    public Map<String, Class<?>> compileAll(final String className, String src) throws IOException, ClassNotFoundException {
-        doCompile(className, src);
+    public Map<String, Class<?>> compileAll(final String className, Iterable<String> options, String src) throws IOException, ClassNotFoundException {
+        doCompile(className, src, options);
 
         Map<String, Class<?>> classes = new LinkedHashMap<>();
         for (String cn : jscl.getClassMap().keySet()) {
@@ -130,7 +149,18 @@ public class JavaShell {
         return classes;
     }
 
-    private void doCompile(String className, String src) throws IOException {
+    /**
+     * Compile and return all classes
+     *
+     * @param className the main class name
+     * @param src the source code
+     * @return all classes
+     */
+    public Map<String, Class<?>> compileAll(final String className, String src) throws IOException, ClassNotFoundException {
+        return compileAll(className, Collections.emptyList(), src);
+    }
+
+    private void doCompile(String className, String src, Iterable<String> options) throws IOException {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         try (BytesJavaFileManager bjfm = new BytesJavaFileManager(compiler.getStandardFileManager(null, locale, charset))) {
             StringBuilderWriter out = new StringBuilderWriter();
@@ -139,7 +169,7 @@ public class JavaShell {
                             out,
                             bjfm,
                             null,
-                            Collections.emptyList(),
+                            options,
                             Collections.emptyList(),
                             Collections.singletonList(
                                     new MemJavaFileObject(className, src)

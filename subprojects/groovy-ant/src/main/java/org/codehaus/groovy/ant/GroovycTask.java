@@ -58,9 +58,9 @@ public class GroovycTask
         int count = 0;
         String[] list = src.list();
 
-        for (int i = 0; i < list.length; i++) {
-            File basedir = getProject().resolveFile(list[i]);
-            
+        for (String s : list) {
+            File basedir = getProject().resolveFile(s);
+
             if (!basedir.exists()) {
                 throw new BuildException("Source directory does not exist: " + basedir, getLocation());
             }
@@ -71,24 +71,23 @@ public class GroovycTask
             if (force) {
                 log.debug("Forcefully including all files from: " + basedir);
 
-                for (int j=0; j < includes.length; j++) {
-                    File file = new File(basedir, includes[j]);
-                    log.debug("    "  + file);
+                for (String include : includes) {
+                    File file = new File(basedir, include);
+                    log.debug("    " + file);
 
                     compilation.addSource(file);
                     count++;
                 }
-            }
-            else {
+            } else {
                 log.debug("Including changed files from: " + basedir);
 
                 SourceFileScanner sourceScanner = new SourceFileScanner(this);
                 File[] files = sourceScanner.restrictAsFiles(includes, basedir, destdir, mapper);
 
-                for (int j=0; j < files.length; j++) {
-                    log.debug("    "  + files[j]);
+                for (File file : files) {
+                    log.debug("    " + file);
 
-                    compilation.addSource(files[j]);
+                    compilation.addSource(file);
                     count++;
                 }
             }
