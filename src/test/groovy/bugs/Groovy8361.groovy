@@ -33,11 +33,11 @@ final class Groovy8361 {
             targetDirectory: File.createTempDir(),
             jointCompilationOptions: [memStub: true]
         )
-
         def parentDir = File.createTempDir()
-        new File(parentDir, 'p').mkdir()
-        new File(parentDir, 'q').mkdir()
         try {
+            new File(parentDir, 'p').mkdir()
+            new File(parentDir, 'q').mkdir()
+
             def a = new File(parentDir, 'p/A.java')
             a.write '''
                 package p;
@@ -65,22 +65,21 @@ final class Groovy8361 {
             }
             assert err =~ /unable to resolve class AA/
         } finally {
-            parentDir.deleteDir()
             config.targetDirectory.deleteDir()
+            parentDir.deleteDir()
         }
     }
 
     @Test
     void testAliasedImportNotUsed2() {
         def config = new CompilerConfiguration(
-            targetDirectory: File.createTempDir(),
-            jointCompilationOptions: [memStub: true]
+            targetDirectory: File.createTempDir()
         )
-
         def parentDir = File.createTempDir()
-        new File(parentDir, 'p').mkdir()
-        new File(parentDir, 'q').mkdir()
         try {
+            new File(parentDir, 'p').mkdir()
+            new File(parentDir, 'q').mkdir()
+
             def a = new File(parentDir, 'p/A.groovy')
             a.write '''
                 package p
@@ -108,8 +107,8 @@ final class Groovy8361 {
             }
             assert err =~ /unable to resolve class AA/
         } finally {
-            parentDir.deleteDir()
             config.targetDirectory.deleteDir()
+            parentDir.deleteDir()
         }
     }
 }
