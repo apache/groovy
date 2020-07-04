@@ -49,35 +49,32 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testAnnotationOnSingleMethod() {
-        GroovyShell shell = new GroovyShell()
-        shell.evaluate '''
-            // calling a method which has got some dynamic stuff in it
+    void testDynamicMethodWithinTypeCheckedClass() {
+        assertScript '''
+            import groovy.transform.*
 
-            import groovy.transform.TypeChecked
-            import groovy.xml.MarkupBuilder
-
-            class Greeter {
-                @TypeChecked
-                String greeting(String name) {
-                    generateMarkup(name.toUpperCase())
+            class C {
+                String m(String s) {
+                    generateMarkup(s.toUpperCase())
                 }
 
-                // MarkupBuilder is dynamic so we won't do typechecking here
-                String generateMarkup(String name) {
+                // MarkupBuilder is dynamic so skip type-checking
+                @TypeChecked(TypeCheckingMode.SKIP)
+                String generateMarkup(String s) {
                     def sw = new StringWriter()
-                    def mkp = new MarkupBuilder()
-                    mkp.html {
+                    def mb = new groovy.xml.MarkupBuilder(sw)
+                    mb.html {
                         body {
-                            div name
+                            div s
                         }
                     }
-                    sw
+                    sw.toString()
                 }
             }
 
-            def g = new Greeter()
-            g.greeting("Guillaume")
+            def c = new C()
+            def xml = c.m('x')
+            // TODO: check XML
         '''
     }
 

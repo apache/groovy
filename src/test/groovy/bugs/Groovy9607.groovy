@@ -35,7 +35,7 @@ final class Groovy9607 {
               def name = prop.name
               help(new Runnable() {
                 void run() {
-                  assert item[name] == 'bar' // STC throws GBE if 'name' to infers as Object
+                  assert item[name] == 'bar' // STC throws GBE if 'name' infers as Object
                 }
               })
             }
@@ -54,7 +54,7 @@ final class Groovy9607 {
               name = prop.name
               help(new Runnable() {
                 void run() {
-                  assert item[name] == 'bar' // STC throws GBE if 'name' to infers as Object
+                  assert item[name] == 'bar' // STC throws GBE if 'name' infers as Object
                 }
               })
             }
