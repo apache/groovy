@@ -41,6 +41,7 @@ import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.MethodCallerMultiAdapter;
 import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
+import org.codehaus.groovy.classgen.asm.VariableSlotLoader;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
@@ -832,14 +833,35 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
 
     @Override
     public void fallbackAttributeOrPropertySite(final PropertyExpression expression, final Expression objectExpression, final String name, final MethodCallerMultiAdapter adapter) {
-        if (name != null && (adapter == AsmClassGenerator.setField || adapter == AsmClassGenerator.setGroovyObjectField)) {
-            TypeChooser typeChooser = controller.getTypeChooser();
+        if (name != null && controller.getCompileStack().isLHS()) {
             ClassNode classNode = controller.getClassNode();
-            ClassNode rType = typeChooser.resolveType(objectExpression, classNode);
-            if (controller.getCompileStack().isLHS()) {
-                if (setField(expression, objectExpression, rType, name)) return;
-            } else {
-                if (getField(expression, objectExpression, rType, name)) return;
+            ClassNode receiverType = controller.getTypeChooser().resolveType(objectExpression, classNode);
+            if (adapter == AsmClassGenerator.setField || adapter == AsmClassGenerator.setGroovyObjectField) {
+                if (setField(expression, objectExpression, receiverType, name)) return;
+            } else if (isThisExpression(objectExpression)) {
+                FieldNode fieldNode = receiverType.getField(name);
+                if (fieldNode != null && fieldNode.isPrivate() && !receiverType.equals(classNode)
+                        && StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode)) {
+                    Map<String, MethodNode> mutators = receiverType.redirect().getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_FIELDS_MUTATORS);
+                    if (mutators != null) {
+                        MethodNode methodNode = mutators.get(name);
+                        if (methodNode != null) {
+                            ClassNode rhsType = controller.getOperandStack().getTopOperand();
+                            int i = controller.getCompileStack().defineTemporaryVariable("$rhsValue", rhsType, true);
+                            VariableSlotLoader rhsValue = new VariableSlotLoader(rhsType, i, controller.getOperandStack());
+
+                            MethodCallExpression call = callX(objectExpression, methodNode.getName(), args(fieldNode.isStatic() ? nullX() : objectExpression, rhsValue));
+                            call.setImplicitThis(expression.isImplicitThis());
+                            call.setSpreadSafe(expression.isSpreadSafe());
+                            call.setSafe(expression.isSafe());
+                            call.setMethodTarget(methodNode);
+                            call.visit(controller.getAcg());
+
+                            controller.getCompileStack().removeVar(i);
+                            return;
+                        }
+                    }
+                }
             }
         }
         super.fallbackAttributeOrPropertySite(expression, objectExpression, name, adapter);
@@ -870,12 +892,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             mv.visitFieldInsn(PUTSTATIC, ownerName, name, BytecodeHelper.getTypeDescription(fn.getType()));
         }
 
-        //mv.visitInsn(ACONST_NULL);
-        //stack.replace(OBJECT_TYPE);
         return true;
     }
 
-    private boolean getField(final PropertyExpression expression, final Expression receiver, ClassNode receiverType, final String name) {
+    /*private boolean getField(final PropertyExpression expression, final Expression receiver, ClassNode receiverType, final String name) {
         boolean safe = expression.isSafe();
         boolean implicitThis = expression.isImplicitThis();
 
@@ -898,5 +918,5 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             return true;
         }
         return false;
-    }
+    }*/
 }
