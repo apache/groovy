@@ -2606,16 +2606,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private static void createMetaBeanProperty(SingleKeyHashMap propertyIndex, String propName, boolean isGetter, MetaMethod propertyMethod) {
-        // check if property is already accounted for
-        MetaProperty oldMP = (MetaProperty) propertyIndex.get(propName);
-        if (oldMP == null && propName.length() == 1 && propertyMethod.isStatic()) {
-            oldMP = (MetaProperty) propertyIndex.get(propName.toUpperCase());
-            if (oldMP != null) propName = propName.toUpperCase();
-        }
-
-        MetaProperty newMP = makeReplacementMetaProperty(oldMP, propName, isGetter, propertyMethod);
-        if (newMP != oldMP) {
-            propertyIndex.put(propName, newMP);
+        // is this property already accounted for?
+        MetaProperty mp = (MetaProperty) propertyIndex.get(propName);
+        MetaProperty newMp = makeReplacementMetaProperty(mp, propName, isGetter, propertyMethod);
+        if (newMp != mp) {
+            propertyIndex.put(propName, newMp);
         }
     }
 
