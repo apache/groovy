@@ -280,28 +280,26 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @see MetaObjectProtocol#getMetaProperty(String)
      */
     public MetaProperty getMetaProperty(String name) {
+        MetaProperty metaProperty = null;
+
         SingleKeyHashMap propertyMap = classPropertyIndex.getNotNull(theCachedClass);
-        if (propertyMap.containsKey(name)) {
-            return (MetaProperty) propertyMap.get(name);
-        } else if (staticPropertyIndex.containsKey(name)) {
-            return (MetaProperty) staticPropertyIndex.get(name);
-        } else {
-            propertyMap = classPropertyIndexForSuper.getNotNull(theCachedClass);
-            if (propertyMap.containsKey(name))
-                return (MetaProperty) propertyMap.get(name);
-            else {
-                CachedClass superClass = theCachedClass;
-                while (superClass != null && superClass != ReflectionCache.OBJECT_CLASS) {
-                    final MetaBeanProperty property = findPropertyInClassHierarchy(name, superClass);
+        metaProperty = (MetaProperty) propertyMap.get(name);
+        if (metaProperty == null) {
+            metaProperty = (MetaProperty) staticPropertyIndex.get(name);
+            if (metaProperty == null) {
+                propertyMap = classPropertyIndexForSuper.getNotNull(theCachedClass);
+                metaProperty = (MetaProperty) propertyMap.get(name);
+                if (metaProperty == null) {
+                    MetaBeanProperty property = findPropertyInClassHierarchy(name, theCachedClass);
                     if (property != null) {
                         onSuperPropertyFoundInHierarchy(property);
-                        return property;
+                        metaProperty = property;
                     }
-                    superClass = superClass.getCachedSuperClass();
                 }
-                return null;
             }
         }
+
+        return metaProperty;
     }
 
     /**
@@ -331,7 +329,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * Return wether the class represented by this metaclass instance is an instance of the GroovyObject class
+     * Return whether the class represented by this metaclass instance is an instance of the GroovyObject class
      *
      * @return true if this is a groovy class, false otherwise.
      */
@@ -843,29 +841,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param instance The object the method should be invoked on.
      * @param propertyName The name of the property to invoke.
      * @param optionalValue The (optional) new value for the property
-     * @param isGetter Wether the method is a getter
-     *
+     * @param isGetter      Whether the method is a getter
      * @return The result of the method invocation.
      */
     public Object invokeMissingProperty(Object instance, String propertyName, Object optionalValue, boolean isGetter) {
-        Class theClass = instance instanceof Class ? (Class)instance : instance.getClass();
-        CachedClass superClass = theCachedClass;
-        while(superClass != null && superClass != ReflectionCache.OBJECT_CLASS) {
-            final MetaBeanProperty property = findPropertyInClassHierarchy(propertyName, superClass);
-            if(property != null) {
-                onSuperPropertyFoundInHierarchy(property);
-                if(!isGetter) {
-                    property.setProperty(instance, optionalValue);
-                    return null;
-                }
-                else {
-                    return property.getProperty(instance);
-                }
+        MetaBeanProperty property = findPropertyInClassHierarchy(propertyName, theCachedClass);
+        if (property != null) {
+            onSuperPropertyFoundInHierarchy(property);
+            if (!isGetter) {
+                property.setProperty(instance, optionalValue);
+                return null;
             }
-            superClass = superClass.getCachedSuperClass();
+            return property.getProperty(instance);
         }
-        // got here to property not found, look for getProperty or setProperty overrides
-        if(isGetter) {
+
+        // look for getProperty or setProperty overrides
+        if (isGetter) {
             final Class[] getPropertyArgs = {String.class};
             final MetaMethod method = findMethodInClassHierarchy(instance.getClass(), GET_PROPERTY_METHOD, getPropertyArgs, this);
             if(method instanceof ClosureMetaMethod) {
@@ -903,6 +894,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             throw iie;
         }
 
+        Class theClass = instance instanceof Class ? (Class) instance : instance.getClass();
         if (instance instanceof Class && theClass != Class.class) {
            final MetaProperty metaProperty = InvokerHelper.getMetaClass(Class.class).hasProperty(instance, propertyName);
            if (metaProperty != null)
@@ -913,6 +905,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                return null;
              }
         }
+
         throw new MissingPropertyExceptionNoStack(propertyName, theClass);
     }
 
@@ -3552,13 +3545,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     protected MetaBeanProperty findPropertyInClassHierarchy(String propertyName, CachedClass theClass) {
-        MetaBeanProperty property= null;
-        if (theClass == null)
+        if (theClass == null || theClass == ReflectionCache.OBJECT_CLASS)
             return null;
 
         final CachedClass superClass = theClass.getCachedSuperClass();
         if (superClass == null)
           return null;
+
+        MetaBeanProperty property = null;
 
         MetaClass metaClass = this.registry.getMetaClass(superClass.getTheClass());
         if(metaClass instanceof MutableMetaClass) {
@@ -3574,7 +3568,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
         return property;
-
     }
 
     private MetaBeanProperty searchInterfacesForMetaProperty(String propertyName, Class[] interfaces) {
