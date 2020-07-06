@@ -529,7 +529,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * }
      *
      * // Stream#toArray(IntFunction) should still be used for closure literal:
-     * assert Arrays.equals(['x'].stream().toArray { n -> new String[n] }, ['x'] as String[])
+     * assert Arrays.equals(['x'].stream().toArray { n -&gt; new String[n] }, ['x'] as String[])
      *
      * // Stream#toArray(IntFunction) should still be used for method reference:
      * assert Arrays.equals(['x'].stream().toArray(String[]::new), ['x'] as String[])
