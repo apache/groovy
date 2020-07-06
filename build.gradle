@@ -150,7 +150,7 @@ ext {
     spockVersion = '2.0-M3-groovy-3.0' // running with Groovy 4 can be allowed with '-Dspock.iKnowWhatImDoing.disableGroovyVersionCheck=true'
     spotbugsVersion = '4.0.3'
     spotbugsAnnotationsVersion = '4.0.3'
-    checkstyleVersion = '8.32'
+    checkstyleVersion = '8.34'
     junit5Version = '5.6.2'
     junit5PlatformVersion = '1.6.2'
 }
