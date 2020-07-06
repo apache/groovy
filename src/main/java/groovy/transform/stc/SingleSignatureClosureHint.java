@@ -35,7 +35,7 @@ import java.util.List;
  */
 public abstract class SingleSignatureClosureHint extends ClosureSignatureHint {
 
-    public abstract ClassNode[] getParameterTypes(final MethodNode node, final String[] options, final SourceUnit sourceUnit, final CompilationUnit unit, final ASTNode usage);
+    public abstract ClassNode[] getParameterTypes(MethodNode node, String[] options, SourceUnit sourceUnit, CompilationUnit unit, ASTNode usage);
 
     public List<ClassNode[]> getClosureSignatures(final MethodNode node, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final String[] options, final ASTNode usage) {
         return Collections.singletonList(getParameterTypes(node, options, sourceUnit, compilationUnit, usage));
