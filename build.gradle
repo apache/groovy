@@ -46,7 +46,7 @@ buildscript {
 
 plugins {
     id 'me.champeau.buildscan-recipes' version '0.2.3'
-    id 'com.github.spotbugs' version '4.2.0'
+    id 'com.github.spotbugs' version '4.4.4'
     id 'com.github.ben-manes.versions' version '0.28.0'
     id 'com.github.blindpirate.osgi' version '0.0.3'
     id 'org.sonarqube' version '2.8'
@@ -148,8 +148,8 @@ ext {
     xmlunitVersion = '1.6'
     xstreamVersion = '1.4.12'
     spockVersion = '2.0-M3-groovy-3.0' // running with Groovy 4 can be allowed with '-Dspock.iKnowWhatImDoing.disableGroovyVersionCheck=true'
-    spotbugsVersion = '4.0.3'
-    spotbugsAnnotationsVersion = '4.0.3'
+    spotbugsVersion = '4.0.6'
+    spotbugsAnnotationsVersion = '4.0.6'
     checkstyleVersion = '8.34'
     junit5Version = '5.6.2'
     junit5PlatformVersion = '1.6.2'
@@ -205,6 +205,7 @@ dependencies {
     testImplementation project(':groovy-dateutil')
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-macro')
+    spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.10.1'
 }
 
 ext.generatedDirectory = "${buildDir}/generated/sources"
