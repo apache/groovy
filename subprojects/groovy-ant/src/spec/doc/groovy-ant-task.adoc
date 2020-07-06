@@ -19,8 +19,10 @@
 
 //////////////////////////////////////////
 
-[[title-heading]]
 = The <groovy> Ant Task
+
+[[ThegroovyAntTask-groovyc]]
+== `<groovy>`
 
 [NOTE]
 Here we describe an Ant task for using Groovy
@@ -28,7 +30,7 @@ from within an Ant build file.
 You may also be interested in
 Ant's built-in https://ant.apache.org/manual/Tasks/script.html[`script`] task
 which supports Groovy and other languages, or
-<<ant-builder.adoc#title-heading,`AntBuilder`>> which lets you write Ant build scripts
+<<ant-builder.adoc#antbuilder,`AntBuilder`>> which lets you write Ant build scripts
 in Groovy rather than XML.
 
 Executes a series of Groovy statements from http://ant.apache.org/[Apache Ant].
