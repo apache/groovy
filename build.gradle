@@ -142,7 +142,7 @@ ext {
     log4jVersion = '1.2.17'
     log4j2Version = '2.13.3'
     openbeansVersion = '1.0'
-    picocliVersion = '4.3.2'
+    picocliVersion = '4.4.0'
     qdoxVersion = '1.12.1'
     slf4jVersion = '1.7.25'
     xmlunitVersion = '1.6'
