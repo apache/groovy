@@ -18,8 +18,6 @@
  */
 package org.apache.groovy.json;
 
-import org.apache.groovy.json.FastStringService;
-
 /**
  * Internal class for fast processing of Strings during JSON parsing - default version
  */
