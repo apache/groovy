@@ -20,6 +20,7 @@ package org.apache.groovy.util
 
 import org.junit.Test
 import static org.apache.groovy.util.BeanUtils.decapitalize
+import static org.apache.groovy.util.BeanUtils.capitalize
 
 class BeanUtilsTest {
     @Test
@@ -27,7 +28,22 @@ class BeanUtilsTest {
         assert decapitalize('Prop') == 'prop'
         assert decapitalize('prop') == 'prop'
         assert decapitalize('SomeProp') == 'someProp'
+        assert decapitalize('X') == 'x'
         assert decapitalize('DB') == 'DB' // GROOVY-9451
         assert decapitalize('XML') == 'XML'
+        assert decapitalize('aProp') == 'aProp'
+        assert decapitalize('AProp') == 'AProp'
+    }
+
+    @Test
+    void testJavaBeanCapitalize() {
+        assert capitalize('Prop') == 'Prop'
+        assert capitalize('prop') == 'Prop'
+        assert capitalize('someProp') == 'SomeProp'
+        assert capitalize('DB') == 'DB'
+        assert capitalize('XML') == 'XML'
+        assert capitalize('aProp') == 'aProp' // GROOVY-3211
+        assert capitalize('pNAME') == 'pNAME' // GROOVY-3211
+        assert capitalize('AProp') == 'AProp' // GROOVY-3211
     }
 }
