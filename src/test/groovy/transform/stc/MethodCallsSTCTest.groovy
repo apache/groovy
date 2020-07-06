@@ -401,7 +401,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                         foo(it)
                     }
                 }
-            ''', 'Reference to method is ambiguous'
+            ''', 'Cannot find matching method'
     }
 
     void testShouldFailWithMultiplePossibleMethods2() {
@@ -420,7 +420,26 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                         foo(argument)
                     }
                 }
-            ''', 'Reference to method is ambiguous'
+            ''', 'Cannot find matching method'
+    }
+
+    // GROOVY-7971
+    void testShouldNotFailWithMultiplePossibleMethods() {
+        assertScript '''
+            import groovy.json.JsonOutput
+
+            def test(value) {
+                def out = new StringBuilder()
+                def isString = value.class == String
+                if (isString || value instanceof Map) {
+                    out.append(JsonOutput.toJson(value))
+                }
+                return out.toString()
+            }
+
+            def string = test('two')
+            assert string == '"two"'
+        '''
     }
 
     void testInstanceOfOnExplicitParameter() {

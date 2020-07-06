@@ -218,6 +218,7 @@ import static org.codehaus.groovy.syntax.Types.INTDIV_EQUAL;
 import static org.codehaus.groovy.syntax.Types.KEYWORD_IN;
 import static org.codehaus.groovy.syntax.Types.KEYWORD_INSTANCEOF;
 import static org.codehaus.groovy.syntax.Types.LEFT_SQUARE_BRACKET;
+import static org.codehaus.groovy.syntax.Types.LOGICAL_OR;
 import static org.codehaus.groovy.syntax.Types.MINUS_MINUS;
 import static org.codehaus.groovy.syntax.Types.MOD;
 import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
@@ -733,6 +734,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         typeCheckingContext.pushEnclosingBinaryExpression(expression);
         try {
             int op = expression.getOperation().getType();
+            if (op == LOGICAL_OR) {
+                typeCheckingContext.pushTemporaryTypeInfo();
+            }
             Expression leftExpression = expression.getLeftExpression();
             Expression rightExpression = expression.getRightExpression();
 
@@ -741,6 +745,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode lType = null;
             if (setterInfo != null) {
                 if (ensureValidSetter(expression, leftExpression, rightExpression, setterInfo)) {
+                    if (op == LOGICAL_OR) typeCheckingContext.popTemporaryTypeInfo();
                     return;
                 }
             } else {
@@ -786,6 +791,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 elvisOperatorExpression.visit(this);
                 resultType = getType(elvisOperatorExpression);
                 storeType(leftExpression, resultType);
+            } else if (op == LOGICAL_OR) {
+                typeCheckingContext.popTemporaryTypeInfo();
             }
 
             if (resultType == null) {
