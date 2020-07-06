@@ -21,6 +21,7 @@
 
 = Object orientation
 :jls: http://docs.oracle.com/javase/specs/jls/se8/html/
+:javabeans: https://download.oracle.com/otndocs/jcp/7224-javabeans-1.01-fr-spec-oth-JSpec/
 
 This chapter covers the object orientation of the Groovy programming language.
 
@@ -83,7 +84,7 @@ link:core-differences-java.html#_primitives_and_wrappers[differences] from Java'
 === Class
 
 Groovy classes are very similar to Java classes, and are compatible with Java ones at JVM level.
-They may have methods, fields and properties (think JavaBean properties but with less boilerplate).
+They may have methods, fields and properties (think JavaBeans properties but with less boilerplate).
 Classes and class members can have the same modifiers (public, protected, private, static, etc) as in Java
 with some minor differences at the source level which are explained shortly.
 
@@ -616,8 +617,9 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=typing_fields,indent=0
 <1> the field `mapping` doesn't declare a type
 <2> the field `mapping` has a strong type
 
-The difference between the two is important if you want to use optional type checking later. It is also important
-for documentation. However in some cases like scripting or if you want to rely on duck typing it may be interesting
+The difference between the two is important if you want to use optional type checking later.
+It is also important as a way to document the class design.
+However, in some cases like scripting or if you want to rely on duck typing it may be useful
 to omit the type.
 
 [[properties]]
@@ -625,9 +627,10 @@ to omit the type.
 
 A property is an externally visible feature of a class. Rather than just using a public field to represent
 such features (which provides a more limited abstraction and would restrict refactoring possibilities),
-the typical convention in Java is to follow JavaBean conventions, i.e. represent the property using a
+the typical approach in Java is to follow the conventions outlined in the
+{javabeans}[JavaBeans Specification], i.e. represent the property using a
 combination of a private backing field and getters/setters. Groovy follows these same conventions
-but provides a simpler approach to defining the property. You can define a property with:
+but provides a simpler way to define the property. You can define a property with:
 
 * an *absent* access modifier (no `public`, `protected` or `private`)
 * one or more optional _modifiers_ (`static`, `final`, `synchronized`)
@@ -691,6 +694,41 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=pseudo_properties,inde
 <3> writing `p.groovy` is allowed because there is a pseudo-writeonly property `groovy`
 
 This syntactic sugar is at the core of many DSLs written in Groovy.
+
+===== Property naming conventions
+
+It is generally recommended that the first two letters of a property name are lowercase and for multiword properties
+that camel case is used. In those cases, generated getters and setters will have a name formed by capitalizing the
+property name and adding a `get` or `set` prefix (or optionally "is" for a boolean getter).
+So, `getLength` would be a getter  for a `length` property and `setFirstName` a setter for a `firstName` property.
+`isEmpty` might be the getter method name for a property named `empty`.
+
+[NOTE]
+====
+Property names starting with a capital letter would have getters/setters with just the prefix added.
+So, the property `Foo` is allowed even though it isn't following the recommended naming conventions.
+For this property, the accessor methods would be `setFoo` and `getFoo`.
+A consequence of this is that you aren't allowed to have both a `foo` and a `Foo` property,
+since they would have the same named accessor methods.
+====
+
+The JavaBeans specification makes a special case for properties which typically might be acronyms.
+If the first two letters of a property name are uppercase, no capitalization is performed
+(or more importantly, no decapitalization is done if generating the property name from the accessor method name).
+So, `getURL` would be the getter for a `URL` property.
+
+[NOTE]
+====
+Because of the special "acronym handling" property naming logic in the JavaBeans specification, the
+conversion to and from a property name are non-symmetrical. This leads to some strange edge cases.
+Groovy adopts a naming convention that avoids one ambiguity that might seem a little strange but
+was popular at the time of Groovy's design and has remained (so far) for historical reasons.
+Groovy looks at the second letter of a property name. If that is a capital, the property is deemed to be
+one of the acronym style properties and no capitalization is done, otherwise normal capitalization is done.
+Although we _never_ recommend it, it does allow you to have what might seem like "duplicate named" properties,
+e.g. you can have `aProp` and `AProp`, or `pNAME` and `PNAME`. The getters would be `getaProp` and `getAProp`,
+and `getpNAME` and `getPNAME` respectively.
+====
 
 === Annotation
 
