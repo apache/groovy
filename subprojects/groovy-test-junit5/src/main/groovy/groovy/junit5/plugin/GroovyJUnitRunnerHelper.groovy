@@ -43,6 +43,6 @@ class GroovyJUnitRunnerHelper {
             listener.summary.printFailuresTo(new PrintWriter(System.out, true))
             return listener.summary.failures[0].exception
         }
-        return null
+        null
     }
 }
