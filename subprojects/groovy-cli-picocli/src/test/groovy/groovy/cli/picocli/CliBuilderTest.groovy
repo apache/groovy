@@ -524,7 +524,7 @@ class CliBuilderTest extends GroovyTestCase {
         cli.writer = printWriter
         options = cli.parse(['-abacus', 'foo'])
         assert options == null
-        assertTrue(stringWriter.toString(), stringWriter.toString().startsWith('error: Unmatched argument'))
+        assertTrue(stringWriter.toString(), stringWriter.toString().startsWith('error: Unknown option'))
         assertTrue(stringWriter.toString(), stringWriter.toString().contains('-us'))
     }
 
@@ -934,7 +934,7 @@ class CliBuilderTest extends GroovyTestCase {
         resetPrintWriter()
         cli.writer = printWriter
         assert cli.parse(['-indy']) == null
-        assertTrue(stringWriter.toString(), stringWriter.toString().startsWith('error: Unmatched argument'))
+        assertTrue(stringWriter.toString(), stringWriter.toString().startsWith('error: Unknown option'))
         assertTrue(stringWriter.toString(), stringWriter.toString().contains('-ndy'))
 
         assert cli.parse(['--help']).help
@@ -942,7 +942,7 @@ class CliBuilderTest extends GroovyTestCase {
         resetPrintWriter()
         cli.writer = printWriter
         assert cli.parse(['-help']) == null
-        assertTrue(stringWriter.toString(), stringWriter.toString().startsWith('error: Unmatched argument'))
+        assertTrue(stringWriter.toString(), stringWriter.toString().startsWith('error: Unknown option'))
         assertTrue(stringWriter.toString(), stringWriter.toString().contains('-elp'))
 
         assert cli.parse(['--version']).version
