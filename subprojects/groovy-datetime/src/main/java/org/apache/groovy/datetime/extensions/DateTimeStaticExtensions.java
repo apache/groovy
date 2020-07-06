@@ -37,7 +37,7 @@ import java.time.format.DateTimeFormatter;
  * This class defines new static extension methods which appear on normal JDK
  * Date/Time API (java.time) classes inside the Groovy environment.
  */
-public class DateTimeStaticExtensions {
+public final class DateTimeStaticExtensions {
 
     // Static methods only
     private DateTimeStaticExtensions() {

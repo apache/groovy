@@ -68,7 +68,7 @@ import static java.time.temporal.ChronoUnit.YEARS;
  * Date/Time API (java.time) classes inside the Groovy environment.
  * These extensions require JDK 8 or above.
  */
-public class DateTimeExtensions {
+public final class DateTimeExtensions {
 
     // Static methods only
     private DateTimeExtensions() {
