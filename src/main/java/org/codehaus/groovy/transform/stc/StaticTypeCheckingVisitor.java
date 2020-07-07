@@ -178,7 +178,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.findActualTypeByGenericsPlaceholderName;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.makeDeclaringAndActualGenericsTypeMap;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.makeDeclaringAndActualGenericsTypeMapOfExactType;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.toGenericTypesString;
 import static org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode;
@@ -588,16 +587,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private boolean storeTypeForThis(VariableExpression vexp) {
         if (vexp == VariableExpression.THIS_EXPRESSION) return true;
         if (!vexp.isThisExpression()) return false;
-        ClassNode enclosingClassNode = typeCheckingContext.getEnclosingClassNode();
-        storeType(vexp, makeType(enclosingClassNode, typeCheckingContext.isInStaticContext));
+        // GROOVY-6904, GROOVY-9422: non-static inner class constructor call sets type
+        storeType(vexp, !OBJECT_TYPE.equals(vexp.getType()) ? vexp.getType() : makeThis());
         return true;
     }
 
     private boolean storeTypeForSuper(VariableExpression vexp) {
         if (vexp == VariableExpression.SUPER_EXPRESSION) return true;
         if (!vexp.isSuperExpression()) return false;
-        ClassNode superClassNode = typeCheckingContext.getEnclosingClassNode().getSuperClass();
-        storeType(vexp, makeType(superClassNode, typeCheckingContext.isInStaticContext));
+        storeType(vexp, makeSuper());
         return true;
     }
 
@@ -2176,15 +2174,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             visitMethodCallArguments(receiver, argumentList, false, null);
 
             ClassNode[] args = getArgumentTypes(argumentList);
-            if (args.length > 0 &&
-                    typeCheckingContext.getEnclosingClosure() != null &&
-                    argumentList.getExpression(0) instanceof VariableExpression &&
-                    ((VariableExpression) argumentList.getExpression(0)).isThisExpression() &&
-                    call.getType() instanceof InnerClassNode &&
-                    call.getType().getOuterClass().equals(args[0]) &&
-                    !call.getType().isStaticClass()) {
-                args[0] = CLOSURE_TYPE;
-            }
 
             MethodNode node;
             if (looksLikeNamedArgConstructor(receiver, args)
