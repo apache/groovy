@@ -203,6 +203,47 @@ class ClosureResolvingTest extends GroovyTestCase {
         cout()
     }
 
+    // GROOVY-7232
+    void testOwnerDelegateChain2() {
+        assertScript '''
+            def outer = { ->
+                def inner = { ->
+                    [x, keySet()]
+                }
+                inner.resolveStrategy = Closure.DELEGATE_ONLY
+                inner.delegate = [x: 1, f: 0]
+                inner.call()
+            }
+            //outer.resolveStrategy = Closure.OWNER_FIRST
+            outer.delegate = [x: 0, g: 0]
+            def result = outer.call()
+
+            assert result.flatten() == [1, 'x', 'f']
+        '''
+    }
+
+    // GROOVY-7232
+    void testOwnerDelegateChain3() {
+        assertScript '''
+            def outer = { ->
+                def inner = { ->
+                    def inner_inner = { ->
+                        [x, keySet()]
+                    }
+                    //inner_inner.resolveStrategy = Closure.OWNER_FIRST
+                    return inner_inner.call()
+                }
+                inner.resolveStrategy = Closure.DELEGATE_ONLY
+                inner.delegate = [x: 1, f: 0]
+                inner()
+            }
+            //outer.resolveStrategy = Closure.OWNER_FIRST
+            outer.delegate = [x: 0, g: 0]
+            def result = outer.call()
+
+            assert result.flatten() == [1, 'x', 'f']
+        '''
+    }
 }
 
 class TestResolve1 {
