@@ -473,5 +473,22 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
             new Test().main()
         '''
     }
-}
 
+    // GROOVY-9422
+    void testInnerClassConstructorCallWithinClosure() {
+        assertScript '''
+            class A {
+              class B {
+                B(param) {}
+                String x = 'value'
+              }
+              def test() {
+                ['s'].collect { String s ->
+                  new B(s).x // expect outer class, not closure as implicit first param to inner class constructor
+                }
+              }
+            }
+            assert new A().test() == ['value']
+        '''
+    }
+}

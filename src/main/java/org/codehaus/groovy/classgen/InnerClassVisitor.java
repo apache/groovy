@@ -185,9 +185,8 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
         int pCount = 0;
         if (!isStatic) {
             // need to pass "this" to access unknown methods/properties
-            expressions.add(pCount, VariableExpression.THIS_EXPRESSION);
-
             ClassNode enclosingType = (inClosure ? ClassHelper.CLOSURE_TYPE : outerClass).getPlainNodeReference();
+            expressions.add(pCount, new VariableExpression("this", enclosingType));
             Parameter thisParameter = new Parameter(enclosingType, "p" + pCount);
             parameters.add(pCount++, thisParameter);
 

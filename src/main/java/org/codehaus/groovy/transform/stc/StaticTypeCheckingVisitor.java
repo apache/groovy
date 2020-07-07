@@ -648,16 +648,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private boolean storeTypeForSuper(final VariableExpression vexp) {
         if (vexp == VariableExpression.SUPER_EXPRESSION) return true;
         if (!vexp.isSuperExpression()) return false;
-        ClassNode superClassNode = typeCheckingContext.getEnclosingClassNode().getSuperClass();
-        storeType(vexp, makeType(superClassNode, typeCheckingContext.isInStaticContext));
+        storeType(vexp, makeSuper());
         return true;
     }
 
     private boolean storeTypeForThis(final VariableExpression vexp) {
         if (vexp == VariableExpression.THIS_EXPRESSION) return true;
         if (!vexp.isThisExpression()) return false;
-        ClassNode enclosingClassNode = typeCheckingContext.getEnclosingClassNode();
-        storeType(vexp, makeType(enclosingClassNode, typeCheckingContext.isInStaticContext));
+        // GROOVY-6904, GROOVY-9422: non-static inner class constructor call sets type
+        storeType(vexp, !OBJECT_TYPE.equals(vexp.getType()) ? vexp.getType() : makeThis());
         return true;
     }
 
@@ -2208,13 +2207,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         visitMethodCallArguments(receiver, argumentList, false, null);
 
         ClassNode[] args = getArgumentTypes(argumentList);
-        if (args.length > 0 &&
-                typeCheckingContext.getEnclosingClosure() != null &&
-                isThisExpression(argumentList.getExpression(0)) &&
-                args[0].equals(call.getType().getOuterClass()) &&
-                !call.getType().isStaticClass()) {
-            args[0] = CLOSURE_TYPE;
-        }
 
         MethodNode node;
         if (looksLikeNamedArgConstructor(receiver, args)
