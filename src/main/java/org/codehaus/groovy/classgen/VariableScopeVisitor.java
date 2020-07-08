@@ -166,50 +166,36 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         currentScope.putDeclaredVariable(variable);
     }
 
-    private Variable findClassMember(final ClassNode cn, final String name) {
-        for (ClassNode classNode = cn; null != classNode; classNode = classNode.getSuperClass()) {
-            Variable variable = doFindClassMember(classNode, name);
-            if (null != variable) {
-                return variable;
+    private Variable findClassMember(final ClassNode node, final String name) {
+        for (ClassNode cn = node; cn != null; cn = cn.getSuperClass()) {
+            if (cn.isScript()) {
+                return new DynamicVariable(name, false);
             }
-        }
 
-        return null;
-    }
-
-    private Variable doFindClassMember(final ClassNode cn, final String name) {
-        if (cn == null) return null;
-
-        if (cn.isScript()) {
-            return new DynamicVariable(name, false);
-        }
-
-        for (FieldNode fn : cn.getFields()) {
-            if (name.equals(fn.getName())) return fn;
-        }
-
-        for (MethodNode mn : cn.getMethods()) {
-            if (mn.isAbstract()) {
-                continue;
+            for (FieldNode fn : cn.getFields()) {
+                if (name.equals(fn.getName())) return fn;
             }
-            if (name.equals(getPropertyName(mn))) {
-                PropertyNode property = new PropertyNode(name, mn.getModifiers(), ClassHelper.OBJECT_TYPE, cn, null, null, null);
-                final FieldNode field = property.getField();
-                field.setHasNoRealSourcePosition(true);
-                field.setSynthetic(true);
-                field.setDeclaringClass(cn);
-                property.setDeclaringClass(cn);
-                return property;
+
+            for (PropertyNode pn : cn.getProperties()) {
+                if (name.equals(pn.getName())) return pn;
             }
-        }
 
-        for (PropertyNode pn : cn.getProperties()) {
-            if (pn.getName().equals(name)) return pn;
-        }
+            for (MethodNode mn : cn.getMethods()) {
+                if (!mn.isAbstract() && name.equals(getPropertyName(mn))) {
+                    PropertyNode property = new PropertyNode(name, mn.getModifiers(), ClassHelper.OBJECT_TYPE, cn, null, null, null);
+                    final FieldNode field = property.getField();
+                    field.setHasNoRealSourcePosition(true);
+                    field.setSynthetic(true);
+                    field.setDeclaringClass(cn);
+                    property.setDeclaringClass(cn);
+                    return property;
+                }
+            }
 
-        for (ClassNode face : cn.getInterfaces()) {
-            FieldNode fn = face.getDeclaredField(name);
-            if (fn != null) return fn;
+            for (ClassNode face : cn.getInterfaces()) {
+                FieldNode fn = face.getDeclaredField(name);
+                if (fn != null) return fn;
+            }
         }
 
         return null;

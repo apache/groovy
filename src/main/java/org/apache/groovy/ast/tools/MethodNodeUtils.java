@@ -30,6 +30,10 @@ import static org.apache.groovy.util.BeanUtils.decapitalize;
  * Utility class for working with MethodNodes
  */
 public class MethodNodeUtils {
+
+    private MethodNodeUtils() {
+    }
+
     /**
      * Return the method node's descriptor including its
      * name and parameter types without generics.
@@ -37,7 +41,7 @@ public class MethodNodeUtils {
      * @param mNode the method node
      * @return the method node's abbreviated descriptor excluding the return type
      */
-    public static String methodDescriptorWithoutReturnType(MethodNode mNode) {
+    public static String methodDescriptorWithoutReturnType(final MethodNode mNode) {
         StringBuilder sb = new StringBuilder();
         sb.append(mNode.getName()).append(':');
         for (Parameter p : mNode.getParameters()) {
@@ -53,7 +57,7 @@ public class MethodNodeUtils {
      * @param mNode the method node
      * @return the method node's descriptor
      */
-    public static String methodDescriptor(MethodNode mNode) {
+    public static String methodDescriptor(final MethodNode mNode) {
         StringBuilder sb = new StringBuilder(mNode.getName().length() + mNode.getParameters().length * 10);
         sb.append(mNode.getReturnType().getName());
         sb.append(' ');
@@ -76,34 +80,30 @@ public class MethodNodeUtils {
      * @param mNode a MethodNode
      * @return the property name without the get/set/is prefix if a property or null
      */
-    public static String getPropertyName(MethodNode mNode) {
-        boolean startsWithGet = false;
-        boolean startsWithSet = false;
-        boolean startsWithIs = false;
-        String name = mNode.getName();
-
-        if ((startsWithGet = name.startsWith("get"))
-                || (startsWithSet = name.startsWith("set"))
-                || (startsWithIs = name.startsWith("is"))) {
-
-            final String tmpPname = name.substring(startsWithIs ? 2 : 3);
-            if (!tmpPname.isEmpty()) {
-                if (startsWithSet) {
-                    if (mNode.getParameters().length == 1) {
-                        return decapitalize(tmpPname);
+    public static String getPropertyName(final MethodNode mNode) {
+        final String name = mNode.getName();
+        final int nameLength = name.length();
+        if (nameLength > 2) {
+            switch (name.charAt(0)) {
+                case 'g':
+                    if (nameLength > 3 && name.charAt(1) == 'e' && name.charAt(2) == 't' && mNode.getParameters().length == 0 && !ClassHelper.VOID_TYPE.equals(mNode.getReturnType())) {
+                        return decapitalize(name.substring(3));
                     }
-                } else if (mNode.getParameters().length == 0 && !ClassHelper.VOID_TYPE.equals(mNode.getReturnType())) {
-                    if (startsWithGet || ClassHelper.boolean_TYPE.equals(mNode.getReturnType())) {
-                        return decapitalize(tmpPname);
+                    break;
+                case 's':
+                    if (nameLength > 3 && name.charAt(1) == 'e' && name.charAt(2) == 't' && mNode.getParameters().length == 1 /*&& ClassHelper.VOID_TYPE.equals(mNode.getReturnType())*/) {
+                        return decapitalize(name.substring(3));
                     }
-                }
+                    break;
+                case 'i':
+                    if (name.charAt(1) == 's' && mNode.getParameters().length == 0 && (ClassHelper.boolean_TYPE.equals(mNode.getReturnType()) /*|| ClassHelper.Boolean_TYPE.equals(mNode.getReturnType())*/)) {
+                        return decapitalize(name.substring(2));
+                    }
+                    break;
             }
         }
-
         return null;
     }
-
-    private MethodNodeUtils() { }
 
     /**
      * Gets the code for a method (or constructor) as a block.
@@ -115,7 +115,7 @@ public class MethodNodeUtils {
      * @param node the method (or constructor) node
      * @return the found or created block statement
      */
-    public static BlockStatement getCodeAsBlock(MethodNode node) {
+    public static BlockStatement getCodeAsBlock(final MethodNode node) {
         Statement code = node.getCode();
         BlockStatement block;
         if (code == null) {
