@@ -1098,16 +1098,13 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=array_3,indent=0]
 <1> Retrieve the first element of the array
 <2> Set the value of the third element of the array to a new value
 
-[NOTE]
-Java's array initializer notation is not supported by Groovy, 
-as the curly braces can be misinterpreted with the notation of Groovy closures.
-
 === Java-style array initialization
 
 Groovy has always supported literal list/array definitions using square brackets
 and has avoided Java-style curly braces so as not to conflict with closure definitions.
 In the case where the curly braces come immediately after an array type declaration however,
-there is no ambiguity with closure definitions, so the Java style is now also supported.
+there is no ambiguity with closure definitions,
+so Groovy 3 and above support that variant of the Java array initialization expression.
 
 Examples:
 
