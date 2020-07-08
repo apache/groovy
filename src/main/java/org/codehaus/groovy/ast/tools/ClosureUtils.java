@@ -37,7 +37,7 @@ public class ClosureUtils {
      * @throws java.lang.IllegalArgumentException when expression is null
      * @throws java.lang.Exception when closure can't be read from source
      */
-    public static String convertClosureToSource(ReaderSource readerSource, ClosureExpression expression) throws Exception {
+    public static String convertClosureToSource(final ReaderSource readerSource, final ClosureExpression expression) throws Exception {
         String source = GeneralUtils.convertASTToSource(readerSource, expression);
         if (!source.startsWith("{")) {
             throw new Exception("Error converting ClosureExpression into source code. Closures must start with {. Found: " + source);
@@ -50,7 +50,7 @@ public class ClosureUtils {
      * @param c a Closure
      * @return true if it has exactly one argument and the type is char or Character
      */
-    public static boolean hasSingleCharacterArg(Closure c) {
+    public static boolean hasSingleCharacterArg(final Closure c) {
         if (c.getMaximumNumberOfParameters() != 1) return false;
         String typeName = c.getParameterTypes()[0].getName();
         return typeName.equals("char") || typeName.equals("java.lang.Character");
@@ -61,7 +61,7 @@ public class ClosureUtils {
      * @param c a Closure
      * @return true if it has exactly one argument and the type is String
      */
-    public static boolean hasSingleStringArg(Closure c) {
+    public static boolean hasSingleStringArg(final Closure c) {
         if (c.getMaximumNumberOfParameters() != 1) return false;
         String typeName = c.getParameterTypes()[0].getName();
         return typeName.equals("java.lang.String");
@@ -70,14 +70,35 @@ public class ClosureUtils {
     /**
      * @return true if the ClosureExpression has an implicit 'it' parameter
      */
-    public static boolean hasImplicitParameter(ClosureExpression ce) {
+    public static boolean hasImplicitParameter(final ClosureExpression ce) {
         return ce.getParameters() != null && ce.getParameters().length == 0;
     }
 
     /**
      * @return the parameters for the ClosureExpression
      */
-    public static Parameter[] getParametersSafe(ClosureExpression ce) {
+    public static Parameter[] getParametersSafe(final ClosureExpression ce) {
         return ce.getParameters() != null ? ce.getParameters() : Parameter.EMPTY_ARRAY;
+    }
+
+    /**
+     * Returns the constant name associated with the given resolve strategy.
+     *
+     * @see {@link Closure#DELEGATE_FIRST}, et al.
+     *
+     * @since 3.0.5
+     */
+    public static String getResolveStrategyName(final int resolveStrategy) {
+        switch (resolveStrategy) {
+            case Closure.DELEGATE_FIRST:
+                return "DELEGATE_FIRST";
+            case Closure.DELEGATE_ONLY:
+                return "DELEGATE_ONLY";
+            case Closure.OWNER_ONLY:
+                return "OWNER_ONLY";
+            case Closure.TO_SELF:
+                return "TO_SELF";
+        }
+        return "OWNER_FIRST";
     }
 }

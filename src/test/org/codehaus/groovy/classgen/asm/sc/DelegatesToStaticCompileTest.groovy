@@ -92,7 +92,7 @@ class DelegatesToStaticCompileTest extends DelegatesToSTCTest implements StaticC
                 }
 
                 class Handler {
-                    def doWithEntity(@DelegatesTo(Entity) Closure c) {
+                    def doWithEntity(@DelegatesTo(value=Entity, strategy=Closure.DELEGATE_FIRST) Closure c) {
                         new Entity().with(c)
                     }
 
