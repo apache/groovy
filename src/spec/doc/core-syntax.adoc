@@ -1102,7 +1102,7 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=array_3,indent=0]
 Java's array initializer notation is not supported by Groovy, 
 as the curly braces can be misinterpreted with the notation of Groovy closures.
 
-==== Java-style array initialization
+=== Java-style array initialization
 
 Groovy has always supported literal list/array definitions using square brackets
 and has avoided Java-style curly braces so as not to conflict with closure definitions.
