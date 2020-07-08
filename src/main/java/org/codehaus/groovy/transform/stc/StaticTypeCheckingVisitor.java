@@ -177,6 +177,7 @@ import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
+import static org.codehaus.groovy.ast.tools.ClosureUtils.getResolveStrategyName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
@@ -3487,14 +3488,27 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 visitMethodCallArguments(receiver, argumentList, true, target);
             }
             if (target != null) {
-                List<Expression> argExpressions = argumentList.getExpressions();
+                List<Expression> arguments = argumentList.getExpressions();
                 Parameter[] parameters = target.getParameters();
-                for (int i = 0; i < argExpressions.size() && i < parameters.length; i += 1) {
-                    Expression arg = argExpressions.get(i);
-                    ClassNode aType = getType(arg), pType = parameters[i].getType();
-                    if (CLOSURE_TYPE.equals(aType) && CLOSURE_TYPE.equals(pType) && !isAssignableTo(aType, pType)) {
-                        addNoMatchingMethodError(receiver, name, getArgumentTypes(argumentList), call);
-                        call.removeNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+                for (int i = 0, n = Math.min(arguments.size(), parameters.length); i < n; i += 1) {
+                    Expression argument = arguments.get(i);
+                    ClassNode aType = getType(argument), pType = parameters[i].getType();
+                    if (CLOSURE_TYPE.equals(aType) && CLOSURE_TYPE.equals(pType)) {
+                        // GROOVY-8310: check closure generics
+                        if (!isAssignableTo(aType, pType) /*&& !extension.handleIncompatibleReturnType(getReturnStatement(argument), aType)*/) {
+                            addNoMatchingMethodError(receiver, name, getArgumentTypes(argumentList), call);
+                            call.removeNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+                            break;
+                        }
+                        // GROOVY-7996: check delegation metadata of closure parameter used as method call argument
+                        if (argument instanceof VariableExpression && ((VariableExpression) argument).getAccessedVariable() instanceof Parameter) {
+                            // TODO: Check additional delegation metadata like type (see checkClosureWithDelegatesTo).
+                            int incomingStrategy = getResolveStrategy((Parameter) ((VariableExpression) argument).getAccessedVariable());
+                            int outgoingStrategy = getResolveStrategy(parameters[i]);
+                            if (incomingStrategy != outgoingStrategy) {
+                                addStaticTypeError("Closure parameter with resolve strategy " + getResolveStrategyName(incomingStrategy) + " passed to method with resolve strategy " + getResolveStrategyName(outgoingStrategy), argument);
+                            }
+                        }
                     }
                 }
             }
@@ -3504,6 +3518,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             typeCheckingContext.popEnclosingMethodCall();
             extension.afterMethodCall(call);
         }
+    }
+
+    private int getResolveStrategy(final Parameter parameter) {
+        List<AnnotationNode> annotations = parameter.getAnnotations(DELEGATES_TO);
+        if (annotations != null && !annotations.isEmpty()) {
+            Expression strategy = annotations.get(0).getMember("strategy");
+            if (strategy != null) {
+                return (Integer) evaluateExpression(castX(Integer_TYPE, strategy), getSourceUnit().getConfiguration());
+            }
+        }
+        return Closure.OWNER_FIRST;
     }
 
     private void inferMethodReferenceType(final MethodCallExpression call, final ClassNode receiver, final ArgumentListExpression argumentList) {

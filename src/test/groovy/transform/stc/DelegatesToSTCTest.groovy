@@ -817,4 +817,29 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
             }
         '''
     }
+
+    // GROOVY-7996
+    void testErrorForMismatchedClosureResolveStrategy() {
+        shouldFailWithMessages '''
+            class Foo {
+                def build(Closure x) { // resolve strategy OWNER_FIRST
+                    this.with(x) // resolve strategy DELEGATE_FIRST
+                }
+                def propertyMissing(String name) {
+                    'something'
+                }
+            }
+
+            class Bar {
+                protected List bars = []
+                def baz() {
+                    new Foo().build {
+                        bars.isEmpty() // fails if executed; delegate's propertyMissing takes precedence
+                    }
+                }
+            }
+
+            new Bar().baz()
+        ''', 'Closure parameter with resolve strategy OWNER_FIRST passed to method with resolve strategy DELEGATE_FIRST'
+    }
 }
