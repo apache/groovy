@@ -74,7 +74,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
@@ -664,8 +663,7 @@ public class CompilationUnit extends ProcessingUnit {
                         ? sourceUnits.stream() // no need to build AST with parallel stream when we just have one/no source unit
                         : sourceUnits.parallelStream();
 
-        // DON'T replace `collect(Collectors.counting())` with `count()` here, otherwise peek will NOT be triggered
-        sourceUnitStream.peek(SourceUnit::buildAST).collect(Collectors.counting());
+        sourceUnitStream.forEach(SourceUnit::buildAST);
     }
 
     private void processPhaseOperations(final int phase) {
