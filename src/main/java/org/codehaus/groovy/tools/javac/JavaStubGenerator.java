@@ -133,7 +133,7 @@ public class JavaStubGenerator {
     }
 
     private void generateMemStub(ClassNode classNode) {
-        Writer writer = new StringBuilderWriter();
+        Writer writer = new StringBuilderWriter(DEFAULT_BUFFER_SIZE);
         generateStubContent(classNode, writer);
 
         javaStubCompilationUnitSet.add(new MemJavaFileObject(classNode, writer.toString()));
