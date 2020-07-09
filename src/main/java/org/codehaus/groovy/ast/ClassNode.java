@@ -830,7 +830,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
         return method;
     }
-    
+
     public void addStaticInitializerStatements(List<Statement> staticStatements, boolean fieldInit) {
         MethodNode method = getOrAddStaticConstructorNode();
         BlockStatement block = null;
@@ -1236,69 +1236,66 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     /**
-     * Returns true if the given method has a possibly matching instance method with the given name and arguments.
+     * Determines if the type has a possibly-matching instance method with the given name and arguments.
      *
      * @param name      the name of the method of interest
      * @param arguments the arguments to match against
      * @return true if a matching method was found
      */
-    public boolean hasPossibleMethod(String name, Expression arguments) {
-        int count = 0;
-
+    public boolean hasPossibleMethod(final String name, final Expression arguments) {
+        int count;
         if (arguments instanceof TupleExpression) {
-            TupleExpression tuple = (TupleExpression) arguments;
-            // TODO this won't strictly be true when using list expansion in argument calls
-            count = tuple.getExpressions().size();
+            // TODO: this won't strictly be true when using list expansion in argument calls
+            count = ((TupleExpression) arguments).getExpressions().size();
+        } else {
+            count = 0;
         }
-        ClassNode node = this;
-        do {
-            for (MethodNode method : getMethods(name)) {
-                if (hasCompatibleNumberOfArgs(method, count) && !method.isStatic()) {
+
+        for (ClassNode cn = this; cn != null; cn = cn.getSuperClass()) {
+            for (MethodNode mn : getDeclaredMethods(name)) {
+                if (!mn.isStatic() && hasCompatibleNumberOfArgs(mn, count)) {
                     return true;
                 }
             }
-            node = node.getSuperClass();
         }
-        while (node != null);
+
         return false;
     }
 
-    public MethodNode tryFindPossibleMethod(String name, Expression arguments) {
-        int count = 0;
-
-        if (arguments instanceof TupleExpression) {
-            TupleExpression tuple = (TupleExpression) arguments;
-            // TODO this won't strictly be true when using list expansion in argument calls
-            count = tuple.getExpressions().size();
-        } else
+    public MethodNode tryFindPossibleMethod(final String name, final Expression arguments) {
+        if (!(arguments instanceof TupleExpression)) {
             return null;
+        }
 
-        MethodNode res = null;
-        ClassNode node = this;
+        // TODO: this won't strictly be true when using list expansion in argument calls
         TupleExpression args = (TupleExpression) arguments;
-        do {
-            for (MethodNode method : node.getMethods(name)) {
-                if (hasCompatibleNumberOfArgs(method, count)) {
+        int count = args.getExpressions().size();
+        MethodNode res = null;
+
+        for (ClassNode cn = this; cn != null; cn = cn.getSuperClass()) {
+            for (MethodNode mn : cn.getDeclaredMethods(name)) {
+                if (hasCompatibleNumberOfArgs(mn, count)) {
                     boolean match = true;
-                    for (int i = 0; i != count; ++i)
-                        if (!hasCompatibleType(args, method, i)) {
+                    for (int i = 0; i < count; i += 1) {
+                        if (!hasCompatibleType(args, mn, i)) {
                             match = false;
                             break;
                         }
+                    }
 
                     if (match) {
-                        if (res == null)
-                            res = method;
-                        else {
+                        if (res == null) {
+                            res = mn;
+                        } else {
                             if (res.getParameters().length != count)
                                 return null;
-                            if (node.equals(this))
+                            if (cn.equals(this))
                                 return null;
 
                             match = true;
                             for (int i = 0; i != count; ++i)
                                 // prefer super method if it matches better
-                                if (!hasExactMatchingCompatibleType(res, method, i)) {
+                                if (!hasExactMatchingCompatibleType(res, mn, i)) {
                                     match = false;
                                     break;
                                 }
@@ -1308,9 +1305,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                     }
                 }
             }
-            node = node.getSuperClass();
         }
-        while (node != null);
 
         return res;
     }
@@ -1480,7 +1475,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         final Map<String,FieldNode> index = r.fieldIndex;
         index.put(newName, index.remove(oldName));
     }
-    
+
     public void removeField(String oldName) {
         ClassNode r = redirect ();
         if (r.fieldIndex == null)
@@ -1510,7 +1505,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
         return transformInstances;
     }
-    
+
     public boolean isRedirectNode() {
         return redirect!=null;
     }
