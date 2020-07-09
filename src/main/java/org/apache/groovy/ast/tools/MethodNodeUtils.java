@@ -86,17 +86,17 @@ public class MethodNodeUtils {
         if (nameLength > 2) {
             switch (name.charAt(0)) {
                 case 'g':
-                    if (nameLength > 3 && name.charAt(1) == 'e' && name.charAt(2) == 't' && mNode.getParameters().length == 0 && !ClassHelper.VOID_TYPE.equals(mNode.getReturnType())) {
+                    if (nameLength > 3 && name.charAt(1) == 'e' && name.charAt(2) == 't' && mNode.getParameters().length == 0 && !mNode.getReturnType().equals(ClassHelper.VOID_TYPE)) {
                         return decapitalize(name.substring(3));
                     }
                     break;
                 case 's':
-                    if (nameLength > 3 && name.charAt(1) == 'e' && name.charAt(2) == 't' && mNode.getParameters().length == 1 /*&& ClassHelper.VOID_TYPE.equals(mNode.getReturnType())*/) {
+                    if (nameLength > 3 && name.charAt(1) == 'e' && name.charAt(2) == 't' && mNode.getParameters().length == 1 /*&& mNode.getReturnType().equals(ClassHelper.VOID_TYPE)*/) {
                         return decapitalize(name.substring(3));
                     }
                     break;
                 case 'i':
-                    if (name.charAt(1) == 's' && mNode.getParameters().length == 0 && (ClassHelper.boolean_TYPE.equals(mNode.getReturnType()) /*|| ClassHelper.Boolean_TYPE.equals(mNode.getReturnType())*/)) {
+                    if (name.charAt(1) == 's' && mNode.getParameters().length == 0 && (mNode.getReturnType().equals(ClassHelper.boolean_TYPE) /*|| mNode.getReturnType().equals(ClassHelper.Boolean_TYPE)*/)) {
                         return decapitalize(name.substring(2));
                     }
                     break;

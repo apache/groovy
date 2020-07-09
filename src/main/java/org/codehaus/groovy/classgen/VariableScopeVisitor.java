@@ -167,7 +167,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     private Variable findClassMember(final ClassNode node, final String name) {
-        for (ClassNode cn = node; cn != null; cn = cn.getSuperClass()) {
+        for (ClassNode cn = node; cn != null && !cn.equals(ClassHelper.OBJECT_TYPE); cn = cn.getSuperClass()) {
             if (cn.isScript()) {
                 return new DynamicVariable(name, false);
             }
@@ -181,14 +181,15 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             }
 
             for (MethodNode mn : cn.getMethods()) {
-                if (!mn.isAbstract() && name.equals(getPropertyName(mn))) {
-                    PropertyNode property = new PropertyNode(name, mn.getModifiers(), ClassHelper.OBJECT_TYPE, cn, null, null, null);
-                    final FieldNode field = property.getField();
-                    field.setHasNoRealSourcePosition(true);
-                    field.setSynthetic(true);
-                    field.setDeclaringClass(cn);
-                    property.setDeclaringClass(cn);
-                    return property;
+                if ((!mn.isAbstract() || node.isAbstract()) && name.equals(getPropertyName(mn))) {
+                    FieldNode fn = new FieldNode(name, mn.getModifiers() & 0xF, ClassHelper.OBJECT_TYPE, cn, null);
+                    fn.setHasNoRealSourcePosition(true);
+                    fn.setDeclaringClass(cn);
+                    fn.setSynthetic(true);
+
+                    PropertyNode pn = new PropertyNode(fn, fn.getModifiers(), null, null);
+                    pn.setDeclaringClass(cn);
+                    return pn;
                 }
             }
 
