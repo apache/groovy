@@ -30,7 +30,7 @@ This page documents the features of this user interface.
 [[GroovyConsole-Basics]]
 == Basics
 
-image:assets/img/GroovyConsole.gif[image]
+image:../assets/img/GroovyConsole.gif[image]
 
 . Groovy Console is launched via `groovyConsole` or
 `groovyConsole.bat`, both located in `$GROOVY_HOME/bin`
@@ -117,7 +117,7 @@ an infinite loop? Interrupting script execution can be achieved by clicking
 the `interrupt` button on the small dialog box that pops up when a script
 is executing or through the `interrupt` icon in the tool bar.
 
-image:assets/img/gconsole-toolbar.png[Toolbar]
+image:../assets/img/gconsole-toolbar.png[Toolbar]
 
 However, this may not be sufficient to interrupt a script: clicking the button
 will interrupt the execution thread, but if your code doesn't handle the interrupt
@@ -171,7 +171,7 @@ You can customize the way script output results are visualized. Let’s
 see how we can customize this. For example, viewing a map result would
 show something like this:
 
-image:assets/img/gconsole-sc-without-visu.png[image]
+image:../assets/img/gconsole-sc-without-visu.png[image]
 
 What you see here is the usual textual representation of a Map. But,
 what if we enabled custom visualization of certain results? The Swing
@@ -208,7 +208,7 @@ own script results representations. In our case, we transform the Map
 into a nice-looking Swing JTable. And we’re now able to visualize maps
 in a friendly and attractive fashion, as the screenshot below shows:
 
-image:assets/img/gconsole-sc-with-visu.png[image]
+image:../assets/img/gconsole-sc-with-visu.png[image]
 
 [[GroovyConsole-ASTbrowser]]
 == AST browser
@@ -217,5 +217,5 @@ Groovy Console can visualize the AST (Abstract Syntax Tree) representing
 the currently edited script, as shown by the screenshot below. This is
 particularly handy when you want to develop AST transformations.
 
-image:assets/img/astbrowser.png[AST Browser]
+image:../assets/img/astbrowser.png[AST Browser]
 
