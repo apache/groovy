@@ -167,6 +167,8 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     private Variable findClassMember(final ClassNode node, final String name) {
+        final boolean abstractType = node.isAbstract();
+
         for (ClassNode cn = node; cn != null && !cn.equals(ClassHelper.OBJECT_TYPE); cn = cn.getSuperClass()) {
             if (cn.isScript()) {
                 return new DynamicVariable(name, false);
@@ -181,7 +183,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             }
 
             for (MethodNode mn : cn.getMethods()) {
-                if (name.equals(getPropertyName(mn))) {
+                if ((abstractType || !mn.isAbstract()) && name.equals(getPropertyName(mn))) {
                     FieldNode fn = new FieldNode(name, mn.getModifiers() & 0xF, ClassHelper.OBJECT_TYPE, cn, null);
                     fn.setHasNoRealSourcePosition(true);
                     fn.setDeclaringClass(cn);
