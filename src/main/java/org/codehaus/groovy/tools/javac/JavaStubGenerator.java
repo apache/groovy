@@ -173,7 +173,7 @@ public class JavaStubGenerator {
         String packageName = classNode.getPackageName();
         if (packageName != null) {
             printAnnotations(out, classNode.getPackage());
-            out.println("package " + packageName + ";\n");
+            out.println("package " + packageName + ";");
         }
     }
 
