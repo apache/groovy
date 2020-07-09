@@ -56,7 +56,6 @@ import org.objectweb.asm.Opcodes;
 
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -143,10 +142,7 @@ public class JavaStubGenerator {
         File file = createJavaStubFile(fileName);
 
         Writer writer = new OutputStreamWriter(
-                new BufferedOutputStream(
-                        new FileOutputStream(file),
-                        DEFAULT_BUFFER_SIZE
-                ),
+                new FileOutputStream(file),
                 Charset.forName(encoding)
         );
 
