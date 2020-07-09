@@ -181,7 +181,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             }
 
             for (MethodNode mn : cn.getMethods()) {
-                if ((!mn.isAbstract() || node.isAbstract()) && name.equals(getPropertyName(mn))) {
+                if (name.equals(getPropertyName(mn))) {
                     FieldNode fn = new FieldNode(name, mn.getModifiers() & 0xF, ClassHelper.OBJECT_TYPE, cn, null);
                     fn.setHasNoRealSourcePosition(true);
                     fn.setDeclaringClass(cn);
