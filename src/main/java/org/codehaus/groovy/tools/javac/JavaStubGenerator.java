@@ -75,7 +75,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
@@ -1038,8 +1037,7 @@ public class JavaStubGenerator {
     }
 
     public void clean() {
-        // DON'T replace `collect(Collectors.counting())` with `count()` here, otherwise peek will NOT be triggered
-        javaStubCompilationUnitSet.stream().peek(FileObject::delete).collect(Collectors.counting());
+        javaStubCompilationUnitSet.stream().forEach(FileObject::delete);
         javaStubCompilationUnitSet.clear();
     }
 
