@@ -133,10 +133,7 @@ public class JavaStubGenerator {
     }
 
     private void generateMemStub(ClassNode classNode) {
-        Writer writer = new StringBuilderWriter(DEFAULT_BUFFER_SIZE);
-        generateStubContent(classNode, writer);
-
-        javaStubCompilationUnitSet.add(new MemJavaFileObject(classNode, writer.toString()));
+        javaStubCompilationUnitSet.add(new MemJavaFileObject(classNode, generateStubContent(classNode)));
     }
 
     private void generateFileStub(ClassNode classNode) throws FileNotFoundException {
@@ -152,24 +149,28 @@ public class JavaStubGenerator {
                 ),
                 Charset.forName(encoding)
         );
-        if (classNode.getNameWithoutPackage().equals("package-info")) {
-            // should just output the package statement
-            try (PrintWriter out = new PrintWriter(writer)) {
-                printPackage(out, classNode);
-            }
-        } else {
-            generateStubContent(classNode, writer);
+
+        try (PrintWriter out = new PrintWriter(writer)) {
+            out.print(generateStubContent(classNode));
         }
 
         javaStubCompilationUnitSet.add(new RawJavaFileObject(createJavaStubFile(fileName).toPath().toUri()));
     }
 
-    private void generateStubContent(ClassNode classNode, Writer writer) {
+    private String generateStubContent(ClassNode classNode) {
+        Writer writer = new StringBuilderWriter(DEFAULT_BUFFER_SIZE);
+
         try (PrintWriter out = new PrintWriter(writer)) {
             printPackage(out, classNode);
-            printImports(out, classNode);
-            printClassContents(out, classNode);
+
+            // should just output the package statement for `package-info` class node
+            if (!"package-info".equals(classNode.getNameWithoutPackage())) {
+                printImports(out, classNode);
+                printClassContents(out, classNode);
+            }
         }
+
+        return writer.toString();
     }
 
     private void printPackage(PrintWriter out, ClassNode classNode) {
