@@ -84,10 +84,10 @@ asciidoctor {
 asciidoctor.onlyIf { project.file('src/spec/doc').exists() }
 
 task asciidoctorAssets(type:Copy) {
-    from project.fileTree('src/spec/assets')
+    from project.fileTree('src/spec/doc/assets')
     into "${asciidoctor.outputDir}/html5/assets"
 }
-asciidoctor.finalizedBy asciidoctorAssets
+asciidoctor.dependsOn asciidoctorAssets
 
 def adocSanityCheck = { file, text, errors ->
     Set localErrors = []
