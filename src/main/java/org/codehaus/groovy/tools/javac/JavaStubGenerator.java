@@ -376,10 +376,10 @@ public class JavaStubGenerator {
                 // skip values() method and valueOf(String)
                 String name = method.getName();
                 Parameter[] params = method.getParameters();
-                if (name.equals("values") && params.length == 0) continue;
-                if (name.equals("valueOf") &&
-                        params.length == 1 &&
-                        params[0].getType().equals(ClassHelper.STRING_TYPE)) {
+                if (params.length == 0 && name.equals("values")) continue;
+                if (params.length == 1
+                        && name.equals("valueOf")
+                        && params[0].getType().equals(ClassHelper.STRING_TYPE)) {
                     continue;
                 }
             }
@@ -459,8 +459,9 @@ public class JavaStubGenerator {
         boolean isInterface = isInterfaceOrTrait(classNode);
         List<FieldNode> fields = classNode.getFields();
         if (fields == null) return;
-        List<FieldNode> enumFields = new ArrayList<FieldNode>(fields.size());
-        List<FieldNode> normalFields = new ArrayList<FieldNode>(fields.size());
+        final int fieldCnt = fields.size();
+        List<FieldNode> enumFields = new ArrayList<FieldNode>(fieldCnt);
+        List<FieldNode> normalFields = new ArrayList<FieldNode>(fieldCnt);
         for (FieldNode field : fields) {
             boolean isSynthetic = (field.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0;
             if (field.isEnum()) {
