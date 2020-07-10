@@ -3228,7 +3228,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // for arguments, we need to visit closures *after* the method has been chosen
 
 
-        final ClassNode receiver = getType(objectExpression);
+        ClassNode receiver = getType(objectExpression);
         visitMethodCallArguments(receiver, argumentList, false, null);
 
         ClassNode[] args = getArgumentTypes(argumentList);
