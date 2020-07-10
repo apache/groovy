@@ -58,7 +58,6 @@ import java.util.List;
 import java.util.Map;
 
 import static java.lang.reflect.Modifier.isFinal;
-import static java.lang.reflect.Modifier.isStatic;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 
 /**
@@ -203,12 +202,10 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             if (pn.getName().equals(name)) return pn;
         }
 
-        for (ClassNode face : cn.getInterfaces()) {
-            FieldNode fn = face.getDeclaredField(name);
-            if (fn != null) return fn;
-        }
-
-        return findClassMember(cn.getSuperClass(), name);
+        Variable ret = findClassMember(cn.getSuperClass(), name);
+        if (ret != null) return ret;
+        if (isAnonymous(cn)) return null;
+        return findClassMember(cn.getOuterClass(), name);
     }
 
     private static boolean isAnonymous(ClassNode node) {
@@ -248,13 +245,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 break;
             }
 
-            ClassNode node = scope.getClassScope();
-            if (node != null) {
-                Variable member = findClassMember(node, name);
-                while (member == null && node.getOuterClass() != null && !isAnonymous(node)) {
-                    crossingStaticContext = (crossingStaticContext || isStatic(node.getModifiers()));
-                    member = findClassMember((node = node.getOuterClass()), name);
-                }
+            ClassNode classScope = scope.getClassScope();
+            if (classScope != null) {
+                Variable member = findClassMember(classScope, var.getName());
                 if (member != null) {
                     boolean staticScope = crossingStaticContext || isSpecialConstructorCall;
                     boolean staticMember = member.isInStaticContext();
@@ -264,7 +257,8 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                         var = member;
                 }
                 // GROOVY-5961
-                if (!isAnonymous(scope.getClassScope())) break;
+                if (!isAnonymous(classScope))
+                    break;
             }
             scope = scope.getParent();
         }
