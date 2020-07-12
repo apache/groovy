@@ -20,8 +20,6 @@ package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AnnotatedNode;
-import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -52,58 +50,60 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
 
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
 import static java.lang.reflect.Modifier.isFinal;
+import static java.lang.reflect.Modifier.isStatic;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 
 /**
- * Goes through an AST and initializes the scopes.
+ * Initializes the variable scopes for an AST.
  */
 public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
-    private VariableScope currentScope = null;
-    private final VariableScope headScope = new VariableScope();
-    private ClassNode currentClass = null;
+    private ClassNode currentClass;
+    private VariableScope currentScope;
+    private boolean inConstructor, inSpecialConstructorCall;
+
     private final SourceUnit source;
-    private boolean isSpecialConstructorCall = false;
-    private boolean inConstructor = false;
     private final boolean recurseInnerClasses;
+    private final Deque<StateStackElement> stateStack = new LinkedList<>();
 
-    private final LinkedList stateStack = new LinkedList();
-
-    private class StateStackElement {
-        final VariableScope scope;
+    private static class StateStackElement {
         final ClassNode clazz;
+        final VariableScope scope;
         final boolean inConstructor;
 
-        StateStackElement() {
-            scope = VariableScopeVisitor.this.currentScope;
-            clazz = VariableScopeVisitor.this.currentClass;
-            inConstructor = VariableScopeVisitor.this.inConstructor;
+        StateStackElement(final ClassNode currentClass, final VariableScope currentScope, final boolean inConstructor) {
+            this.clazz = currentClass;
+            this.scope = currentScope;
+            this.inConstructor = inConstructor;
         }
     }
 
-    public VariableScopeVisitor(SourceUnit source, boolean recurseInnerClasses) {
+    public VariableScopeVisitor(final SourceUnit source, final boolean recurseInnerClasses) {
         this.source = source;
-        currentScope = headScope;
+        this.currentScope = new VariableScope();
         this.recurseInnerClasses = recurseInnerClasses;
     }
 
-
-    public VariableScopeVisitor(SourceUnit source) {
+    public VariableScopeVisitor(final SourceUnit source) {
         this(source, false);
+    }
+
+    @Override
+    protected SourceUnit getSourceUnit() {
+        return source;
     }
 
     // ------------------------------
     // helper methods
-    //------------------------------
+    // ------------------------------
 
-    private void pushState(boolean isStatic) {
-        stateStack.add(new StateStackElement());
+    private void pushState(final boolean isStatic) {
+        stateStack.push(new StateStackElement(currentClass, currentScope, inConstructor));
         currentScope = new VariableScope(currentScope);
         currentScope.setInStaticContext(isStatic);
     }
@@ -113,35 +113,26 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     private void popState() {
-        StateStackElement element = (StateStackElement) stateStack.removeLast();
-        currentScope = element.scope;
-        currentClass = element.clazz;
-        inConstructor = element.inConstructor;
+        StateStackElement state = stateStack.pop();
+        this.currentClass  = state.clazz;
+        this.currentScope  = state.scope;
+        this.inConstructor = state.inConstructor;
     }
 
-    private void declare(Parameter[] parameters, ASTNode node) {
-        for (Parameter parameter : parameters) {
-            if (parameter.hasInitialExpression()) {
-                parameter.getInitialExpression().visit(this);
-            }
-            declare(parameter, node);
-        }
+    private void declare(final VariableExpression variable) {
+        variable.setInStaticContext(currentScope.isInStaticContext());
+        declare(variable, variable);
+        variable.setAccessedVariable(variable);
     }
 
-    private void declare(VariableExpression vex) {
-        vex.setInStaticContext(currentScope.isInStaticContext());
-        declare(vex, vex);
-        vex.setAccessedVariable(vex);
-    }
-
-    private void declare(Variable var, ASTNode expr) {
+    private void declare(final Variable variable, final ASTNode context) {
         String scopeType = "scope";
         String variableType = "variable";
 
-        if (expr.getClass() == FieldNode.class) {
+        if (context.getClass() == FieldNode.class) {
             scopeType = "class";
             variableType = "field";
-        } else if (expr.getClass() == PropertyNode.class) {
+        } else if (context.getClass() == PropertyNode.class) {
             scopeType = "class";
             variableType = "property";
         }
@@ -149,10 +140,10 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         StringBuilder msg = new StringBuilder();
         msg.append("The current ").append(scopeType);
         msg.append(" already contains a ").append(variableType);
-        msg.append(" of the name ").append(var.getName());
+        msg.append(" of the name ").append(variable.getName());
 
-        if (currentScope.getDeclaredVariable(var.getName()) != null) {
-            addError(msg.toString(), expr);
+        if (currentScope.getDeclaredVariable(variable.getName()) != null) {
+            addError(msg.toString(), context);
             return;
         }
 
@@ -162,125 +153,123 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             // to declare a variable of the same name as a class member
             if (scope.getClassScope() != null && !isAnonymous(scope.getClassScope())) break;
 
-            if (scope.getDeclaredVariable(var.getName()) != null) {
+            if (scope.getDeclaredVariable(variable.getName()) != null) {
                 // variable already declared
-                addError(msg.toString(), expr);
+                addError(msg.toString(), context);
                 break;
             }
         }
         // declare the variable even if there was an error to allow more checks
-        currentScope.putDeclaredVariable(var);
+        currentScope.putDeclaredVariable(variable);
     }
 
-    protected SourceUnit getSourceUnit() {
-        return source;
-    }
+    private Variable findClassMember(final ClassNode node, final String name) {
+        final boolean abstractType = node.isAbstract();
 
-    private Variable findClassMember(ClassNode cn, String name) {
-        if (cn == null) return null;
-        if (cn.isScript()) {
-            return new DynamicVariable(name, false);
-        }
+        for (ClassNode cn = node; cn != null && !cn.equals(ClassHelper.OBJECT_TYPE); cn = cn.getSuperClass()) {
+            if (cn.isScript()) {
+                return new DynamicVariable(name, false);
+            }
 
-        for (FieldNode fn : cn.getFields()) {
-            if (fn.getName().equals(name)) return fn;
-        }
+            for (FieldNode fn : cn.getFields()) {
+                if (name.equals(fn.getName())) return fn;
+            }
 
-        for (MethodNode mn : cn.getMethods()) {
-            String pName = getPropertyName(mn);
-            if (name.equals(pName)) {
-                PropertyNode property = new PropertyNode(name, mn.getModifiers(), ClassHelper.OBJECT_TYPE, cn, null, null, null);
-                property.getField().setHasNoRealSourcePosition(true);
-                property.getField().setSynthetic(true);
-                property.getField().setDeclaringClass(cn);
-                property.setDeclaringClass(cn);
-                return property;
+            for (PropertyNode pn : cn.getProperties()) {
+                if (name.equals(pn.getName())) return pn;
+            }
+
+            for (MethodNode mn : cn.getMethods()) {
+                if ((abstractType || !mn.isAbstract()) && name.equals(getPropertyName(mn))) {
+                    FieldNode fn = new FieldNode(name, mn.getModifiers() & 0xF, ClassHelper.OBJECT_TYPE, cn, null);
+                    fn.setHasNoRealSourcePosition(true);
+                    fn.setDeclaringClass(cn);
+                    fn.setSynthetic(true);
+
+                    PropertyNode pn = new PropertyNode(fn, fn.getModifiers(), null, null);
+                    pn.setDeclaringClass(cn);
+                    return pn;
+                }
+            }
+
+            for (ClassNode face : cn.getInterfaces()) {
+                FieldNode fn = face.getDeclaredField(name);
+                if (fn != null) return fn;
             }
         }
 
-        for (PropertyNode pn : cn.getProperties()) {
-            if (pn.getName().equals(name)) return pn;
-        }
-
-        Variable ret = findClassMember(cn.getSuperClass(), name);
-        if (ret != null) return ret;
-        if (isAnonymous(cn)) return null;
-        return findClassMember(cn.getOuterClass(), name);
+        return null;
     }
 
-    private static boolean isAnonymous(ClassNode node) {
-        return (!node.isEnum() && node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous());
-    }
-
-    // -------------------------------
-    // different Variable based checks
-    // -------------------------------
-
-    private Variable checkVariableNameForDeclaration(String name, Expression expression) {
+    private Variable findVariableDeclaration(final String name) {
         if ("super".equals(name) || "this".equals(name)) return null;
 
+        Variable variable = null;
         VariableScope scope = currentScope;
-        Variable var = new DynamicVariable(name, currentScope.isInStaticContext());
-        Variable orig = var;
-        // try to find a declaration of a variable
         boolean crossingStaticContext = false;
+        // try to find a declaration of a variable
         while (true) {
-            crossingStaticContext = crossingStaticContext || scope.isInStaticContext();
+            crossingStaticContext = (crossingStaticContext || scope.isInStaticContext());
 
-            Variable var1 = scope.getDeclaredVariable(var.getName());
-            if (var1 != null) {
-                var = var1;
+            Variable var = scope.getDeclaredVariable(name);
+            if (var != null) {
+                variable = var;
                 break;
             }
 
-            var1 = scope.getReferencedLocalVariable(var.getName());
-            if (var1 != null) {
-                var = var1;
+            var = scope.getReferencedLocalVariable(name);
+            if (var != null) {
+                variable = var;
                 break;
             }
 
-            var1 = scope.getReferencedClassVariable(var.getName());
-            if (var1 != null) {
-                var = var1;
+            var = scope.getReferencedClassVariable(name);
+            if (var != null) {
+                variable = var;
                 break;
             }
 
-            ClassNode classScope = scope.getClassScope();
-            if (classScope != null) {
-                Variable member = findClassMember(classScope, var.getName());
+            ClassNode node = scope.getClassScope();
+            if (node != null) {
+                Variable member = findClassMember(node, name);
+                while (member == null && node.getOuterClass() != null && !isAnonymous(node)) {
+                    crossingStaticContext = (crossingStaticContext || isStatic(node.getModifiers()));
+                    member = findClassMember((node = node.getOuterClass()), name);
+                }
                 if (member != null) {
-                    boolean staticScope = crossingStaticContext || isSpecialConstructorCall;
-                    boolean staticMember = member.isInStaticContext();
-                    // We don't allow a static context (e.g. a static method) to access
-                    // a non-static variable (e.g. a non-static field).
-                    if (!(staticScope && !staticMember))
-                        var = member;
+                    boolean staticScope = (crossingStaticContext || inSpecialConstructorCall), staticMember = member.isInStaticContext();
+                    // prevent a static context (e.g. a static method) from accessing a non-static variable (e.g. a non-static field)
+                    if (!(staticScope && !staticMember)) {
+                        variable = member;
+                    }
                 }
                 // GROOVY-5961
-                if (!isAnonymous(classScope))
-                    break;
+                if (!isAnonymous(scope.getClassScope())) break;
             }
             scope = scope.getParent();
         }
-        if (var == orig && crossingStaticContext) {
-            var = new DynamicVariable(var.getName(), true);
+        if (variable == null) {
+            variable = new DynamicVariable(name, crossingStaticContext);
         }
 
         boolean isClassVariable = (scope.isClassScope() && !scope.isReferencedLocalVariable(name))
-                || (scope.isReferencedClassVariable(name) && scope.getDeclaredVariable(name) == null);
+            || (scope.isReferencedClassVariable(name) && scope.getDeclaredVariable(name) == null);
         VariableScope end = scope;
-
         scope = currentScope;
         while (scope != end) {
             if (isClassVariable) {
-                scope.putReferencedClassVariable(var);
+                scope.putReferencedClassVariable(variable);
             } else {
-                scope.putReferencedLocalVariable(var);
+                scope.putReferencedLocalVariable(variable);
             }
             scope = scope.getParent();
         }
 
-        return var;
+        return variable;
+    }
+
+    private static boolean isAnonymous(final ClassNode node) {
+        return (!node.isEnum() && node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous());
     }
 
     /**
@@ -415,7 +404,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
     public void visitVariableExpression(VariableExpression expression) {
         String name = expression.getName();
-        Variable v = checkVariableNameForDeclaration(name, expression);
+        Variable v = findVariableDeclaration(name);
         if (v == null) return;
         expression.setAccessedVariable(v);
         checkVariableContextAccess(v, expression);
@@ -471,7 +460,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     public void visitFieldExpression(FieldExpression expression) {
         String name = expression.getFieldName();
         //TODO: change that to get the correct scope
-        Variable v = checkVariableNameForDeclaration(name, expression);
+        Variable v = findVariableDeclaration(name);
         checkVariableContextAccess(v, expression);
     }
 
@@ -516,8 +505,12 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         for (Parameter parameter : parameters) {
             visitAnnotations(parameter);
         }
-
-        declare(node.getParameters(), node);
+        for (Parameter parameter : parameters) {
+            if (parameter.hasInitialExpression()) {
+                parameter.getInitialExpression().visit(this);
+            }
+            declare(parameter, node);
+        }
         visitClassCodeContainer(node.getCode());
 
         popState();
@@ -532,7 +525,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 throw new GroovyBugError("method name is null");
             }
 
-            Variable v = checkVariableNameForDeclaration(methodName, call);
+            Variable v = findVariableDeclaration(methodName);
             if (v != null && !(v instanceof DynamicVariable)) {
                 checkVariableContextAccess(v, call);
             }
@@ -552,9 +545,11 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
-        isSpecialConstructorCall = call.isSpecialCall();
+        boolean specialCtorFlag = inSpecialConstructorCall;
+        inSpecialConstructorCall |= call.isSpecialCall();
         super.visitConstructorCallExpression(call);
-        isSpecialConstructorCall = false;
+        inSpecialConstructorCall = specialCtorFlag;
+
         if (!call.isUsingAnonymousInnerClass()) return;
 
         pushState();
@@ -602,18 +597,5 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         pushState(node.isStatic());
         super.visitField(node);
         popState();
-    }
-
-    public void visitAnnotations(AnnotatedNode node) {
-        List<AnnotationNode> annotations = node.getAnnotations();
-        if (annotations.isEmpty()) return;
-        for (AnnotationNode an : annotations) {
-            // skip built-in properties
-            if (an.isBuiltIn()) continue;
-            for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
-                Expression annMemberValue = member.getValue();
-                annMemberValue.visit(this);
-            }
-        }
     }
 }

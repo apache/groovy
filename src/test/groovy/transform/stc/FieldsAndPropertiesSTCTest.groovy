@@ -387,6 +387,53 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testOuterPropertyAccess1() {
+        assertScript '''
+            class Outer {
+                class Inner {
+                    def m() {
+                        p
+                    }
+                }
+                def p = 1
+            }
+            def i = new Outer.Inner(new Outer())
+            def x = i.m()
+            assert x == 1
+        '''
+    }
+
+    // GROOVY-9598
+    void testOuterPropertyAccess2() {
+        shouldFailWithMessages '''
+            class Outer {
+                static class Inner {
+                    def m() {
+                        p
+                    }
+                }
+                def p = 1
+            }
+            def i = new Outer.Inner()
+            def x = i.m()
+        ''', "Apparent variable 'p' was found in a static scope but doesn't refer to a local variable, static field or class."
+    }
+
+    void testOuterPropertyAccess3() {
+        shouldFailWithMessages '''
+            class Outer {
+                static class Inner {
+                    def m() {
+                        this.p
+                    }
+                }
+                def p = 1
+            }
+            def i = new Outer.Inner()
+            def x = i.m()
+        ''', 'No such property: p for class: Outer$Inner'
+    }
+
     void testPrivateFieldAccessInClosure() {
         assertScript '''
             class A {
@@ -847,4 +894,3 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
     static class BaseClass2 extends BaseClass {
     }
 }
-
