@@ -21,6 +21,7 @@ package org.codehaus.groovy.util;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 
+@Deprecated
 public class ComplexKeyHashMap
 {
   public static class Entry {

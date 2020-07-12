@@ -32,7 +32,7 @@ import org.codehaus.groovy.runtime.metaclass.MixedInMetaClass;
 import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaProperty;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
-import org.codehaus.groovy.util.ManagedConcurrentMap;
+import org.codehaus.groovy.util.ManagedIdentityConcurrentMap;
 import org.codehaus.groovy.util.ReferenceBundle;
 
 import java.lang.reflect.Modifier;
@@ -40,19 +40,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class MixinInMetaClass extends ManagedConcurrentMap {
+public class MixinInMetaClass {
     final ExpandoMetaClass emc;
     final CachedClass mixinClass;
     final CachedConstructor constructor;
-
-    private static final ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
+    private final ManagedIdentityConcurrentMap managedIdentityConcurrentMap =
+            new ManagedIdentityConcurrentMap(ReferenceBundle.getSoftBundle());
 
     public MixinInMetaClass(ExpandoMetaClass emc, CachedClass mixinClass) {
-        super(softBundle);
         this.emc = emc;
         this.mixinClass = mixinClass;
 
-        constructor = findDefaultConstructor(mixinClass);
+        this.constructor = findDefaultConstructor(mixinClass);
         emc.addMixinClass(this);
     }
 
@@ -70,20 +69,20 @@ public class MixinInMetaClass extends ManagedConcurrentMap {
     }
 
     public synchronized Object getMixinInstance(Object object) {
-        Object mixinInstance = get(object);
+        Object mixinInstance = managedIdentityConcurrentMap.get(object);
         if (mixinInstance == null) {
             mixinInstance = constructor.invoke(MetaClassHelper.EMPTY_ARRAY);
             new MixedInMetaClass(mixinInstance, object);
-            put(object, mixinInstance);
+            managedIdentityConcurrentMap.put(object, mixinInstance);
         }
         return mixinInstance;
     }
 
     public synchronized void setMixinInstance(Object object, Object mixinInstance) {
         if (mixinInstance == null) {
-            remove(object);
+            managedIdentityConcurrentMap.remove(object);
         } else {
-            put(object, mixinInstance);
+            managedIdentityConcurrentMap.put(object, mixinInstance);
         }
     }
 

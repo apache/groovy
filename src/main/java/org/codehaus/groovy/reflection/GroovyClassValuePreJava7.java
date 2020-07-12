@@ -28,6 +28,7 @@ import org.codehaus.groovy.util.ReferenceBundle;
  *
  * @param <T>
  */
+@Deprecated
 class GroovyClassValuePreJava7<T> implements GroovyClassValue<T> {
 	private static final ReferenceBundle weakBundle = ReferenceBundle.getWeakBundle();
 

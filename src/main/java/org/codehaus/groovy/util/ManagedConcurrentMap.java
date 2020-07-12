@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.util;
 
+@Deprecated
 public class ManagedConcurrentMap<K,V> extends AbstractConcurrentMap<K,V> {
     protected ReferenceBundle bundle;
     public ManagedConcurrentMap(ReferenceBundle bundle) {

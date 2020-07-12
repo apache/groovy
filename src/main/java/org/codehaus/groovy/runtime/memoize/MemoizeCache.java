@@ -44,7 +44,7 @@ public interface MemoizeCache<K, V> {
      * Try to get the value from cache.
      * If not found, create the value by {@link ValueProvider} and put it into the cache, at last return the value.
      *
-     * @param key
+     * @param key the key to look up
      * @param valueProvider provide the value if the associated value not found
      * @return the cached value
      */
