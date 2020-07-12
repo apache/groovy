@@ -1102,11 +1102,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
         // visit the method nodes added while iterating,
         // e.g. synthetic method for constructor reference
-        List<MethodNode> changedMethodList = new ArrayList<>(getMethods());
-        boolean changed = changedMethodList.removeAll(methodList);
-        if (changed) {
-            for (MethodNode mn : changedMethodList) {
-                visitor.visitMethod(mn);
+        final List<MethodNode> newMethodList = getMethods();
+        if (newMethodList.size() > methodList.size()) { // if the newly added method nodes found, visit them
+            List<MethodNode> changedMethodList = new ArrayList<>(newMethodList);
+            boolean changed = changedMethodList.removeAll(methodList);
+            if (changed) {
+                for (MethodNode mn : changedMethodList) {
+                    visitor.visitMethod(mn);
+                }
             }
         }
     }
