@@ -83,7 +83,7 @@ public class MethodNodeUtils {
     public static String getPropertyName(final MethodNode mNode) {
         final int parameterCnt = mNode.getParameters().length;
 
-        if (0 == parameterCnt || 1 == parameterCnt) {
+        if (parameterCnt < 2) {
             final String name = mNode.getName();
             final int nameLength = name.length();
             if (nameLength > 2) {
