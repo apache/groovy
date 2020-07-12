@@ -26,8 +26,10 @@ public class ReflectionCache {
         return TypeUtil.autoboxType(type);
     }
 
+    @Deprecated
     static TripleKeyHashMap mopNames = new TripleKeyHashMap();
 
+    @Deprecated // the method is never called
     public static String getMOPMethodName(CachedClass declaringClass, String name, boolean useThis) {
         TripleKeyHashMap.Entry mopNameEntry = mopNames.getOrPut(declaringClass, name, useThis);
         if (mopNameEntry.value == null) {

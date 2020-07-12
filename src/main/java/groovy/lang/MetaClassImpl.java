@@ -101,9 +101,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -151,14 +150,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     protected final boolean isMap;
     protected final MetaMethodIndex metaMethodIndex;
 
-    private final Index classPropertyIndex = new MethodIndex();
-    private final SingleKeyHashMap staticPropertyIndex = new SingleKeyHashMap();
-    private final Map<String, MetaMethod> listeners = new HashMap<>();
+    private final Map<CachedClass, LinkedHashMap<String, MetaProperty>> classPropertyIndex = new LinkedHashMap<>();
+    private final Map<String, MetaProperty> staticPropertyIndex = new LinkedHashMap<>();
+    private final Map<String, MetaMethod> listeners = new LinkedHashMap<>();
     private final List<MetaMethod> allMethods = new ArrayList<>();
     // we only need one of these that can be reused over and over.
     private final MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
-    private final Index classPropertyIndexForSuper = new MethodIndex();
-    private final Set<MetaMethod> newGroovyMethodsSet = new HashSet<>();
+    private final Map<CachedClass, LinkedHashMap<String, MetaProperty>> classPropertyIndexForSuper = new LinkedHashMap<>();
+    private final Set<MetaMethod> newGroovyMethodsSet = new LinkedHashSet<>();
     private final MetaMethod[] myNewMetaMethods;
     private final MetaMethod[] additionalMetaMethods;
 
@@ -290,13 +289,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public MetaProperty getMetaProperty(final String name) {
         MetaProperty metaProperty = null;
 
-        SingleKeyHashMap propertyMap = classPropertyIndex.getNotNull(theCachedClass);
-        metaProperty = (MetaProperty) propertyMap.get(name);
+        LinkedHashMap<String, MetaProperty> propertyMap = classPropertyIndex.computeIfAbsent(theCachedClass, k -> new LinkedHashMap<>());
+        metaProperty = propertyMap.get(name);
         if (metaProperty == null) {
-            metaProperty = (MetaProperty) staticPropertyIndex.get(name);
+            metaProperty = staticPropertyIndex.get(name);
             if (metaProperty == null) {
-                propertyMap = classPropertyIndexForSuper.getNotNull(theCachedClass);
-                metaProperty = (MetaProperty) propertyMap.get(name);
+                propertyMap = classPropertyIndexForSuper.computeIfAbsent(theCachedClass, k -> new LinkedHashMap<>());
+                metaProperty = propertyMap.get(name);
                 if (metaProperty == null) {
                     MetaBeanProperty property = findPropertyInClassHierarchy(name, theCachedClass);
                     if (property != null) {
@@ -1632,7 +1631,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         };
         l.sort(comp);
         int found = -1;
-        for (int i = 0; i < l.size(); i++) {
+        for (int i = 0, n = l.size(); i < n; i++) {
             if (l.get(i) != constructor) continue;
             found = i;
             break;
@@ -2215,16 +2214,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     public List<MetaProperty> getProperties() {
         checkInitalised();
-        SingleKeyHashMap propertyMap = classPropertyIndex.getNullable(theCachedClass);
+        LinkedHashMap<String, MetaProperty> propertyMap = classPropertyIndex.get(theCachedClass);
         if (propertyMap == null) {
             // GROOVY-6903: May happen in some special environment, like under Android, due
             // to classloading issues
-            propertyMap = new SingleKeyHashMap();
+            propertyMap = new LinkedHashMap<>();
         }
         // simply return the values of the metaproperty map as a List
-        List ret = new ArrayList(propertyMap.size());
-        for (ComplexKeyHashMap.EntryIterator iter = propertyMap.getEntrySetIterator(); iter.hasNext(); ) {
-            MetaProperty element = (MetaProperty) ((SingleKeyHashMap.Entry) iter.next()).value;
+        List<MetaProperty> ret = new ArrayList<>(propertyMap.size());
+        for (Map.Entry<String, MetaProperty> stringMetaPropertyEntry : propertyMap.entrySet()) {
+            MetaProperty element = stringMetaPropertyEntry.getValue();
             if (element instanceof CachedField) continue;
             // filter out DGM beans
             if (element instanceof MetaBeanProperty) {
@@ -2372,23 +2371,21 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      *
      * @param propertyDescriptors the property descriptors
      */
-    @SuppressWarnings("unchecked")
     private void setupProperties(PropertyDescriptor[] propertyDescriptors) {
         if (theCachedClass.isInterface) {
             LinkedList<CachedClass> superClasses = new LinkedList<>();
             superClasses.add(ReflectionCache.OBJECT_CLASS);
-            Set interfaces = theCachedClass.getInterfaces();
+            LinkedList<CachedClass> superInterfaces = new LinkedList<>(theCachedClass.getInterfaces());
 
-            LinkedList<CachedClass> superInterfaces = new LinkedList<CachedClass>(interfaces);
             // sort interfaces so that we may ensure a deterministic behaviour in case of
             // ambiguous fields (class implementing two interfaces using the same field)
             if (superInterfaces.size() > 1) {
                 superInterfaces.sort(CACHED_CLASS_NAME_COMPARATOR);
             }
 
-            SingleKeyHashMap iPropertyIndex = classPropertyIndex.getNotNull(theCachedClass);
+            Map<String, MetaProperty> iPropertyIndex = classPropertyIndex.computeIfAbsent(theCachedClass, k -> new LinkedHashMap<>());
             for (CachedClass iclass : superInterfaces) {
-                SingleKeyHashMap sPropertyIndex = classPropertyIndex.getNotNull(iclass);
+                Map<String, MetaProperty> sPropertyIndex = classPropertyIndex.computeIfAbsent(iclass, k -> new LinkedHashMap<>());
                 copyNonPrivateFields(sPropertyIndex, iPropertyIndex, null);
                 addFields(iclass, iPropertyIndex);
             }
@@ -2400,21 +2397,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             makeStaticPropertyIndex();
         } else {
             LinkedList<CachedClass> superClasses = getSuperClasses();
-            LinkedList<CachedClass> interfaces = new LinkedList<>(theCachedClass.getInterfaces());
+            LinkedList<CachedClass> superInterfaces = new LinkedList<>(theCachedClass.getInterfaces());
+
             // sort interfaces so that we may ensure a deterministic behaviour in case of
             // ambiguous fields (class implementing two interfaces using the same field)
-            if (interfaces.size() > 1) {
-                interfaces.sort(CACHED_CLASS_NAME_COMPARATOR);
+            if (superInterfaces.size() > 1) {
+                superInterfaces.sort(CACHED_CLASS_NAME_COMPARATOR);
             }
 
             // if this an Array, then add the special read-only "length" property
             if (theCachedClass.isArray) {
-                SingleKeyHashMap map = new SingleKeyHashMap();
+                LinkedHashMap<String, MetaProperty> map = new LinkedHashMap<>();
                 map.put("length", arrayLengthProperty);
                 classPropertyIndex.put(theCachedClass, map);
             }
 
-            inheritStaticInterfaceFields(superClasses, new LinkedHashSet(interfaces));
+            inheritStaticInterfaceFields(superClasses, new LinkedHashSet<>(superInterfaces));
             inheritFields(superClasses);
 
             applyPropertyDescriptors(propertyDescriptors);
@@ -2428,11 +2426,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private void makeStaticPropertyIndex() {
-        SingleKeyHashMap propertyMap = classPropertyIndex.getNotNull(theCachedClass);
-        for (ComplexKeyHashMap.EntryIterator iter = propertyMap.getEntrySetIterator(); iter.hasNext(); ) {
-            SingleKeyHashMap.Entry entry = ((SingleKeyHashMap.Entry) iter.next());
-
-            MetaProperty mp = (MetaProperty) entry.getValue();
+        LinkedHashMap<String, MetaProperty> propertyMap = classPropertyIndex.computeIfAbsent(theCachedClass, k -> new LinkedHashMap<>());
+        for (Map.Entry<String, MetaProperty> entry : propertyMap.entrySet()) {
+            MetaProperty mp = entry.getValue();
             if (mp instanceof CachedField) {
                 CachedField mfp = (CachedField) mp;
                 if (!mfp.isStatic()) continue;
@@ -2499,32 +2495,29 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return result;
     }
 
-    private void copyClassPropertyIndexForSuper(Index dest) {
-        for (ComplexKeyHashMap.EntryIterator iter = classPropertyIndex.getEntrySetIterator(); iter.hasNext(); ) {
-            SingleKeyHashMap.Entry entry = (SingleKeyHashMap.Entry) iter.next();
-            SingleKeyHashMap newVal = new SingleKeyHashMap();
-            dest.put((CachedClass) entry.getKey(), newVal);
+    private void copyClassPropertyIndexForSuper(Map<CachedClass, LinkedHashMap<String, MetaProperty>> dest) {
+        for (Map.Entry<CachedClass, LinkedHashMap<String, MetaProperty>> entry : classPropertyIndex.entrySet()) {
+            LinkedHashMap<String, MetaProperty> newVal = new LinkedHashMap<>();
+            dest.put(entry.getKey(), newVal);
         }
     }
 
-    private void inheritStaticInterfaceFields(LinkedList superClasses, Set interfaces) {
-        for (Object anInterface : interfaces) {
-            CachedClass iclass = (CachedClass) anInterface;
-            SingleKeyHashMap iPropertyIndex = classPropertyIndex.getNotNull(iclass);
+    private void inheritStaticInterfaceFields(List<CachedClass> superClasses, Set<CachedClass> interfaces) {
+        for (CachedClass iclass : interfaces) {
+            LinkedHashMap<String, MetaProperty> iPropertyIndex = classPropertyIndex.computeIfAbsent(iclass, k -> new LinkedHashMap<>());
             addFields(iclass, iPropertyIndex);
-            for (Object superClass : superClasses) {
-                CachedClass sclass = (CachedClass) superClass;
-                if (!iclass.getTheClass().isAssignableFrom(sclass.getTheClass())) continue;
-                SingleKeyHashMap sPropertyIndex = classPropertyIndex.getNotNull(sclass);
+            for (CachedClass superClass : superClasses) {
+                if (!iclass.getTheClass().isAssignableFrom(superClass.getTheClass())) continue;
+                LinkedHashMap<String, MetaProperty> sPropertyIndex = classPropertyIndex.computeIfAbsent(superClass, k -> new LinkedHashMap<>());
                 copyNonPrivateFields(iPropertyIndex, sPropertyIndex, null);
             }
         }
     }
 
     private void inheritFields(LinkedList<CachedClass> superClasses) {
-        SingleKeyHashMap last = null;
+        LinkedHashMap<String, MetaProperty> last = null;
         for (CachedClass klass : superClasses) {
-            SingleKeyHashMap propertyIndex = classPropertyIndex.getNotNull(klass);
+            LinkedHashMap<String, MetaProperty> propertyIndex = classPropertyIndex.computeIfAbsent(klass, k -> new LinkedHashMap<>());
             if (last != null) {
                 copyNonPrivateFields(last, propertyIndex, klass);
             }
@@ -2533,15 +2526,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private static void addFields(CachedClass klass, SingleKeyHashMap propertyIndex) {
+    private static void addFields(CachedClass klass, Map<String, MetaProperty> propertyIndex) {
         for (CachedField field : klass.getFields()) {
             propertyIndex.put(field.getName(), field);
         }
     }
 
-    private static void copyNonPrivateFields(SingleKeyHashMap from, SingleKeyHashMap to, @Nullable CachedClass klass) {
-        for (ComplexKeyHashMap.EntryIterator it = from.getEntrySetIterator(); it.hasNext(); ) {
-            SingleKeyHashMap.Entry entry = (SingleKeyHashMap.Entry) it.next();
+    private static void copyNonPrivateFields(Map<String, MetaProperty> from, Map<String, MetaProperty> to, @Nullable CachedClass klass) {
+        for (Map.Entry<String, MetaProperty> entry : from.entrySet()) {
             CachedField field = (CachedField) entry.getValue();
             int modifiers = field.getModifiers();
             if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers) || (!Modifier.isPrivate(modifiers)
@@ -2551,11 +2543,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private void applyStrayPropertyMethods(LinkedList<CachedClass> superClasses, Index classPropertyIndex, boolean isThis) {
+    private void applyStrayPropertyMethods(LinkedList<CachedClass> superClasses, Map<CachedClass, LinkedHashMap<String, MetaProperty>> classPropertyIndex, boolean isThis) {
         // now look for any stray getters that may be used to define a property
         for (CachedClass klass : superClasses) {
             MetaMethodIndex.Header header = metaMethodIndex.getHeader(klass.getTheClass());
-            SingleKeyHashMap propertyIndex = classPropertyIndex.getNotNull(klass);
+            Map<String, MetaProperty> propertyIndex = classPropertyIndex.computeIfAbsent(klass, k -> new LinkedHashMap<>());
             for (MetaMethodIndex.Entry e = header.head; e != null; e = e.nextClassEntry) {
                 String methodName = e.name;
                 // name too short?
@@ -2639,9 +2631,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private static void createMetaBeanProperty(SingleKeyHashMap propertyIndex, String propName, boolean isGetter, MetaMethod propertyMethod) {
+    private static void createMetaBeanProperty(Map<String, MetaProperty> propertyIndex, String propName, boolean isGetter, MetaMethod propertyMethod) {
         // is this property already accounted for?
-        MetaProperty mp = (MetaProperty) propertyIndex.get(propName);
+        MetaProperty mp = propertyIndex.get(propName);
         MetaProperty newMp = makeReplacementMetaProperty(mp, propName, isGetter, propertyMethod);
         if (newMp != mp) {
             propertyIndex.put(propName, newMp);
@@ -2695,10 +2687,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (staticProperty != null) {
             staticPropertyIndex.put(mp.getName(), mp);
         } else {
-            SingleKeyHashMap propertyMap = classPropertyIndex.getNotNull(theCachedClass);
+            LinkedHashMap<String, MetaProperty> propertyMap = classPropertyIndex.computeIfAbsent(theCachedClass, k -> new LinkedHashMap<>());
             //keep field
             CachedField field;
-            MetaProperty old = (MetaProperty) propertyMap.get(mp.getName());
+            MetaProperty old = propertyMap.get(mp.getName());
             if (old != null) {
                 if (old instanceof MetaBeanProperty) {
                     field = ((MetaBeanProperty) old).getField();
@@ -2892,13 +2884,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         CachedClass clazz = ReflectionCache.getCachedClass(_clazz);
         while (true) {
-            SingleKeyHashMap propertyMap;
+            Map<String, MetaProperty> propertyMap;
             if (useStatic) {
                 propertyMap = staticPropertyIndex;
             } else if (useSuper) {
-                propertyMap = classPropertyIndexForSuper.getNullable(clazz);
+                propertyMap = classPropertyIndexForSuper.get(clazz);
             } else {
-                propertyMap = classPropertyIndex.getNullable(clazz);
+                propertyMap = classPropertyIndex.get(clazz);
             }
             if (propertyMap == null) {
                 if (clazz != theCachedClass) {
@@ -2908,22 +2900,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     return null;
                 }
             }
-            return (MetaProperty) propertyMap.get(name);
+            return propertyMap.get(name);
         }
     }
 
     private MetaProperty getMetaProperty(String name, boolean useStatic) {
         CachedClass clazz = theCachedClass;
-        SingleKeyHashMap propertyMap;
+        Map<String, MetaProperty> propertyMap;
         if (useStatic) {
             propertyMap = staticPropertyIndex;
         } else {
-            propertyMap = classPropertyIndex.getNullable(clazz);
+            propertyMap = classPropertyIndex.get(clazz);
         }
         if (propertyMap == null) {
             return null;
         }
-        return (MetaProperty) propertyMap.get(name);
+        return propertyMap.get(name);
     }
 
     /**
@@ -3938,6 +3930,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         metaMethodIndex.clearCaches();
     }
 
+    @Deprecated
     private static final SingleKeyHashMap.Copier NAME_INDEX_COPIER = value -> {
         if (value instanceof FastArray) {
             return ((FastArray) value).copy();
@@ -3946,8 +3939,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     };
 
+    @Deprecated
     private static final SingleKeyHashMap.Copier METHOD_INDEX_COPIER = value -> SingleKeyHashMap.copy(new SingleKeyHashMap(false), (SingleKeyHashMap) value, NAME_INDEX_COPIER);
 
+    /**
+     * @deprecated use {@link LinkedHashMap} instead
+     */
+    @Deprecated
     static class MethodIndex extends Index {
         public MethodIndex(boolean b) {
             super(false);
@@ -3970,6 +3968,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
+    /**
+     * @deprecated use {@link LinkedHashMap} instead
+     */
+    @Deprecated
     public static class Index extends SingleKeyHashMap {
 
         public Index(int size) {

@@ -306,30 +306,30 @@ class JsonOutputTest extends GroovyTestCase {
                 "name": "Paris",
                 "districts": [
                     {
+                        "number": 1,
                         "streets": [
                             {
-                                "kind": "street",
-                                "streetName": "Saint-Honore"
+                                "streetName": "Saint-Honore",
+                                "kind": "street"
                             },
                             {
-                                "kind": "avenue",
-                                "streetName": "de l'Opera"
+                                "streetName": "de l'Opera",
+                                "kind": "avenue"
                             }
-                        ],
-                        "number": 1
+                        ]
                     },
                     {
+                        "number": 2,
                         "streets": [
                             {
-                                "kind": "boulevard",
-                                "streetName": "des Italiens"
+                                "streetName": "des Italiens",
+                                "kind": "boulevard"
                             },
                             {
-                                "kind": "boulevard",
-                                "streetName": "Bonne Nouvelle"
+                                "streetName": "Bonne Nouvelle",
+                                "kind": "boulevard"
                             }
-                        ],
-                        "number": 2
+                        ]
                     }
                 ]
             }'''.stripIndent()
@@ -350,12 +350,12 @@ class JsonOutputTest extends GroovyTestCase {
     void testObjectWithDeclaredPropertiesField() {
         def person = new JsonObject(name: "pillow", properties: [state: "fluffy", color: "white"])
         def json = toJson(person)
-        assert json == '{"properties":{"state":"fluffy","color":"white"},"name":"pillow"}'
+        assert json == '{"name":"pillow","properties":{"state":"fluffy","color":"white"}}'
     }
 
     void testGROOVY5494() {
         def json = toJson(new JsonFoo(name: "foo"))
-        assert json == '{"properties":0,"name":"foo"}'
+        assert json == '{"name":"foo","properties":0}'
     }
 
     void testCharacter() {

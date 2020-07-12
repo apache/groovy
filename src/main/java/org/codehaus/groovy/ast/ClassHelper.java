@@ -52,7 +52,7 @@ import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.GeneratedLambda;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.trait.Traits;
-import org.codehaus.groovy.util.ManagedConcurrentMap;
+import org.codehaus.groovy.util.ManagedIdentityConcurrentMap;
 import org.codehaus.groovy.util.ReferenceBundle;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
@@ -408,7 +408,7 @@ public class ClassHelper {
     }
 
     static class ClassHelperCache {
-        static ManagedConcurrentMap<Class, SoftReference<ClassNode>> classCache = new ManagedConcurrentMap<Class, SoftReference<ClassNode>>(ReferenceBundle.getWeakBundle());
+        static ManagedIdentityConcurrentMap<Class, SoftReference<ClassNode>> classCache = new ManagedIdentityConcurrentMap<Class, SoftReference<ClassNode>>(ReferenceBundle.getWeakBundle());
     }
 
     public static boolean isSAMType(final ClassNode type) {

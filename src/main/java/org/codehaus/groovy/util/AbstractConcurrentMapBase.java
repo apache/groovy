@@ -21,6 +21,7 @@ package org.codehaus.groovy.util;
 import java.util.Collection;
 import java.util.LinkedList;
 
+@Deprecated
 public abstract class AbstractConcurrentMapBase {
     protected static final int MAXIMUM_CAPACITY = 1 << 30;
     static final int MAX_SEGMENTS = 1 << 16;

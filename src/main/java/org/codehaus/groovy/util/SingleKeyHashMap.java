@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.util;
 
+@Deprecated
 public class SingleKeyHashMap extends ComplexKeyHashMap
 {
     public static class Entry extends ComplexKeyHashMap.Entry{

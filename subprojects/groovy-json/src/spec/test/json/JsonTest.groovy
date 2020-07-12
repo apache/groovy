@@ -120,7 +120,7 @@ class JsonTest extends GroovyTestCase {
             .excludeFieldsByType(URL)
             .build()
 
-        assert generator.toJson(person) == '{"dob":"1984@12","name":"John"}'
+        assert generator.toJson(person) == '{"name":"John","dob":"1984@12"}'
         // end::json_output_generator[]
         '''
     }
@@ -148,7 +148,7 @@ class JsonTest extends GroovyTestCase {
             }
             .build()
 
-        assert generator.toJson(person) == '{"favoriteUrl":"groovy-lang.org","name":"John"}'
+        assert generator.toJson(person) == '{"name":"John","favoriteUrl":"groovy-lang.org"}'
 
         // No key available when generating a JSON Array
         def list = [new URL('http://groovy-lang.org/json.html#_jsonoutput')]
