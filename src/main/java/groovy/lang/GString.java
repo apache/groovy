@@ -18,6 +18,7 @@
  */
 package groovy.lang;
 
+import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -93,12 +94,12 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     public GString(Object values) {
         this.values = (Object[]) values;
-        this.immutable = checkValuesImmutable();
+        this.immutable = checkImmutable(this.values);
     }
 
     public GString(Object[] values) {
         this.values = values;
-        this.immutable = checkValuesImmutable();
+        this.immutable = checkImmutable(this.values);
     }
 
     // will be static in an instance
@@ -310,10 +311,10 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         return toString().getBytes(charset);
     }
 
-    private boolean checkValuesImmutable() {
+    private static boolean checkImmutable(Object[] values) {
         for (Object value : values) {
             if (null == value) continue;
-            if (!(IMMUTABLE_TYPE_LIST.contains(value.getClass())
+            if (!(ImmutablePropertyUtils.isBuiltinImmutable(value.getClass().getName())
                     || (value instanceof GString && ((GString) value).immutable))) {
                 return false;
             }
