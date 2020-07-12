@@ -627,4 +627,12 @@ class GStringTest extends GroovyTestCase {
         def gstr9 = "a${(short) 1}"
         assert gstr9.toString() === gstr9.toString()
     }
+
+    void testImmutableValues() {
+        def x = 42G
+        def y = "Answer is $x"
+        assert 'Answer is 42' == y
+        y.values[0] = 'the question'
+        assert 'Answer is 42' == y
+    }
 }
