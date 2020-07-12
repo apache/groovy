@@ -28,11 +28,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -53,22 +48,6 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
     public static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
-
-    private static final Set<Class<?>> IMMUTABLE_TYPE_LIST =
-            new HashSet<>(
-                    Arrays.asList(
-                            String.class, Class.class,
-                            BigDecimal.class, BigInteger.class,
-                            boolean.class, Boolean.class,
-                            char.class, Character.class,
-                            byte.class, Byte.class,
-                            short.class, Short.class,
-                            int.class, Integer.class,
-                            long.class, Long.class,
-                            float.class, Float.class,
-                            double.class, Double.class
-                    )
-            );
 
     /**
      * A GString containing a single empty String and no values.
