@@ -20,6 +20,8 @@ package groovy
 
 import groovy.test.GroovyTestCase
 
+import java.lang.reflect.Field
+
 class GStringTest extends GroovyTestCase {
 
     void check(template, teststr) {
@@ -581,5 +583,19 @@ class GStringTest extends GroovyTestCase {
         assert Eval.me('''def foo='bar'; /${foo}*baz/''') == 'bar*baz'
         assert Eval.me('''def foo='bar'; /$foo\u002abaz/''') == 'bar*baz'
         assert Eval.me('''def foo='bar'; /${foo}\u002abaz/''') == 'bar*baz'
+    }
+
+    void testNestedGString() {
+        def gstr = "a${"${123}"}b"
+        assert 'a123b' == gstr
+        assert gstr.toString() === gstr.toString()
+
+        Field immutableField = GString.getDeclaredFields().find {f -> f.name == 'immutable'}
+        immutableField.setAccessible(true)
+        assert true == immutableField.get(gstr)
+
+        Field cachedStringLiteralField = GString.getDeclaredFields().find {f -> f.name == 'cachedStringLiteral'}
+        cachedStringLiteralField.setAccessible(true)
+        assert 'a123b' == cachedStringLiteralField.get(gstr)
     }
 }

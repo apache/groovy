@@ -27,6 +27,11 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -48,6 +53,22 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
     public static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
+    private static final Set<Class<?>> IMMUTABLE_TYPE_LIST =
+            new HashSet<>(
+                    Arrays.asList(
+                            String.class, Class.class,
+                            BigDecimal.class, BigInteger.class,
+                            boolean.class, Boolean.class,
+                            char.class, Character.class,
+                            byte.class, Byte.class,
+                            short.class, Short.class,
+                            int.class, Integer.class,
+                            long.class, Long.class,
+                            float.class, Float.class,
+                            double.class, Double.class
+                    )
+            );
+
     /**
      * A GString containing a single empty String and no values.
      */
@@ -68,13 +89,16 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
 
     private final Object[] values;
+    private final boolean immutable;
 
     public GString(Object values) {
         this.values = (Object[]) values;
+        this.immutable = checkValuesImmutable();
     }
 
     public GString(Object[] values) {
         this.values = values;
+        this.immutable = checkValuesImmutable();
     }
 
     // will be static in an instance
@@ -150,8 +174,15 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         return values[idx];
     }
 
+
+    private String cachedStringLiteral;
+
     @Override
     public String toString() {
+        if (null != cachedStringLiteral) {
+            return cachedStringLiteral;
+        }
+
         Writer buffer = new StringBuilderWriter(calcInitialCapacity());
         try {
             writeTo(buffer);
@@ -159,7 +190,9 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
             throw new StringWriterIOException(e);
         }
 
-        return buffer.toString();
+        String str = buffer.toString();
+
+        return immutable ? (cachedStringLiteral = str) : str;
     }
 
     private int calcInitialCapacity() {
@@ -275,5 +308,17 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     public byte[] getBytes(String charset) throws UnsupportedEncodingException {
         return toString().getBytes(charset);
+    }
+
+    private boolean checkValuesImmutable() {
+        for (Object value : values) {
+            if (null == value) continue;
+            if (!(IMMUTABLE_TYPE_LIST.contains(value.getClass())
+                    || (value instanceof GString && ((GString) value).immutable))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
