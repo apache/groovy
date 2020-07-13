@@ -172,16 +172,6 @@ public class Java9 extends Java8 {
         return 9;
     }
 
-    @Override
-    public Object getInvokeSpecialHandle(Method method, Object receiver) {
-        final Class<?> receiverType = receiver.getClass();
-        try {
-            return of(receiverType).unreflectSpecial(method, receiverType).bindTo(receiver);
-        } catch (ReflectiveOperationException e) {
-            return super.getInvokeSpecialHandle(method, receiver);
-        }
-    }
-
     /**
      * This method may be used by a caller in class C to check whether to enable access to a member of declaring class D successfully
      * if {@link Java8#checkCanSetAccessible(java.lang.reflect.AccessibleObject, java.lang.Class)} returns true and any of the following hold:
