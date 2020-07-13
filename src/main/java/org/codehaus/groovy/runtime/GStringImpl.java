@@ -58,7 +58,7 @@ public class GStringImpl extends GString {
      */
     @Override
     public String[] getStrings() {
-        return strings;
+        return strings.clone();
     }
 
 }
