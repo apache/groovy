@@ -58,7 +58,7 @@ public class GenericsType extends ASTNode {
     }
 
     public void setType(final ClassNode type) {
-        this.type = Objects.requireNonNull(type);
+        this.type = Objects.requireNonNull(type); // TODO: ensure type is not primitive
     }
 
     public String toString() {
