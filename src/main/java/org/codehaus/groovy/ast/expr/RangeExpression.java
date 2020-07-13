@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
@@ -35,6 +36,7 @@ public class RangeExpression extends Expression {
         this.from = from;
         this.to = to;
         this.inclusive = inclusive;
+        setType(ClassHelper.RANGE_TYPE);
     }
 
     public void visit(GroovyCodeVisitor visitor) {
@@ -42,7 +44,7 @@ public class RangeExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new RangeExpression(transformer.transform(from), transformer.transform(to), inclusive); 
+        Expression ret = new RangeExpression(transformer.transform(from), transformer.transform(to), inclusive);
         ret.setSourcePosition(this);
         ret.copyNodeMetaData(this);
         return ret;
