@@ -1166,6 +1166,56 @@ final class InnerClassTest {
         }
     }
 
+    @Test // GROOVY-8358
+    void testResolveInnerOfSuperType7() {
+        assertScript '''
+            class Outer implements I {
+                static class Inner extends C {
+                    static usage() {
+                        new T() // whoami?
+                    }
+                }
+            }
+
+            class C implements H { }
+
+            interface H {
+                static class T {}
+            }
+
+            interface I {
+                static class T {}
+            }
+
+            assert Outer.Inner.usage() instanceof H.T
+        '''
+    }
+
+    @Test // GROOVY-8358
+    void testResolveInnerOfSuperType8() {
+        assertScript '''
+            class C implements H { } // moved ahead of Outer
+
+            class Outer implements I {
+                static class Inner extends C {
+                    static usage() {
+                        new T() // whoami?
+                    }
+                }
+            }
+
+            interface H {
+                static class T {}
+            }
+
+            interface I {
+                static class T {}
+            }
+
+            assert Outer.Inner.usage() instanceof H.T
+        '''
+    }
+
     @Test // GROOVY-5679, GROOVY-5681
     void testEnclosingMethodIsSet() {
         assertScript '''
