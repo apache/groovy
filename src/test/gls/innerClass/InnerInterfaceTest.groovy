@@ -26,7 +26,7 @@ import groovy.test.GroovyTestCase
 class InnerInterfaceTest extends GroovyTestCase {
 
     void testStaticInnerInterfaceInAClass() {
-        assertScript """
+        assertScript '''
             class Foo4422V1 {
                 static class Bar {
                     def bar(){}
@@ -36,7 +36,7 @@ class InnerInterfaceTest extends GroovyTestCase {
                     def baz()
                 }
             }
-            
+
             class BazImpl implements Foo4422V1.Baz {
                 def baz(){}
             }
@@ -46,29 +46,29 @@ class InnerInterfaceTest extends GroovyTestCase {
             assert Foo4422V1.Baz.getMethod('baz') != null
             assert Foo4422V1.Baz.getField('TEST') != null
             assert BazImpl != null
-        """
+        '''
     }
 
     void testStaticInnerInterfaceInAnInterface() {
-        assertScript """
+        assertScript '''
             interface Foo4422V2 {
                 static interface Baz {}
             }
-            
+
             assert Foo4422V2.Baz != null
-        """
+        '''
     }
-    
+
     void testNonStaticInnerInterfaceInAClass() {
-        assertScript """
+        assertScript '''
             class Foo4422V3 {
                 class Bar {}
                 interface Baz {}
             }
-            
+
             assert Foo4422V3.Bar != null
             assert Foo4422V3.Baz != null
-        """
+        '''
     }
 
     // GROOVY-5989
@@ -83,21 +83,6 @@ class InnerInterfaceTest extends GroovyTestCase {
                     assert m.firstEntry().toString() == 'a=42'
                 }
             }
-        '''
-    }
-
-    // GROOVY-5754
-    void testResolveInnerInterface() {
-        assertScript '''
-            class Usage implements Koo {
-                static class MyInner extends Inner {}
-            }
-
-            interface Koo {
-                class Inner {
-                }
-            }
-            Koo.Inner
         '''
     }
 }
