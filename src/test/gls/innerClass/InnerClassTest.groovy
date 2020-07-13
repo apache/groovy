@@ -1120,6 +1120,52 @@ final class InnerClassTest {
         }
     }
 
+    @CompileDynamic @Test // GROOVY-8359
+    void testResolveInnerOfSuperType6() {
+        def config = new CompilerConfiguration(
+            targetDirectory: File.createTempDir(),
+            jointCompilationOptions: [memStub: true]
+        )
+        def parentDir = File.createTempDir()
+        try {
+            new File(parentDir, 'p').mkdir()
+            new File(parentDir, 'q').mkdir()
+
+            def a = new File(parentDir, 'p/A.Java')
+            a.write '''
+                package p;
+                public abstract class A {
+                    public interface I { }
+                }
+            '''
+            def b = new File(parentDir, 'q/B.groovy')
+            b.write '''
+                package q
+                import p.A
+                class B extends A {
+                    static m() {
+                        I
+                    }
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a)
+            cu.compile()
+
+            loader = new GroovyClassLoader(this.class.classLoader)
+            cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(b)
+            cu.compile()
+
+            assert loader.loadClass('q.B').m() instanceof Class
+        } finally {
+            config.targetDirectory.deleteDir()
+            parentDir.deleteDir()
+        }
+    }
+
     @Test // GROOVY-5679, GROOVY-5681
     void testEnclosingMethodIsSet() {
         assertScript '''
