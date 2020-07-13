@@ -990,6 +990,26 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-9642
+    void testResolveInnerOfSuperType9() {
+        assertScript '''
+            class C {
+                interface I {}
+                static class T {}
+            }
+            class D extends C {
+                static I one() {
+                    new I() {}
+                }
+                static T two() {
+                    new T() {}
+                }
+            }
+            assert D.one() instanceof C.I
+            assert D.two() instanceof C.T
+        '''
+    }
+
     @Test // GROOVY-5679, GROOVY-5681
     void testEnclosingMethodIsSet() {
         assertScript '''
