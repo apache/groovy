@@ -62,8 +62,8 @@ public class GenericsType extends ASTNode {
         return type;
     }
 
-    public void setType(ClassNode type) {
-        this.type = type;
+    public void setType(final ClassNode type) {
+            this.type = type;
     }
 
     public String toString() {
