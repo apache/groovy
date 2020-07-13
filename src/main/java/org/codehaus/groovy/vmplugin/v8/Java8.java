@@ -615,7 +615,7 @@ public class Java8 implements VMPlugin {
     @Override
     public Object getInvokeSpecialHandle(final Method method, final Object receiver) {
         if (getLookupConstructor() == null) {
-            throw new GroovyBugError("getInvokeSpecialHandle requires at least JDK 7 wot private access to Lookup");
+            throw new GroovyBugError("getInvokeSpecialHandle requires at least JDK 7 for private access to Lookup");
         }
         if (!method.isAccessible()) {
             AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
