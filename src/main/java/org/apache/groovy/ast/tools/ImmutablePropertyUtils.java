@@ -115,7 +115,8 @@ public class ImmutablePropertyUtils {
             "java.time.temporal.IsoFields",
             "java.time.temporal.JulianFields",
             "java.time.temporal.ValueRange",
-            "java.time.temporal.WeekFields"
+            "java.time.temporal.WeekFields",
+            "java.io.File"
     ));
 
     private ImmutablePropertyUtils() { }
