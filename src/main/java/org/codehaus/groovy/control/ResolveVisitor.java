@@ -1240,9 +1240,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         findPossibleOuterClassNodeForNonStaticInnerClassInstantiation(cce);
 
         ClassNode type = cce.getType();
-        resolveOrFail(type, cce);
-        if (Modifier.isAbstract(type.getModifiers())) {
-            addError("You cannot create an instance from the abstract " + getDescription(type) + ".", cce);
+        if (cce.isUsingAnonymousInnerClass()) { // GROOVY-9642
+            resolveOrFail(type.getUnresolvedSuperClass(false), type);
+        } else {
+            resolveOrFail(type, cce);
+            if (type.isAbstract()) {
+                addError("You cannot create an instance from the abstract " + getDescription(type) + ".", cce);
+            }
         }
 
         return cce.transformExpression(this);
