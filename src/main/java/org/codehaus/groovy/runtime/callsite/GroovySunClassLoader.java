@@ -20,6 +20,7 @@ package org.codehaus.groovy.runtime.callsite;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.reflection.SunClassLoader;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -32,9 +33,10 @@ import java.security.PrivilegedAction;
 public class GroovySunClassLoader extends SunClassLoader {
 
     public static final SunClassLoader sunVM;
+    public static final boolean pre9 = VMPluginFactory.getPlugin().getVersion() < 9;
 
     static {
-        sunVM = AccessController.doPrivileged((PrivilegedAction<SunClassLoader>) () -> {
+        sunVM = pre9 ? null : AccessController.doPrivileged((PrivilegedAction<SunClassLoader>) () -> {
             try {
                 if (SunClassLoader.sunVM != null) {
                     return new GroovySunClassLoader();
