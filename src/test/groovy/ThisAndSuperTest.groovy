@@ -18,20 +18,28 @@
  */
 package groovy
 
-class ThisAndSuperTest extends GroovyTestCase {
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
+
+final class ThisAndSuperTest {
+
+    @Test
     void testOverwrittenSuperMethod() {
         def helper = new TestForSuperHelper2()
         assert helper.foo() == 2
         assert helper.callFooInSuper() == 1
     }
 
+    @Test
     void testClosureUsingSuperAndThis() {
         def helper = new TestForSuperHelper2()
         assert helper.aClosureUsingThis() == 2
         assert helper.aClosureUsingSuper() == 1
         // accessing private method should not be changed
         // by a public method of the same name and signature!
-        assertEquals "bar", helper.closureUsingPrivateMethod()
+        assert helper.closureUsingPrivateMethod() == "bar"
         assert helper.bar() == "no bar"
 
         assert helper.aField == "I am a field"
@@ -41,6 +49,7 @@ class ThisAndSuperTest extends GroovyTestCase {
         assert helper.aField == 2
     }
 
+    @Test
     void testClosureDelegateAndThis() {
         def map = [:]
         def helper = new TestForSuperHelper2()
@@ -76,6 +85,7 @@ class ThisAndSuperTest extends GroovyTestCase {
         assert map.foo == 1
     }
 
+    @Test
     void testConstructorChain() {
         def helper = new TestForSuperHelper4()
         assert helper.x == 1
@@ -83,6 +93,7 @@ class ThisAndSuperTest extends GroovyTestCase {
         assert helper.x == "Object"
     }
 
+    @Test
     void testChainingForAsType() {
         def helper = new TestForSuperHelper1()
         def ret = helper as Object[]
@@ -94,43 +105,83 @@ class ThisAndSuperTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testSuperEach() {
         def x = new TestForSuperEach()
         x.each {
             x.res << "I am it: ${it.class.name}"
         }
 
-        assertEquals 3, x.res.size()
-        assertEquals "start each in subclass", x.res[0]
-        assertEquals "I am it: groovy.TestForSuperEach", x.res[1]
-        assertEquals "end of each in subclass", x.res[2]
+        assert x.res.size() == 3
+        assert x.res[0] == "start each in subclass"
+        assert x.res[1] == "I am it: groovy.TestForSuperEach"
+        assert x.res[2] == "end of each in subclass"
     }
 
-// GROOVY-2555
-//    void testCallToAbstractSuperMethodShouldResultInMissingMethod () {
-//        def x = new TestForSuperHelper6()
-//        shouldFail(MissingMethodException) {
-//            x.theMethod()
-//        }
-//    }
-
-    void testDgm() {
-        assertEquals A.empty(), '123'
-    }
-
+    @Test // GROOVY-2555
     void testAbstractSuperMethodShouldBeTreatedLikeMissingMethod() {
-        shouldFail(MissingMethodException) {
-            new TestForSuperHelper6().theMethod()
-        }
+        shouldFail MissingMethodException, '''
+            abstract class A {
+                abstract void m()
+            }
+            class B extends A {
+                void m() {
+                    super.m()
+                }
+            }
+            new B().m()
+        '''
+    }
+
+    @Test // GROOVY-8999
+    void testPrivateSuperField1() {
+        def err = shouldFail MissingFieldException, '''
+            abstract class A {
+                private x = 1
+                def getX() { 2 }
+            }
+            class B extends A {
+                private x = 3
+                def m() { super.@x }
+            }
+            assert new B().m() == 1
+        '''
+
+        assert err =~ /No such field: x for class: A/
+    }
+
+    @Test // GROOVY-8999
+    void testPrivateSuperField2() {
+        def err = shouldFail MissingFieldException, '''
+            abstract class A {
+                private x = 1
+                def getX() { 2 }
+                void setX(x) { this.x = 3 }
+            }
+            class B extends A {
+                private x = 4
+                def m() { super.@x = 5; return x }
+            }
+            assert new B().m() == 2
+        '''
+
+        assert err =~ /No such field: x for class: A/
+    }
+
+    // https://github.com/apache/groovy/commit/b62e4d3165b4d899a3b6c71dba2858c9362b2e1b
+    @Test // TODO: Does this belong in another test suite?
+    void testStaticMetaClassClosure() {
+        assertScript '''
+            class A {
+            }
+            A.metaClass.static.something << { -> '123' }
+
+            assert A.something() == '123'
+        '''
     }
 }
 
-class A {
-    static {
-        A.metaClass.static.empty << {-> '123' }
-    }
-}
-
+//------------------------------------------------------------------------------
 
 class TestForSuperEach {
     def res = []
@@ -190,15 +241,5 @@ class TestForSuperHelper4 extends TestForSuperHelper3 {
 
     TestForSuperHelper4(Object j) {
         super(j)
-    }
-}
-
-abstract class TestForSuperHelper5 {
-    abstract void theMethod()
-}
-
-class TestForSuperHelper6 extends TestForSuperHelper5 {
-    void theMethod() {
-        super.theMethod()
     }
 }
