@@ -183,7 +183,7 @@ public class AsmClassGenerator extends ClassGenerator {
     private final Map genericParameterNames;
     private final SourceUnit source;
     private WriterController controller;
-    
+
     public AsmClassGenerator(
             SourceUnit source, GeneratorContext context,
             ClassVisitor classVisitor, String sourceFile
@@ -1039,7 +1039,7 @@ public class AsmClassGenerator extends ClassGenerator {
                     fieldX(field).visit(this);
                     return;
                 }
-                if (isSuperExpression(objectExpression)) {
+                if (isSuperExpression(objectExpression) && !(expression instanceof AttributeExpression)) {
                     if (controller.getCompileStack().isLHS()) {
                         setPropertyOfSuperClass(classNode, expression, mv);
                     } else {
@@ -2208,7 +2208,7 @@ public class AsmClassGenerator extends ClassGenerator {
         return false;
     }
 
-    private static boolean isSuperExpression(Expression expression) {
+    public static boolean isSuperExpression(Expression expression) {
         if (expression instanceof VariableExpression) {
             VariableExpression varExp = (VariableExpression) expression;
             return varExp.getName().equals("super");

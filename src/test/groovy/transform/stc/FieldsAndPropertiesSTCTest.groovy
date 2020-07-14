@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import groovy.transform.NotYetImplemented
+
 /**
  * Unit tests for static type checking : fields and properties.
  */
@@ -99,14 +101,14 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testShouldComplainAboutMissingField() {
+    void testShouldComplainAboutMissingProperty() {
         shouldFailWithMessages '''
             Object o = new Object()
             o.x = 0
         ''', 'No such property: x for class: java.lang.Object'
     }
 
-    void testShouldComplainAboutMissingField2() {
+    void testShouldComplainAboutMissingProperty2() {
         shouldFailWithMessages '''
             class A {
             }
@@ -115,19 +117,73 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         ''', 'No such property: x for class: A'
     }
 
-    void testFieldWithInheritance() {
+    void testShouldComplainAboutMissingAttribute() {
+        shouldFailWithMessages '''
+            Object o = new Object()
+            o.@x = 0
+        ''', 'No such attribute: x for class: java.lang.Object'
+    }
+
+    void testShouldComplainAboutMissingAttribute2() {
+        shouldFailWithMessages '''
+            class A {
+            }
+            A a = new A()
+            a.@x = 0
+        ''', 'No such attribute: x for class: A'
+    }
+
+    void testShouldComplainAboutMissingAttribute3() {
+        shouldFailWithMessages '''
+            class A {
+                def getX() { }
+            }
+            A a = new A()
+            println a.@x
+        ''', 'No such attribute: x for class: A'
+    }
+
+    void testShouldComplainAboutMissingAttribute4() {
+        shouldFailWithMessages '''
+            class A {
+                def setX(x) { }
+            }
+            A a = new A()
+            a.@x = 0
+        ''', 'No such attribute: x for class: A'
+    }
+
+    @NotYetImplemented
+    void testShouldComplainAboutMissingAttribute5() {
+        shouldFailWithMessages '''
+            class A {
+                private x
+            }
+            class B extends A {
+                void test() {
+                    this.@x
+                }
+            }
+        ''', 'The field A.x is not accessible'
+    }
+
+    void testPropertyWithInheritance() {
         assertScript '''
             class A {
                 int x
             }
             class B extends A {
             }
+
             B b = new B()
+            assert b.x == 0
+
             b.x = 2
+            assert b.x == 2
         '''
     }
 
-    void testFieldTypeWithInheritance() {
+    void testPropertyTypeWithInheritance() {
         shouldFailWithMessages '''
             class A {
                 int x
@@ -139,7 +195,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot assign value of type java.lang.String to variable of type int'
     }
 
-    void testFieldWithInheritanceFromAnotherSourceUnit() {
+    void testPropertyWithInheritanceFromAnotherSourceUnit() {
         assertScript '''
             class B extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass {
             }
@@ -148,7 +204,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testFieldWithInheritanceFromAnotherSourceUnit2() {
+    void testPropertyWithInheritanceFromAnotherSourceUnit2() {
         shouldFailWithMessages '''
             class B extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass {
             }
@@ -157,7 +213,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot assign value of type java.lang.String to variable of type int'
     }
 
-    void testFieldWithSuperInheritanceFromAnotherSourceUnit() {
+    void testPropertyWithSuperInheritanceFromAnotherSourceUnit() {
         assertScript '''
             class B extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass2 {
             }
@@ -616,29 +672,30 @@ new FooWorker().doSomething()'''
     }
 
     void testShouldFailWithIncompatibleGenericTypes() {
-        shouldFailWithMessages '''public class Foo {
+        shouldFailWithMessages '''\
+            public class Foo {
+                private List<String> names;
 
-    private List<String> names;
+                public List<String> getNames() {
+                    return names;
+                }
 
-    public List<String> getNames() {
-        return names;
-    }
+                public void setNames(List<String> names) {
+                    this.names = names;
+                }
+            }
 
-    public void setNames(List<String> names) {
-        this.names = names;
-    }
-}
+            class FooWorker {
+                public void doSomething() {
+                    new Foo().with {
+                        names = new ArrayList<Integer>()
+                    }
+                }
+            }
 
-class FooWorker {
-
-    public void doSomething() {
-        new Foo().with {
-            names = new ArrayList<Integer>()
-        }
-    }
-}
-
-new FooWorker().doSomething()''', 'Cannot assign value of type java.util.ArrayList <Integer> to variable of type java.util.List <String>'
+            new FooWorker().doSomething()
+        ''',
+        'Cannot assign value of type java.util.ArrayList <Integer> to variable of type java.util.List <String>'
     }
 
     void testAICAsStaticProperty() {
@@ -804,7 +861,7 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
     void testImplicitPropertyOfDelegateShouldNotPreferField() {
         assertScript '''
             Calendar.instance.with {
-                Date d1 = time
+                Date d1 = time // Date getTime() vs. long time
             }
         '''
     }

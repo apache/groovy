@@ -132,10 +132,19 @@ public class InvocationWriter {
             MethodCallerMultiAdapter adapter,
             boolean safe, boolean spreadSafe, boolean implicitThis
     ) {
-        ClassNode cn = controller.getClassNode();
-        if (controller.isInClosure() && !implicitThis && AsmClassGenerator.isThisExpression(receiver)) cn=cn.getOuterClass();
-        makeCall(origin, new ClassExpression(cn), receiver, message, arguments,
-                adapter, safe, spreadSafe, implicitThis);
+        ClassNode sender = controller.getClassNode();
+        if (AsmClassGenerator.isSuperExpression(receiver) || (AsmClassGenerator.isThisExpression(receiver) && !implicitThis)) {
+            while (sender.getOuterClass() != null && sender.getSuperClass() == ClassHelper.CLOSURE_TYPE) {
+                sender = sender.getOuterClass();
+            }
+            if (AsmClassGenerator.isSuperExpression(receiver)) {
+                sender = sender.getSuperClass(); // GROOVY-4035
+                implicitThis = false; // prevent recursion
+                safe = false; // GROOVY-6045
+            }
+        }
+
+        makeCall(origin, new ClassExpression(sender), receiver, message, arguments, adapter, safe, spreadSafe, implicitThis);
     }
     
     protected boolean writeDirectMethodCall(MethodNode target, boolean implicitThis,  Expression receiver, TupleExpression args) {

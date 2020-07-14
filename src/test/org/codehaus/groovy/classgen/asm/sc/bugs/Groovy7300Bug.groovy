@@ -16,64 +16,68 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
-
-
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
+import groovy.transform.NotYetImplemented
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
-class Groovy7300Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
-    void testShouldNotThrowStackOverflow() {
+final class Groovy7300Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
+    void testUseSuperToBypassOverride1() {
         assertScript '''
-class A {
-    private String field1 = 'test'
-
-    String getField1() {
-        return this.field1
-   }
-}
-
-class B extends A {
-    @Override
-    String getField1() {
-        super.field1
-    }
-}
-
-B b = new B()
-
-assert b.field1 == 'test'
-'''
+            abstract class A {
+                protected x = 1
+                def getX() { 2 }
+            }
+            class B extends A {
+                @Override
+                def getX() { super.x }
+            }
+            assert new B().getX() == 1 // TODO: Why use A#x and not A#getX?
+        '''
     }
 
-    void testShouldNotThrowStackOverflowWithSuper() {
+    void testUseSuperToBypassOverride1a() {
         assertScript '''
-class A {
-    private String field1 = 'test'
-
-    void setField1(String val) { field1 = val }
-
-    String getField1() {
-        return this.field1
-   }
-}
-
-class B extends A {
-    @Override
-    String getField1() {
-        super.field1 = 'test 2'
-        super.field1
+            abstract class A {
+                protected x = 1
+                def getX() { 2 }
+            }
+            class B extends A {
+                @Override
+                def getX() { super.@x }
+            }
+            assert new B().getX() == 1
+        '''
     }
-}
 
-B b = new B()
+    void testUseSuperToBypassOverride2() {
+        assertScript '''
+            abstract class A {
+                private x = 1
+                def getX() { 2 }
+            }
+            class B extends A {
+                @Override
+                def getX() { super.x }
+            }
+            assert new B().getX() == 2
+        '''
+    }
 
-assert b.field1 == 'test 2'
-'''
+    @NotYetImplemented
+    void testUseSuperToBypassOverride2a() {
+        shouldFailWithMessages '''
+            abstract class A {
+                private x = 1
+                def getX() { 2 }
+            }
+            class B extends A {
+                @Override
+                def getX() { super.@x }
+            }
+            assert false
+        ''', 'The field A.x is not accessible'
     }
 }
