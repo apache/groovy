@@ -36,7 +36,6 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.tools.WideningCategories;
-import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.BinaryExpressionMultiTypeDispatcher;
 import org.codehaus.groovy.classgen.asm.BinaryExpressionWriter;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
@@ -59,6 +58,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
@@ -254,7 +254,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
     private boolean makeSetProperty(final Expression receiver, final Expression message, final Expression arguments, final boolean safe, final boolean spreadSafe, final boolean implicitThis, final boolean isAttribute) {
         ClassNode receiverType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
         String property = message.getText();
-        boolean isThisExpression = AsmClassGenerator.isThisExpression(receiver);
+        boolean isThisExpression = isThisExpression(receiver);
         if (isAttribute || (isThisExpression && receiverType.getDeclaredField(property) != null)) {
             ClassNode current = receiverType;
             FieldNode fn = null;

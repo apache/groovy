@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyRuntimeException;
+import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -124,6 +125,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static org.apache.groovy.util.BeanUtils.capitalize;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
@@ -789,7 +791,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (castExpression.isCoerce()) {
             controller.getOperandStack().doAsType(type);
         } else {
-            if (isNullConstant(subExpression) && !ClassHelper.isPrimitiveType(type)) {
+            if (ExpressionUtils.isNullConstant(subExpression) && !ClassHelper.isPrimitiveType(type)) {
                 controller.getOperandStack().replace(type);
             } else {
                 ClassNode subExprType = controller.getTypeChooser().resolveType(subExpression, controller.getClassNode());
@@ -1056,7 +1058,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private boolean isGroovyObject(final Expression objectExpression) {
-        if (isThisExpression(objectExpression)) return true;
+        if (ExpressionUtils.isThisExpression(objectExpression)) return true;
         if (objectExpression instanceof ClassExpression) return false;
 
         ClassNode objectExpressionType = controller.getTypeChooser().resolveType(objectExpression, controller.getClassNode());
@@ -1077,7 +1079,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 FieldNode fieldNode = null;
                 ClassNode classNode = controller.getClassNode();
 
-                if (isThisExpression(objectExpression)) {
+                if (ExpressionUtils.isThisExpression(objectExpression)) {
                     if (controller.isInGeneratedFunction()) { // params are stored as fields
                         if (expression.isImplicitThis()) fieldNode = classNode.getDeclaredField(name);
                     } else {
@@ -1136,7 +1138,7 @@ public class AsmClassGenerator extends ClassGenerator {
             String name = expression.getPropertyAsString();
             if (name != null) {
                 ClassNode classNode = controller.getClassNode();
-                FieldNode fieldNode = getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(classNode, classNode, name, isSuperExpression(objectExpression));
+                FieldNode fieldNode = getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(classNode, classNode, name, ExpressionUtils.isSuperExpression(objectExpression));
                 if (fieldNode != null) {
                     fieldX(fieldNode).visit(this);
                     visited = true;
@@ -1147,9 +1149,9 @@ public class AsmClassGenerator extends ClassGenerator {
         if (!visited) {
             MethodCallerMultiAdapter adapter;
             if (controller.getCompileStack().isLHS()) {
-                adapter = isSuperExpression(objectExpression) ? setFieldOnSuper : isGroovyObject(objectExpression) ? setGroovyObjectField : setField;
+                adapter = ExpressionUtils.isSuperExpression(objectExpression) ? setFieldOnSuper : isGroovyObject(objectExpression) ? setGroovyObjectField : setField;
             } else {
-                adapter = isSuperExpression(objectExpression) ? getFieldOnSuper : isGroovyObject(objectExpression) ? getGroovyObjectField : getField;
+                adapter = ExpressionUtils.isSuperExpression(objectExpression) ? getFieldOnSuper : isGroovyObject(objectExpression) ? getGroovyObjectField : getField;
             }
             visitAttributeOrProperty(expression, adapter);
         }
@@ -1159,6 +1161,16 @@ public class AsmClassGenerator extends ClassGenerator {
         } else {
             controller.getAssertionWriter().record(expression.getProperty());
         }
+    }
+
+    private static boolean usesSuper(PropertyExpression pe) {
+        Expression expression = pe.getObjectExpression();
+        if (expression instanceof VariableExpression) {
+            VariableExpression varExp = (VariableExpression) expression;
+            String variable = varExp.getName();
+            return variable.equals("super");
+        }
+        return false;
     }
 
     @Override
@@ -2117,20 +2129,19 @@ public class AsmClassGenerator extends ClassGenerator {
         return controller.getClassNode().getOuterClass() != null;
     }
 
-    public static boolean isNullConstant(final Expression expression) {
-        return expression instanceof ConstantExpression && ((ConstantExpression) expression).isNullExpression();
-    }
-
+    @Deprecated
     public static boolean isThisExpression(final Expression expression) {
-        return expression instanceof VariableExpression && ((VariableExpression) expression).isThisExpression();
+        return ExpressionUtils.isThisExpression(expression);
     }
 
+    @Deprecated
     public static boolean isSuperExpression(final Expression expression) {
-        return expression instanceof VariableExpression && ((VariableExpression) expression).isSuperExpression();
+        return ExpressionUtils.isSuperExpression(expression);
     }
 
-    private static boolean isThisOrSuper(final Expression expression) {
-        return isThisExpression(expression) || isSuperExpression(expression);
+    @Deprecated
+    public static boolean isNullConstant(final Expression expression) {
+        return ExpressionUtils.isNullConstant(expression);
     }
 
     private static boolean isVargs(final Parameter[] parameters) {
