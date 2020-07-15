@@ -63,6 +63,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.GROOVY_INTERCEPTABLE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
@@ -804,7 +805,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             if (expression.getNodeMetaData(StatementMeta.class) != null) return;
             super.visitMethodCallExpression(expression);
 
-            if (AsmClassGenerator.isThisExpression(expression.getObjectExpression())) {
+            if (isThisExpression(expression.getObjectExpression())) {
                 setMethodTarget(expression, expression.getMethodAsString(), expression.getArguments(), true);
             }
         }

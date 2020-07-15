@@ -54,6 +54,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.TreeMap;
 
+import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
@@ -100,11 +103,11 @@ public class InvocationWriter {
 
     public void makeCall(final Expression origin, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, boolean safe, final boolean spreadSafe, boolean implicitThis) {
         ClassNode sender = controller.getClassNode();
-        if (AsmClassGenerator.isSuperExpression(receiver) || (AsmClassGenerator.isThisExpression(receiver) && !implicitThis)) {
+        if (isSuperExpression(receiver) || (isThisExpression(receiver) && !implicitThis)) {
             while (ClassHelper.isGeneratedFunction(sender)) {
                 sender = sender.getOuterClass();
             }
-            if (AsmClassGenerator.isSuperExpression(receiver)) {
+            if (isSuperExpression(receiver)) {
                 sender = sender.getSuperClass(); // GROOVY-4035
                 implicitThis = false; // prevent recursion
                 safe = false; // GROOVY-6045
@@ -129,7 +132,7 @@ public class InvocationWriter {
             opcode = INVOKESTATIC;
         } else if (declaringClass.isInterface()) {
             opcode = INVOKEINTERFACE;
-        } else if (target.isPrivate() || AsmClassGenerator.isSuperExpression(receiver)) {
+        } else if (target.isPrivate() || isSuperExpression(receiver)) {
             opcode = INVOKESPECIAL;
         }
 
@@ -434,9 +437,9 @@ public class InvocationWriter {
             }
             MethodCallerMultiAdapter adapter = invokeMethod;
             Expression objectExpression = call.getObjectExpression();
-            if (AsmClassGenerator.isSuperExpression(objectExpression)) {
+            if (isSuperExpression(objectExpression)) {
                 adapter = invokeMethodOnSuper;
-            } else if (AsmClassGenerator.isThisExpression(objectExpression)) {
+            } else if (isThisExpression(objectExpression)) {
                 adapter = invokeMethodOnCurrent;
             }
             if (isStaticInvocation(call)) {
@@ -450,7 +453,7 @@ public class InvocationWriter {
     private static boolean isFunctionInterfaceCall(final MethodCallExpression call) {
         if ("call".equals(call.getMethodAsString())) {
             Expression objectExpression = call.getObjectExpression();
-            if (!AsmClassGenerator.isThisExpression(objectExpression)) {
+            if (!isThisExpression(objectExpression)) {
                 return ClassHelper.isFunctionalInterface(objectExpression.getType());
             }
         }
@@ -479,7 +482,7 @@ public class InvocationWriter {
         String methodName = call.getMethodAsString();
         if (methodName == null) return false;
         if (!call.isImplicitThis()) return false;
-        if (!AsmClassGenerator.isThisExpression(call.getObjectExpression())) return false;
+        if (!isThisExpression(call.getObjectExpression())) return false;
         FieldNode field = classNode.getDeclaredField(methodName);
         if (field == null) return false;
         if (isStaticInvocation(call) && !field.isStatic()) return false;
@@ -501,7 +504,7 @@ public class InvocationWriter {
     }
 
     private boolean isStaticInvocation(final MethodCallExpression call) {
-        if (!AsmClassGenerator.isThisExpression(call.getObjectExpression())) return false;
+        if (!isThisExpression(call.getObjectExpression())) return false;
         if (controller.isStaticMethod()) return true;
         return controller.isStaticContext() && !call.isImplicitThis();
     }
@@ -665,7 +668,7 @@ public class InvocationWriter {
         for (int i = 0, n = params.length; i < n; i += 1) {
             Expression expression = argumentList.get(i);
             expression.visit(controller.getAcg());
-            if (!AsmClassGenerator.isNullConstant(expression)) {
+            if (!isNullConstant(expression)) {
                 operandStack.doGroovyCast(params[i].getType());
             }
             operandStack.remove(1);

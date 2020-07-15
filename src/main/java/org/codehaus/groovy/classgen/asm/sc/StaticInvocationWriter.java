@@ -70,6 +70,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
@@ -79,9 +82,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
-import static org.codehaus.groovy.classgen.AsmClassGenerator.isNullConstant;
-import static org.codehaus.groovy.classgen.AsmClassGenerator.isSuperExpression;
-import static org.codehaus.groovy.classgen.AsmClassGenerator.isThisExpression;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
@@ -287,9 +287,8 @@ public class StaticInvocationWriter extends InvocationWriter {
             if (emn.isStaticExtension()) {
                 argumentList.add(nullX());
             } else {
-                boolean isThisOrSuper = isThisExpression(receiver) || isSuperExpression(receiver);
                 Expression fixedReceiver = null;
-                if (isThisOrSuper && classNode.getOuterClass() != null && controller.isInGeneratedFunction()) {
+                if (isThisOrSuper(receiver) && classNode.getOuterClass() != null && controller.isInGeneratedFunction()) {
                     ClassNode current = classNode.getOuterClass();
                     fixedReceiver = varX("thisObject", current);
                     // adjust for multiple levels of nesting if needed
@@ -355,7 +354,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         boolean fixedImplicitThis = implicitThis;
         if (target.isProtected()) {
             ClassNode node = receiver == null ? ClassHelper.OBJECT_TYPE : controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
-            if (!implicitThis && !isThisExpression(receiver) && !isSuperExpression(receiver) && !samePackageName(node, classNode)
+            if (!implicitThis && !isThisOrSuper(receiver) && !samePackageName(node, classNode)
                     && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(node,target.getDeclaringClass())) {
                 controller.getSourceUnit().addError(new SyntaxException(
                         "Method " + target.getName() + " is protected in " + target.getDeclaringClass().toString(false),

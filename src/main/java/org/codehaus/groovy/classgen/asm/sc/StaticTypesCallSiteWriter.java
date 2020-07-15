@@ -55,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.BigInteger_TYPE;
@@ -426,7 +427,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     @Override
     public void makeGroovyObjectGetPropertySite(final Expression receiver, final String propertyName, final boolean safe, final boolean implicitThis) {
         ClassNode receiverType = controller.getClassNode();
-        if (!AsmClassGenerator.isThisExpression(receiver) || controller.isInGeneratedFunction()) {
+        if (!isThisExpression(receiver) || controller.isInGeneratedFunction()) {
             receiverType = controller.getTypeChooser().resolveType(receiver, receiverType);
         }
 
