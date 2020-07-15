@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyRuntimeException;
+import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -124,6 +125,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
@@ -805,7 +808,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (castExpression.isCoerce()) {
             controller.getOperandStack().doAsType(type);
         } else {
-            if (isNullConstant(subExpression) && !ClassHelper.isPrimitiveType(type)) {
+            if (ExpressionUtils.isNullConstant(subExpression) && !ClassHelper.isPrimitiveType(type)) {
                 controller.getOperandStack().replace(type);
             } else {
                 ClassNode subExprType = controller.getTypeChooser().resolveType(subExpression, controller.getClassNode());
@@ -880,8 +883,9 @@ public class AsmClassGenerator extends ClassGenerator {
         controller.getAssertionWriter().record(call);
     }
 
+    @Deprecated
     public static boolean isNullConstant(Expression expr) {
-        return expr instanceof ConstantExpression && ((ConstantExpression) expr).getValue()==null;
+        return ExpressionUtils.isNullConstant(expr);
     }
 
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
@@ -1246,7 +1250,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private static boolean isGroovyObject(Expression objectExpression) {
-        return isThisExpression(objectExpression) || objectExpression.getType().isDerivedFromGroovyObject() && !(objectExpression instanceof ClassExpression);
+        return ExpressionUtils.isThisExpression(objectExpression) || objectExpression.getType().isDerivedFromGroovyObject() && !(objectExpression instanceof ClassExpression);
     }
 
     public void visitFieldExpression(FieldExpression expression) {
@@ -2200,24 +2204,9 @@ public class AsmClassGenerator extends ClassGenerator {
         controller.getOperandStack().push(cle.getType());
     }
 
+    @Deprecated
     public static boolean isThisExpression(Expression expression) {
-        if (expression instanceof VariableExpression) {
-            VariableExpression varExp = (VariableExpression) expression;
-            return varExp.getName().equals("this");
-        }
-        return false;
-    }
-
-    public static boolean isSuperExpression(Expression expression) {
-        if (expression instanceof VariableExpression) {
-            VariableExpression varExp = (VariableExpression) expression;
-            return varExp.getName().equals("super");
-        }
-        return false;
-    }
-
-    private static boolean isThisOrSuper(Expression expression) {
-        return isThisExpression(expression) || isSuperExpression(expression);
+        return ExpressionUtils.isThisExpression(expression);
     }
 
     public void onLineNumber(ASTNode statement, String message) {

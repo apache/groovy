@@ -57,6 +57,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeMap;
 
+import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
@@ -133,11 +136,11 @@ public class InvocationWriter {
             boolean safe, boolean spreadSafe, boolean implicitThis
     ) {
         ClassNode sender = controller.getClassNode();
-        if (AsmClassGenerator.isSuperExpression(receiver) || (AsmClassGenerator.isThisExpression(receiver) && !implicitThis)) {
+        if (isSuperExpression(receiver) || (isThisExpression(receiver) && !implicitThis)) {
             while (sender.getOuterClass() != null && sender.getSuperClass() == ClassHelper.CLOSURE_TYPE) {
                 sender = sender.getOuterClass();
             }
-            if (AsmClassGenerator.isSuperExpression(receiver)) {
+            if (isSuperExpression(receiver)) {
                 sender = sender.getSuperClass(); // GROOVY-4035
                 implicitThis = false; // prevent recursion
                 safe = false; // GROOVY-6045
@@ -500,7 +503,7 @@ public class InvocationWriter {
                 // but keeping the flag would trigger a VerifyError (see GROOVY-6045)
                 call.setSafe(false);
             }
-            if (AsmClassGenerator.isThisExpression(call.getObjectExpression())) adapter = invokeMethodOnCurrent;
+            if (isThisExpression(call.getObjectExpression())) adapter = invokeMethodOnCurrent;
             if (isSuperMethodCall) adapter = invokeMethodOnSuper;
             if (isStaticInvocation(call)) adapter = invokeStaticMethod;
             makeInvokeMethodCall(call, isSuperMethodCall, adapter);
@@ -516,7 +519,7 @@ public class InvocationWriter {
         String methodName = call.getMethodAsString();
         if (methodName==null) return false;
         if (!call.isImplicitThis()) return false;
-        if (!AsmClassGenerator.isThisExpression(call.getObjectExpression())) return false;
+        if (!isThisExpression(call.getObjectExpression())) return false;
         FieldNode field = classNode.getDeclaredField(methodName);
         if (field == null) return false;
         if (isStaticInvocation(call) && !field.isStatic()) return false;
@@ -538,7 +541,7 @@ public class InvocationWriter {
     }
 
     private boolean isStaticInvocation(MethodCallExpression call) {
-        if (!AsmClassGenerator.isThisExpression(call.getObjectExpression())) return false;
+        if (!isThisExpression(call.getObjectExpression())) return false;
         if (controller.isStaticMethod()) return true;
         return controller.isStaticContext() && !call.isImplicitThis();
     }
@@ -720,7 +723,7 @@ public class InvocationWriter {
         for (int i=0; i<params.length; i++) {
             Expression expression = argumentList.get(i);
             expression.visit(controller.getAcg());
-            if (!AsmClassGenerator.isNullConstant(expression)) {
+            if (!isNullConstant(expression)) {
                 operandStack.doGroovyCast(params[i].getType());
             }
             operandStack.remove(1);
