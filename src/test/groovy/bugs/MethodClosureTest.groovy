@@ -49,6 +49,42 @@ class MethodClosureTest extends GroovyTestCase {
        list = [1].collect (mct.&bb)
        assert list == [1]
     }
+
+    void testMethodClosureWithCategory() {
+        assertScript '''
+            class Bar {
+                protected methodClosure
+                def storeMethodClosure() {
+                    methodClosure = this.&method
+                }
+            }
+
+            class Foo extends Bar {
+                def storeMethodClosure() {
+                    methodClosure = super.&method
+                }
+            }
+
+            class BarCategory {
+                static method(Bar self) { 'result' }
+            }
+
+            def bar = new Bar()
+            def foo = new Foo()
+            bar.storeMethodClosure()
+            foo.storeMethodClosure()
+            try {
+                bar.methodClosure()
+                assert false
+            } catch(MissingMethodException ignore) {}
+            try {
+                foo.methodClosure()
+                assert false
+            } catch(MissingMethodException ignore) {}
+            use(BarCategory) {
+                assert bar.methodClosure() == 'result'
+                assert foo.methodClosure() == 'result'
+            }
+        '''
+    }
 }
-
-
