@@ -322,24 +322,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         genericParameterNames = oldPNames;
     }
 
-    protected boolean resolveToInner(final ClassNode type) {
-        // we do not do our name mangling to find an inner class
-        // if the type is a ConstructedClassWithPackage, because in this case we
-        // are resolving the name at a different place already
-        if (type instanceof ConstructedClassWithPackage) return false;
-        if (type instanceof ConstructedNestedClass) return false;
-        String name = type.getName();
-        String saved = name;
-        while (name.lastIndexOf('.') != -1) {
-            name = replaceLastPointWithDollar(name);
-            type.setName(name);
-            if (resolve(type)) {
-                return true;
-            }
-        }
+    private void resolveOrFailPlus(final ClassNode type, final ASTNode node) {
+        resolveGenericsTypes(type.getGenericsTypes());
+        if (resolveAliasFromModule(type)) return;
+        resolveOrFail(type, node);
+    }
 
-        type.setName(saved);
-        return false;
+    private void resolveOrFail(final ClassNode type, final ASTNode node) {
+        resolveOrFail(type, "", node);
     }
 
     private void resolveOrFail(final ClassNode type, final String msg, final ASTNode node) {
@@ -348,6 +338,31 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (resolveToOuterNested(type)) return;
 
         addError("unable to resolve class " + type.toString(false) + msg, node);
+    }
+
+    protected boolean resolveToInner(final ClassNode type) {
+        // we do not do our name mangling to find an inner class
+        // if the type is a ConstructedClassWithPackage, because in this case we
+        // are resolving the name at a different place already
+        if (type instanceof ConstructedClassWithPackage) return false;
+        if (type instanceof ConstructedNestedClass) return false;
+
+        // GROOVY-8715
+        ClassNode t = type;
+        while (t.isArray()) {
+            t = t.getComponentType();
+        }
+
+        String name = t.getName(), temp = name;
+        while (temp.lastIndexOf('.') != -1) {
+            temp = replaceLastPointWithDollar(temp);
+            t.setName(temp);
+            if (resolve(t, true, false, false)) {
+                return true;
+            }
+        }
+        t.setName(name);
+        return false;
     }
 
     // GROOVY-7812(#1): Static inner classes cannot be accessed from other files when running by 'groovy' command
@@ -445,16 +460,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         ConstructedOuterNestedClassNode constructedOuterNestedClassNode = new ConstructedOuterNestedClassNode(cn, outerNestedClassName);
         constructedOuterNestedClassNode.addSetRedirectListener(setRedirectListener);
         return constructedOuterNestedClassNode;
-    }
-
-    private void resolveOrFail(final ClassNode type, final ASTNode node, final boolean prefereImports) {
-        resolveGenericsTypes(type.getGenericsTypes());
-        if (prefereImports && resolveAliasFromModule(type)) return;
-        resolveOrFail(type, node);
-    }
-
-    private void resolveOrFail(final ClassNode type, final ASTNode node) {
-        resolveOrFail(type, "", node);
     }
 
     protected boolean resolve(final ClassNode type) {
@@ -1471,10 +1476,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
 
         ClassNode sn = node.getUnresolvedSuperClass();
-        if (sn != null) resolveOrFail(sn, node, true);
+        if (sn != null) resolveOrFailPlus(sn, node);
 
         for (ClassNode anInterface : node.getInterfaces()) {
-            resolveOrFail(anInterface, node, true);
+            resolveOrFailPlus(anInterface, node);
         }
 
         checkCyclicInheritance(node, node.getUnresolvedSuperClass(), node.getInterfaces());

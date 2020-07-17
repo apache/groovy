@@ -1236,6 +1236,74 @@ final class InnerClassTest {
         '''
     }
 
+    @Test
+    void testResolveInnerOfSuperType9() {
+        assertScript '''
+            abstract class A {
+                static class B {}
+            }
+
+            def test(A.B[] bees) {
+                assert bees != null
+            }
+
+            test(new A.B[0])
+        '''
+    }
+
+    @Test
+    void testResolveInnerOfSuperType9a() {
+        assertScript '''
+            abstract class A {
+                static class B {}
+            }
+
+            def test(A.B... bees) {
+                assert bees != null
+            }
+
+            test()
+        '''
+    }
+
+    @CompileDynamic @Test // GROOVY-8715
+    void testResolveInnerOfSuperType9b() {
+        def config = new CompilerConfiguration(
+            targetDirectory: File.createTempDir(),
+            jointCompilationOptions: [memStub: true]
+        )
+        def parentDir = File.createTempDir()
+        try {
+            new File(parentDir, 'p').mkdir()
+
+            def a = new File(parentDir, 'p/A.Java')
+            a.write '''
+                package p;
+                public abstract class A {
+                    public interface I {}
+                }
+            '''
+            def b = new File(parentDir, 'p/B.groovy')
+            b.write '''
+                package p
+                def test(A.I... eyes) {
+                    assert eyes != null
+                }
+                test()
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b)
+            cu.compile()
+
+            loader.loadClass('p.B').main()
+        } finally {
+            config.targetDirectory.deleteDir()
+            parentDir.deleteDir()
+        }
+    }
+
     @Test // GROOVY-5679, GROOVY-5681
     void testEnclosingMethodIsSet() {
         assertScript '''
