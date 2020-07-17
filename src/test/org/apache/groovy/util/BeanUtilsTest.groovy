@@ -40,6 +40,7 @@ class BeanUtilsTest {
         assert capitalize('Prop') == 'Prop'
         assert capitalize('prop') == 'Prop'
         assert capitalize('someProp') == 'SomeProp'
+        assert capitalize('X') == 'X'
         assert capitalize('DB') == 'DB'
         assert capitalize('XML') == 'XML'
         assert capitalize('aProp') == 'aProp' // GROOVY-3211

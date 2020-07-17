@@ -254,8 +254,10 @@ public class BinaryExpressionTransformer {
             Character cRight = tryCharConstant(right);
             if (cLeft != null || cRight != null) {
                 Expression oLeft = (cLeft == null ? left : constX(cLeft, true));
+                if (oLeft instanceof PropertyExpression && !hasCharType((PropertyExpression)oLeft)) return null;
                 oLeft.setSourcePosition(left);
                 Expression oRight = (cRight == null ? right : constX(cRight, true));
+                if (oRight instanceof PropertyExpression && !hasCharType((PropertyExpression)oRight)) return null;
                 oRight.setSourcePosition(right);
                 bin.setLeftExpression(oLeft);
                 bin.setRightExpression(oRight);
@@ -263,6 +265,11 @@ public class BinaryExpressionTransformer {
             }
         }
         return null;
+    }
+
+    private static boolean hasCharType(PropertyExpression pe) {
+        ClassNode inferredType = pe.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+        return inferredType != null && ClassHelper.Character_TYPE.equals(ClassHelper.getWrapper(inferredType));
     }
 
     private static Character tryCharConstant(final Expression expr) {

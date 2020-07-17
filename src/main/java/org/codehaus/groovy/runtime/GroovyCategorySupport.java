@@ -19,6 +19,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
+import org.apache.groovy.util.BeanUtils;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
@@ -174,9 +175,9 @@ public class GroovyCategorySupport {
         // Precondition: accessorName.length() > prefixLength
         private Map<String, String> putPropertyAccessor(int prefixLength, String accessorName, Map<String, String> map) {
             if (map == null) {
-              map = new HashMap<String, String>();
+                map = new HashMap<String, String>();
             }
-            String property = accessorName.substring(prefixLength, prefixLength+1).toLowerCase() + accessorName.substring(prefixLength+1);
+            String property = BeanUtils.decapitalize(accessorName.substring(prefixLength));
             map.put(property, accessorName);
             return map;
         }
@@ -199,12 +200,16 @@ public class GroovyCategorySupport {
         }
 
 
-        String getPropertyCategoryGetterName(String propertyName){
-            return propertyGetterMap != null ? propertyGetterMap.get(propertyName) : null;
+        String getPropertyCategoryGetterName(String propertyName) {
+            if (propertyGetterMap == null) return null;
+            String getter = propertyGetterMap.get(propertyName);
+            return getter != null ? getter : propertyGetterMap.get(BeanUtils.decapitalize(propertyName));
         }
 
-        String getPropertyCategorySetterName(String propertyName){
-            return propertySetterMap != null ? propertySetterMap.get(propertyName) : null;
+        String getPropertyCategorySetterName(String propertyName) {
+            if (propertySetterMap == null) return null;
+            String setter = propertySetterMap.get(propertyName);
+            return setter != null ? setter : propertySetterMap.get(BeanUtils.decapitalize(propertyName));
         }
     }
 
