@@ -276,6 +276,279 @@ class PropertyTest extends GroovyTestCase {
         '''
     }
 
+    // GROOVY-9618
+    void testJavaBeanNamingForPropertyAccess() {
+        assertScript '''
+        class A {
+            String getProp() { 'Prop' }
+            String getSomeProp() { 'SomeProp' }
+            String getX() { 'X' }
+            String getDB() { 'DB' }
+            String getXML() { 'XML' }
+            String getaProp() { 'aProp' }
+            String getAProp() { 'AProp' }
+            String getpNAME() { 'pNAME' }
+        }
+        new A().with {
+            assert prop == 'Prop'
+            assert Prop == 'Prop'
+            assert x == 'X'
+            assert X == 'X'
+            assert someProp == 'SomeProp'
+            assert SomeProp == 'SomeProp'
+            assert DB == 'DB'
+            assert XML == 'XML'
+            assert AProp == 'AProp'
+            assert aProp == 'aProp'
+            assert pNAME == 'pNAME'
+        }
+        '''
+    }
+
+    // GROOVY-9618
+    void testJavaBeanNamingForPropertyAccessCS() {
+        assertScript '''
+        class A {
+            String getProp() { 'Prop' }
+            String getSomeProp() { 'SomeProp' }
+            String getX() { 'X' }
+            String getDB() { 'DB' }
+            String getXML() { 'XML' }
+            String getaProp() { 'aProp' }
+            String getAProp() { 'AProp' }
+            String getpNAME() { 'pNAME' }
+        }
+        class B {
+            @groovy.transform.CompileStatic
+            def method() {
+                new A().with {
+                    assert prop == 'Prop'
+                    assert Prop == 'Prop'
+                    assert x == 'X'
+                    assert X == 'X'
+                    assert someProp == 'SomeProp'
+                    assert SomeProp == 'SomeProp'
+                    assert DB == 'DB'
+                    assert XML == 'XML'
+                    assert AProp == 'AProp'
+                    assert aProp == 'aProp'
+                    assert pNAME == 'pNAME'
+                }
+            }
+        }
+        new B().method()
+        '''
+    }
+
+    // GROOVY-9618
+    void testJavaBeanNamingForStaticPropertyAccess() {
+        assertScript '''
+        class A {
+            static String getProp() { 'Prop' }
+            static String getSomeProp() { 'SomeProp' }
+            static String getX() { 'X' }
+            static String getDB() { 'DB' }
+            static String getXML() { 'XML' }
+            static String getaProp() { 'aProp' }
+            static String getAProp() { 'AProp' }
+            static String getpNAME() { 'pNAME' }
+        }
+        A.with {
+            assert prop == 'Prop'
+            assert Prop == 'Prop'
+            assert x == 'X'
+            assert X == 'X'
+            assert someProp == 'SomeProp'
+            assert SomeProp == 'SomeProp'
+            assert DB == 'DB'
+            assert XML == 'XML'
+            assert AProp == 'AProp'
+            assert aProp == 'aProp'
+            assert pNAME == 'pNAME'
+        }
+        '''
+    }
+
+    // GROOVY-9618
+    void testJavaBeanNamingForStaticPropertyAccessCS() {
+        assertScript '''
+        class A {
+            static String getProp() { 'Prop' }
+            static String getSomeProp() { 'SomeProp' }
+            static String getX() { 'X' }
+            static String getDB() { 'DB' }
+            static String getXML() { 'XML' }
+            static String getaProp() { 'aProp' }
+            static String getAProp() { 'AProp' }
+            static String getpNAME() { 'pNAME' }
+        }
+        class B {
+            @groovy.transform.CompileStatic
+            static method() {
+                A.with {
+                    assert prop == 'Prop'
+                    assert Prop == 'Prop'
+                    assert x == 'X' // TODO fix CCE
+                    assert X == 'X' // TODO fix CCE
+                    assert someProp == 'SomeProp'
+                    assert SomeProp == 'SomeProp'
+                    assert DB == 'DB'
+                    assert XML == 'XML'
+                    assert AProp == 'AProp'
+                    assert aProp == 'aProp'
+                    assert pNAME == 'pNAME'
+                }
+            }
+        }
+        B.method()
+        '''
+    }
+
+    // GROOVY-9618
+    void testJavaBeanNamingForPropertyStaticImport() {
+        assertScript '''
+        class A {
+            static String getProp() { 'Prop' }
+            static String getSomeProp() { 'SomeProp' }
+            static String getX() { 'X' }
+            static String getDB() { 'DB' }
+            static String getXML() { 'XML' }
+            static String getaProp() { 'aProp' }
+            static String getAProp() { 'AProp' }
+            static String getpNAME() { 'pNAME' }
+        }
+        
+        import static A.*
+
+        assert prop == 'Prop'
+        assert Prop == 'Prop'
+        assert x == 'X'
+        assert X == 'X'
+        assert someProp == 'SomeProp'
+        assert SomeProp == 'SomeProp'
+        assert DB == 'DB'
+        assert XML == 'XML'
+        assert AProp == 'AProp'
+        assert aProp == 'aProp'
+        assert pNAME == 'pNAME'
+        '''
+    }
+
+    // GROOVY-9618
+    void testJavaBeanNamingForPropertyStaticImportCS() {
+        assertScript '''
+        class A {
+            static String getProp() { 'Prop' }
+            static String getSomeProp() { 'SomeProp' }
+            static String getX() { 'X' }
+            static String getDB() { 'DB' }
+            static String getXML() { 'XML' }
+            static String getaProp() { 'aProp' }
+            static String getAProp() { 'AProp' }
+            static String getpNAME() { 'pNAME' }
+        }
+        
+        import static A.*
+
+        class B {
+            @groovy.transform.CompileStatic
+            def method() {
+                assert prop == 'Prop'
+                assert Prop == 'Prop'
+                assert x == 'X'
+                assert X == 'X'
+                assert someProp == 'SomeProp'
+                assert SomeProp == 'SomeProp'
+                assert DB == 'DB'
+                assert XML == 'XML'
+                assert AProp == 'AProp'
+                assert aProp == 'aProp'
+                assert pNAME == 'pNAME'
+            }
+        }
+        new B().method()
+        '''
+    }
+
+    // GROOVY-9618
+    void testJavaBeanNamingForPropertyAccessWithCategory() {
+        assertScript '''
+        class A {}
+        class ACategory {
+            static String getProp(A self) { 'Prop' }
+            static String getSomeProp(A self) { 'SomeProp' }
+            static String getX(A self) { 'X' }
+            static String getDB(A self) { 'DB' }
+            static String getXML(A self) { 'XML' }
+            static String getaProp(A self) { 'aProp' }
+            static String getAProp(A self) { 'AProp' }
+            static String getpNAME(A self) { 'pNAME' }
+        }
+        use(ACategory) {
+            def a = new A()
+            assert a.prop == 'Prop'
+            assert a.Prop == 'Prop'
+            assert a.x == 'X'
+            assert a.X == 'X'
+            assert a.someProp == 'SomeProp'
+            assert a.SomeProp == 'SomeProp'
+            assert a.DB == 'DB'
+            assert a.XML == 'XML'
+            assert a.AProp == 'AProp'
+            assert a.aProp == 'aProp'
+            assert a.pNAME == 'pNAME'
+        }
+        '''
+    }
+
+    void testMissingPropertyWithStaticImport() { // GROOVY-5852+GROOVY-9618
+
+        def errMsg = shouldFail '''
+            class Constants {
+                static final pi = 3.14
+            }
+
+            import static Constants.*
+
+            assert PI.toString().startsWith('3')
+        '''
+
+        assert errMsg.contains('No such property: PI for class:')
+    }
+
+    void testMissingPropertyWithDirectUsage() { // GROOVY-5852+GROOVY-9618
+        def errMsg = shouldFail '''
+            class Constants {
+                static final pi = 3.14
+            }
+
+            assert Constants.PI.toString().startsWith('3')
+        '''
+
+        assert errMsg.contains('No such property: PI for class: Constants')
+    }
+
+    void testPropertyDirectUsageWithAllowableCaseChange() { // GROOVY-5852+GROOVY-9618
+        assertScript '''
+            class Constants {
+                static final pi = 3.14
+            }
+
+            assert Constants.Pi.toString().startsWith('3')
+        '''
+    }
+
+    void testPropertyStaticImportWithAllowableCaseChange() { // GROOVY-5852+GROOVY-9618
+        assertScript '''
+            class Constants {
+                static final pi = 3.14
+            }
+
+            import static Constants.*
+
+            assert Pi.toString().startsWith('3')
+        '''
+    }
 }
 
 class Base {

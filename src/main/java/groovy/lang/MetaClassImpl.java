@@ -110,6 +110,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static java.lang.Character.isUpperCase;
 import static org.apache.groovy.util.Arrays.concat;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.reflection.ReflectionCache.isAssignableFrom;
@@ -2087,6 +2088,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private Tuple2<MetaMethod, MetaProperty> createMetaMethodAndMetaProperty(final Class senderForMP, final Class senderForCMG, final String name, final boolean useSuper, final boolean isStatic) {
         MetaMethod method = null;
         MetaProperty mp = getMetaProperty(senderForMP, name, useSuper, isStatic);
+        if (mp == null && isUpperCase(name.charAt(0)) && (name.length() < 2 || !isUpperCase(name.charAt(1)))) {
+            mp = getMetaProperty(senderForMP, BeanUtils.decapitalize(name), useSuper, isStatic);
+        }
         if (mp != null) {
             if (mp instanceof MetaBeanProperty) {
                 MetaBeanProperty mbp = (MetaBeanProperty) mp;
