@@ -2088,9 +2088,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private Tuple2<MetaMethod, MetaProperty> createMetaMethodAndMetaProperty(final Class senderForMP, final Class senderForCMG, final String name, final boolean useSuper, final boolean isStatic) {
         MetaMethod method = null;
         MetaProperty mp = getMetaProperty(senderForMP, name, useSuper, isStatic);
-        if (mp == null && isUpperCase(name.charAt(0)) && (name.length() < 2 || !isUpperCase(name.charAt(1)))) {
+        if ((mp == null || mp instanceof CachedField) && isUpperCase(name.charAt(0)) && (name.length() < 2 || !isUpperCase(name.charAt(1))) && !"Class".equals(name)) {
+            // GROOVY-9618 adjust because capitalised properties aren't stored as meta bean props
+            MetaProperty saved = mp;
             mp = getMetaProperty(senderForMP, BeanUtils.decapitalize(name), useSuper, isStatic);
+            if (mp == null || (saved != null && mp instanceof CachedField)) {
+                // restore if we didn't find something better
+                mp = saved;
+            }
         }
+
         if (mp != null) {
             if (mp instanceof MetaBeanProperty) {
                 MetaBeanProperty mbp = (MetaBeanProperty) mp;

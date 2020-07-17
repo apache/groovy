@@ -280,6 +280,10 @@ class PropertyTest extends GroovyTestCase {
     void testJavaBeanNamingForPropertyAccess() {
         assertScript '''
         class A {
+            private String X = 'fieldX'
+            private String Prop = 'fieldProp'
+            private String DB = 'fieldDB'
+            private String XML = 'fieldXML'
             String getProp() { 'Prop' }
             String getSomeProp() { 'SomeProp' }
             String getX() { 'X' }
@@ -344,6 +348,10 @@ class PropertyTest extends GroovyTestCase {
     void testJavaBeanNamingForStaticPropertyAccess() {
         assertScript '''
         class A {
+            private static String X = 'fieldX'
+            private static String Prop = 'fieldProp'
+            private static String DB = 'fieldDB'
+            private static String XML = 'fieldXML'
             static String getProp() { 'Prop' }
             static String getSomeProp() { 'SomeProp' }
             static String getX() { 'X' }
