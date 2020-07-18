@@ -18,26 +18,52 @@
  */
 package groovy
 
-class ImportTest extends GroovyTestCase {
+import org.junit.Test
 
+import static groovy.test.GroovyAssert.assertScript
+
+final class ImportTest {
+
+    @Test
     void testImportAll() {
-        def file = new File("foo.txt")
-        assert file instanceof File
-        assert file.getClass().name == "java.io.File"
+        assertScript '''
+            def file = new File('foo')
+            assert file instanceof File
+        '''
     }
-    
+
+    @Test
     void testImportByName() {
-        def x = [:]
-        assert x instanceof Map
-        /**
-         * For maps, map.getClass() should be used instead of map.class,
-         * when map has no member, named as "class"
-         */
-        assert x.getClass() != null
-        assert x.getClass().name.startsWith("java.util.")
-        
-        def y = [1, 2, 3]
-        assert y instanceof List
-        assert y.getClass().name.startsWith("java.util.")
+        assertScript '''
+            def map = [foo:'bar']
+            assert map instanceof Map
+        '''
+
+        assertScript '''
+            def list = [1, 2, 3]
+            assert list instanceof List
+        '''
+    }
+
+    @Test
+    void testImportStaticInnerClass() {
+        assertScript '''
+            import java.util.Map.Entry
+            Entry entry = [foo:'bar'].entrySet().first()
+        '''
+
+        // GROOVY-5103
+        assertScript '''
+            import java.util.Map.*
+            Entry entry = [foo:'bar'].entrySet().first()
+        '''
+    }
+
+    @Test // GROOVY-4193
+    void testNullSafetyOfGetClassName() {
+        def imp = new org.codehaus.groovy.ast.ImportNode('foo.bar')
+        assert imp.packageName == 'foo.bar' // constructor routing
+        assert imp.className == null // no NullPointerException
+        assert imp.text != null // no NullPointerException
     }
 }
