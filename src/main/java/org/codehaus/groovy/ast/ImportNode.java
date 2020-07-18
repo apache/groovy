@@ -25,7 +25,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class ImportNode extends AnnotatedNode {
 
-    private final ClassNode type;
+    private ClassNode type;
     private final String alias;
     private final String fieldName;
     private final String packageName;
@@ -141,6 +141,10 @@ public class ImportNode extends AnnotatedNode {
 
     public ClassNode getType() {
         return type;
+    }
+
+    public void setType(final ClassNode type) {
+        this.type = type;
     }
 
     @Override
