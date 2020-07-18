@@ -1237,7 +1237,7 @@ final class InnerClassTest {
     }
 
     @Test
-    void testResolveInnerOfSuperType9() {
+    void testResolveInnerOfSuperType10() {
         assertScript '''
             abstract class A {
                 static class B {}
@@ -1252,7 +1252,7 @@ final class InnerClassTest {
     }
 
     @Test
-    void testResolveInnerOfSuperType9a() {
+    void testResolveInnerOfSuperType10a() {
         assertScript '''
             abstract class A {
                 static class B {}
@@ -1267,7 +1267,7 @@ final class InnerClassTest {
     }
 
     @CompileDynamic @Test // GROOVY-8715
-    void testResolveInnerOfSuperType9b() {
+    void testResolveInnerOfSuperType10b() {
         def config = new CompilerConfiguration(
             targetDirectory: File.createTempDir(),
             jointCompilationOptions: [memStub: true]

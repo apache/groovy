@@ -322,17 +322,19 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         genericParameterNames = oldPNames;
     }
 
-    private void resolveOrFailPlus(final ClassNode type, final ASTNode node) {
-        resolveGenericsTypes(type.getGenericsTypes());
-        if (resolveAliasFromModule(type)) return;
-        resolveOrFail(type, node);
-    }
-
     private void resolveOrFail(final ClassNode type, final ASTNode node) {
         resolveOrFail(type, "", node);
     }
 
     private void resolveOrFail(final ClassNode type, final String msg, final ASTNode node) {
+        resolveOrFail(type, "", node, false);
+    }
+
+    private void resolveOrFail(final ClassNode type, final String msg, final ASTNode node, final boolean preferImports) {
+        if (preferImports) {
+            resolveGenericsTypes(type.getGenericsTypes());
+            if (resolveAliasFromModule(type)) return;
+        }
         if (resolve(type)) return;
         if (resolveToInner(type)) return;
         if (resolveToOuterNested(type)) return;
@@ -1476,10 +1478,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
 
         ClassNode sn = node.getUnresolvedSuperClass();
-        if (sn != null) resolveOrFailPlus(sn, node);
+        if (sn != null) resolveOrFail(sn, "", node, true);
 
         for (ClassNode anInterface : node.getInterfaces()) {
-            resolveOrFailPlus(anInterface, node);
+            resolveOrFail(anInterface, "", node, true);
         }
 
         checkCyclicInheritance(node, node.getUnresolvedSuperClass(), node.getInterfaces());
