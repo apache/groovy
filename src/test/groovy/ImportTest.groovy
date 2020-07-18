@@ -18,28 +18,45 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class ImportTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
+final class ImportTest {
+
+    @Test
     void testImportAll() {
-        def file = new File("foo.txt")
-        assert file instanceof File
-        assert file.getClass().name == "java.io.File"
+        assertScript '''
+            def file = new File('foo')
+            assert file instanceof File
+        '''
     }
-    
+
+    @Test
     void testImportByName() {
-        def x = [:]
-        assert x instanceof Map
-        /**
-         * For maps, map.getClass() should be used instead of map.class,
-         * when map has no member, named as "class"
-         */
-        assert x.getClass() != null
-        assert x.getClass().name.startsWith("java.util.")
-        
-        def y = [1, 2, 3]
-        assert y instanceof List
-        assert y.getClass().name.startsWith("java.util.")
+        assertScript '''
+            def map = [foo:'bar']
+            assert map instanceof Map
+        '''
+
+        assertScript '''
+            def list = [1, 2, 3]
+            assert list instanceof List
+        '''
+    }
+
+    @Test
+    void testImportStaticInnerClass() {
+        assertScript '''
+            import java.util.Map.Entry
+            Entry entry = [foo:'bar'].entrySet().first()
+        '''
+
+        // GROOVY-5103
+        shouldFail '''
+            import java.util.Map.*
+            Entry entry = [foo:'bar'].entrySet().first()
+        '''
     }
 }
