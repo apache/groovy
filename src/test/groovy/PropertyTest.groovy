@@ -557,6 +557,22 @@ class PropertyTest extends GroovyTestCase {
             assert Pi.toString().startsWith('3')
         '''
     }
+
+    void testPropertyAndStaticUppercaseFieldPriority() { // GROOVY-9618
+        assertScript '''
+            class A {
+                public static X = 1
+                static getX() { 2 }
+                static class B { }
+            }
+            class C extends A.B {
+                def test() {
+                    X
+                }
+            }
+            assert new C().test() == 2
+        '''
+    }
 }
 
 class Base {
