@@ -21,7 +21,6 @@ package groovy
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
-import static groovy.test.GroovyAssert.shouldFail
 
 final class ImportTest {
 
@@ -54,7 +53,7 @@ final class ImportTest {
         '''
 
         // GROOVY-5103
-        shouldFail '''
+        assertScript '''
             import java.util.Map.*
             Entry entry = [foo:'bar'].entrySet().first()
         '''
