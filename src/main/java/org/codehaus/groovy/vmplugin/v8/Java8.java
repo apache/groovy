@@ -311,14 +311,15 @@ public class Java8 implements VMPlugin {
 
     public void configureAnnotationNodeFromDefinition(AnnotationNode definition, AnnotationNode root) {
         ClassNode type = definition.getClassNode();
-        if ("java.lang.annotation.Retention".equals(type.getName())) {
+        final String typeName = type.getName();
+        if ("java.lang.annotation.Retention".equals(typeName)) {
             Expression exp = definition.getMember("value");
             if (!(exp instanceof PropertyExpression)) return;
             PropertyExpression pe = (PropertyExpression) exp;
             String name = pe.getPropertyAsString();
             RetentionPolicy policy = RetentionPolicy.valueOf(name);
             setRetentionPolicy(policy, root);
-        } else if ("java.lang.annotation.Target".equals(type.getName())) {
+        } else if ("java.lang.annotation.Target".equals(typeName)) {
             Expression exp = definition.getMember("value");
             if (!(exp instanceof ListExpression)) return;
             ListExpression le = (ListExpression) exp;
