@@ -156,6 +156,11 @@ public class Java9 extends Java8 {
         }
     }
 
+    @Override
+    protected MethodHandles.Lookup newLookup(final Class<?> declaringClass) {
+        return of(declaringClass);
+    }
+
     private static Constructor<MethodHandles.Lookup> getLookupConstructor() {
         return LookupHolder.LOOKUP_Constructor;
     }
@@ -186,16 +191,6 @@ public class Java9 extends Java8 {
     @Override
     public int getVersion() {
         return 9;
-    }
-
-    @Override
-    public Object getInvokeSpecialHandle(Method method, Object receiver) {
-        final Class<?> receiverType = receiver.getClass();
-        try {
-            return of(receiverType).unreflectSpecial(method, receiverType).bindTo(receiver);
-        } catch (ReflectiveOperationException e) {
-            return super.getInvokeSpecialHandle(method, receiver);
-        }
     }
 
     /**

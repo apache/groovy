@@ -141,6 +141,10 @@ public class Java8 implements VMPlugin {
         mn.setAnnotationDefault(true);
     }
 
+    protected MethodHandles.Lookup newLookup(final Class<?> declaringClass) {
+        return of(declaringClass);
+    }
+
     private static Constructor<MethodHandles.Lookup> getLookupConstructor() {
         return LookupHolder.LOOKUP_Constructor;
     }
@@ -618,16 +622,13 @@ public class Java8 implements VMPlugin {
     public Object getInvokeSpecialHandle(Method method, Object receiver) {
         final Class<?> receiverType = receiver.getClass();
         try {
-            return of(receiverType).unreflectSpecial(method, receiverType).bindTo(receiver);
+            return newLookup(receiverType).unreflectSpecial(method, receiverType).bindTo(receiver);
         } catch (ReflectiveOperationException e) {
             return getInvokeSpecialHandleFallback(method, receiver);
         }
     }
 
     private Object getInvokeSpecialHandleFallback(Method method, Object receiver) {
-        if (getLookupConstructor() == null) {
-            throw new GroovyBugError("getInvokeSpecialHandle requires at least JDK 7 for private access to Lookup");
-        }
         if (!method.isAccessible()) {
             AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
                 ReflectionUtils.trySetAccessible(method);
@@ -636,7 +637,7 @@ public class Java8 implements VMPlugin {
         }
         Class<?> declaringClass = method.getDeclaringClass();
         try {
-            return getLookupConstructor().newInstance(declaringClass, -1).
+            return newLookup(declaringClass).
                     unreflectSpecial(method, declaringClass).
                     bindTo(receiver);
         } catch (ReflectiveOperationException e) {
