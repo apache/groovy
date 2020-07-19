@@ -636,7 +636,7 @@ public class Java8 implements VMPlugin {
         }
         Class<?> declaringClass = method.getDeclaringClass();
         try {
-            return getLookupConstructor().newInstance(declaringClass, -1).
+            return getLookupConstructor().newInstance(declaringClass, -1 /* TRUSTED */).
                     unreflectSpecial(method, declaringClass).
                     bindTo(receiver);
         } catch (ReflectiveOperationException e) {
