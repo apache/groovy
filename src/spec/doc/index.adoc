@@ -75,6 +75,8 @@ include::{projectdir}/subprojects/groovy-xml/{specfolder}/xml-userguide.adoc[lev
 
 include::{projectdir}/subprojects/groovy-yaml/{specfolder}/yaml-userguide.adoc[leveloffset=+2]
 
+include::{projectdir}/subprojects/groovy-contracts/{specfolder}/contracts-userguide.adoc[leveloffset=+2]
+
 === Scripting Ant tasks
 
 Groovy integrates very well with http://ant.apache.org[Apache Ant] thanks to <<_antbuilder,AntBuilder>>.
