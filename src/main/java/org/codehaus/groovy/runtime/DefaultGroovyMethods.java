@@ -7966,15 +7966,39 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Support the subscript operator for a Map.
-     * <pre class="groovyTestCase">def map = [a:10]
-     * assert map["a"] == 10</pre>
+     *
+     * <pre class="groovyTestCase">
+     * def map = [1:10]
+     * assert map[1] == 10
+     * assert map.getAt(1) == 10
+     * </pre>
      *
      * @param self a Map
      * @param key  an Object as a key for the map
      * @return the value corresponding to the given key
+     *
      * @since 1.0
      */
     public static <K,V> V getAt(Map<K,V> self, Object key) {
+        return self.get(key);
+    }
+
+    /**
+     * Support the subscript operator for a Map.
+     *
+     * <pre class="groovyTestCase">
+     * def map = [a:10]
+     * assert map['a'] == 10
+     * assert map.getAt('a') == 10
+     * </pre>
+     *
+     * @param self a Map
+     * @param key  a String as a key for the map
+     * @return the value corresponding to the given key
+     *
+     * @since 3.0.6
+     */
+    public static <V> V getAt(Map<String, V> self, String key) {
         return self.get(key);
     }
 
@@ -8005,12 +8029,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * A helper method to allow maps to work with subscript operators
+     * Support the subscript operator for Map.
+     *
+     * <pre class="groovyTestCase">
+     * def map = [:]
+     * map[1] = 'a'
+     * assert map.get(1) == 'a'
+     * </pre>
      *
      * @param self  a Map
      * @param key   an Object as a key for the map
      * @param value the value to put into the map
      * @return the value corresponding to the given key
+     *
      * @since 1.0
      */
     public static <K,V> V putAt(Map<K,V> self, K key, V value) {
