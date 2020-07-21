@@ -1762,19 +1762,39 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (res instanceof MetaMethod) return (MetaMethod) res;
         CachedConstructor constructor = (CachedConstructor) res;
         if (constructor != null) return new MetaConstructor(constructor, false);
-        if (arguments.length == 1 && arguments[0] instanceof Map) {
-            res = chooseMethod("<init>", constructors, MetaClassHelper.EMPTY_TYPE_ARRAY);
-        } else if (
-                arguments.length == 2 && arguments[1] instanceof Map &&
+        // handle named args on class or inner class (one level only for now)
+        if ((arguments.length == 1 && arguments[0] instanceof Map) ||
+                (arguments.length == 2 && arguments[1] instanceof Map &&
                         theClass.getEnclosingClass() != null &&
-                        theClass.getEnclosingClass().isAssignableFrom(argClasses[0])) {
-            res = chooseMethod("<init>", constructors, new Class[]{argClasses[0]});
+                        theClass.getEnclosingClass().isAssignableFrom(argClasses[0]))) {
+            res = retrieveNamedArgCompatibleConstructor(argClasses, arguments);
         }
         if (res instanceof MetaMethod) return (MetaMethod) res;
         constructor = (CachedConstructor) res;
         if (constructor != null) return new MetaConstructor(constructor, true);
 
         return null;
+    }
+
+    private Object retrieveNamedArgCompatibleConstructor(Class[] origArgTypes, Object[] origArgs) {
+        // if we get here Map variant already not found so allow for no-arg plus setters
+        Class[] argTypes = Arrays.copyOf(origArgTypes, origArgTypes.length - 1);
+        Object[] args = Arrays.copyOf(origArgs, origArgs.length - 1);
+        Object res = chooseMethod("<init>", constructors, argTypes);
+        // chooseMethod allows fuzzy matching implicit null case but we don't want that here
+        // code here handles inner class case but we currently don't do fuzzy matching for inner classes
+        if (res instanceof ParameterTypes && ((ParameterTypes) res).getParameterTypes().length == origArgTypes.length) {
+            String prettyOrigArgs = InvokerHelper.toTypeString(origArgs);
+            if (prettyOrigArgs.endsWith("LinkedHashMap")) {
+                prettyOrigArgs = prettyOrigArgs.replaceFirst("LinkedHashMap$", "Map");
+            }
+            throw new GroovyRuntimeException(
+                    "Could not find named-arg compatible constructor. Expecting one of:\n"
+                            + theClass.getName() + "(" + prettyOrigArgs + ")\n"
+                            + theClass.getName() + "(" + InvokerHelper.toTypeString(args) + ")"
+            );
+        }
+        return res;
     }
 
     private Object invokeConstructor(Class at, Object[] arguments) {
@@ -1786,18 +1806,20 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (constructor != null) {
             return constructor.doConstructorInvoke(arguments);
         }
-
-        if (arguments.length == 1) {
-            Object firstArgument = arguments[0];
-            if (firstArgument instanceof Map) {
-                constructor = (CachedConstructor) chooseMethod("<init>", constructors, MetaClassHelper.EMPTY_TYPE_ARRAY);
-                if (constructor != null) {
-                    Object bean = constructor.doConstructorInvoke(MetaClassHelper.EMPTY_ARRAY);
-                    setProperties(bean, ((Map) firstArgument));
-                    return bean;
-                }
+        // handle named args on class or inner class (one level only for now)
+        if ((arguments.length == 1 && arguments[0] instanceof Map) ||
+                (arguments.length == 2 && arguments[1] instanceof Map &&
+                        theClass.getEnclosingClass() != null &&
+                        theClass.getEnclosingClass().isAssignableFrom(argClasses[0]))) {
+            constructor = (CachedConstructor)  retrieveNamedArgCompatibleConstructor(argClasses, arguments);
+            if (constructor != null) {
+                Object[] args = Arrays.copyOf(arguments, arguments.length - 1);
+                Object bean = constructor.doConstructorInvoke(args);
+                setProperties(bean, ((Map) arguments[arguments.length - 1]));
+                return bean;
             }
         }
+
         throw new GroovyRuntimeException(
                 "Could not find matching constructor for: "
                         + theClass.getName()
