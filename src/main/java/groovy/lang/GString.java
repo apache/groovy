@@ -100,11 +100,20 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         return values;
     }
 
+
     public GString plus(GString that) {
-        Object[] values = getValues();
+        Object[] thisValues = getValuesInternal(this);
         return new GStringImpl(
-                appendValues(values, that.getValues()),
-                appendStrings(getStrings(), that.getStrings(), values.length));
+                appendValues(thisValues, getValuesInternal(that)),
+                appendStrings(getStringsInternal(this), getStringsInternal(that), thisValues.length));
+    }
+
+    private String[] getStringsInternal(GString gs) {
+        return gs instanceof GStringImpl ? ((GStringImpl) gs).getStringList().toArray(EMPTY_STRING_ARRAY) : gs.getStrings();
+    }
+
+    private Object[] getValuesInternal(GString gs) {
+        return gs instanceof GStringImpl ? ((GStringImpl) gs).getValueList().toArray(EMPTY_OBJECT_ARRAY) : gs.getValues();
     }
 
     private static String[] appendStrings(String[] strings1, String[] strings2, int values1Length) {
@@ -164,24 +173,24 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     }
 
     private int calcInitialCapacity() {
-        String[] strings = getStrings();
+        final String[] ss = getStringsInternal(this);
 
         int initialCapacity = 0;
-        for (String string : strings) {
+        for (String string : ss) {
             initialCapacity += string.length();
         }
 
-        initialCapacity += values.length * Math.max(initialCapacity / strings.length, 8);
+        initialCapacity += values.length * Math.max(initialCapacity / ss.length, 8);
 
         return Math.max((int) (initialCapacity * 1.2), 16);
     }
 
     @Override
     public Writer writeTo(Writer out) throws IOException {
-        String[] s = getStrings();
+        final String[] ss = getStringsInternal(this);
         int numberOfValues = values.length;
-        for (int i = 0, size = s.length; i < size; i++) {
-            out.write(s[i]);
+        for (int i = 0, size = ss.length; i < size; i++) {
+            out.write(ss[i]);
             if (i < numberOfValues) {
                 final Object value = values[i];
 
@@ -211,12 +220,12 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     @Override
     public void build(final GroovyObject builder) {
-        final String[] s = getStrings();
+        final String[] ss = getStringsInternal(this);
         final int numberOfValues = values.length;
 
-        for (int i = 0, size = s.length; i < size; i++) {
+        for (int i = 0, size = ss.length; i < size; i++) {
             builder.getProperty(MKP);
-            builder.invokeMethod(YIELD, new Object[]{s[i]});
+            builder.invokeMethod(YIELD, new Object[]{ss[i]});
             if (i < numberOfValues) {
                 builder.getProperty(MKP);
                 builder.invokeMethod(YIELD, new Object[]{values[i]});

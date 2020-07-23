@@ -19,6 +19,11 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.GString;
+import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Default implementation of a GString used by the compiler. A GString consists
@@ -29,6 +34,8 @@ import groovy.lang.GString;
 public class GStringImpl extends GString {
     private static final long serialVersionUID = 3581289038662723858L;
     private final String[] strings;
+    private boolean cacheable;
+    private String cachedStringLiteral;
 
     /**
      * Create a new GString with values and strings.
@@ -48,6 +55,7 @@ public class GStringImpl extends GString {
     public GStringImpl(Object[] values, String[] strings) {
         super(values);
         this.strings = strings;
+        cacheable = checkValuesImmutable();
     }
 
     /**
@@ -59,7 +67,55 @@ public class GStringImpl extends GString {
      */
     @Override
     public String[] getStrings() {
+        cacheable = false;
+        cachedStringLiteral = null;
         return strings;
     }
 
+    @Override
+    public Object[] getValues() {
+        cacheable = false;
+        cachedStringLiteral = null;
+        return super.getValues();
+    }
+
+    /**
+     * Get the strings of this GString as an unmodifiable list.
+     * This method is preferred over {@code getStrings()} in performance critical scenarios.
+     */
+    public List<String> getStringList() {
+        return Collections.unmodifiableList(Arrays.asList(strings));
+    }
+
+    /**
+     * Get the values of this GString as an unmodifiable list.
+     * This method is preferred over {@code getValues()} in performance critical scenarios.
+     */
+    public List<?> getValueList() {
+        return Collections.unmodifiableList(Arrays.asList(super.getValues()));
+    }
+
+    @Override
+    public String toString() {
+        if (null != cachedStringLiteral) {
+            return cachedStringLiteral;
+        }
+        String str = super.toString();
+        if (cacheable) {
+            cachedStringLiteral = str;
+        }
+        return str;
+    }
+
+    private boolean checkValuesImmutable() {
+        for (Object value : super.getValues()) {
+            if (null == value) continue;
+            if (!(ImmutablePropertyUtils.isBuiltinImmutable(value.getClass().getName())
+                    || (value instanceof GStringImpl && ((GStringImpl) value).cacheable))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
