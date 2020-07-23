@@ -626,6 +626,9 @@ class GStringTest extends GroovyTestCase {
 
         def gstr9 = "a${(short) 1}"
         assert gstr9.toString() === gstr9.toString()
+
+        def gstr10 = "a${Map.class}"
+        assert gstr10.toString() === gstr10.toString()
     }
 
     void testImmutableStringsAndValues() {
