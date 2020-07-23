@@ -43,7 +43,7 @@ class FileAppendTest extends GroovyTestCase {
               </characters>
             </groovy>
             """.stripIndent()
-    static Writable gPathResult = new DummyGStringBase(text)
+    static Writable gPathResult = new GString(text , new String[]{"Hello ", "!"})
     static gPathWriteTo;
 
     public FileAppendTest() {

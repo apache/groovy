@@ -43,7 +43,7 @@ class WriterAppendTest extends GroovyTestCase {
               </characters>
             </groovy>
             """
-    static gPathResult = new DummyGStringBase(text)
+    static gPathResult = new GString(text, new String[]{"Hello ", "!"})
     static gPathWriteTo
     static defaultEncoding
     static UTF8_ENCODING

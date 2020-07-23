@@ -27,8 +27,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.util.Arrays;
-import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -41,7 +39,7 @@ import java.util.regex.Pattern;
  * James Strachan: The lovely name of this class was suggested by Jules Gosnell
  * and was such a good idea, I couldn't resist :)
  */
-public class GString extends GroovyObjectSupport implements Comparable, CharSequence, Writable, Buildable, Serializable {
+public final class GString extends GroovyObjectSupport implements Comparable, CharSequence, Writable, Buildable, Serializable {
 
     private static final long serialVersionUID = -2638020355892246323L;
     private static final String MKP = "mkp";
@@ -60,9 +58,13 @@ public class GString extends GroovyObjectSupport implements Comparable, CharSequ
     private final boolean immutable;
 
     public GString(Object values, String[] strings) {
-        this.values = (Object[]) values;
-        this.strings = strings;
-        this.immutable = checkImmutable(this.values);
+        this(convertToObjectArray(values), strings);
+    }
+
+    private static Object[] convertToObjectArray(Object values) {
+        if (null == values) return EMPTY_OBJECT_ARRAY;
+
+        return values instanceof Object[] ? (Object[]) values : new Object[] { values };
     }
 
     /**
@@ -99,8 +101,8 @@ public class GString extends GroovyObjectSupport implements Comparable, CharSequ
         }
     }
 
-    public final List<Object> getValues() {
-        return Arrays.asList(values);
+    public Object[] getValues() {
+        return values.clone();
     }
 
     /**
@@ -110,8 +112,8 @@ public class GString extends GroovyObjectSupport implements Comparable, CharSequ
      * the values will result in changes of the GString. It is not recommended
      * to do so.
      */
-    public final List<String> getStrings() {
-        return Arrays.asList(strings);
+    public String[] getStrings() {
+        return strings.clone();
     }
 
     public GString plus(GString that) {

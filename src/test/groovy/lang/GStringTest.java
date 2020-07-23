@@ -27,14 +27,14 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 public class GStringTest extends GroovyTestCase {
 
     public void testIterateOverText() {
-        DummyGString compString = new DummyGString(new Object[]{"James"});
-        assertArrayEquals(new String[]{"Hello ", "!"}, compString.getStrings().toArray(new String[0]));
-        assertArrayEquals(new Object[]{"James"}, compString.getValues().toArray());
+        GString compString = new GString(new Object[]{"James"}, new String[]{"Hello ", "!"});
+        assertArrayEquals(new String[]{"Hello ", "!"}, compString.getStrings());
+        assertArrayEquals(new Object[]{"James"}, compString.getValues());
         assertEquals("Hello James!", compString.toString());
     }
 
     public void testAppendString() {
-        DummyGString a = new DummyGString(new Object[]{"James"});
+        GString a = new GString(new Object[]{"James"}, new String[]{"Hello ", "!"});
         GString result = a.plus(" how are you?");
         assertEquals("Hello James! how are you?", result.toString());
         assertEquals('J', a.charAt(6));
@@ -42,7 +42,7 @@ public class GStringTest extends GroovyTestCase {
     }
 
     public void testAppendString2() {
-        DummyGString a = new DummyGString(new Object[]{"James"}, new String[]{"Hello "});
+        GString a = new GString(new Object[]{"James"}, new String[]{"Hello "});
         GString result = a.plus(" how are you?");
         System.out.println("Strings: " + InvokerHelper.toString(result.getStrings()));
         System.out.println("Values: " + InvokerHelper.toString(result.getValues()));
@@ -50,23 +50,23 @@ public class GStringTest extends GroovyTestCase {
     }
 
     public void testAppendGString() {
-        DummyGString a = new DummyGString(new Object[]{"James"});
-        DummyGString b = new DummyGString(new Object[]{"Bob"});
+        GString a = new GString(new Object[]{"James"}, new String[]{"Hello ", "!"});
+        GString b = new GString(new Object[]{"Bob"}, new String[]{"Hello ", "!"});
         GString result = a.plus(b);
         assertEquals("Hello James!Hello Bob!", result.toString());
     }
 
     public void testAppendGString2() {
-        DummyGString a = new DummyGString(new Object[]{"James"}, new String[]{"Hello "});
-        DummyGString b = new DummyGString(new Object[]{"Bob"}, new String[]{"Hello "});
+        GString a = new GString(new Object[]{"James"}, new String[]{"Hello "});
+        GString b = new GString(new Object[]{"Bob"}, new String[]{"Hello "});
         GString result = a.plus(b);
         assertEquals("Hello JamesHello Bob", result.toString());
     }
 
     public void testEqualsAndHashCode() {
-        DummyGString a = new DummyGString(new Object[]{Integer.valueOf(1)});
-        DummyGString b = new DummyGString(new Object[]{Long.valueOf(1)});
-        Comparable c = new DummyGString(new Object[]{new Double(2.3)});
+        GString a = new GString(new Object[]{Integer.valueOf(1)}, new String[]{"Hello ", "!"});
+        GString b = new GString(new Object[]{Long.valueOf(1)}, new String[]{"Hello ", "!"});
+        Comparable c = new GString(new Object[]{new Double(2.3)}, new String[]{"Hello ", "!"});
 
         assertTrue("a == b", a.equals(b));
         assertEquals("hashcode a == b", a.hashCode(), b.hashCode());
