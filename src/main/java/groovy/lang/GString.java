@@ -20,7 +20,6 @@ package groovy.lang;
 
 import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
 import org.apache.groovy.io.StringBuilderWriter;
-import org.codehaus.groovy.runtime.GStringImpl;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 
@@ -28,6 +27,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -40,7 +41,7 @@ import java.util.regex.Pattern;
  * James Strachan: The lovely name of this class was suggested by Jules Gosnell
  * and was such a good idea, I couldn't resist :)
  */
-public abstract class GString extends GroovyObjectSupport implements Comparable, CharSequence, Writable, Buildable, Serializable {
+public class GString extends GroovyObjectSupport implements Comparable, CharSequence, Writable, Buildable, Serializable {
 
     private static final long serialVersionUID = -2638020355892246323L;
     private static final String MKP = "mkp";
@@ -52,38 +53,36 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     /**
      * A GString containing a single empty String and no values.
      */
-    public static final GString EMPTY = new GString(EMPTY_OBJECT_ARRAY) {
-        private static final long serialVersionUID = -7676746462783374250L;
-        private static final String EMPTY_STRING = "";
+    public static final GString EMPTY = new GString(EMPTY_OBJECT_ARRAY, EMPTY_STRING_ARRAY);
 
-        @Override
-        public String[] getStrings() {
-            return new String[] { EMPTY_STRING };
-        }
-
-        @Override
-        public String toString() {
-            return EMPTY_STRING;
-        }
-    };
-
-
+    private final String[] strings;
     private final Object[] values;
     private final boolean immutable;
 
-    public GString(Object values) {
+    public GString(Object values, String[] strings) {
         this.values = (Object[]) values;
+        this.strings = strings;
         this.immutable = checkImmutable(this.values);
     }
 
-    public GString(Object[] values) {
+    /**
+     * Create a new GString with values and strings.
+     * <p>
+     * Each value is prefixed by a string, after the last value
+     * an additional String might be used. This means
+     * <code>strings.length == values.length  ||  strings.length == values.length + 1</code>.
+     * <p>
+     * <b>NOTE:</b> The lengths are <b>not</b> checked. Using different lengths might result
+     * in unpredictable behaviour.
+     *
+     * @param values  the value parts
+     * @param strings the string parts
+     */
+    public GString(Object[] values, String[] strings) {
         this.values = values;
+        this.strings = strings;
         this.immutable = checkImmutable(this.values);
     }
-
-    // will be static in an instance
-
-    public abstract String[] getStrings();
 
     /**
      * Overloaded to implement duck typing for Strings
@@ -100,14 +99,25 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         }
     }
 
-    public Object[] getValues() {
-        return values.clone();
+    public final List<Object> getValues() {
+        return Arrays.asList(values);
+    }
+
+    /**
+     * Get the strings of this GString.
+     * <p>
+     * This methods returns the same array as used in the constructor. Changing
+     * the values will result in changes of the GString. It is not recommended
+     * to do so.
+     */
+    public final List<String> getStrings() {
+        return Arrays.asList(strings);
     }
 
     public GString plus(GString that) {
         Object[] values = this.values;
 
-        return new GStringImpl(appendValues(values, that.values), appendStrings(getStrings(), that.getStrings(), values.length));
+        return new GString(appendValues(values, that.values), appendStrings(this.strings, that.strings, values.length));
     }
 
     private String[] appendStrings(String[] strings, String[] thatStrings, int valuesLength) {
@@ -143,7 +153,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     }
 
     public GString plus(String that) {
-        return plus(new GStringImpl(EMPTY_OBJECT_ARRAY, new String[]{that}));
+        return plus(new GString(EMPTY_OBJECT_ARRAY, new String[] { that }));
     }
 
     public int getValueCount() {
@@ -176,7 +186,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     }
 
     private int calcInitialCapacity() {
-        String[] strings = getStrings();
+        String[] strings = this.strings;
 
         int initialCapacity = 0;
         for (String string : strings) {
@@ -190,7 +200,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     @Override
     public Writer writeTo(Writer out) throws IOException {
-        String[] s = getStrings();
+        String[] s = this.strings;
         int numberOfValues = values.length;
         for (int i = 0, size = s.length; i < size; i++) {
             out.write(s[i]);
@@ -223,7 +233,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     @Override
     public void build(final GroovyObject builder) {
-        final String[] s = getStrings();
+        final String[] s = this.strings;
         final int numberOfValues = values.length;
 
         for (int i = 0, size = s.length; i < size; i++) {

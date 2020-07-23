@@ -28,8 +28,8 @@ public class GStringTest extends GroovyTestCase {
 
     public void testIterateOverText() {
         DummyGString compString = new DummyGString(new Object[]{"James"});
-        assertArrayEquals(new String[]{"Hello ", "!"}, compString.getStrings());
-        assertArrayEquals(new Object[]{"James"}, compString.getValues());
+        assertArrayEquals(new String[]{"Hello ", "!"}, compString.getStrings().toArray(new String[0]));
+        assertArrayEquals(new Object[]{"James"}, compString.getValues().toArray());
         assertEquals("Hello James!", compString.toString());
     }
 

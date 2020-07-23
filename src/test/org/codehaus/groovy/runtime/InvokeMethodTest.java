@@ -28,7 +28,11 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 
 /**
  * Tests method invocation
@@ -217,21 +221,13 @@ public class InvokeMethodTest extends GroovyTestCase {
     }
 
     public void testCoerceGStringToString() throws Throwable {
-        GString param = new GString(new Object[]{"James"}) {
-            public String[] getStrings() {
-                return new String[]{"Hello "};
-            }
-        };
+        GString param = new GString(new Object[]{"James"}, new String[]{"Hello "});
         Object value = invoke(this, "methodTakesString", new Object[]{param});
         assertEquals("converted GString to string", param.toString(), value);
     }
 
     public void testCoerceGStringToStringOnGetBytes() throws Throwable {
-        GString param = new GString(new Object[]{CompilerConfiguration.DEFAULT_SOURCE_ENCODING}) {
-            public String[] getStrings() {
-                return new String[]{""};
-            }
-        };
+        GString param = new GString(new Object[]{CompilerConfiguration.DEFAULT_SOURCE_ENCODING}, new String[]{""});
         Object value = invoke("test", "getBytes", new Object[]{param});
         assertEquals("converted GString to string", "test".getBytes(CompilerConfiguration.DEFAULT_SOURCE_ENCODING).getClass(), value.getClass());
     }

@@ -23,7 +23,14 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -71,17 +78,9 @@ public class InvokerTest extends GroovyTestCase {
         assertAsBoolean(false, Boolean.FALSE);
         assertAsBoolean(false, (String) null);
         assertAsBoolean(false, "");
-        GString emptyGString = new GString(new Object[]{""}) {
-            public String[] getStrings() {
-                return new String[]{""};
-            }
-        };
+        GString emptyGString = new GString(new Object[]{""}, new String[]{""});
         assertAsBoolean(false, emptyGString);
-        GString nonEmptyGString = new GString(new Object[]{"x"}) {
-            public String[] getStrings() {
-                return new String[]{"x"};
-            }
-        };
+        GString nonEmptyGString = new GString(new Object[]{"x"}, new String[]{"x"});
         assertAsBoolean(true, nonEmptyGString);
         assertAsBoolean(true, Integer.valueOf(1234));
         assertAsBoolean(false, Integer.valueOf(0));

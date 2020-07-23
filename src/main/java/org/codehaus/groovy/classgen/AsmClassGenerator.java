@@ -1873,7 +1873,7 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitGStringExpression(final GStringExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
 
-        mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/GStringImpl");
+        mv.visitTypeInsn(NEW, "groovy/lang/GString");
         mv.visitInsn(DUP);
 
         int size = expression.getValues().size();
@@ -1903,7 +1903,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         controller.getOperandStack().remove(size);
 
-        mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/GStringImpl", "<init>", "([Ljava/lang/Object;[Ljava/lang/String;)V", false);
+        mv.visitMethodInsn(INVOKESPECIAL, "groovy/lang/GString", "<init>", "([Ljava/lang/Object;[Ljava/lang/String;)V", false);
         controller.getOperandStack().push(ClassHelper.GSTRING_TYPE);
     }
 

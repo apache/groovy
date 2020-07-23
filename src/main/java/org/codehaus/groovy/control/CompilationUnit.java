@@ -839,6 +839,8 @@ public class CompilationUnit extends ProcessingUnit {
                 return lookupResult == null ? null : lookupResult.getClassNode();
             }
             private ClassNode getCommonSuperClassNode(ClassNode c, ClassNode d) {
+                if (c == null || d == null) return ClassHelper.OBJECT_TYPE;
+
                 // adapted from ClassWriter code
                 if (c.isDerivedFrom(d)) return d;
                 if (d.isDerivedFrom(c)) return c;

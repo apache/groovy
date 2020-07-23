@@ -26,11 +26,7 @@ public class DummyGStringBase extends GString {
     }
 
     public DummyGStringBase(final Object[] values, String[] strings) {
-        super(values);
+        super(values, strings);
         this.strings = strings;
-    }
-
-    public String[] getStrings() {
-        return strings;
     }
 }

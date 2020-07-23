@@ -39,11 +39,7 @@ public class InvokeConstructorTest extends GroovyTestCase {
     }
 
     public void testConstructorWithGStringCoercion() throws Throwable {
-        GString gstring = new GString(new Object[]{Integer.valueOf(123)}) {
-            public String[] getStrings() {
-                return new String[]{""};
-            }
-        };
+        GString gstring = new GString(new Object[]{Integer.valueOf(123)}, new String[]{""});
 
         Object expected = Long.valueOf(gstring.toString());
 
