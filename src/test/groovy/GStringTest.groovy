@@ -580,4 +580,15 @@ class GStringTest extends GroovyTestCase {
         assert Eval.me('''def foo='bar'; /$foo\u002abaz/''') == 'bar*baz'
         assert Eval.me('''def foo='bar'; /${foo}\u002abaz/''') == 'bar*baz'
     }
+
+    void testGStringMutation() {
+        def cat = 'cat', hat = 'hat'
+        def gstring = "The ${cat} in the ${hat}"
+        assert gstring.toString() == 'The cat in the hat'
+        gstring.values[0] = 'eggs'
+        gstring.values[1] = 'ham'
+        gstring.strings[0] = 'Green '
+        gstring.strings[1] = ' and '
+        assert gstring.toString() == 'Green eggs and ham'
+    }
 }
