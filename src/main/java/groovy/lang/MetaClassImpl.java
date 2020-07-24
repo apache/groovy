@@ -1756,19 +1756,18 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public MetaMethod retrieveConstructor(Object[] arguments) {
         checkInitalised();
         if (arguments == null) arguments = EMPTY_ARGUMENTS;
-        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
+        Class[] argTypes = MetaClassHelper.convertToTypeArray(arguments);
         MetaClassHelper.unwrap(arguments);
-        Object res = chooseMethod("<init>", constructors, argClasses);
+        Object res = chooseMethod("<init>", constructors, argTypes);
         if (res instanceof MetaMethod) return (MetaMethod) res;
         CachedConstructor constructor = (CachedConstructor) res;
         if (constructor != null) return new MetaConstructor(constructor, false);
-        if (arguments.length == 1 && arguments[0] instanceof Map) {
-            res = chooseMethod("<init>", constructors, MetaClassHelper.EMPTY_TYPE_ARRAY);
-        } else if (
-                arguments.length == 2 && arguments[1] instanceof Map &&
+        // handle named args on class or inner class (one level only for now)
+        if ((arguments.length == 1 && arguments[0] instanceof Map) ||
+                (arguments.length == 2 && arguments[1] instanceof Map &&
                         theClass.getEnclosingClass() != null &&
-                        theClass.getEnclosingClass().isAssignableFrom(argClasses[0])) {
-            res = chooseMethod("<init>", constructors, new Class[]{argClasses[0]});
+                        theClass.getEnclosingClass().isAssignableFrom(argTypes[0]))) {
+            res = retrieveNamedArgCompatibleConstructor(argTypes, arguments);
         }
         if (res instanceof MetaMethod) return (MetaMethod) res;
         constructor = (CachedConstructor) res;
@@ -1777,27 +1776,50 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return null;
     }
 
+    private Object retrieveNamedArgCompatibleConstructor(Class[] origArgTypes, Object[] origArgs) {
+        // if we get here Map variant already not found so allow for no-arg plus setters
+        Class[] argTypes = Arrays.copyOf(origArgTypes, origArgTypes.length - 1);
+        Object[] args = Arrays.copyOf(origArgs, origArgs.length - 1);
+        Object res = chooseMethod("<init>", constructors, argTypes);
+        // chooseMethod allows fuzzy matching implicit null case but we don't want that here
+        // code here handles inner class case but we currently don't do fuzzy matching for inner classes
+        if (res instanceof ParameterTypes && ((ParameterTypes) res).getParameterTypes().length == origArgTypes.length) {
+            String prettyOrigArgs = InvokerHelper.toTypeString(origArgs);
+            if (prettyOrigArgs.endsWith("LinkedHashMap")) {
+                prettyOrigArgs = prettyOrigArgs.replaceFirst("LinkedHashMap$", "Map");
+            }
+            throw new GroovyRuntimeException(
+                    "Could not find named-arg compatible constructor. Expecting one of:\n"
+                            + theClass.getName() + "(" + prettyOrigArgs + ")\n"
+                            + theClass.getName() + "(" + InvokerHelper.toTypeString(args) + ")"
+            );
+        }
+        return res;
+    }
+
     private Object invokeConstructor(Class at, Object[] arguments) {
         checkInitalised();
         if (arguments == null) arguments = EMPTY_ARGUMENTS;
-        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
+        Class[] argTypes = MetaClassHelper.convertToTypeArray(arguments);
         MetaClassHelper.unwrap(arguments);
-        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
+        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, argTypes);
         if (constructor != null) {
             return constructor.doConstructorInvoke(arguments);
         }
-
-        if (arguments.length == 1) {
-            Object firstArgument = arguments[0];
-            if (firstArgument instanceof Map) {
-                constructor = (CachedConstructor) chooseMethod("<init>", constructors, MetaClassHelper.EMPTY_TYPE_ARRAY);
-                if (constructor != null) {
-                    Object bean = constructor.doConstructorInvoke(MetaClassHelper.EMPTY_ARRAY);
-                    setProperties(bean, ((Map) firstArgument));
-                    return bean;
-                }
+        // handle named args on class or inner class (one level only for now)
+        if ((arguments.length == 1 && arguments[0] instanceof Map) ||
+                (arguments.length == 2 && arguments[1] instanceof Map &&
+                        theClass.getEnclosingClass() != null &&
+                        theClass.getEnclosingClass().isAssignableFrom(argTypes[0]))) {
+            constructor = (CachedConstructor)  retrieveNamedArgCompatibleConstructor(argTypes, arguments);
+            if (constructor != null) {
+                Object[] args = Arrays.copyOf(arguments, arguments.length - 1);
+                Object bean = constructor.doConstructorInvoke(args);
+                setProperties(bean, ((Map) arguments[arguments.length - 1]));
+                return bean;
             }
         }
+
         throw new GroovyRuntimeException(
                 "Could not find matching constructor for: "
                         + theClass.getName()
@@ -3549,25 +3571,20 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     public CallSite createConstructorSite(CallSite site, Object[] args) {
         if (!(this instanceof AdaptingMetaClass)) {
-            Class[] params = MetaClassHelper.convertToTypeArray(args);
-            CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, params);
+            Class[] argTypes = MetaClassHelper.convertToTypeArray(args);
+            CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, argTypes);
             if (constructor != null) {
-                return ConstructorSite.createConstructorSite(site, this, constructor, params, args);
-            } else {
-                if (args.length == 1 && args[0] instanceof Map) {
-                    constructor = (CachedConstructor) chooseMethod("<init>", constructors, MetaClassHelper.EMPTY_TYPE_ARRAY);
-                    if (constructor != null) {
-                        return new ConstructorSite.NoParamSite(site, this, constructor, params);
-                    }
-                } else if (args.length == 2 && theClass.getEnclosingClass() != null && args[1] instanceof Map) {
-                    Class enclosingClass = theClass.getEnclosingClass();
-                    String enclosingInstanceParamType = args[0] != null ? args[0].getClass().getName() : "";
-                    if (enclosingClass.getName().equals(enclosingInstanceParamType)) {
-                        constructor = (CachedConstructor) chooseMethod("<init>", constructors, new Class[]{enclosingClass});
-                        if (constructor != null) {
-                            return new ConstructorSite.NoParamSiteInnerClass(site, this, constructor, params);
-                        }
-                    }
+                return ConstructorSite.createConstructorSite(site, this, constructor, argTypes, args);
+            }
+            if ((args.length == 1 && args[0] instanceof Map) ||
+                    (args.length == 2 && args[1] instanceof Map &&
+                            theClass.getEnclosingClass() != null &&
+                            theClass.getEnclosingClass().isAssignableFrom(argTypes[0]))) {
+                constructor = (CachedConstructor) retrieveNamedArgCompatibleConstructor(argTypes, args);
+                if (constructor != null) {
+                    return args.length == 1
+                            ? new ConstructorSite.NoParamSite(site, this, constructor, argTypes)
+                            : new ConstructorSite.NoParamSiteInnerClass(site, this, constructor, argTypes);
                 }
             }
         }
