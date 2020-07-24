@@ -1345,6 +1345,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         // method name
         if (!oldMethod.getName().equals(overridingMethod.getName())) return null;
         if ((overridingMethod.getModifiers() & ACC_BRIDGE) != 0) return null;
+        if ((oldMethod.getModifiers() & ACC_BRIDGE) != 0) return null;
         if (oldMethod.isPrivate()) return null;
 
         // parameters
