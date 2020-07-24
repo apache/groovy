@@ -95,6 +95,11 @@ public class CachedConstructor extends ParameterTypes {
                 setReason ? e : null);
     }
 
+    @Override
+    public String toString() {
+        return cachedConstructor.toString();
+    }
+
     public int getModifiers () {
         return cachedConstructor.getModifiers();
     }
