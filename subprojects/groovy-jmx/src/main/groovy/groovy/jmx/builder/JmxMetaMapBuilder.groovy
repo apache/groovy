@@ -402,7 +402,11 @@ class JmxMetaMapBuilder {
             // avoid picking up extra methods from parents
             if ((declaredMethods.contains(method.name) && !OPS_EXCEPTION_LIST.contains(method.name)) || (!OPS_EXCEPTION_LIST.contains(method.name))) {
                 String mName = method.name
-                MetaProperty prop = (mName.startsWith("get") || mName.startsWith("set")) ? object.metaClass.getMetaProperty(JmxBuilderTools.uncapitalize(mName.length() == 3 ? mName : mName[3..-1])) : null
+                MetaProperty prop =
+                        (mName.length() > 3 && (mName.startsWith("get") || mName.startsWith("set")) ||
+                                mName.length() > 2 && mName.startsWith("is"))
+                                ? object.metaClass.getMetaProperty(JmxBuilderTools.uncapitalize(mName[(mName.startsWith("is") ? 2 : 3)..-1]))
+                                : null
                 // skip exporting getters/setters to avoid dbl exposure.  They are exported differently.
                 if (!prop) {
                     def map = [:]
