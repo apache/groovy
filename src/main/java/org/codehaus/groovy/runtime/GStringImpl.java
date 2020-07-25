@@ -21,9 +21,8 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.GString;
 
 /**
- * Default implementation of a GString used by the compiler. A GString
- * consist of a list of values and strings which can be combined to
- * create a new String.
+ * Default implementation of a GString used by the compiler. A GString consists
+ * of a list of values and strings which can be combined to create a new String.
  *
  * @see groovy.lang.GString
  */
@@ -35,11 +34,13 @@ public class GStringImpl extends GString {
      * Create a new GString with values and strings.
      * <p>
      * Each value is prefixed by a string, after the last value
-     * an additional String might be used. This means
-     * <code>strings.length == values.length  ||  strings.length == values.length + 1</code>.
+     * an additional String might be used, hence the following constraint is expected to hold:
+     * <code>
+     * strings.length == values.length  ||  strings.length == values.length + 1
+     * </code>.
      * <p>
-     * <b>NOTE:</b> The lengths are <b>not</b> checked. Using different lengths might result
-     * in unpredictable behaviour.
+     * <strong>NOTE:</strong> The lengths are <strong>not</strong> checked but using arrays with
+     * lengths which violate the above constraint could result in unpredictable behaviour.
      *
      * @param values  the value parts
      * @param strings the string parts
@@ -52,9 +53,9 @@ public class GStringImpl extends GString {
     /**
      * Get the strings of this GString.
      * <p>
-     * This methods returns the same array as used in the constructor. Changing
-     * the values will result in changes of the GString. It is not recommended
-     * to do so.
+     * This methods returns the same array as used in the constructor.
+     * Changing the values will result in changes of the GString.
+     * It is generally not recommended to do so.
      */
     @Override
     public String[] getStrings() {
