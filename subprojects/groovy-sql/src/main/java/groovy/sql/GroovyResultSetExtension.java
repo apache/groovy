@@ -27,7 +27,6 @@ import org.codehaus.groovy.runtime.InvokerInvocationException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -179,8 +178,8 @@ public class GroovyResultSetExtension extends GroovyObjectSupport {
      */
     public void add(Map values) throws SQLException {
         getResultSet().moveToInsertRow();
-        for (Iterator iter = values.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
+        for (Object o : values.entrySet()) {
+            Map.Entry entry = (Map.Entry) o;
             getResultSet().updateObject(entry.getKey().toString(), entry.getValue());
         }
         getResultSet().insertRow();

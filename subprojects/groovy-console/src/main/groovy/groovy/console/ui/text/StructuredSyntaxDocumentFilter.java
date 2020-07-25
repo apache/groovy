@@ -312,8 +312,8 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
         private String buildRegexp(String[] regexps) {
             StringBuilder regexp = new StringBuilder();
 
-            for (int i = 0; i < regexps.length; i++) {
-                regexp.append("|").append(regexps[i]);
+            for (String s : regexps) {
+                regexp.append("|").append(s);
             }
 
             // ensure leading '|' is removed
