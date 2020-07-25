@@ -106,34 +106,34 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         return new GStringImpl(appendValues(values, that.getValues()), appendStrings(getStrings(), that.getStrings(), values.length));
     }
 
-    private String[] appendStrings(String[] strings, String[] thatStrings, int valuesLength) {
-        int stringsLength = strings.length;
-        boolean isStringsLonger = stringsLength > valuesLength;
-        int thatStringsLength = isStringsLonger ? thatStrings.length - 1 : thatStrings.length;
+    private static String[] appendStrings(String[] strings1, String[] strings2, int values1Length) {
+        int strings1Length = strings1.length;
+        boolean isStringsLonger = strings1Length > values1Length;
+        int strings2Length = isStringsLonger ? strings2.length - 1 : strings2.length;
 
-        String[] newStrings = new String[stringsLength + thatStringsLength];
-        System.arraycopy(strings, 0, newStrings, 0, stringsLength);
+        String[] newStrings = new String[strings1Length + strings2Length];
+        System.arraycopy(strings1, 0, newStrings, 0, strings1Length);
 
         if (isStringsLonger) {
             // merge onto end of previous GString to avoid an empty bridging value
-            System.arraycopy(thatStrings, 1, newStrings, stringsLength, thatStringsLength);
+            System.arraycopy(strings2, 1, newStrings, strings1Length, strings2Length);
 
-            int lastIndexOfStrings = stringsLength - 1;
-            newStrings[lastIndexOfStrings] = strings[lastIndexOfStrings] + thatStrings[0];
+            int lastIndexOfStrings = strings1Length - 1;
+            newStrings[lastIndexOfStrings] = strings1[lastIndexOfStrings] + strings2[0];
         } else {
-            System.arraycopy(thatStrings, 0, newStrings, stringsLength, thatStringsLength);
+            System.arraycopy(strings2, 0, newStrings, strings1Length, strings2Length);
         }
 
         return newStrings;
     }
 
-    private Object[] appendValues(Object[] values, Object[] thatValues) {
-        int valuesLength = values.length;
-        int thatValuesLength = thatValues.length;
+    private static Object[] appendValues(Object[] values1, Object[] values2) {
+        int values1Length = values1.length;
+        int values2Length = values2.length;
 
-        Object[] newValues = new Object[valuesLength + thatValuesLength];
-        System.arraycopy(values, 0, newValues, 0, valuesLength);
-        System.arraycopy(thatValues, 0, newValues, valuesLength, thatValuesLength);
+        Object[] newValues = new Object[values1Length + values2Length];
+        System.arraycopy(values1, 0, newValues, 0, values1Length);
+        System.arraycopy(values2, 0, newValues, values1Length, values2Length);
 
         return newValues;
     }
