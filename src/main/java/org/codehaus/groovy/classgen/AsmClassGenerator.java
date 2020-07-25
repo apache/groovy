@@ -134,6 +134,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PROPERTY_OWNER;
+import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.isStaticallyCompiled;
 
 /**
  * Generates Java class versions of Groovy classes using ASM.
@@ -1915,7 +1916,15 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         controller.getOperandStack().remove(size);
 
-        mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/GStringImpl", "<init>", "([Ljava/lang/Object;[Ljava/lang/String;)V", false);
+        String target;
+        if (isStaticallyCompiled(expression)) {
+            mv.visitInsn(ICONST_1);
+            target = "([Ljava/lang/Object;[Ljava/lang/String;Z)V";
+        } else {
+            target = "([Ljava/lang/Object;[Ljava/lang/String;)V";
+        }
+
+        mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/GStringImpl", "<init>", target, false);
         controller.getOperandStack().push(ClassHelper.GSTRING_TYPE);
     }
 

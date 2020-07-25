@@ -39,6 +39,7 @@ import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureListExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
@@ -417,6 +418,15 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         if (call.getMethodTarget() == null && call.getLineNumber() > 0) {
             addError("Target method for method call expression hasn't been set", call);
         }
+    }
+
+    @Override
+    public void visitGStringExpression(GStringExpression expression) {
+        super.visitGStringExpression(expression);
+        AnnotatedNode target = typeCheckingContext.getEnclosingMethod() != null ? typeCheckingContext.getEnclosingMethod() :
+                typeCheckingContext.getEnclosingClassNodes() != null && !typeCheckingContext.getEnclosingClassNodes().isEmpty() ? typeCheckingContext.getEnclosingClassNodes().get(0) :
+                expression;
+        expression.putNodeMetaData(STATIC_COMPILE_NODE, isStaticallyCompiled(target));
     }
 
     @Override

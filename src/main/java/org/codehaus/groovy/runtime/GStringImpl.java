@@ -19,6 +19,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.GString;
+import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
 
 /**
  * Default implementation of a GString used by the compiler. A GString consists
@@ -29,6 +30,9 @@ import groovy.lang.GString;
 public class GStringImpl extends GString {
     private static final long serialVersionUID = 3581289038662723858L;
     private final String[] strings;
+    private final boolean cloneArrays;
+    private final boolean cacheable;
+    private String cachedStringLiteral;
 
     /**
      * Create a new GString with values and strings.
@@ -46,8 +50,30 @@ public class GStringImpl extends GString {
      * @param strings the string parts
      */
     public GStringImpl(Object[] values, String[] strings) {
-        super(values);
-        this.strings = strings;
+        this(values, strings, false);
+    }
+
+    /**
+     * Create a new GString with values and strings.
+     * <p>
+     * Each value is prefixed by a string, after the last value
+     * an additional String might be used, hence the following constraint is expected to hold:
+     * <code>
+     * strings.length == values.length  ||  strings.length == values.length + 1
+     * </code>.
+     * <p>
+     * <strong>NOTE:</strong> The lengths are <strong>not</strong> checked but using arrays with
+     * lengths which violate the above constraint could result in unpredictable behaviour.
+     *
+     * @param values  the value parts
+     * @param strings the string parts
+     * @param cloneArrays clone the string and value arrays on input and output (prohibits modification)
+     */
+    public GStringImpl(Object[] values, String[] strings, boolean cloneArrays) {
+        super(cloneArrays ? values.clone() : values);
+        this.strings = cloneArrays ? strings.clone() : strings;
+        this.cloneArrays = cloneArrays;
+        this.cacheable = cloneArrays && checkValuesImmutable();
     }
 
     /**
@@ -59,7 +85,35 @@ public class GStringImpl extends GString {
      */
     @Override
     public String[] getStrings() {
-        return strings;
+        return cloneArrays ? strings.clone() : strings;
     }
 
+    @Override
+    public Object[] getValues() {
+        return cloneArrays ? super.getValues().clone() : super.getValues();
+    }
+
+    @Override
+    public String toString() {
+        if (null != cachedStringLiteral) {
+            return cachedStringLiteral;
+        }
+        String str = super.toString();
+        if (cacheable) {
+            cachedStringLiteral = str;
+        }
+        return str;
+    }
+
+    private boolean checkValuesImmutable() {
+        for (Object value : super.getValues()) {
+            if (null == value) continue;
+            if (!(ImmutablePropertyUtils.isBuiltinImmutable(value.getClass().getName())
+                    || (value instanceof GStringImpl && ((GStringImpl) value).cacheable))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
