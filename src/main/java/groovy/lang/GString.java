@@ -102,8 +102,9 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     public GString plus(GString that) {
         Object[] values = getValues();
-
-        return new GStringImpl(appendValues(values, that.getValues()), appendStrings(getStrings(), that.getStrings(), values.length));
+        return new GStringImpl(
+                appendValues(values, that.getValues()),
+                appendStrings(getStrings(), that.getStrings(), values.length));
     }
 
     private static String[] appendStrings(String[] strings1, String[] strings2, int values1Length) {
