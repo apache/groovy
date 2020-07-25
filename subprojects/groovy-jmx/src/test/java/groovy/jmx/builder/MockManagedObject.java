@@ -69,13 +69,20 @@ public class MockManagedObject {
     public void dontDoThis(Object param) {
         logger.log(Level.FINER, "Jmx Invoke - method dontDoThis() with param : " + param);
     }
-
+    
     public void setAvailable(boolean flag) {
         avail = flag;
     }
-
+    
     public boolean isAvailable() {
         return avail;
     }
-
+    
+    public String get(String str) {
+        return str;
+    }
+    
+    public String set(String str) {
+        return str;
+    }
 }
