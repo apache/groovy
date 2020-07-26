@@ -1459,20 +1459,17 @@ public class AsmClassGenerator extends ClassGenerator {
 
     private void processClassVariable(VariableExpression expression) {
         if (passingParams && controller.isInScriptBody()) {
-            //TODO: check if this part is actually used
             MethodVisitor mv = controller.getMethodVisitor();
-            // let's create a ScriptReference to pass into the closure
             mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/ScriptReference");
             mv.visitInsn(DUP);
-
             loadThisOrOwner();
             mv.visitLdcInsn(expression.getName());
-
             mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/ScriptReference", "<init>", "(Lgroovy/lang/Script;Ljava/lang/String;)V", false);
         } else {
             PropertyExpression pexp = new PropertyExpression(new VariableExpression("this"), expression.getName());
             pexp.getObjectExpression().setSourcePosition(expression);
             pexp.getProperty().setSourcePosition(expression);
+            pexp.copyNodeMetaData(expression);
             pexp.setImplicitThis(true);
             visitPropertyExpression(pexp);
         }
