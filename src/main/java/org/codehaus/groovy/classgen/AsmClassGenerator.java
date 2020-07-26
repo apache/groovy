@@ -124,8 +124,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
+import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
@@ -1325,6 +1325,7 @@ public class AsmClassGenerator extends ClassGenerator {
             PropertyExpression pexp = thisPropX(true, variableName);
             pexp.getObjectExpression().setSourcePosition(expression);
             pexp.getProperty().setSourcePosition(expression);
+            pexp.copyNodeMetaData(expression);
             pexp.visit(this);
         }
 

@@ -949,7 +949,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param leftExpression  left expression of the assignment
      * @param rightExpression right expression of the assignment
      * @param setterInfo      possible setters
-     * @return true if type checking passed
+     * @return {@code false} if valid setter found or {@code true} if type checking error created
      */
     private boolean ensureValidSetter(final Expression expression, final Expression leftExpression, final Expression rightExpression, final SetterInfo setterInfo) {
         // for expressions like foo = { ... }
@@ -985,16 +985,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             for (MethodNode setter : setterInfo.setters) {
                 if (setter == directSetterCandidate) {
                     leftExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, directSetterCandidate);
+                    leftExpression.removeNodeMetaData(INFERRED_TYPE); // clear assumption
                     storeType(leftExpression, getType(newRightExpression));
                     break;
                 }
             }
+            return false;
         } else {
-            ClassNode firstSetterType = setterInfo.setters.iterator().next().getParameters()[0].getOriginType();
+            ClassNode firstSetterType = setterInfo.setters.get(0).getParameters()[0].getOriginType();
             addAssignmentError(firstSetterType, getType(newRightExpression), expression);
             return true;
         }
-        return false;
     }
 
     private boolean isCompoundAssignment(final Expression exp) {
@@ -1468,8 +1469,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (receiverType.isArray() && "length".equals(propertyName)) {
                 storeType(pexp, int_TYPE);
                 if (visitor != null) {
-                    PropertyNode length = new PropertyNode("length", Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL, int_TYPE, receiverType, null, null, null);
-                    visitor.visitProperty(length);
+                    FieldNode length = new FieldNode("length", Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL, int_TYPE, receiverType, null);
+                    length.setDeclaringClass(receiverType);
+                    visitor.visitField(length);
                 }
                 return true;
             }
@@ -1554,8 +1556,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                     visitor.visitField(field);
                                 } else {
                                     for (MethodNode setter : setters) {
-                                        ClassNode setterType = setter.getParameters()[0].getOriginType();
-                                        FieldNode virtual = new FieldNode(propertyName, 0, setterType, current, EmptyExpression.INSTANCE);
+                                        // visiting setter will not infer the property type since return type is void, so visit a dummy field instead
+                                        FieldNode virtual = new FieldNode(propertyName, 0, setter.getParameters()[0].getOriginType(), current, null);
+                                        virtual.setDeclaringClass(setter.getDeclaringClass());
                                         visitor.visitField(virtual);
                                     }
                                 }
