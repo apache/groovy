@@ -642,6 +642,26 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9653
+    void testSetterInWithUsingPropertyNotation_DelegateAndOwnerHaveSetter() {
+        assertScript '''
+            class C {
+                final result = new D().with {
+                    something = 'value' // ClassCastException: D cannot be cast to C
+                    return object
+                }
+                void setSomething(value) { }
+            }
+
+            class D {
+                void setSomething(value) { }
+                Object getObject() { 'works' }
+            }
+
+            assert new C().result == 'works'
+        '''
+    }
+
     // GROOVY-6230
     void testAttributeWithGetterOfDifferentType() {
         assertScript '''import java.awt.Dimension
@@ -778,56 +798,52 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
     void testPropertyAssignmentInSubClassAndMultiSetter() {
         10.times {
             assertScript '''
+                class A {
+                    int which
 
-            public class Activity {
-                int debug
+                    A() {
+                        contentView = 42L
+                        assert which == 2
+                    }
 
-                Activity() {
-                    contentView = 1
+                    void setContentView(Date value) { which = 1 }
+                    void setContentView(Long value) { which = 2 }
                 }
 
-                public void setContentView(Date layoutResID) { debug = 2 }
-                public void setContentView(int layoutResID) { debug = 3 }
-            }
-
-            class MyActivity extends Activity {
-                void foo() {
-                    contentView = 1
-                    assert debug == 3
-                    contentView = new Date()
-                    assert debug == 2
+                class B extends A {
+                    void m() {
+                        contentView = 42L
+                        assert which == 2
+                        contentView = new Date()
+                        assert which == 1
+                    }
                 }
-            }
-            new MyActivity().foo()
-        '''
+
+                new B().m()
+            '''
         }
     }
 
     void testPropertyAssignmentInSubClassAndMultiSetterThroughDelegation() {
         10.times {
-            assertScript '''
+            assertScript '''\
+                class A {
+                    int which
 
-            public class Activity {
-                int debug
-
-                Activity() {
-                    contentView = 1
+                    void setContentView(Date value) { which = 1 }
+                    void setContentView(Long value) { which = 2 }
                 }
 
-                public void setContentView(Date layoutResID) { debug = 2 }
-                public void setContentView(int layoutResID) { debug = 3 }
-            }
+                class B extends A {
+                }
 
-            class MyActivity extends Activity {
-            }
-            def activity = new  MyActivity()
-            activity.with {
-                 contentView = 1
-                 assert debug == 3
-                 contentView = new Date()
-                 assert debug == 2
-            }
-        '''
+                new B().with {
+                    contentView = 42L
+                    assert which == 2
+                    contentView = new Date()
+                    assert which == 1
+                }
+            '''
         }
     }
 

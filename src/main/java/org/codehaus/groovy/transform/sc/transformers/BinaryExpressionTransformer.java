@@ -98,15 +98,17 @@ public class BinaryExpressionTransformer {
                 }
             }
         }
-        if (operationType == Types.EQUAL && leftExpression instanceof PropertyExpression) {
+        if (operationType == Types.ASSIGN) {
             MethodNode directMCT = leftExpression.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
             if (directMCT != null) {
-                PropertyExpression left = (PropertyExpression) leftExpression;
-                Expression right = staticCompilationTransformer.transform(rightExpression);
-                return transformPropertyAssignmentToSetterCall(left, right, directMCT);
+                Expression left = staticCompilationTransformer.transform(leftExpression);
+                if (left instanceof PropertyExpression) {
+                    Expression right = staticCompilationTransformer.transform(rightExpression);
+                    return transformPropertyAssignmentToSetterCall((PropertyExpression) left, right, directMCT);
+                }
+                // TODO: Handle left instanceof VariableExpression and has DIRECT_METHOD_CALL_TARGET?
             }
-        }
-        if (operationType == Types.COMPARE_EQUAL || operationType == Types.COMPARE_NOT_EQUAL) {
+        } else if (operationType == Types.COMPARE_EQUAL || operationType == Types.COMPARE_NOT_EQUAL) {
             // let's check if one of the operands is the null constant
             CompareToNullExpression compareToNullExpression = null;
             if (isNullConstant(leftExpression)) {
