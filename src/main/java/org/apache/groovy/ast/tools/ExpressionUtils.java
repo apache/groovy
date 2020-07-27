@@ -47,7 +47,7 @@ import static org.codehaus.groovy.syntax.Types.POWER;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
 
-public class ExpressionUtils {
+public final class ExpressionUtils {
 
     // NOTE: values are sorted in ascending order
     private static final int[] HANDLED_TYPES = {
@@ -339,4 +339,21 @@ public class ExpressionUtils {
         }
         return null;
     }
+
+    public static boolean isThisExpression(final Expression expression) {
+        return expression instanceof VariableExpression && ((VariableExpression) expression).isThisExpression();
+    }
+
+    public static boolean isSuperExpression(final Expression expression) {
+        return expression instanceof VariableExpression && ((VariableExpression) expression).isSuperExpression();
+    }
+
+    public static boolean isThisOrSuper(final Expression expression) {
+        return isThisExpression(expression) || isSuperExpression(expression);
+    }
+
+    public static boolean isNullConstant(final Expression expr) {
+        return expr instanceof ConstantExpression && ((ConstantExpression) expr).isNullExpression();
+    }
+
 }

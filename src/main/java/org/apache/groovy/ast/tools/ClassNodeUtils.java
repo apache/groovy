@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ast.tools;
 
+import org.apache.groovy.util.BeanUtils;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -302,7 +303,11 @@ public class ClassNodeUtils {
     }
 
     public static boolean hasStaticProperty(ClassNode cNode, String propName) {
-        return getStaticProperty(cNode, propName) != null;
+        PropertyNode found = getStaticProperty(cNode, propName);
+        if (found == null) {
+            found = getStaticProperty(cNode, BeanUtils.decapitalize(propName));
+        }
+        return found != null;
     }
 
     /**

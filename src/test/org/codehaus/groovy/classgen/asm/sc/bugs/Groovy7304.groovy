@@ -16,36 +16,27 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package org.codehaus.groovy.classgen.asm.sc.bugs
 
-import groovy.test.GroovyTestCase
+import groovy.transform.CompileStatic
+import org.junit.Test
 
-class Groovy5852Bug extends GroovyTestCase {
-    void testMissingProperty() {
-        def errMsg = shouldFail '''
-            class Constants {
-              static final pi = 3.14
+import static groovy.test.GroovyAssert.assertScript
+
+@CompileStatic
+final class Groovy7304 {
+
+    @Test // bridge methods should also be statically compiled
+    void testShouldGoThroughPrivateBridgeMethod() {
+        assertScript '''
+            class A {
+                private int i = 1
+                @groovy.transform.CompileStatic
+                int m() { new String().with { i++ } }
             }
-            
-            import static Constants.*
-            
-            println Pi
-        '''
-
-        assert errMsg.contains('No such property: Pi for class:')
-    }
-
-    void testMissingProperty2() {
-        def errMsg = shouldFail '''
-            class Constants {
-              static final pi = 3.14
+            class B extends A {
             }
-            
-            import static Constants.*
-            
-            println Constants.Pi
+            assert new B().m() == 1
         '''
-
-        assert errMsg.contains('No such property: Pi for class: Constants')
     }
 }

@@ -60,7 +60,7 @@ import java.util.Properties;
  */
 public class MetaClassRegistryImpl implements MetaClassRegistry{
     /**
-     * @deprecated Use {@link ExtensionModuleScanner#MODULE_META_INF_FILE instead}
+     * @deprecated Use {@link ExtensionModuleScanner#MODULE_META_INF_FILE} instead
      */
     @Deprecated
     public static final String MODULE_META_INF_FILE = "META-INF/services/org.codehaus.groovy.runtime.ExtensionModule";
@@ -97,7 +97,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     public MetaClassRegistryImpl(boolean useAccessible) {
         this(LOAD_DEFAULT, useAccessible);
     }
-    
+
     public MetaClassRegistryImpl(final int loadDefault, final boolean useAccessible) {
         this.useAccessible = useAccessible;
 
@@ -189,7 +189,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                throw new GroovyRuntimeException("Could not instantiate custom Metaclass creation handle: "+ e, e);
            }
     }
-    
+
     private void registerMethods(final Class theClass, final boolean useMethodWrapper, final boolean useInstanceMethods, Map<CachedClass, List<MetaMethod>> map) {
         if (useMethodWrapper) {
             // Here we instantiate objects representing MetaMethods for DGM methods.
@@ -269,7 +269,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      */
     private void setMetaClass(Class theClass, MetaClass oldMc, MetaClass newMc) {
         final ClassInfo info = ClassInfo.getClassInfo(theClass);
-        
+
         MetaClass mc = null;
         info.lock();
         try {
@@ -282,11 +282,11 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             fireConstantMetaClassUpdate(null, theClass, mc, newMc);
         }
     }
-    
+
     public void removeMetaClass(Class theClass) {
         setMetaClass(theClass, null, null);
     }
-    
+
     /**
      * Registers a new MetaClass in the registry to customize the type
      *
@@ -310,7 +310,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         finally {
             info.unlock();
         }
-        
+
         fireConstantMetaClassUpdate(obj, theClass, oldMC, theMetaClass);
     }
 
@@ -320,16 +320,16 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     }
 
     private volatile MetaClassCreationHandle metaClassCreationHandle = new MetaClassCreationHandle();
-    
+
     /**
      * Gets a handle internally used to create MetaClass implementations
      * WARNING: experimental code, likely to change soon
      * @return the handle
-     */    
+     */
     public MetaClassCreationHandle getMetaClassCreationHandler() {
         return metaClassCreationHandle;
     }
-    
+
     /**
      * Sets a handle internally used to create MetaClass implementations.
      * When replacing the handle with a custom version, you should
@@ -343,7 +343,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         ClassInfo.clearModifiedExpandos();
         handle.setDisableCustomMetaClassLookup(metaClassCreationHandle.isDisableCustomMetaClassLookup());
         metaClassCreationHandle = handle;
-    }    
+    }
 
     /**
      * Adds a listener for constant meta classes.
@@ -354,7 +354,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             changeListenerList.add(listener);
         }
     }
-    
+
 
     /**
      * Adds a listener for constant meta classes. This listener cannot be removed!
@@ -406,9 +406,9 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             return ret.toArray(EMPTY_METACLASSREGISTRYCHANGEEVENTLISTENER_ARRAY);
         }
     }
-    
+
     /**
-     * Singleton of MetaClassRegistry. 
+     * Singleton of MetaClassRegistry.
      *
      * @param includeExtension
      * @return the registry
@@ -434,21 +434,21 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     public FastArray getStaticMethods() {
         return staticMethods;
     }
-    
+
     /**
      * Returns an iterator to iterate over all constant meta classes.
      * This iterator can be seen as making a snapshot of the current state
      * of the registry. The snapshot will include all meta classes that has
-     * been used unless they are already collected. Collected meta classes 
+     * been used unless they are already collected. Collected meta classes
      * will be skipped automatically, so you can expect that each element
      * of the iteration is not null. Calling this method is thread safe, the
      * usage of the iterator is not.
-     *  
+     *
      * @return the iterator.
-     */    
+     */
     public Iterator iterator() {
         final MetaClass[] refs = metaClassInfo.toArray(EMPTY_METACLASS_ARRAY);
-        
+
         return new Iterator() {
             // index in the ref array
             private int index = 0;
@@ -471,19 +471,19 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                 }
                 return hasNext;
             }
-            
+
             private void ensureNext() {
-                // we ensure that hasNext has been called before 
+                // we ensure that hasNext has been called before
                 // next is called
                 hasNext();
                 hasNextCalled = false;
             }
-            
+
             public Object next() {
                 ensureNext();
                 return currentMeta;
             }
-            
+
             public void remove() {
                 ensureNext();
                 setMetaClass(currentMeta.getTheClass(), currentMeta, null);

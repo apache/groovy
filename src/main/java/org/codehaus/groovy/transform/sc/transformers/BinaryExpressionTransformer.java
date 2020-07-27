@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
@@ -55,7 +56,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
-import static org.codehaus.groovy.classgen.AsmClassGenerator.isNullConstant;
 
 public class BinaryExpressionTransformer {
     private static final MethodNode COMPARE_TO_METHOD = ClassHelper.COMPARABLE_TYPE.getMethods("compareTo").get(0);
@@ -254,8 +254,10 @@ public class BinaryExpressionTransformer {
             Character cRight = tryCharConstant(right);
             if (cLeft != null || cRight != null) {
                 Expression oLeft = (cLeft == null ? left : constX(cLeft, true));
+                if (oLeft instanceof PropertyExpression && !hasCharType((PropertyExpression)oLeft)) return null;
                 oLeft.setSourcePosition(left);
                 Expression oRight = (cRight == null ? right : constX(cRight, true));
+                if (oRight instanceof PropertyExpression && !hasCharType((PropertyExpression)oRight)) return null;
                 oRight.setSourcePosition(right);
                 bin.setLeftExpression(oLeft);
                 bin.setRightExpression(oRight);
@@ -263,6 +265,11 @@ public class BinaryExpressionTransformer {
             }
         }
         return null;
+    }
+
+    private static boolean hasCharType(PropertyExpression pe) {
+        ClassNode inferredType = pe.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+        return inferredType != null && ClassHelper.Character_TYPE.equals(ClassHelper.getWrapper(inferredType));
     }
 
     private static Character tryCharConstant(final Expression expr) {

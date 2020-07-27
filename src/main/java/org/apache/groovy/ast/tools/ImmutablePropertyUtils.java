@@ -69,7 +69,15 @@ public class ImmutablePropertyUtils {
               This list can by extended by providing "known immutable" classes
               via Immutable.knownImmutableClasses
              */
-    private static Set<String> builtinImmutables = new HashSet<String>(Arrays.asList(
+    private static final Set<String> BUILTIN_IMMUTABLES = new HashSet<String>(Arrays.asList(
+            "boolean",
+            "byte",
+            "char",
+            "double",
+            "float",
+            "int",
+            "long",
+            "short",
             "java.lang.Class",
             "java.lang.Boolean",
             "java.lang.Byte",
@@ -115,7 +123,8 @@ public class ImmutablePropertyUtils {
             "java.time.temporal.IsoFields",
             "java.time.temporal.JulianFields",
             "java.time.temporal.ValueRange",
-            "java.time.temporal.WeekFields"
+            "java.time.temporal.WeekFields",
+            "java.io.File"
     ));
 
     private ImmutablePropertyUtils() { }
@@ -195,7 +204,7 @@ public class ImmutablePropertyUtils {
     }
 
     public static boolean isBuiltinImmutable(String typeName) {
-        return builtinImmutables.contains(typeName);
+        return BUILTIN_IMMUTABLES.contains(typeName);
     }
 
     private static boolean hasImmutableAnnotation(Class clazz) {

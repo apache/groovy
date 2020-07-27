@@ -16,46 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy
+package org.codehaus.groovy.util
 
+import groovy.transform.CompileStatic
 import org.junit.Test
 
-import static groovy.test.GroovyAssert.assertScript
-
-final class ImportTest {
-
+@CompileStatic
+class HashCodeHelperTest {
     @Test
-    void testImportAll() {
-        assertScript '''
-            def file = new File('foo')
-            assert file instanceof File
-        '''
-    }
-
-    @Test
-    void testImportByName() {
-        assertScript '''
-            def map = [foo:'bar']
-            assert map instanceof Map
-        '''
-
-        assertScript '''
-            def list = [1, 2, 3]
-            assert list instanceof List
-        '''
-    }
-
-    @Test
-    void testImportStaticInnerClass() {
-        assertScript '''
-            import java.util.Map.Entry
-            Entry entry = [foo:'bar'].entrySet().first()
-        '''
-
-        // GROOVY-5103
-        assertScript '''
-            import java.util.Map.*
-            Entry entry = [foo:'bar'].entrySet().first()
-        '''
+    void testUpdateHash() {
+        assert 158 == HashCodeHelper.updateHash(1, new Character('c' as char))
+        assert 59  == HashCodeHelper.updateHash(1, (Character) null)
     }
 }

@@ -81,32 +81,27 @@ public class MethodNodeUtils {
      * @return the property name without the get/set/is prefix if a property or null
      */
     public static String getPropertyName(final MethodNode mNode) {
-        final int parameterCnt = mNode.getParameters().length;
-
-        if (parameterCnt < 2) {
-            final String name = mNode.getName();
-            final int nameLength = name.length();
-            if (nameLength > 2) {
-                switch (name.charAt(0)) {
-                    case 'g':
-                        if (nameLength > 3 && parameterCnt == 0  && name.charAt(1) == 'e' && name.charAt(2) == 't' && !mNode.getReturnType().equals(ClassHelper.VOID_TYPE)) {
-                            return decapitalize(name.substring(3));
-                        }
-                        break;
-                    case 's':
-                        if (nameLength > 3 && parameterCnt == 1 && name.charAt(1) == 'e' && name.charAt(2) == 't'  /*&& mNode.getReturnType().equals(ClassHelper.VOID_TYPE)*/) {
-                            return decapitalize(name.substring(3));
-                        }
-                        break;
-                    case 'i':
-                        if (parameterCnt == 0 && name.charAt(1) == 's' && (mNode.getReturnType().equals(ClassHelper.boolean_TYPE) /*|| mNode.getReturnType().equals(ClassHelper.Boolean_TYPE)*/)) {
-                            return decapitalize(name.substring(2));
-                        }
-                        break;
-                }
+        final String name = mNode.getName();
+        final int nameLength = name.length();
+        if (nameLength > 2) {
+            switch (name.charAt(0)) {
+                case 'g':
+                    if (nameLength > 3 && name.charAt(1) == 'e' && name.charAt(2) == 't' && mNode.getParameters().length == 0 && !mNode.getReturnType().equals(ClassHelper.VOID_TYPE)) {
+                        return decapitalize(name.substring(3));
+                    }
+                    break;
+                case 's':
+                    if (nameLength > 3 && name.charAt(1) == 'e' && name.charAt(2) == 't' && mNode.getParameters().length == 1 /*&& mNode.getReturnType().equals(ClassHelper.VOID_TYPE)*/) {
+                        return decapitalize(name.substring(3));
+                    }
+                    break;
+                case 'i':
+                    if (name.charAt(1) == 's' && mNode.getParameters().length == 0 && (mNode.getReturnType().equals(ClassHelper.boolean_TYPE) /*|| mNode.getReturnType().equals(ClassHelper.Boolean_TYPE)*/)) {
+                        return decapitalize(name.substring(2));
+                    }
+                    break;
             }
         }
-
         return null;
     }
 

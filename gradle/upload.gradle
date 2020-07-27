@@ -190,7 +190,7 @@ def optionalModules = [
         'groovy-cli-commons',
         'groovy-dateutil',
         'groovy-jaxb',
-        'groovy-yaml'
+        'groovy-testng'
 ]
 
 def pomAll = {

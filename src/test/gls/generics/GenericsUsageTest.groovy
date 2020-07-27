@@ -40,25 +40,43 @@ final class GenericsUsageTest extends CompilableTestSupport {
     }
 
     void testCovariantReturn() {
-        shouldNotCompile """
+        shouldNotCompile '''
+            class A<T> {
+                T foo(T t) { 1 }
+            }
+
+            class B extends A<Long> {
+                String foo(Long l) { '2' }
+            }
+        '''
+
+        // GROOVY-6977
+        assertScript '''
+            class A {
+              public <R> List<R> foo() {
+                List<R> list = new ArrayList<R>() {
+                    // ...
+                }
+                // ...
+                list
+              }
+            }
+
+            def longList = new A().<Long>foo()
+            assert longList != null
+            assert longList.empty
+        '''
+
+        assertScript '''
             class A<T> {
                 T foo(T t) {1}
             }
 
-            class B extends A<Long>{
-                String foo(Long l){"2"}
-            }
-        """
-
-        assertScript """
-            class A<T> {
-                T foo(T t) {1}
+            class B extends A<Long> {
+                Long foo(Long l) { 2 }
             }
 
-            class B extends A<Long>{
-                Long foo(Long l){2}
-            }
-            def b = new B();
+            def b = new B()
             try {
                 b.foo(new Object())
                 assert false
@@ -66,7 +84,7 @@ final class GenericsUsageTest extends CompilableTestSupport {
                 assert true
             }
             assert b.foo((Long) 1) == 2
-        """
+        '''
     }
 
     void testCovariantReturnWithInterface() {
@@ -189,45 +207,8 @@ final class GenericsUsageTest extends CompilableTestSupport {
         """, "Unexpected input: '('"
     }
 
-    private void shouldFailCompilationWithDefaultMessage(scriptText) {
-        shouldFailCompilationWithMessage scriptText, "Missing closing bracket '>' for generics types"
-    }
-
-    private void shouldFailCompilationWithMessage(scriptText, String errorMessage) {
-        shouldFailCompilationWithMessages(scriptText, [errorMessage])
-    }
-
-    private void shouldFailCompilationWithMessages(scriptText, List<String> errorMessages) {
-        try {
-            assertScript scriptText
-            fail("The script compilation should have failed as it contains generics errors, e.g. mis-matching generic brackets")
-        } catch (MultipleCompilationErrorsException mcee) {
-            def text = mcee.toString()
-            errorMessages.each {
-                assert text.contains(it)
-            }
-        }
-    }
-
-    private void shouldFailCompilationWithAnyMessage(scriptText, List<String> errorMessages) {
-        try {
-            assertScript scriptText
-            fail("The script compilation should have failed as it contains generics errors, e.g. mis-matching generic brackets")
-        } catch (MultipleCompilationErrorsException mcee) {
-            def text = mcee.toString()
-
-            for (errorMessage in errorMessages) {
-                if (text.contains(errorMessage)) {
-                    return
-                }
-            }
-
-            assert false, text + " can not match any expected error message: " + errorMessages
-        }
-    }
-
     // GROOVY-3975
-    void testGenericsInfoForClosureParameters() {
+    void testGenericsForClosureParameters() {
         def cl = { List<String> s -> }
         def type = cl.getClass().getMethod("call", List).genericParameterTypes[0]
         assert type.toString().contains("java.util.List<java.lang.String>")
@@ -236,7 +217,8 @@ final class GenericsUsageTest extends CompilableTestSupport {
         assert type.toString().contains("java.util.List<java.lang.String>")
     }
 
-    void testBoundedGenericsWithInheritanceGroovy4974() {
+    // GROOVY-4974
+    void testBoundedGenericsWithInheritance() {
         assertScript '''
             class TestGenerics {
                 static interface Z {}
@@ -259,7 +241,8 @@ final class GenericsUsageTest extends CompilableTestSupport {
         '''
     }
 
-    void testFriendlyErrorMessageForGenericsArityErrorsGroovy7865() {
+    // GROOVY-7865
+    void testFriendlyErrorMessageForGenericsArityErrors() {
         shouldFailCompilationWithMessages '''
             class MyList extends ArrayList<String, String> {}
         ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
@@ -354,5 +337,44 @@ final class GenericsUsageTest extends CompilableTestSupport {
                 'The type Integer is not a valid substitute for the bounded parameter <T extends java.lang.Number & I1>',
                 'The type String is not a valid substitute for the bounded parameter <T extends java.lang.Number>'
         ]
+    }
+
+    //--------------------------------------------------------------------------
+
+    private void shouldFailCompilationWithDefaultMessage(scriptText) {
+        shouldFailCompilationWithMessage scriptText, "Missing closing bracket '>' for generics types"
+    }
+
+    private void shouldFailCompilationWithMessage(scriptText, String errorMessage) {
+        shouldFailCompilationWithMessages(scriptText, [errorMessage])
+    }
+
+    private void shouldFailCompilationWithMessages(scriptText, List<String> errorMessages) {
+        try {
+            assertScript scriptText
+            fail("The script compilation should have failed as it contains generics errors, e.g. mis-matching generic brackets")
+        } catch (MultipleCompilationErrorsException mcee) {
+            def text = mcee.toString()
+            errorMessages.each {
+                assert text.contains(it)
+            }
+        }
+    }
+
+    private void shouldFailCompilationWithAnyMessage(scriptText, List<String> errorMessages) {
+        try {
+            assertScript scriptText
+            fail("The script compilation should have failed as it contains generics errors, e.g. mis-matching generic brackets")
+        } catch (MultipleCompilationErrorsException mcee) {
+            def text = mcee.toString()
+
+            for (errorMessage in errorMessages) {
+                if (text.contains(errorMessage)) {
+                    return
+                }
+            }
+
+            assert false, text + " can not match any expected error message: " + errorMessages
+        }
     }
 }

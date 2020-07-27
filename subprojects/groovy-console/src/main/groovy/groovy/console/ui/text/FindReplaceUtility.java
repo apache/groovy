@@ -18,14 +18,28 @@
  */
 package groovy.console.ui.text;
 
-import javax.swing.*;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JRootPane;
+import javax.swing.KeyStroke;
 import javax.swing.event.EventListenerList;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.Segment;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
@@ -193,8 +207,8 @@ public final class FindReplaceUtility {
         if (lstrs != null && lstrs.length > 0) {
             TextEvent te =
                     new TextEvent(FIND_REPLACE_DIALOG, TextEvent.TEXT_VALUE_CHANGED);
-            for (int i = 0; i < lstrs.length; i++) {
-                ((TextListener) lstrs[i]).textValueChanged(te);
+            for (EventListener lstr : lstrs) {
+                ((TextListener) lstr).textValueChanged(te);
             }
         }
     }
@@ -377,9 +391,9 @@ public final class FindReplaceUtility {
         FIND_REPLACE_DIALOG.pack();
 
         java.awt.Frame[] frames = java.awt.Frame.getFrames();
-        for (int i = 0; i < frames.length; i++) {
-            if (frames[i].isFocused()) {
-                FIND_REPLACE_DIALOG.setLocationRelativeTo(frames[i]);
+        for (Frame frame : frames) {
+            if (frame.isFocused()) {
+                FIND_REPLACE_DIALOG.setLocationRelativeTo(frame);
             }
         }
 

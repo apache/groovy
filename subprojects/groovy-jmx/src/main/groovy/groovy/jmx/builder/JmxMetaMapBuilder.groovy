@@ -402,8 +402,11 @@ class JmxMetaMapBuilder {
             // avoid picking up extra methods from parents
             if ((declaredMethods.contains(method.name) && !OPS_EXCEPTION_LIST.contains(method.name)) || (!OPS_EXCEPTION_LIST.contains(method.name))) {
                 String mName = method.name
-                MetaProperty prop = (mName.startsWith("get") || mName.startsWith("set")) ?
-                        object.metaClass.getMetaProperty(JmxBuilderTools.uncapitalize(mName[3..-1])) : null
+                MetaProperty prop =
+                        (mName.length() > 3 && (mName.startsWith("get") || mName.startsWith("set")) ||
+                                mName.length() > 2 && mName.startsWith("is"))
+                                ? object.metaClass.getMetaProperty(JmxBuilderTools.uncapitalize(mName[(mName.startsWith("is") ? 2 : 3)..-1]))
+                                : null
                 // skip exporting getters/setters to avoid dbl exposure.  They are exported differently.
                 if (!prop) {
                     def map = [:]
@@ -499,7 +502,7 @@ class JmxMetaMapBuilder {
      * to create a map object of the meta data provided with defaults where necessary.
      * @param method - the method being described
      * @param descriptor - the meta data collected from JmxBuilder.bean()
-     * @return fully-normalized meta map 
+     * @return fully-normalized meta map
      */
     private static Map createOperationMap(object, method, descriptor) {
         def desc = (descriptor && descriptor instanceof Map) ? descriptor : [:]

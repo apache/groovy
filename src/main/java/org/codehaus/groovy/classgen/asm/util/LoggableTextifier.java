@@ -515,4 +515,37 @@ public class LoggableTextifier extends Textifier {
         log();
         return t;
     }
+
+    @Override
+    public Printer visitRecordComponent(String name, String descriptor, String signature) {
+        Printer p = super.visitRecordComponent(name, descriptor, signature);
+        log();
+        return p;
+    }
+
+    @Override
+    public Textifier visitRecordComponentAnnotation(String descriptor, boolean visible) {
+        Textifier t = super.visitRecordComponentAnnotation(descriptor, visible);
+        log();
+        return t;
+    }
+
+    @Override
+    public Printer visitRecordComponentTypeAnnotation(int typeRef, TypePath typePath, String descriptor, boolean visible) {
+        Printer p = super.visitRecordComponentTypeAnnotation(typeRef, typePath, descriptor, visible);
+        log();
+        return p;
+    }
+
+    @Override
+    public void visitRecordComponentAttribute(Attribute attribute) {
+        super.visitRecordComponentAttribute(attribute);
+        log();
+    }
+
+    @Override
+    public void visitRecordComponentEnd() {
+        super.visitRecordComponentEnd();
+        log();
+    }
 }

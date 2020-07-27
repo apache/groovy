@@ -18,9 +18,8 @@
  */
 package groovy.swing.impl;
 
-import java.awt.*;
+import java.awt.GridBagConstraints;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /** 
@@ -42,8 +41,7 @@ public class TableLayoutRow {
      */
     public void addCell(groovy.swing.impl.TableLayoutCell tag) {
         int gridx = 0;
-        for (Iterator iter = cells.iterator(); iter.hasNext(); ) {
-            groovy.swing.impl.TableLayoutCell cell = (groovy.swing.impl.TableLayoutCell) iter.next();
+        for (TableLayoutCell cell : cells) {
             gridx += cell.getColspan();
         }
         tag.getConstraints().gridx = gridx;
@@ -54,8 +52,7 @@ public class TableLayoutRow {
         rowIndex = parent.nextRowIndex();
 
         // iterate through the rows and add each one to the layout...
-        for (Iterator iter = cells.iterator(); iter.hasNext(); ) {
-            groovy.swing.impl.TableLayoutCell cell = (groovy.swing.impl.TableLayoutCell) iter.next();
+        for (TableLayoutCell cell : cells) {
             GridBagConstraints c = cell.getConstraints();
             c.gridy = rowIndex;
             // add the cell to the table

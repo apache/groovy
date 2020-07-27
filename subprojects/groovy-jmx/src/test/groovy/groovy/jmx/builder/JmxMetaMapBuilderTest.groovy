@@ -301,7 +301,7 @@ class JmxMetaMapBuilderTest extends GroovyTestCase {
     void testBuildOperationMapFromObject() {
         def object = new MockManagedObject()
         def map = JmxMetaMapBuilder.buildOperationMapFrom(object)
-
+    
         assert map
         assert map."doSomethingElse".name == "doSomethingElse"
         assert map."doSomethingElse".displayName
@@ -311,6 +311,9 @@ class JmxMetaMapBuilderTest extends GroovyTestCase {
         assert map."doSomethingElse".params."int".displayName
         assert map."doSomethingElse".params."java.lang.String".name == "java.lang.String"
         assert map."doSomethingElse".params."java.lang.String".displayName
+    
+        assert map."get".name == "get"
+        assert map."set".name == "set"
     }
 
     void testBuildOperationFromDescriptorMap() {

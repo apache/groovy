@@ -37,7 +37,7 @@ final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompi
     }
 
     void testShouldGoThroughPrivateBridgeMethod2() {
-        ['i'/*, 'i++'*/].each { // GROOVY-7304
+        ['i', 'i++'].each { // GROOVY-7304
             assertScript """
                 class Foo {
                     private int i = 1
@@ -62,7 +62,7 @@ final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompi
         }
     }
 
-    @NotYetImplemented // GROOVY-7304
+    // GROOVY-7304
     void testShouldGoThroughPrivateBridgeMethod4() {
         ['++i', 'i+=1', 'i=i+1'].each {
             assertScript """

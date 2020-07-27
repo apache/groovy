@@ -19,8 +19,11 @@
 package gls.innerClass
 
 import groovy.test.NotYetImplemented
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -1019,17 +1022,286 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-5989
-    void testReferenceToOuterClassNestedInterface() {
+    @Test // GROOVY-5754
+    void testResolveInnerOfSuperType() {
         assertScript '''
-            interface Koo { class Inner { } }
+            interface I { class C { } }
 
-            class Usage implements Koo {
-                static class MyInner extends Inner { }
+            class Outer implements I {
+                static class Inner extends C {}
             }
 
-            assert new Usage() != null
+            print I.C
         '''
+    }
+
+    @Test // GROOVY-5989
+    void testResolveInnerOfSuperType2() {
+        assertScript '''
+            interface I { class C { } }
+
+            class Outer implements I {
+                static class Inner extends C { }
+            }
+
+            new Outer()
+            new Outer.Inner()
+        '''
+    }
+
+    @Test // GROOVY-8364
+    void testResolveInnerOfSuperType3() {
+        assertScript '''
+            abstract class A { static class C { } }
+
+            class B extends A {
+                static m() {
+                    C
+                }
+            }
+
+            assert B.m() == A.C
+        '''
+    }
+
+    @Test // GROOVY-8364
+    void testResolveInnerOfSuperType4() {
+        assertScript '''
+            abstract class A { interface I { } }
+
+            class B extends A {
+                static m() {
+                    I
+                }
+            }
+
+            assert B.m() == A.I
+        '''
+    }
+
+    @CompileDynamic @Test // GROOVY-8364
+    void testResolveInnerOfSuperType5() {
+        def config = new CompilerConfiguration(
+            targetDirectory: File.createTempDir(),
+            jointCompilationOptions: [memStub: true]
+        )
+        def parentDir = File.createTempDir()
+        try {
+            new File(parentDir, 'p').mkdir()
+            new File(parentDir, 'q').mkdir()
+
+            def a = new File(parentDir, 'p/A.Java')
+            a.write '''
+                package p;
+                public abstract class A {
+                    public interface I { }
+                }
+            '''
+            def b = new File(parentDir, 'q/B.groovy')
+            b.write '''
+                package q
+                import p.A
+                class B extends A {
+                    static m() {
+                        I
+                    }
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b)
+            cu.compile()
+
+            assert loader.loadClass('q.B').m() instanceof Class
+        } finally {
+            config.targetDirectory.deleteDir()
+            parentDir.deleteDir()
+        }
+    }
+
+    @CompileDynamic @Test // GROOVY-8359
+    void testResolveInnerOfSuperType6() {
+        def config = new CompilerConfiguration(
+            targetDirectory: File.createTempDir(),
+            jointCompilationOptions: [memStub: true]
+        )
+        def parentDir = File.createTempDir()
+        try {
+            new File(parentDir, 'p').mkdir()
+            new File(parentDir, 'q').mkdir()
+
+            def a = new File(parentDir, 'p/A.Java')
+            a.write '''
+                package p;
+                public abstract class A {
+                    public interface I { }
+                }
+            '''
+            def b = new File(parentDir, 'q/B.groovy')
+            b.write '''
+                package q
+                import p.A
+                class B extends A {
+                    static m() {
+                        I
+                    }
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a)
+            cu.compile()
+
+            loader = new GroovyClassLoader(this.class.classLoader)
+            cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(b)
+            cu.compile()
+
+            assert loader.loadClass('q.B').m() instanceof Class
+        } finally {
+            config.targetDirectory.deleteDir()
+            parentDir.deleteDir()
+        }
+    }
+
+    @Test // GROOVY-8358
+    void testResolveInnerOfSuperType7() {
+        assertScript '''
+            class Outer implements I {
+                static class Inner extends C {
+                    static usage() {
+                        new T() // whoami?
+                    }
+                }
+            }
+
+            class C implements H { }
+
+            interface H {
+                static class T {}
+            }
+
+            interface I {
+                static class T {}
+            }
+
+            assert Outer.Inner.usage() instanceof H.T
+        '''
+    }
+
+    @Test // GROOVY-8358
+    void testResolveInnerOfSuperType8() {
+        assertScript '''
+            class C implements H { } // moved ahead of Outer
+
+            class Outer implements I {
+                static class Inner extends C {
+                    static usage() {
+                        new T() // whoami?
+                    }
+                }
+            }
+
+            interface H {
+                static class T {}
+            }
+
+            interface I {
+                static class T {}
+            }
+
+            assert Outer.Inner.usage() instanceof H.T
+        '''
+    }
+
+    @Test // GROOVY-9642
+    void testResolveInnerOfSuperType9() {
+        assertScript '''
+            class C {
+                interface I {}
+                static class T {}
+            }
+            class D extends C {
+                static I one() {
+                    new I() {}
+                }
+                static T two() {
+                    new T() {}
+                }
+            }
+            assert D.one() instanceof C.I
+            assert D.two() instanceof C.T
+        '''
+    }
+
+    @Test
+    void testResolveInnerOfSuperType10() {
+        assertScript '''
+            abstract class A {
+                static class B {}
+            }
+
+            def test(A.B[] bees) {
+                assert bees != null
+            }
+
+            test(new A.B[0])
+        '''
+    }
+
+    @Test
+    void testResolveInnerOfSuperType10a() {
+        assertScript '''
+            abstract class A {
+                static class B {}
+            }
+
+            def test(A.B... bees) {
+                assert bees != null
+            }
+
+            test()
+        '''
+    }
+
+    @CompileDynamic @Test // GROOVY-8715
+    void testResolveInnerOfSuperType10b() {
+        def config = new CompilerConfiguration(
+            targetDirectory: File.createTempDir(),
+            jointCompilationOptions: [memStub: true]
+        )
+        def parentDir = File.createTempDir()
+        try {
+            new File(parentDir, 'p').mkdir()
+
+            def a = new File(parentDir, 'p/A.Java')
+            a.write '''
+                package p;
+                public abstract class A {
+                    public interface I {}
+                }
+            '''
+            def b = new File(parentDir, 'p/B.groovy')
+            b.write '''
+                package p
+                def test(A.I... eyes) {
+                    assert eyes != null
+                }
+                test()
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b)
+            cu.compile()
+
+            loader.loadClass('p.B').main()
+        } finally {
+            config.targetDirectory.deleteDir()
+            parentDir.deleteDir()
+        }
     }
 
     @Test // GROOVY-5679, GROOVY-5681

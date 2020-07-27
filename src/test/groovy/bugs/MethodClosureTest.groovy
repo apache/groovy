@@ -58,7 +58,6 @@ class MethodClosureTest extends GroovyTestCase {
        assert list == [1]
     }
 
-
     void testShellVariable() {
         def shell = new GroovyShell()
         assert shell.evaluate("x = String.&toUpperCase; x('abc')") == "ABC"
@@ -66,5 +65,42 @@ class MethodClosureTest extends GroovyTestCase {
         assert shell.evaluate("x = Integer.&parseInt; x('123')") == 123
         assert shell.evaluate("x = 3.&parseInt; x('123')") == 123
     }
-}
 
+    void testMethodClosureWithCategory() {
+        assertScript '''
+            class Bar {
+                protected methodClosure
+                def storeMethodClosure() {
+                    methodClosure = this.&method
+                }
+            }
+
+            class Foo extends Bar {
+                def storeMethodClosure() {
+                    methodClosure = super.&method
+                }
+            }
+
+            class BarCategory {
+                static method(Bar self) { 'result' }
+            }
+
+            def bar = new Bar()
+            def foo = new Foo()
+            bar.storeMethodClosure()
+            foo.storeMethodClosure()
+            try {
+                bar.methodClosure()
+                assert false
+            } catch(MissingMethodException ignore) {}
+            try {
+                foo.methodClosure()
+                assert false
+            } catch(MissingMethodException ignore) {}
+            use(BarCategory) {
+                assert bar.methodClosure() == 'result'
+                assert foo.methodClosure() == 'result'
+            }
+        '''
+    }
+}

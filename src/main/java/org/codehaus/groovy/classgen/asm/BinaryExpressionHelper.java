@@ -50,6 +50,7 @@ import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
+import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -410,15 +411,15 @@ public class BinaryExpressionHelper {
             // ensure we try to unbox null to cause a runtime NPE in case we assign
             // null to a primitive typed variable, even if it is used only in boxed
             // form as it is closure shared
-            if (var.isClosureSharedVariable() && ClassHelper.isPrimitiveType(var.getOriginType()) && AsmClassGenerator.isNullConstant(rightExpression)) {
+            if (var.isClosureSharedVariable() && ClassHelper.isPrimitiveType(var.getOriginType()) && isNullConstant(rightExpression)) {
                 operandStack.doGroovyCast(var.getOriginType());
                 // these two are never reached in bytecode and only there
-                // to avoid verifyerrors and compiler infrastructure hazzle
+                // to avoid verify errors and compiler infrastructure hazzle
                 operandStack.box();
                 operandStack.doGroovyCast(lhsType);
             }
             // normal type transformation
-            if (!ClassHelper.isPrimitiveType(lhsType) && AsmClassGenerator.isNullConstant(rightExpression)) {
+            if (!ClassHelper.isPrimitiveType(lhsType) && isNullConstant(rightExpression)) {
                 operandStack.replace(lhsType);
             } else {
                 operandStack.doGroovyCast(lhsType);
