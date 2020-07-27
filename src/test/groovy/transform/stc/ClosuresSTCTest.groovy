@@ -577,5 +577,37 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             }
         '''
     }
+
+    // GROOVY-9652
+    void testDelegatePropertyAndCharCompareOptimization() {
+        ['String', 'Character', 'char'].each { type ->
+            assertScript """
+                class Node {
+                    String name
+                    ${type} text
+                }
+                class Root implements Iterable<Node> {
+                    @Override
+                    Iterator<Node> iterator() {
+                        return [
+                            new Node(name: 'term', text: (${type}) 'a'),
+                            new Node(name: 'dash', text: (${type}) '-'),
+                            new Node(name: 'term', text: (${type}) 'b')
+                        ].iterator()
+                    }
+                }
+
+                void test() {
+                    Root root = new Root()
+                    root[0].with {
+                        assert name == 'term'
+                        assert text == 'a' // GroovyCastException: Cannot cast object 'script@b91d8c4' with class 'script' to class 'bugs.Node'
+                    }
+                }
+
+                test()
+            """
+        }
+    }
 }
 

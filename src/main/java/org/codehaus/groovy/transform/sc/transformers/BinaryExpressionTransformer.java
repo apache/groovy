@@ -172,9 +172,10 @@ public class BinaryExpressionTransformer {
             Expression left = staticCompilationTransformer.transform(leftExpression);
             Expression right = staticCompilationTransformer.transform(rightExpression);
             BinaryExpression optimized = tryOptimizeCharComparison(left, right, bin);
-            if (optimized!=null) {
+            if (optimized != null) {
                 optimized.removeNodeMetaData(BINARY_EXP_TARGET);
-                return transformBinaryExpression(optimized);
+                optimized.removeNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+                return optimized;
             }
             call = new MethodCallExpression(
                     left,
