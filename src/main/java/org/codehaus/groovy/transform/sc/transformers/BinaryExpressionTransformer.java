@@ -166,7 +166,8 @@ public class BinaryExpressionTransformer {
             BinaryExpression optimized = tryOptimizeCharComparison(left, right, bin);
             if (optimized != null) {
                 optimized.removeNodeMetaData(StaticCompilationMetadataKeys.BINARY_EXP_TARGET);
-                return transformBinaryExpression(optimized);
+                optimized.removeNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+                return optimized;
             }
 
             String name = (String) list[1];
