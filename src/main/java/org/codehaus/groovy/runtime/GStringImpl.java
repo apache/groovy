@@ -18,12 +18,14 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.Closure;
 import groovy.lang.GString;
+import groovy.lang.GroovyObject;
+import groovy.lang.GroovyRuntimeException;
 import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.io.IOException;
+import java.io.Writer;
 
 /**
  * Default implementation of a GString used by the compiler. A GString consists
@@ -33,8 +35,12 @@ import java.util.List;
  */
 public class GStringImpl extends GString {
     private static final long serialVersionUID = 3581289038662723858L;
+    private static final String MKP = "mkp";
+    private static final String YIELD = "yield";
+
     private final String[] strings;
     private boolean cacheable;
+    private final boolean frozen;
     private String cachedStringLiteral;
 
     /**
@@ -53,9 +59,15 @@ public class GStringImpl extends GString {
      * @param strings the string parts
      */
     public GStringImpl(Object[] values, String[] strings) {
+        this(values, strings, checkValuesImmutable(values), null, false);
+    }
+
+    private GStringImpl(Object[] values, String[] strings, boolean cachable, String cachedStringLiteral, boolean frozen) {
         super(values);
         this.strings = strings;
-        cacheable = checkValuesImmutable();
+        this.cacheable = cachable;
+        this.frozen = frozen;
+        this.cachedStringLiteral = cachedStringLiteral;
     }
 
     /**
@@ -67,32 +79,20 @@ public class GStringImpl extends GString {
      */
     @Override
     public String[] getStrings() {
-        cacheable = false;
-        cachedStringLiteral = null;
+        if (!frozen) {
+            cacheable = false;
+            cachedStringLiteral = null;
+        }
         return strings;
     }
 
     @Override
     public Object[] getValues() {
-        cacheable = false;
-        cachedStringLiteral = null;
+        if (!frozen) {
+            cacheable = false;
+            cachedStringLiteral = null;
+        }
         return super.getValues();
-    }
-
-    /**
-     * Get the strings of this GString as an unmodifiable list.
-     * This method is preferred over {@code getStrings()} in performance critical scenarios.
-     */
-    public List<String> getStringList() {
-        return Collections.unmodifiableList(Arrays.asList(strings));
-    }
-
-    /**
-     * Get the values of this GString as an unmodifiable list.
-     * This method is preferred over {@code getValues()} in performance critical scenarios.
-     */
-    public List<?> getValueList() {
-        return Collections.unmodifiableList(Arrays.asList(super.getValues()));
     }
 
     @Override
@@ -101,14 +101,14 @@ public class GStringImpl extends GString {
             return cachedStringLiteral;
         }
         String str = super.toString();
-        if (cacheable) {
+        if (cacheable || frozen) {
             cachedStringLiteral = str;
         }
         return str;
     }
 
-    private boolean checkValuesImmutable() {
-        for (Object value : super.getValues()) {
+    private static boolean checkValuesImmutable(Object[] values) {
+        for (Object value : values) {
             if (null == value) continue;
             if (!(ImmutablePropertyUtils.isBuiltinImmutable(value.getClass().getName())
                     || (value instanceof GStringImpl && ((GStringImpl) value).cacheable))) {
@@ -117,5 +117,96 @@ public class GStringImpl extends GString {
         }
 
         return true;
+    }
+
+    @Override
+    public GString frozen() {
+        return new GStringImpl(super.getValues(), strings, cacheable, cachedStringLiteral, frozen);
+    }
+
+    public GString plus(GString other) {
+        GString that = other.frozen();
+        Object[] thisValues = super.getValues();
+        return new GStringImpl(
+                appendValues(thisValues, that.getValues()),
+                appendStrings(this.getStrings(), that.getStrings(), thisValues.length));
+    }
+
+    private static Object[] appendValues(Object[] values1, Object[] values2) {
+        int values1Length = values1.length;
+        int values2Length = values2.length;
+
+        Object[] newValues = new Object[values1Length + values2Length];
+        System.arraycopy(values1, 0, newValues, 0, values1Length);
+        System.arraycopy(values2, 0, newValues, values1Length, values2Length);
+
+        return newValues;
+    }
+
+    private static String[] appendStrings(String[] strings1, String[] strings2, int values1Length) {
+        int strings1Length = strings1.length;
+        boolean isStringsLonger = strings1Length > values1Length;
+        int strings2Length = isStringsLonger ? strings2.length - 1 : strings2.length;
+
+        String[] newStrings = new String[strings1Length + strings2Length];
+        System.arraycopy(strings1, 0, newStrings, 0, strings1Length);
+
+        if (isStringsLonger) {
+            // merge onto end of previous GString to avoid an empty bridging value
+            System.arraycopy(strings2, 1, newStrings, strings1Length, strings2Length);
+
+            int lastIndexOfStrings = strings1Length - 1;
+            newStrings[lastIndexOfStrings] = strings1[lastIndexOfStrings] + strings2[0];
+        } else {
+            System.arraycopy(strings2, 0, newStrings, strings1Length, strings2Length);
+        }
+
+        return newStrings;
+    }
+
+    @Override
+    public Writer writeTo(Writer out) throws IOException {
+        final String[] ss = this.getStrings();
+        Object[] thisValues = super.getValues();
+        int numberOfValues = thisValues.length;
+        for (int i = 0, size = ss.length; i < size; i++) {
+            out.write(ss[i]);
+            if (i < numberOfValues) {
+                final Object value = thisValues[i];
+
+                if (value instanceof Closure) {
+                    final Closure<?> c = (Closure<?>) value;
+                    int maximumNumberOfParameters = c.getMaximumNumberOfParameters();
+
+                    if (maximumNumberOfParameters == 0) {
+                        InvokerHelper.write(out, c.call());
+                    } else if (maximumNumberOfParameters == 1) {
+                        c.call(out);
+                    } else {
+                        throw new GroovyRuntimeException("Trying to evaluate a GString containing a Closure taking "
+                                + maximumNumberOfParameters + " parameters");
+                    }
+                } else {
+                    InvokerHelper.write(out, value);
+                }
+            }
+        }
+        return out;
+    }
+
+    @Override
+    public void build(final GroovyObject builder) {
+        final String[] ss = this.getStrings();
+        Object[] thisValues = super.getValues();
+        final int numberOfValues = thisValues.length;
+
+        for (int i = 0, size = ss.length; i < size; i++) {
+            builder.getProperty(MKP);
+            builder.invokeMethod(YIELD, new Object[]{ss[i]});
+            if (i < numberOfValues) {
+                builder.getProperty(MKP);
+                builder.invokeMethod(YIELD, new Object[]{thisValues[i]});
+            }
+        }
     }
 }

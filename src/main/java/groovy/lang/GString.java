@@ -102,18 +102,9 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
 
     public GString plus(GString that) {
-        Object[] thisValues = getValuesInternal(this);
         return new GStringImpl(
-                appendValues(thisValues, getValuesInternal(that)),
-                appendStrings(getStringsInternal(this), getStringsInternal(that), thisValues.length));
-    }
-
-    private String[] getStringsInternal(GString gs) {
-        return gs instanceof GStringImpl ? ((GStringImpl) gs).getStringList().toArray(EMPTY_STRING_ARRAY) : gs.getStrings();
-    }
-
-    private Object[] getValuesInternal(GString gs) {
-        return gs instanceof GStringImpl ? ((GStringImpl) gs).getValueList().toArray(EMPTY_OBJECT_ARRAY) : gs.getValues();
+                appendValues(this.values, that.getValues()),
+                appendStrings(this.getStrings(), that.getStrings(), this.values.length));
     }
 
     private static String[] appendStrings(String[] strings1, String[] strings2, int values1Length) {
@@ -173,7 +164,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     }
 
     private int calcInitialCapacity() {
-        final String[] ss = getStringsInternal(this);
+        final String[] ss = this.getStrings();
 
         int initialCapacity = 0;
         for (String string : ss) {
@@ -187,7 +178,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     @Override
     public Writer writeTo(Writer out) throws IOException {
-        final String[] ss = getStringsInternal(this);
+        final String[] ss = this.getStrings();
         int numberOfValues = values.length;
         for (int i = 0, size = ss.length; i < size; i++) {
             out.write(ss[i]);
@@ -220,7 +211,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     @Override
     public void build(final GroovyObject builder) {
-        final String[] ss = getStringsInternal(this);
+        final String[] ss = this.getStrings();
         final int numberOfValues = values.length;
 
         for (int i = 0, size = ss.length; i < size; i++) {
@@ -285,5 +276,9 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     public byte[] getBytes(String charset) throws UnsupportedEncodingException {
         return toString().getBytes(charset);
+    }
+
+    public GString frozen() {
+        return this;
     }
 }
