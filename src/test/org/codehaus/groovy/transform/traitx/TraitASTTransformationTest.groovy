@@ -2714,7 +2714,7 @@ assert c.b() == 2
         '''
     }
 
-    @Test // GROOVY-9660
+    // GROOVY-9660
     void testAsGenericsParam() {
         assertScript '''
             trait Data {}
