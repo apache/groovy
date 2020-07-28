@@ -2713,4 +2713,14 @@ assert c.b() == 2
             assert new Main().doIt() == 'GO!'
         '''
     }
+
+    @Test // GROOVY-9660
+    void testAsGenericsParam() {
+        assertScript '''
+            trait Data {}
+            class TestData implements Data {}
+            class AbstractData<D extends Data>{ D data }
+            new AbstractData<TestData>()
+        '''
+    }
 }
