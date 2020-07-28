@@ -45,13 +45,13 @@ class Groovy4285Bug extends GroovyShellTestCase {
         assertScript '''
             import groovy.util.slurpersupport.NodeChild
             import groovy.xml.XmlUtil
-            
+
             String xml = '<xml xmlns="http://example.com/ns"><abc><xyz>true</xyz></abc></xml>'
             String name = 'abc'
-            
+
             NodeChild parsed = new XmlSlurper().parseText(xml)
             def node = parsed."$name"
-            
+
             assert XmlUtil.serialize(node).contains('xyz>true</')
         '''
     }
