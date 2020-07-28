@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.transform.trait.Traits;
 
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isUnboundedWildcard;
 
@@ -171,7 +172,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
                 ClassNode[] bounds = cnTypes[i].getUpperBounds();
 
                 // first can be class or interface
-                boolean valid = nType.isDerivedFrom(cnType) || (cnType.isInterface() && nType.implementsInterface(cnType));
+                boolean valid = nType.isDerivedFrom(cnType) || ((cnType.isInterface() || Traits.isTrait(cnType)) && nType.implementsInterface(cnType));
 
                 // subsequent bounds if present can be interfaces
                 if (valid && bounds != null && bounds.length > 1) {
