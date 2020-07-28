@@ -406,6 +406,10 @@ public class XmlUtil {
     }
 
     private static String asString(GPathResult node) {
+        return asStringAdjusted(node);
+    }
+
+    private static String asStringAdjusted(Object node) {
         // little bit of hackery to avoid Groovy dependency in this file
         try {
             Object builder = Class.forName("groovy.xml.StreamingMarkupBuilder").getDeclaredConstructor().newInstance();
@@ -423,6 +427,9 @@ public class XmlUtil {
         if (writable instanceof GPathResult) {
             return asString((GPathResult) writable); //GROOVY-4285
         }
+        if (isOrExtendsLegacyGPathResult(writable.getClass())) {
+            return asStringAdjusted(writable); //GROOVY-4285 legacy case
+        }
         Writer sw = new StringBuilderWriter();
         try {
             writable.writeTo(sw);
@@ -430,6 +437,16 @@ public class XmlUtil {
             // ignore
         }
         return sw.toString();
+    }
+
+    private static boolean isOrExtendsLegacyGPathResult(Class candidate) {
+        if (candidate.getName().equals("java.lang.Object")) {
+            return false;
+        }
+        if (candidate.getName().endsWith(".slurpersupport.GPathResult")) {
+            return true;
+        }
+        return isOrExtendsLegacyGPathResult(candidate.getSuperclass());
     }
 
     private static StreamSource asStreamSource(String xmlString) {
