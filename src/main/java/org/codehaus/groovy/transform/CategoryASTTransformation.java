@@ -194,7 +194,9 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                         return thisExpression;
                     else {
                         if (!varStack.getLast().contains(ve.getName())) {
-                            return new PropertyExpression(thisExpression, ve.getName());
+                            PropertyExpression transformed = new PropertyExpression(thisExpression, ve.getName());
+                            transformed.setSourcePosition(ve);
+                            return transformed;
                         }
                     }
                 } else if (exp instanceof PropertyExpression) {
