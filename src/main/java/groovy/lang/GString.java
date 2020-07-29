@@ -20,6 +20,7 @@ package groovy.lang;
 
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.runtime.GStringImpl;
+import org.codehaus.groovy.runtime.GStringUtil;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 
@@ -42,8 +43,6 @@ import java.util.regex.Pattern;
 public abstract class GString extends GroovyObjectSupport implements Comparable, CharSequence, Writable, Buildable, Serializable {
 
     private static final long serialVersionUID = -2638020355892246323L;
-    private static final String MKP = "mkp";
-    private static final String YIELD = "yield";
 
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
     public static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
@@ -57,7 +56,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
         @Override
         public String[] getStrings() {
-            return new String[] { EMPTY_STRING };
+            return new String[]{EMPTY_STRING};
         }
 
         @Override
@@ -65,7 +64,6 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
             return EMPTY_STRING;
         }
     };
-
 
     private final Object[] values;
 
@@ -101,42 +99,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     }
 
     public GString plus(GString that) {
-        Object[] values = getValues();
-        return new GStringImpl(
-                appendValues(values, that.getValues()),
-                appendStrings(getStrings(), that.getStrings(), values.length));
-    }
-
-    private static String[] appendStrings(String[] strings1, String[] strings2, int values1Length) {
-        int strings1Length = strings1.length;
-        boolean isStringsLonger = strings1Length > values1Length;
-        int strings2Length = isStringsLonger ? strings2.length - 1 : strings2.length;
-
-        String[] newStrings = new String[strings1Length + strings2Length];
-        System.arraycopy(strings1, 0, newStrings, 0, strings1Length);
-
-        if (isStringsLonger) {
-            // merge onto end of previous GString to avoid an empty bridging value
-            System.arraycopy(strings2, 1, newStrings, strings1Length, strings2Length);
-
-            int lastIndexOfStrings = strings1Length - 1;
-            newStrings[lastIndexOfStrings] = strings1[lastIndexOfStrings] + strings2[0];
-        } else {
-            System.arraycopy(strings2, 0, newStrings, strings1Length, strings2Length);
-        }
-
-        return newStrings;
-    }
-
-    private static Object[] appendValues(Object[] values1, Object[] values2) {
-        int values1Length = values1.length;
-        int values2Length = values2.length;
-
-        Object[] newValues = new Object[values1Length + values2Length];
-        System.arraycopy(values1, 0, newValues, 0, values1Length);
-        System.arraycopy(values2, 0, newValues, values1Length, values2Length);
-
-        return newValues;
+        return GStringUtil.plusImpl(values, that.values, getStrings(), that.getStrings());
     }
 
     public GString plus(String that) {
@@ -163,65 +126,21 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         return buffer.toString();
     }
 
-    private int calcInitialCapacity() {
-        String[] strings = getStrings();
-
-        int initialCapacity = 0;
-        for (String string : strings) {
-            initialCapacity += string.length();
-        }
-
-        initialCapacity += values.length * Math.max(initialCapacity / strings.length, 8);
-
-        return Math.max((int) (initialCapacity * 1.2), 16);
+    protected int calcInitialCapacity() {
+        return GStringUtil.calcInitialCapacityImpl(values, getStrings());
     }
 
     @Override
     public Writer writeTo(Writer out) throws IOException {
-        String[] s = getStrings();
-        int numberOfValues = values.length;
-        for (int i = 0, size = s.length; i < size; i++) {
-            out.write(s[i]);
-            if (i < numberOfValues) {
-                final Object value = values[i];
-
-                if (value instanceof Closure) {
-                    final Closure c = (Closure) value;
-                    int maximumNumberOfParameters = c.getMaximumNumberOfParameters();
-
-                    if (maximumNumberOfParameters == 0) {
-                        InvokerHelper.write(out, c.call());
-                    } else if (maximumNumberOfParameters == 1) {
-                        c.call(out);
-                    } else {
-                        throw new GroovyRuntimeException("Trying to evaluate a GString containing a Closure taking "
-                                + maximumNumberOfParameters + " parameters");
-                    }
-                } else {
-                    InvokerHelper.write(out, value);
-                }
-            }
-        }
-        return out;
+        return GStringUtil.writeToImpl(out, values, getStrings());
     }
 
     /* (non-Javadoc)
      * @see groovy.lang.Buildable#build(groovy.lang.GroovyObject)
      */
-
     @Override
     public void build(final GroovyObject builder) {
-        final String[] s = getStrings();
-        final int numberOfValues = values.length;
-
-        for (int i = 0, size = s.length; i < size; i++) {
-            builder.getProperty(MKP);
-            builder.invokeMethod(YIELD, new Object[]{s[i]});
-            if (i < numberOfValues) {
-                builder.getProperty(MKP);
-                builder.invokeMethod(YIELD, new Object[]{values[i]});
-            }
-        }
+        GStringUtil.buildImpl(builder, values, getStrings());
     }
 
     @Override
