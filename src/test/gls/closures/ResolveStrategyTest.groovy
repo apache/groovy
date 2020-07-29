@@ -23,33 +23,32 @@ import groovy.transform.CompileStatic
 
 import static groovy.lang.Closure.*
 
-class ResolveStrategyTest extends GroovyTestCase {
-    void testDynamicSettingOfResolveStrategy() {
+final class ResolveStrategyTest extends GroovyTestCase {
+
+    void testDynamicResolveStrategy() {
         new MyClass().with {
-            assert run(OWNER_ONLY) == 1234 // (*)
-            assert runOwnerOnly { m1() + m2() + m3() + m4() } == 1234 // (*)
+            assert run(OWNER_ONLY) == 1234
+            assert runOwnerOnly { m1() + m2() + m3() + m4() } == 1234
 
-            assert run(DELEGATE_ONLY) == 12340000 // (*)
-            assert runDelegateOnly { m1() + m2() + m3() + m4() } == 12340000 // (*)
+            assert run(DELEGATE_ONLY) == 12340000
+            assert runDelegateOnly { m1() + m2() + m3() + m4() } == 12340000
 
-            // (*) involves methodMissing as forced by ONLY strategy (no equivalent CS case below)
+            assert run(OWNER_FIRST) == 1234
+            assert runOwnerFirst { m1() + m2() + m3() + m4() } == 1234
 
-            assert run(OWNER_FIRST) == 41230
-            assert runOwnerFirst { m1() + m2() + m3() + m4() } == 41230
-
-            assert run(DELEGATE_FIRST) == 12040030
-            assert runDelegateFirst { m1() + m2() + m3() + m4() } == 12040030
+            assert run(DELEGATE_FIRST) == 12340000
+            assert runDelegateFirst { m1() + m2() + m3() + m4() } == 12340000
 
             // nested cases
-            assert runOwnerFirst { runOwnerFirst { m1() + m2() + m3() + m4() } } == 41230
-            assert runOwnerFirst { runDelegateFirst { m1() + m2() + m3() + m4() } } == 12040030
-            assert runDelegateFirst { runOwnerFirst { m1() + m2() + m3() + m4() } } == 12040030
-            assert runDelegateFirst { runDelegateFirst { m1() + m2() + m3() + m4() } } == 12040030
+            assert runOwnerFirst { runOwnerFirst { m1() + m2() + m3() + m4() } } == 1234
+            assert runOwnerFirst { runDelegateFirst { m1() + m2() + m3() + m4() } } == 12340000
+            assert runDelegateFirst { runOwnerFirst { m1() + m2() + m3() + m4() } } == 12340000
+            assert runDelegateFirst { runDelegateFirst { m1() + m2() + m3() + m4() } } == 12340000
         }
     }
 
     @CompileStatic
-    void testStaticCases() {
+    void testStaticResolveStrategy() {
         new MyClass().with {
             assert runOwnerOnly { m1() + m2() + m3() } == 1230
             assert runOwnerFirst { m1() + m2() + m3() + m4() } == 41230

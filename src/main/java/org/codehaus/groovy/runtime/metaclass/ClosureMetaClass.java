@@ -231,6 +231,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
     }
 
+    @Override
     public Object invokeMethod(Class sender, Object object, String methodName, Object[] originalArguments, boolean isCallToSuper, boolean fromInsideClass) {
         checkInitalised();
         if (object == null) {
@@ -248,7 +249,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         if (CLOSURE_DO_CALL_METHOD.equals(methodName) || CLOSURE_CALL_METHOD.equals(methodName)) {
             method = pickClosureMethod(argClasses);
             if (method == null && arguments.length == 1 && arguments[0] instanceof List) {
-                Object[] newArguments = ((List) arguments[0]).toArray();
+                Object[] newArguments = ((List<?>) arguments[0]).toArray();
                 Class[] newArgClasses = MetaClassHelper.convertToTypeArray(newArguments);
                 method = createTransformMetaMethod(pickClosureMethod(newArgClasses));
             }
@@ -266,7 +267,6 @@ public final class ClosureMetaClass extends MetaClassImpl {
         Object callObject = object;
         final Object owner = closure.getOwner();
         final Object delegate = closure.getDelegate();
-        final Object thisObject = closure.getThisObject();
         boolean invokeOnDelegate = false;
         boolean invokeOnOwner = false;
         boolean ownerFirst = true;
@@ -288,18 +288,22 @@ public final class ClosureMetaClass extends MetaClassImpl {
                     invokeOnOwner = owner != closure && (owner instanceof GroovyObject);
                 }
                 break;
-            default: // Closure.*_FIRST:
-                for (Object candidate : ownersAndDelegatesOf(closure, new ArrayList<>())) {
-                    method = getDelegateMethod(closure, candidate, methodName, argClasses);
-                    callObject = candidate;
-                    if (method != null) {
-                        break;
-                    }
-                }
+            case Closure.DELEGATE_FIRST:
+                method = getDelegateMethod(closure, delegate, methodName, argClasses);
+                callObject = delegate;
                 if (method == null) {
-                    invokeOnDelegate = delegate != closure && (delegate instanceof GroovyObject);
-                    invokeOnOwner = owner != closure && (owner instanceof GroovyObject);
-                    ownerFirst = resolveStrategy != Closure.DELEGATE_FIRST;
+                    invokeOnDelegate = delegate != closure;
+                    invokeOnOwner = owner != closure;
+                    ownerFirst = false;
+                }
+                break;
+            default: // Closure.OWNER_FIRST:
+                method = getDelegateMethod(closure, owner, methodName, argClasses);
+                callObject = owner;
+                if (method == null) {
+                    invokeOnDelegate = delegate != closure;
+                    invokeOnOwner = owner != closure;
+                    ownerFirst = true;
                 }
                 break;
         }
@@ -337,46 +341,25 @@ public final class ClosureMetaClass extends MetaClassImpl {
             }
         }
 
-        if (last != null) throw last;
-        throw new MissingMethodException(methodName, theClass, arguments, false);
+        throw last != null ? last : new MissingMethodException(methodName, theClass, arguments, false);
     }
 
     private static boolean isInternalMethod(String methodName) {
-        return methodName.equals("curry") || methodName.equals("ncurry") || methodName.equals("rcurry") ||
-                methodName.equals("leftShift") || methodName.equals("rightShift");
+        switch (methodName) {
+            case "curry":
+            case "ncurry":
+            case "rcurry":
+            case "leftShift":
+            case "rightShift":
+                return true;
+            default:
+                return false;
+        }
     }
 
     private static Object[] makeArguments(Object[] arguments, String methodName) {
         if (arguments == null) return EMPTY_ARGUMENTS;
         return arguments;
-    }
-
-    private static List ownersAndDelegatesOf(Closure closure, List ownersAndDelegates) {
-        switch (closure.getResolveStrategy()) {
-        case Closure.TO_SELF:
-            ownersAndDelegates.add(closure);
-            break;
-        case Closure.OWNER_ONLY:
-            ownersAndDelegates.add(closure.getOwner());
-            break;
-        case Closure.DELEGATE_ONLY:
-            ownersAndDelegates.add(closure.getDelegate());
-            break;
-        case Closure.DELEGATE_FIRST:
-            ownersAndDelegates.add(closure.getDelegate());
-            ownersAndDelegates.add(closure.getOwner());
-            if (closure.getOwner() instanceof Closure) {
-                ownersAndDelegatesOf((Closure) closure.getOwner(), ownersAndDelegates);
-            }
-            break;
-        default: // Closure.OWNER_FIRST:
-            ownersAndDelegates.add(closure.getOwner());
-            if (closure.getOwner() instanceof Closure) {
-                ownersAndDelegatesOf((Closure) closure.getOwner(), ownersAndDelegates);
-            }
-            ownersAndDelegates.add(closure.getDelegate());
-        }
-        return ownersAndDelegates;
     }
 
     private static Throwable unwrap(GroovyRuntimeException gre) {
@@ -386,38 +369,32 @@ public final class ClosureMetaClass extends MetaClassImpl {
         return th;
     }
 
-    private static Object invokeOnDelegationObjects(
-            boolean invoke1, Object o1,
-            boolean invoke2, Object o2,
-            String methodName, Object[] args) {
+    private static Object invokeOnDelegationObjects(boolean invoke1, Object o1, boolean invoke2, Object o2, String methodName, Object[] args) {
         MissingMethodException first = null;
         if (invoke1) {
-            GroovyObject go = (GroovyObject) o1;
             try {
-                return go.invokeMethod(methodName, args);
+                return InvokerHelper.invokeMethod(o1, methodName, args);
             } catch (MissingMethodException mme) {
                 first = mme;
             } catch (GroovyRuntimeException gre) {
-                Throwable th = unwrap(gre);
-                if ((th instanceof MissingMethodException)
-                        && (methodName.equals(((MissingMethodException) th).getMethod()))) {
-                    first = (MissingMethodException) th;
+                Throwable t = unwrap(gre);
+                if (t instanceof MissingMethodException && methodName.equals(((MissingMethodException) t).getMethod())) {
+                    first = (MissingMethodException) t;
                 } else {
                     throw gre;
                 }
             }
         }
         if (invoke2 && (!invoke1 || o1 != o2)) {
-            GroovyObject go = (GroovyObject) o2;
             try {
-                return go.invokeMethod(methodName, args);
+                return InvokerHelper.invokeMethod(o2, methodName, args);
             } catch (MissingMethodException mme) {
                 // patch needed here too, but we need a test case to trip it first
                 if (first == null) first = mme;
             } catch (GroovyRuntimeException gre) {
-                Throwable th = unwrap(gre);
-                if (th instanceof MissingMethodException) {
-                    first = (MissingMethodException) th;
+                Throwable t = unwrap(gre);
+                if (t instanceof MissingMethodException) {
+                    first = (MissingMethodException) t;
                 } else {
                     throw gre;
                 }
