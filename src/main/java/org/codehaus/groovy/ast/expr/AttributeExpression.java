@@ -25,23 +25,38 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class AttributeExpression extends PropertyExpression {
 
-    public AttributeExpression(Expression objectExpression, Expression property) {
+    public AttributeExpression(final Expression objectExpression, final Expression property) {
         super(objectExpression, property, false);
     }
 
-    public AttributeExpression(Expression objectExpression, Expression property, boolean safe) {
+    public AttributeExpression(final Expression objectExpression, final Expression property, final boolean safe) {
         super(objectExpression, property, safe);
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitAttributeExpression(this);
+    @Override
+    public String getText() {
+        StringBuilder sb = new StringBuilder(getObjectExpression().getText());
+        if (isSpreadSafe()) sb.append('*');
+        if (isSafe()) sb.append('?');
+        sb.append(".@");
+
+        return sb.append(getProperty().getText()).toString();
     }
 
-    public Expression transformExpression(ExpressionTransformer transformer) {
-        AttributeExpression ret = new AttributeExpression(transformer.transform(getObjectExpression()),transformer.transform(getProperty()),isSafe());
+    @Override
+    public Expression transformExpression(final ExpressionTransformer transformer) {
+        AttributeExpression ret = new AttributeExpression(transformer.transform(getObjectExpression()), transformer.transform(getProperty()), isSafe());
+        ret.setImplicitThis(this.isImplicitThis());
+        ret.setSpreadSafe(this.isSpreadSafe());
+        ret.setStatic(this.isStatic());
+        ret.setType(this.getType());
         ret.setSourcePosition(this);
-        ret.setSpreadSafe(isSpreadSafe());
         ret.copyNodeMetaData(this);
         return ret;
+    }
+
+    @Override
+    public void visit(final GroovyCodeVisitor visitor) {
+        visitor.visitAttributeExpression(this);
     }
 }
