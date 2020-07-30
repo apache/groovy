@@ -46,22 +46,21 @@ public class PropertyExpression extends Expression {
         this.safe = safe;
     }
 
-    public void visit(final GroovyCodeVisitor visitor) {
-        visitor.visitPropertyExpression(this);
-    }
-
+    @Override
     public Expression transformExpression(final ExpressionTransformer transformer) {
-        PropertyExpression ret = new PropertyExpression(
-                transformer.transform(objectExpression),
-                transformer.transform(property),
-                safe
-        );
-        ret.setImplicitThis(implicitThis);
-        ret.setSpreadSafe(spreadSafe);
-        ret.setStatic(isStatic);
+        PropertyExpression ret = new PropertyExpression(transformer.transform(getObjectExpression()), transformer.transform(getProperty()), isSafe());
+        ret.setImplicitThis(this.isImplicitThis());
+        ret.setSpreadSafe(this.isSpreadSafe());
+        ret.setStatic(this.isStatic());
+        ret.setType(this.getType());
         ret.setSourcePosition(this);
         ret.copyNodeMetaData(this);
         return ret;
+    }
+
+    @Override
+    public void visit(final GroovyCodeVisitor visitor) {
+        visitor.visitPropertyExpression(this);
     }
 
     public Expression getObjectExpression() {
@@ -77,17 +76,17 @@ public class PropertyExpression extends Expression {
     }
 
     public String getPropertyAsString() {
-        if (!(property instanceof ConstantExpression)) return null;
-        ConstantExpression constant = (ConstantExpression) property;
-        return constant.getText();
+        return getProperty() instanceof ConstantExpression ? getProperty().getText() : null;
     }
 
+    @Override
     public String getText() {
-        String object = objectExpression.getText();
-        String text = property.getText();
-        String spread = isSpreadSafe() ? "*" : "";
-        String safe = isSafe() ? "?" : "";
-        return object + spread + safe + "." + text;
+        StringBuilder sb = new StringBuilder(getObjectExpression().getText());
+        if (isSpreadSafe()) sb.append('*');
+        if (isSafe()) sb.append('?');
+        sb.append('.');
+
+        return sb.append(getProperty().getText()).toString();
     }
 
     public boolean isDynamic() {
@@ -126,7 +125,8 @@ public class PropertyExpression extends Expression {
         this.isStatic = isStatic;
     }
 
+    @Override
     public String toString() {
-        return super.toString() + "[object: " + objectExpression + " property: " + property + "]";
+        return super.toString() + "[object: " + getObjectExpression() + " property: " + getProperty() + "]";
     }
 }
