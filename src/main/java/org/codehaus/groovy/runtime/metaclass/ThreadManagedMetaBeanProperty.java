@@ -21,9 +21,9 @@ package org.codehaus.groovy.runtime.metaclass;
 import groovy.lang.Closure;
 import groovy.lang.MetaBeanProperty;
 import groovy.lang.MetaMethod;
+import org.apache.groovy.util.concurrent.ManagedIdentityConcurrentMap;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
-import org.codehaus.groovy.util.ManagedIdentityConcurrentMap;
 import org.codehaus.groovy.util.ReferenceBundle;
 
 import java.lang.reflect.Modifier;
@@ -120,7 +120,7 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
     private static ManagedIdentityConcurrentMap getInstance2PropName(String name) {
         ManagedIdentityConcurrentMap res = PROPNAME_TO_MAP.get(name);
         if (res == null) {
-            res = new ManagedIdentityConcurrentMap(SOFT_BUNDLE);
+            res = new ManagedIdentityConcurrentMap(ManagedIdentityConcurrentMap.ReferenceType.SOFT);
             ManagedIdentityConcurrentMap ores = PROPNAME_TO_MAP.putIfAbsent(name, res);
             if (ores != null)
               return ores;

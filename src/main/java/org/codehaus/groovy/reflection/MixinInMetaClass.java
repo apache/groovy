@@ -26,14 +26,13 @@ import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import groovy.lang.MetaProperty;
 import groovy.transform.Internal;
+import org.apache.groovy.util.concurrent.ManagedIdentityConcurrentMap;
 import org.codehaus.groovy.runtime.HandleMetaClass;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.metaclass.MixedInMetaClass;
 import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaProperty;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
-import org.codehaus.groovy.util.ManagedIdentityConcurrentMap;
-import org.codehaus.groovy.util.ReferenceBundle;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -45,7 +44,7 @@ public class MixinInMetaClass {
     final CachedClass mixinClass;
     final CachedConstructor constructor;
     private final ManagedIdentityConcurrentMap managedIdentityConcurrentMap =
-            new ManagedIdentityConcurrentMap(ReferenceBundle.getSoftBundle());
+            new ManagedIdentityConcurrentMap(ManagedIdentityConcurrentMap.ReferenceType.SOFT);
 
     public MixinInMetaClass(ExpandoMetaClass emc, CachedClass mixinClass) {
         this.emc = emc;
