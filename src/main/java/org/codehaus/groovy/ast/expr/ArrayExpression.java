@@ -23,42 +23,53 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * Represents an array object construction either using a fixed size
- * or an initializer expression
+ * Represents an array object construction.
+ * One of:
+ * <ul>
+ *     <li>a fixed size array (e.g. {@code new String[3]} or {@code new Integer[2][3])}</li>
+ *     <li>an array with an explicit initializer (e.g. {@code new String[]{ "foo", "bar" &#125;})</li>
+ * </ul>
  */
 public class ArrayExpression extends Expression {
-    private final List<Expression> expressions;
-    private final List<Expression> sizeExpression;
+    private final List<Expression> initExpressions;
+    private final List<Expression> sizeExpressions;
 
     private final ClassNode elementType;
 
-    private static ClassNode makeArray(ClassNode base, List<Expression> sizeExpression) {
+    private static ClassNode makeArray(ClassNode base, List<Expression> sizeExpressions) {
         ClassNode ret = base.makeArray();
-        if (sizeExpression == null) return ret;
-        int size = sizeExpression.size();
+        if (sizeExpressions == null) return ret;
+        int size = sizeExpressions.size();
         for (int i = 1; i < size; i++) {
             ret = ret.makeArray();
         }
         return ret;
     }
 
-    public ArrayExpression(ClassNode elementType, List<Expression> expressions, List<Expression> sizeExpression) {
-        //expect to get the elementType
-        super.setType(makeArray(elementType, sizeExpression));
-        if (expressions == null) expressions = Collections.emptyList();
+    public ArrayExpression(ClassNode elementType, List<Expression> initExpressions, List<Expression> sizeExpressions) {
+        super.setType(makeArray(elementType, sizeExpressions));
         this.elementType = elementType;
-        this.expressions = expressions;
-        this.sizeExpression = sizeExpression;
-
-        for (Object item : expressions) {
+        this.sizeExpressions = sizeExpressions;
+        this.initExpressions = initExpressions == null ? Collections.emptyList() : initExpressions;
+        if (initExpressions == null) {
+            if (sizeExpressions == null || sizeExpressions.isEmpty()) {
+                throw new IllegalArgumentException("Either an initializer or defined size must be given");
+            }
+        }
+        if (!this.initExpressions.isEmpty() && sizeExpressions != null && !sizeExpressions.isEmpty()) {
+            throw new IllegalArgumentException("Both an initializer (" + formatInitExpressions() +
+                    ") and a defined size (" + formatSizeExpressions() + ") cannot be given");
+        }
+        for (Object item : this.initExpressions) {
             if (item != null && !(item instanceof Expression)) {
                 throw new ClassCastException("Item: " + item + " is not an Expression");
             }
         }
-        if (sizeExpression != null) {
-            for (Object item : sizeExpression) {
+        if (!hasInitializer()) {
+            for (Object item : sizeExpressions) {
                 if (!(item instanceof Expression)) {
                     throw new ClassCastException("Item: " + item + " is not an Expression");
                 }
@@ -66,20 +77,25 @@ public class ArrayExpression extends Expression {
         }
     }
 
+    /**
+     * Creates an array using an initializer (list of expressions corresponding to array elements)
+     */
+    public ArrayExpression(ClassNode elementType, List<Expression> initExpressions) {
+        this(elementType, initExpressions, null);
+    }
 
     /**
-     * Creates an array using an initializer expression
+     * Add another element to the initializer expressions
      */
-    public ArrayExpression(ClassNode elementType, List<Expression> expressions) {
-        this(elementType, expressions, null);
+    public void addExpression(Expression initExpression) {
+        initExpressions.add(initExpression);
     }
 
-    public void addExpression(Expression expression) {
-        expressions.add(expression);
-    }
-
+    /**
+     * Get the initializer expressions
+     */
     public List<Expression> getExpressions() {
-        return expressions;
+        return initExpressions;
     }
 
     public void visit(GroovyCodeVisitor visitor) {
@@ -91,17 +107,22 @@ public class ArrayExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        List<Expression> exprList = transformExpressions(expressions, transformer);
+        List<Expression> exprList = transformExpressions(initExpressions, transformer);
         List<Expression> sizes = null;
-        if (sizeExpression != null) sizes = transformExpressions(sizeExpression, transformer);
+        if (!hasInitializer()) {
+            sizes = transformExpressions(sizeExpressions, transformer);
+        }
         Expression ret = new ArrayExpression(elementType, exprList, sizes);
         ret.setSourcePosition(this);
         ret.copyNodeMetaData(this);
         return ret;
     }
 
+    /**
+     * Get a particular initializer expression
+     */
     public Expression getExpression(int i) {
-        return expressions.get(i);
+        return initExpressions.get(i);
     }
 
     public ClassNode getElementType() {
@@ -109,26 +130,35 @@ public class ArrayExpression extends Expression {
     }
 
     public String getText() {
-        StringBuilder buffer = new StringBuilder("[");
-        boolean first = true;
-        for (Expression expression : expressions) {
-            if (first) {
-                first = false;
-            } else {
-                buffer.append(", ");
-            }
-
-            buffer.append(expression.getText());
-        }
-        buffer.append("]");
-        return buffer.toString();
+        return "[" + formatInitExpressions() + "]";
     }
 
+    private String formatInitExpressions() {
+        return "{" + initExpressions.stream().map(Expression::getText).collect(Collectors.joining(", ")) + "}";
+    }
+
+    private String formatSizeExpressions() {
+        return sizeExpressions.stream().map(e -> "[" + e.getText() + "]").collect(Collectors.joining());
+    }
+
+    /**
+     * @return true if the array expression is defined by an explicit initializer
+     */
+    public boolean hasInitializer() {
+        return sizeExpressions == null;
+    }
+
+    /**
+     * @return a list with elements corresponding to the array's dimensions
+     */
     public List<Expression> getSizeExpression() {
-        return sizeExpression;
+        return sizeExpressions;
     }
 
     public String toString() {
-        return super.toString() + expressions;
+        if (hasInitializer()) {
+            return super.toString() + "[elementType: " + getElementType() + ", init: {" + formatInitExpressions() + "}]";
+        }
+        return super.toString() + "[elementType: " + getElementType() + ", size: " + formatSizeExpressions() + "]";
     }
 }
