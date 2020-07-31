@@ -593,4 +593,43 @@ class GStringTest extends GroovyTestCase {
         gstring.strings[1] = ' and '
         assert gstring.toString() == 'Green eggs and ham'
     }
+
+    void testGStringLiteral() {
+        def gstr = "a${'1'}"
+        assert gstr.toString() === gstr.toString()
+
+        def gstr2 = "a${true}"
+        assert gstr2.toString() === gstr2.toString()
+
+        def gstr3 = "a${(byte) 1}"
+        assert gstr3.toString() === gstr3.toString()
+
+        def gstr4 = "a${(char) 65}"
+        assert gstr4.toString() === gstr4.toString()
+
+        def gstr5 = "a${1D}"
+        assert gstr5.toString() === gstr5.toString()
+
+        def gstr6 = "a${1F}"
+        assert gstr6.toString() === gstr6.toString()
+
+        def gstr7 = "a${1}"
+        assert gstr7.toString() === gstr7.toString()
+
+        def gstr8 = "a${1L}"
+        assert gstr8.toString() === gstr8.toString()
+
+        def gstr9 = "a${(short) 1}"
+        assert gstr9.toString() === gstr9.toString()
+
+        def gstr10 = "a${Map.class}"
+        assert gstr10.toString() === gstr10.toString()
+
+        def gstr11 = "a${new File('.')}"
+        assert gstr11.toString() === gstr11.toString()
+
+        def gstr12 = "a${"${123}"}b"
+        assert 'a123b' == gstr12
+        assert gstr12.toString() === gstr12.toString()
+    }
 }
