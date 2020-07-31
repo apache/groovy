@@ -76,8 +76,9 @@ public class GStringImpl extends GString {
     protected GStringImpl(Object[] values, String[] strings, boolean cacheable, String cachedStringLiteral, boolean frozen) {
         super(frozen ? values.clone() : values);
         this.strings = frozen ? strings.clone() : strings;
-        this.frozen = frozen;
         this.cacheable = cacheable;
+        this.cachedStringLiteral = cachedStringLiteral;
+        this.frozen = frozen;
     }
 
     @Override
