@@ -1594,12 +1594,14 @@ public class AsmClassGenerator extends ClassGenerator {
         MethodVisitor mv = controller.getMethodVisitor();
         ClassNode elementType = expression.getElementType();
         String arrayTypeName = BytecodeHelper.getClassInternalName(elementType);
-        List<Expression> sizeExpression = expression.getSizeExpression();
 
         int size = 0;
         int dimensions = 0;
-        if (sizeExpression != null) {
-            for (Expression element : sizeExpression) {
+        if (expression.hasInitializer()) {
+            size = expression.getExpressions().size();
+            BytecodeHelper.pushConstant(mv, size);
+        } else {
+            for (Expression element : expression.getSizeExpression()) {
                 if (element == ConstantExpression.EMPTY_EXPRESSION) break;
                 dimensions += 1;
                 // let's convert to an int
@@ -1607,45 +1609,44 @@ public class AsmClassGenerator extends ClassGenerator {
                 controller.getOperandStack().doGroovyCast(ClassHelper.int_TYPE);
             }
             controller.getOperandStack().remove(dimensions);
-        } else {
-            size = expression.getExpressions().size();
-            BytecodeHelper.pushConstant(mv, size);
         }
 
         int storeIns = AASTORE;
-        if (sizeExpression != null) {
+        if (expression.hasInitializer()) {
+            if (ClassHelper.isPrimitiveType(elementType)) {
+                int primType = 0;
+                if (elementType == ClassHelper.boolean_TYPE) {
+                    primType = T_BOOLEAN;
+                    storeIns = BASTORE;
+                } else if (elementType == ClassHelper.char_TYPE) {
+                    primType = T_CHAR;
+                    storeIns = CASTORE;
+                } else if (elementType == ClassHelper.float_TYPE) {
+                    primType = T_FLOAT;
+                    storeIns = FASTORE;
+                } else if (elementType == ClassHelper.double_TYPE) {
+                    primType = T_DOUBLE;
+                    storeIns = DASTORE;
+                } else if (elementType == ClassHelper.byte_TYPE) {
+                    primType = T_BYTE;
+                    storeIns = BASTORE;
+                } else if (elementType == ClassHelper.short_TYPE) {
+                    primType = T_SHORT;
+                    storeIns = SASTORE;
+                } else if (elementType == ClassHelper.int_TYPE) {
+                    primType = T_INT;
+                    storeIns = IASTORE;
+                } else if (elementType == ClassHelper.long_TYPE) {
+                    primType = T_LONG;
+                    storeIns = LASTORE;
+                }
+                mv.visitIntInsn(NEWARRAY, primType);
+            } else {
+                mv.visitTypeInsn(ANEWARRAY, arrayTypeName);
+            }
+        } else {
             arrayTypeName = BytecodeHelper.getTypeDescription(expression.getType());
             mv.visitMultiANewArrayInsn(arrayTypeName, dimensions);
-        } else if (ClassHelper.isPrimitiveType(elementType)) {
-            int primType = 0;
-            if (elementType == ClassHelper.boolean_TYPE) {
-                primType = T_BOOLEAN;
-                storeIns = BASTORE;
-            } else if (elementType == ClassHelper.char_TYPE) {
-                primType = T_CHAR;
-                storeIns = CASTORE;
-            } else if (elementType == ClassHelper.float_TYPE) {
-                primType = T_FLOAT;
-                storeIns = FASTORE;
-            } else if (elementType == ClassHelper.double_TYPE) {
-                primType = T_DOUBLE;
-                storeIns = DASTORE;
-            } else if (elementType == ClassHelper.byte_TYPE) {
-                primType = T_BYTE;
-                storeIns = BASTORE;
-            } else if (elementType == ClassHelper.short_TYPE) {
-                primType = T_SHORT;
-                storeIns = SASTORE;
-            } else if (elementType == ClassHelper.int_TYPE) {
-                primType = T_INT;
-                storeIns = IASTORE;
-            } else if (elementType == ClassHelper.long_TYPE) {
-                primType = T_LONG;
-                storeIns = LASTORE;
-            }
-            mv.visitIntInsn(NEWARRAY, primType);
-        } else {
-            mv.visitTypeInsn(ANEWARRAY, arrayTypeName);
         }
 
         for (int i = 0; i < size; i += 1) {
