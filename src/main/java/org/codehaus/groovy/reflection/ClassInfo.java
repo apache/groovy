@@ -25,6 +25,7 @@ import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
 import groovy.lang.MetaMethod;
+import org.apache.groovy.util.concurrent.ManagedIdentityConcurrentMap;
 import org.codehaus.groovy.reflection.GroovyClassValue.ComputeValue;
 import org.codehaus.groovy.reflection.stdclasses.ArrayCachedClass;
 import org.codehaus.groovy.reflection.stdclasses.BigDecimalCachedClass;
@@ -46,7 +47,6 @@ import org.codehaus.groovy.util.Finalizable;
 import org.codehaus.groovy.util.LazyReference;
 import org.codehaus.groovy.util.LockableObject;
 import org.codehaus.groovy.util.ManagedConcurrentLinkedQueue;
-import org.codehaus.groovy.util.ManagedIdentityConcurrentMap;
 import org.codehaus.groovy.util.ManagedReference;
 import org.codehaus.groovy.util.ReferenceBundle;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
@@ -409,7 +409,7 @@ public class ClassInfo implements Finalizable {
 
         if (metaClass != null) {
             if (perInstanceMetaClassMap == null)
-              perInstanceMetaClassMap = new ManagedIdentityConcurrentMap<Object, MetaClass>(ReferenceBundle.getWeakBundle());
+              perInstanceMetaClassMap = new ManagedIdentityConcurrentMap<>();
 
             perInstanceMetaClassMap.put(obj, metaClass);
         }

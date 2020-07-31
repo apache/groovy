@@ -16,15 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.util
+package org.apache.groovy.util.concurrent
 
-
+import org.apache.groovy.util.concurrent.ManagedIdentityConcurrentMap
 import org.junit.Test
 
 class ManagedIdentityConcurrentMapTest {
     @Test
     void testRemovingEntriesFromMapAfterGC() {
-        def m = new ManagedIdentityConcurrentMap<Object, String>(ReferenceBundle.getWeakBundle())
+        def m = new ManagedIdentityConcurrentMap<Object, String>()
         def k1 = new Object()
         m.put(k1, "a")
         def k2 = new Object()
@@ -50,11 +50,10 @@ class ManagedIdentityConcurrentMapTest {
             Thread.sleep(100)
         }
 
-        // finalize manually
-        if (!m.isEmpty()) {
-            m.internalMap.keySet().stream().forEach(e -> e.finalizeReference())
-        }
-
-        assert m.isEmpty()
+        def k4 = new Object()
+        assert "d" == m.getOrPut(k4, "d")
+        assert "d" == m.getOrPut(k4, "e")
+        assert [k4] == (m.keySet() as List)
+        assert ["d"] == (m.values() as List)
     }
 }
