@@ -30,8 +30,6 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.BooleanExpression;
-import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -47,10 +45,19 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.Types;
 
 import java.util.Collection;
 import java.util.List;
+
+import static org.codehaus.groovy.ast.tools.GeneralUtils.INSTANCEOF;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * This expression transformer is used internally by the {@link org.codehaus.groovy.transform.trait.TraitASTTransformation
@@ -73,8 +80,8 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
     private boolean inClosure;
 
-    public TraitReceiverTransformer(VariableExpression thisObject, SourceUnit unit, final ClassNode traitClass,
-                                    final ClassNode traitHelperClass, ClassNode fieldHelper, Collection<String> knownFields) {
+    public TraitReceiverTransformer(final VariableExpression thisObject, final SourceUnit unit, final ClassNode traitClass,
+                                    final ClassNode traitHelperClass, final ClassNode fieldHelper, final Collection<String> knownFields) {
         this.weaved = thisObject;
         this.unit = unit;
         this.traitClass = traitClass;
@@ -97,15 +104,15 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             StaticMethodCallExpression call = (StaticMethodCallExpression) exp;
             ClassNode ownerType = call.getOwnerType();
             if (traitClass.equals(ownerType)) {
-                MethodCallExpression result = new MethodCallExpression(
-                        new VariableExpression(weaved),
+                MethodCallExpression result = callX(
+                        varX(weaved),
                         call.getMethod(),
                         transform(call.getArguments())
                 );
                 result.setSafe(false);
-                result.setImplicitThis(false);
                 result.setSpreadSafe(false);
-                result.setSourcePosition(call);
+                result.setImplicitThis(false);
+                result.setSourcePosition(exp);
                 return result;
             }
         } else if (exp instanceof MethodCallExpression) {
@@ -124,63 +131,52 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             if (accessedVariable instanceof FieldNode) {
                 FieldNode fn = (FieldNode) accessedVariable;
                 Expression receiver = createFieldHelperReceiver();
-                MethodCallExpression mce;
                 boolean isStatic = fn.isStatic();
                 if (isStatic) {
                     receiver = createStaticReceiver(receiver);
                 }
-                mce = new MethodCallExpression(
-                        receiver,
-                        Traits.helperGetterName(fn),
-                        ArgumentListExpression.EMPTY_ARGUMENTS
-                );
-                mce.setSourcePosition(exp);
+                MethodCallExpression mce = callX(receiver, Traits.helperGetterName(fn));
                 mce.setImplicitThis(false);
+                mce.setSourcePosition(exp);
                 markDynamicCall(mce, fn, isStatic);
                 return mce;
             } else if (accessedVariable instanceof PropertyNode) {
-                String propName = accessedVariable.getName();
+                String propName = vexp.getName();
                 if (knownFields.contains(propName)) {
                     return createFieldHelperCall(exp, weavedType, propName);
                 } else {
-                    PropertyExpression propertyExpression = new PropertyExpression(
-                            new VariableExpression(weaved), accessedVariable.getName());
+                    PropertyExpression propertyExpression = propX(varX(weaved), propName);
                     propertyExpression.getProperty().setSourcePosition(exp);
                     return propertyExpression;
                 }
-            } else if (accessedVariable instanceof DynamicVariable) {
-                PropertyExpression propertyExpression = new PropertyExpression(
-                        new VariableExpression(weaved), accessedVariable.getName());
+            } else if (accessedVariable instanceof DynamicVariable && !inClosure) { // GROOVY-9386
+                PropertyExpression propertyExpression = propX(varX(weaved), vexp.getName());
                 propertyExpression.getProperty().setSourcePosition(exp);
                 return propertyExpression;
             }
             if (vexp.isThisExpression()) {
-                VariableExpression res = new VariableExpression(weaved);
-                res.setSourcePosition(exp);
-                return res;
+                VariableExpression variableExpression = varX(weaved);
+                variableExpression.setSourcePosition(exp);
+                return variableExpression;
             }
             if (vexp.isSuperExpression()) {
                 throwSuperError(vexp);
             }
         } else if (exp instanceof PropertyExpression) {
             PropertyExpression pexp = (PropertyExpression) exp;
-            Expression object = pexp.getObjectExpression();
-            if (pexp.isImplicitThis() || "this".equals(object.getText())) {
+            Expression objectExpression = pexp.getObjectExpression();
+            if (pexp.isImplicitThis() || "this".equals(objectExpression.getText())) {
                 String propName = pexp.getPropertyAsString();
                 if (knownFields.contains(propName)) {
                     return createFieldHelperCall(exp, weavedType, propName);
                 }
             }
         } else if (exp instanceof ClosureExpression) {
-            MethodCallExpression mce = new MethodCallExpression(
-                    exp,
-                    "rehydrate",
-                    new ArgumentListExpression(
-                            new VariableExpression(weaved),
-                            new VariableExpression(weaved),
-                            new VariableExpression(weaved)
-                    )
-            );
+            MethodCallExpression mce = callX(exp, "rehydrate", args(
+                    varX(weaved),
+                    varX(weaved),
+                    varX(weaved)
+            ));
             mce.setImplicitThis(false);
             mce.setSourcePosition(exp);
             boolean oldInClosure = inClosure;
@@ -194,29 +190,21 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             return exp;
         }
 
-        // todo: unary expressions (field++, field+=, ...)
+        // TODO: unary expressions (field++, field+=, ...)
         return super.transform(exp);
     }
 
-    private Expression createFieldHelperCall(Expression exp, ClassNode weavedType, String propName) {
+    private Expression createFieldHelperCall(final Expression exp, final ClassNode weavedType, final String propName) {
         String method = Traits.helperGetterName(new FieldNode(propName, 0, ClassHelper.OBJECT_TYPE, weavedType, null));
-        MethodCallExpression mce = new MethodCallExpression(
-                createFieldHelperReceiver(),
-                method,
-                ArgumentListExpression.EMPTY_ARGUMENTS
-        );
-        mce.setSourcePosition(exp instanceof PropertyExpression ? ((PropertyExpression) exp).getProperty() : exp);
+        MethodCallExpression mce = callX(createFieldHelperReceiver(), method);
         mce.setImplicitThis(false);
+        mce.setSourcePosition(exp instanceof PropertyExpression ? ((PropertyExpression) exp).getProperty() : exp);
         return mce;
     }
 
     private Expression transformFieldExpression(final FieldExpression exp) {
         FieldNode field = exp.getField();
-        MethodCallExpression mce = new MethodCallExpression(
-                createFieldHelperReceiver(),
-                Traits.helperGetterName(field),
-                ArgumentListExpression.EMPTY_ARGUMENTS
-        );
+        MethodCallExpression mce = callX(createFieldHelperReceiver(), Traits.helperGetterName(field));
         mce.setSourcePosition(exp);
         mce.setImplicitThis(false);
         markDynamicCall(mce, field, field.isStatic());
@@ -251,13 +239,13 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 Expression receiver = createFieldHelperReceiver();
                 boolean isStatic = staticField != null && staticField.isStatic();
                 if (fn.isStatic()) { // DO NOT USE isStatic variable here!
-                    receiver = new PropertyExpression(receiver, "class");
+                    receiver = propX(receiver, "class");
                 }
                 String method = Traits.helperSetterName(fn);
-                MethodCallExpression mce = new MethodCallExpression(
+                MethodCallExpression mce = callX(
                         receiver,
                         method,
-                        new ArgumentListExpression(super.transform(rightExpression))
+                        args(super.transform(rightExpression))
                 );
                 mce.setSourcePosition(exp);
                 mce.setImplicitThis(false);
@@ -267,11 +255,8 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         }
         Expression leftTransform = transform(leftExpression);
         Expression rightTransform = transform(rightExpression);
-        Expression ret =
-                exp instanceof DeclarationExpression ? new DeclarationExpression(
-                        leftTransform, operation, rightTransform
-                ) :
-                        new BinaryExpression(leftTransform, operation, rightTransform);
+        Expression ret = exp instanceof DeclarationExpression ?
+                new DeclarationExpression(leftTransform, operation, rightTransform) : binX(leftTransform, operation, rightTransform);
         ret.setSourcePosition(exp);
         ret.copyNodeMetaData(exp);
         return ret;
@@ -284,26 +269,20 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
     }
 
     private TernaryExpression createStaticReceiver(final Expression receiver) {
-        return new TernaryExpression(
-                new BooleanExpression(new BinaryExpression(
-                        receiver,
-                        Token.newSymbol(Types.KEYWORD_INSTANCEOF, -1, -1),
-                        new ClassExpression(ClassHelper.CLASS_Type)
-                )),
+        return ternaryX(
+                binX(receiver, INSTANCEOF, classX(ClassHelper.CLASS_Type)),
                 receiver,
-                new MethodCallExpression(createFieldHelperReceiver(), "getClass", ArgumentListExpression.EMPTY_ARGUMENTS)
+                callX(createFieldHelperReceiver(), "getClass")
         );
     }
 
     private BinaryExpression createAssignmentToField(final Expression rightExpression,
                                                      final Token operation, final String fieldName) {
-        return new BinaryExpression(
-                new PropertyExpression(
-                        new VariableExpression(weaved),
-                        fieldName
-                ),
+        return binX(
+                propX(varX(weaved), fieldName),
                 operation,
-                transform(rightExpression));
+                transform(rightExpression)
+        );
     }
 
     private static FieldNode tryGetFieldNode(final ClassNode weavedType, final String fieldName) {
@@ -365,13 +344,10 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 }
             }
         }
-
         if (inClosure) {
             return transformMethodCallOnThisInClosure(call);
         }
-
         return transformMethodCallOnThisFallBack(call, method, arguments);
-
     }
 
     private Expression transformMethodCallOnThisFallBack(final MethodCallExpression call,
@@ -431,10 +407,6 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         return transformed;
     }
 
-    private Expression createFieldHelperReceiver() {
-        return ClassHelper.CLASS_Type.equals(weaved.getOriginType()) ? weaved : new CastExpression(fieldHelper, weaved);
-    }
-
     private ArgumentListExpression createArgumentList(final Expression origCallArgs) {
         ArgumentListExpression newArgs = new ArgumentListExpression();
         newArgs.addExpression(new VariableExpression(weaved));
@@ -447,5 +419,9 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             newArgs.addExpression(origCallArgs);
         }
         return newArgs;
+    }
+
+    private Expression createFieldHelperReceiver() {
+        return weaved.getOriginType().equals(ClassHelper.CLASS_Type) ? weaved : castX(fieldHelper, weaved);
     }
 }
