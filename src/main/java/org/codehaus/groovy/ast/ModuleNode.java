@@ -91,24 +91,39 @@ public class ModuleNode extends ASTNode implements Opcodes {
         return /*Collections.unmodifiableList(*/classes/*)*/; // modified by MacroClassTransform
     }
 
+    /**
+     * @return the module's methods
+     */
     public List<MethodNode> getMethods() {
-        return Collections.unmodifiableList(methods);
+        return methods;
     }
 
+    /**
+     * @return a copy of the module's imports
+     */
     public List<ImportNode> getImports() {
-        return Collections.unmodifiableList(imports);
+        return new ArrayList<>(imports);
     }
 
+    /**
+     * @return the module's star imports
+     */
     public List<ImportNode> getStarImports() {
-        return Collections.unmodifiableList(starImports);
+        return starImports;
     }
 
+    /**
+     * @return the module's static imports
+     */
     public Map<String, ImportNode> getStaticImports() {
-        return Collections.unmodifiableMap(staticImports);
+        return staticImports;
     }
 
+    /**
+     * @return the module's static star imports
+     */
     public Map<String, ImportNode> getStaticStarImports() {
-        return Collections.unmodifiableMap(staticStarImports);
+        return staticStarImports;
     }
 
     /**
