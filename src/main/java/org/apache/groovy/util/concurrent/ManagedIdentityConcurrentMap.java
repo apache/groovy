@@ -21,28 +21,48 @@ package org.apache.groovy.util.concurrent;
 import java.util.EnumSet;
 
 /**
- * This is a basic implementation of a map able to forget its keys. This
- * map uses internally a ConcurrentHashMap, thus should be safe for concurrency.
- * hashcode and equals are used to find the entries and should thus be implemented
- * properly for the keys. This map does not support null keys.
+ * This is a basic implementation of a map able to forget its keys could be weak/soft/strong references. This
+ * bases on {@link ConcurrentReferenceHashMap}, thus it is safe for concurrency.
+ * This map compares keys through references.
  *
  * @param <K> the key type
  * @param <V> the value type
  * @since 4.0.0
  */
 public class ManagedIdentityConcurrentMap<K, V> extends ConcurrentReferenceHashMap<K, V> {
+    private static final long serialVersionUID = 1046734443288902802L;
+
+    /**
+     * Creates a new, empty map with the key weak reference
+     */
     public ManagedIdentityConcurrentMap() {
         this(ReferenceType.WEAK);
     }
 
+    /**
+     * Creates a new, empty map with the key weak reference and the specified initial capacity
+     *
+     * @param initialCapacity initial capacity
+     */
     public ManagedIdentityConcurrentMap(int initialCapacity) {
         this(ReferenceType.WEAK, initialCapacity);
     }
 
+    /**
+     * Creates a new, empty map with the specified key reference type
+     *
+     * @param keyType key reference type
+     */
     public ManagedIdentityConcurrentMap(ReferenceType keyType) {
         super(keyType, ReferenceType.STRONG, EnumSet.of(Option.IDENTITY_COMPARISONS));
     }
 
+    /**
+     * Creates a new, empty map with the specified key reference type and initial capacity
+     *
+     * @param keyType key reference type
+     * @param initialCapacity the initial capacity
+     */
     public ManagedIdentityConcurrentMap(ReferenceType keyType, int initialCapacity) {
         super(initialCapacity, keyType, ReferenceType.STRONG, EnumSet.of(Option.IDENTITY_COMPARISONS));
     }
