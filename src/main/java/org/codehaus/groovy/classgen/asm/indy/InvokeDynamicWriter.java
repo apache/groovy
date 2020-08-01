@@ -73,7 +73,8 @@ public class InvokeDynamicWriter extends InvocationWriter {
                 H_INVOKESTATIC,
                 INDY_INTERFACE_NAME,
                 "bootstrap",
-                BSM_METHOD_TYPE_DESCRIPTOR);
+                BSM_METHOD_TYPE_DESCRIPTOR,
+                false);
 
     private final WriterController controller;
 
