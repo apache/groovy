@@ -47,6 +47,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -243,7 +244,6 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
         MetaMethod method = null;
         final Closure closure = (Closure) object;
-        final int resolveStrategy = closure.getResolveStrategy();
 
         if (CLOSURE_DO_CALL_METHOD.equals(methodName) || CLOSURE_CALL_METHOD.equals(methodName)) {
             method = pickClosureMethod(argClasses);
@@ -255,7 +255,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
             if (method == null) throw new MissingMethodException(methodName, theClass, arguments, false);
         }
 
-        boolean shouldDefer = resolveStrategy == Closure.DELEGATE_ONLY && isInternalMethod(methodName);
+        boolean shouldDefer = closure.getResolveStrategy() == Closure.DELEGATE_ONLY && isInternalMethod(methodName);
         if (method == null && !shouldDefer) {
             method = CLOSURE_METACLASS.pickMethod(methodName, argClasses);
         }
@@ -267,6 +267,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         final Object owner = closure.getOwner();
         final Object delegate = closure.getDelegate();
         final Object thisObject = closure.getThisObject();
+        final int resolveStrategy = closure.getResolveStrategy();
         boolean invokeOnDelegate = false;
         boolean invokeOnOwner = false;
         boolean ownerFirst = true;
@@ -287,21 +288,48 @@ public final class ClosureMetaClass extends MetaClassImpl {
                 if (method == null) {
                     invokeOnOwner = owner != closure && (owner instanceof GroovyObject);
                 }
+
                 break;
-            default: // Closure.*_FIRST:
-                for (Object candidate : ownersAndDelegatesOf(closure, new ArrayList<>())) {
-                    method = getDelegateMethod(closure, candidate, methodName, argClasses);
-                    callObject = candidate;
-                    if (method != null) {
-                        break;
+            case Closure.DELEGATE_FIRST:
+                method = getDelegateMethod(closure, delegate, methodName, argClasses);
+                callObject = delegate;
+                if (method == null) {
+                    method = getDelegateMethod(closure, owner, methodName, argClasses);
+                    callObject = owner;
+                }
+                if (method == null) {
+                    invokeOnDelegate = delegate != closure && (delegate instanceof GroovyObject);
+                    invokeOnOwner = owner != closure && (owner instanceof GroovyObject);
+                    ownerFirst = false;
+                }
+                break;
+            default: // owner first
+                // owner first means we start with the outer most owner that is not a generated closure
+                // this owner is equal to the this object, so we check that one first.
+                method = getDelegateMethod(closure, thisObject, methodName, argClasses);
+                callObject = thisObject;
+                if (method == null) {
+                    // try finding a delegate that has that method... we start from
+                    // outside building a stack and try each delegate
+                    LinkedList list = new LinkedList();
+                    for (Object current = closure; current != thisObject;) {
+                        if (!(current instanceof Closure)) break;
+                        Closure currentClosure = (Closure) current;
+                        if (currentClosure.getDelegate() != null) list.add(current);
+                        current = currentClosure.getOwner();
+                    }
+
+                    while (!list.isEmpty() && method == null) {
+                        Closure closureWithDelegate = (Closure) list.removeLast();
+                        Object currentDelegate = closureWithDelegate.getDelegate();
+                        method = getDelegateMethod(closureWithDelegate, currentDelegate, methodName, argClasses);
+                        callObject = currentDelegate;
                     }
                 }
                 if (method == null) {
                     invokeOnDelegate = delegate != closure && (delegate instanceof GroovyObject);
                     invokeOnOwner = owner != closure && (owner instanceof GroovyObject);
-                    ownerFirst = resolveStrategy != Closure.DELEGATE_FIRST;
                 }
-                break;
         }
         if (method == null && (invokeOnOwner || invokeOnDelegate)) {
             try {
@@ -349,34 +377,6 @@ public final class ClosureMetaClass extends MetaClassImpl {
     private static Object[] makeArguments(Object[] arguments, String methodName) {
         if (arguments == null) return EMPTY_ARGUMENTS;
         return arguments;
-    }
-
-    private static List ownersAndDelegatesOf(Closure closure, List ownersAndDelegates) {
-        switch (closure.getResolveStrategy()) {
-        case Closure.TO_SELF:
-            ownersAndDelegates.add(closure);
-            break;
-        case Closure.OWNER_ONLY:
-            ownersAndDelegates.add(closure.getOwner());
-            break;
-        case Closure.DELEGATE_ONLY:
-            ownersAndDelegates.add(closure.getDelegate());
-            break;
-        case Closure.DELEGATE_FIRST:
-            ownersAndDelegates.add(closure.getDelegate());
-            ownersAndDelegates.add(closure.getOwner());
-            if (closure.getOwner() instanceof Closure) {
-                ownersAndDelegatesOf((Closure) closure.getOwner(), ownersAndDelegates);
-            }
-            break;
-        default: // Closure.OWNER_FIRST:
-            ownersAndDelegates.add(closure.getOwner());
-            if (closure.getOwner() instanceof Closure) {
-                ownersAndDelegatesOf((Closure) closure.getOwner(), ownersAndDelegates);
-            }
-            ownersAndDelegates.add(closure.getDelegate());
-        }
-        return ownersAndDelegates;
     }
 
     private static Throwable unwrap(GroovyRuntimeException gre) {

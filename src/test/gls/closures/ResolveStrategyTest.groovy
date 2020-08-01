@@ -20,31 +20,30 @@ package gls.closures
 
 import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
-
 import static groovy.lang.Closure.*
 
 class ResolveStrategyTest extends GroovyTestCase {
     void testDynamicSettingOfResolveStrategy() {
         new MyClass().with {
-            assert run(OWNER_ONLY) == 1234 // (*)
-            assert runOwnerOnly { m1() + m2() + m3() + m4() } == 1234 // (*)
-
             assert run(DELEGATE_ONLY) == 12340000 // (*)
-            assert runDelegateOnly { m1() + m2() + m3() + m4() } == 12340000 // (*)
-
-            // (*) involves methodMissing as forced by ONLY strategy (no equivalent CS case below)
-
-            assert run(OWNER_FIRST) == 41230
-            assert runOwnerFirst { m1() + m2() + m3() + m4() } == 41230
-
             assert run(DELEGATE_FIRST) == 12040030
-            assert runDelegateFirst { m1() + m2() + m3() + m4() } == 12040030
+            assert run(OWNER_ONLY) == 1234 // (*)
+            assert run(OWNER_FIRST) == 41230
+
+            assert runOwnerOnly { m1() + m2() + m3() } == 1230
+            assert runOwnerOnly { m1() + m2() + m3() + m4() } == 1234 // (*)
+            assert runOwnerFirst { m1() + m2() + m3() + m4() } == 41230
+            assert runDelegateOnly { m1() + m2() + m3() + m4() } == 12340000 // (*)
+            assert runDelegateOnly { m1() + m2() + m4() } == 12040000
+            assert runDelegateFirst { m1() + m2() + m3() + m4() } == 12340000 // (**)
 
             // nested cases
+            assert runDelegateFirst { runOwnerFirst { m1() + m2() + m3() + m4() } } == 41230
+            assert runOwnerFirst { runDelegateFirst { m1() + m2() + m3() + m4() } } == 12340000 // (**)
             assert runOwnerFirst { runOwnerFirst { m1() + m2() + m3() + m4() } } == 41230
-            assert runOwnerFirst { runDelegateFirst { m1() + m2() + m3() + m4() } } == 12040030
-            assert runDelegateFirst { runOwnerFirst { m1() + m2() + m3() + m4() } } == 12040030
-            assert runDelegateFirst { runDelegateFirst { m1() + m2() + m3() + m4() } } == 12040030
+            assert runDelegateFirst { runDelegateFirst { m1() + m2() + m3() + m4() } } == 12340000 // (**)
+            // (*) involves methodMissing as forced by ONLY strategy (no equivalent CS case below)
+            // (**) involves methodMissing since delegate methodMissing has precedence over explicit owner method
         }
     }
 
@@ -54,13 +53,14 @@ class ResolveStrategyTest extends GroovyTestCase {
             assert runOwnerOnly { m1() + m2() + m3() } == 1230
             assert runOwnerFirst { m1() + m2() + m3() + m4() } == 41230
             assert runDelegateOnly { m1() + m2() + m4() } == 12040000
-            assert runDelegateFirst { m1() + m2() + m3() + m4() } == 12040030
+            assert runDelegateFirst { m1() + m2() + m3() + m4() } == 12040030 // (*)
 
-            // GROOVY-9086: nested cases
+            // nested cases (GROOVY-9086)
+            assert runDelegateFirst { runOwnerFirst { m1() + m2() + m3() + m4() } } == 12040030 // (*)
+            assert runOwnerFirst { runDelegateFirst { m1() + m2() + m3() + m4() } } == 12040030 // (*)
             assert runOwnerFirst { runOwnerFirst { m1() + m2() + m3() + m4() } } == 41230
-            assert runDelegateFirst { runOwnerFirst { m1() + m2() + m3() + m4() } } == 12040030
-            assert runOwnerFirst { runDelegateFirst { m1() + m2() + m3() + m4() } } == 12040030
-            assert runDelegateFirst { runDelegateFirst { m1() + m2() + m3() + m4() } } == 12040030
+            assert runDelegateFirst { runDelegateFirst { m1() + m2() + m3() + m4() } } == 12040030 // (*)
+            // (*) different to dynamic since static assumes no methodMissing
         }
     }
 }
