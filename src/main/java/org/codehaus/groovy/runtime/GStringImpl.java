@@ -154,7 +154,7 @@ public class GStringImpl extends GString {
     private static boolean checkValuesImmutable(Object[] values) {
         for (Object value : values) {
             if (null == value) continue;
-            if (!(ImmutablePropertyUtils.isBuiltinImmutable(value.getClass().getName())
+            if (!(ImmutablePropertyUtils.builtinOrMarkedImmutableClass(value.getClass())
                     || (value instanceof GStringImpl && ((GStringImpl) value).cacheable))) {
                 return false;
             }

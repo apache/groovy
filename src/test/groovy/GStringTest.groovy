@@ -631,5 +631,26 @@ class GStringTest extends GroovyTestCase {
         def gstr12 = "a${"${123}"}b"
         assert 'a123b' == gstr12
         assert gstr12.toString() === gstr12.toString()
+
+        def gstr13 = "a${new GroovyImmutableValue()}b"
+        assert 'a123b' == gstr13
+        assert gstr13.toString() === gstr13.toString()
+
+        def gstr14 = "a${new JcipImmutableValue()}b"
+        assert 'a234b' == gstr14
+        assert gstr14.toString() === gstr14.toString()
     }
+
+    @groovy.transform.Immutable
+    static class GroovyImmutableValue {
+        private final String v = '123'
+        String toString() { v }
+    }
+
+    @net.jcip.annotations.Immutable
+    static final class JcipImmutableValue {
+        private final String v = '234'
+        String toString() { v }
+    }
+
 }
