@@ -19,7 +19,6 @@
 package org.apache.groovy.ast.tools;
 
 import groovy.transform.ImmutableOptions;
-import groovy.transform.KnownImmutable;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -54,7 +53,6 @@ public class ImmutablePropertyUtils {
     private static final ClassNode CLONEABLE_TYPE = make(Cloneable.class);
     private static final ClassNode DATE_TYPE = make(Date.class);
     private static final ClassNode REFLECTION_INVOKER_TYPE = make(ReflectionMethodInvoker.class);
-    private static final String KNOWN_IMMUTABLE_NAME = KnownImmutable.class.getName();
     private static final Class<? extends Annotation> IMMUTABLE_OPTIONS_CLASS = ImmutableOptions.class;
     public static final ClassNode IMMUTABLE_OPTIONS_TYPE = makeWithoutCaching(IMMUTABLE_OPTIONS_CLASS, false);
     private static final String MEMBER_KNOWN_IMMUTABLE_CLASSES = "knownImmutableClasses";
@@ -127,6 +125,13 @@ public class ImmutablePropertyUtils {
             "java.io.File"
     ));
 
+    private static final Set<String> BUILTIN_IMMUTABLE_ANNOTATIONS = new HashSet<String>(Arrays.asList(
+            "groovy.transform.Immutable",
+            "groovy.transform.KnownImmutable",
+//            "javax.annotation.concurrent.Immutable", // its RetentionPolicy is CLASS, can not be got via reflection
+            "net.jcip.annotations.Immutable" // supported by Findbugs and IntelliJ IDEA
+    ));
+
     private ImmutablePropertyUtils() { }
 
     public static Expression cloneArrayOrCloneableExpr(Expression fieldExpr, ClassNode type) {
@@ -194,13 +199,13 @@ public class ImmutablePropertyUtils {
         List<AnnotationNode> annotations = type.getAnnotations();
         for (AnnotationNode next : annotations) {
             String name = next.getClassNode().getName();
-            if (matchingMarkerName(name)) return true;
+            if (matchingImmutableMarkerName(name)) return true;
         }
         return false;
     }
 
-    private static boolean matchingMarkerName(String name) {
-        return name.equals("groovy.transform.Immutable") || name.equals(KNOWN_IMMUTABLE_NAME);
+    private static boolean matchingImmutableMarkerName(String name) {
+        return BUILTIN_IMMUTABLE_ANNOTATIONS.contains(name);
     }
 
     public static boolean isBuiltinImmutable(String typeName) {
@@ -211,7 +216,7 @@ public class ImmutablePropertyUtils {
         Annotation[] annotations = clazz.getAnnotations();
         for (Annotation next : annotations) {
             String name = next.annotationType().getName();
-            if (matchingMarkerName(name)) return true;
+            if (matchingImmutableMarkerName(name)) return true;
         }
         return false;
     }
