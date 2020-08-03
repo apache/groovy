@@ -35,7 +35,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 /**
  * Annotation to indicate experimental and still to be refined API, which may change at any time
  */
-@Incubating
 @Documented
 @Retention(value=RUNTIME)
 @Target(value={TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, ANNOTATION_TYPE, PACKAGE})
