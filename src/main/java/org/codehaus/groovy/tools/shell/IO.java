@@ -18,8 +18,8 @@
  */
 package org.codehaus.groovy.tools.shell;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.tools.shell.util.Preferences;
-import org.fusesource.jansi.AnsiRenderWriter;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -32,25 +32,43 @@ import java.io.Reader;
 /**
  * Container for input/output handles.
  */
-public class IO implements Closeable
-{
-    /** Raw input stream. */
+public class IO implements Closeable {
+    private static final String ANSI_RENDER_WRITER = "org.fusesource.jansi.AnsiRenderWriter";
+
+    /**
+     * Raw input stream.
+     */
     public final InputStream inputStream;
 
-    /** Raw output stream. */
+    /**
+     * Raw output stream.
+     */
     public final OutputStream outputStream;
 
-    /** Raw error output stream. */
+    /**
+     * Raw error output stream.
+     */
     public final OutputStream errorStream;
 
-    /** Prefered input reader. */
+    /**
+     * Preferred input reader.
+     */
     public final Reader in;
 
-    /** Prefered output writer. */
+    /**
+     * Preferred output writer.
+     */
     public final PrintWriter out;
 
-    /** Prefered error output writer. */
+    /**
+     * Preferred error output writer.
+     */
     public final PrintWriter err;
+
+    /**
+     * Whether ansi support is available
+     */
+    public final boolean ansiSupported;
 
     /**
      * Construct a new IO container.
@@ -65,8 +83,36 @@ public class IO implements Closeable
         this.errorStream = errorStream;
 
         this.in = new InputStreamReader(inputStream);
-        this.out = new AnsiRenderWriter(outputStream, true);
-        this.err = new AnsiRenderWriter(errorStream, true);
+        boolean ansiSupported = false;
+        try {
+            Class.forName(ANSI_RENDER_WRITER, false, IO.class.getClassLoader());
+            ansiSupported = true;
+        } catch (ClassNotFoundException ignore) {
+        }
+        this.ansiSupported = ansiSupported;
+        PrintWriter out = null;
+        PrintWriter err = null;
+        if (ansiSupported) {
+            out = tryConstructRenderWriter(outputStream);
+            err = tryConstructRenderWriter(errorStream);
+        }
+        if (out == null) {
+            out = new PrintWriter(outputStream, true);
+        }
+        if (err == null) {
+            err = new PrintWriter(errorStream, true);
+        }
+        this.out = out;
+        this.err = err;
+    }
+
+    protected PrintWriter tryConstructRenderWriter(OutputStream stream) {
+        // load via reflection to avoid hard-coded dependency on jansi jar
+        try {
+            return (PrintWriter) InvokerHelper.invokeConstructorOf(ANSI_RENDER_WRITER, new Object[]{stream, true});
+        } catch (ClassNotFoundException ignore) {
+            return null;
+        }
     }
 
     /**
@@ -78,8 +124,6 @@ public class IO implements Closeable
 
     /**
      * Set the verbosity level.
-     *
-     * @param verbosity
      */
     public void setVerbosity(final Verbosity verbosity) {
         assert verbosity != null;
@@ -142,12 +186,10 @@ public class IO implements Closeable
         err.close();
     }
 
-    //
-    // Verbosity
-    //
-
-    public static final class Verbosity
-    {
+    /**
+     * Verbosity for simple logging: QUIET, INFO, VERBOSE, DEBUG
+     */
+    public static final class Verbosity {
         public static final Verbosity QUIET = new Verbosity("QUIET");
 
         public static final Verbosity INFO = new Verbosity("INFO");
