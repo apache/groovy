@@ -1014,8 +1014,49 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    @Test // GROOVY-9673
+    void testTraitSuperPropertySetWithOverloads() {
+        assertScript '''
+            trait T {
+              def setX(Number n) {
+                'Number'
+              }
+              def setX(String s) {
+                'String'
+              }
+            }
+
+            class C implements T {
+              def test() {
+                T.super.x = 42
+              }
+            }
+
+            assert new C().test() == 'Number'
+        '''
+
+        assertScript '''
+            trait T {
+              def setX(Number n) {
+                'Number'
+              }
+              def setX(String s) {
+                'String'
+              }
+            }
+
+            class C implements T {
+              def test() {
+                T.super.x = 'x'
+              }
+            }
+
+            assert new C().test() == 'String'
+        '''
+    }
+
     @Test
-    void testSuperCallInTraitExtendingAnotherTrait() {
+    void testTraitSuperCallWhenExtendingAnotherTrait() {
         assertScript '''
             trait Foo {
                 int foo() { 1 }
