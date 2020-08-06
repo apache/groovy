@@ -119,6 +119,10 @@ public class GeneralUtils {
         return args(Arrays.stream(names).map(GeneralUtils::varX).toArray(Expression[]::new));
     }
 
+    public static CastExpression asX(final ClassNode type, final Expression expression) {
+        return CastExpression.asExpression(type, expression);
+    }
+
     public static Statement assignS(final Expression target, final Expression value) {
         return stmt(assignX(target, value));
     }

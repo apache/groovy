@@ -55,6 +55,7 @@ import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.asX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -95,6 +96,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         }
 
         boolean autoDelegate = memberHasValue(anno, "autoDelegate", true);
+        boolean coerce = memberHasValue(anno, "coerce", true);
         Parameter mapParam = param(GenericsUtils.nonGeneric(MAP_TYPE), "__namedArgs");
         List<Parameter> genParams = new ArrayList<>();
         genParams.add(mapParam);
@@ -113,17 +115,17 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
 
         if (!annoFound && autoDelegate) {
             // assume the first param is the delegate by default
-            processDelegateParam(mNode, mapParam, args, propNames, fromParams[0]);
+            processDelegateParam(mNode, mapParam, args, propNames, fromParams[0], coerce);
         } else {
             for (Parameter fromParam : fromParams) {
                 if (!annoFound) {
-                    if (!processImplicitNamedParam(mNode, mapParam, args, propNames, fromParam)) return;
+                    if (!processImplicitNamedParam(mNode, mapParam, args, propNames, fromParam, coerce)) return;
                 } else if (AnnotatedNodeUtils.hasAnnotation(fromParam, NAMED_PARAM_TYPE)) {
-                    if (!processExplicitNamedParam(mNode, mapParam, inner, args, propNames, fromParam)) return;
+                    if (!processExplicitNamedParam(mNode, mapParam, inner, args, propNames, fromParam, coerce)) return;
                 } else if (AnnotatedNodeUtils.hasAnnotation(fromParam, NAMED_DELEGATE_TYPE)) {
-                    if (!processDelegateParam(mNode, mapParam, args, propNames, fromParam)) return;
+                    if (!processDelegateParam(mNode, mapParam, args, propNames, fromParam, coerce)) return;
                 } else {
-                    args.addExpression(varX(fromParam));
+                    args.addExpression(asType(varX(fromParam), fromParam.getType(), coerce));
                     if (hasDuplicates(mNode, propNames, fromParam.getName())) return;
                     genParams.add(fromParam);
                 }
@@ -132,7 +134,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         createMapVariant(mNode, anno, mapParam, genParams, cNode, inner, args, propNames);
     }
 
-    private boolean processImplicitNamedParam(final MethodNode mNode, final Parameter mapParam, final ArgumentListExpression args, final List<String> propNames, final Parameter fromParam) {
+    private boolean processImplicitNamedParam(final MethodNode mNode, final Parameter mapParam, final ArgumentListExpression args, final List<String> propNames, final Parameter fromParam, boolean coerce) {
         boolean required = fromParam.hasInitialExpression();
         String name = fromParam.getName();
         if (hasDuplicates(mNode, propNames, name)) return false;
@@ -141,11 +143,11 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         namedParam.addMember("type", classX(fromParam.getType()));
         namedParam.addMember("required", constX(required, true));
         mapParam.addAnnotation(namedParam);
-        args.addExpression(propX(varX(mapParam), name));
+        args.addExpression(asType(propX(varX(mapParam), name), fromParam.getType(), coerce));
         return true;
     }
 
-    private boolean processExplicitNamedParam(final MethodNode mNode, final Parameter mapParam, final BlockStatement inner, final ArgumentListExpression args, final List<String> propNames, final Parameter fromParam) {
+    private boolean processExplicitNamedParam(final MethodNode mNode, final Parameter mapParam, final BlockStatement inner, final ArgumentListExpression args, final List<String> propNames, final Parameter fromParam, boolean coerce) {
         AnnotationNode namedParam = fromParam.getAnnotations(NAMED_PARAM_TYPE).get(0);
         boolean required = memberHasValue(namedParam, "required", true);
         if (getMemberStringValue(namedParam, "value") == null) {
@@ -166,13 +168,13 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
             inner.addStatement(new AssertStatement(boolX(callX(varX(mapParam), "containsKey", args(constX(name)))),
                     plusX(constX("Missing required named argument '" + name + "'. Keys found: "), callX(varX(mapParam), "keySet"))));
         }
-        args.addExpression(propX(varX(mapParam), name));
+        args.addExpression(asType(propX(varX(mapParam), name), fromParam.getType(), coerce));
         mapParam.addAnnotation(namedParam);
         fromParam.getAnnotations().remove(namedParam);
         return true;
     }
 
-    private boolean processDelegateParam(final MethodNode mNode, final Parameter mapParam, final ArgumentListExpression args, final List<String> propNames, final Parameter fromParam) {
+    private boolean processDelegateParam(final MethodNode mNode, final Parameter mapParam, final ArgumentListExpression args, final List<String> propNames, final Parameter fromParam, boolean coerce) {
         if (isInnerClass(fromParam.getType())) {
             if (mNode.isStatic()) {
                 addError("Error during " + NAMED_VARIANT + " processing. Delegate type '" + fromParam.getType().getNameWithoutPackage() + "' is an inner class which is not supported.", mNode);
@@ -190,7 +192,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
             String name = pNode.getName();
             // create entry [name: __namedArgs.getOrDefault('name', initialValue)]
             Expression defaultValue = Optional.ofNullable(pNode.getInitialExpression()).orElseGet(() -> getDefaultExpression(pNode.getType()));
-            entries.add(entryX(constX(name), callX(varX(mapParam), "getOrDefault", args(constX(name), defaultValue))));
+            entries.add(entryX(constX(name), asType(callX(varX(mapParam), "getOrDefault", args(constX(name), defaultValue)), pNode.getType(), coerce)));
             // create annotation @NamedParam(value='name', type=DelegateType)
             AnnotationNode namedParam = new AnnotationNode(NAMED_PARAM_TYPE);
             namedParam.addMember("value", constX(name));
@@ -255,6 +257,14 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
                     mNode.getExceptions(),
                     body
             );
+        }
+    }
+
+    private Expression asType(Expression expression, ClassNode classNode, boolean coerce) {
+        if (coerce) {
+            return asX(classNode, expression);
+        } else {
+            return expression;
         }
     }
 }
