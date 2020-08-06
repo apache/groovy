@@ -1014,6 +1014,100 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    @Test // GROOVY-9255
+    void testTraitSuperPropertyGet() {
+        assertScript '''
+            trait T {
+              def x = 'value'
+            }
+            class C implements T {
+              def test() {
+                T.super.x
+              }
+            }
+            assert new C().test() == 'value'
+        '''
+
+        assertScript '''
+            trait T {
+              boolean x = true
+            }
+            class C implements T {
+              def test() {
+                T.super.x
+              }
+            }
+            assert new C().test() == true
+        '''
+
+        assertScript '''
+            trait T {
+              def getX() { 'value' }
+            }
+            class C implements T {
+              def test() {
+                T.super.x
+              }
+            }
+            assert new C().test() == 'value'
+        '''
+
+        assertScript '''
+            trait T {
+              boolean isX() { true }
+            }
+            class C implements T {
+              def test() {
+                T.super.x
+              }
+            }
+            assert new C().test() == true
+        '''
+    }
+
+    @Test
+    void testTraitSuperPropertySet() {
+        assertScript '''
+            trait T {
+              def x
+            }
+            class C implements T {
+              def test() {
+                T.super.x = 'value'
+                return x
+              }
+            }
+            assert new C().test() == 'value'
+        '''
+
+        // TODO: add support for compound assignment
+        shouldFail MissingPropertyException, '''
+            trait T {
+              def x = 'value'
+            }
+            class C implements T {
+              def test() {
+                T.super.x -= ~/e\b/
+                T.super.x += 'able'
+                return x
+              }
+            }
+            assert new C().test() == 'valuable'
+        '''
+
+        assertScript '''
+            trait T {
+              def setX(value) { 'retval' }
+            }
+            class C implements T {
+              def test() {
+                T.super.x = 'value'
+              }
+            }
+            assert new C().test() == 'retval'
+        '''
+    }
+
     @Test
     void testSuperCallInTraitExtendingAnotherTrait() {
         assertScript '''
