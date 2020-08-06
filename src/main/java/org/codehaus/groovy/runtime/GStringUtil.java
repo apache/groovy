@@ -119,7 +119,9 @@ public final class GStringUtil {
         for (String string : ss) {
             initialCapacity += string.length();
         }
-        initialCapacity += vs.length * Math.max(initialCapacity / ss.length, 8);
+        if (ss.length != 0) {
+            initialCapacity += vs.length * Math.max(initialCapacity / ss.length, 8);
+        }
         return Math.max((int) (initialCapacity * 1.2), 16);
     }
 }
