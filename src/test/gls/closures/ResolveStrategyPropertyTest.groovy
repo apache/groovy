@@ -31,31 +31,63 @@ class ResolveStrategyPropertyTest extends GroovyTestCase {
         new MyClassRSPT().with {
             assert run(OWNER_ONLY) == 1234
             assert runOwnerOnly { m1 + m2 + m3 + m4 } == 1234
+            shouldFail(MissingPropertyException) {
+                runOwnerOnly { m1 + m2 + m3 + m6 }
+            }
 
             assert run(DELEGATE_ONLY) == 12340000
             assert runDelegateOnly { m1 + m2 + m3 + m4 } == 12340000
+            shouldFail(MissingPropertyException) {
+                runDelegateOnly { m1 + m2 + m4 + m5 }
+            }
 
             assert run(OWNER_FIRST) == 1234
             assert runOwnerFirst { m1 + m2 + m3 + m4 } == 1234
+            assert runOwnerFirst { m1 + m2 + m3 + m5 } == 1234
+            assert runOwnerFirst { m1 + m2 + m3 + m6 } == 301230 // m6 supplied by delegate
 
             assert run(DELEGATE_FIRST) == 12340000
             assert runDelegateFirst { m1 + m2 + m3 + m4 } == 12340000
+            assert runDelegateFirst { m1 + m2 + m3 + m5 } == 12300004 // m5 supplied by owner
+            assert runDelegateFirst { m1 + m2 + m4 + m6 } == 12340000
 
             // nested cases
             assert runOwnerFirst { runOwnerFirst { m1 + m2 + m3 + m4 } } == 1234
             assert runOwnerFirst { runDelegateFirst { m1 + m2 + m3 + m4 } } == 12340000
             assert runDelegateFirst { runOwnerFirst { m1 + m2 + m3 + m4 } } == 12340000
             assert runDelegateFirst { runDelegateFirst { m1 + m2 + m3 + m4 } } == 12340000
+            assert runOwnerFirst { runOwnerFirst { m1 + m2 + m3 + m4 + m5 + m6 } } == 301238 // owner: m4 m5, delegate: m6
+            assert runOwnerFirst { runDelegateFirst { m1 + m2 + m3 + m4 + m5 + m6 } } == 12640004 // owner: m5, delegate: m3 m6
+            assert runDelegateFirst { runOwnerFirst { m1 + m2 + m3 + m4 + m5 + m6 } } == 12640004 // owner: m5, delegate: m3 m6
+            assert runDelegateFirst { runDelegateFirst { m1 + m2 + m3 + m4 + m5 + m6 } } == 12640004 // owner: m5, delegate: m3 m6
         }
     }
 
     @CompileStatic
     void testStaticCases() {
         new MyClassRSPT().with {
+            // cases with explicit casting fall back to dynamic behavior for that term
             assert runOwnerOnly { m1 + m2 + m3 } == 1230
+            assert runOwnerOnly { m1 + m2 + m3 + (int) m4 } == 1234
+            assert runOwnerOnly { m1 + m2 + m3 + (int) m5 } == 1234
+            shouldFail(MissingPropertyException) {
+                runOwnerOnly { m1 + m2 + m3 + (int) m6 }
+            }
+
             assert runOwnerFirst { m1 + m2 + m3 + (int) m4 } == 1234
+            assert runOwnerFirst { m1 + m2 + m3 + (int) m5 } == 1234
+            assert runOwnerFirst { m1 + m2 + m3 + (int) m6 } == 301230
+
             assert runDelegateOnly { m1 + m2 + m4 } == 12040000
+            assert runDelegateOnly { m1 + m2 + (int) m3 + m4 } == 12340000
+            shouldFail(MissingPropertyException) {
+                runDelegateOnly { m1 + m2 + m4 + (int) m5 }
+            }
+            assert runDelegateOnly { m1 + m2 + m4 + (int) m6 } == 12340000
+
             assert runDelegateFirst { m1 + m2 + (int) m3 + m4 } == 12340000
+            assert runDelegateFirst { m1 + m2 + m4 + (int) m5 } == 12040004
+            assert runDelegateFirst { m1 + m2 + m4 + (int) m6 } == 12340000
 
             // nested cases
             assert runOwnerFirst { runOwnerFirst { m1 + m2 + m3 + (int) m4 } } == 1234
@@ -74,8 +106,10 @@ class MyDelegateRSPT {
     int m4 = 40000
 
     def propertyMissing(String name) {
-        if (name.size() == 2) return 300000
-        else throw new MissingPropertyException(name, MyDelegateRSPT)
+        if (name.size() != 2 || 'm5' == name) {
+            throw new MissingPropertyException(name, MyClassRSPT)
+        }
+        return 300000
     }
 }
 
@@ -86,7 +120,12 @@ class MyClassRSPT {
 
     int m3 = 30
 
-    def propertyMissing(String name) { 4 }
+    def propertyMissing(String name) {
+        if (name.size() != 2 || 'm6' == name) {
+            throw new MissingPropertyException(name, MyClassRSPT)
+        }
+        return 4
+    }
 
     def run(int rs) {
         def answer = -1
