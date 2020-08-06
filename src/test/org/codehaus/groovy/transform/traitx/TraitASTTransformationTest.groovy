@@ -399,6 +399,7 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    @Test
     void testTraitOnEnum() {
         assertScript '''
             trait WithBar { int bar }
@@ -1045,6 +1046,37 @@ final class TraitASTTransformationTest {
             class Baz implements Bar {}
             def b = new Baz()
             assert b.foo() == 2
+        '''
+    }
+
+    @Test // GROOVY-9256
+    void testTraitSuperCallWithinClosure() {
+        assertScript '''
+            trait T {
+              int getX() { 42 }
+            }
+            class C implements T {
+              def test() {
+                { ->
+                  T.super.getX()
+                }()
+              }
+            }
+            assert new C().test() == 42
+        '''
+
+        assertScript '''
+            trait T {
+              int getX() { 42 }
+            }
+            class C implements T {
+              def test() {
+                { p = T.super.getX() ->
+                  return p
+                }()
+              }
+            }
+            assert new C().test() == 42
         '''
     }
 
@@ -1700,6 +1732,7 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    @Test
     void testIncrementPropertyOfTraitUsingPlusPlus() {
         def err = shouldFail '''
             trait Level {
