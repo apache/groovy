@@ -24,6 +24,8 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.CatchStatement;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 
@@ -58,22 +60,25 @@ public class TryCatchBlockGenerator {
         if (powerAssertionErrorClass == null)
             throw new GroovyBugError("groovy-contracts needs Groovy 1.7 or above!");
 
-        VariableExpression newErrorVariableExpression = localVarX("newError", assertionErrorClass);
+        VariableExpression newError = localVarX("newError", assertionErrorClass);
 
-        Statement expr = declS(newErrorVariableExpression,
-                ctorX(assertionErrorClass,
-                        args(binX(constX(message), PLUS, callX(varX(param(ClassHelper.makeWithoutCaching(powerAssertionErrorClass), "error")), "getMessage")))));
+        Statement block = block(
+                // newError = message + error.message
+                declS(newError,
+                        ctorX(assertionErrorClass,
+                                args(binX(constX(message), PLUS, callX(varX(param(ClassHelper.makeWithoutCaching(powerAssertionErrorClass), "error")), "getMessage"))))),
+                // newError.stackTrace = error.stackTrace
+                stmt(callX(newError, "setStackTrace", args(
+                        callX(varX(param(ClassHelper.makeWithoutCaching(powerAssertionErrorClass), "error")), "getStackTrace")
+                ))),
+                throwS(newError));
 
-        Statement exp2 = stmt(callX(newErrorVariableExpression, "setStackTrace", args(
-                callX(varX(param(ClassHelper.makeWithoutCaching(powerAssertionErrorClass), "error")), "getStackTrace")
-        )));
+        CatchStatement catchStatement = catchS(param(ClassHelper.makeWithoutCaching(powerAssertionErrorClass), "error"), block);
 
-        final TryCatchStatement tryCatchStatement = tryCatchS(assertStatement);
-        tryCatchStatement.addCatch(catchS(
-                param(ClassHelper.makeWithoutCaching(powerAssertionErrorClass), "error"),
-                block(expr, exp2, throwS(newErrorVariableExpression))));
-
-        return block(tryCatchStatement);
+        return block(tryCatchS(
+                assertStatement,
+                EmptyStatement.INSTANCE,
+                catchStatement));
     }
 
     public static BlockStatement generateTryCatchBlock(final ClassNode assertionErrorClass, final String message, final Statement assertStatement) {
@@ -105,8 +110,10 @@ public class TryCatchBlockGenerator {
                 callX(varX(param(ClassHelper.makeWithoutCaching(powerAssertionErrorClass), "error")), "getStackTrace")
         )));
 
-        final TryCatchStatement tryCatchStatement = tryCatchS(assertBlockStatement);
-        tryCatchStatement.addCatch(catchS(param(ClassHelper.makeWithoutCaching(powerAssertionErrorClass), "error"), block(expr, exp2)));
+        final TryCatchStatement tryCatchStatement = tryCatchS(
+                assertBlockStatement,
+                EmptyStatement.INSTANCE,
+                catchS(param(ClassHelper.makeWithoutCaching(powerAssertionErrorClass), "error"), block(expr, exp2)));
 
         overallBlock.addStatement(tryCatchStatement);
         overallBlock.addStatement(returnS(variableExpression));

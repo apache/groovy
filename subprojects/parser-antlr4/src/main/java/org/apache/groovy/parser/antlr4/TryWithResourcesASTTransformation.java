@@ -44,6 +44,7 @@ import java.util.List;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.syntax.Token.newSymbol;
 
@@ -130,12 +131,8 @@ public class TryWithResourcesASTTransformation {
          *  try ResourceSpecification
          *      Block
          */
-        TryCatchStatement newTryWithResourcesStatement =
-                new TryCatchStatement(
-                        tryCatchStatement.getTryStatement(),
-                        EmptyStatement.INSTANCE);
+        TryCatchStatement newTryWithResourcesStatement = tryCatchS(tryCatchStatement.getTryStatement());
         tryCatchStatement.getResourceStatements().forEach(newTryWithResourcesStatement::addResource);
-
 
         /*
          *   try {
@@ -146,11 +143,9 @@ public class TryWithResourcesASTTransformation {
          *   Catchesopt
          *   Finallyopt
          */
-        TryCatchStatement newTryCatchStatement =
-                new TryCatchStatement(
-                        astBuilder.createBlockStatement(this.transform(newTryWithResourcesStatement)),
-                        tryCatchStatement.getFinallyStatement());
-
+        TryCatchStatement newTryCatchStatement = tryCatchS(
+                astBuilder.createBlockStatement(this.transform(newTryWithResourcesStatement)),
+                tryCatchStatement.getFinallyStatement());
         tryCatchStatement.getCatchStatements().forEach(newTryCatchStatement::addCatch);
 
         return newTryCatchStatement;
@@ -215,10 +210,9 @@ public class TryWithResourcesASTTransformation {
         String firstResourceIdentifierName =
                 ((DeclarationExpression) tryCatchStatement.getResourceStatement(0).getExpression()).getLeftExpression().getText();
 
-        TryCatchStatement newTryCatchStatement =
-                new TryCatchStatement(
-                        tryCatchStatement.getTryStatement(),
-                        this.createFinallyBlockForNewTryCatchStatement(primaryExcName, firstResourceIdentifierName));
+        TryCatchStatement newTryCatchStatement = tryCatchS(
+                tryCatchStatement.getTryStatement(),
+                this.createFinallyBlockForNewTryCatchStatement(primaryExcName, firstResourceIdentifierName));
 
         List<ExpressionStatement> resourceStatements = tryCatchStatement.getResourceStatements();
         // 2nd, 3rd, ..., n'th resources declared in resources
@@ -309,11 +303,8 @@ public class TryWithResourcesASTTransformation {
                                 new ConstantExpression(null)));
 
         // try-catch statement
-        TryCatchStatement newTryCatchStatement =
-                new TryCatchStatement(
-                        astBuilder.createBlockStatement(this.createCloseResourceStatement(firstResourceIdentifierName)), // { Identifier?.close(); }
-                        EmptyStatement.INSTANCE);
-
+        TryCatchStatement newTryCatchStatement = tryCatchS(
+                astBuilder.createBlockStatement(this.createCloseResourceStatement(firstResourceIdentifierName)) /* { Identifier?.close(); }*/);
 
         String suppressedExcName = this.genSuppressedExcName();
         newTryCatchStatement.addCatch(

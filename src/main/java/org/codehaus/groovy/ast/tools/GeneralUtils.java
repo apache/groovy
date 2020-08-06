@@ -769,6 +769,14 @@ public class GeneralUtils {
         return new TryCatchStatement(tryStatement, finallyStatement);
     }
 
+    public static TryCatchStatement tryCatchS(final Statement tryStatement, final Statement finallyStatement, final CatchStatement... catchStatements) {
+        TryCatchStatement result = new TryCatchStatement(tryStatement, finallyStatement);
+        for (CatchStatement catchStatement : catchStatements) {
+            result.addCatch(catchStatement);
+        }
+        return result;
+    }
+
     public static VariableExpression varX(final String name) {
         return new VariableExpression(name);
     }

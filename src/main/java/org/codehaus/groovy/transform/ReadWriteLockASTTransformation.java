@@ -30,7 +30,6 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -41,6 +40,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 
@@ -94,10 +94,7 @@ public class ReadWriteLockASTTransformation extends AbstractASTTransformation {
             releaseLock.setImplicitThis(false);
 
             Statement originalCode = mNode.getCode();
-
-            mNode.setCode(block(
-                    stmt(acquireLock),
-                    new TryCatchStatement(originalCode, stmt(releaseLock))));
+            mNode.setCode(block(stmt(acquireLock), tryCatchS(originalCode, stmt(releaseLock))));
         }
     }
 

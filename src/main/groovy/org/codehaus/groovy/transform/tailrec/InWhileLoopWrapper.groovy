@@ -23,7 +23,6 @@ import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.VariableScope
 import org.codehaus.groovy.ast.stmt.BlockStatement
-import org.codehaus.groovy.ast.stmt.CatchStatement
 import org.codehaus.groovy.ast.stmt.ContinueStatement
 import org.codehaus.groovy.ast.stmt.EmptyStatement
 import org.codehaus.groovy.ast.stmt.Statement
@@ -32,8 +31,10 @@ import org.codehaus.groovy.ast.stmt.WhileStatement
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block
 import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.catchS
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param
+import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS
 
 /**
  * Wrap the body of a method in a while loop, nested in a try-catch.
@@ -52,14 +53,13 @@ class InWhileLoopWrapper {
 
 	void wrap(MethodNode method) {
 		BlockStatement oldBody = method.code as BlockStatement
-        TryCatchStatement tryCatchStatement = new TryCatchStatement(
+        TryCatchStatement tryCatchStatement = tryCatchS(
                 oldBody,
-                EmptyStatement.INSTANCE
-        )
-        tryCatchStatement.addCatch(new CatchStatement(
-                param(ClassHelper.make(GotoRecurHereException), 'ignore'),
-                new ContinueStatement(InWhileLoopWrapper.LOOP_LABEL)
-        ))
+                EmptyStatement.INSTANCE,
+                catchS(
+                        param(ClassHelper.make(GotoRecurHereException), 'ignore'),
+                        new ContinueStatement(InWhileLoopWrapper.LOOP_LABEL)
+                ))
 
         WhileStatement whileLoop = new WhileStatement(
                 boolX(constX(true)),
