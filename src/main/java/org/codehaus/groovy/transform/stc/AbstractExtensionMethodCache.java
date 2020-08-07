@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.stc;
 
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -46,6 +47,7 @@ import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
  */
 public abstract class AbstractExtensionMethodCache {
     final EvictableCache<ClassLoader, Map<String, List<MethodNode>>> cache = new StampedCommonCache<>(new WeakHashMap<>());
+    private final boolean canDisable = SystemUtil.getBooleanSafe(getDisablePrefix());
 
     public Map<String, List<MethodNode>> get(ClassLoader loader) {
         return cache.getAndPut(loader, this::getMethodsFromClassLoader);
@@ -116,12 +118,14 @@ public abstract class AbstractExtensionMethodCache {
             for (MethodNode methodNode : cn.getMethods()) {
                 if (!(methodNode.isStatic() && methodNode.isPublic()) || methodNode.getParameters().length == 0) continue;
                 if (methodFilter.test(methodNode)) continue;
+                if (canDisable && SystemUtil.getBooleanSafe(getDisablePrefix() + "." + methodNode.getName())) continue;
 
                 accumulate(accumulator, isStatic, methodNode, methodMapper);
             }
         }
     }
 
+    protected abstract String getDisablePrefix();
     protected abstract Predicate<MethodNode> getMethodFilter();
     protected abstract Function<MethodNode, String> getMethodMapper();
 

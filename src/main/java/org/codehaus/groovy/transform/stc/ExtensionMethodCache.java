@@ -29,6 +29,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl.EXTENSION_DISABLE_PREFIX;
+
 /**
  * This class is used to make extension methods lookup faster. Basically, it will only
  * collect the list of extension methods (see {@link ExtensionModule} if the list of
@@ -58,6 +60,11 @@ public class ExtensionMethodCache extends AbstractExtensionMethodCache {
 
         Collections.addAll(instanceExtClasses, VMPluginFactory.getPlugin().getPluginDefaultGroovyMethods());
         Collections.addAll(staticExtClasses, VMPluginFactory.getPlugin().getPluginStaticGroovyMethods());
+    }
+
+    @Override
+    protected String getDisablePrefix() {
+        return EXTENSION_DISABLE_PREFIX;
     }
 
     @Override
