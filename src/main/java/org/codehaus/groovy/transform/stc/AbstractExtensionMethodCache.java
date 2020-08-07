@@ -29,8 +29,10 @@ import org.codehaus.groovy.runtime.memoize.EvictableCache;
 import org.codehaus.groovy.runtime.memoize.StampedCommonCache;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -47,7 +49,9 @@ import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
  */
 public abstract class AbstractExtensionMethodCache {
     final EvictableCache<ClassLoader, Map<String, List<MethodNode>>> cache = new StampedCommonCache<>(new WeakHashMap<>());
-    private final boolean canDisable = SystemUtil.getBooleanSafe(getDisablePrefix());
+    private final String disabledString = SystemUtil.getSystemPropertySafe(getDisablePropertyName());
+    private final boolean disabling = disabledString != null;
+    private final Set<String> disabledNames = disabling ? new HashSet<>(Arrays.asList(disabledString.split(","))) : null;
 
     public Map<String, List<MethodNode>> get(ClassLoader loader) {
         return cache.getAndPut(loader, this::getMethodsFromClassLoader);
@@ -81,7 +85,6 @@ public abstract class AbstractExtensionMethodCache {
      * which is applicable for this class.
      *
      * @param modules extension modules
-     * @return
      */
     private Map<String, List<MethodNode>> getMethods(List<ExtensionModule> modules) {
         Set<Class> instanceExtClasses = new LinkedHashSet<>();
@@ -118,14 +121,14 @@ public abstract class AbstractExtensionMethodCache {
             for (MethodNode methodNode : cn.getMethods()) {
                 if (!(methodNode.isStatic() && methodNode.isPublic()) || methodNode.getParameters().length == 0) continue;
                 if (methodFilter.test(methodNode)) continue;
-                if (canDisable && SystemUtil.getBooleanSafe(getDisablePrefix() + "." + methodNode.getName())) continue;
+                if (disabling && disabledNames.contains(methodNode.getName())) continue;
 
                 accumulate(accumulator, isStatic, methodNode, methodMapper);
             }
         }
     }
 
-    protected abstract String getDisablePrefix();
+    protected abstract String getDisablePropertyName();
     protected abstract Predicate<MethodNode> getMethodFilter();
     protected abstract Function<MethodNode, String> getMethodMapper();
 

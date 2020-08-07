@@ -29,7 +29,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl.EXTENSION_DISABLE_PREFIX;
+import static org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl.EXTENSION_DISABLE_PROPERTY;
 
 /**
  * This class is used to make extension methods lookup faster. Basically, it will only
@@ -63,8 +63,8 @@ public class ExtensionMethodCache extends AbstractExtensionMethodCache {
     }
 
     @Override
-    protected String getDisablePrefix() {
-        return EXTENSION_DISABLE_PREFIX;
+    protected String getDisablePropertyName() {
+        return EXTENSION_DISABLE_PROPERTY;
     }
 
     @Override

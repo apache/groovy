@@ -42,7 +42,7 @@ class MacroMethodsCache extends AbstractExtensionMethodCache {
     protected void addAdditionalClassesToScan(Set<Class> instanceExtClasses, Set<Class> staticExtClasses) {}
 
     @Override
-    protected String getDisablePrefix() {
+    protected String getDisablePropertyName() {
         return "groovy.macro.disable";
     }
 

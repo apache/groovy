@@ -47,12 +47,15 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * A registry of MetaClass instances which caches introspection and
@@ -67,7 +70,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     public static final String MODULE_META_INF_FILE = "META-INF/services/org.codehaus.groovy.runtime.ExtensionModule";
     private static final MetaClass[] EMPTY_METACLASS_ARRAY = new MetaClass[0];
     private static final MetaClassRegistryChangeEventListener[] EMPTY_METACLASSREGISTRYCHANGEEVENTLISTENER_ARRAY = new MetaClassRegistryChangeEventListener[0];
-    public static final String EXTENSION_DISABLE_PREFIX = "groovy.extension.disable";
+    public static final String EXTENSION_DISABLE_PROPERTY = "groovy.extension.disable";
 
     private final boolean useAccessible;
 
@@ -78,7 +81,9 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     private final LinkedList<MetaClassRegistryChangeEventListener> nonRemoveableChangeListenerList = new LinkedList<MetaClassRegistryChangeEventListener>();
     private final ManagedConcurrentLinkedQueue<MetaClass> metaClassInfo = new ManagedConcurrentLinkedQueue<MetaClass>(ReferenceBundle.getWeakBundle());
     private final ExtensionModuleRegistry moduleRegistry = new ExtensionModuleRegistry();
-    private final boolean canDisable = SystemUtil.getBooleanSafe(EXTENSION_DISABLE_PREFIX);
+    private final String disabledString = SystemUtil.getSystemPropertySafe(EXTENSION_DISABLE_PROPERTY);
+    private final boolean disabling = disabledString != null;
+    private final Set<String> disabledNames = disabling ? new HashSet<>(Arrays.asList(disabledString.split(","))) : null;
 
     public static final int LOAD_DEFAULT = 0;
     public static final int DONT_LOAD_DEFAULT = 1;
@@ -202,9 +207,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                 List<GeneratedMetaMethod.DgmMethodRecord> records = GeneratedMetaMethod.DgmMethodRecord.loadDgmInfo();
 
                 for (GeneratedMetaMethod.DgmMethodRecord record : records) {
-                    if (canDisable && SystemUtil.getBooleanSafe(EXTENSION_DISABLE_PREFIX + "." + record.methodName)) {
-                        continue;
-                    }
+                    if (disabling && disabledNames.contains(record.methodName)) continue;
                     Class[] newParams = new Class[record.parameters.length - 1];
                     System.arraycopy(record.parameters, 1, newParams, 0, record.parameters.length-1);
 
@@ -231,9 +234,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             for (CachedMethod method : methods) {
                 final int mod = method.getModifiers();
                 if (Modifier.isStatic(mod) && Modifier.isPublic(mod) && method.getAnnotation(Deprecated.class) == null) {
-                    if (canDisable && SystemUtil.getBooleanSafe(EXTENSION_DISABLE_PREFIX + "." + method.getName())) {
-                        continue;
-                    }
+                    if (disabling && disabledNames.contains(method.getName())) continue;
                     CachedClass[] paramTypes = method.getParameterTypes();
                     if (paramTypes.length > 0) {
                         List<MetaMethod> arr = map.computeIfAbsent(paramTypes[0], k -> new ArrayList<MetaMethod>(4));
