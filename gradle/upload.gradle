@@ -191,6 +191,7 @@ def optionalModules = [
         'groovy-dateutil',
         'groovy-gcontracts',
         'groovy-jaxb',
+        'groovy-macro-library',
         'groovy-testng'
 ]
 
