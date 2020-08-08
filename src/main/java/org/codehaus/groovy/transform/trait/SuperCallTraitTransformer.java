@@ -38,6 +38,8 @@ import org.codehaus.groovy.ast.tools.ClosureUtils;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
 
+import java.util.function.Function;
+
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -71,6 +73,9 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
         if (exp instanceof ClosureExpression) {
             return transformClosureExpression((ClosureExpression) exp);
         }
+        if (exp instanceof PropertyExpression) {
+            return transformPropertyExpression((PropertyExpression) exp);
+        }
         if (exp instanceof MethodCallExpression) {
             return transformMethodCallExpression((MethodCallExpression) exp);
         }
@@ -78,6 +83,10 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
     }
 
     private Expression transformBinaryExpression(final BinaryExpression exp) {
+        if (Types.isAssignment(exp.getOperation().getType()))
+            // prevent transform of assignment target to accessor method call
+            exp.getLeftExpression().putNodeMetaData("assign.target", exp.getOperation());
+
         Expression trn = super.transform(exp);
         if (trn instanceof BinaryExpression) {
             BinaryExpression bin = (BinaryExpression) trn;
@@ -120,6 +129,52 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
             prm.setInitialExpression(ini);
         }
         visitClassCodeContainer(exp.getCode());
+        return super.transform(exp);
+    }
+
+    private Expression transformPropertyExpression(final PropertyExpression exp) {
+        if (exp.getNodeMetaData("assign.target") == null) {
+            ClassNode traitType = getTraitSuperTarget(exp.getObjectExpression());
+            if (traitType != null) {
+                ClassNode helperType = getHelper(traitType);
+                // TraitType.super.foo -> TraitType$Helper.getFoo(this)
+
+                Function<MethodNode, MethodCallExpression> xform = (methodNode) -> {
+                    MethodCallExpression methodCall = new MethodCallExpression(
+                            new ClassExpression(helperType),
+                            methodNode.getName(),
+                            new ArgumentListExpression(
+                                    new VariableExpression("this")
+                            )
+                    );
+                    methodCall.getObjectExpression().setSourcePosition(((PropertyExpression) exp.getObjectExpression()).getObjectExpression());
+                    methodCall.getMethod().setSourcePosition(exp.getProperty());
+                    methodCall.setSpreadSafe(exp.isSpreadSafe());
+                    methodCall.setMethodTarget(methodNode);
+                    methodCall.setImplicitThis(false);
+                    return methodCall;
+                };
+
+                String getterName = MetaProperty.getGetterName(exp.getPropertyAsString(), null);
+                for (MethodNode method : helperType.getMethods(getterName)) {
+                    if (method.isStatic() && method.getParameters().length == 1
+                            && method.getParameters()[0].getType().equals(traitType)
+                            && !method.getReturnType().equals(ClassHelper.VOID_TYPE)) {
+                        return xform.apply(method);
+                    }
+                }
+
+                String isserName = "is" + getterName.substring(3);
+                for (MethodNode method : helperType.getMethods(isserName)) {
+                    if (method.isStatic() && method.getParameters().length == 1
+                            && method.getParameters()[0].getType().equals(traitType)
+                            && method.getReturnType().equals(ClassHelper.boolean_TYPE)) {
+                        return xform.apply(method);
+                    }
+                }
+            }
+        }
+        exp.removeNodeMetaData("assign.target");
         return super.transform(exp);
     }
 
