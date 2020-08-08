@@ -1019,48 +1019,48 @@ final class TraitASTTransformationTest {
     void testTraitSuperPropertyGet() {
         assertScript '''
             trait T {
-              def x = 'value'
+                def x = 'value'
             }
             class C implements T {
-              def test() {
-                T.super.x
-              }
+                def test() {
+                    T.super.x
+                }
             }
             assert new C().test() == 'value'
         '''
 
         assertScript '''
             trait T {
-              boolean x = true
+                boolean x = true
             }
             class C implements T {
-              def test() {
-                T.super.x
-              }
+                def test() {
+                    T.super.x
+                }
             }
             assert new C().test() == true
         '''
 
         assertScript '''
             trait T {
-              def getX() { 'value' }
+                def getX() { 'value' }
             }
             class C implements T {
-              def test() {
-                T.super.x
-              }
+                def test() {
+                    T.super.x
+                }
             }
             assert new C().test() == 'value'
         '''
 
         assertScript '''
             trait T {
-              boolean isX() { true }
+                boolean isX() { true }
             }
             class C implements T {
-              def test() {
-                T.super.x
-              }
+                def test() {
+                    T.super.x
+                }
             }
             assert new C().test() == true
         '''
@@ -1070,40 +1070,54 @@ final class TraitASTTransformationTest {
     void testTraitSuperPropertySet() {
         assertScript '''
             trait T {
-              def x
+                def x
             }
             class C implements T {
-              def test() {
-                T.super.x = 'value'
-                return x
-              }
+                def test() {
+                    T.super.x = 'value'
+                    return x
+                }
             }
             assert new C().test() == 'value'
         '''
 
+        def err = shouldFail '''
+            trait T {
+                final x = 'const'
+            }
+            class C implements T {
+                def test() {
+                    T.super.x = 'value'
+                    return x
+                }
+            }
+            assert new C().test() == 'value'
+        '''
+        assert err =~ /No such property: super for class: T/
+
         // TODO: add support for compound assignment
         shouldFail MissingPropertyException, '''
             trait T {
-              def x = 'value'
+                def x = 'value'
             }
             class C implements T {
-              def test() {
-                T.super.x -= ~/e\b/
-                T.super.x += 'able'
-                return x
-              }
+                def test() {
+                    T.super.x -= ~/e\b/
+                    T.super.x += 'able'
+                    return x
+                }
             }
             assert new C().test() == 'valuable'
         '''
 
         assertScript '''
             trait T {
-              def setX(value) { 'retval' }
+                def setX(value) { 'retval' }
             }
             class C implements T {
-              def test() {
-                T.super.x = 'value'
-              }
+                def test() {
+                    T.super.x = 'value'
+                }
             }
             assert new C().test() == 'retval'
         '''
@@ -1113,39 +1127,35 @@ final class TraitASTTransformationTest {
     void testTraitSuperPropertySetWithOverloads() {
         assertScript '''
             trait T {
-              def setX(Number n) {
-                'Number'
-              }
-              def setX(String s) {
-                'String'
-              }
+                def setX(Number n) {
+                    'Number'
+                }
+                def setX(String s) {
+                    'String'
+                }
             }
-
             class C implements T {
-              def test() {
-                T.super.x = 42
-              }
+                def test() {
+                    T.super.x = 42
+                }
             }
-
             assert new C().test() == 'Number'
         '''
 
         assertScript '''
             trait T {
-              def setX(Number n) {
-                'Number'
-              }
-              def setX(String s) {
-                'String'
-              }
+                def setX(Number n) {
+                    'Number'
+                }
+                def setX(String s) {
+                    'String'
+                }
             }
-
             class C implements T {
-              def test() {
-                T.super.x = 'x'
-              }
+                def test() {
+                    T.super.x = 'x'
+                }
             }
-
             assert new C().test() == 'String'
         '''
     }

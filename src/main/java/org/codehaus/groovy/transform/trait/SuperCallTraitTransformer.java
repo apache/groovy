@@ -95,7 +95,7 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
                 ClassNode traitType = getTraitSuperTarget(leftExpression.getObjectExpression());
                 if (traitType != null) {
                     ClassNode helperType = getHelper(traitType);
-                    // TraitType.super.foo = ... -> TraitType$Helper.setFoo(this, ...)
+                    // TraitType.super.foo = ... -> TraitType$Trait$Helper.setFoo(this, ...)
 
                     String setterName = MetaProperty.getSetterName(leftExpression.getPropertyAsString());
                     for (MethodNode method : helperType.getMethods(setterName)) {
@@ -136,7 +136,7 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
             ClassNode traitType = getTraitSuperTarget(exp.getObjectExpression());
             if (traitType != null) {
                 ClassNode helperType = getHelper(traitType);
-                // TraitType.super.foo -> TraitType$Helper.getFoo(this)
+                // TraitType.super.foo -> TraitType$Trait$Helper.getFoo(this)
 
                 Function<MethodNode, MethodCallExpression> xform = (methodNode) -> {
                     MethodCallExpression methodCall = new MethodCallExpression(
@@ -181,7 +181,7 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
         ClassNode traitType = getTraitSuperTarget(exp.getObjectExpression());
         if (traitType != null) {
             ClassNode helperType = getHelper(traitType);
-            // TraitType.super.foo() -> TraitType$Helper.foo(this)
+            // TraitType.super.foo() -> TraitType$Trait$Helper.foo(this)
 
             ArgumentListExpression newArgs = new ArgumentListExpression();
             newArgs.addExpression(new VariableExpression("this"));
