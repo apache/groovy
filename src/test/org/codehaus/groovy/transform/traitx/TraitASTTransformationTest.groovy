@@ -1066,6 +1066,72 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    @Test // GROOVY-9672
+    void testTraitSuperPropertyGetStatic() {
+        assertScript '''
+            trait T {
+                static x = 'value'
+            }
+            class C implements T {
+                def test() {
+                    T.super.x
+                }
+            }
+            assert new C().test() == 'value'
+        '''
+
+        assertScript '''
+            trait T {
+                static boolean x = true
+            }
+            class C implements T {
+                def test() {
+                    T.super.x
+                }
+            }
+            assert new C().test() == true
+        '''
+
+        assertScript '''
+            trait T {
+                static getX() { 'value' }
+            }
+            class C implements T {
+                def test() {
+                    T.super.x
+                }
+            }
+            assert new C().test() == 'value'
+        '''
+
+        assertScript '''
+            trait T {
+                static boolean isX() { true }
+            }
+            class C implements T {
+                def test() {
+                    T.super.x
+                }
+            }
+            assert new C().test() == true
+        '''
+
+        assertScript '''
+            trait A {
+                static getX() { 'A' }
+            }
+            trait B {
+                static getX() { 'B' }
+            }
+            class C implements A, B {
+                def test() {
+                    A.super.x + B.super.x
+                }
+            }
+            assert new C().test() == 'AB'
+        '''
+    }
+
     @Test
     void testTraitSuperPropertySet() {
         assertScript '''
@@ -1123,6 +1189,63 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    @Test // GROOVY-9672
+    void testTraitSuperPropertySetStatic() {
+        assertScript '''
+            trait T {
+                static x
+            }
+            class C implements T {
+                def test() {
+                    T.super.x = 'value'
+                    return x
+                }
+            }
+            assert new C().test() == 'value'
+        '''
+
+        def err = shouldFail '''
+            trait T {
+                static final x = 'const'
+            }
+            class C implements T {
+                def test() {
+                    T.super.x = 'value'
+                    return x
+                }
+            }
+            assert new C().test() == 'value'
+        '''
+        assert err =~ /No such property: super for class: T/
+
+        assertScript '''
+            trait T {
+                static setX(value) { 'retval' }
+            }
+            class C implements T {
+                def test() {
+                    T.super.x = 'value'
+                }
+            }
+            assert new C().test() == 'retval'
+        '''
+
+        assertScript '''
+            trait A {
+                static setX(value) { 'A' }
+            }
+            trait B {
+                static setX(value) { 'B' }
+            }
+            class C implements A, B {
+                def test() {
+                    (A.super.x = 'a') + (B.super.x = 'b')
+                }
+            }
+            assert new C().test() == 'AB'
+        '''
+    }
+
     @Test // GROOVY-9673
     void testTraitSuperPropertySetWithOverloads() {
         assertScript '''
@@ -1157,6 +1280,24 @@ final class TraitASTTransformationTest {
                 }
             }
             assert new C().test() == 'String'
+        '''
+    }
+
+    @Test // GROOVY-9672
+    void testTraitSuperCallStatic() {
+        assertScript '''
+            trait A {
+                static m() { 'A' }
+            }
+            trait B {
+                static m() { 'B' }
+            }
+            class C implements A, B {
+                def test() {
+                    m() + A.super.m() + B.super.m()
+                }
+            }
+            assert new C().test() == 'BAB'
         '''
     }
 
