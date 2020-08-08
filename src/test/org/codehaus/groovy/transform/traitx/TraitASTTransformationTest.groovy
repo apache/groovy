@@ -2849,6 +2849,44 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    @Test // GROOVY-9386
+    void testTraitPropertyInitializedByTap() {
+        assertScript '''
+            class P {
+                int prop
+            }
+            trait T {
+                P pogo = new P().tap {
+                    prop = 42 // MissingPropertyException: No such property: prop for class: C
+                }
+            }
+            class C implements T {
+            }
+
+            def pogo = new C().pogo
+            assert pogo.prop == 42
+        '''
+    }
+
+    @Test // GROOVY-9386
+    void testTraitPropertyInitializedByWith() {
+        assertScript '''
+            class P {
+                int prop
+            }
+            trait T {
+                P pogo = new P().with {
+                    prop = 42 // MissingPropertyException: No such property: prop for class: C
+                    return it
+                }
+            }
+            class C implements T {
+            }
+            def pogo = new C().pogo
+            assert pogo.prop == 42
+        '''
+    }
+
     @Test // GROOVY-9660
     void testAsGenericsParam() {
         assertScript '''
