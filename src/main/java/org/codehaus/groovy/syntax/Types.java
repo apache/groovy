@@ -368,6 +368,9 @@ public class Types {
     //---------------------------------------------------------------------------
     // TYPE HIERARCHIES
 
+    /**
+     * @since 3.0.0
+     */
     public static boolean isAssignment(int type) {
         return ofType(type, ASSIGNMENT_OPERATOR);
     }

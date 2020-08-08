@@ -189,6 +189,7 @@ def optionalModules = [
         'groovy-bsf',
         'groovy-cli-commons',
         'groovy-dateutil',
+        'groovy-contracts',
         'groovy-jaxb',
         'groovy-testng'
 ]

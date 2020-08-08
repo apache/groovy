@@ -1,0 +1,70 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Groovy Contracts – design by contract support for Groovy
+
+This module provides contract annotations that support the specification of class-invariants,
+pre- and post-conditions on Groovy classes and interfaces.
+Special support is provided so that post-conditions may refer to the old value of variables
+or to the result value associated with calling a method.
+
+== Applying @Invariant, @Requires and @Ensures
+
+With GContracts in your class-path, contracts can be applied on a Groovy class or interface by using one of the assertions found in package org.gcontracts.annotations.
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-contracts/src/spec/test/ContractsTest.groovy[tags=basic_example,indent=0]
+----
+
+== More Features
+
+GContracts supports the following feature set:
+
+* definition of class invariants, pre- and post-conditions via @Invariant, @Requires and @Ensures
+* inheritance of class invariants, pre- and post-conditions of concrete predecessor classes
+* inheritance of class invariants, pre- and post-conditions in implemented interfaces
+* usage of old and result variable in post-condition assertions
+* assertion injection in Plain Old Groovy Objects (POGOs)
+* human-readable assertion messages, based on Groovy power asserts
+* enabling contracts at package- or class-level with @AssertionsEnabled
+* enable or disable contract checking with Java's -ea and -da VM parameters
+* annotation contracts: a way to reuse reappearing contract elements in a project domain model
+* detection of circular assertion method calls
+
+== The Stack Example
+
+Currently, Groovy contracts supports 3 annotations: @Invariant, @Requires and @Ensures – all of them work
+as annotations with closures, where closures allow you to specify arbitrary code pieces as annotation parameters:
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-contracts/src/spec/test/ContractsTest.groovy[tags=stack_prelim,indent=0]
+include::{rootProjectDir}/subprojects/groovy-contracts/src/spec/test/ContractsTest.groovy[tags=stack_example,indent=0]
+----
+
+The example above specifies a class-invariant and methods with pre- and post-conditions.
+Note, that preconditions may reference method arguments and post-conditions have access
+to the method’s result with the result variable and old instance variables values with old.
+
+Indeed, Groovy AST transformations change these assertion annotations into Java assertion
+statements (can be turned on and off with a JVM param) and inject them at appropriate places,
+e.g. class-invariants are used to check an object's state before and after each method call.

@@ -94,7 +94,7 @@ public class GeneralUtils {
     public static final Token OR = Token.newSymbol(Types.LOGICAL_OR, -1, -1);
     public static final Token CMP = Token.newSymbol(Types.COMPARE_TO, -1, -1);
     public static final Token INSTANCEOF = Token.newSymbol(Types.KEYWORD_INSTANCEOF, -1, -1);
-    private static final Token PLUS = Token.newSymbol(Types.PLUS, -1, -1);
+    public static final Token PLUS = Token.newSymbol(Types.PLUS, -1, -1);
     private static final Token INDEX = Token.newSymbol("[", -1, -1);
 
     public static BinaryExpression andX(final Expression lhv, final Expression rhv) {
@@ -767,6 +767,14 @@ public class GeneralUtils {
 
     public static TryCatchStatement tryCatchS(final Statement tryStatement, final Statement finallyStatement) {
         return new TryCatchStatement(tryStatement, finallyStatement);
+    }
+
+    public static TryCatchStatement tryCatchS(final Statement tryStatement, final Statement finallyStatement, final CatchStatement... catchStatements) {
+        TryCatchStatement result = new TryCatchStatement(tryStatement, finallyStatement);
+        for (CatchStatement catchStatement : catchStatements) {
+            result.addCatch(catchStatement);
+        }
+        return result;
     }
 
     public static VariableExpression varX(final String name) {
