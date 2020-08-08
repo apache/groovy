@@ -26,30 +26,44 @@ import static groovy.lang.Closure.*
 final class ResolveStrategyTest extends GroovyTestCase {
 
     void testDynamicResolveStrategy() {
-        new MyClass().with {
+        new ClassRST().with {
             assert run(OWNER_ONLY) == 1234
             assert runOwnerOnly { m1() + m2() + m3() + m4() } == 1234
+            shouldFail(MissingMethodException) {
+                runOwnerOnly { m1() + m2() + m3() + m6() }
+            }
 
             assert run(DELEGATE_ONLY) == 12340000
             assert runDelegateOnly { m1() + m2() + m3() + m4() } == 12340000
+            shouldFail(MissingMethodException) {
+                runDelegateOnly { m1() + m2() + m4() + m5() }
+            }
 
             assert run(OWNER_FIRST) == 1234
             assert runOwnerFirst { m1() + m2() + m3() + m4() } == 1234
+            assert runOwnerFirst { m1() + m2() + m3() + m5() } == 1234
+            assert runOwnerFirst { m1() + m2() + m3() + m6() } == 301230 // delegate: m6
 
             assert run(DELEGATE_FIRST) == 12340000
             assert runDelegateFirst { m1() + m2() + m3() + m4() } == 12340000
+            assert runDelegateFirst { m1() + m2() + m3() + m5() } == 12300004 // owner: m5
+            assert runDelegateFirst { m1() + m2() + m4() + m6() } == 12340000
 
             // nested cases
             assert runOwnerFirst { runOwnerFirst { m1() + m2() + m3() + m4() } } == 1234
             assert runOwnerFirst { runDelegateFirst { m1() + m2() + m3() + m4() } } == 12340000
             assert runDelegateFirst { runOwnerFirst { m1() + m2() + m3() + m4() } } == 12340000
             assert runDelegateFirst { runDelegateFirst { m1() + m2() + m3() + m4() } } == 12340000
+            assert runOwnerFirst { runOwnerFirst { m1() + m2() + m3() + m4() + m5() + m6() } } == 301238 // owner: m4 m5, delegate: m6
+            assert runOwnerFirst { runDelegateFirst { m1() + m2() + m3() + m4() + m5() + m6() } } == 12640004 // owner: m5, delegate: m3 m6
+            assert runDelegateFirst { runOwnerFirst { m1() + m2() + m3() + m4() + m5() + m6() } } == 12640004 // owner: m5, delegate: m3 m6
+            assert runDelegateFirst { runDelegateFirst { m1() + m2() + m3() + m4() + m5() + m6() } } == 12640004 // owner: m5, delegate: m3 m6
         }
     }
 
     @CompileStatic
     void testStaticResolveStrategy() {
-        new MyClass().with {
+        new ClassRST().with {
             assert runOwnerOnly { m1() + m2() + m3() } == 1230
             assert runOwnerFirst { m1() + m2() + m3() + m4() } == 41230
             assert runDelegateOnly { m1() + m2() + m4() } == 12040000
@@ -64,7 +78,7 @@ final class ResolveStrategyTest extends GroovyTestCase {
     }
 }
 
-class Delegate {
+class DelegateRST {
     int m1() { 10000000 }
 
     int m2() { 2000000 }
@@ -72,48 +86,55 @@ class Delegate {
     int m4() { 40000 }
 
     def methodMissing(String name, args) {
-        if (name.size() == 2) return 300000
-        else throw new MissingMethodException(name, Delegate, args)
+        if (name.size() != 2 || 'm5' == name) {
+            throw new MissingMethodException(name, DelegateRST, args)
+        }
+        return 300000
     }
 }
 
-class MyClass {
+class ClassRST {
     int m1() { 1000 }
 
     int m2() { 200 }
 
     int m3() { 30 }
 
-    def methodMissing(String name, args) { 4 }
+    def methodMissing(String name, args) {
+        if (name.size() != 2 || 'm6' == name) {
+            throw new MissingMethodException(name, ClassRST)
+        }
+        return 4
+    }
 
     def run(int rs) {
         def answer = -1
         Closure c = { answer = m1() + m2() + m3() + m4() }
         c.resolveStrategy = rs
-        c.delegate = new Delegate()
+        c.delegate = new DelegateRST()
         c()
         answer
     }
 
-    def runDelegateFirst(@DelegatesTo(value = Delegate, strategy = DELEGATE_FIRST) Closure c) {
-        c.delegate = new Delegate()
+    def runDelegateFirst(@DelegatesTo(value = DelegateRST, strategy = DELEGATE_FIRST) Closure c) {
+        c.delegate = new DelegateRST()
         c.resolveStrategy = DELEGATE_FIRST
         c()
     }
 
-    def runDelegateOnly(@DelegatesTo(value = Delegate, strategy = DELEGATE_ONLY) Closure c) {
-        c.delegate = new Delegate()
+    def runDelegateOnly(@DelegatesTo(value = DelegateRST, strategy = DELEGATE_ONLY) Closure c) {
+        c.delegate = new DelegateRST()
         c.resolveStrategy = DELEGATE_ONLY
         c()
     }
 
-    def runOwnerFirst(@DelegatesTo(Delegate) Closure c) {
-        c.delegate = new Delegate()
+    def runOwnerFirst(@DelegatesTo(DelegateRST /* strategy = OWNER_FIRST  */) Closure c) {
+        c.delegate = new DelegateRST()
         c()
     }
 
-    def runOwnerOnly(@DelegatesTo(value = Delegate, strategy = OWNER_ONLY) Closure c) {
-        c.delegate = new Delegate()
+    def runOwnerOnly(@DelegatesTo(value = DelegateRST, strategy = OWNER_ONLY) Closure c) {
+        c.delegate = new DelegateRST()
         c.resolveStrategy = OWNER_ONLY
         c()
     }
