@@ -127,6 +127,8 @@ public @interface NamedVariant {
 
     /**
      * If true, will use {@code as} to convert map parameter to required class
+     *
+     * @since 3.0.6
      */
     boolean coerce() default false;
 }
