@@ -78,7 +78,16 @@ public class GroovyAssert extends org.junit.Assert {
      * @param script the script that should pass without any exception thrown
      */
     public static void assertScript(final String script) throws Exception {
-        GroovyShell shell = new GroovyShell();
+        assertScript(new GroovyShell(), script);
+    }
+
+    /**
+     * Asserts that the script runs using the given shell without any exceptions
+     *
+     * @param shell the shell to use to evaluate the script
+     * @param script the script that should pass without any exception thrown
+     */
+    public static void assertScript(final GroovyShell shell, final String script) {
         shell.evaluate(script, genericScriptName());
     }
 
@@ -188,9 +197,21 @@ public class GroovyAssert extends org.junit.Assert {
      * @return the caught exception
      */
     public static Throwable shouldFail(Class clazz, String script) {
+        return shouldFail(new GroovyShell(), clazz, script);
+    }
+
+    /**
+     * Asserts that the given script fails when it is evaluated using the given shell
+     * and that a particular type of exception is thrown.
+     *
+     * @param shell the shell to use to evaluate the script
+     * @param clazz the class of the expected exception
+     * @param script  the script that should fail
+     * @return the caught exception
+     */
+    public static Throwable shouldFail(GroovyShell shell, Class clazz, String script) {
         Throwable th = null;
         try {
-            GroovyShell shell = new GroovyShell();
             shell.evaluate(script, genericScriptName());
         } catch (GroovyRuntimeException gre) {
             th = ScriptBytecodeAdapter.unwrap(gre);
@@ -213,10 +234,20 @@ public class GroovyAssert extends org.junit.Assert {
      * @return the caught exception
      */
     public static Throwable shouldFail(String script) {
+        return shouldFail(new GroovyShell(), script);
+    }
+
+    /**
+     * Asserts that the given script fails when it is evaluated using the given shell
+     *
+     * @param shell the shell to use to evaluate the script
+     * @param script the script expected to fail
+     * @return the caught exception
+     */
+    public static Throwable shouldFail(GroovyShell shell, String script) {
         boolean failed = false;
         Throwable th = null;
         try {
-            GroovyShell shell = new GroovyShell();
             shell.evaluate(script, genericScriptName());
         } catch (GroovyRuntimeException gre) {
             failed = true;
