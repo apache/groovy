@@ -42,7 +42,7 @@ allprojects { proj ->
 
     dependencies {
         checkstyle "com.puppycrawl.tools:checkstyle:$checkstyleVersion"
-        codenarc "org.codenarc:CodeNarc:1.6"
+        codenarc "org.codenarc:CodeNarc:1.6.1"
         spotbugs "com.github.spotbugs:spotbugs:$spotbugsVersion"
         if (proj.name.contains('jaxb') && JavaVersion.current().isJava9Compatible()) {
             spotbugs 'javax.xml.bind:jaxb-api:2.3.0'
