@@ -18,21 +18,22 @@
  */
 package groovy.bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class Groovy8816Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
+
+final class Groovy8816 {
+
+    @Test
     void testCallNoArgClosureWithArg() {
-        def msg = shouldFail MissingMethodException, '''
-        import groovy.transform.CompileStatic
-
-        @CompileStatic
-        void main() {
-            [0].each { -> }
-        }
-
-        main()
+        def err = shouldFail MissingMethodException, '''
+            @groovy.transform.CompileStatic
+            void test() {
+                [0].each { -> }
+            }
+            test()
         '''
-        assert msg.contains('No signature of method:')
-        assert msg.contains('doCall() is applicable for argument types: (Integer) values: [0]')
+
+        assert err =~ /No signature of method: .*\.doCall\(\) is applicable for argument types: \(Integer\) values: \[0\]/
     }
 }
