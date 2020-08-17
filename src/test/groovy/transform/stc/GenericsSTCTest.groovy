@@ -1298,7 +1298,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    private static File createTempDir() {
+    protected static File createTempDir() {
         File.createTempDir('groovy-junit-', Long.toString(System.currentTimeMillis()))
     }
 
