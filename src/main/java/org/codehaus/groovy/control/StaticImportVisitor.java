@@ -289,21 +289,25 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                 return false;
             };
 
-            if (isInnerClass(currentClass)) {
-                if (mce.isImplicitThis() && !inClosure && inSpecialConstructorCall && !foundInstanceMethod) {
-                    if (currentClass.getOuterClass().hasPossibleMethod(methodName, args)) {
-                        object = new PropertyExpression(new ClassExpression(currentClass.getOuterClass()), new ConstantExpression("this"));
-                    } else if (hasPossibleStaticMember.test(currentClass.getOuterClass())) {
-                        Expression result = new StaticMethodCallExpression(currentClass.getOuterClass(), methodName, args);
+            if (mce.isImplicitThis()) {
+                if (isInnerClass(currentClass)) {
+                    if (inSpecialConstructorCall && !foundInstanceMethod) {
+                        // check for reference to outer class method in this(...) or super(...)
+                        if (currentClass.getOuterClass().hasPossibleMethod(methodName, args)) {
+                            object = new PropertyExpression(new ClassExpression(currentClass.getOuterClass()), new ConstantExpression("this"));
+                        } else if (hasPossibleStaticMember.test(currentClass.getOuterClass())) {
+                            Expression result = new StaticMethodCallExpression(currentClass.getOuterClass(), methodName, args);
+                            result.setSourcePosition(mce);
+                            return result;
+                        }
+                    }
+                } else if (inSpecialConstructorCall || (!inClosure && !foundInstanceMethod && !methodName.equals("call"))) {
+                    // check for reference to static method in this(...) or super(...) or when call not resolved
+                    if (hasPossibleStaticMember.test(currentClass)) {
+                        Expression result = new StaticMethodCallExpression(currentClass, methodName, args);
                         result.setSourcePosition(mce);
                         return result;
                     }
-                }
-            } else if (inSpecialConstructorCall || (!foundInstanceMethod && !methodName.equals("call"))) {
-                if (hasPossibleStaticMember.test(currentClass)) {
-                    Expression result = new StaticMethodCallExpression(currentClass, methodName, args);
-                    result.setSourcePosition(mce);
-                    return result;
                 }
             }
         }
