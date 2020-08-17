@@ -33,13 +33,15 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.tools.ClosureUtils;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
 
+import java.util.List;
 import java.util.function.Function;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -100,12 +102,13 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
                     String setterName = MetaProperty.getSetterName(leftExpression.getPropertyAsString());
                     for (MethodNode method : helperType.getMethods(setterName)) {
                         Parameter[] parameters = method.getParameters();
-                        if (parameters.length == 2 && parameters[0].getType().equals(traitType)) {
+                        if (parameters.length == 2 && isSelfType(parameters[0], traitType)) {
                             MethodCallExpression setterCall = new MethodCallExpression(
                                     new ClassExpression(helperType),
                                     setterName,
                                     new ArgumentListExpression(
-                                            new VariableExpression("this"),
+                                            parameters[0].getType().equals(ClassHelper.CLASS_Type)
+                                                ? thisPropX(false, "class") : varX("this"),
                                             bin.getRightExpression()
                                     )
                             );
@@ -143,7 +146,8 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
                             new ClassExpression(helperType),
                             methodNode.getName(),
                             new ArgumentListExpression(
-                                    new VariableExpression("this")
+                                    methodNode.getParameters()[0].getType().equals(ClassHelper.CLASS_Type)
+                                        ? thisPropX(false, "class") : varX("this")
                             )
                     );
                     methodCall.getObjectExpression().setSourcePosition(((PropertyExpression) exp.getObjectExpression()).getObjectExpression());
@@ -157,7 +161,7 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
                 String getterName = MetaProperty.getGetterName(exp.getPropertyAsString(), null);
                 for (MethodNode method : helperType.getMethods(getterName)) {
                     if (method.isStatic() && method.getParameters().length == 1
-                            && method.getParameters()[0].getType().equals(traitType)
+                            && isSelfType(method.getParameters()[0], traitType)
                             && !method.getReturnType().equals(ClassHelper.VOID_TYPE)) {
                         return xform.apply(method);
                     }
@@ -166,7 +170,7 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
                 String isserName = "is" + getterName.substring(3);
                 for (MethodNode method : helperType.getMethods(isserName)) {
                     if (method.isStatic() && method.getParameters().length == 1
-                            && method.getParameters()[0].getType().equals(traitType)
+                            && isSelfType(method.getParameters()[0], traitType)
                             && method.getReturnType().equals(ClassHelper.boolean_TYPE)) {
                         return xform.apply(method);
                     }
@@ -183,8 +187,12 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
             ClassNode helperType = getHelper(traitType);
             // TraitType.super.foo() -> TraitType$Trait$Helper.foo(this)
 
-            ArgumentListExpression newArgs = new ArgumentListExpression();
-            newArgs.addExpression(new VariableExpression("this"));
+            List<MethodNode> targets = helperType.getMethods(exp.getMethodAsString());
+            boolean isStatic = !targets.isEmpty() && targets.stream().map(MethodNode::getParameters)
+                .allMatch(params -> params.length > 0 && params[0].getType().equals(ClassHelper.CLASS_Type));
+
+            ArgumentListExpression newArgs = new ArgumentListExpression(
+                    isStatic ? thisPropX(false, "class") : varX("this"));
             Expression arguments = exp.getArguments();
             if (arguments instanceof TupleExpression) {
                 for (Expression expression : (TupleExpression) arguments) {
@@ -239,5 +247,13 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
             }
         }
         return null;
+    }
+
+    private static boolean isSelfType(final Parameter parameter, final ClassNode traitType) {
+        ClassNode paramType = parameter.getType();
+        if (paramType.equals(traitType)) return true;
+        return paramType.equals(ClassHelper.CLASS_Type)
+                && paramType.getGenericsTypes() != null
+                && paramType.getGenericsTypes()[0].getType().equals(traitType);
     }
 }
