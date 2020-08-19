@@ -45,10 +45,10 @@ tasks.check {
 
 // for comparing between versions with different modules, set excludeModules to differing modules, e.g.
 Set excludeModules = [
-        "performance", "binary-compatibility", "tests-preview"
+        "performance", "binary-compatibility", "tests-preview", "groovy-contracts", "groovy-macro-library", "groovy-typecheckers"
 ]
 
-def compatibilityBaselineVersion = "3.0.3"
+def compatibilityBaselineVersion = "3.0.5"
 
 def thisProject = project
 
