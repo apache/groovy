@@ -3206,6 +3206,35 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    @Test // GROOVY-8000
+    void testTraitMultiLevelGenerics() {
+        assertScript '''
+            trait TopTrait<X> { X getSomeThing() {}
+            }
+            trait MiddleTrait<Y> implements TopTrait<Y> {
+            }
+            trait BottomTrait<Z> implements MiddleTrait<Z> {
+            }
+            class Implementation implements BottomTrait<String> {
+            }
+
+            assert new Implementation().getSomeThing() == null
+        '''
+
+        assertScript '''
+            trait TopTrait<T> { T getSomeThing() {}
+            }
+            trait MiddleTrait<T> implements TopTrait<T> {
+            }
+            trait BottomTrait<T> implements MiddleTrait<T> {
+            }
+            class Implementation implements BottomTrait<String> {
+            }
+
+            assert new Implementation().getSomeThing() == null
+        '''
+    }
+
     @Test // GROOVY-9660
     void testAsGenericsParam() {
         assertScript '''
