@@ -21,7 +21,7 @@
 
 = Decorator Pattern
 
-The http://en.wikipedia.org/wiki/Decorator_pattern[Decorator Pattern] provides a mechanism to embellish the behaviour of an object without changing its essential interface. A decorated object should be able to be substituted wherever the original (non-decorated) object was expected. Decoration typically does not involve modifying the source code of the original object and decorators should be able to be combined in flexible ways to produce objects with several embellishments.
+The https://en.wikipedia.org/wiki/Decorator_pattern[Decorator Pattern] provides a mechanism to embellish the behaviour of an object without changing its essential interface. A decorated object should be able to be substituted wherever the original (non-decorated) object was expected. Decoration typically does not involve modifying the source code of the original object and decorators should be able to be combined in flexible ways to produce objects with several embellishments.
 
 == Traditional Example
 
@@ -29,7 +29,7 @@ Suppose we have the following `Logger` class.
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_logger_class,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=decorator_logger_class,indent=0]
 ----
 
 There might be times when it is useful to timestamp a log message, or times when we might want to change the case of the message. We could try to build all of this functionality into our `Logger` class. If we did that, the `Logger` class would start to be very complex. Also, everyone would obtain all of features even when they might not want a small subset of the features. Finally, feature interaction would become quite difficult to control.
@@ -38,21 +38,21 @@ To overcome these drawbacks, we instead define two decorator classes. Uses of th
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_traditional_classes,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=decorator_traditional_classes,indent=0]
 ----
 
 We can use the decorators like so:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_traditional_usage,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=decorator_traditional_usage,indent=0]
 ----
 
 You can see that we embellish the logger behaviour with both decorators. Because of the order we chose to apply the decorators, our log message comes out capitalised and the timestamp is in normal case. If we swap the order around, let's see what happens:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_traditional_usage2,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=decorator_traditional_usage2,indent=0]
 ----
 
 Now the timestamp itself has also been changed to be uppercase.
@@ -63,14 +63,14 @@ Our previous decorators were specific to `Logger` objects. We can use Groovy's M
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_dynamic_behaviour_class,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=decorator_dynamic_behaviour_class,indent=0]
 ----
 
 It takes any class and decorates it so that any `String` method parameter will automatically be changed to lower case.
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_dynamic_behaviour_usage,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=decorator_dynamic_behaviour_usage,indent=0]
 ----
 
 Just be careful with ordering here. The original decorators were restricted to decorating `Logger` objects. This decorator works with any object type, so we can't swap the ordering around, i.e. this won't work:
@@ -90,7 +90,7 @@ Here's what the code looks like:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_runtime_behaviour,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=decorator_runtime_behaviour,indent=0]
 ----
 
 This achieves a similar result to applying a single decorator but we have no way to easily apply and remove embellishments on the fly.
@@ -101,21 +101,21 @@ Suppose we have a calculator class (Actually any class would do).
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_calc_class,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=decorator_calc_class,indent=0]
 ----
 
 We might be interested in observing usage of the class over time. If it is buried deep within our codebase, it might be hard to determine when it is being called and with what parameters. Also, it might be hard to know if it is performing well. We can easily make a generic tracing decorator that prints out tracing information whenever any method on the `Calc` class is called and also provide timing information about how long it took to execute. Here is the code for the tracing decorator:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_tracing_decorator,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=decorator_tracing_decorator,indent=0]
 ----
 
 Here is how to use the class in a script:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_tracing_decorator_usage,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=decorator_tracing_decorator_usage,indent=0]
 ----
 
 And here is what you would see after running this script:
@@ -133,14 +133,14 @@ Groovy even comes with a built-in `TracingInterceptor`. We can extend the built-
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_interceptor,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=decorator_interceptor,indent=0]
 ----
 
 Here is an example of using this new class:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_interceptor_usage,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=decorator_interceptor_usage,indent=0]
 ----
 
 And here is the output:
@@ -160,7 +160,7 @@ If you are trying to decorate an object (i.e. just a particular instance of the 
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_reflect_proxy,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=decorator_reflect_proxy,indent=0]
 ----
 
 If there were many methods to intercept, then this approach could be modified to look up closure in a map by method name and invoke it.
@@ -175,14 +175,14 @@ Here's the interface:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_spring_calc,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=decorator_spring_calc,indent=0]
 ----
 
 Here's the class:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_spring_calc_impl,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=decorator_spring_calc_impl,indent=0]
 ----
 
 Now, we define our wiring in a file called `beans.xml` as follows:
@@ -213,7 +213,7 @@ Now, our script looks like this:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_spring_context,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=decorator_spring_context,indent=0]
 ----
 
 And when we run it, we see the results:
@@ -232,5 +232,5 @@ These days, you'll see this style used with async functions in JavaScript.
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=decorator_gpars,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=decorator_gpars,indent=0]
 ----

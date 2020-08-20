@@ -38,7 +38,7 @@ expression.
 
 [source,groovy]
 -------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_literals,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_literals,indent=0]
 -------------------------------------
 
 Each list expression creates an implementation of {java-util-list}.
@@ -47,7 +47,7 @@ Of course lists can be used as a source to construct another list:
 
 [source,groovy]
 ----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_construct,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_construct,indent=0]
 ----------------------------------------------------------------------------
 
 
@@ -55,7 +55,7 @@ A list is an ordered collection of objects:
 
 [source,groovy]
 ----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_usecases,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_usecases,indent=0]
 ----------------------------------------------------------------------------
 
 === List as a boolean expression
@@ -64,7 +64,7 @@ Lists can be evaluated as a `boolean` value:
 
 [source,groovy]
 ----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_to_bool,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_to_bool,indent=0]
 ----------------------------------------------------------------------------
 
 === Iterating on a list
@@ -74,7 +74,7 @@ item of a list:
 
 [source,groovy]
 ----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_each,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_each,indent=0]
 ----------------------------------------------------------------------------
 
 In addition to iterating, it is often useful to create a new list by transforming each of its elements into
@@ -82,7 +82,7 @@ something else. This operation, often called mapping, is done in Groovy thanks t
 
 [source,groovy]
 ----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_collect,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_collect,indent=0]
 ----------------------------------------------------------------------------
 
 === Manipulating lists
@@ -95,21 +95,21 @@ the standard collections with pragmatic methods, some of which are illustrated h
 
 [source,groovy]
 ----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk1,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk1,indent=0]
 ----------------------------------------------------------------------------
 
 And here is idiomatic Groovy code for finding the maximum and minimum in a collection:
 
 [source,groovy]
 ----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk2,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk2,indent=0]
 ----------------------------------------------------------------------------
 
 In addition to closures, you can use a `Comparator` to define the comparison criteria:
 
 [source,groovy]
 ----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_comparator,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_comparator,indent=0]
 ----------------------------------------------------------------------------
 
 ==== Adding or removing elements
@@ -118,14 +118,14 @@ We can use `[]` to assign a new empty list and `<<` to append items to it:
 
 [source,groovy]
 ----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_leftshift,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_leftshift,indent=0]
 ----------------------------------------------------------------------------
 
 We can add to a list in many ways:
 
 [source,groovy]
 ----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_add,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_add,indent=0]
 ----------------------------------------------------------------------------
 
 It is however important that the `+` operator on a list is *not mutating*. Compared to `<<`, it will create a new
@@ -135,14 +135,14 @@ The {gdk} also contains methods allowing you to easily remove elements from a li
 
 [source,groovy]
 ----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk3,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk3,indent=0]
 ----------------------------------------------------------------------------
 
 It is also possible to remove an element by passing its index to the `remove` method, in which case the list is mutated:
 
 [source,groovy]
 ----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk_remove_index,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk_remove_index,indent=0]
 ----------------------------------------------------------------------------
 
 In case you only want to remove the first element having the same value in a list, instead of removing all
@@ -150,7 +150,7 @@ elements, you can call the `remove` method passing the value:
 
 [source,groovy]
 ----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk5,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk5,indent=0]
 ----------------------------------------------------------------------------
 
 As you can see, there are two `remove` methods available.  One that takes an integer and removes an element
@@ -160,7 +160,7 @@ index, and `removeElement` to remove the first element that matches a value.
 
 [source,groovy]
 ----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk4,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk4,indent=0]
 ----------------------------------------------------------------------------
 
 Of course, `removeAt` and `removeElement` will work with lists of any type.
@@ -169,7 +169,7 @@ Additionally, removing all the elements in a list can be done by calling the `cl
 
 [source,groovy]
 ----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk6,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk6,indent=0]
 ----------------------------------------------------------------------------
 
 ==== Set operations
@@ -178,7 +178,7 @@ The {gdk} also includes methods making it easy to reason on sets:
 
 [source,groovy]
 ----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk7,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_gdk7,indent=0]
 ----------------------------------------------------------------------------
 
 ==== Sorting
@@ -188,7 +188,7 @@ from using closures to comparators, as in the following examples:
 
 [source,groovy]
 ----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_sort,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_sort,indent=0]
 ----------------------------------------------------------------------------
 
 ==== Duplicating elements
@@ -198,7 +198,7 @@ of a list:
 
 [source,groovy]
 ----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=list_multiply,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_multiply,indent=0]
 ----------------------------------------------------------------------------
 
 [[Collections-Maps]]
@@ -210,7 +210,7 @@ In Groovy, maps (also known as associative arrays) can be created using the map 
 
 [source,groovy]
 --------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=map_literal,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=map_literal,indent=0]
 --------------------------------------------------
 
 Map keys are strings by default: `[a:1]` is equivalent to `['a':1]`. This can be confusing if you define a variable
@@ -219,14 +219,14 @@ the key by adding parenthesis, like in the following example:
 
 [source,groovy]
 --------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=map_literal_gotcha,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=map_literal_gotcha,indent=0]
 --------------------------------------------------
 
 In addition to map literals, it is possible, to get a new copy of a map, to clone it:
 
 [source,groovy]
 --------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=map_construct,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=map_construct,indent=0]
 --------------------------------------------------
 
 The resulting map is a *shallow* copy of the original one, as illustrated in the previous example.
@@ -239,7 +239,7 @@ Groovy identifiers:
 
 [source,groovy]
 --------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=map_property,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=map_property,indent=0]
 --------------------------------------------------
 
 Note: by design `map.foo` will always look for the key `foo` in the map. This
@@ -248,7 +248,7 @@ the class, then you must use `getClass()`:
 
 [source,groovy]
 --------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=map_property_gotcha,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=map_property_gotcha,indent=0]
 --------------------------------------------------
 
 === Iterating on maps
@@ -259,7 +259,7 @@ on map entries, it is guaranteed that the entries will be returned in the same o
 
 [source,groovy]
 --------------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=map_iteration,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=map_iteration,indent=0]
 --------------------------------------------------------------------------------
 
 === Manipulating maps
@@ -270,14 +270,14 @@ Adding an element to a map can be done either using the `put` method, the subscr
 
 [source,groovy]
 ---------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=map_add,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=map_add,indent=0]
 ---------------------
 
 Removing all the elements of a map can be done by calling the `clear` method:
 
 [source,groovy]
 ---------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=map_gdk1,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=map_gdk1,indent=0]
 ---------------------
 
 Maps generated using the map literal syntax are using the object `equals` and `hashcode` methods. This means that
@@ -289,7 +289,7 @@ is not the same as the hash code of an equivalent `String`:
 
 [source,groovy]
 ---------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=gstring_gotcha,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=gstring_gotcha,indent=0]
 ---------------------
 
 [[JN1035-Maps-Collectionviewsofamap]]
@@ -299,7 +299,7 @@ We can inspect the keys, values, and entries in a view:
 
 [source,groovy]
 -------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=map_views,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=map_views,indent=0]
 -------------------------------------------------------------------------
 
 Mutating values returned by the view (be it a map entry, a key or a value) is highly discouraged because success
@@ -314,7 +314,7 @@ for <<List-Filtering,lists>>:
 
 [source,groovy]
 -----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=map_gdk2,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=map_gdk2,indent=0]
 -----------------------------------------------------------------------------
 
 [[Maps-Grouping]]
@@ -324,7 +324,7 @@ We can group a list into a map using some criteria:
 
 [source,groovy]
 ----------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=map_gdk3,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=map_gdk3,indent=0]
 ----------------------------------------------------------------
 
 [[Collections-Ranges]]
@@ -343,7 +343,7 @@ first value but not the last value.
 
 [source,groovy]
 ----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=intrange,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=intrange,indent=0]
 ----------------------------------------------------------------------------
 
 Note that int ranges are implemented efficiently, creating a lightweight
@@ -355,14 +355,14 @@ next / previous item in the range. For example, you can create a range of `Strin
 
 [source,groovy]
 --------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=stringrange,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=stringrange,indent=0]
 --------------------------------------
 
 You can iterate on a range using a classic `for` loop:
 
 [source,groovy]
 ----------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=range_for,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=range_for,indent=0]
 ----------------------
 
 but alternatively you can achieve the same effect in a more Groovy idiomatic style, by iterating a range
@@ -370,14 +370,14 @@ with `each` method:
 
 [source,groovy]
 ----------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=range_each,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=range_each,indent=0]
 ----------------------
 
 Ranges can be also used in the `switch` statement:
 
 [source,groovy]
 ----------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=range_switch,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=range_switch,indent=0]
 ----------------------
 
 == Syntax enhancements for collections
@@ -389,8 +389,8 @@ really easy to deal with nested collections, as illustrated in the following exa
 
 [source,groovy]
 ------------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=gpath_support_1,indent=0]
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=gpath_support_2,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=gpath_support_1,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=gpath_support_2,indent=0]
 ------------------------------------------------------------------------------
 
 === Spread operator
@@ -400,7 +400,7 @@ to `putAll` and facilitates the realization of one-liners:
 
 [source,groovy]
 ------------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=gpath_support_3,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=gpath_support_3,indent=0]
 ------------------------------------------------------------------------------
 
 [[Collections-Gettingefficientwiththestar-dotoperator]]
@@ -411,9 +411,9 @@ collection:
 
 [source,groovy]
 -------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=stardot_1,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=stardot_1,indent=0]
 
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=stardot_2,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=stardot_2,indent=0]
 -------------------------------------------------
 
 [[Collections-Slicingwiththesubscriptoperator]]
@@ -424,28 +424,28 @@ are considered as special kinds of collections in that context:
 
 [source,groovy]
 --------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=subscript,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=subscript,indent=0]
 --------------------------------------------------
 
 Notice that you can use ranges to extract part of a collection:
 
 [source,groovy]
 -----------------------------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=subscript_2,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=subscript_2,indent=0]
 -----------------------------------------------------------
 
 The subscript operator can be used to update an existing collection (for collection type which are not immutable):
 
 [source,groovy]
 ---------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=subscript_3,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=subscript_3,indent=0]
 ---------------------------------
 
 It is worth noting that negative indices are allowed, to extract more easily from the end of a collection:
 
 [source,groovy]
 ---------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=subscript_4,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=subscript_4,indent=0]
 ---------------------------------
 
 You can use negative indices to count from the end of the List, array,
@@ -453,7 +453,7 @@ String etc.
 
 [source,groovy]
 --------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=subscript_4a,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=subscript_4a,indent=0]
 --------------------------------
 
 Eventually, if you use a backwards range (the starting index is greater than
@@ -461,7 +461,7 @@ the end index), then the answer is reversed.
 
 [source,groovy]
 --------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithCollectionsTest.groovy[tags=subscript_5,indent=0]
+include::{includedir}/../test/gdk/WorkingWithCollectionsTest.groovy[tags=subscript_5,indent=0]
 --------------------------------
 
 [[Collections-EnhancedCollectionMethods]]

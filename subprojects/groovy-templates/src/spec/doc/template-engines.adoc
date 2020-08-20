@@ -23,11 +23,13 @@
 
 == Introduction
 
-Groovy supports multiple ways to generate text dynamically including `GStrings`, `printf` and <<_markupbuilder, MarkupBuilder>> just to name a few. In addition to these, there is a dedicated template framework which is well-suited to applications where the text to be generated follows the form of a static template.
+Groovy supports multiple ways to generate text dynamically including `GStrings`, `printf` and <<xml-userguide.adoc#_markupbuilder, MarkupBuilder>> just to name a few.
+In addition to these, there is a dedicated template framework which is well-suited to applications where the text to be generated follows the form of a static template.
 
 == Template framework
 
-The template framework in Groovy consists of a `TemplateEngine` abstract base class that engines must implement and a `Template` interface that the resulting templates they generate must implement.
+The template framework in Groovy consists of a `TemplateEngine` abstract base class that engines must implement
+and a `Template` interface that the resulting templates they generate must implement.
 
 Included with Groovy are several template engines:
 
@@ -39,14 +41,16 @@ Included with Groovy are several template engines:
 
 == SimpleTemplateEngine
 
-Shown here is the `SimpleTemplateEngine` that allows you to use JSP-like scriptlets (see example below), script, and EL expressions in your template in order to generate parametrized text. Here is an example of using the system:
+Shown here is the `SimpleTemplateEngine` that allows you to use JSP-like scriptlets (see example below), script, and EL expressions
+in your template in order to generate parametrized text. Here is an example of using the system:
 
 [source,groovy]
 ----
 include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEnginesTest.groovy[tags=simple_template_engine1,indent=0]
 ----
 
-While it is generally not deemed good practice to mix processing logic in your template (or view), sometimes very simple logic can be useful. E.g. in the example above, we could change this:
+While it is generally not deemed good practice to mix processing logic in your template (or view), sometimes very simple logic can be useful.
+E.g. in the example above, we could change this:
 
 [source,groovy]
 ----
@@ -76,7 +80,10 @@ include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEng
 
 === Advanced Usage Note
 
-If you happen to be embedding your template directly in your script (as we did above) you have to be careful about backslash escaping. Because the template string itself will be parsed by Groovy before it is passed to the templating framework, you have to escape any backslashes inside GString expressions or scriptlet 'code' that are entered as part of a Groovy program. E.g. if we wanted quotes around __The Big Apple__ above, we would use:
+If you happen to be embedding your template directly in your script (as we did above) you have to be careful about backslash escaping.
+Because the template string itself will be parsed by Groovy before it is passed to the templating framework, you have to
+escape any backslashes inside GString expressions or scriptlet 'code' that are entered as part of a Groovy program.
+E.g. if we wanted quotes around __The Big Apple__ above, we would use:
 
 [source,groovy]
 ----
@@ -90,7 +97,9 @@ Similarly, if we wanted a newline, we would use:
 include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEnginesTest.groovy[tags=simple_template_engine7,indent=0]
 ----
 
-in any GString expression or scriptlet $$'code'$$ that appears inside a Groovy script. A normal "`\n`" is fine within the static template text itself or if the entire template itself is in an external template file. Similarly, to represent an actual backslash in your text you would need
+in any GString expression or scriptlet $$'code'$$ that appears inside a Groovy script. A normal "`\n`" is fine within
+the static template text itself or if the entire template itself is in an external template file.
+Similarly, to represent an actual backslash in your text you would need
 
 [source,groovy]
 ----
@@ -104,13 +113,17 @@ in an external file or
 include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEnginesTest.groovy[tags=simple_template_engine8,indent=0]
 ----
 
-in any GString expression or scriptlet $$'code'$$. (Note: the necessity to have this extra slash may go away in a future version of Groovy if we can find an easy way to support such a change.)
+in any GString expression or scriptlet $$'code'$$. (Note: the necessity to have this extra slash may go away
+in a future version of Groovy if we can find an easy way to support such a change.)
 
 == StreamingTemplateEngine
 
-The `StreamingTemplateEngine` engine is functionally equivalent to the `SimpleTemplateEngine`, but creates the template using writable closures making it more scalable for large templates. Specifically this template engine can handle strings larger than 64k.
+The `StreamingTemplateEngine` engine is functionally equivalent to the `SimpleTemplateEngine`,
+but creates the template using writable closures making it more scalable for large templates.
+Specifically this template engine can handle strings larger than 64k.
 
-It uses JSP style <% %> script and <%= %> expression syntax or GString style expressions. The variable 'out' is bound to the writer that the template is being written to.
+It uses JSP style <% %> script and <%= %> expression syntax or GString style expressions.
+The variable 'out' is bound to the writer that the template is being written to.
 
 Frequently, the template source will be a file but here we show a simple example providing the template as a string:
 
@@ -121,7 +134,8 @@ include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEng
 
 == GStringTemplateEngine
 
-As an example of using the `GStringTemplateEngine`, here is the example above done again (with a few changes to show some other options). First we will store the template in a file this time:
+As an example of using the `GStringTemplateEngine`, here is the example above done again (with a few changes to show some other options).
+First we will store the template in a file this time:
 
 [source,groovy]
 .test.template
@@ -129,7 +143,8 @@ As an example of using the `GStringTemplateEngine`, here is the example above do
 include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEnginesTest.groovy[tags=gstring_template_engine1,indent=0]
 ----
 
-Note that we used `out` instead of `print` to support the streaming nature of `GStringTemplateEngine`. Because we have the template in a separate file, there is no need to escape the backslashes. Here is how we call it:
+Note that we used `out` instead of `print` to support the streaming nature of `GStringTemplateEngine`.
+Because we have the template in a separate file, there is no need to escape the backslashes. Here is how we call it:
 
 [source,groovy]
 ----
@@ -147,11 +162,17 @@ Groovy-Dev
 
 == XmlTemplateEngine
 
-`XmlTemplateEngine` for use in templating scenarios where both the template source and the expected output are intended to be XML. Templates may use the normal `${expression}` and `$variable` notations to insert an arbitrary expression into the template. In addition, support is also provided for special tags: `<gsp:scriptlet>` (for inserting code fragments) and `<gsp:expression>` (for code fragments which produce output).
+`XmlTemplateEngine` for use in templating scenarios where both the template source and the expected output are intended to be XML.
+Templates may use the normal `${expression}` and `$variable` notations to insert an arbitrary expression into the template.
+In addition, support is also provided for special tags: `<gsp:scriptlet>` (for inserting code fragments) and `<gsp:expression>`
+(for code fragments which produce output).
 
-Comments and processing instructions will be removed as part of processing and special XML characters such as `<`, `>`, `"` and `'` will be escaped using the respective XML notation. The output will also be indented using standard XML pretty printing.
+Comments and processing instructions will be removed as part of processing and special XML characters such
+as `<`, `>`, `"` and `'` will be escaped using the respective XML notation.
+The output will also be indented using standard XML pretty printing.
 
-The xmlns namespace definition for gsp: tags will be removed but other namespace definitions will be preserved (but may change to an equivalent position within the XML tree).
+The xmlns namespace definition for gsp: tags will be removed but other namespace definitions will be preserved
+(but may change to an equivalent position within the XML tree).
 
 Normally, the template source will be in a file but here is a simple example providing the XML template as a string:
 
@@ -173,8 +194,9 @@ This example will produce this output:
 </document>
 ----
 
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/doc/markup-template-engine.adoc[leveloffset=+1]
+include::{rootProjectDir}/subprojects/groovy-templates/{specfolder}/fragment_markup-template-engine.adoc[leveloffset=+1]
 
 == Other solutions
 
-Also, there are other templating solutions that can be used along with Groovy, such as http://freemarker.org[FreeMarker], http://velocity.apache.org[Velocity], http://stringtemplate.org[StringTemplate] and others.
+Also, there are other templating solutions that can be used along with Groovy,
+such as http://freemarker.org[FreeMarker], http://velocity.apache.org[Velocity], http://stringtemplate.org[StringTemplate] and others.

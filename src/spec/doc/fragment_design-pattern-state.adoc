@@ -22,7 +22,7 @@
 = State Pattern
 
 
-The http://en.wikipedia.org/wiki/State_pattern[State Pattern] provides a structured approach to partitioning the behaviour within complex systems. The overall behaviour of a system is partitioned into well-defined states. Typically, each state is implemented by a class. The overall system behaviour can be determined firstly by knowing the __current state__ of the system; secondly, by understanding the behaviour possible while in that state (as embodied in the methods of the class corresponding to that state).
+The https://en.wikipedia.org/wiki/State_pattern[State Pattern] provides a structured approach to partitioning the behaviour within complex systems. The overall behaviour of a system is partitioned into well-defined states. Typically, each state is implemented by a class. The overall system behaviour can be determined firstly by knowing the __current state__ of the system; secondly, by understanding the behaviour possible while in that state (as embodied in the methods of the class corresponding to that state).
 
 == Example
 
@@ -30,7 +30,7 @@ Here is an example:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=state_example,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=state_example,indent=0]
 ----
 
 Here is the output:
@@ -53,14 +53,14 @@ One approach we could take is to leverage http://www.pragmaticprogrammer.com/tit
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=state_variation1_interface,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=state_variation1_interface,indent=0]
 ----
 
 Then our `Client`, `Online` and 'Offline` classes could be modified to implement that interface, e.g.:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=state_variation1_impl,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=state_variation1_impl,indent=0]
 ----
 
 You might ask: Haven't we just introduced additional boilerplate code? Can't we rely on duck-typing for this? The answer is 'yes' and 'no'. We can get away with duck-typing but one of the key intentions of the state pattern is to partition complexity. If we know that the __client__ class and each __state__ class all satisfy one interface, then we have placed some key boundaries around the complexity. We can look at any state class in isolation and know the bounds of behaviour possible for that state.
@@ -73,14 +73,14 @@ Alternatively, or in combination with other variations, we might decide to extra
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=state_variation2_classes,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=state_variation2_classes,indent=0]
 ----
 
 This is all quite generic and can be used wherever we want to introduce the state pattern. Here is what our code would look like now:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=state_variation2_impl,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=state_variation2_impl,indent=0]
 ----
 
 You can see here the `startFrom` and `transitionTo` methods begin to give our example code a DSL feel.
@@ -89,25 +89,27 @@ You can see here the `startFrom` and `transitionTo` methods begin to give our ex
 
 Alternatively, or in combination with other variations, we might decide to fully embrace a Domain Specific Language (DSL) approach to this example.
 
-We can define the following generic helper functions (first discussed http://www.bytemycode.com/snippets/snippet/640/[here]):
+We can define the following generic helper functions (first discussed https://web.archive.org/web/20170624004445/http://www.bytemycode.com:80/snippets/snippet/640/[here]):
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=state_variation31,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=state_variation31,indent=0]
 ----
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=state_variation32,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=state_variation32,indent=0]
 ----
 
 Now we can define and test our state machine like this:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=state_variation33,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=state_variation33,indent=0]
 ----
 
-This example isn't an exact equivalent of the others. It doesn't use predefined `Online` and `Offline` classes. Instead it defines the entire state machine on the fly as needed. See the http://www.bytemycode.com/snippets/snippet/640/[previous reference] for more elaborate examples of this style.
+This example isn't an exact equivalent of the others. It doesn't use predefined `Online` and `Offline` classes.
+Instead, it defines the entire state machine on the fly as needed.
+See the https://web.archive.org/web/20170624004445/http://www.bytemycode.com:80/snippets/snippet/640/[previous reference] for more elaborate examples of this style.
 
-See also: <<_model_based_testing_using_modeljunit,Model-based testing using ModelJUnit>>
+See also: https://web.archive.org/web/20150102211229/http://groovy.codehaus.org/Model-based+testing+using+ModelJUnit[Model-based testing using ModelJUnit]

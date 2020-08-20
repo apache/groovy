@@ -24,7 +24,7 @@
 
 == A Windows-specific installation script
 
-That allows to create installer. You can examine the results on the <<download,download page>>.
+That allows to create installer. You can examine the results on the https://groovy.apache.org/download.html[download page].
 
 image::assets/img/setup.png[]
 

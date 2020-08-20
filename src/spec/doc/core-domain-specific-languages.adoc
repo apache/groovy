@@ -33,15 +33,15 @@ supported by this new syntax:
 
 [source,groovy]
 ---------------------------------------------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_1,indent=0]
+include::{includedir}/../test/CommandChainsTest.groovy[tags=commandchain_1,indent=0]
 
-include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_2,indent=0]
+include::{includedir}/../test/CommandChainsTest.groovy[tags=commandchain_2,indent=0]
 
-include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_3,indent=0]
+include::{includedir}/../test/CommandChainsTest.groovy[tags=commandchain_3,indent=0]
 
-include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_4,indent=0]
+include::{includedir}/../test/CommandChainsTest.groovy[tags=commandchain_4,indent=0]
 
-include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_5,indent=0]
+include::{includedir}/../test/CommandChainsTest.groovy[tags=commandchain_5,indent=0]
 ---------------------------------------------------------------------------------------------------------------
 
 It is also possible to use methods in the chain which take no arguments,
@@ -49,7 +49,7 @@ but in that case, the parentheses are needed:
 
 [source,groovy]
 -------------------------------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_6,indent=0]
+include::{includedir}/../test/CommandChainsTest.groovy[tags=commandchain_6,indent=0]
 -------------------------------------------------------------------------------------------------
 
 If your command chain contains an odd number of elements, the chain will
@@ -58,7 +58,7 @@ access:
 
 [source,groovy]
 -------------------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_7,indent=0]
+include::{includedir}/../test/CommandChainsTest.groovy[tags=commandchain_7,indent=0]
 -------------------------------------------------------------------------------------
 
 This command chain approach opens up interesting possibilities in terms of the much wider range of DSLs which
@@ -69,7 +69,7 @@ that you can use, but to illustrate creating such a DSL, we will show a couple o
 
 [source,groovy]
 ------------------------------------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_impl1,indent=0]
+include::{includedir}/../test/CommandChainsTest.groovy[tags=commandchain_impl1,indent=0]
 ------------------------------------------------------------------------------------------------------
 
 As a second example, consider how you might write a DSL for simplifying
@@ -82,8 +82,8 @@ box:
 
 [source,groovy]
 ----------------------------------------------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_impl2,indent=0]
-include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_impl2_assert,indent=0]
+include::{includedir}/../test/CommandChainsTest.groovy[tags=commandchain_impl2,indent=0]
+include::{includedir}/../test/CommandChainsTest.groovy[tags=commandchain_impl2_assert,indent=0]
 ----------------------------------------------------------------------------------------------------------------
 
 It reads fairly well for a Java developer but if that is not your target
@@ -94,21 +94,21 @@ helper method:
 
 [source,groovy]
 ------------------------------------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_impl3,indent=0]
+include::{includedir}/../test/CommandChainsTest.groovy[tags=commandchain_impl3,indent=0]
 ------------------------------------------------------------------------------------------------------
 
 now instead of this line from our original example:
 
 [source,groovy]
 ----------------------------------------------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_impl2_assert,indent=0]
+include::{includedir}/../test/CommandChainsTest.groovy[tags=commandchain_impl2_assert,indent=0]
 ----------------------------------------------------------------------------------------------------------------
 
 we can write this:
 
 [source,groovy]
 -----------------------------------------------------
-include::{projectdir}/src/spec/test/CommandChainsTest.groovy[tags=commandchain_impl3_assert,indent=0]
+include::{includedir}/../test/CommandChainsTest.groovy[tags=commandchain_impl3_assert,indent=0]
 -----------------------------------------------------
 
 
@@ -158,7 +158,7 @@ Groovy scripts are always compiled to classes. For example, a script as simple a
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=simple_script,indent=0]
+include::{includedir}/../test/BaseScriptSpecTest.groovy[tags=simple_script,indent=0]
 ----
 
 is compiled to a class extending the abstract gapi:groovy.lang.Script[] class. This class contains a single abstract
@@ -168,7 +168,7 @@ with your application through the `Binding` object, as illustrated in this examp
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=integ_binding,indent=0]
+include::{includedir}/../test/BaseScriptSpecTest.groovy[tags=integ_binding,indent=0]
 ----
 <1> a binding is used to share data between the script and the calling class
 <2> a `GroovyShell` can be used with this binding
@@ -182,14 +182,14 @@ has to extend gapi:groovy.lang.Script[] and be a single abstract method type:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=baseclass_def,indent=0]
+include::{includedir}/../test/BaseScriptSpecTest.groovy[tags=baseclass_def,indent=0]
 ----
 
 Then the custom script base class can be declared in the compiler configuration, for example:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=use_custom_conf,indent=0]
+include::{includedir}/../test/BaseScriptSpecTest.groovy[tags=use_custom_conf,indent=0]
 ----
 <1> create a custom compiler configuration
 <2> set the base script class to our custom base script class
@@ -203,7 +203,7 @@ As an alternative, it is also possible to use the `@BaseScript` annotation direc
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=use_basescript,indent=0]
+include::{includedir}/../test/BaseScriptSpecTest.groovy[tags=use_basescript,indent=0]
 ----
 
 where `@BaseScript` should annotate a variable which type is the class of the base script. Alternatively, you can set
@@ -211,7 +211,7 @@ the base script class as a member of the `@BaseScript` annotation itself:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=use_basescript_alt,indent=0]
+include::{includedir}/../test/BaseScriptSpecTest.groovy[tags=use_basescript_alt,indent=0]
 ----
 
 === Alternate abstract method
@@ -224,7 +224,7 @@ is possible by doing this:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=custom_run_method,indent=0]
+include::{includedir}/../test/BaseScriptSpecTest.groovy[tags=custom_run_method,indent=0]
 ----
 <1> the base script class should define one (and only one) abstract method
 <2> the `run` method can be overridden and perform a task before executing the script body
@@ -235,7 +235,7 @@ If you execute this code:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=custom_run_eval,indent=0]
+include::{includedir}/../test/BaseScriptSpecTest.groovy[tags=custom_run_eval,indent=0]
 ----
 
 Then you will see that the script is executed, but the result of the evaluation is `1` as returned by the `run`
@@ -244,7 +244,7 @@ execute the `run` method several times on the same script instance:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/BaseScriptSpecTest.groovy[tags=custom_run_parse,indent=0]
+include::{includedir}/../test/BaseScriptSpecTest.groovy[tags=custom_run_parse,indent=0]
 ----
 
 == Adding properties to numbers
@@ -258,7 +258,7 @@ An illustration of this can be found in Groovy using the `TimeCategory`:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/metaprogramming/CategoryTest.groovy[tags=time_category,indent=0]
+include::{includedir}/../test/metaprogramming/CategoryTest.groovy[tags=time_category,indent=0]
 ----
 <1> using the `TimeCategory`, a property `minute` is added to the `Integer` class
 <2> similarily, the `months` method returns a `groovy.time.DatumDependentDuration` which can be used in calculus
@@ -283,7 +283,7 @@ code:
 
 [source,groovy]
 ---------------------------------------
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=email_builder_usage,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=email_builder_usage,indent=0]
 ---------------------------------------
 
 One way of implementing this is using the builder strategy, which
@@ -297,7 +297,7 @@ Implementing such a builder is usually done the following way:
 
 [source,groovy]
 ----------------------------------------------
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=email_method_no_delegatesto,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=email_method_no_delegatesto,indent=0]
 ----------------------------------------------
 
 the `EmailSpec` class implements the `from`, `to`, … methods. By
@@ -309,7 +309,7 @@ resolved only against the delegate of the closure.
 
 [source,groovy]
 ----------------------------------------------
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=emailspec_no_delegatesto,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=emailspec_no_delegatesto,indent=0]
 ----------------------------------------------
 
 The `EmailSpec` class has itself a `body` method accepting a closure that is cloned and executed. This is what
@@ -335,7 +335,7 @@ checking on this code:
 
 [source,groovy]
 ---------------------------------------
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=email_builder_usage,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=email_builder_usage,indent=0]
 ---------------------------------------
 
 Then the type checker will know that there’s an `email` method accepting
@@ -347,7 +347,7 @@ runtime, be of type `EmailSpec`:
 
 [source,groovy]
 ---------------------------------------
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=sendmail_typechecked_nodelegatesto,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=sendmail_typechecked_nodelegatesto,indent=0]
 ---------------------------------------
 
 will fail compilation with errors like this one:
@@ -372,7 +372,7 @@ The idea is to annotate the `Closure` parameter of the `email` method:
 
 [source,groovy]
 ---------------------------------------
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=email_method_delegatesto,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=email_method_delegatesto,indent=0]
 ---------------------------------------
 
 What we’ve done here is telling the compiler (or the IDE) that when the
@@ -384,7 +384,7 @@ the delegation strategy is also changed:
 
 [source,groovy]
 ---------------------------------------
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=email_method_delegatesto_strategy,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=email_method_delegatesto_strategy,indent=0]
 ---------------------------------------
 
 Now, both the IDE and the type checker (if you are using `@TypeChecked`)
@@ -397,7 +397,7 @@ The following code will now pass compilation:
 
 [source,groovy]
 ---------------------------------------
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=sendmail_typechecked_pass,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=sendmail_typechecked_pass,indent=0]
 ---------------------------------------
 
 [[TheDelegatesToannotation-DelegatesTomodes]]
@@ -418,7 +418,7 @@ checker).
 
 [source,groovy]
 -----------------------------------------------
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=simple_delegation,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=simple_delegation,indent=0]
 -----------------------------------------------
 
 [[TheDelegatesToannotation-Delegationstrategy]]
@@ -430,7 +430,7 @@ with the default delegation strategy, which is `Closure.OWNER_FIRST`.
 
 [source,groovy]
 ----------------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=delegation_with_strategy,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=delegation_with_strategy,indent=0]
 ----------------------------------------------------------------------------------
 
 [[TheDelegatesToannotation-Delegatetoparameter]]
@@ -441,7 +441,7 @@ another parameter of the method. Take the following code:
 
 [source,groovy]
 -------------------------------------------------
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=exec_method_no_delegatesto,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=exec_method_no_delegatesto,indent=0]
 -------------------------------------------------
 
 Here, the delegate which will be used is *not* created inside the `exec`
@@ -450,7 +450,7 @@ Usage may look like this:
 
 [source,groovy]
 -----------------------
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=exec_usage,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=exec_usage,indent=0]
 -----------------------
 
 Each of the method calls are delegated to the `email` parameter. This is
@@ -459,7 +459,7 @@ companion annotation:
 
 [source,groovy]
 ---------------------------------------------------------------
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=exec_method_with_delegatesto,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=exec_method_with_delegatesto,indent=0]
 ---------------------------------------------------------------
 
 A closure is annotated with `@DelegatesTo`, but this time, without
@@ -470,8 +470,8 @@ which in this case is `Object` but this is not true. Take this code:
 
 [source,groovy]
 --------------------------------------
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=delegatesto_flow_typing_header,indent=0]
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=delegatesto_flow_typing_footer,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=delegatesto_flow_typing_header,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=delegatesto_flow_typing_footer,indent=0]
 --------------------------------------
 
 Remember that this works out of the box *without* having to annotate
@@ -495,7 +495,7 @@ but you may have methods that take multiple closures:
 
 [source,groovy]
 --------------------------------------------------------------------
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=foobarbaz_method_no_delegatesto,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=foobarbaz_method_no_delegatesto,indent=0]
 --------------------------------------------------------------------
 
 Then nothing prevents you from annotating each closure
@@ -503,11 +503,11 @@ with `@DelegatesTo`:
 
 [source,groovy]
 --------------------------------------------------------------------
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=foobarbaz_classes,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=foobarbaz_classes,indent=0]
 
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=foobarbaz_method_header,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=foobarbaz_method_header,indent=0]
    ...
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=foobarbaz_method_footer,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=foobarbaz_method_footer,indent=0]
 --------------------------------------------------------------------
 
 But more importantly, if you have multiple closures *and* multiple
@@ -515,9 +515,9 @@ arguments, you can use several targets:
 
 [source,groovy]
 -----------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=foobarbaz_multitarget,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=foobarbaz_multitarget,indent=0]
 
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=multitarget_test,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=multitarget_test,indent=0]
 -----------------------------------------------------------------------------
 
 NOTE: At this point, you may wonder why we don’t use the parameter names as
@@ -532,14 +532,14 @@ but a generic type. Imagine a configurator that runs on a list of elements:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=configure_list_method,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=configure_list_method,indent=0]
 ----
 
 Then this method can be called with any list like this:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=configure_list_usage,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=configure_list_usage,indent=0]
 ----
 
 To let the type checker and the IDE know that the `configure` method calls the closure on each element of the list, you
@@ -547,7 +547,7 @@ To let the type checker and the IDE know that the `configure` method calls the c
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=configure_list_with_delegatesto,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=configure_list_with_delegatesto,indent=0]
 ----
 
 `@DelegatesTo` takes an optional `genericTypeIndex` argument that tells what is the index of the generic type that will
@@ -564,7 +564,7 @@ a mapper class which is parametrized with an object and defines a map method whi
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=delegatestotype_mapper,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=delegatestotype_mapper,indent=0]
 ----
 <1> The mapper class takes two generic type arguments: the source type and the target type
 <2> The source object is stored in a final field
@@ -577,7 +577,7 @@ available options for `@DelegatesTo` is suitable. For example, if we try to stat
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=delegatestotype_mapper_test,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=delegatestotype_mapper_test,indent=0]
 ----
 
 Then the compiler will fail with:
@@ -590,7 +590,7 @@ In that case, you can use the `type` member of the `@DelegatesTo` annotation to 
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DelegatesToSpecTest.groovy[tags=delegatestotype_mapper_fixed,indent=0]
+include::{includedir}/../test/DelegatesToSpecTest.groovy[tags=delegatestotype_mapper_fixed,indent=0]
 ----
 <1> The `@DelegatesTo` annotation references a generic type which is not found in the method signature
 
@@ -648,7 +648,7 @@ Groovy language allows, that is:
 -----------------------------------------------------------------------------------------------------
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 
-include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=import_cz,indent=0]
+include::{includedir}/../test/CustomizersTest.groovy[tags=import_cz,indent=0]
 -----------------------------------------------------------------------------------------------------
 
 A detailed description of all shortcuts can be found in gapi:org.codehaus.groovy.control.customizers.ImportCustomizer[]
@@ -675,7 +675,7 @@ to do it:
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import groovy.util.logging.Log
 
-include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=ast_cz_simple,indent=0]
+include::{includedir}/../test/CustomizersTest.groovy[tags=ast_cz_simple,indent=0]
 --------------------------------------------------------------------------
 
 That’s all! Internally, the `@Log` AST transformation is applied to
@@ -687,7 +687,7 @@ use parameters in the constructor too:
 
 [source,groovy]
 -----------------------------------------------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=ast_cz_customname,indent=0]
+include::{includedir}/../test/CustomizersTest.groovy[tags=ast_cz_customname,indent=0]
 -----------------------------------------------------------------------------------------------------------------
 
 As the AST transformation customizers works with objects instead of AST
@@ -699,7 +699,7 @@ give it a `ClosureExpression`, like in the following example:
 
 [source,groovy]
 --------------------------------------------------------------------------------------------------------------
-include::{projectdir}/subprojects/groovy-astbuilder/src/spec/test/CustomizersTest.groovy[tags=ast_cz_closure,indent=0]
+include::{rootprojectdir}/subprojects/groovy-astbuilder/src/spec/test/CustomizersTest.groovy[tags=ast_cz_closure,indent=0]
 --------------------------------------------------------------------------------------------------------------
 
 For a complete list of options, please refer to gapi:org.codehaus.groovy.control.customizers.ASTTransformationCustomizer[]
@@ -740,7 +740,7 @@ you will choose allowed lists (which permits only the constructs listed and disa
 import org.codehaus.groovy.control.customizers.SecureASTCustomizer
 import static org.codehaus.groovy.syntax.Types.* <1>
 
-include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=secure_cz,indent=0]
+include::{includedir}/../test/CustomizersTest.groovy[tags=secure_cz,indent=0]
 -------------------------------------------------------------------------------------
 <1> use for token types from gapi:org.codehaus.groovy.syntax.Types[]
 <2> you can use class literals here
@@ -765,7 +765,7 @@ checker, it is trivial:
 
 [source,groovy]
 ----------------------------------------------------------------------
-include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=secure_cz_custom,indent=0]
+include::{includedir}/../test/CustomizersTest.groovy[tags=secure_cz_custom,indent=0]
 ----------------------------------------------------------------------
 
 Then we can make sure that this works by evaluating a simple script:
@@ -773,7 +773,7 @@ Then we can make sure that this works by evaluating a simple script:
 [source,groovy]
 ----
 new GroovyShell(config).evaluate '''
-include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=secure_cz_custom_assert,indent=4]
+include::{includedir}/../test/CustomizersTest.groovy[tags=secure_cz_custom_assert,indent=4]
 '''
 ----
 <1> will fail compilation
@@ -799,14 +799,14 @@ example. Here is how you would create a source aware customizer:
 import org.codehaus.groovy.control.customizers.SourceAwareCustomizer
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 
-include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=source_cz,indent=0]
+include::{includedir}/../test/CustomizersTest.groovy[tags=source_cz,indent=0]
 --------------------------------------------------------------------
 
 Then you can use predicates on the source aware customizer:
 
 [source,groovy]
 --------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=source_cz_predicates,indent=0]
+include::{includedir}/../test/CustomizersTest.groovy[tags=source_cz_predicates,indent=0]
 --------------------------------------------------------------------------
 
 === Customizer builder
@@ -821,7 +821,7 @@ simplifies the creation of customizers using a hierarchical DSL.
 import org.codehaus.groovy.control.CompilerConfiguration
 import static org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder.withConfig <1>
 
-include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=customizer_withconfig,indent=0]
+include::{includedir}/../test/CustomizersTest.groovy[tags=customizer_withconfig,indent=0]
 -----------------------------------------------------------------------------------------------------
 <1> static import of the builder method
 <2> configuration goes here
@@ -1014,7 +1014,7 @@ Then AST transformations are the way to go. Unlike the techniques used so far, A
 change or generate code before it is compiled to bytecode. AST transformations are capable of adding new methods at
 compile time for example, or totally changing the body of a method based on your needs. They are a very powerful tool
 but also come at the price of not being easy to write. For more information about AST transformations, please take
-a look at the http://docs.groovy-lang.org/latest/html/documentation/index.html#_compile_time_metaprogramming[compile-time
+a look at the https://docs.groovy-lang.org/latest/html/documentation/index.html#_compile_time_metaprogramming[compile-time
 metaprogramming] section of this manual.
 
 == Custom type checking extensions
@@ -1052,11 +1052,11 @@ See <<xml-userguide.adoc#_markupbuilder,Creating Xml - MarkupBuilder>>.
 
 See <<xml-userguide.adoc#_streamingmarkupbuilder,Creating Xml - StreamingMarkupBuilder>>.
 
-include::{projectdir}/subprojects/groovy-xml/{specfolder}/sax-builder.adoc[leveloffset=+3]
+include::{rootprojectdir}/subprojects/groovy-xml/{specfolder}/fragment_sax-builder.adoc[leveloffset=+3]
 
-include::{projectdir}/subprojects/groovy-xml/{specfolder}/stax-builder.adoc[leveloffset=+3]
+include::{rootprojectdir}/subprojects/groovy-xml/{specfolder}/fragment_stax-builder.adoc[leveloffset=+3]
 
-include::{projectdir}/subprojects/groovy-xml/{specfolder}/dom-builder.adoc[leveloffset=+3]
+include::{rootprojectdir}/subprojects/groovy-xml/{specfolder}/fragment_dom-builder.adoc[leveloffset=+3]
 
 ==== NodeBuilder
 
@@ -1065,23 +1065,23 @@ To create a simple user list you use a `NodeBuilder` like this:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/NodeBuilderTest.groovy[tags=node_builder_example,indent=0]
+include::{includedir}/../test/builder/NodeBuilderTest.groovy[tags=node_builder_example,indent=0]
 ----
 
-Now you can process the data further, e.g. by using <<gpath_expressions,GPath expressions>>: 
+Now you can process the data further, e.g. by using <<core-semantics.adoc#gpath_expressions,GPath expressions>>:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/NodeBuilderTest.groovy[tags=node_builder_gpath_assert,indent=0]
+include::{includedir}/../test/builder/NodeBuilderTest.groovy[tags=node_builder_gpath_assert,indent=0]
 ----
 
-include::{projectdir}/subprojects/groovy-json/{specfolder}/json-builder.adoc[leveloffset=+3]
+include::{rootprojectdir}/subprojects/groovy-json/{specfolder}/fragment_json-builder.adoc[leveloffset=+3]
 
-include::{projectdir}/subprojects/groovy-json/{specfolder}/streaming-jason-builder.adoc[leveloffset=+3]
+include::{rootprojectdir}/subprojects/groovy-json/{specfolder}/fragment_streaming-jason-builder.adoc[leveloffset=+3]
 
-include::{projectdir}/subprojects/groovy-swing/{specfolder}/swing-builder.adoc[leveloffset=+3]
+include::{rootprojectdir}/subprojects/groovy-swing/{specfolder}/fragment_swing-builder.adoc[leveloffset=+3]
 
-include::{projectdir}/subprojects/groovy-ant/{specfolder}/ant-builder.adoc[leveloffset=+3]
+include::{rootprojectdir}/subprojects/groovy-ant/{specfolder}/fragment_ant-builder.adoc[leveloffset=+3]
 
 ==== CliBuilder
 
@@ -1211,7 +1211,7 @@ Here is how such a specification can be defined:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/GreeterI.groovy[tags=annotationInterfaceSpec,indent=0]
+include::{includedir}/../test/cli/GreeterI.groovy[tags=annotationInterfaceSpec,indent=0]
 ----
 <1> Specify a Boolean option set using `-h` or `--help`
 <2> Specify a String option set using `-a` or `--audience`
@@ -1226,7 +1226,7 @@ Here is how you could use the interface specification:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/CliBuilderTestCase.groovy[tags=annotationInterface,indent=0]
+include::{includedir}/../test/cli/CliBuilderTestCase.groovy[tags=annotationInterface,indent=0]
 ----
 <1> Create a `CliBuilder` instance as before with optional properties
 <2> Parse parameters using the interface specification
@@ -1248,7 +1248,7 @@ Here is how such a specification can be defined:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/GreeterC.groovy[tags=annotationClassSpec,indent=0]
+include::{includedir}/../test/cli/GreeterC.groovy[tags=annotationClassSpec,indent=0]
 ----
 <1> Indicate that a Boolean property is an option
 <2> Indicate that a String property (with explicit setter) is an option
@@ -1258,7 +1258,7 @@ And here is how you could use the specification:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/CliBuilderTestCase.groovy[tags=annotationClass,indent=0]
+include::{includedir}/../test/cli/CliBuilderTestCase.groovy[tags=annotationClass,indent=0]
 ----
 <1> Create a `CliBuilder` instance as before with optional parameters
 <2> Create an instance for `CliBuilder` to populate
@@ -1282,7 +1282,7 @@ with the same arguments as shown for the instance example earlier:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/CliBuilderTestCase.groovy[tags=annotationScript,indent=0]
+include::{includedir}/../test/cli/CliBuilderTestCase.groovy[tags=annotationScript,indent=0]
 ----
 
 ===== Options with arguments
@@ -1294,7 +1294,7 @@ Here is an example involving those cases:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/CliBuilderTestCase.groovy[tags=withArgument,indent=0]
+include::{includedir}/../test/cli/CliBuilderTestCase.groovy[tags=withArgument,indent=0]
 ----
 <1> An option that is simply a flag - the default; setting args to 0 is allowed but not needed.
 <2> An option with exactly one argument
@@ -1311,14 +1311,14 @@ illustrating such a definition:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/WithArgsI.groovy[tags=withArgumentInterfaceSpec,indent=0]
+include::{includedir}/../test/cli/WithArgsI.groovy[tags=withArgumentInterfaceSpec,indent=0]
 ----
 
 And here is how it is used:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/CliBuilderTestCase.groovy[tags=withArgumentInterface,indent=0]
+include::{includedir}/../test/cli/CliBuilderTestCase.groovy[tags=withArgumentInterface,indent=0]
 ----
 
 This example makes use of an array-typed option specification. We cover this in more detail shortly when we discuss
@@ -1339,7 +1339,7 @@ Here is an example using types with the dynamic api argument definition style:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/CliBuilderTestCase.groovy[tags=withType,indent=0]
+include::{includedir}/../test/cli/CliBuilderTestCase.groovy[tags=withType,indent=0]
 ----
 
 Primitives, numeric types, files, enums and arrays thereof, are supported (they are converted using
@@ -1352,7 +1352,7 @@ for you. Here is a sample using the dynamic api style:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/CliBuilderTestCase.groovy[tags=withConvert,indent=0]
+include::{includedir}/../test/cli/CliBuilderTestCase.groovy[tags=withConvert,indent=0]
 ----
 
 Alternatively, you can use the annotation style by supplying the conversion closure as an annotation parameter.
@@ -1360,14 +1360,14 @@ Here is an example specification:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/WithConvertI.groovy[tags=withConvertInterfaceSpec,indent=0]
+include::{includedir}/../test/cli/WithConvertI.groovy[tags=withConvertInterfaceSpec,indent=0]
 ----
 
 And an example using that specification:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/CliBuilderTestCase.groovy[tags=withConvertInterface,indent=0]
+include::{includedir}/../test/cli/CliBuilderTestCase.groovy[tags=withConvertInterface,indent=0]
 ----
 
 ===== Options with multiple arguments
@@ -1393,7 +1393,7 @@ Here is an excerpt highlighting the use of multiple arguments:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/CliBuilderTestCase.groovy[tags=multipleArgs,indent=0]
+include::{includedir}/../test/cli/CliBuilderTestCase.groovy[tags=multipleArgs,indent=0]
 ----
 <1> Args value supplied as a String and comma value separator specified
 <2> One or more arguments are allowed
@@ -1413,14 +1413,14 @@ array type for the annotated class member (method or property) as this example s
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/ValSepI.groovy[tags=multipleArgsInterfaceSpec,indent=0]
+include::{includedir}/../test/cli/ValSepI.groovy[tags=multipleArgsInterfaceSpec,indent=0]
 ----
 
 And used as follows:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/CliBuilderTestCase.groovy[tags=multipleArgsInterface,indent=0]
+include::{includedir}/../test/cli/CliBuilderTestCase.groovy[tags=multipleArgsInterface,indent=0]
 ----
 
 ===== Types and multiple arguments
@@ -1429,7 +1429,7 @@ Here is an example using types and multiple arguments with the dynamic api argum
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/CliBuilderTestCase.groovy[tags=withTypeMultiple,indent=0]
+include::{includedir}/../test/cli/CliBuilderTestCase.groovy[tags=withTypeMultiple,indent=0]
 ----
 <1> For an array type, the trailing 's' can be used but isn't needed
 
@@ -1444,7 +1444,7 @@ Here is how you could use it using the dynamic api style:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/CliBuilderTestCase.groovy[tags=withDefaultValue,indent=0]
+include::{includedir}/../test/cli/CliBuilderTestCase.groovy[tags=withDefaultValue,indent=0]
 ----
 
 Similarly, you might want such a specification using the annotation style. Here is an example using an interface
@@ -1452,14 +1452,14 @@ specification:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/WithDefaultValueI.groovy[tags=withDefaultValueInterfaceSpec,indent=0]
+include::{includedir}/../test/cli/WithDefaultValueI.groovy[tags=withDefaultValueInterfaceSpec,indent=0]
 ----
 
 Which would be used like this:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/CliBuilderTestCase.groovy[tags=withDefaultValueInterface,indent=0]
+include::{includedir}/../test/cli/CliBuilderTestCase.groovy[tags=withDefaultValueInterface,indent=0]
 ----
 
 You can also use the `defaultValue` annotation attribute when using annotations with an instance,
@@ -1473,14 +1473,14 @@ annotation style, for example, here is an interface option specification:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/TypeCheckedI.groovy[tags=withTypeCheckedInterfaceSpec,indent=0]
+include::{includedir}/../test/cli/TypeCheckedI.groovy[tags=withTypeCheckedInterfaceSpec,indent=0]
 ----
 
 And it can be used in combination with `@TypeChecked` as shown here:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/CliBuilderTestCase.groovy[tags=withTypeCheckedInterface,indent=0]
+include::{includedir}/../test/cli/CliBuilderTestCase.groovy[tags=withTypeCheckedInterface,indent=0]
 ----
 
 Secondly, there is a feature of the dynamic api style which offers some support. The definition statements
@@ -1513,7 +1513,7 @@ the following example:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/cli/CliBuilderTestCase.groovy[tags=withTypeChecked,indent=0]
+include::{includedir}/../test/cli/CliBuilderTestCase.groovy[tags=withTypeChecked,indent=0]
 ----
 
 ===== Advanced CLI Usage
@@ -1594,7 +1594,7 @@ which gives fine-grained control over various sections of the usage help message
 
 [source,groovy]
 ----
-include::{projectdir}/subprojects/groovy-cli-picocli/src/spec/test/builder/CliBuilderTest.groovy[tags=withUsageMessageSpec,indent=0]
+include::{rootprojectdir}/subprojects/groovy-cli-picocli/src/spec/test/builder/CliBuilderTest.groovy[tags=withUsageMessageSpec,indent=0]
 ----
 Gives this output:
 
@@ -1631,9 +1631,9 @@ Finally, if your application has options that are key-value pairs, you may be in
 
 [source,groovy]
 ----
-include::{projectdir}/subprojects/groovy-cli-picocli/src/spec/test/builder/CliBuilderTest.groovy[tags=mapOptionImports,indent=0]
+include::{rootprojectdir}/subprojects/groovy-cli-picocli/src/spec/test/builder/CliBuilderTest.groovy[tags=mapOptionImports,indent=0]
 
-include::{projectdir}/subprojects/groovy-cli-picocli/src/spec/test/builder/CliBuilderTest.groovy[tags=mapOption,indent=0]
+include::{rootprojectdir}/subprojects/groovy-cli-picocli/src/spec/test/builder/CliBuilderTest.groovy[tags=mapOption,indent=0]
 ----
 <1> Previously, `key=value` pairs were split up into parts and added to a list
 <2> Picocli map support: simply specify `Map` as the type of the option
@@ -1666,7 +1666,7 @@ Let's start with a list of classes that belong to your domain:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/ObjectGraphBuilderTest.groovy[tags=domain_classes,indent=0]
+include::{includedir}/../test/builder/ObjectGraphBuilderTest.groovy[tags=domain_classes,indent=0]
 ----
 
 Then using `ObjectGraphBuilder` building a `Company` with three employees is as
@@ -1674,7 +1674,7 @@ easy as:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/ObjectGraphBuilderTest.groovy[tags=builder_example,indent=0]
+include::{includedir}/../test/builder/ObjectGraphBuilderTest.groovy[tags=builder_example,indent=0]
 ----
 <1> creates a new object graph builder
 <2> sets the classloader where the classes will be resolved
@@ -1700,27 +1700,27 @@ immutable:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/ObjectGraphBuilderTest.groovy[tags=immutable_class,indent=0]
+include::{includedir}/../test/builder/ObjectGraphBuilderTest.groovy[tags=immutable_class,indent=0]
 ----
 
 Then if you try to create a `Person` with the builder:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/ObjectGraphBuilderTest.groovy[tags=immutable_fail_runtime,indent=0]
+include::{includedir}/../test/builder/ObjectGraphBuilderTest.groovy[tags=immutable_fail_runtime,indent=0]
 ----
 
 It will fail at runtime with:
 
 ----
-include::{projectdir}/src/spec/test/builder/ObjectGraphBuilderTest.groovy[tags=expected_error_immutable,indent=0]
+include::{includedir}/../test/builder/ObjectGraphBuilderTest.groovy[tags=expected_error_immutable,indent=0]
 ----
 
 Fixing this can be done by changing the new instance strategy:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/ObjectGraphBuilderTest.groovy[tags=newinstanceresolver,indent=0]
+include::{includedir}/../test/builder/ObjectGraphBuilderTest.groovy[tags=newinstanceresolver,indent=0]
 ----
 
 `ObjectGraphBuilder` supports ids per node, meaning
@@ -1735,7 +1735,7 @@ appropriate value (default is `refId'):
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/ObjectGraphBuilderTest.groovy[tags=test_id,indent=0]
+include::{includedir}/../test/builder/ObjectGraphBuilderTest.groovy[tags=test_id,indent=0]
 ----
 <1> an address can be created with an `id`
 <2> an employee can reference the address directly with its id
@@ -1746,7 +1746,7 @@ referenced bean.
 
 ==== JmxBuilder
 
-See <<jmx_jmxbuilder,Working with JMX - JmxBuilder>> for details.
+See <<jmx.adoc#jmx_jmxbuilder,Working with JMX - JmxBuilder>> for details.
 
 ==== FileTreeBuilder
 
@@ -1766,26 +1766,26 @@ You can use a `FileTreeBuilder` like this:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/FileTreeBuilderTest.groovy[tags=example,indent=0]
+include::{includedir}/../test/builder/FileTreeBuilderTest.groovy[tags=example,indent=0]
 ----
 
 To check that everything worked as expected we use the following `assert`s:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/FileTreeBuilderTest.groovy[tags=example_assert,indent=0]
+include::{includedir}/../test/builder/FileTreeBuilderTest.groovy[tags=example_assert,indent=0]
 ----
 
 `FileTreeBuilder` also supports a shorthand syntax:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/FileTreeBuilderTest.groovy[tags=shorthand_syntax,indent=0]
+include::{includedir}/../test/builder/FileTreeBuilderTest.groovy[tags=shorthand_syntax,indent=0]
 ----
 
 This produces the same directory structure as above, as shown by these `assert`s:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/FileTreeBuilderTest.groovy[tags=shorthand_syntax_assert,indent=0]
+include::{includedir}/../test/builder/FileTreeBuilderTest.groovy[tags=shorthand_syntax_assert,indent=0]
 ----

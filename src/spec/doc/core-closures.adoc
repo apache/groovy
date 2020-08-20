@@ -21,7 +21,7 @@
 
 = Closures
 
-:lambdas: http://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html[lambda expressions in Java 8]
+:lambdas: https://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html[lambda expressions in Java 8]
 
 This chapter covers Groovy Closures. A closure in Groovy is an open, anonymous, block of code that can take arguments,
 return a value and be assigned to a variable. A closure may reference variables declared in its surrounding scope. In
@@ -52,19 +52,19 @@ Some examples of valid closure definitions:
 
 [source,groovy]
 -----------------------------------------------------------
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_syntax_1,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_syntax_1,indent=0]
 
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_syntax_1bis,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_syntax_1bis,indent=0]
 
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_syntax_2,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_syntax_2,indent=0]
 
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_syntax_3,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_syntax_3,indent=0]
 
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_syntax_4,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_syntax_4,indent=0]
 
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_syntax_5,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_syntax_5,indent=0]
 
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_syntax_6,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_syntax_6,indent=0]
 -----------------------------------------------------------
 <1> A closure referencing a variable named `item`
 <2> It is possible to explicitly separate closure parameters from code by adding an arrow (`+->+`)
@@ -82,7 +82,7 @@ other variable, despite being a block of code:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_is_an_instance_of_Closure,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_is_an_instance_of_Closure,indent=0]
 ----
 <1> You can assign a closure to a variable, and it is an instance of `groovy.lang.Closure`
 <2> If not using `def` or `var`, use `groovy.lang.Closure` as the type
@@ -95,7 +95,7 @@ no argument like this:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_call_1,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_call_1,indent=0]
 ----
 
 Then the code inside the closure will only be executed when you _call_ the closure, which can be done by using the
@@ -103,21 +103,21 @@ variable as if it was a regular method:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_call_1_direct,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_call_1_direct,indent=0]
 ----
 
 Alternatively, you can be explicit and use the `call` method:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_call_1_explicit,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_call_1_explicit,indent=0]
 ----
 
 The principle is the same if the closure accepts arguments:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_call_2,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_call_2,indent=0]
 ----
 <1> define a closure which accepts an `int` as a parameter
 <2> it can be called directly
@@ -143,7 +143,7 @@ Parameters are separated with commas:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_param_declaration,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_param_declaration,indent=0]
 ----
 
 [[implicit-it]]
@@ -154,14 +154,14 @@ parameter, named `it`. This means that this code:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=implicit_it,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=implicit_it,indent=0]
 ----
 
 is stricly equivalent to this one:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=implicit_it_equiv,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=implicit_it_equiv,indent=0]
 ----
 
 If you want to declare a closure which accepts no argument and must be restricted to calls without arguments,
@@ -169,9 +169,9 @@ then you *must* declare it with an explicit empty argument list:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_no_arg_def,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_no_arg_def,indent=0]
 
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_no_arg_fail,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_no_arg_fail,indent=0]
 ----
 
 === Varargs
@@ -182,7 +182,7 @@ examples:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_vargs,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_vargs,indent=0]
 ----
 <1> A closure accepting a variable number of strings as first parameter
 <2> It may be called using any number of arguments *without* having to explicitly wrap them into an array
@@ -217,7 +217,7 @@ using an explicit `this`:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_this,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_this,indent=0]
 ----
 <1> a closure is defined inside the `Enclosing` class, and returns `getThisObject`
 <2> calling the closure will return the instance of `Enclosing` where the closure is defined
@@ -232,7 +232,7 @@ It is of course possible to call methods from the enclosing class this way:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_this_call,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_this_call,indent=0]
 ----
 <1> the closure calls `toString` on `this`, which will actually call the `toString` method on the enclosing object,
 that is to say the `Person` instance
@@ -244,7 +244,7 @@ it will return the direct enclosing object, be it a closure or a class:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_owner,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_owner,indent=0]
 ----
 <1> a closure is defined inside the `Enclosing` class, and returns `getOwner`
 <2> calling the closure will return the instance of `Enclosing` where the closure is defined
@@ -258,13 +258,13 @@ include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_owner,i
 ==== Delegate of a closure
 
 The delegate of a closure can be accessed by using the `delegate` property or calling the `getDelegate` method. It is a
-powerful concept for building domain specific languages in Groovy. While <<this,closure-this>> and <<owner,closure-owner>>
+powerful concept for building domain specific languages in Groovy. While <<closure-this,this>> and <<closure-owner,owner>>
 refer to the lexical scope of a closure, the delegate is a user defined object that a closure will use. By default, the
 delegate is set to `owner`:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=delegate_is_owner,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=delegate_is_owner,indent=0]
 ----
 <1> you can get the delegate of a closure calling the `getDelegate` method
 <2> or using the `delegate` property
@@ -278,28 +278,28 @@ subclasses of each other but both define a property called `name`:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=change_delegate_classes,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=change_delegate_classes,indent=0]
 ----
 
 Then let's define a closure which fetches the `name` property on the delegate:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=change_delegate_closure,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=change_delegate_closure,indent=0]
 ----
 
 Then by changing the delegate of the closure, you can see that the target object will change:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=change_delegate_asserts,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=change_delegate_asserts,indent=0]
 ----
 
 At this point, the behavior is not different from having a `target` variable defined in the lexical scope of the closure:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=delegate_alernative,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=delegate_alernative,indent=0]
 ----
 
 However, there are major differences:
@@ -315,7 +315,7 @@ is involved:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=delegation_strategy_intro,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=delegation_strategy_intro,indent=0]
 ----
 <1> `name` is not referencing a variable in the lexical scope of the closure
 <2> we can change the delegate of the closure to be an instance of `Person`
@@ -339,7 +339,7 @@ Let's illustrate the default "owner first" strategy with this code:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_owner_first,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_owner_first,indent=0]
 ----
 <1> for the illustration, we define a closure member which references "name"
 <2> both the `Person` and the `Thing` class define a `name` property
@@ -351,7 +351,7 @@ However, it is possible to change the resolution strategy of the closure:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_delegate_first,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_delegate_first,indent=0]
 ----
 
 By changing the `resolveStrategy`, we are modifying the way Groovy will resolve the "implicit this" references: in this
@@ -363,7 +363,7 @@ of the delegate (resp. owner) does *not* have such a method or property:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=delegate_only,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=delegate_only,indent=0]
 ----
 
 In this example, we define two classes which both have a `name` property but only the `Person` class declares an `age`.
@@ -382,14 +382,14 @@ Take the following code:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=gstring_eager_intro,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=gstring_eager_intro,indent=0]
 ----
 
 The code behaves as you would expect, but what happens if you add:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=gstring_eager_outro,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=gstring_eager_outro,indent=0]
 ----
 
 You will see that the assert fails! There are two reasons for this:
@@ -411,14 +411,14 @@ alternate syntax `${-> x}` like in the fixed example:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=gstring_lazy,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=gstring_lazy,indent=0]
 ----
 
 And let's illustrate how it differs from mutation with this code:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=gstring_mutation,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=gstring_mutation,indent=0]
 ----
 <1> the `Person` class has a `toString` method returning the `name` property
 <2> we create a first `Person` named _Sam_
@@ -436,7 +436,7 @@ declaring an empty argument list:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=gstring_no_mutation,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=gstring_no_mutation,indent=0]
 ----
 
 == Closure coercion
@@ -461,7 +461,7 @@ Left currying is the fact of setting the left-most parameter of a closure, like 
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=left_curry,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=left_curry,indent=0]
 ----
 <1> the `nCopies` closure defines two parameters
 <2> `curry` will set the first parameter to `2`, creating a new closure (function) which accepts a single `String`
@@ -474,7 +474,7 @@ Similarily to left currying, it is possible to set the right-most parameter of a
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=right_curry,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=right_curry,indent=0]
 ----
 <1> the `nCopies` closure defines two parameters
 <2> `rcurry` will set the last parameter to `bla`, creating a new closure (function) which accepts a single `int`
@@ -487,7 +487,7 @@ In case a closure accepts more than 2 parameters, it is possible to set an arbit
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=ncurry,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=ncurry,indent=0]
 ----
 <1> the `volume` function defines 3 parameters
 <2> `ncurry` will set the second parameter (index = 1) to `2d`, creating a new volume function which accepts length and height
@@ -503,7 +503,7 @@ typical example is the Fibonacci suite. A naive implementation may look like thi
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=naive_fib,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=naive_fib,indent=0]
 ----
 
 It is a naive implementation because 'fib' is often called recursively with the same arguments, leading to an exponential
@@ -517,7 +517,7 @@ be cached. This naive implementation can be "fixed" by caching the result of cal
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=memoized_fib,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=memoized_fib,indent=0]
 ----
 
 WARNING: The cache works *using the actual values of the arguments*. This means that you should be very careful if you use
@@ -538,7 +538,7 @@ composing two or more functions (chaining calls), as illustrated in this example
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_composition,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=closure_composition,indent=0]
 ----
 
 === Trampoline
@@ -558,7 +558,7 @@ Here’s an example of the use of `trampoline()` to implement the factorial func
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=trampoline,indent=0]
+include::{includedir}/../test/ClosuresSpecTest.groovy[tags=trampoline,indent=0]
 ----
 
 === Method pointers

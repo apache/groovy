@@ -563,7 +563,7 @@ class ClassTest extends GroovyTestCase {
             class Runner {
                 static <T> T run(Class<T> taskClass) {
                     def tasks = taskClass.newInstance()                                         // <1>
-                    def params = [jdk:6, windows: false]                                        // <2>
+                    def params = [jdk: 6, windows: false]                                       // <2>
                     tasks.class.declaredMethods.each { m ->                                     // <3>
                         if (Modifier.isPublic(m.modifiers) && m.parameterTypes.length == 0) {   // <4>
                             def onlyIf = m.getAnnotation(OnlyIf)                                // <5>
