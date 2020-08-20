@@ -21,9 +21,9 @@
 
 = Delegation Pattern
 
-The http://en.wikipedia.org/wiki/Delegation_pattern[Delegation Pattern] is a technique where an object's behavior (public methods) is implemented by delegating responsibility to one or more associated objects.
+The https://en.wikipedia.org/wiki/Delegation_pattern[Delegation Pattern] is a technique where an object's behavior (public methods) is implemented by delegating responsibility to one or more associated objects.
 
-Groovy allows the traditional style of applying the delegation pattern, e.g. see <<_replace_inheritance_with_delegation,Replace Inheritance with Delegation>>.
+Groovy allows the traditional style of applying the delegation pattern, e.g. see https://refactoring.com/catalog/replaceSuperclassWithDelegate.html[Replace Inheritance with Delegation].
 
 == Implement Delegation Pattern using ExpandoMetaClass
 
@@ -33,21 +33,21 @@ Consider the following library class:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=delegation_delegator,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=delegation_delegator,indent=0]
 ----
 
 With this in your classpath, you can now apply the delegation pattern dynamically as shown in the following examples. First, consider we have the following classes:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=delegation_classes,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=delegation_classes,indent=0]
 ----
 
 We can now use the __delegator__ to automatically borrow methods from the __lender__ object to extend the __Person__ class. We can borrow the methods as is or with a rename:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=delegation_usage,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=delegation_usage,indent=0]
 ----
 
 The first line above, adds the __borrowFor__ method to the __Person__ class by delegating to the __lender__ object. The second line adds a __getMoney__ method to the __Person__ class by delegating to the __lender__ object's __borrowAmount__ method.
@@ -56,7 +56,7 @@ Alternatively, we could borrow multiple methods like this:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=delegation_usage2,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=delegation_usage2,indent=0]
 ----
 
 Which adds these two methods to the __Person__ class.
@@ -65,7 +65,7 @@ Or if we want all the methods, like this:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=delegation_usage3,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=delegation_usage3,indent=0]
 ----
 
 Which will make all the methods in the delegate object available in the __Person__ class.
@@ -74,7 +74,7 @@ Alternatively, we can use a map notation to rename multiple methods:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=delegation_usage4,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=delegation_usage4,indent=0]
 ----
 
 == Implement Delegation Pattern using @Delegate annotation
@@ -85,5 +85,5 @@ This make delegation even easier:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=delegation_annotation,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=delegation_annotation,indent=0]
 ----

@@ -125,7 +125,7 @@ By using maps or expandos, we can incorporate desired behaviour of a collaborato
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=map_coercion,indent=0]
+include::{includedir}/../test/testingguide/MockingExampleTests.groovy[tags=map_coercion,indent=0]
 ----
 
 The `as` operator can be used to coerce a map to a particular class. The given map keys are interpreted as
@@ -151,7 +151,7 @@ Let's have an example on coercing a closure to be of a specific type:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=closure_coercion,indent=0]
+include::{includedir}/../test/testingguide/MockingExampleTests.groovy[tags=closure_coercion,indent=0]
 ----
 
 Groovy supports a feature called implicit SAM coercion. This means that the `as` operator is not necessary in situations
@@ -160,7 +160,7 @@ classes:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=sam_coercion,indent=0]
+include::{includedir}/../test/testingguide/MockingExampleTests.groovy[tags=sam_coercion,indent=0]
 ----
 
 ==== MockFor and StubFor
@@ -178,14 +178,14 @@ Let's assume our target classes looked like this:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=collaborators,indent=0]
+include::{includedir}/../test/testingguide/MockingExampleTests.groovy[tags=collaborators,indent=0]
 ----
 
 With `MockFor`, a mock expectation is always sequence dependent and its use automatically ends with a call to `verify`:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=mockFor,indent=0]
+include::{includedir}/../test/testingguide/MockingExampleTests.groovy[tags=mockFor,indent=0]
 ----
 <1> a new mock is created by a new instance of `MockFor`
 <2> a `Closure` is passed to `use` which enables the mocking functionality
@@ -202,7 +202,7 @@ In contrast to `MockFor` the stub expectation checked with `verify` is sequence 
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=stubFor,indent=0]
+include::{includedir}/../test/testingguide/MockingExampleTests.groovy[tags=stubFor,indent=0]
 ----
 <1> a new stub is created by a new instance of `StubFor`
 <2> the `with` method is used for delegating all calls inside the closure to the `StubFor` instance
@@ -224,7 +224,7 @@ JDK classes like for example `java.lang.String` as well:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=emc,indent=0]
+include::{includedir}/../test/testingguide/MockingExampleTests.groovy[tags=emc,indent=0]
 ----
 
 The `ExpandoMetaClass` is a rather good candidate for mocking functionality as it allows for more advanced stuff
@@ -232,14 +232,14 @@ like mocking static methods
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=emc2,indent=0]
+include::{includedir}/../test/testingguide/MockingExampleTests.groovy[tags=emc2,indent=0]
 ----
 
 or even constructors
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=emc3,indent=0]
+include::{includedir}/../test/testingguide/MockingExampleTests.groovy[tags=emc3,indent=0]
 ----
 
 [NOTE]
@@ -254,7 +254,7 @@ replacing the meta-class in the `GroovyMetaClassRegistry`:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=emc4,indent=0]
+include::{includedir}/../test/testingguide/MockingExampleTests.groovy[tags=emc4,indent=0]
 ----
 
 Another alternative is to register a `MetaClassRegistryChangeEventListener`, track the changed classes and remove
@@ -267,7 +267,7 @@ level:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/MockingExampleTests.groovy[tags=emc5,indent=0]
+include::{includedir}/../test/testingguide/MockingExampleTests.groovy[tags=emc5,indent=0]
 ----
 
 In this case the meta-class change is related to the instance only. Depending on the test scenario this might be a better
@@ -285,7 +285,7 @@ combinations from a list containing two or more sub-lists:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/GDKMethodTests.groovy[tags=combinations,indent=0]
+include::{includedir}/../test/testingguide/GDKMethodTests.groovy[tags=combinations,indent=0]
 ----
 
 The method could be used in test case scenarios to generate all possible argument combinations for a specific method
@@ -301,7 +301,7 @@ It applies a function on each combination of the input lists:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/GDKMethodTests.groovy[tags=each_combination,indent=0]
+include::{includedir}/../test/testingguide/GDKMethodTests.groovy[tags=each_combination,indent=0]
 ----
 
 The method could be used in the testing context to call methods with each of the generated combinations.
@@ -398,7 +398,7 @@ being available to be called in every test method:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/GroovyTestCaseExampleTests.groovy[tags=assertions,indent=0]
+include::{includedir}/../test/testingguide/GroovyTestCaseExampleTests.groovy[tags=assertions,indent=0]
 ----
 
 As can be seen above, in contrast to Java it is possible to leave out the parenthesis in most situations which
@@ -409,7 +409,7 @@ code string succeeds without any exception:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/GroovyTestCaseExampleTests.groovy[tags=assertScript,indent=0]
+include::{includedir}/../test/testingguide/GroovyTestCaseExampleTests.groovy[tags=assertScript,indent=0]
 ----
 
 ==== shouldFail Methods
@@ -419,7 +419,7 @@ otherwise the assertion fails:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/GroovyTestCaseExampleTests.groovy[tags=should_fail_without_class,indent=0]
+include::{includedir}/../test/testingguide/GroovyTestCaseExampleTests.groovy[tags=should_fail_without_class,indent=0]
 ----
 
 The example above uses the basic `shouldFail` method interface that takes a `groovy.lang.Closure` as a single argument.
@@ -430,7 +430,7 @@ implementation that takes the `Exception` class as first argument and the `Closu
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/GroovyTestCaseExampleTests.groovy[tags=should_fail_with_class,indent=0]
+include::{includedir}/../test/testingguide/GroovyTestCaseExampleTests.groovy[tags=should_fail_with_class,indent=0]
 ----
 
 If anything other than `IndexOutOfBoundsException` (or a descendant class of it) is thrown, the test case will fail.
@@ -440,7 +440,7 @@ useful if you want to assert on the exception error message:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/GroovyTestCaseExampleTests.groovy[tags=should_fail_with_msg,indent=0]
+include::{includedir}/../test/testingguide/GroovyTestCaseExampleTests.groovy[tags=should_fail_with_msg,indent=0]
 ----
 
 ==== notYetImplemented Method
@@ -450,7 +450,7 @@ as not yet implemented. As long as the test method fails and is marked with `not
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/GroovyTestCaseExampleTests.groovy[tags=not_yet_implemented,indent=0]
+include::{includedir}/../test/testingguide/GroovyTestCaseExampleTests.groovy[tags=not_yet_implemented,indent=0]
 ----
 <1> a call to `notYetImplemented` is necessary for `GroovyTestCase` to get the current method stack.
 <2> as long as the test evaluates to `false` the test execution will be successful.
@@ -461,7 +461,7 @@ for the `notYetImplemented` method call:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/GroovyTestCaseExampleTests.groovy[tags=not_yet_implemented_ast,indent=0]
+include::{includedir}/../test/testingguide/GroovyTestCaseExampleTests.groovy[tags=not_yet_implemented_ast,indent=0]
 ----
 
 === JUnit 4
@@ -471,7 +471,7 @@ various static methods that can be used as replacement for the `GroovyTestCase` 
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/JUnit4ExampleTests.groovy[tags=junit4_example,indent=0]
+include::{includedir}/../test/testingguide/JUnit4ExampleTests.groovy[tags=junit4_example,indent=0]
 ----
 
 As can be seen in the example above, the static methods found in `GroovyAssert` are imported at the beginning of the
@@ -489,10 +489,10 @@ exception:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/testingguide/JUnit4ExampleTests.groovy[tags=should_fail_return,indent=0]
+include::{includedir}/../test/testingguide/JUnit4ExampleTests.groovy[tags=should_fail_return,indent=0]
 ----
 
-include::{rootProjectDir}/subprojects/groovy-test-junit5/src/spec/doc/testing-with-junit5.adoc[leveloffset=+1]
+include::{rootProjectDir}/subprojects/groovy-test-junit5/{specfolder}/fragment_testing-with-junit5.adoc[leveloffset=+1]
 
 == Testing with Spock
 

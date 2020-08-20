@@ -33,7 +33,7 @@ which supports Groovy and other languages, or
 <<ant-builder.adoc#antbuilder,`AntBuilder`>> which lets you write Ant build scripts
 in Groovy rather than XML.
 
-Executes a series of Groovy statements from http://ant.apache.org/[Apache Ant].
+Executes a series of Groovy statements from https://ant.apache.org/[Apache Ant].
 Statements can either be read in from a resource or as direct text between the enclosing Groovy tags.
 
 == Required taskdef
@@ -136,7 +136,7 @@ Groovy's classpath attribute is a PATH like structure and can also be set via a 
 
 === <arg>
 
-Arguments can be set via one or more nested <arg> elements using the standard Ant http://ant.apache.org/manual/using.html#arg[command line conventions].
+Arguments can be set via one or more nested <arg> elements using the standard Ant https://ant.apache.org/manual/using.html#arg[command line conventions].
 
 == Available bindings
 

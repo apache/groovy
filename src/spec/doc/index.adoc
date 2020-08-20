@@ -21,73 +21,74 @@
 
 = Groovy Language Documentation
 :doctype: book
-ifndef::projectdir[:projectdir: ../../..]
 
-include::{projectdir}/src/spec/doc/core-introduction.adoc[]
+include::{includedir}/core-introduction.adoc[]
 
 == Groovy Language Specification
 
-include::{projectdir}/src/spec/doc/core-syntax.adoc[leveloffset=+2]
+include::{includedir}/core-syntax.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-operators.adoc[leveloffset=+2]
+include::{includedir}/core-operators.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-program-structure.adoc[leveloffset=+2]
+include::{includedir}/core-program-structure.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-object-orientation.adoc[leveloffset=+2]
+include::{includedir}/core-object-orientation.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-closures.adoc[leveloffset=+2]
+include::{includedir}/core-closures.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-semantics.adoc[leveloffset=+2]
+include::{includedir}/core-semantics.adoc[leveloffset=+2]
 
 == Tools
 
-include::{projectdir}/src/spec/doc/tools-groovy.adoc[leveloffset=+2]
+include::{includedir}/tools-groovy.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/tools-groovyc.adoc[leveloffset=+2]
+include::{includedir}/tools-groovyc.adoc[leveloffset=+2]
 
-include::{projectdir}/subprojects/groovy-groovysh/{specfolder}/groovysh.adoc[leveloffset=+2]
+include::{rootprojectdir}/subprojects/groovy-groovysh/{specfolder}/groovysh.adoc[leveloffset=+2]
 
-include::{projectdir}/subprojects/groovy-console/{specfolder}/groovy-console.adoc[leveloffset=+2]
+include::{rootprojectdir}/subprojects/groovy-console/{specfolder}/groovy-console.adoc[leveloffset=+2]
 
-include::{projectdir}/subprojects/groovy-groovydoc/{specfolder}/groovydoc.adoc[leveloffset=+2]
+include::{rootprojectdir}/subprojects/groovy-groovydoc/{specfolder}/groovydoc.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/tools-ide.adoc[leveloffset=+2]
+include::{includedir}/tools-ide.adoc[leveloffset=+2]
 
 == User Guides
 
-include::{projectdir}/src/spec/doc/core-getting-started.adoc[leveloffset=+2]
+include::{includedir}/core-getting-started.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-differences-java.adoc[leveloffset=+2]
+include::{includedir}/core-differences-java.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-gdk.adoc[leveloffset=+2]
+include::{includedir}/core-gdk.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-metaprogramming.adoc[leveloffset=+2]
+include::{includedir}/core-metaprogramming.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/grape.adoc[leveloffset=+2]
+include::{includedir}/grape.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-testing-guide.adoc[leveloffset=+2]
+include::{includedir}/core-testing-guide.adoc[leveloffset=+2]
 
-include::{projectdir}/subprojects/groovy-json/{specfolder}/json-userguide.adoc[leveloffset=+2]
+include::{rootprojectdir}/subprojects/groovy-json/{specfolder}/json-userguide.adoc[leveloffset=+2]
 
-include::{projectdir}/subprojects/groovy-sql/{specfolder}/sql-userguide.adoc[leveloffset=+2]
+include::{rootprojectdir}/subprojects/groovy-sql/{specfolder}/sql-userguide.adoc[leveloffset=+2]
 
-include::{projectdir}/subprojects/groovy-xml/{specfolder}/xml-userguide.adoc[leveloffset=+2]
+include::{rootprojectdir}/subprojects/groovy-xml/{specfolder}/xml-userguide.adoc[leveloffset=+2]
+
+include::{rootprojectdir}/subprojects/groovy-yaml/{specfolder}/yaml-userguide.adoc[leveloffset=+2]
 
 === Scripting Ant tasks
 
-Groovy integrates very well with http://ant.apache.org[Apache Ant] thanks to <<_antbuilder,AntBuilder>>.
+Groovy integrates very well with http://ant.apache.org[Apache Ant] thanks to <<antbuilder,AntBuilder>>.
 
-include::{projectdir}/subprojects/groovy-ant/{specfolder}/groovy-ant-task.adoc[leveloffset=+2]
+include::{rootprojectdir}/subprojects/groovy-ant/{specfolder}/groovy-ant-task.adoc[leveloffset=+2]
 
-include::{projectdir}/subprojects/groovy-templates/{specfolder}/template-engines.adoc[leveloffset=+2]
+include::{rootprojectdir}/subprojects/groovy-templates/{specfolder}/template-engines.adoc[leveloffset=+2]
 
-include::{projectdir}/subprojects/groovy-servlet/{specfolder}/servlet-userguide.adoc[leveloffset=+2]
+include::{rootprojectdir}/subprojects/groovy-servlet/{specfolder}/servlet-userguide.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/guide-integrating.adoc[leveloffset=+2]
+include::{includedir}/guide-integrating.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/core-domain-specific-languages.adoc[leveloffset=+2]
+include::{includedir}/core-domain-specific-languages.adoc[leveloffset=+2]
 
-include::{projectdir}/subprojects/groovy-jmx/src/spec/doc/jmx.adoc[leveloffset=+2]
+include::{rootprojectdir}/subprojects/groovy-jmx/{specfolder}/jmx.adoc[leveloffset=+2]
 
 === Creating Swing UIs
 
@@ -98,11 +99,11 @@ Creating Swing UIs is made easy thanks to the use of <<swingbuilder,SwingBuilder
 (TBD)
 
 
-include::{projectdir}/src/spec/doc/design-pattern-in-groovy.adoc[leveloffset=+2]
+include::{includedir}/design-patterns-in-groovy.adoc[leveloffset=+2]
 
 == Acknowledgements
 
-include::{projectdir}/src/spec/doc/contributors.adoc[leveloffset=+2]
+include::{includedir}/contributors.adoc[leveloffset=+2]
 
-include::{projectdir}/src/spec/doc/license.adoc[leveloffset=+2]
+include::{includedir}/license.adoc[leveloffset=+2]
 

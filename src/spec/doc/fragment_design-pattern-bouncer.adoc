@@ -33,21 +33,21 @@ We might have a utility method such as:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=bouncer_null_check,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=bouncer_null_check,indent=0]
 ----
 
 And we would use it like this:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=bouncer_null_check_usage,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=bouncer_null_check_usage,indent=0]
 ----
 
 But a more Groovy way to do this would simply be like this:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=bouncer_null_check_usage_groovy_way,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=bouncer_null_check_usage_groovy_way,indent=0]
 ----
 
 == Validation Example
@@ -56,19 +56,19 @@ As an alternative example, we might have this utility method:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=bouncer_validation,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=bouncer_validation,indent=0]
 ----
 
 And we would use it like this:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=bouncer_validation_usage,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=bouncer_validation_usage,indent=0]
 ----
 
 But with Groovy we could just as easily use:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=bouncer_validation_usage_groovy_way,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=bouncer_validation_usage_groovy_way,indent=0]
 ----

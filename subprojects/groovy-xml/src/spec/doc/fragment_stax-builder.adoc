@@ -19,27 +19,20 @@
 
 //////////////////////////////////////////
 
-= DOMBuilder
+= StaxBuilder
 
-A builder for parsing HTML, XHTML and XML into a https://en.wikipedia.org/wiki/Document_Object_Model[W3C DOM] tree.
+A Groovy builder that works with https://en.wikipedia.org/wiki/StAX[Streaming API for XML (StAX)] processors.
 
-For example this XML `String`:
-
-[source,groovy]
-----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/DOMBuilderTest.groovy[tags=xml_string,indent=0]
-----
-
-Can be parsed into a DOM tree with a `DOMBuilder` like this:
+Here is a simple example using the StAX implementation of Java to generate XML:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/DOMBuilderTest.groovy[tags=dom_builder_parse,indent=0]
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/StaxBuilderTest.groovy[tags=stax_builder,indent=0]
 ----
 
-And then processed further e.g. by using <<_domcategory,DOMCategory>>:
+An external library such as https://github.com/jettison-json/jettison[Jettison] can be used as follows:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/DOMBuilderTest.groovy[tags=dom_builder_process_result,indent=0]
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/StaxBuilderTest.groovy[tags=stax_builder_external_library,indent=0]
 ----

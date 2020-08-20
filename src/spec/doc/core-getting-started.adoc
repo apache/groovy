@@ -25,7 +25,7 @@
 
 In this download area, you will be able to download the distribution (binary and source), the Windows installer and the documentation for **Groovy**.
 
-For a quick and effortless start on Mac OSX, Linux or Cygwin, you can use http://sdkman.io/[SDKMAN!] (The Software Development Kit Manager) to download and configure any **Groovy** version of your choice. Basic <<SDKMAN,instructions>> can be found below.
+For a quick and effortless start on Mac OSX, Linux or Cygwin, you can use https://sdkman.io/[SDKMAN!] (The Software Development Kit Manager) to download and configure any **Groovy** version of your choice. Basic <<SDKMAN,instructions>> can be found below.
 
 === Stable
 
@@ -33,7 +33,7 @@ For a quick and effortless start on Mac OSX, Linux or Cygwin, you can use http:/
 - **Download documentation**: https://bintray.com/artifact/download/groovy/maven/apache-groovy-docs-{groovy-full-version}.zip[**JavaDoc and zipped online documentation**]
 - **Combined binary / source / documentation bundle**: https://bintray.com/artifact/download/groovy/maven/apache-groovy-sdk-{groovy-full-version}.zip[**Distribution bundle**]
 
-You can learn more about this version in the http://groovy-lang.org/releasenotes/groovy-{groovy-short-version}.html[release notes] or in the http://groovy-lang.org/changelogs/changelog-{groovy-full-version}.html[changelog].
+You can learn more about this version in the https://groovy-lang.org/releasenotes/groovy-{groovy-short-version}.html[release notes] or in the https://groovy-lang.org/changelogs/changelog-{groovy-full-version}.html[changelog].
 
 If you plan on using invokedynamic support, link:invokedynamic-support.html[read those notes].
 
@@ -129,7 +129,7 @@ That's all there is to it!
 
 ==== MacPorts
 
-If you're on MacOS and have http://www.macports.org[MacPorts] installed, you can run:
+If you're on MacOS and have https://www.macports.org[MacPorts] installed, you can run:
 
 [source,shell]
 ----
@@ -138,7 +138,7 @@ sudo port install groovy
 
 ==== Homebrew
 
-If you're on MacOS and have http://mxcl.github.com/homebrew[Homebrew] installed, you can run:
+If you're on MacOS and have https://mxcl.github.com/homebrew[Homebrew] installed, you can run:
 
 [source,shell]
 ----
@@ -165,7 +165,7 @@ If you are an IDE user, you can just grab the latest link:tools-ide.html[IDE plu
 
 These instructions describe how to install a binary distribution of **Groovy**.
 
-* First, <<download-groovy,Download>> a binary distribution of Groovy and unpack it into some file on your local file system.
+* First, https://groovy.apache.org/download.html[Download] a binary distribution of Groovy and unpack it into some file on your local file system.
 * Set your `GROOVY_HOME` environment variable to the directory you unpacked the distribution.
 * Add `GROOVY_HOME/bin` to your `PATH` environment variable.
 * Set your `JAVA_HOME` environment variable to point to your JDK. On OS X this is `/Library/Java/Home`, on other unixes its often `/usr/java` etc. If you've already installed tools like Ant or Maven you've probably already done this step.

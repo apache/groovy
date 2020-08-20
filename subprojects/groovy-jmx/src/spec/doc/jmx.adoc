@@ -141,7 +141,7 @@ GARBAGE COLLECTION:
 
 == Monitoring Tomcat
 
-First start up http://tomcat.apache.org[Tomcat] with JMX monitoring enabled by setting the following:
+First start up https://tomcat.apache.org[Tomcat] with JMX monitoring enabled by setting the following:
 
 [source,shell]
 ----

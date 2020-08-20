@@ -29,7 +29,7 @@ with the constant field numbers from the `Calendar` class as shown in the follow
 
 [source,groovy]
 -------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithDateUtilTypesTest.groovy[tags=calendar_getAt,indent=0]
+include::{rootprojectdir}/subprojects/groovy-dateutil/src/spec/test/gdk/WorkingWithDateUtilTypesTest.groovy[tags=calendar_getAt,indent=0]
 -------------------------------------
 <1> Import the constants
 <2> Setting the calendar's year, month and day of month
@@ -38,17 +38,17 @@ include::{projectdir}/src/spec/test/gdk/WorkingWithDateUtilTypesTest.groovy[tags
 Groovy supports arithmetic on and iteration between `Date` and `Calendar` instances as shown in the following example:
 [source,groovy]
 -------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithDateUtilTypesTest.groovy[tags=date_arithmetic,indent=0]
+include::{rootprojectdir}/subprojects/groovy-dateutil/src/spec/test/gdk/WorkingWithDateUtilTypesTest.groovy[tags=date_arithmetic,indent=0]
 -------------------------------------
 
 You can parse strings into dates and output dates into formatted strings:
 [source,groovy]
 -------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithDateUtilTypesTest.groovy[tags=date_parsing,indent=0]
+include::{rootprojectdir}/subprojects/groovy-dateutil/src/spec/test/gdk/WorkingWithDateUtilTypesTest.groovy[tags=date_parsing,indent=0]
 -------------------------------------
 
 You can also create a new Date or Calendar based on an existing one:
 [source,groovy]
 -------------------------------------
-include::{projectdir}/src/spec/test/gdk/WorkingWithDateUtilTypesTest.groovy[tags=date_copyWith,indent=0]
+include::{rootprojectdir}/subprojects/groovy-dateutil/src/spec/test/gdk/WorkingWithDateUtilTypesTest.groovy[tags=date_copyWith,indent=0]
 -------------------------------------

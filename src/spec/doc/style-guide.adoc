@@ -486,7 +486,7 @@ Here are some examples of those native constructs:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/StyleGuideTest.groovy[tags=data_structures,indent=0]
+include::{includedir}/../test/StyleGuideTest.groovy[tags=data_structures,indent=0]
 ----
 
 == The Groovy Development Kit
