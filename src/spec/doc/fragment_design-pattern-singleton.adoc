@@ -35,7 +35,7 @@ Suppose we wish to create a class for collecting votes. Because getting the righ
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=singleton_vote_collector,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=singleton_vote_collector,indent=0]
 ----
 
 Some points of interest about this code:
@@ -49,7 +49,7 @@ We can use this singleton class in some script code as follows:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=singleton_vote_collector_usage,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=singleton_vote_collector_usage,indent=0]
 ----
 
 Here we used the instance 3 times. The second usage was even in a different thread (but don't try this in a scenario with a new class loader).
@@ -77,21 +77,21 @@ First we define some base classes. A `Calculator` class which performs calculati
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=singleton_meta_programming_classes,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=singleton_meta_programming_classes,indent=0]
 ----
 
 Now we can define and register a __MetaClass__ which intercepts all attempts to create a `Calculator` object and always provides a pre-created instance instead. We also register this MetaClass with the Groovy system:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=singleton_meta_programming_meta_class,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=singleton_meta_programming_meta_class,indent=0]
 ----
 
 Now we use instances of our `Client` class from within a script. The client class will attempt to create new instances of the calculator but will always get the singleton.
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=singleton_meta_programming_usage,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=singleton_meta_programming_usage,indent=0]
 ----
 
 Here is the result of running this script (your hashcode values may vary):
@@ -111,7 +111,7 @@ Guice is a Java-oriented framework that supports Interface-Oriented design. Henc
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=singleton_guice,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=singleton_guice,indent=0]
 ----
 
 Note the `@Inject` annotation in the `Client` class. We can always tell right in the source code which fields will be injected.
@@ -122,7 +122,7 @@ In other scenarios (though probably not in large systems), we could choose to ex
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=singleton_guice2,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=singleton_guice2,indent=0]
 ----
 
 Note the `@Singleton` annotation on the `CalculatorImpl` class and the `@ImplementedBy` annotation in the `Calculator` interface.
@@ -142,7 +142,7 @@ We can do the Calculator example again using Spring as follows:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=singleton_spring,indent=0]
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=singleton_spring,indent=0]
 ----
 
 And here is the result (your hashcode values will vary):

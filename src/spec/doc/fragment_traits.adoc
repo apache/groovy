@@ -33,7 +33,7 @@ They can be seen as *interfaces* carrying both *default implementations* and *st
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=flying_simple,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=flying_simple,indent=0]
 ----
 <1> declaration of a trait
 <2> declaration of a method inside a trait
@@ -42,7 +42,7 @@ Then it can be used like a normal interface using the `implements` keyword:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=bird,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=bird,indent=0]
 ----
 <1> Adds the trait `FlyingAbility` to the `Bird` class capabilities
 <2> instantiate a new `Bird`
@@ -57,7 +57,7 @@ Declaring a method in a trait can be done like any regular method in a class:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=flying_simple,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=flying_simple,indent=0]
 ----
 <1> declaration of a trait
 <2> declaration of a method inside a trait
@@ -68,7 +68,7 @@ In addition, traits may declare _abstract_ methods too, which therefore need to 
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=greetable,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=greetable,indent=0]
 ----
 <1> implementing class will have to declare the `name` method
 <2> can be mixed with a concrete method
@@ -77,7 +77,7 @@ Then the trait can be used like this:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=greetable_person,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=greetable_person,indent=0]
 ----
 <1> implement the trait `Greetable`
 <2> since `name` was abstract, it is required to implement it
@@ -89,7 +89,7 @@ Traits may also define private methods. Those methods will not appear in the tra
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=private_method_in_trait,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=private_method_in_trait,indent=0]
 ----
 <1> define a private method `greetingMessage` in the trait
 <2> the public `greet` message calls `greetingMessage` by default
@@ -118,21 +118,21 @@ want trait implementation methods that can't be overridden.
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=meaningofthis_header,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=meaningofthis_header,indent=0]
 ----
 
 then calling:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=meaningofthis_snippet,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=meaningofthis_snippet,indent=0]
 ----
 
 will return the same instance:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=meaningofthis_assert,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=meaningofthis_assert,indent=0]
 ----
 
 == Interfaces
@@ -141,7 +141,7 @@ Traits may implement interfaces, in which case the interfaces are declared using
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=trait_implementing_interface,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=trait_implementing_interface,indent=0]
 ----
 <1> declaration of a normal interface
 <2> add `Named` to the list of implemented interfaces
@@ -157,7 +157,7 @@ A trait may define properties, like in the following example:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=trait_with_property,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=trait_with_property,indent=0]
 ----
 <1> declare a property `name` inside a trait
 <2> declare a class which implements the trait
@@ -173,7 +173,7 @@ will let you do that:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=trait_with_private_field,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=trait_with_private_field,indent=0]
 ----
 <1> declare a private field `count` inside a trait
 <2> declare a public method `count` that increments the counter and returns it
@@ -191,7 +191,7 @@ field names are remapped in the implementing class:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=trait_with_public_field,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=trait_with_public_field,indent=0]
 ----
 <1> declare a public *field* inside the trait
 <2> declare a class implementing the trait
@@ -215,15 +215,15 @@ Traits can be used to implement multiple inheritance in a controlled way. For ex
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=flying_simple,indent=0]
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=speaking_simple,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=flying_simple,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=speaking_simple,indent=0]
 ----
 
 And a class implementing both traits:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=speakingduck,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=speakingduck,indent=0]
 ----
 <1> the `Duck` class implements both `FlyingAbility` and `SpeakingAbility`
 <2> creates a new instance of `Duck`
@@ -239,7 +239,7 @@ can slightly change the example above, by having a duck which quacks:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=quackingduck,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=quackingduck,indent=0]
 ----
 <1> define a method specific to `Duck`, named `quack`
 <2> override the default implementation of `speak` so that we use `quack` instead
@@ -253,7 +253,7 @@ Traits may extend another trait, in which case you must use the `extends` keywor
 
 [source,groovy]
 -----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=trait_inherit,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=trait_inherit,indent=0]
 -----
 <1> the `Named` trait defines a single `name` property
 <2> the `Polite` trait *extends* the `Named` trait
@@ -268,7 +268,7 @@ clause:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=trait_multiple_inherit,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=trait_multiple_inherit,indent=0]
 ----
 <1> `WithId` trait defines the `id` property
 <2> `WithName` trait defines the `name` property
@@ -282,7 +282,7 @@ This means that traits are fully compatible with duck typing:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=ducktyping,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=ducktyping,indent=0]
 ----
 <1> the `SpeakingDuck` expects the `quack` method to be defined
 <2> the `Duck` class does implement the method using _methodMissing_
@@ -295,7 +295,7 @@ will inherit the behavior from the trait, like in this example:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=dynamicobject,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=dynamicobject,indent=0]
 ----
 <1> create a trait implementing several MOP methods
 <2> the `Dynamic` class defines a property
@@ -315,7 +315,7 @@ method in another trait, we have a conflict:
 
 [source,groovy]
 -----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=multiple_inherit_default,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=multiple_inherit_default,indent=0]
 -----
 <1> trait `A` defines a method named `exec` returning a `String`
 <2> trait `B` defines the very same method
@@ -326,7 +326,7 @@ Here, `B` is declared after `A` so the method from `B` will be picked up:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=multiple_inherit_default_assert,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=multiple_inherit_default_assert,indent=0]
 ----
 
 === User conflict resolution
@@ -336,7 +336,7 @@ In the example above, we can ensure the method from trait A is invoked by writin
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=multiple_inherit_user,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=multiple_inherit_user,indent=0]
 ----
 <1> explicit call of `exec` from the trait `A`
 <2> calls the version from `A` instead of using the default resolution, which would be the one from `B`
@@ -348,7 +348,7 @@ trait. As an example, let's start with this trait and the following class:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=runtime_header,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=runtime_header,indent=0]
 ----
 <1> the `Extra` trait defines an `extra` method
 <2> the `Something` class does *not* implement the `Extra` trait
@@ -358,7 +358,7 @@ Then if we do:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=runtime_fail,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=runtime_fail,indent=0]
 ----
 
 the call to extra would fail because `Something` is not implementing `Extra`. It is possible to do it at runtime with
@@ -366,7 +366,7 @@ the following syntax:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=runtime_success,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=runtime_success,indent=0]
 ----
 <1> use of the *as* keyword to coerce an object to a trait *at runtime*
 <2> then `extra` can be called on the object
@@ -382,9 +382,9 @@ Should you need to implement several traits at once, you can use the `withTraits
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=withtraits_header,indent=0]
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=withtraits_fail,indent=0]
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=withtraits_success,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=withtraits_header,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=withtraits_fail,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=withtraits_success,indent=0]
 ----
 <1> call to `methodFromA` will fail because `C` doesn't implement `A`
 <2> call to `methodFromB` will fail because `C` doesn't implement `B`
@@ -403,7 +403,7 @@ is not capable of handling a message. To illustrate this, let's imagine a messag
 
 [source,groovy]
 -----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=messagehandler,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=messagehandler,indent=0]
 -----
 
 Then you can compose a message handler by applying small behaviors. For example, let's define a default handler in the
@@ -411,21 +411,21 @@ form of a trait:
 
 [source,groovy]
 -----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=defaulthandler,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=defaulthandler,indent=0]
 -----
 
 Then any class can inherit the behavior of the default handler by implementing the trait:
 
 [source,groovy]
 -----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=simplehandler,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=simplehandler,indent=0]
 -----
 
 Now what if you want to log all messages, in addition to the default handler? One option is to write this:
 
 [source,groovy]
 -----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=simplehandlerwithlogging,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=simplehandlerwithlogging,indent=0]
 -----
 <1> explicitly implement the `on` method
 <2> perform logging
@@ -440,7 +440,7 @@ As an alternative, we can write another trait which responsibility is limited to
 
 [source,groovy]
 -----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=logginghandler,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=logginghandler,indent=0]
 -----
 <1> the logging handler is itself a handler
 <2> prints the message it receives
@@ -450,14 +450,14 @@ Then our class can be rewritten as this:
 
 [source,groovy]
 -----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=handlerwithlogger,indent=0]
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=handlerwithlogger_assert,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=handlerwithlogger,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=handlerwithlogger_assert,indent=0]
 -----
 
 which will print:
 
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=handlerwithlogger_assert_output,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=handlerwithlogger_assert_output,indent=0]
 ----
 
 As the priority rules imply that `LoggerHandler` wins because it is declared last, then a call to `on` will use
@@ -469,7 +469,7 @@ that start with `say`:
 
 [source,groovy]
 -----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=sayhandler,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=sayhandler,indent=0]
 -----
 <1> a handler specific precondition
 <2> if the precondition is not met, pass the message to the next handler in the chain
@@ -478,8 +478,8 @@ Then our final handler looks like this:
 
 [source,groovy]
 -----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=implementinghandler,indent=0]
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=implementinghandler_assert,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=implementinghandler,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=implementinghandler_assert,indent=0]
 -----
 
 Which means:
@@ -493,21 +493,21 @@ This approach is very powerful because it allows you to write handlers that do n
 combine them in the order you want. For example, if we execute the code, it will print:
 
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=implementinghandler_output,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=implementinghandler_output,indent=0]
 ----
 
 but if we move the logging handler to be the second one in the chain, the output is different:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=alternatehandler,indent=0]
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=alternatehandler_assert,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=alternatehandler,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=alternatehandler_assert,indent=0]
 ----
 
 prints:
 
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=alternatehandler_output,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=alternatehandler_output,indent=0]
 ----
 
 The reason is that now, since the `SayHandler` consumes the message without calling `super`, the logging handler is
@@ -524,7 +524,7 @@ For example, it is possible to decorate final classes thanks to this behavior:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=decoratefinalclass,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=decoratefinalclass,indent=0]
 ----
 <1> define a trait named `Filtering`, supposed to be applied on a `StringBuilder` at runtime
 <2> redefine the `append` method
@@ -547,7 +547,7 @@ imagine the following trait:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=sam_trait,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=sam_trait,indent=0]
 ----
 <1> the `greet` method is not abstract and calls the abstract method `getName`
 <2> `getName` is an abstract method
@@ -556,7 +556,7 @@ Since `getName` is the _single abstract method_ in the `Greeter` trait, you can 
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=sam_trait_assignment,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=sam_trait_assignment,indent=0]
 ----
 <1> the closure "becomes" the implementation of the `getName` single abstract method
 
@@ -564,7 +564,7 @@ or even:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=sam_trait_method,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=sam_trait_method,indent=0]
 ----
 <1> the greet method accepts the SAM type Greeter as parameter
 <2> we can call it directly with a closure
@@ -583,7 +583,7 @@ To illustrate the concept, let's start with this simple example:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=forceoverride_header,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=forceoverride_header,indent=0]
 ----
 
 In this example, we create a simple test case which uses two properties (_config_ and _shell_) and uses those in
@@ -592,7 +592,7 @@ One option is to create a subclass of `SomeTest`:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=forceoverride_extends,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=forceoverride_extends,indent=0]
 ----
 
 It works, but what if you have actually multiple test classes, and that you want to test the new configuration for all
@@ -600,21 +600,21 @@ those test classes? Then you would have to create a distinct subclass for each t
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=forceoverride_extends2,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=forceoverride_extends2,indent=0]
 ----
 
 Then what you see is that the `setup` method of both tests is the same. The idea, then, is to create a trait:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=forceoverride_trait,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=forceoverride_trait,indent=0]
 ----
 
 Then use it in the subclasses:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=forceoverride_miss_header,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=forceoverride_miss_header,indent=0]
 ...
 ----
 
@@ -633,7 +633,7 @@ object:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=runtime_forceoverride,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=runtime_forceoverride,indent=0]
 ----
 <1> the `Person` class defines a `name` property which results in a `getName` method
 <2> `Bob` is a trait which defines `getName` as returning `Bob`
@@ -660,7 +660,7 @@ Methods added through a mixin are, on the contrary, only visible at runtime:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=diff_mixin,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=diff_mixin,indent=0]
 ----
 <1> class `A` defines `methodFromA`
 <2> class `B` defines `methodFromB`
@@ -697,7 +697,7 @@ Let's start with a simple example:
 
 [source,groovy]
 -----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=staticfield_header,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=staticfield_header,indent=0]
 -----
 <1> the static field is declared in the trait
 <2> a static method is also declared in the trait
@@ -709,14 +709,14 @@ As usual, it is not recommended to use public fields. Anyway, should you want th
 
 [source,groovy]
 -----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=staticfield_notontrait,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=staticfield_notontrait,indent=0]
 -----
 
 because there is _no_ static field _CALLED_ defined on the trait itself. Likewise, if you have two distinct implementing classes, each one gets a distinct static field:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=staticfield_distinct,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=staticfield_distinct,indent=0]
 ----
 <1> class `Bar` implements the trait
 <2> class `Baz` also implements the trait
@@ -731,7 +731,7 @@ a per-trait basis. So consider the following example:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=intcouple,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=intcouple,indent=0]
 ----
 
 
@@ -739,14 +739,14 @@ The trait defines two properties, `x` and `y`, as well as a `sum` method. Now le
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=intcouple_impl,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=intcouple_impl,indent=0]
 ----
 
 The result of calling `f` is `3`, because `f` delegates to `sum` in the trait, which has state. But what if we write this instead?
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=intcouple_impl_override,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=intcouple_impl_override,indent=0]
 ----
 <1> Override property `x`
 <2> Override property `y`
@@ -756,7 +756,7 @@ If you call `elem.f()`, what is the expected output? Actually it is:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=intcouple_impl_override_assert,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=intcouple_impl_override_assert,indent=0]
 ----
 
 The reason is that the `sum` method accesses the _fields_ of the trait. So it is using the `x` and `y` values defined
@@ -765,7 +765,7 @@ getters and setters, like in this last example:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=intcouple_impl_override_directgetter,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=intcouple_impl_override_directgetter,indent=0]
 ----
 
 == Self types
@@ -777,7 +777,7 @@ To illustrate this, let's start with this example:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=selftype_intro,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=selftype_intro,indent=0]
 ----
 <1> A `Service` class, beyond your control (in a library, ...) defines a `sendMessage` method
 <2> A `Device` class, beyond your control (in a library, ...)
@@ -800,7 +800,7 @@ requires `this` as a parameter, and actually requires it to be a `Device`?
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=selftype_securityservice,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=selftype_securityservice,indent=0]
 ----
 
 If you want to be able to call `this` in the trait, then you will explicitly need to cast `this` into a `Device`. This can
@@ -819,14 +819,14 @@ So in our previous example, we can fix the trait using the `@groovy.transform.Se
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=selftype_fixed,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=selftype_fixed,indent=0]
 ----
 
 Now if you try to implement this trait on a class that is *not* a device, a compile-time error will occur:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=selftype_compiletimeerror,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=selftype_compiletimeerror,indent=0]
 ----
 
 The error will be:
@@ -852,7 +852,7 @@ Within traits, prefix and postfix operations are not allowed if they update a fi
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=prefix_postfix,indent=0]
+include::{includedir}/../test/TraitsSpecificationTest.groovy[tags=prefix_postfix,indent=0]
 ----
 <1> `x` is defined within the trait, postfix increment is not allowed
 <2> `x` is defined within the trait, prefix decrement is not allowed
