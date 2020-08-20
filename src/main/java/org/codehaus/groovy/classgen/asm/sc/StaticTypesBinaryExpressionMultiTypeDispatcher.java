@@ -37,7 +37,6 @@ import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.asm.BinaryExpressionMultiTypeDispatcher;
-import org.codehaus.groovy.classgen.asm.BinaryExpressionWriter;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.OperandStack;
@@ -45,10 +44,7 @@ import org.codehaus.groovy.classgen.asm.VariableSlotLoader;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
-import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
-import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
-import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -77,9 +73,12 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_FIELDS_MUTATORS;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_ADD_METHOD;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CLASSNODE;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CONSTRUCTOR;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssignment;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor.inferLoopElementType;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_FUNCTIONAL_INTERFACE_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
@@ -195,7 +194,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         // GROOVY-5620: spread-safe operator on LHS is not supported
         if (leftExpression instanceof PropertyExpression
                 && ((PropertyExpression) leftExpression).isSpreadSafe()
-                && StaticTypeCheckingSupport.isAssignment(expression.getOperation().getType())) {
+                && isAssignment(expression.getOperation().getType())) {
             // rewrite it so that it can be statically compiled
             transformSpreadOnLHS(expression);
             return;
@@ -225,8 +224,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         operandStack.remove(1); // receiver consumed by if()
         Label nonull = compileStack.createLocalLabel("nonull_" + counter);
         mv.visitLabel(nonull);
-        ClassNode componentType = StaticTypeCheckingVisitor.inferLoopElementType(
-                controller.getTypeChooser().resolveType(receiver, controller.getClassNode()));
+        ClassNode componentType = inferLoopElementType(controller.getTypeChooser().resolveType(receiver, controller.getClassNode()));
         Parameter iterator = new Parameter(componentType, "for$it$" + counter);
         VariableExpression iteratorAsVar = varX(iterator);
         PropertyExpression pexp = spreadExpression instanceof AttributeExpression
@@ -357,7 +355,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         if (field != null && field.isPrivate() && !receiverType.equals(classNode)
                 && (StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode)
                     || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode,receiverType))) {
-            Map<String, MethodNode> mutators = receiverType.redirect().getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_FIELDS_MUTATORS);
+            Map<String, MethodNode> mutators = receiverType.redirect().getNodeMetaData(PRIVATE_FIELDS_MUTATORS);
             if (mutators != null) {
                 MethodNode methodNode = mutators.get(fieldName);
                 if (methodNode != null) {
@@ -375,30 +373,27 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
     }
 
     @Override
-    protected void assignToArray(final Expression parent, final Expression receiver, final Expression index, final Expression rhsValueLoader, final boolean safe) {
-        ClassNode arrayType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
-        int operationType = getOperandType(arrayType.getComponentType());
-        BinaryExpressionWriter bew = binExpWriter[operationType];
+    protected void assignToArray(final Expression enclosing, final Expression receiver, final Expression subscript, final Expression rhsValueLoader, final boolean safe) {
+        ClassNode receiverType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
 
-        if (bew.arraySet(true) && arrayType.isArray() && !safe) {
-            super.assignToArray(parent, receiver, index, rhsValueLoader, safe);
+        if (receiverType.isArray() && !safe && binExpWriter[getOperandType(receiverType.getComponentType())].arraySet(true)) {
+            super.assignToArray(enclosing, receiver, subscript, rhsValueLoader, safe);
         } else {
             /*
              * This code path is needed because ACG creates array access expressions
              */
-            StaticTypeCheckingVisitor visitor = new StaticCompilationVisitor(controller.getSourceUnit(), controller.getClassNode());
+
             // GROOVY-6061
-            if (rhsValueLoader instanceof VariableSlotLoader && parent instanceof BinaryExpression) {
-                rhsValueLoader.putNodeMetaData(INFERRED_TYPE, controller.getTypeChooser().resolveType(parent, controller.getClassNode()));
+            if (rhsValueLoader instanceof VariableSlotLoader && enclosing instanceof BinaryExpression) {
+                rhsValueLoader.putNodeMetaData(INFERRED_TYPE, controller.getTypeChooser().resolveType(enclosing, controller.getClassNode()));
             }
-            // let's replace this assignment to a subscript operator with a method call
-            // e.g. x[5] = 10
-            // -> (x, [], 5), =, 10
-            // -> methodCall(x, "putAt", [5, 10])
-            MethodCallExpression call = callX(receiver, "putAt", args(index, rhsValueLoader));
+
+            // replace assignment to a subscript operator with a method call
+            // e.g. x[5] = 10 -> methodCall(x, "putAt", [5, 10])
+            MethodCallExpression call = callX(receiver, "putAt", args(subscript, rhsValueLoader));
             call.setSafe(safe);
-            call.setSourcePosition(parent);
-            visitor.visitMethodCallExpression(call);
+            call.setSourcePosition(enclosing);
+            call.visit(new StaticCompilationVisitor(controller.getSourceUnit(), controller.getClassNode()));
 
             OperandStack operandStack = controller.getOperandStack();
             int height = operandStack.getStackLength();
