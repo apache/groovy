@@ -189,8 +189,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.findActualTypeByGenericsPlaceholderName;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.makeDeclaringAndActualGenericsTypeMapOfExactType;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.toGenericTypesString;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isBigDecCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isBigIntCategory;
@@ -552,7 +550,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         final Variable accessedVariable = vexp.getAccessedVariable();
         final TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
 
-        VariableExpression localVariableExpression = null;
+        if (accessedVariable == null) {
+            return;
+        }
+
         if (accessedVariable instanceof DynamicVariable) {
             // a dynamic variable is either a closure property, a class member referenced from a closure, or an undeclared variable
 
@@ -601,15 +602,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (inferredType != null && !inferredType.equals(OBJECT_TYPE)) {
                     vexp.putNodeMetaData(INFERRED_RETURN_TYPE, inferredType);
                 } else {
-                    // GROOVY-7691
-                    FieldNode fieldNode = (FieldNode) accessedVariable;
-                    ClassNode fieldType = findActualTypeByGenericsPlaceholderName(
-                            fieldNode.getOriginType().getUnresolvedName(),
-                            makeDeclaringAndActualGenericsTypeMapOfExactType(fieldNode.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode())
-                    );
-                    if (fieldType != null) {
-                        storeType(vexp, fieldType);
-                    }
+                    storeType(vexp, getType(vexp));
                 }
             }
         } else if (accessedVariable instanceof PropertyNode) {
@@ -623,25 +616,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     SetterInfo setterInfo = removeSetterInfo(leftExpression);
                     if (setterInfo != null) {
                         Expression rightExpression = enclosingBinaryExpression.getRightExpression();
-                        if (!ensureValidSetter(vexp, leftExpression, rightExpression, setterInfo)) {
-                            return;
-                        }
+                        ensureValidSetter(vexp, leftExpression, rightExpression, setterInfo);
                     }
                 }
             }
-        } else if (accessedVariable instanceof Parameter) {
-            if (enclosingClosure == null) {
-                localVariableExpression = new ParameterVariableExpression((Parameter) accessedVariable);
+        } else if (enclosingClosure == null) {
+            VariableExpression localVariable;
+            if (accessedVariable instanceof Parameter) {
+                Parameter parameter = (Parameter) accessedVariable;
+                localVariable = new ParameterVariableExpression(parameter);
+            } else {
+                localVariable = (VariableExpression) accessedVariable;
             }
-        } else if (accessedVariable instanceof VariableExpression) {
-            if (enclosingClosure == null) {
-                localVariableExpression = (VariableExpression) accessedVariable;
-            }
-        }
 
-        if (localVariableExpression != null) {
-            ClassNode inferredType = localVariableExpression.getNodeMetaData(INFERRED_TYPE);
-            inferredType = getInferredTypeFromTempInfo(localVariableExpression, inferredType);
+            ClassNode inferredType = localVariable.getNodeMetaData(INFERRED_TYPE);
+            inferredType = getInferredTypeFromTempInfo(localVariable, inferredType);
             if (inferredType != null && !inferredType.equals(OBJECT_TYPE)) {
                 vexp.putNodeMetaData(INFERRED_RETURN_TYPE, inferredType);
             }
