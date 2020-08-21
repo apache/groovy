@@ -17,7 +17,7 @@
  *  under the License.
  */
 
-task doc(dependsOn: ['javadocAll', 'groovydocAll', 'docGDK', 'asciidocAll', 'asciidoctorPdf']) {
+task doc(dependsOn: ['javadocAll', 'groovydocAll', 'docGDK', 'asciidocAll']) {
     ext.footer = 'Copyright &copy; 2003-2020 The Apache Software Foundation. All rights reserved.'
     ext.title = "Groovy ${groovyVersion}"
 }
@@ -28,18 +28,6 @@ task asciidocAll(type: Copy) {
         from asciidoctor.outputDir
     }
     into "$buildDir/asciidocAll/html5"
-}
-
-asciidoctorPdf {
-    baseDirIsRootProjectDir() // needed for asciidocAll
-    logDocuments = true
-    sourceDir = project.file('src/spec/doc')
-    sources {
-        include 'index.adoc'
-    }
-    outputDir = "$buildDir/asciidoc/pdf"
-    attributes 'rootProjectDir': rootProject.projectDir,
-            specfolder: 'src/spec/doc'
 }
 
 def javadocSpec = {
