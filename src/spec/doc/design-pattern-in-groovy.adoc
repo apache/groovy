@@ -22,8 +22,7 @@
 = Design patterns in Groovy
 
 
-Using https://en.wikipedia.org/wiki/Design_pattern_%28computer_science%29[design patterns] with Java is a well-established topic.
-Design patterns also apply to Groovy:
+Using http://en.wikipedia.org/wiki/Design_pattern_%28computer_science%29[design patterns] with Java is a well-established topic. Design patterns also apply to Groovy:
 
 * some patterns carry over directly (and can make use of normal Groovy syntax improvements for greater readability)
 * some patterns are no longer required because they are built right into the language or because Groovy supports a better way of achieving the intent of the pattern
@@ -31,41 +30,41 @@ Design patterns also apply to Groovy:
 
 == Patterns
 
-include::{includedir}/fragment_design-pattern-abstract-factory.adoc[leveloffset=+2]
+include::{projectdir}/{specfolder}/design-pattern-abstract-factory.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-adapter.adoc[leveloffset=+2]
+include::{projectdir}/{specfolder}/design-pattern-adapter.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-bouncer.adoc[leveloffset=+2]
+include::{projectdir}/{specfolder}/design-pattern-bouncer.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-chain-of-responsibility.adoc[leveloffset=+2]
+include::{projectdir}/{specfolder}/design-pattern-chain-of-responsibility.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-composite.adoc[leveloffset=+2]
+include::{projectdir}/{specfolder}/design-pattern-composite.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-decorator.adoc[leveloffset=+2]
+include::{projectdir}/{specfolder}/design-pattern-decorator.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-delegation.adoc[leveloffset=+2]
+include::{projectdir}/{specfolder}/design-pattern-delegation.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-flyweight.adoc[leveloffset=+2]
+include::{projectdir}/{specfolder}/design-pattern-flyweight.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-iterator.adoc[leveloffset=+2]
+include::{projectdir}/{specfolder}/design-pattern-iterator.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-loan-my-resource.adoc[leveloffset=+2]
+include::{projectdir}/{specfolder}/design-pattern-loan-my-resource.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-null-object.adoc[leveloffset=+2]
+include::{projectdir}/{specfolder}/design-pattern-null-object.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-pimp-my-library.adoc[leveloffset=+2]
+include::{projectdir}/{specfolder}/design-pattern-pimp-my-library.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-proxy.adoc[leveloffset=+2]
+include::{projectdir}/{specfolder}/design-pattern-proxy.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-singleton.adoc[leveloffset=+2]
+include::{projectdir}/{specfolder}/design-pattern-singleton.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-state.adoc[leveloffset=+2]
+include::{projectdir}/{specfolder}/design-pattern-state.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-strategy.adoc[leveloffset=+2]
+include::{projectdir}/{specfolder}/design-pattern-strategy.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-template-method.adoc[leveloffset=+2]
+include::{projectdir}/{specfolder}/design-pattern-template-method.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-visitor.adoc[leveloffset=+2]
+include::{projectdir}/{specfolder}/design-pattern-visitor.adoc[leveloffset=+2]
 
 == References
 

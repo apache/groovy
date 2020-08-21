@@ -30,14 +30,14 @@ Suppose we have the following system:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=null_object_simple_example,indent=0]
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=null_object_simple_example,indent=0]
 ----
 
 When run, this prints out `1200`. Suppose now that we now invoke:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=null_object_simple_example2,indent=0]
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=null_object_simple_example2,indent=0]
 ----
 
 If we now try to calculate `biggestSalary` again, we receive a null pointer exception.
@@ -46,14 +46,14 @@ To overcome this problem, we can introduce a `NullJob` class and change the abov
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=null_object_simple_example3,indent=0]
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=null_object_simple_example3,indent=0]
 ----
 
 This works as we require but it's not always the best way to do this with Groovy. Groovy's safe-dereference operator (`?.`) operator and null aware closures often allow Groovy to avoid the need to create a special null object or null class. This is illustrated by examining a groovier way to write the above example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=null_object_simple_example4,indent=0]
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=null_object_simple_example4,indent=0]
 ----
 
 Two things are going on here to allow this to work. First of all, `max()` is __'null aware'__ so that ++[300, null, 400].max() == 400++. Secondly, with the `?.` operator, an expression like `p?.job?.salary` will be equal to null if `salary` is equal to null, or if `job` is equal ` null or if `p` is equal to null. You don't need to code a complex nested ++if ... then ... else++ to avoid a `NullPointerException`.
@@ -66,14 +66,14 @@ Our first attempt has special logic within the calculation methods to handle nul
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=null_object_tree_example,indent=0]
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=null_object_tree_example,indent=0]
 ----
 
 If we introduce the null object pattern (here by defining the `NullTree` class), we can now simplify the logic in the `size()`, `sum()` and`product()` methods. These methods now much more clearly represent the logic for the normal (and now universal) case. Each of the methods within `NullTree` returns a value which represents doing nothing.
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=null_object_tree_example2,indent=0]
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=null_object_tree_example2,indent=0]
 ----
 
 The result of running either of these examples is:

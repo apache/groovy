@@ -173,7 +173,7 @@ the compilation fails. |No
 *Notes:*
 
 * For path structures see for example
-https://ant.apache.org/manual/using.html#path
+http://ant.apache.org/manual/using.html#path
 * For usages of the `javac` task see
 https://ant.apache.org/manual/Tasks/javac.html
 * The nested `javac` task behaves more or less as documented for the top-level

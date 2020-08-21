@@ -29,7 +29,7 @@ In this example, the script sends requests to the `lister` object. The `lister` 
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=chain_of_responsibility,indent=0]
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=chain_of_responsibility,indent=0]
 ----
 
 The output will be a list of files (with slightly different format depending on the operating system).

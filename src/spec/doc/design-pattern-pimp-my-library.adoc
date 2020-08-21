@@ -32,7 +32,7 @@ First, we'll define a suitable category.
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=pimp_my_library_example,indent=0]
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=pimp_my_library_example,indent=0]
 ----
 
 We have added two methods which augment the Integer methods by providing the `greaterThanAll` method. Categories follow conventions where they are defined as static methods with a special first parameter representing the class we wish to extend. The ++greaterThanAll(Integer self, others)++ static method becomes the `greaterThanAll(other)` instance method.
@@ -43,7 +43,7 @@ Here is how you would use the category.
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=pimp_my_library_example2,indent=0]
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=pimp_my_library_example2,indent=0]
 ----
 
 As you can see, using this technique you can effectively enrich an original class without having access to its source code. Moreover, you can apply different enrichments in different parts of the system as well as work with un-enriched objects if we need to.

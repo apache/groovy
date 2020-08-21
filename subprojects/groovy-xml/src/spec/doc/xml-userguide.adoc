@@ -133,7 +133,7 @@ sense, it has similar aims and scope as XPath does for XML. The two
 main places where you use GPath expressions is when dealing with
 nested POJOs or when dealing with XML__
 
-It is similar to https://en.wikipedia.org/wiki/XPath[XPath]
+It is similar to http://en.wikipedia.org/wiki/XPath[XPath]
 expressions and you can use it not only with XML but also with POJO
 classes. As an example, you can specify a path to an object or element
 of interest:

@@ -21,7 +21,7 @@
 
 = Composite Pattern
 
-The https://en.wikipedia.org/wiki/Composite_pattern[Composite Pattern] allows you to treat single instances of an object the same way as a group of objects. The pattern is often used with hierarchies of objects. Typically, one or more methods should be callable in the same way for either __leaf__ or __composite__ nodes within the hierarchy. In such a case, composite nodes typically invoke the same named method for each of their children nodes.
+The http://en.wikipedia.org/wiki/Composite_pattern[Composite Pattern] allows you to treat single instances of an object the same way as a group of objects. The pattern is often used with hierarchies of objects. Typically, one or more methods should be callable in the same way for either __leaf__ or __composite__ nodes within the hierarchy. In such a case, composite nodes typically invoke the same named method for each of their children nodes.
 
 == Example
 
@@ -39,7 +39,7 @@ Here is the code:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=composite_code,indent=0]
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=composite_code,indent=0]
 ----
 
 Here is the resulting output:

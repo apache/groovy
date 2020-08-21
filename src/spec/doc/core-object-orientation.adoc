@@ -71,7 +71,7 @@ Here's an example using `int`
 
 [source,groovy]
 ----
-include::{includedir}/../test/PrimitiveTest.groovy[tags=primitive_references,indent=0]
+include::{projectdir}/src/spec/test/PrimitiveTest.groovy[tags=primitive_references,indent=0]
 ----
 
 Now you may be concerned that this means every time you use a mathematical operator on a reference to a primitive
@@ -101,7 +101,7 @@ The following code presents an example class.
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=class_definition,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=class_definition,indent=0]
 ----
 <1> class beginning, with the name `Person`
 <2> string field and property named `name`
@@ -114,7 +114,7 @@ Normal classes refer to classes which are top level and concrete. This means the
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=class_instantiation,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=class_instantiation,indent=0]
 ----
 
 
@@ -124,7 +124,7 @@ Inner classes are defined within another classes. The enclosing class can use th
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=inner_class,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=inner_class,indent=0]
 ----
 <1> the inner class is instantiated and its method gets called
 <2> inner class definition, inside its enclosing class
@@ -140,7 +140,7 @@ In several cases, inner classes are implementation of interfaces whose methods a
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=inner_class2,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=inner_class2,indent=0]
 ----
 
 Note that the class `Inner2` is defined only to provide an implementation of the method `run` to class `Outer2`. Anonymous inner classes help to eliminate verbosity in this case.
@@ -149,7 +149,7 @@ Since Groovy 3.0.0, Java syntax for non-static inner class instantiation is now 
 
 [source,groovy]
 --------------------------------------
-include::{includedir}/../test/ClassTest.groovy[tags=inner_instantiation,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=inner_instantiation,indent=0]
 --------------------------------------
 
 ===== Anonymous inner class
@@ -158,7 +158,7 @@ The last example of inner class can be simplified with an anonymous inner class.
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=anonymous_inner_class,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=anonymous_inner_class,indent=0]
 ----
 <1> comparing with the last example of previous section, the `new Inner2()` was replaced by `new Runnable()` along with all its implementation
 <2> the method `start` is invoked normally
@@ -172,7 +172,7 @@ Abstract classes represent generic concepts, thus, they cannot be instantiated, 
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=abstract_class,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=abstract_class,indent=0]
 ----
 <1> abstract classes must be declared with `abstract` keyword
 <2> abstract methods must also be declared with `abstract` keyword
@@ -186,7 +186,7 @@ to be implemented, but does not define the methods implementation.
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=interface_def_1,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=interface_def_1,indent=0]
 ----
 <1> an interface needs to be declared using the `interface` keyword
 <2> an interface only defines method signatures
@@ -195,7 +195,7 @@ Methods of an interface are always *public*. It is an error to use `protected` o
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=protected_forbidden,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=protected_forbidden,indent=0]
 ----
 <1> Using `protected` is a compile-time error
 
@@ -204,7 +204,7 @@ does:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=class_implements,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=class_implements,indent=0]
 ----
 <1> The `SystemGreeter` declares the `Greeter` interface using the `implements` keyword
 <2> Then implements the required `greet` method
@@ -214,7 +214,7 @@ An interface can extend another interface:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=extended_interface,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=extended_interface,indent=0]
 ----
 <1> the `ExtendedGreeter` interface extends the `Greeter` interface using the `extends` keyword
 
@@ -224,7 +224,7 @@ interfaces:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=no_structural_interface,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=no_structural_interface,indent=0]
 ----
 
 In other words, Groovy does not define structural typing. It is however possible to make an instance of an object
@@ -232,7 +232,7 @@ implement an interface at runtime, using the `as` coercion operator:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=interface_coercion,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=interface_coercion,indent=0]
 ----
 <1> create an instance of `DefaultGreeter` that does not implement the interface
 <2> coerce the instance into a `Greeter` at runtime
@@ -274,7 +274,7 @@ keyword and by statically typing the variable.
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=constructor_positional_parameters,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=constructor_positional_parameters,indent=0]
 ----
 <1> Constructor declaration
 <2> Constructor invocation, classic Java way
@@ -291,7 +291,7 @@ constructor may also be added using the gapi:groovy.transform.MapConstructor[] a
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=constructor_named_parameters,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=constructor_named_parameters,indent=0]
 ----
 <1> No constructor declared
 <2> No parameters given in the instantiation
@@ -329,7 +329,7 @@ Methods in Groovy always return some value. If no `return` statement is provided
 
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=method_definition ,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=method_definition ,indent=0]
 ----
 <1> Method with no return type declared and no parameter
 <2> Method with explicit return type and no parameter
@@ -345,7 +345,7 @@ If the method has just a single Map argument, all supplied parameters must be na
 
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=named_arguments ,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=named_arguments ,indent=0]
 ----
 
 ===== Mixing named and positional parameters
@@ -359,7 +359,7 @@ the first parameter automatically.
 
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=named_arguments_with_additional_arguments ,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=named_arguments_with_additional_arguments ,indent=0]
 ----
 <1> Method call with additional `number` argument of `Integer` type
 <2> Method call with changed order of arguments
@@ -370,7 +370,7 @@ Failure to do so will lead to `groovy.lang.MissingMethodException`:
 
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=failed_named_arguments_with_additional_arguments ,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=failed_named_arguments_with_additional_arguments ,indent=0]
 ----
 <1> Method call throws `groovy.lang.MissingMethodException: No signature of method: foo() is applicable for argument types: (LinkedHashMap, Integer) values: [[name:Marie, age:1], 23]`, because the named argument `Map` parameter is not defined as the first argument
 
@@ -378,7 +378,7 @@ Above exception can be avoided if we replace named arguments with an explicit `M
 
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=explicit_named_arguments_with_additional_arguments ,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=explicit_named_arguments_with_additional_arguments ,indent=0]
 ----
 <1> Explicit `Map` argument in place of named arguments makes invocation valid
 
@@ -391,7 +391,7 @@ Default arguments make parameters optional. If the argument is not supplied, the
 
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=default_arguments ,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=default_arguments ,indent=0]
 ----
 
 Note that no mandatory parameter can be defined after a default parameter is present, only other default parameters.
@@ -403,7 +403,7 @@ Here `foo` supports `n` arguments by default, but also an unspecified number of 
 
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=varargs_example,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=varargs_example,indent=0]
 ----
 
 This example defines a method `foo`, that can take any number of arguments, including no arguments at all.
@@ -412,21 +412,21 @@ That means any method with an array as last parameter is seen by Groovy as a met
 
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=varargs_array_notation,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=varargs_array_notation,indent=0]
 ----
 
 If a method with varargs is called with `null` as the vararg parameter, then the argument will be `null` and not an array of length one with `null` as the only element.
 
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=varargs_null_parameter,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=varargs_null_parameter,indent=0]
 ----
 
 If a varargs method is called with an array as an argument, then the argument will be that array instead of an array of length one containing the given array as the only element.
 
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=varargs_array_parameter,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=varargs_array_parameter,indent=0]
 ----
 
 Another important point are varargs in combination with method overloading. In case of method overloading Groovy will select the most specific method.
@@ -434,7 +434,7 @@ For example if a method `foo` takes a varargs argument of type `T` and another m
 
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=varargs_method_overloading,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=varargs_method_overloading,indent=0]
 ----
 
 ==== Method selection algorithm
@@ -448,7 +448,7 @@ Consider the following method definitions:
 
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=multi_methods,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=multi_methods,indent=0]
 ----
 
 Perhaps as expected, calling `method` with `String` and `Integer` parameters,
@@ -456,7 +456,7 @@ invokes our third method definition.
 
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=call_single_method,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=call_single_method,indent=0]
 ----
 
 Of more interest here is when the types are not known at compile time.
@@ -467,7 +467,7 @@ and will invoke each of our methods once (and normally, no casting is needed):
 
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=call_multi_methods,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=call_multi_methods,indent=0]
 ----
 
 For each of the first two of our three method invocations an exact match of argument types was found.
@@ -493,49 +493,49 @@ a| Given these interface and method definitions:
 
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=multi_method_distance_interfaces,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=multi_method_distance_interfaces,indent=0]
 ----
 
 The directly implemented interface will match:
 
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=multi_method_distance_interfaces_usage,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=multi_method_distance_interfaces_usage,indent=0]
 ----
 
 | An Object array is preferred over an Object.
 a|
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=object_array_over_object,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=object_array_over_object,indent=0]
 ----
 
 | Non-vararg variants are favored over vararg variants.
 a|
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=non_varargs_over_vararg,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=non_varargs_over_vararg,indent=0]
 ----
 
 | If two vararg variants are applicable, the one which uses the minimum number of vararg arguments is preferred.
 a|
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=minimal_varargs,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=minimal_varargs,indent=0]
 ----
 
 | Interfaces are preferred over super classes.
 a|
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=multi_method_distance_interface_over_super,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=multi_method_distance_interface_over_super,indent=0]
 ----
 
 | For a primitive argument type, a declared parameter type which is the same or slightly larger is preferred.
 a|
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=primitive_larger_over_smaller,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=primitive_larger_over_smaller,indent=0]
 ----
 |====
 
@@ -543,14 +543,14 @@ In the case where two variants have exactly the same distance, this is deemed am
 
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=multi_method_ambiguous,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=multi_method_ambiguous,indent=0]
 ----
 
 Casting can be used to select the desired method:
 
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=multi_method_ambiguous_cast,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=multi_method_ambiguous_cast,indent=0]
 ----
 
 
@@ -562,7 +562,7 @@ as shown in the following example which can throw a `FileNotFoundException` if t
 
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=idiomatic_method_declaration,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=idiomatic_method_declaration,indent=0]
 ----
 
 Nor will you be required to surround the call to the `badRead` method in the previous example within a try/catch
@@ -576,7 +576,7 @@ Using an explicit checked exception declaration is illustrated in the following 
 
 [source,groovy]
 ----
-include::{includedir}/../test/objectorientation/MethodsTest.groovy[tags=checked_method_declaration,indent=0]
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=checked_method_declaration,indent=0]
 ----
 
 === Fields and properties
@@ -593,7 +593,7 @@ A field is a member of a class or a trait which has:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=field_declaration,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=field_declaration,indent=0]
 ----
 <1> a `private` field named `id`, of type `int`
 <2> a `protected` field named `description`, of type `String`
@@ -603,7 +603,7 @@ A field may be initialized directly at declaration:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=field_initialization,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=field_initialization,indent=0]
 ----
 <1> the private field `id` is initialized with `IDGenerator.next()`
 
@@ -612,7 +612,7 @@ is a good idea to use strong typing for fields:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=typing_fields,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=typing_fields,indent=0]
 ----
 <1> the field `mapping` doesn't declare a type
 <2> the field `mapping` has a strong type
@@ -641,7 +641,7 @@ Groovy will then generate the getters/setters appropriately. For example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=properties_definition,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=properties_definition,indent=0]
 ----
 <1> creates a backing `private String name` field, a `getName` and a `setName` method
 <2> creates a backing `private int age` field, a `getAge` and a `setAge` method
@@ -650,7 +650,7 @@ If a property is declared `final`, no setter is generated:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=readonly_property,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=readonly_property,indent=0]
 ----
 <1> defines a read-only property of type `String`
 <2> defines a read-only property of type `int`
@@ -662,7 +662,7 @@ which defines the property:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=property_access,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=property_access,indent=0]
 ----
 <1> `this.name` will directly access the field because the property is accessed from within the class that defines it
 <2> similarily a read access is done directly on the `name` field
@@ -678,7 +678,7 @@ It is possible to list the properties of a class thanks to the meta `properties`
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=properties_meta,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=properties_meta,indent=0]
 ----
 
 By convention, Groovy will recognize properties even if there is no backing field
@@ -687,7 +687,7 @@ that follow the Java Beans specification. For example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=pseudo_properties,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=pseudo_properties,indent=0]
 ----
 <1> writing `p.name` is allowed because there is a pseudo-property `name`
 <2> reading `p.age` is allowed because there is a pseudo-readonly property `age`
@@ -741,7 +741,7 @@ similar way to interfaces, using the `@interface` keyword:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=define_annotation,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=define_annotation,indent=0]
 ----
 
 An annotation may define members in the form of methods without bodies and an optional default value. The possible
@@ -758,12 +758,12 @@ For example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=ann_member_string,indent=0]
-include::{includedir}/../test/ClassTest.groovy[tags=ann_member_string_default,indent=0]
-include::{includedir}/../test/ClassTest.groovy[tags=ann_member_int,indent=0]
-include::{includedir}/../test/ClassTest.groovy[tags=ann_member_class,indent=0]
-include::{includedir}/../test/ClassTest.groovy[tags=ann_member_annotation,indent=0]
-include::{includedir}/../test/ClassTest.groovy[tags=ann_member_enum,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_string,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_string_default,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_int,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_class,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_annotation,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_member_enum,indent=0]
 ----
 <1> an annotation defining a `value` member of type `String`
 <2> an annotation defining a `value` member of type `String` with a default value of `something`
@@ -782,7 +782,7 @@ An annotation can be applied on various elements of the code:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=apply_annotation_1,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=apply_annotation_1,indent=0]
 ----
 <1> `@SomeAnnotation` applies to the `someMethod` method
 <2> `@SomeAnnotation` applies to the `SomeClass` class
@@ -794,7 +794,7 @@ declare that an annotation can be applied to a class or a method:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=ann_target,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_target,indent=0]
 ----
 <1> the `@Target` annotation is meant to annotate an annotation with a scope.
 <2> `@SomeAnnotation` will therefore only be allowed on `TYPE` or `METHOD`
@@ -810,7 +810,7 @@ When an annotation is used, it is required to set at least all members that do n
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=annotation_value_set,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=annotation_value_set,indent=0]
 ----
 
 However it is possible to omit `value=` in the declaration of the value of an annotation if the member `value` is the
@@ -818,7 +818,7 @@ only one being set:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=annotation_value_set_option,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=annotation_value_set_option,indent=0]
 ----
 <1> we can omit the `statusCode` because it has a default value, but `value` needs to be set
 <2> since `value` is the only mandatory member without a default, we can omit `value=`
@@ -831,7 +831,7 @@ the jdk:java.lang.annotation.Retention[Retention] annotation:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=ann_retention,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=ann_retention,indent=0]
 ----
 <1> the `@Retention` annotation annotates the `@SomeAnnotation` annotation
 <2> so `@SomeAnnotation` will have a `SOURCE` retention
@@ -850,21 +850,21 @@ One could write the following code:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=closure_ann_example,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=closure_ann_example,indent=0]
 ----
 
 For the `@OnlyIf` annotation to accept a `Closure` as an argument, you only have to declare the `value` as a `Class`:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=closure_ann_def,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=closure_ann_def,indent=0]
 ----
 
 To complete the example, let's write a sample runner that would use that information:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=closure_ann_runner,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=closure_ann_runner,indent=0]
 ----
 <1> create a new instance of the class passed as an argument (the task class)
 <2> emulate an environment which is JDK 6 and not Windows
@@ -882,7 +882,7 @@ Then the runner can be used this way:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=closure_ann_runner_exec,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=closure_ann_runner_exec,indent=0]
 ----
 
 ==== Meta-annotations
@@ -900,7 +900,7 @@ with both:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=transactionalservice_class,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=transactionalservice_class,indent=0]
 ----
 
 Given the multiplication of annotations that you could add to the same class, a meta-annotation
@@ -909,7 +909,7 @@ we might want to write this instead:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=transactionalservice_class2,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=transactionalservice_class2,indent=0]
 ----
 <1> `@TransactionalService` is a meta-annotation
 
@@ -918,7 +918,7 @@ list of annotations it is collecting. In our case, the `@TransactionalService` a
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=metaann_ts,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=metaann_ts,indent=0]
 ----
 <1> annotate the meta-annotation with `@Service`
 <2> annotate the meta-annotation with `@Transactional`
@@ -946,7 +946,7 @@ replace `@TransactionalService` with `@Transactional` and `@Service`:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=annotations_expanded,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=annotations_expanded,indent=0]
 ----
 
 The conversion from a meta-annotation to the collected annotations is performed during the
@@ -963,15 +963,15 @@ we will imagine two annotations, each of them accepting one argument:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=collected_ann_explosive,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=collected_ann_explosive,indent=0]
 ----
 
 And suppose that you want create a meta-annotation named `@Explosive`:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=collected_ann_explosive,indent=0]
-include::{includedir}/../test/ClassTest.groovy[tags=collector_ann_explosive,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=collected_ann_explosive,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=collector_ann_explosive,indent=0]
 ----
 
 By default, when the annotations are replaced, they will get the
@@ -980,7 +980,7 @@ the meta-annotation supports overriding specific values:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=example_bomb,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=example_bomb,indent=0]
 ----
 <1> the `after` value provided as a parameter to `@Explosive` overrides the one defined in the `@Timeout` annotation
 
@@ -989,7 +989,7 @@ will copy the annotation value to all annotations that accept this parameter:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=collector_ann_same_values,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=collector_ann_same_values,indent=0]
 ----
 <1> the `@Foo` annotation defines the `value` member of type `String`
 <2> the `@Bar` annotation also defines the `value` member of type `String`
@@ -1064,14 +1064,14 @@ The naive implementation here would not work:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=compiledynamic_naive,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=compiledynamic_naive,indent=0]
 ----
 
 Instead, we will define it like this:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=compiledynamic_def_fixed,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=compiledynamic_def_fixed,indent=0]
 ----
 
 The first thing you may notice is that our interface is no longer
@@ -1084,7 +1084,7 @@ Here is how the custom processor is implemented:
 [source,groovy]
 .CompileDynamicProcessor.groovy
 ----
-include::{includedir}/../test/ClassTest.groovy[tags=compiledynamic_processor,indent=0]
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=compiledynamic_processor,indent=0]
 ----
 <1> our custom processor is written in Groovy, and for better compilation performance, we use static compilation
 <2> the custom processor has to extend gapi:org.codehaus.groovy.transform.AnnotationCollectorTransform[AnnotationCollectorTransform]
@@ -1114,5 +1114,5 @@ single one corresponding to `@CompileStatic(TypeCheckingMode.SKIP)`.
 (TBD)
 
 
-include::{includedir}/fragment_traits.adoc[leveloffset=+1]
+include::{projectdir}/src/spec/doc/core-traits.adoc[leveloffset=+1]
 

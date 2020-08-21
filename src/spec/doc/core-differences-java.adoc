@@ -52,21 +52,21 @@ The following code, written as Java code, can be compiled in both Java and Groov
 
 [source,java]
 ----
-include::{includedir}/../test/DifferencesFromJavaTest.groovy[tags=multimethods,indent=0]
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=multimethods,indent=0]
 ----
 
 In Java, you would have:
 
 [source,java]
 ----
-include::{includedir}/../test/DifferencesFromJavaTest.groovy[tags=multimethods_java,indent=0]
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=multimethods_java,indent=0]
 ----
 
 Whereas in Groovy:
 
 [source,java]
 ----
-include::{includedir}/../test/DifferencesFromJavaTest.groovy[tags=multimethods_groovy,indent=0]
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=multimethods_groovy,indent=0]
 ----
 
 That is because Java will use the static information type, which is that `o` is declared as an `Object`, whereas
@@ -79,7 +79,7 @@ In Java, array initializers take either of these two forms:
 
 [source,java]
 ----
-include::{includedir}/../test/DifferencesFromJavaTest.groovy[tags=arraycreate_fail,indent=0]
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=arraycreate_fail,indent=0]
 ----
 
 In Groovy, the `{ ... }` block is reserved for closures.
@@ -88,14 +88,14 @@ You instead borrow Groovy's literal list notation like this:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DifferencesFromJavaTest.groovy[tags=arraycreate_success,indent=0]
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=arraycreate_success,indent=0]
 ----
 
 For Groovy 3+, you can optionally use the Java's array initializer long syntax:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DifferencesFromJavaTest.groovy[tags=arraycreate3_success,indent=0]
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=arraycreate3_success,indent=0]
 ----
 
 == Package scope visibility
@@ -104,7 +104,7 @@ In Groovy, omitting a modifier on a field doesn't result in a package-private fi
 
 [source,groovy]
 ----
-include::{includedir}/../test/DifferencesFromJavaTest.groovy[tags=packageprivate_property,indent=0]
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=packageprivate_property,indent=0]
 ----
 
 Instead, it is used to create a _property_, that is to say a _private field_, an associated _getter_ and an associated
@@ -114,7 +114,7 @@ It is possible to create a package-private field by annotating it with `@Package
 
 [source,groovy]
 ----
-include::{includedir}/../test/DifferencesFromJavaTest.groovy[tags=packageprivate_field,indent=0]
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=packageprivate_field,indent=0]
 ----
 
 == ARM blocks
@@ -171,7 +171,7 @@ Here's an example of static inner class:
 
 [source,groovy]
 ---------------------
-include::{includedir}/../test/DifferencesFromJavaTest.groovy[tags=innerclass_1,indent=0]
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=innerclass_1,indent=0]
 ---------------------
 
 The usage of static inner classes is the best supported one. If you
@@ -181,7 +181,7 @@ absolutely need an inner class, you should make it a static one.
 
 [source,groovy]
 ---------------------
-include::{includedir}/../test/DifferencesFromJavaTest.groovy[tags=innerclass_2,indent=0]
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=innerclass_2,indent=0]
 ---------------------
 
 === Creating Instances of Non-Static Inner Classes
@@ -190,14 +190,14 @@ In Java you can do this:
 
 [source,java]
 ----------------------------------
-include::{includedir}/../test/DifferencesFromJavaTest.groovy[tags=innerclass_3_java,indent=0]
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=innerclass_3_java,indent=0]
 ----------------------------------
 
 Before 3.0.0, Groovy doesn't support the `y.new X()` syntax. Instead, you have to write `new X(y)`, like in the code below:
 
 [source,groovy]
 ----------------------------------
-include::{includedir}/../test/DifferencesFromJavaTest.groovy[tags=innerclass_3,indent=0]
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=innerclass_3,indent=0]
 ----------------------------------
 
 [WARNING]
@@ -248,7 +248,7 @@ Singly-quoted literals in Groovy are used for `String`, and double-quoted result
 
 [source,groovy]
 ----
-include::{includedir}/../test/DifferencesFromJavaTest.groovy[tags=type_depends_on_quoting_AND_whether_we_actually_interpolate,indent=0]
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=type_depends_on_quoting_AND_whether_we_actually_interpolate,indent=0]
 ----
 
 Groovy will automatically cast a single-character `String` to `char` only when assigning to
@@ -257,7 +257,7 @@ to either cast explicitly or make sure the value has been cast in advance.
 
 [source,groovy]
 ----
-include::{includedir}/../test/DifferencesFromJavaTest.groovy[tags=single_char_strings_are_autocasted,indent=0]
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=single_char_strings_are_autocasted,indent=0]
 ----
 
 Groovy supports two styles of casting and in the case of casting to `char` there
@@ -267,7 +267,7 @@ with exception.
 
 [source,groovy]
 ----
-include::{includedir}/../test/DifferencesFromJavaTest.groovy[tags=chars_c_vs_groovy_cast,indent=0]
+include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=chars_c_vs_groovy_cast,indent=0]
 ----
 
 == Primitives and wrappers
@@ -278,7 +278,7 @@ Here's an example using `int`
 
 [source,groovy]
 ----
-include::{includedir}/../test/PrimitiveTest.groovy[tags=widening_vs_boxing,indent=0]
+include::{projectdir}/src/spec/test/PrimitiveTest.groovy[tags=widening_vs_boxing,indent=0]
 ----
 <1> This is the method that Java would call, since widening has precedence over unboxing.
 <2> This is the method Groovy actually calls, since all primitive references use their wrapper class.

@@ -21,6 +21,7 @@
 
 = Strategy Pattern
 
+
 The http://en.wikipedia.org/wiki/Strategy_pattern[Strategy Pattern] allows you to abstract away particular algorithms from their usage. This allows you to easily swap the algorithm being used without having to change the calling code. The general form of the pattern is:
 
 image::assets/img/StrategyClasses.gif[]
@@ -33,7 +34,7 @@ First let's look at the traditional way of encapsulating the Strategy Pattern.
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=strategy_traditional,indent=0]
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=strategy_traditional,indent=0]
 ----
 
 Here we have defined an interface `Calc` which our concrete strategy classes will implement (we could also have used an abstract class). We then defined two algorithms for doing simple multiplication: `CalcByMult` the normal way, and ++CalcByManyAdds++ using only addition (don't try this one using negative numbers - yes we could fix this but it would just make the example longer). We then use normal http://en.wikipedia.org/wiki/Polymorphism_in_object-oriented_programming[polymorphism] to invoke the algorithms.
@@ -42,6 +43,6 @@ Here is the Groovier way to achieve the same thing using Closures:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=strategy_groovy_way,indent=0]
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=strategy_groovy_way,indent=0]
 ----
 

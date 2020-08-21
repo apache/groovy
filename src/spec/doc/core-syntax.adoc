@@ -34,7 +34,7 @@ The characters following `//`, until the end of the line, are considered part of
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=single_line_comment,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=single_line_comment,indent=0]
 ----
 
 === Multiline comment
@@ -46,7 +46,7 @@ Multiline comments can thus be put at the end of a statement, or even inside a s
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=multiline_comment,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=multiline_comment,indent=0]
 ----
 
 === Groovydoc comment
@@ -64,7 +64,7 @@ you should prepend those constructs with the comment right before it.
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=groovydoc_comment,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=groovydoc_comment,indent=0]
 ----
 
 Groovydoc follows the same conventions as Java's own Javadoc.
@@ -103,7 +103,7 @@ and the `groovy` command is available on the `PATH`.
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=shebang_comment_line,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=shebang_comment_line,indent=0]
 ----
 
 NOTE: The `#` character must be the first character of the file. Any indentation would yield a compilation error.
@@ -187,21 +187,21 @@ Here are a few examples of valid identifiers (here, variable names):
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=valid_identifiers,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=valid_identifiers,indent=0]
 ----
 
 But the following ones are invalid identifiers:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=invalid_identifiers,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=invalid_identifiers,indent=0]
 ----
 
 All keywords are also valid identifiers when following a dot:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=keywords_valid_id_after_dot,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=keywords_valid_id_after_dot,indent=0]
 ----
 
 === Quoted identifiers
@@ -213,7 +213,7 @@ but which are allowed by Groovy when quoted. For example, characters like a dash
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=quoted_id,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=quoted_id,indent=0]
 ----
 
 As we shall see in the <<all-strings,following section on strings>>, Groovy provides different string literals.
@@ -221,7 +221,7 @@ All kind of strings are actually allowed after the dot:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=quoted_id_with_all_strings,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=quoted_id_with_all_strings,indent=0]
 ----
 
 There's a difference between plain character strings and Groovy's GStrings (interpolated strings),
@@ -229,7 +229,7 @@ as in that the latter case, the interpolated values are inserted in the final st
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=quoted_id_with_gstring,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=quoted_id_with_gstring,indent=0]
 ----
 
 [[all-strings]]
@@ -245,7 +245,7 @@ Single-quoted strings are a series of characters surrounded by single quotes:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=string_1,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_1,indent=0]
 ----
 
 NOTE: Single-quoted strings are plain `java.lang.String` and don't support interpolation.
@@ -256,7 +256,7 @@ All the Groovy strings can be concatenated with the `+` operator:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=string_plus,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_plus,indent=0]
 ----
 
 === Triple-single-quoted string
@@ -265,7 +265,7 @@ Triple-single-quoted strings are a series of characters surrounded by triplets o
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=triple_single_0,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=triple_single_0,indent=0]
 ----
 
 NOTE: Triple-single-quoted strings are plain `java.lang.String` and don't support interpolation.
@@ -276,7 +276,7 @@ and without concatenation or newline escape characters:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=triple_single_1,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=triple_single_1,indent=0]
 ----
 
 If your code is indented, for example in the body of the method of a class, your string will contain the whitespace of the indentation.
@@ -287,7 +287,7 @@ When creating a string as follows:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=triple_single_2,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=triple_single_2,indent=0]
 ----
 
 You will notice that the resulting string contains a newline character as first character.
@@ -295,7 +295,7 @@ It is possible to strip that character by escaping the newline with a backslash:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=triple_single_3,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=triple_single_3,indent=0]
 ----
 
 ==== Escaping special characters
@@ -304,14 +304,14 @@ You can escape single quotes with the backslash character to avoid terminating t
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=string_2,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_2,indent=0]
 ----
 
 And you can escape the escape character itself with a double backslash:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=string_3,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_3,indent=0]
 ----
 
 Some special characters also use the backslash as escape character:
@@ -360,7 +360,7 @@ For example, the Euro currency symbol can be represented with:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=string_4,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_4,indent=0]
 ----
 
 === Double-quoted string
@@ -369,7 +369,7 @@ Double-quoted strings are a series of characters surrounded by double quotes:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=string_5,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_5,indent=0]
 ----
 
 NOTE: Double-quoted strings are plain `java.lang.String` if there's no interpolated expression,
@@ -391,14 +391,14 @@ Here, we have a string with a placeholder referencing a local variable:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=gstring_1,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_1,indent=0]
 ----
 
 Any Groovy expression is valid, as we can see in this example with an arithmetic expression:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=gstring_2,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_2,indent=0]
 ----
 
 [NOTE]
@@ -410,7 +410,7 @@ In addition to `${}` placeholders, we can also use a lone `$` sign prefixing a d
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=gstring_3,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_3,indent=0]
 ----
 
 But only dotted expressions of the form `a.b`, `a.b.c`, etc, are valid. Expressions containing parentheses like method calls,
@@ -419,14 +419,14 @@ Given the following variable definition of a number:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=gstring_4,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_4,indent=0]
 ----
 
 The following statement will throw a `groovy.lang.MissingPropertyException` because Groovy believes you're trying to access the `toString` property of that number, which doesn't exist:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=gstring_5,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_5,indent=0]
 ----
 
 NOTE: You can think of `"$number.toString()"` as being interpreted by the parser as `"${number.toString}()"`.
@@ -435,9 +435,9 @@ Similarly, if the expression is ambiguous, you need to keep the curly braces:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=gstring_3b,indent=0]
-include::{includedir}/../test/SyntaxTest.groovy[tags=gstring_3b2,indent=0]
-include::{includedir}/../test/SyntaxTest.groovy[tags=gstring_3b3,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_3b,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_3b2,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_3b3,indent=0]
 ----
 
 If you need to escape the `$` or `${}` placeholders in a GString so they appear as is without interpolation,
@@ -445,7 +445,7 @@ you just need to use a `\` backslash character to escape the dollar sign:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=gstring_6,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_6,indent=0]
 ----
 
 ==== Special case of interpolating closure expressions
@@ -454,7 +454,7 @@ So far, we've seen we could interpolate arbitrary expressions inside the `${}` p
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=closure_in_gstring_1,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=closure_in_gstring_1,indent=0]
 ----
 <1> The closure is a parameterless closure which doesn't take arguments.
 <2> Here, the closure takes a single `java.io.StringWriter` argument, to which you can append content  with the `<<` leftShift operator.
@@ -467,7 +467,7 @@ Let's consider the following sample:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=closure_in_gstring_2,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=closure_in_gstring_2,indent=0]
 ----
 <1> We define a `number` variable containing `1` that we then interpolate within two GStrings,
 as an expression in `eagerGString` and as a closure in `lazyGString`.
@@ -490,7 +490,7 @@ the `toString()` method of the GString is automatically and transparently called
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=java_gstring_interop_1,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=java_gstring_interop_1,indent=0]
 ----
 <1> We create a GString variable
 <2> We double check it's an instance of the GString
@@ -508,7 +508,7 @@ Even for the same resulting string, GStrings and Strings don't have the same has
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=gstring_hashcode_1,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_hashcode_1,indent=0]
 ----
 
 GString and Strings having different hashCode values, using GString as Map keys should be avoided,
@@ -516,7 +516,7 @@ especially if we try to retrieve an associated value with a String instead of a 
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=gstring_hashcode_2,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_hashcode_2,indent=0]
 ----
 <1> The map is created with an initial pair whose key is a GString
 <2> When we try to fetch the value with a String key, we will not find it, as Strings and GString have different hashCode values
@@ -527,7 +527,7 @@ Triple-double-quoted strings behave like double-quoted strings, with the additio
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=triple_double_1,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=triple_double_1,indent=0]
 ----
 
 NOTE: Neither double quotes nor single quotes need be escaped in triple-double-quoted strings.
@@ -542,28 +542,28 @@ Example of a slashy string:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=slashy_1,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=slashy_1,indent=0]
 ----
 
 Only forward slashes need to be escaped with a backslash:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=slashy_2,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=slashy_2,indent=0]
 ----
 
 Slashy strings are multiline:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=slashy_3,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=slashy_3,indent=0]
 ----
 
 Slashy strings can be thought of as just another way to define a GString but with different escaping rules. They hence support interpolation:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=slashy_4,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=slashy_4,indent=0]
 ----
 
 ==== Special cases
@@ -573,7 +573,7 @@ That's why the following assert would actually not compile as it would look like
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=slashy_5,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=slashy_5,indent=0]
 ----
 
 As slashy strings were mostly designed to make regexp easier so a few things that
@@ -598,7 +598,7 @@ Here's an example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=dollar_slashy_1,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=dollar_slashy_1,indent=0]
 ----
 
 It was created to overcome some of the limitations of the slashy string escaping rules.
@@ -658,7 +658,7 @@ However, you can be explicit about making a Groovy string an actual character, b
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=char,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=char,indent=0]
 ----
 <1> by being explicit when declaring a variable holding the character by specifying the `char` type
 <2> by using type coercion with the `as` operator
@@ -686,7 +686,7 @@ You can create integral numbers of those types with the following declarations:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=int_decl,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=int_decl,indent=0]
 ----
 
 If you use optional typing by using the `def` keyword, the type of the integral number will vary:
@@ -696,14 +696,14 @@ For positive numbers:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=wide_int_positive,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=wide_int_positive,indent=0]
 ----
 
 As well as for negative numbers:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=wide_int_negative,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=wide_int_negative,indent=0]
 ----
 
 ==== Alternative non-base 10 representations
@@ -716,7 +716,7 @@ Binary numbers start with a `0b` prefix:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=binary_literal_example,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=binary_literal_example,indent=0]
 ----
 
 ===== Octal literal
@@ -725,7 +725,7 @@ Octal numbers are specified in the typical format of `0` followed by octal digit
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=octal_literal_example,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=octal_literal_example,indent=0]
 ----
 
 ===== Hexadecimal literal
@@ -734,7 +734,7 @@ Hexadecimal numbers are specified in the typical format of `0x` followed by hex 
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=hexadecimal_literal_example,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=hexadecimal_literal_example,indent=0]
 ----
 
 === Decimal literals
@@ -749,7 +749,7 @@ You can create decimal numbers of those types with the following declarations:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=float_decl,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=float_decl,indent=0]
 ----
 
 Decimals can use exponents, with the `e` or `E` exponent letter, followed by an optional sign,
@@ -757,7 +757,7 @@ and a integral number representing the exponent:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=float_exp,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=float_exp,indent=0]
 ----
 
 Conveniently for exact decimal number calculations, Groovy choses `java.lang.BigDecimal` as its decimal number type.
@@ -772,7 +772,7 @@ When writing long literal numbers, it’s harder on the eye to figure out how so
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=underscore_in_number_example,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=underscore_in_number_example,indent=0]
 ----
 
 === Number type suffixes
@@ -807,12 +807,12 @@ Examples:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=number_type_suffixes_example,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=number_type_suffixes_example,indent=0]
 ----
 
 === Math operations
 
-Although <<core-operators.adoc#_operators,operators>> are covered in more detail elsewhere, it's important to discuss the behavior of math operations
+Although <<_operators,operators>> are covered later on, it's important to discuss the behavior of math operations
 and what their resulting types are.
 
 Division and power binary operations aside (covered below),
@@ -987,23 +987,23 @@ We can illustrate those rules with a few examples:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=number_power,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=number_power,indent=0]
 ----
 
 == Booleans
 
 Boolean is a special data type that is used to represent truth values: `true` and `false`.
-Use this data type for simple flags that track true/false <<core-operators.adoc#_conditional_operators,conditions>>.
+Use this data type for simple flags that track true/false <<_conditional_operators,conditions>>.
 
 Boolean values can be stored in variables, assigned into fields, just like any other data type:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=variable_store_boolean_value,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=variable_store_boolean_value,indent=0]
 ----
 
 `true` and `false` are the only two primitive boolean values.
-But more complex boolean expressions can be represented using <<core-operators.adoc#_logical_operators,logical operators>>.
+But more complex boolean expressions can be represented using <<_bitwise_and_logical_operators,logical operators>>.
 
 In addition, Groovy has <<core-semantics.adoc#Groovy-Truth,special rules>> (often referred to as _Groovy Truth_)
 for coercing non-boolean objects to a boolean value.
@@ -1017,7 +1017,7 @@ unless you decide to specify otherwise, as we shall see later on.
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=list_1,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=list_1,indent=0]
 ----
 <1> We define a list numbers delimited by commas and surrounded by square brackets, and we assign that list into a variable
 <2> The list is an instance of Java's `java.util.List` interface
@@ -1027,7 +1027,7 @@ In the above example, we used a homogeneous list, but you can also create lists 
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=list_2,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=list_2,indent=0]
 ----
 <1> Our list here contains a number, a string and a boolean value
 
@@ -1037,7 +1037,7 @@ thanks to using type coercion with the `as` operator, or with explicit type decl
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=coercion_of_list,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=coercion_of_list,indent=0]
 ----
 <1> We use coercion with the `as` operator to explicitly request a `java.util.LinkedList` implementation
 <2> We can say that the variable holding the list literal is of type `java.util.LinkedList`
@@ -1048,7 +1048,7 @@ and use the `<<` leftShift operator to append elements to a list:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=subscript_and_leftshift,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=subscript_and_leftshift,indent=0]
 ----
 <1> Access the first element of the list (zero-based counting)
 <2> Access the last element of the list with a negative index: -1 is the first element from the end of the list
@@ -1061,7 +1061,7 @@ As lists can be heterogeneous in nature, lists can also contain other lists to c
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=multi_dim_list,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=multi_dim_list,indent=0]
 ----
 <1> Define a list of list of numbers
 <2> Access the second element of the top-most list, and the first element of the inner list
@@ -1073,7 +1073,7 @@ you need to explicitely define the type of the array through coercion or type de
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=array_1,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=array_1,indent=0]
 ----
 <1> Define an array of strings using explicit variable type declaration
 <2> Assert that we created an array of strings
@@ -1084,7 +1084,7 @@ You can also create multi-dimensional arrays:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=array_2,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=array_2,indent=0]
 ----
 <1> You can define the bounds of a new array
 <2> Or declare an array without specifying its bounds
@@ -1093,7 +1093,7 @@ Access to elements of an array follows the same notation as for lists:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=array_3,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=array_3,indent=0]
 ----
 <1> Retrieve the first element of the array
 <2> Set the value of the third element of the array to a new value
@@ -1132,7 +1132,7 @@ and the whole keys and values surrounded by square brackets.
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=map_def_access,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=map_def_access,indent=0]
 ----
 <1> We define a map of string color names, associated with their hexadecimal-coded html colors
 <2> We use the subscript notation to check the content associated with the `red` key
@@ -1150,7 +1150,7 @@ If you try to access a key which is not present in the map:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=unknown_key,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=unknown_key,indent=0]
 ----
 
 You will retrieve a `null` result.
@@ -1159,7 +1159,7 @@ In the examples above, we used string keys, but you can also use values of other
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=number_key,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=number_key,indent=0]
 ----
 
 Here, we used numbers as keys, as numbers can unambiguously be recognized as numbers,
@@ -1168,7 +1168,7 @@ But consider the case you want to pass a variable in lieu of the key, to have th
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=variable_key_1,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=variable_key_1,indent=0]
 ----
 <1> The `key` associated with the `'Guillaume'` name will actually be the `"key"` string, not the value associated with the `key` variable
 <2> The map doesn't contain the `'name'` key
@@ -1183,7 +1183,7 @@ When you need to pass variable values as keys in your map definitions, you must 
 
 [source,groovy]
 ----
-include::{includedir}/../test/SyntaxTest.groovy[tags=variable_key_2,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=variable_key_2,indent=0]
 ----
 <1> This time, we surround the `key` variable with parentheses, to instruct the parser we are passing a variable rather than defining a string key
 <2> The map does contain the `name` key

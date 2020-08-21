@@ -22,7 +22,7 @@
 = Iterator Pattern
 
 
-The https://en.wikipedia.org/wiki/Iterator_pattern[Iterator Pattern] allows sequential access to the elements of an aggregate object without exposing its underlying representation.
+The http://en.wikipedia.org/wiki/Iterator_pattern[Iterator Pattern] allows sequential access to the elements of an aggregate object without exposing its underlying representation.
 
 Groovy has the iterator pattern built right in to many of its closure operators, e.g. `each` and `eachWithIndex` as well as the `for .. in` loop.
 
@@ -30,7 +30,7 @@ For example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=iterator_example,indent=0]
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=iterator_example,indent=0]
 ----
 
 Results in the output:
@@ -51,7 +51,7 @@ Another example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=iterator_example2,indent=0]
+include::{projectdir}/src/spec/test/DesignPatternsTest.groovy[tags=iterator_example2,indent=0]
 ----
 
 Results in:

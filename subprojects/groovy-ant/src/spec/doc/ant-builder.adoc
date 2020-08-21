@@ -27,7 +27,7 @@ Here we describe `AntBuilder` which lets you write Ant build scripts
 in Groovy rather than XML. You may also be interested in using Groovy
 from Ant using the <<groovy-ant-task.adoc#ThegroovyAntTask-groovyc,Groovy Ant task>>.
 
-Despite being primarily a build tool, https://ant.apache.org/[Apache Ant] is
+Despite being primarily a build tool, http://ant.apache.org/[Apache Ant] is
 a very practical tool for manipulating files including zip files, copy, resource processing, and more.
 But if ever you’ve been working with a `build.xml` file or some _Jelly script_
 and found yourself a little restricted by all those pointy brackets, or
@@ -93,6 +93,6 @@ We can even go further by compiling and executing a Java file directly from Groo
 include::{rootProjectDir}/subprojects/groovy-ant/src/spec/test/builder/AntBuilderSpecTest.groovy[tags=compile_java,indent=0]
 ----
 
-It is worth mentioning that `AntBuilder` is included in https://gradle.org/[Gradle], so you can use it in Gradle
+It is worth mentioning that `AntBuilder` is included in http://gradle.org/[Gradle], so you can use it in Gradle
 just like you would in Groovy. Additional documentation can be found in the
-https://gradle.org/docs/current/userguide/ant.html[Gradle manual].
+http://gradle.org/docs/current/userguide/ant.html[Gradle manual].

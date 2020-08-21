@@ -21,7 +21,7 @@
 
 = Bean Scripting Framework
 
-WARNING: The https://commons.apache.org/proper/commons-bsf/[Bean Scripting Framework] is an attempt to create an API
+WARNING: The http://commons.apache.org/proper/commons-bsf/[Bean Scripting Framework] is an attempt to create an API
 to allow calling scripting languages from Java. It hasn't been updated for long and abandoned in favor of the
 standard <<jsr223,JSR-223>> API.
 
@@ -61,7 +61,7 @@ include::{rootProjectDir}/subprojects/groovy-bsf/src/spec/test/BSFSpecTest.java[
 
 The previous examples used the _eval_ method. BSF makes multiple methods
 available for your use (see the
-https://commons.apache.org/proper/commons-bsf/manual.html[BSF documentation] for more
+http://commons.apache.org/proper/commons-bsf/manual.html[BSF documentation] for more
 details). One of the other available methods is _apply_. It allows you
 to define an anonymous function in your scripting language and apply
 that function to arguments. Groovy supports this function using

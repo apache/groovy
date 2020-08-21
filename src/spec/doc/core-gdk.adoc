@@ -21,14 +21,13 @@
 
 = Groovy Development Kit
 
+include::{projectdir}/src/spec/doc/working-with-io.adoc[leveloffset=+1]
 
-include::{includedir}/fragment_working-with-io.adoc[leveloffset=+1]
+include::{projectdir}/src/spec/doc/working-with-collections.adoc[leveloffset=+1]
 
-include::{includedir}/fragment_working-with-collections.adoc[leveloffset=+1]
+include::{projectdir}/subprojects/groovy-dateutil/{specfolder}/working-with-dateutil-types.adoc[leveloffset=+1]
 
-include::{rootprojectdir}/subprojects/groovy-dateutil/{specfolder}/fragment_working-with-dateutil-types.adoc[leveloffset=+1]
-
-include::{rootprojectdir}/subprojects/groovy-datetime/{specfolder}/fragment_working-with-datetime-types.adoc[leveloffset=+1]
+include::{projectdir}/subprojects/groovy-datetime/{specfolder}/working-with-datetime-types.adoc[leveloffset=+1]
 
 == Handy utilities
 
@@ -40,7 +39,7 @@ configuration values and arbitrary object types.
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/ConfigSlurperTest.groovy[tags=arbitrary_types,indent=0]
+include::{projectdir}/src/spec/test/gdk/ConfigSlurperTest.groovy[tags=arbitrary_types,indent=0]
 ----
 <1> Usage of the dot notation
 <2> Usage of Closure scopes as an alternative to the dot notation
@@ -51,7 +50,7 @@ instance but never `null`.
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/ConfigSlurperTest.groovy[tags=never_null,indent=0]
+include::{projectdir}/src/spec/test/gdk/ConfigSlurperTest.groovy[tags=never_null,indent=0]
 ----
 <1> `config.test` has not been specified yet it returns a `ConfigObject` when being called.
 
@@ -59,7 +58,7 @@ In the case of a dot being part of a configuration variable name, it can be esca
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/ConfigSlurperTest.groovy[tags=escape_dot,indent=0]
+include::{projectdir}/src/spec/test/gdk/ConfigSlurperTest.groovy[tags=escape_dot,indent=0]
 ----
 
 In addition, `ConfigSlurper` comes with support for `environments`. The `environments` method can be used to hand over
@@ -69,7 +68,7 @@ constructor to specify the target environment.
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/ConfigSlurperTest.groovy[tags=environments,indent=0]
+include::{projectdir}/src/spec/test/gdk/ConfigSlurperTest.groovy[tags=environments,indent=0]
 ----
 
 [NOTE]
@@ -81,7 +80,7 @@ in addition to the `environments` name.
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/ConfigSlurperTest.groovy[tags=custom_environments,indent=0]
+include::{projectdir}/src/spec/test/gdk/ConfigSlurperTest.groovy[tags=custom_environments,indent=0]
 ----
 <1> Once the new block is registered `ConfigSlurper` can parse it.
 
@@ -91,7 +90,7 @@ object that might be stored to a `*.properties` text file. Be aware though that 
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/ConfigSlurperTest.groovy[tags=properties,indent=0]
+include::{projectdir}/src/spec/test/gdk/ConfigSlurperTest.groovy[tags=properties,indent=0]
 ----
 
 === Expando
@@ -102,7 +101,7 @@ extended with properties (or methods) at runtime.
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/ExpandoTest.groovy[tags=expando_property,indent=0]
+include::{projectdir}/src/spec/test/gdk/ExpandoTest.groovy[tags=expando_property,indent=0]
 ----
 
 A special case occurs when a dynamic property registers a `Closure` code block. Once being registered it can be invoked
@@ -110,7 +109,7 @@ as it would be done with a method call.
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/ExpandoTest.groovy[tags=expando_method,indent=0]
+include::{projectdir}/src/spec/test/gdk/ExpandoTest.groovy[tags=expando_method,indent=0]
 ----
 
 === Observable list, map and set
@@ -124,7 +123,7 @@ Depending on the type of change that has happened, observable collections might 
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/ObservableTest.groovy[tags=observable_list,indent=0]
+include::{projectdir}/src/spec/test/gdk/ObservableTest.groovy[tags=observable_list,indent=0]
 ----
 <1> Declares a `PropertyChangeEventListener` that is capturing the fired events
 <2> `ObservableList.ElementEvent` and its descendant types are relevant for this listener
@@ -141,7 +140,7 @@ The `ObservableList.ElementClearedEvent` event type is another interesting one. 
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/ObservableTest.groovy[tags=observable_list_clear,indent=0]
+include::{projectdir}/src/spec/test/gdk/ObservableTest.groovy[tags=observable_list_clear,indent=0]
 ----
 
 To get an overview of all the supported event types the reader is encouraged to have a look at the JavaDoc documentation

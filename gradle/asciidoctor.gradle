@@ -16,25 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-apply plugin: 'org.asciidoctor.jvm.convert'
+apply plugin: 'org.asciidoctor.gradle.asciidoctor'
 
 asciidoctor {
-    baseDirIsRootProjectDir() // needed for asciidocAll
     def (full, major, minor, patch, flavor) = (groovyVersion =~ /(\d+)\.(\d++)\.(\d+)(?:-(.+))?/)[0]
     logDocuments = true
     sourceDir = project.file('src/spec/doc')
-    sources {
-        include '*.adoc'
-        exclude 'fragment_*.adoc'
-    }
-    outputDir = "$buildDir/asciidoc/html5"
-    resources {
-        from( "${rootProject.projectDir}/src/spec/doc/assets" ) {
-            include 'css/style.css'
-        }
-        into 'assets'
-    }
-    attributes 'rootProjectDir': rootProject.projectDir,
+
+    attributes([
+            'rootProjectDir': rootProject.projectDir,
             'source-highlighter': 'prettify',
             groovyversion: groovyVersion,
             'groovy-major-version': major,
@@ -53,33 +43,41 @@ asciidoctor {
             toclevels: 10,
             numbered: '',
             sectanchors: ''
-}
+    ])
 
-asciidoctorj {
-    jrubyVersion = '1.5.8'
-    version = '2.4.0'
-    def vers = groovyVersion
-    docExtensions {
+    extensions {
+
         def baseUrls = [
-                jdk: 'https://docs.oracle.com/en/java/javase/11/docs/api/index.html',
-                gjdk: "https://docs.groovy-lang.org/${vers}/html/groovy-jdk/index.html",
-                gapi: "https://docs.groovy-lang.org/${vers}/html/gapi/index.html",
-                gapid:  "https://docs.groovy-lang.org/${vers}/html/gapi/",
+                jdk: "https://docs.oracle.com/javase/8/docs/api/index.html",
+                gjdk: "https://docs.groovy-lang.org/${version}/html/groovy-jdk/index.html",
+                gapi: "https://docs.groovy-lang.org/${version}/html/gapi/index.html",
+                gapid:  "https://docs.groovy-lang.org/${version}/html/gapi/",
         ]
+
         baseUrls.each { macroName, baseURL ->
-            inline_macro(name: macroName) {
+            inlinemacro(name: macroName) {
                 parent, target, attributes ->
                     def (className, anchor) = target.split('#') as List
-                    def base = className == 'index' ?
-                            baseURL : baseURL + '?' + className.replace('.', '/') + '.html' + (anchor ? '#' + anchor : '')
-                    createPhraseNode(parent, 'anchor', attributes.text?:target, attributes, [type: ':link', target: base])
+                    options = [
+                            "type"  : ":link",
+                            "target": calculateDocUrl(baseURL, className, anchor),
+                    ]
+
+                    createInline(parent, "anchor", attributes.text?:target, attributes, options).render()
             }
         }
+
+        inlinemacro('gapid') { parent, target, attributes ->
+            def (className, anchor) = target.split('#') as List
+
+            def partialUrl = { -> className.replace('.', '/') + '.html' + (anchor ? '#' + anchor.replace(',',', ') : '')}
+            options = [
+                    "type": ":link",
+                    "target": "${baseUrls['gapid']}${partialUrl()}",
+            ]
+            createInline(parent, "anchor", attributes.text?:target, attributes, options).render()
+        }
     }
-//    modules {
-//        diagram.version('2.0.2')
-//        pdf.version('1.5.3')
-//    }
 }
 
 // skip the asciidoctor task if there's no directory with asciidoc files
@@ -87,7 +85,7 @@ asciidoctor.onlyIf { project.file('src/spec/doc').exists() }
 
 task asciidoctorAssets(type:Copy) {
     from project.fileTree('src/spec/doc/assets')
-    into "${asciidoctor.outputDir}/assets"
+    into "${asciidoctor.outputDir}/html5/assets"
 }
 asciidoctor.dependsOn asciidoctorAssets
 
@@ -116,7 +114,7 @@ def htmlOutputSanityCheck = { file, text, errors ->
         if (line =~ /<code class=".+?"><\/code>/) {
             localErrors << "contains empty code block, probably incorrect import of a tag."
         }
-        if (line =~ /(gapi|jdk|gjdk):(\S.+?)/) {
+        if (line =~ /(gapi|jdk|gjdk):(.+?)/) {
             localErrors << "line $i starting with asciidoctor raw markup:\n$line"
         }
     }
@@ -140,6 +138,7 @@ asciidoctor {
     }
 
     doLast {
+
         def scripts = '''<link rel="stylesheet" href="assets/css/view-example.css">
 <script src='assets/js/jquery-min-2.1.1.js'></script>
 <script src='assets/js/view-example.js'></script>'''
@@ -155,4 +154,10 @@ asciidoctor {
             throw new GradleException("Incorrect Asciidoctor output:\n${errors.join('\n')}")
         }
     }
+}
+
+String calculateDocUrl(String baseUrl, String className, String anchor) {
+    if (className == "index") return baseUrl
+
+    return baseUrl + "?" + className.replace('.', '/') + '.html' + (anchor ? '#' + anchor : '')
 }

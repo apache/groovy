@@ -36,7 +36,7 @@ buildscript {
 
     dependencies {
         // using the old "classpath" style of plugins because the new one doesn't play well with multi-modules
-        classpath "org.asciidoctor:asciidoctor-gradle-jvm:3.2.0"
+        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.8'
         classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.0.3"
         //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
         classpath "org.nosphere.apache:creadur-rat-gradle:0.7.0"
@@ -51,10 +51,6 @@ plugins {
     id 'com.github.blindpirate.osgi' version '0.0.3'
     id 'org.sonarqube' version '2.8'
 }
-
-//configurations {
-//    asciidoctorExtensions
-//}
 
 buildScanRecipes {
     recipe 'git-commit', baseUrl: 'https://github.com/apache/groovy/tree'
@@ -108,7 +104,7 @@ allprojects {
     apply from: "${rootProject.projectDir}/gradle/indy.gradle"
     apply from: "${rootProject.projectDir}/gradle/asciidoctor.gradle"
 
-    tasks.withType(org.asciidoctor.gradle.jvm.AbstractAsciidoctorTask) {
+    tasks.withType(org.asciidoctor.gradle.AsciidoctorTask) {
         outputs.cacheIf { true }
     }
 }

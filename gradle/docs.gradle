@@ -27,7 +27,7 @@ task asciidocAll(type: Copy) {
         dependsOn asciidoctor
         from asciidoctor.outputDir
     }
-    into "$buildDir/asciidocAll/html5"
+    into "$buildDir/asciidocAll"
 }
 
 def javadocSpec = {

@@ -22,7 +22,7 @@
 == JUnit 5
 
 Much of the approach and helper classes described under JUnit4 apply when using JUnit5 however JUnit5
-uses some slightly different class annotations when writing your tests. See the https://junit.org[JUnit5] documentation
+uses some slightly different class annotations when writing your tests. See the http://junit.org[JUnit5] documentation
 for more details.
 
 Create your test classes as per normal JUnit5 guidelines as shown in this example:
