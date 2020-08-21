@@ -76,10 +76,10 @@ asciidoctorj {
             }
         }
     }
-//    modules {
+    modules {
 //        diagram.version('2.0.2')
-//        pdf.version('1.5.3')
-//    }
+        pdf.version('1.5.3')
+    }
 }
 
 // skip the asciidoctor task if there's no directory with asciidoc files
