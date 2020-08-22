@@ -44,29 +44,29 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     // GROOVY-5561
     void testShouldNotThrowAccessForbidden() {
         assertScript '''
-        class Test {
-            def foo() {
-                def bar = createBar()
-                bar.foo
-            }
+            class Test {
+                def foo() {
+                    def bar = createBar()
+                    bar.foo
+                }
 
-            Bar createBar() { new Bar() }
-        }
-        class Bar {
-            List<String> foo = ['1','2']
-        }
-        assert new Test().foo() == ['1','2']
+                Bar createBar() { new Bar() }
+            }
+            class Bar {
+                List<String> foo = ['1','2']
+            }
+            assert new Test().foo() == ['1','2']
         '''
     }
 
     // GROOVY-5579
     void testUseSetterAndNotSetProperty() {
         assertScript '''
-                Date d = new Date()
-                d.time = 1
+            Date d = new Date()
+            d.time = 1
 
-                assert d.time == 1
-                '''
+            assert d.time == 1
+        '''
         assert astTrees.values().any {
             it.toString().contains 'INVOKEVIRTUAL java/util/Date.setTime (J)V'
         }
@@ -116,38 +116,38 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
 
     void testUseDirectWriteFieldAccess() {
         assertScript '''
-                class A {
-                        boolean setterCalled = false
+            class A {
+                boolean setterCalled
 
-                        protected int x
-                        public void setX(int a) {
-                            setterCalled = true
-                            x = a
-                        }
+                protected int x
+                public void setX(int a) {
+                    setterCalled = true
+                    x = a
                 }
-                class B extends A {
-                    void directAccess() {
-                        this.@x = 2
-                    }
+            }
+            class B extends A {
+                void directAccess() {
+                    this.@x = 2
                 }
-                B b = new B()
-                b.directAccess()
-                assert b.isSetterCalled() == false
-                assert b.x == 2
-            '''
+            }
+            B b = new B()
+            b.directAccess()
+            assert b.isSetterCalled() == false
+            assert b.x == 2
+        '''
         assert astTrees['B'][1].contains('PUTFIELD A.x')
     }
 
     void testUseDirectWriteStaticFieldAccess() {
         assertScript '''
             class A {
-                    static boolean setterCalled = false
+                static boolean setterCalled
 
-                    static protected int x
-                    public static void setX(int a) {
-                        setterCalled = true
-                        x = a
-                    }
+                static protected int x
+                public static void setX(int a) {
+                    setterCalled = true
+                    x = a
+                }
             }
             class B extends A {
                 static void directAccess() {
@@ -157,31 +157,31 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             B.directAccess()
             assert B.isSetterCalled() == false
             assert B.x == 2
-                '''
+        '''
         assert astTrees['B'][1].contains('PUTSTATIC A.x')
     }
 
     void testUseSetterFieldAccess() {
         assertScript '''
-                class A {
-                        boolean setterCalled = false
+            class A {
+                boolean setterCalled
 
-                        protected int x
-                        public void setX(int a) {
-                            setterCalled = true
-                            x = a
-                        }
+                protected int x
+                public void setX(int a) {
+                    setterCalled = true
+                    x = a
                 }
-                class B extends A {
-                    void setterAccess() {
-                        this.x = 2
-                    }
+            }
+            class B extends A {
+                void setterAccess() {
+                    this.x = 2
                 }
-                B b = new B()
-                b.setterAccess()
-                assert b.isSetterCalled() == true
-                assert b.x == 2
-            '''
+            }
+            B b = new B()
+            b.setterAccess()
+            assert b.isSetterCalled() == true
+            assert b.x == 2
+        '''
         assert astTrees['B'][1].contains('INVOKEVIRTUAL B.setX')
     }
 
@@ -251,7 +251,6 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             A a = new A(1)
             assert b.sameAs(a)
         '''
-
     }
 
     void testDirectReadFieldFromSameClass() {
@@ -288,54 +287,55 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
 
     void testUseDirectReadFieldAccess() {
         assertScript '''
-                class A {
-                        boolean getterCalled = false
+            class A {
+                boolean getterCalled
 
-                        protected int x
-                        public int getX() {
-                            getterCalled = true
-                            x
-                        }
+                protected int x
+                public int getX() {
+                    getterCalled = true
+                    x
                 }
-                class B extends A {
-                    void m() {
-                        this.@x
-                    }
+            }
+            class B extends A {
+                void m() {
+                    this.@x
                 }
-                B b = new B()
-                b.m()
-                assert b.isGetterCalled() == false
-            '''
+            }
+            B b = new B()
+            b.m()
+            assert b.isGetterCalled() == false
+        '''
         assert astTrees['B'][1].contains('GETFIELD A.x')
     }
 
     void testUseGetterFieldAccess() {
         assertScript '''
-                    class A {
-                            boolean getterCalled = false
+            class A {
+                boolean getterCalled
 
-                            protected int x
-                            public int getX() {
-                                getterCalled = true
-                                x
-                            }
-                    }
-                    class B extends A {
-                        void usingGetter() {
-                            this.x
-                        }
-                    }
-                    B b = new B()
-                    b.usingGetter()
-                    assert b.isGetterCalled() == true
-                '''
+                protected int x
+                public int getX() {
+                    getterCalled = true
+                    x
+                }
+            }
+            class B extends A {
+                void usingGetter() {
+                    this.x
+                }
+            }
+            B b = new B()
+            b.usingGetter()
+            assert b.isGetterCalled() == true
+        '''
         assert astTrees['B'][1].contains('INVOKEVIRTUAL B.getX')
     }
 
     void testUseAttributeExternal() {
         assertScript '''
             class A {
-                boolean setterCalled = false
+                boolean setterCalled
+
                 public int x
                 void setX(int a) {
                     setterCalled = true
@@ -352,7 +352,8 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     void testUseAttributeExternalSafe() {
         assertScript '''
             class A {
-                boolean setterCalled = false
+                boolean setterCalled
+
                 public int x
                 void setX(int a) {
                     setterCalled = true
@@ -369,7 +370,8 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     void testUseAttributeExternalSafeWithNull() {
         assertScript '''
             class A {
-                boolean setterCalled = false
+                boolean setterCalled
+
                 public int x
                 void setX(int a) {
                     setterCalled = true
@@ -384,7 +386,8 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     void testUseGetterExternal() {
         assertScript '''
             class A {
-                boolean setterCalled = false
+                boolean setterCalled
+
                 public int x
                 void setX(int a) {
                     setterCalled = true
@@ -401,7 +404,8 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     void testUseAttributeExternalSpread() {
         assertScript '''
             class A {
-                boolean setterCalled = false
+                boolean setterCalled
+
                 public int x
                 void setX(int a) {
                     setterCalled = true
@@ -418,7 +422,8 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     void testUseAttributeExternalSpreadSafeWithNull() {
         assertScript '''
             class A {
-                boolean setterCalled = false
+                boolean setterCalled
+
                 public int x
                 void setX(int a) {
                     setterCalled = true
@@ -436,7 +441,8 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     void testUseAttributeExternalSpreadUsingSetter() {
         assertScript '''
             class A {
-                boolean setterCalled = false
+                boolean setterCalled
+
                 public int x
                 void setX(int a) {
                     setterCalled = true
@@ -453,7 +459,8 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     void testUseAttributeExternalSpreadSafeWithNullUsingSetter() {
         assertScript '''
             class A {
-                boolean setterCalled = false
+                boolean setterCalled
+
                 public int x
                 void setX(int a) {
                     setterCalled = true
@@ -471,45 +478,43 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     // GROOVY-5649
     void testShouldNotThrowStackOverflowUsingThis() {
         new GroovyShell().evaluate '''
-        class HaveOption {
+            class HaveOption {
+                private String helpOption
 
-          private String helpOption;
-
-          public void setHelpOption(String helpOption) {
-            this.helpOption = helpOption
-          }
-
-        }
-        def o = new HaveOption()
-        o.setHelpOption 'foo'
-        assert o.helpOption
+                public void setHelpOption(String helpOption) {
+                    this.helpOption = helpOption
+                }
+            }
+            def o = new HaveOption()
+            o.setHelpOption 'foo'
+            assert o.helpOption
         '''
     }
 
     void testShouldNotThrowStackOverflow() {
         new GroovyShell().evaluate '''
-        class HaveOption {
+            class HaveOption {
+              private String helpOption
 
-          private String helpOption;
-
-          public void setHelpOption(String ho) {
-            helpOption = ho
-          }
-
-        }
-        def o = new HaveOption()
-        o.setHelpOption 'foo'
-        assert o.helpOption
+              public void setHelpOption(String ho) {
+                  helpOption = ho
+              }
+            }
+            def o = new HaveOption()
+            o.setHelpOption 'foo'
+            assert o.helpOption
         '''
     }
 
     @Override
     void testPropertyWithMultipleSetters() {
         // we need to override the test because the AST is going to be changed
-        assertScript '''import org.codehaus.groovy.ast.expr.BinaryExpression
-import org.codehaus.groovy.ast.expr.BooleanExpression
-import org.codehaus.groovy.ast.stmt.AssertStatement
-import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression
+        assertScript '''
+            import org.codehaus.groovy.ast.expr.BinaryExpression
+            import org.codehaus.groovy.ast.expr.BooleanExpression
+            import org.codehaus.groovy.ast.stmt.AssertStatement
+            import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression
+
             class A {
                 private field
                 void setX(Integer a) {field=a}
@@ -537,24 +542,24 @@ import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression
                 assert a.x == "3"
             }
             testBody()
-            '''
+        '''
     }
 
     void testCallSetterAsPropertyWithinFinallyBlockShouldNotThrowVerifyError() {
         try {
             assertScript '''
-            class Multi {
-               void setOut(int a) {}
-            }
+                class Multi {
+                   void setOut(int a) {}
+                }
 
-            void foo() {
-               def m = new Multi()
-               try {
-               } finally {
-                  m.out = 1
-               }
-            }
-            foo()
+                void foo() {
+                   def m = new Multi()
+                   try {
+                   } finally {
+                      m.out = 1
+                   }
+                }
+                foo()
             '''
         } finally {
             assert astTrees.values().any {
@@ -566,20 +571,20 @@ import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression
     void testCallMultiSetterAsPropertyWithinFinallyBlockShouldNotThrowVerifyError() {
         try {
             assertScript '''
-            class Multi {
-               void setOut(int a) {}
-               void setOut(String a) {}
-            }
+                class Multi {
+                   void setOut(int a) {}
+                   void setOut(String a) {}
+                }
 
-            void foo() {
-               def m = new Multi()
-               try {
-               } finally {
-                  m.out = 1
-                  m.out = 'foo'
-               }
-            }
-            foo()
+                void foo() {
+                   def m = new Multi()
+                   try {
+                   } finally {
+                      m.out = 1
+                      m.out = 'foo'
+                   }
+                }
+                foo()
             '''
         } finally {
             assert astTrees.values().any {
