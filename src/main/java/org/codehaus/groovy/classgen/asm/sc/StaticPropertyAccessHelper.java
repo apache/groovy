@@ -39,29 +39,29 @@ public abstract class StaticPropertyAccessHelper {
     public static Expression transformToSetterCall(
             final Expression receiver,
             final MethodNode setterMethod,
-            final Expression argument,
+            final Expression valueExpression,
             final boolean implicitThis,
             final boolean safe,
             final boolean spreadSafe,
-            final boolean requiresReturnValue,
-            final Expression propertyExpression) {
-        if (requiresReturnValue) {
-            TemporaryVariableExpression tmp = new TemporaryVariableExpression(argument);
+            final boolean returnValue,
+            final Expression sourceExpression) {
+        if (returnValue) {
+            TemporaryVariableExpression tmp = new TemporaryVariableExpression(valueExpression);
             PoppingMethodCallExpression call = new PoppingMethodCallExpression(receiver, setterMethod, tmp);
             call.setSafe(safe);
             call.setSpreadSafe(spreadSafe);
             call.setImplicitThis(implicitThis);
-            call.setSourcePosition(propertyExpression);
+            call.setSourcePosition(sourceExpression);
             PoppingListOfExpressionsExpression list = new PoppingListOfExpressionsExpression(tmp, call);
-            list.setSourcePosition(propertyExpression);
+            list.setSourcePosition(sourceExpression);
             return list;
         } else {
-            MethodCallExpression call = new MethodCallExpression(receiver, setterMethod.getName(), argument);
+            MethodCallExpression call = new MethodCallExpression(receiver, setterMethod.getName(), valueExpression);
             call.setSafe(safe);
             call.setSpreadSafe(spreadSafe);
             call.setImplicitThis(implicitThis);
             call.setMethodTarget(setterMethod);
-            call.setSourcePosition(propertyExpression);
+            call.setSourcePosition(sourceExpression);
             return call;
         }
     }
@@ -79,7 +79,7 @@ public abstract class StaticPropertyAccessHelper {
 
         @Override
         public Expression transformExpression(final ExpressionTransformer transformer) {
-            PoppingMethodCallExpression call = (PoppingMethodCallExpression) this.call.transformExpression(transformer);
+            PoppingMethodCallExpression call = (PoppingMethodCallExpression) transformer.transform(this.call);
             return new PoppingListOfExpressionsExpression(call.tmp, call);
         }
 
@@ -104,7 +104,7 @@ public abstract class StaticPropertyAccessHelper {
 
         @Override
         public Expression transformExpression(final ExpressionTransformer transformer) {
-            PoppingMethodCallExpression call = new PoppingMethodCallExpression(getObjectExpression().transformExpression(transformer), getMethodTarget(), (TemporaryVariableExpression) tmp.transformExpression(transformer));
+            PoppingMethodCallExpression call = new PoppingMethodCallExpression(transformer.transform(getObjectExpression()), getMethodTarget(), (TemporaryVariableExpression) transformer.transform(tmp));
             call.copyNodeMetaData(this);
             call.setSourcePosition(this);
             call.setSafe(isSafe());

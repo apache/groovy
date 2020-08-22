@@ -194,7 +194,7 @@ public class BinaryExpressionTransformer {
             expr.setSourcePosition(bin);
             return expr;
         }
-        if (operationType == Types.EQUAL && leftExpression instanceof TupleExpression && rightExpression instanceof ListExpression) {
+        if (operationType == Types.ASSIGN && leftExpression instanceof TupleExpression && rightExpression instanceof ListExpression) {
             // multiple assignment
             ListOfExpressionsExpression cle = new ListOfExpressionsExpression();
             boolean isDeclaration = (bin instanceof DeclarationExpression);

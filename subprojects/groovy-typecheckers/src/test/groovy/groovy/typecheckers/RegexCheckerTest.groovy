@@ -18,111 +18,109 @@
  */
 package groovy.typecheckers
 
-import groovy.transform.TypeChecked
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
-import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.codehaus.groovy.control.customizers.*
 import org.junit.BeforeClass
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
-class RegexCheckerTest {
+final class RegexCheckerTest {
+
     private static GroovyShell shell
 
     @BeforeClass
-    static void setup() {
-        def cc = new CompilerConfiguration()
-        def customizer = new ASTTransformationCustomizer(TypeChecked)
-        customizer.annotationParameters = [extensions: 'groovy.typecheckers.RegexChecker']
-        cc.addCompilationCustomizers(customizer)
-        cc.addCompilationCustomizers(new ImportCustomizer().addStarImports("java.util.regex"))
-        shell = new GroovyShell(cc)
+    static void setUp() {
+        shell = new GroovyShell(new CompilerConfiguration().tap {
+            def customizer = new ASTTransformationCustomizer(groovy.transform.TypeChecked)
+            customizer.annotationParameters = [extensions: 'groovy.typecheckers.RegexChecker']
+            addCompilationCustomizers(customizer, new ImportCustomizer().addStarImports('java.util.regex'))
+        })
     }
 
     @Test
     void testBadRegexForExplicitPatternDeclaration() {
-        def err = shouldFail(shell, '''
-        def shortNamed = ~/\\w{3/ // missing closing quantifier brace
-        ''')
-        assert err.message.contains(/Bad regex: Unclosed counted closure/)
+        def err = shouldFail shell, '''
+            def shortNamed = ~/\\w{3/ // missing closing quantifier brace
+        '''
+        assert err =~ /Bad regex: Unclosed counted closure/
 
-        err = shouldFail(shell, '''
-        def oNamed = ~/(.)o(.*/ // missing closing grouping bracket
-        ''')
+        err = shouldFail shell, '''
+            def oNamed = ~/(.)o(.*/ // missing closing grouping bracket
+        '''
         assert err.message.contains('Bad regex: Unclosed group')
     }
 
     @Test
     void testGoodRegexForExplicitPatternDeclaration() {
         assertScript shell, '''
-        def pets = ['cat', 'dog', 'goldfish']
-        def shortNamed = ~/\\w{3}/
-        assert pets.grep(shortNamed) == ['cat', 'dog']
+            def pets = ['cat', 'dog', 'goldfish']
+            def shortNamed = ~/\\w{3}/
+            assert pets.grep(shortNamed) == ['cat', 'dog']
         '''
 
         assertScript shell, '''
-        def pets = ['cat', 'dog', 'goldfish']
-        def oNamed = ~/(.)o(.*)/ // missing closing bracket
-        assert pets.grep(oNamed) == ['dog', 'goldfish']
+            def pets = ['cat', 'dog', 'goldfish']
+            def oNamed = ~/(.)o(.*)/ // missing closing bracket
+            assert pets.grep(oNamed) == ['dog', 'goldfish']
         '''
     }
 
     @Test
     void testBadRegexForExplicitJavaPatternDeclaration() {
-        def err = shouldFail(shell, '''
-        Pattern.compile(/?/) // dangling metacharacter
-        ''')
+        def err = shouldFail shell, '''
+            Pattern.compile(/?/) // dangling metacharacter
+        '''
         assert err.message.contains(/Bad regex: Dangling meta character '?'/)
     }
 
     @Test
     void testGoodRegexForExplicitJavaPatternDeclaration() {
         assertScript shell, '''
-        def pets = ['bird', 'cat', 'goldfish']
-        def threeOrFour = Pattern.compile(/....?/)
-        assert pets.grep(threeOrFour) == ['bird', 'cat']
+            def pets = ['bird', 'cat', 'goldfish']
+            def threeOrFour = Pattern.compile(/....?/)
+            assert pets.grep(threeOrFour) == ['bird', 'cat']
         '''
     }
 
     @Test
     void testBadRegexWithRegexMatchOperator() {
         // explicit string cases
-        def err = shouldFail(shell, '''
-        def newYears = '2020-12-31'
-        def matcher = newYears =~ /(\\d{4})-(\\d{1,2})-(\\d{1,2}/
-        ''')
+        def err = shouldFail shell, '''
+            def newYears = '2020-12-31'
+            def matcher = newYears =~ /(\\d{4})-(\\d{1,2})-(\\d{1,2}/
+        '''
         assert err.message.contains(/Bad regex: Unclosed group/)
 
-        err = shouldFail(shell, '''
-        def newYears = '2020-12-31'
-        def matcher = newYears =~ /(\\d{4})-(\\d{1,2})-(\\d{1,2)/
-        ''')
+        err = shouldFail shell, '''
+            def newYears = '2020-12-31'
+            def matcher = newYears =~ /(\\d{4})-(\\d{1,2})-(\\d{1,2)/
+        '''
         assert err.message.contains(/Bad regex: Unclosed counted closure/)
 
         // field case(s)
-        err = shouldFail(shell, '''
-        class Foo {
-            private static final REGEX = /(\\d{4})-(\\d{1,2})-(\\d{1,2}/
-            static void main(String[] args) {
-                def newYears = '2020-12-31'
-                def m = newYears =~ REGEX
+        err = shouldFail shell, '''
+            class Foo {
+                private static final REGEX = /(\\d{4})-(\\d{1,2})-(\\d{1,2}/
+                static void main(String[] args) {
+                    def newYears = '2020-12-31'
+                    def m = newYears =~ REGEX
+                }
             }
-        }
-        ''')
+        '''
         assert err.message ==~ /(?s).*Bad regex.*: Unclosed group.*/
 
         // local var case(s)
-        err = shouldFail(shell, $/
-        class Foo {
-            static void main(String[] args) {
-                def newYears = '2020-12-31'
-                def REGEX = /(\d{4})-(\d{1,2})-(\d{1,2}/
-                def m = newYears =~ REGEX
+        err = shouldFail shell, $/
+            class Foo {
+                static void main(String[] args) {
+                    def newYears = '2020-12-31'
+                    def REGEX = /(\d{4})-(\d{1,2})-(\d{1,2}/
+                    def m = newYears =~ REGEX
+                }
             }
-        }
-        /$)
+        /$
         assert err.message ==~ /(?s).*Bad regex.*: Unclosed group.*/
     }
 
@@ -130,86 +128,86 @@ class RegexCheckerTest {
     void testGoodRegexWithRegexMatchOperator() {
         // explicit cases
         assertScript shell, '''
-        def newYears = '2020-12-31'
-        Matcher m = newYears =~ /(\\d{4})-(\\d{1,2})-(\\d{1,2})/
-        List parts = (List) m[0]
-        assert parts[1] == '2020'
-        assert parts[2] == '12'
-        assert parts[3] == '31'
+            def newYears = '2020-12-31'
+            Matcher m = newYears =~ /(\\d{4})-(\\d{1,2})-(\\d{1,2})/
+            List parts = (List) m[0]
+            assert parts[1] == '2020'
+            assert parts[2] == '12'
+            assert parts[3] == '31'
         '''
         // as above without cast
         assertScript shell, '''
-        def newYears = '2020-12-31'
-        Matcher m = newYears =~ /(\\d{4})-(\\d{2})-(\\d{2})/
-        List parts = m[0]
-        assert parts[1] == '2020'
-        assert parts[2] == '12'
-        assert parts[3] == '31'
+            def newYears = '2020-12-31'
+            Matcher m = newYears =~ /(\\d{4})-(\\d{2})-(\\d{2})/
+            List parts = m[0]
+            assert parts[1] == '2020'
+            assert parts[2] == '12'
+            assert parts[3] == '31'
         '''
 
         // field
         assertScript shell, '''
-        class Foo {
-            private static final REGEX = /(\\d{4})-(\\d{1,2})-(\\d{1,2})/
-            static void main(String[] args) {
-                def newYears = '2020-12-31'
-                Matcher m = newYears =~ REGEX
-                List parts = (List) m[0]
-                assert parts[1] == '2020'
-                assert parts[2] == '12'
-                assert parts[3] == '31'
+            class Foo {
+                private static final REGEX = /(\\d{4})-(\\d{1,2})-(\\d{1,2})/
+                static void main(String[] args) {
+                    def newYears = '2020-12-31'
+                    Matcher m = newYears =~ REGEX
+                    List parts = (List) m[0]
+                    assert parts[1] == '2020'
+                    assert parts[2] == '12'
+                    assert parts[3] == '31'
+                }
             }
-        }
         '''
 
         // local var cases
         assertScript shell, '''
-        def newYears = '2020-12-31'
-        def REGEX = /(\\d{4})-(\\d{1,2})-(\\d{1,2})/
-        Matcher m = newYears =~ REGEX
-        List parts = (List) m[0]
-        assert parts[1] == '2020'
-        assert parts[2] == '12'
-        assert parts[3] == '31'
+            def newYears = '2020-12-31'
+            def REGEX = /(\\d{4})-(\\d{1,2})-(\\d{1,2})/
+            Matcher m = newYears =~ REGEX
+            List parts = (List) m[0]
+            assert parts[1] == '2020'
+            assert parts[2] == '12'
+            assert parts[3] == '31'
         '''
         // as above without groups or casting
         assertScript shell, '''
-        def newYears = '2020-12-31'
-        Matcher m = newYears =~ /\\d{2}/
-        assert m[0].toUpperCase() == '20'
-        assert m[1].getBytes() == [50, 48]
-        assert m[2] == '12'
-        assert m[3] == '31'
+            def newYears = '2020-12-31'
+            Matcher m = newYears =~ /\\d{2}/
+            assert m[0].toUpperCase() == '20'
+            assert m[1].getBytes() == [50, 48]
+            assert m[2] == '12'
+            assert m[3] == '31'
         '''
     }
 
     @Test
     void testBadRegexWithRegexFindOperator() {
         // explicit string cases
-        def err = shouldFail(shell, $/
-        def newYears = '2020-12-31'
-        assert newYears ==~ /\d{4}-\d{1,2}-\d{1,2/
-        /$)
+        def err = shouldFail shell, $/
+            def newYears = '2020-12-31'
+            assert newYears ==~ /\d{4}-\d{1,2}-\d{1,2/
+        /$
         assert err.message.contains(/Bad regex: Unclosed counted closure/)
 
         // field case(s)
-        err = shouldFail(shell, '''
-        class Foo {
-            private static final REGEX = /2020-12-[0123][0123456789/
-            static void main(String[] args) {
-                def newYears = '2020-12-31'
-                assert newYears ==~ REGEX
+        err = shouldFail shell, '''
+            class Foo {
+                private static final REGEX = /2020-12-[0123][0123456789/
+                static void main(String[] args) {
+                    def newYears = '2020-12-31'
+                    assert newYears ==~ REGEX
+                }
             }
-        }
-        ''')
+        '''
         assert err.message ==~ /(?s).*Bad regex.*: Unclosed character class.*/
 
         // local var case(s)
-        err = shouldFail(shell, '''
-        def REGEX = /?/
-        def newYears = '2020-12-31'
-        assert newYears ==~ REGEX
-        ''')
+        err = shouldFail shell, '''
+            def REGEX = /?/
+            def newYears = '2020-12-31'
+            assert newYears ==~ REGEX
+        '''
         assert err.message ==~ /(?s).*Bad regex.*: Dangling meta character '?'.*/
     }
 
@@ -230,10 +228,10 @@ class RegexCheckerTest {
     @Test
     void testBadRegexJavaMatches() {
         // local var
-        def err = shouldFail(shell, '''
-        def REGEX = /?/
-        Pattern.matches(REGEX, 'foo')
-        ''')
+        def err = shouldFail shell, '''
+            def REGEX = /?/
+            Pattern.matches(REGEX, 'foo')
+        '''
         assert err.message ==~ /(?s).*Bad regex.*: Dangling meta character '?'.*/
     }
 
@@ -244,60 +242,60 @@ class RegexCheckerTest {
 
     @Test
     void testBadRegexGroupCount() {
-        shouldFailWithBadGroupCount'''
-        def m = 'foobaz' =~ /(...)(...)/
-        assert m.find()
-        assert m.group(3)
-        '''
-        shouldFailWithBadGroupCount'''
-        def p = ~'(...)(...)'
-        Matcher m = p.matcher('barfoo')
-        assert m.find()
-        assert m.group(3)
-        '''
-        shouldFailWithBadGroupCount'''
-        Pattern p = Pattern.compile('(...)(...)')
-        Matcher m = p.matcher('foobar')
-        assert m.find()
-        assert m.group(3)
-        '''
-        shouldFailWithBadGroupCount'''
-        def m = 'barbaz' =~ /(...)(...)/
-        assert m[0][3]
-        '''
-    }
+        def shouldFailWithGroupCountError = { String script ->
+            def err = shouldFail(shell, script)
+            assert err =~ /Invalid group count 3 for regex with 2 groups/
+        }
 
-    private void shouldFailWithBadGroupCount(String script) {
-        def err = shouldFail(shell, script)
-        assert err.message.contains(/Invalid group count 3 for regex with 2 groups/)
+        shouldFailWithGroupCountError '''
+            def m = 'foobaz' =~ /(...)(...)/
+            assert m.find()
+            assert m.group(3)
+        '''
+        shouldFailWithGroupCountError '''
+            def p = ~'(...)(...)'
+            Matcher m = p.matcher('barfoo')
+            assert m.find()
+            assert m.group(3)
+        '''
+        shouldFailWithGroupCountError '''
+            Pattern p = Pattern.compile('(...)(...)')
+            Matcher m = p.matcher('foobar')
+            assert m.find()
+            assert m.group(3)
+        '''
+        shouldFailWithGroupCountError '''
+            def m = 'barbaz' =~ /(...)(...)/
+            assert m[0][3]
+        '''
     }
 
     @Test
     void testGoodRegexGroupCount() {
         assertScript shell, '''
-        def m = 'foobaz' =~ /(...)(...)/
-        assert m.find()
-        assert m.group(1) == 'foo'
-        assert m.group(2) == 'baz'
+            def m = 'foobaz' =~ /(...)(...)/
+            assert m.find()
+            assert m.group(1) == 'foo'
+            assert m.group(2) == 'baz'
         '''
         assertScript shell, '''
-        def p = ~'(...)(...)'
-        Matcher m = p.matcher('barfoo')
-        assert m.find()
-        assert m.group(1) == 'bar'
-        assert m.group(2) == 'foo'
+            def p = ~'(...)(...)'
+            Matcher m = p.matcher('barfoo')
+            assert m.find()
+            assert m.group(1) == 'bar'
+            assert m.group(2) == 'foo'
         '''
         assertScript shell, '''
-        Pattern p = Pattern.compile('(...)(...)')
-        Matcher m = p.matcher('foobar')
-        assert m.find()
-        assert m.group(1) == 'foo'
-        assert m.group(2) == 'bar'
+            Pattern p = Pattern.compile('(...)(...)')
+            Matcher m = p.matcher('foobar')
+            assert m.find()
+            assert m.group(1) == 'foo'
+            assert m.group(2) == 'bar'
         '''
         assertScript shell, '''
-        def m = 'barbaz' =~ /(...)(...)/
-        assert m[0][1] == 'bar'
-        assert m[0][2] == 'baz'
+            def m = 'barbaz' =~ /(...)(...)/
+            assert m[0][1] == 'bar'
+            assert m[0][2] == 'baz'
         '''
     }
 }
