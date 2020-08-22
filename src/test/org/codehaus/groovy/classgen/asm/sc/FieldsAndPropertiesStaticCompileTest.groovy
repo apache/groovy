@@ -610,6 +610,36 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    // GROOVY-9700
+    void testVariableAssignmentUsesDirectSetterCall() {
+        assertScript '''
+            import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression
+
+            class Foo {
+                void setX(Date value) {}
+                void setX(Long value) {}
+            }
+            class Bar extends Foo {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    def assignment = node.code.statements[0].expression
+                    assert assignment instanceof ListOfExpressionsExpression
+                        assignment = node.code.statements[1].expression
+                    assert assignment instanceof ListOfExpressionsExpression
+                })
+                void test() {
+                    x = 42L
+                    x = new Date()
+                }
+            }
+            new Bar().test()
+        '''
+
+        def bar = astTrees['Bar'][1]
+        assert bar.contains('INVOKEVIRTUAL Bar.setX (Ljava/lang/Long;)V')
+        assert bar.contains('INVOKEVIRTUAL Bar.setX (Ljava/util/Date;)V')
+        assert !bar.contains('INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.setGroovyObjectProperty ')
+    }
+
     void testPrivateFieldMutationInClosureUsesBridgeMethod() {
         try {
             assertScript '''
