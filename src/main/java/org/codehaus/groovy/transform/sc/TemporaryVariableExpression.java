@@ -45,7 +45,7 @@ public class TemporaryVariableExpression extends Expression {
 
     @Override
     public Expression transformExpression(final ExpressionTransformer transformer) {
-        TemporaryVariableExpression result = new TemporaryVariableExpression(expression.transformExpression(transformer));
+        TemporaryVariableExpression result = new TemporaryVariableExpression(transformer.transform(expression));
         result.copyNodeMetaData(this);
         return result;
     }
@@ -53,7 +53,7 @@ public class TemporaryVariableExpression extends Expression {
     @Override
     public void visit(final GroovyCodeVisitor visitor) {
         if (visitor instanceof AsmClassGenerator) {
-            if (variable==null) {
+            if (variable == null) {
                 AsmClassGenerator acg = (AsmClassGenerator) visitor;
                 WriterController controller = acg.getController();
                 variable = new ExpressionAsVariableSlot(controller, expression);
@@ -64,7 +64,7 @@ public class TemporaryVariableExpression extends Expression {
         }
     }
 
-    public void remove(WriterController controller) {
+    public void remove(final WriterController controller) {
         controller.getCompileStack().removeVar(variable.getIndex());
         variable = null;
     }

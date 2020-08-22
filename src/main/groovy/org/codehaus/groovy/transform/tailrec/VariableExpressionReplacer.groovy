@@ -139,7 +139,7 @@ class VariableExpressionReplacer extends CodeVisitorSupport {
                 replaceExpression(node, propName, propClass, expr, newExpr)
             }
         } else {
-            Expression newExpr = expr.transformExpression(transformer)
+            Expression newExpr = transformer.transform(expr)
             replaceExpression(node, propName, propClass, expr, newExpr)
         }
     }

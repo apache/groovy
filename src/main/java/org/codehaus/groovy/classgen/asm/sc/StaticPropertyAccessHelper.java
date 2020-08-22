@@ -79,7 +79,7 @@ public abstract class StaticPropertyAccessHelper {
 
         @Override
         public Expression transformExpression(final ExpressionTransformer transformer) {
-            PoppingMethodCallExpression call = (PoppingMethodCallExpression) transformer.transform(this.call);
+            PoppingMethodCallExpression call = (PoppingMethodCallExpression) this.call.transformExpression(transformer);
             return new PoppingListOfExpressionsExpression(call.tmp, call);
         }
 
@@ -104,7 +104,7 @@ public abstract class StaticPropertyAccessHelper {
 
         @Override
         public Expression transformExpression(final ExpressionTransformer transformer) {
-            PoppingMethodCallExpression call = new PoppingMethodCallExpression(transformer.transform(getObjectExpression()), getMethodTarget(), (TemporaryVariableExpression) transformer.transform(tmp));
+            PoppingMethodCallExpression call = new PoppingMethodCallExpression(transformer.transform(getObjectExpression()), getMethodTarget(), (TemporaryVariableExpression) tmp.transformExpression(transformer));
             call.copyNodeMetaData(this);
             call.setSourcePosition(this);
             call.setSafe(isSafe());
