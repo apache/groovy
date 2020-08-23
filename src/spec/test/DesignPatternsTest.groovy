@@ -1604,7 +1604,7 @@ class DesignPatternsTest extends CompilableTestSupport {
     }
 
     void testStrategyTraditional() {
-        shouldCompile '''
+        assertScript '''
             // tag::strategy_traditional[]
             interface Calc {
                 def execute(n, m)
@@ -1645,7 +1645,7 @@ class DesignPatternsTest extends CompilableTestSupport {
     }
 
     void testStrategyGroovyWay() {
-        shouldCompile '''
+        assertScript '''
             // tag::strategy_groovy_way[]
             def multiplicationStrategies = [
                 { n, m -> n * m },
@@ -1663,6 +1663,56 @@ class DesignPatternsTest extends CompilableTestSupport {
                 }
             }
             // end::strategy_groovy_way[]
+        '''
+    }
+
+    void testStrategyLambdaWithSAMInterface() {
+        assertScript '''
+            // tag::strategy_lambdas_with_explicit_interface[]
+            interface Calc {
+                def execute(n, m)
+            }
+
+            List<Calc> multiplicationStrategies = [
+                (n, m) -> n * m,
+                (n, m) -> { def result = 0; n.times{ result += m }; result }
+            ]
+
+            def sampleData = [
+                [3, 4, 12],
+                [5, -5, -25]
+            ]
+
+            sampleData.each{ data ->
+                multiplicationStrategies.each { calc ->
+                    assert data[2] == calc(data[0], data[1])
+                }
+            }
+            // end::strategy_lambdas_with_explicit_interface[]
+        '''
+    }
+
+    void testStrategyLambdaBiFunction() {
+        assertScript '''
+            // tag::strategy_lambdas_using_bifunction[]
+            import java.util.function.BiFunction
+
+            List<BiFunction<Integer, Integer, Integer>> multiplicationStrategies = [
+                (n, m) -> n * m,
+                (n, m) -> { def result = 0; n.times{ result += m }; result }
+            ]
+
+            def sampleData = [
+                [3, 4, 12],
+                [5, -5, -25]
+            ]
+
+            sampleData.each{ data ->
+                multiplicationStrategies.each { calc ->
+                    assert data[2] == calc(data[0], data[1])
+                }
+            }
+            // end::strategy_lambdas_using_bifunction[]
         '''
     }
 
