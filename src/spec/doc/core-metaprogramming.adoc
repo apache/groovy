@@ -37,7 +37,40 @@ In Groovy we work with three kinds of objects: POJO, POGO and Groovy Interceptor
 For every method call Groovy checks whether the object is a POJO or a POGO. For POJOs, Groovy fetches its `MetaClass` from the gapi:groovy.lang.MetaClassRegistry[] and delegates method invocation to it. For POGOs, Groovy takes more steps, as illustrated in the following figure:
 
 .Groovy interception mechanism
-image::assets/img/GroovyInterceptions.png[align="center"]
+[plantuml, GroovyInterceptions, png]
+....
+start
+if (Class implements\nGroovyInterceptable?) then (yes)
+    :Call its invokeMethod();
+    detach
+else (no)
+    if (Method exists in\nMetaClass or class?) then (yes)
+        :Call interceptor or\noriginal method;
+        detach
+    else (no)
+        if (Property exists in\nMetaClass or class?) then (yes)
+            if (Is property type\nClosure?) then (yes)
+                :Call closure's\ncall() method;
+                detach
+            else (no)
+            endif
+        else (no)
+        endif
+        if (Has methodMissing()?) then (yes)
+            :Call its\nmethodMissing();
+            detach
+        else (no)
+            if (has invokeMethod()?) then (yes)
+                :Call its\ninvokeMethod();
+                detach
+            else (no)
+                :Throw\nMissingMethodException;
+                detach
+            endif
+        endif
+    endif
+endif
+....
 
 === GroovyObject interface
 
