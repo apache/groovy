@@ -23,7 +23,40 @@
 
 The http://en.wikipedia.org/wiki/Strategy_pattern[Strategy Pattern] allows you to abstract away particular algorithms from their usage. This allows you to easily swap the algorithm being used without having to change the calling code. The general form of the pattern is:
 
-image::assets/img/StrategyClasses.gif[]
+[plantuml, StrategyClasses, png]
+....
+hide fields
+hide <<Hidden>> circle
+skinparam ClassBorderColor<<Hidden>> Transparent
+skinparam ClassBackgroundColor<<Hidden>> Transparent
+skinparam ClassStereotypeFontColor<<Hidden>> Transparent
+skinparam ClassFontSize<<Hidden>> 24
+skinparam ClassFontStyle<<Hidden>> bold
+skinparam shadowing<<Hidden>> false
+class Context {
+    +Strategy getStrategy()
+}
+class Strategy {
+    +algorithmMethod()
+}
+class ConcreteStrategy1 {
+    +algorithmMethod()
+}
+class ConcreteStrategy2 {
+    +algorithmMethod()
+}
+class "..." as ConcreteHidden
+class ConcreteHidden <<Hidden>> {
+}
+class ConcreteStrategyN {
+    +algorithmMethod()
+}
+Context o---r--- Strategy
+Strategy <|-- ConcreteStrategy1
+Strategy <|-- ConcreteStrategy2
+Strategy <|-[hidden]- ConcreteHidden
+Strategy <|-- ConcreteStrategyN
+....
 
 In Groovy, because of its ability to treat code as a first class object using anonymous methods (which we loosely call __Closures__), the need for the strategy pattern is greatly reduced. You can simply place algorithms inside Closures.
 
