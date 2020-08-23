@@ -36,7 +36,31 @@ The output will be a list of files (with slightly different format depending on 
 
 Here is a UML representation:
 
-image::assets/img/ChainOfResponsibilityClasses.gif[]
+[plantuml, ChainOfResponsibilityClasses, png]
+....
+skinparam nodesep 100
+hide <<HIDDEN>>
+class UnixLister {
+    nextInLine : Object
+    +listFiles(dir)
+}
+object dummy1<<HIDDEN>>
+class WindowsLister {
+    nextInLine : Object
+    +listFiles(dir)
+}
+object dummy2<<HIDDEN>>
+hide DefaultLister fields
+class DefaultLister {
+    +listFiles(dir)
+}
+object script
+script ..r..> "<<use>>" UnixLister
+UnixLister --> "forwardIfRequired" WindowsLister
+UnixLister <-[hidden]- dummy1
+WindowsLister <-[hidden]- dummy2
+WindowsLister --> "forwardIfRequired" DefaultLister
+....
 
 Variations to this pattern:
 

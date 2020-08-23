@@ -30,6 +30,7 @@ Consider this usage of the composite pattern where we want to call `toString()` 
 [plantuml, CompositeClasses, png]
 ....
 skinparam linetype ortho
+skinparam nodesep 100
 class Component {
     +toString()
 }
@@ -41,9 +42,9 @@ class Composite {
 }
 object componentClient
 hide fields
-Composite "1" *-- "*" Component : children
-componentClient ..r..> "uses" Component
+componentClient ..r..> "<<use>>" Component
 Component <|-- Leaf
+Composite "1" *-- "*" Component : children
 Component <|-- Composite
 ....
 
