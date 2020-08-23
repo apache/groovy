@@ -22,9 +22,34 @@
 = Template Method Pattern
 
 
-The http://en.wikipedia.org/wiki/Template_method_pattern[Template Method Pattern] abstracts away the details of several algorithms. The generic part of an algorithm is contained within a base class. Particular implementation details are captured within base classes. The generic pattern of classes involved looks like this:
+The http://en.wikipedia.org/wiki/Template_method_pattern[Template Method Pattern] abstracts away the details of several algorithms.
+The generic part of an algorithm is contained within a base class.
+Particular implementation details are captured within base classes.
+The generic pattern of classes involved looks like this:
 
-image::assets/img/TemplateMethodClasses.gif[]
+[plantuml, TemplateMethodClasses, png]
+....
+skinparam nodesep 100
+class AbstractClass {
+    +algorithm1()
+    +algorithm2()
+    +primitiveOperationA()
+    +primitiveOperationB()
+}
+class ConcreteClass1 {
+    +primitiveOperationA()
+    +primitiveOperationB()
+}
+class ConcreteClass2 {
+    +primitiveOperationA()
+    +primitiveOperationB()
+}
+object templateMethodUser
+hide fields
+templateMethodUser ......r......> "<<use>>" AbstractClass
+AbstractClass <|-- ConcreteClass1
+AbstractClass <|-- ConcreteClass2
+....
 
 == Example
 
