@@ -385,6 +385,22 @@ class DesignPatternsTest extends CompilableTestSupport {
             // end::chain_of_responsibility_elvis[]
         '''
         shouldCompile '''
+            // tag::chain_of_responsibility_switch[]
+            String listFiles(dir) {
+                switch(dir) {
+                case { System.getProperty('os.name') == 'Linux' }:
+                    return "ls $dir".execute().text
+                case { System.getProperty('os.name').startsWith('Windows') }:
+                    return "cmd.exe /c dir $dir".execute().text
+                default:
+                    new File(dir).listFiles().collect{ f -> f.name }.join('\\n')
+                }
+            }
+
+            println listFiles('Downloads')
+            // end::chain_of_responsibility_switch[]
+        '''
+        shouldCompile '''
             // tag::chain_of_responsibility_lambda[]
             Optional<String> unixListFiles(String dir) {
                 Optional.ofNullable(dir)
@@ -403,7 +419,7 @@ class DesignPatternsTest extends CompilableTestSupport {
                     .map(d -> new File(d).listFiles().collect{ f -> f.name }.join('\\n'))
             }
 
-            def dir = 'subprojects\'
+            def dir = 'Downloads'
             def handlers = [this::unixListFiles, this::windowsListFiles, this::defaultListFiles]
             println handlers.stream()
                 .map(f -> f(dir))
@@ -412,6 +428,118 @@ class DesignPatternsTest extends CompilableTestSupport {
                 .findFirst()
                 .get()
             // end::chain_of_responsibility_lambda[]
+        '''
+        shouldCompile '''
+            // tag::chain_of_responsibility_shape[]
+            import static Math.PI as π
+            abstract class Shape {
+                String name
+            }
+            class Polygon extends Shape {
+                String name
+                double lengthSide
+                int numSides
+            }
+            class Circle extends Shape {
+                double radius
+            }
+
+            class CircleAreaCalculator {
+                def next
+                def area(shape) {
+                    if (shape instanceof Circle) {
+                        return shape.radius ** 2 * π
+                    } else {
+                        next.area(shape)
+                    }
+                }
+            }
+            class SquareAreaCalculator {
+                def next
+                def area(shape) {
+                    if (shape instanceof Polygon && shape.numSides == 4) {
+                        return shape.lengthSide ** 2
+                    } else {
+                        next.area(shape)
+                    }
+                }
+            }
+            class DefaultAreaCalculator {
+                def area(shape) {
+                    throw new IllegalArgumentException("Don't know how to calculate area for $shape")
+                }
+            }
+
+            def chain = new CircleAreaCalculator(next: new SquareAreaCalculator(next: new DefaultAreaCalculator()))
+            def shapes = [
+                new Circle(name: 'Circle', radius: 5.0),
+                new Polygon(name: 'Square', lengthSide: 10.0, numSides: 4)
+            ]
+            shapes.each { println chain.area(it) }
+            // end::chain_of_responsibility_shape[]
+        '''
+        shouldCompile '''
+            import static Math.PI as π
+            abstract class Shape {
+            }
+            class Polygon extends Shape {
+                double lengthSide
+                int numSides
+            }
+            class Circle extends Shape {
+                double radius
+            }
+            // tag::chain_of_responsibility_shape_multimethods[]
+            // ...
+            class Square extends Polygon {
+                // ...
+            }
+
+            double area(Circle c) {
+                c.radius ** 2 * π
+            }
+
+            double area(Square s) {
+                s.lengthSide ** 2
+            }
+
+            def shapes = [
+                new Circle(radius: 5.0),
+                new Square(lengthSide: 10.0, numSides: 4)
+            ]
+            shapes.each { println area(it) }
+            // end::chain_of_responsibility_shape_multimethods[]
+        '''
+        shouldCompile '''
+            // tag::chain_of_responsibility_shape_oo[]
+            import static Math.PI as π
+            interface Shape {
+                double area()
+            }
+            abstract class Polygon implements Shape {
+                double lengthSide
+                int numSides
+                abstract double area()
+            }
+            class Circle implements Shape {
+                double radius
+                double area() {
+                    radius ** 2 * π
+                }
+            }
+            class Square extends Polygon {
+                // ...
+                double area() {
+                    lengthSide ** 2
+                }
+            }
+
+            def shapes = [
+                new Circle(radius: 5.0),
+                new Square(lengthSide: 10.0, numSides: 4)
+            ]
+            shapes.each { println it.area() }
+            // end::chain_of_responsibility_shape_oo[]
         '''
     }
 
