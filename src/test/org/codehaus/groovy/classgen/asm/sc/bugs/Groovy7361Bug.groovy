@@ -58,4 +58,33 @@ final class Groovy7361Bug extends StaticTypeCheckingTestCase implements StaticCo
             assert new A().m() == [x:'y']
         '''
     }
+
+    // GROOVY-9699
+    void testShouldNotEmitErrorForSubscriptPrivateAccess() {
+        assertScript '''
+            class A {
+                private static final java.util.regex.Pattern PATTERN = ~/.*/
+                void checkList() {
+                    def list = []
+                    def closure = { ->
+                        list << PATTERN.pattern()
+                    }
+                    closure()
+                }
+                void checkMap() {
+                    def map = [:]
+                    def closure = { ->
+                        map[PATTERN.pattern()] = 1
+                    }
+                    closure()
+                }
+            }
+            class B extends A {
+            }
+            new A().checkList()
+            new B().checkList()
+            new A().checkMap()
+            new B().checkMap()
+        '''
+    }
 }
