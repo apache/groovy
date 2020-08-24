@@ -130,10 +130,11 @@ class JmxTest extends CompilableTestSupport {
 
     void testTomcat() {
         shouldCompile '''
-            @Grapes([@Grab('org.jfree:jfreechart:1.0.15'), @Grab('org.codehaus.groovy:groovy-swing:2.1.6')])
+            @Grab('org.jfree:jfreechart:1.5.0')
 
             // tag::tomcat[]
             import groovy.swing.SwingBuilder
+            import groovy.jmx.GroovyMBean
 
             import javax.management.ObjectName
             import javax.management.remote.JMXConnectorFactory as JmxFactory
@@ -168,8 +169,8 @@ class JmxTest extends CompilableTestSupport {
             def chart = ChartFactory.createBarChart(*labels, dataset,
                             Orientation.VERTICAL, *options)
             def swing = new SwingBuilder()
-            def frame = swing.frame(title:'Catalina Module Processing Time', defaultCloseOperation:WC.EXIT_ON_CLOSE) {
-                panel(id:'canvas') { rigidArea(width:600, height:250) }
+            def frame = swing.frame(title:'Catalina Module Processing Time', defaultCloseOperation:WC.DISPOSE_ON_CLOSE) {
+                panel(id:'canvas') { rigidArea(width:800, height:350) }
             }
             frame.pack()
             frame.show()
@@ -209,7 +210,7 @@ class JmxTest extends CompilableTestSupport {
 
     void testSpringClasses() {
         shouldCompile '''
-            @Grab('org.springframework:spring-context:3.2.0.RELEASE')
+            @Grab('org.springframework:spring-context:5.2.8.RELEASE')
             // tag::spring_classes[]
             import org.springframework.jmx.export.annotation.*
 
@@ -260,12 +261,13 @@ class JmxTest extends CompilableTestSupport {
 
     void testSpringUsage() {
         shouldCompile '''
-            @Grab('org.springframework:spring-context:3.2.0.RELEASE')
+            @Grab('org.springframework:spring-context:5.2.8.RELEASE')
             // tag::spring_usage[]
             import org.springframework.context.support.ClassPathXmlApplicationContext
             import java.lang.management.ManagementFactory
             import javax.management.ObjectName
             import javax.management.Attribute
+            import groovy.jmx.GroovyMBean
 
             // get normal bean
             def ctx = new ClassPathXmlApplicationContext("beans.xml")
