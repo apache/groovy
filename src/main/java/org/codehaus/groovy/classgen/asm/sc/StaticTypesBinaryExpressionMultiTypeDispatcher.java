@@ -44,7 +44,6 @@ import org.codehaus.groovy.classgen.asm.VariableSlotLoader;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
-import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -393,7 +392,6 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
             MethodCallExpression call = callX(receiver, "putAt", args(subscript, rhsValueLoader));
             call.setSafe(safe);
             call.setSourcePosition(enclosing);
-            call.visit(new StaticCompilationVisitor(controller.getSourceUnit(), controller.getClassNode()));
 
             OperandStack operandStack = controller.getOperandStack();
             int height = operandStack.getStackLength();
