@@ -185,6 +185,7 @@ class JmxTest extends CompilableTestSupport {
             import javax.management.remote.*
             import javax.management.*
             import javax.naming.Context
+            import groovy.jmx.GroovyMBean
 
             def urlRuntime = '/jndi/weblogic.management.mbeanservers.runtime'
             def urlBase = 'service:jmx:t3://localhost:7001'
