@@ -62,7 +62,22 @@ WindowsLister <-[hidden]- dummy2
 WindowsLister --> "forwardIfRequired" DefaultLister
 ....
 
-Variations to this pattern:
+For simple cases, consider simplifying your code by not requiring the chain of classes.
+Instead, use Groovy truth and the elvis operator as shown here:
+
+[source,groovy]
+----
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=chain_of_responsibility_elvis,indent=0]
+----
+
+Alternatively, for Groovy 3+, consider using streams of lambdas as shown here:
+
+[source,groovy]
+----
+include::{includedir}/../test/DesignPatternsTest.groovy[tags=chain_of_responsibility_lambda,indent=0]
+----
+
+Other variations to this pattern:
 
 * we could have an explicit interface, e.g. `Lister`, to statically type the implementations but because of _duck-typing_ this is optional
 * we could use a chain tree instead of a list, e.g. `if (animal.hasBackbone())` delegate to `VertebrateHandler` else delegate to `InvertebrateHandler`

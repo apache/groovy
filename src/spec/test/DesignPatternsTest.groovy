@@ -343,7 +343,7 @@ class DesignPatternsTest extends CompilableTestSupport {
                 private nextInLine
                 WindowsLister(next) { nextInLine = next }
                 def listFiles(dir) {
-                    if (System.getProperty('os.name') == 'Windows XP') {
+                    if (System.getProperty('os.name').startsWith('Windows')) {
                         println "cmd.exe /c dir $dir".execute().text
                     } else {
                         nextInLine.listFiles(dir)
@@ -361,6 +361,57 @@ class DesignPatternsTest extends CompilableTestSupport {
 
             lister.listFiles('Downloads')
             // end::chain_of_responsibility[]
+        '''
+        shouldCompile '''
+            // tag::chain_of_responsibility_elvis[]
+            String unixListFiles(dir) {
+                if (System.getProperty('os.name') == 'Linux') {
+                    "ls $dir".execute().text
+                }
+            }
+
+            String windowsListFiles(dir) {
+                if (System.getProperty('os.name').startsWith('Windows')) {
+                    "cmd.exe /c dir $dir".execute().text
+                }
+            }
+
+            String defaultListFiles(dir) {
+                new File(dir).listFiles().collect{ f -> f.name }.join('\\n')
+            }
+
+            def dir = 'Downloads'
+            println unixListFiles(dir) ?: windowsListFiles(dir) ?: defaultListFiles(dir)
+            // end::chain_of_responsibility_elvis[]
+        '''
+        shouldCompile '''
+            // tag::chain_of_responsibility_lambda[]
+            Optional<String> unixListFiles(String dir) {
+                Optional.ofNullable(dir)
+                    .filter(d -> System.getProperty('os.name') == 'Linux')
+                    .map(d -> "ls $d".execute().text)
+            }
+
+            Optional<String> windowsListFiles(String dir) {
+                Optional.ofNullable(dir)
+                    .filter(d -> System.getProperty('os.name').startsWith('Windows'))
+                    .map(d -> "cmd.exe /c dir $d".execute().text)
+            }
+
+            Optional<String> defaultListFiles(String dir) {
+                Optional.ofNullable(dir)
+                    .map(d -> new File(d).listFiles().collect{ f -> f.name }.join('\\n'))
+            }
+
+            def dir = 'subprojects\'
+            def handlers = [this::unixListFiles, this::windowsListFiles, this::defaultListFiles]
+            println handlers.stream()
+                .map(f -> f(dir))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst()
+                .get()
+            // end::chain_of_responsibility_lambda[]
         '''
     }
 
