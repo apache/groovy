@@ -34,7 +34,7 @@ include::{rootProjectDir}/subprojects/groovy-swing/src/spec/test/SwingBuilderTes
 
 Here is what it will look like:
 
-image::assets/img/SwingBuilder001.gif[]
+image::assets/img/SwingBuilder001.png[]
 
 This hierarchy of components would normally be created through a series of repetitive instantiations, setters, and finally attaching this child to its respective parent.
 Using `SwingBuilder`, however, allows you to define this hierarchy in its native form, which makes the interface design understandable simply by reading the code.
