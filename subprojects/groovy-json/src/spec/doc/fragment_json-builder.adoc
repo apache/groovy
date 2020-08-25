@@ -25,26 +25,26 @@ Groovy's `JsonBuilder` makes it easy to create Json. For example to create this 
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonBuilderTest.groovy[tags=json_string,indent=0]
+include::../test/json/JsonBuilderTest.groovy[tags=json_string,indent=0]
 ----
 
 you can use a `JsonBuilder` like this:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonBuilderTest.groovy[tags=json_builder,indent=0]
+include::../test/json/JsonBuilderTest.groovy[tags=json_builder,indent=0]
 ----
 
 We use https://github.com/lukas-krecan/JsonUnit[JsonUnit] to check that the builder produced the expected result:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonBuilderTest.groovy[tags=json_assert,indent=0]
+include::../test/json/JsonBuilderTest.groovy[tags=json_assert,indent=0]
 ----
 
 If you need to customize the generated output you can pass a `JsonGenerator` instance when creating a `JsonBuilder`:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonBuilderTest.groovy[tags=json_builder_generator,indent=0]
+include::../test/json/JsonBuilderTest.groovy[tags=json_builder_generator,indent=0]
 ----

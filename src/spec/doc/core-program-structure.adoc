@@ -31,7 +31,7 @@ Defining a package is very similar to Java:
 
 [source,groovy]
 ----
-include::{includedir}/../test/PackageTest.groovy[tags=package_statement,indent=0]
+include::../test/PackageTest.groovy[tags=package_statement,indent=0]
 ----
 
 To refer to some class `Foo` in the `com.yoursite.com` package you will need to use the fully qualified name `com.yoursite.com.Foo`, or else you can use an `import` statement as we'll see below.
@@ -44,7 +44,7 @@ For example, Groovy provides several builder classes, such as `MarkupBuilder`. `
 
 [source,groovy]
 ----
-include::{includedir}/../test/PackageTest.groovy[tags=import_statement,indent=0]
+include::../test/PackageTest.groovy[tags=import_statement,indent=0]
 ----
 
 === Default imports
@@ -53,7 +53,7 @@ Default imports are the imports that Groovy language provides by default. For ex
 
 [source,groovy]
 ----
-include::{includedir}/../test/PackageTest.groovy[tags=default_import,indent=0]
+include::../test/PackageTest.groovy[tags=default_import,indent=0]
 ----
 
 The same code in Java needs an import statement to `Date` class like this: ++import java.util.Date++. Groovy by default imports these classes for you. 
@@ -80,7 +80,7 @@ A simple import is an import statement where you fully define the class name alo
 
 [source,groovy]
 ----
-include::{includedir}/../test/PackageTest.groovy[tags=import_statement,indent=0]
+include::../test/PackageTest.groovy[tags=import_statement,indent=0]
 ----
 
 === Star import
@@ -89,14 +89,14 @@ Groovy, like Java, provides a special way to import all classes from a package u
 
 [source,groovy]
 ----
-include::{includedir}/../test/PackageTest.groovy[tags=multiple_import,indent=0]
+include::../test/PackageTest.groovy[tags=multiple_import,indent=0]
 ----
 
 That's perfectly valid code. But with a `*` import, we can achieve the same effect with just one line. The star imports all the classes under package `groovy.xml`:
 
 [source,groovy]
 ----
-include::{includedir}/../test/PackageTest.groovy[tags=star_import,indent=0]
+include::../test/PackageTest.groovy[tags=star_import,indent=0]
 ----
 
 One problem with `*` imports is that they can clutter your local namespace. But with the kinds of aliasing provided by Groovy, this can be solved easily. 
@@ -107,14 +107,14 @@ Groovy's static import capability allows you to reference imported classes as if
 
 [source,groovy]
 ----
-include::{includedir}/../test/PackageTest.groovy[tags=static_imports,indent=0]
+include::../test/PackageTest.groovy[tags=static_imports,indent=0]
 ----
 
 This is similar to Java's static import capability but is a more dynamic than Java in that it allows you to define methods with the same name as an imported method as long as you have different types:
 
 [source,groovy]
 ----
-include::{includedir}/../test/PackageTest.groovy[tags=static_import_same_method_name_different_parameter_type,indent=0]
+include::../test/PackageTest.groovy[tags=static_import_same_method_name_different_parameter_type,indent=0]
 ----
 <1> static import of method
 <2> declaration of method with same name as method statically imported above, but with a different parameter type
@@ -128,7 +128,7 @@ Static imports with the `as` keyword provide an elegant solution to namespace pr
 
 [source,groovy]
 ----
-include::{includedir}/../test/PackageTest.groovy[tags=static_importswithas,indent=0]
+include::../test/PackageTest.groovy[tags=static_importswithas,indent=0]
 ----
 
 Now, that's clean!
@@ -142,7 +142,7 @@ The class `java.lang.Math` has static methods named `sin` and `cos` which fit ou
 
 [source,groovy]
 ----
-include::{includedir}/../test/PackageTest.groovy[tags=static_importswithstar,indent=0]
+include::../test/PackageTest.groovy[tags=static_importswithstar,indent=0]
 ----
 
 As you can see, we were able to access the methods `sin` and `cos` directly, without the `Math.` prefix.
@@ -155,7 +155,7 @@ For example we can import `java.sql.Date` as `SQLDate` and use it in the same fi
 
 [source,groovy]
 ----
-include::{includedir}/../test/PackageTest.groovy[tags=alias_import,indent=0]
+include::../test/PackageTest.groovy[tags=alias_import,indent=0]
 ----
 
 == Scripts versus classes
@@ -166,7 +166,7 @@ Groovy supports both scripts and classes. Take the following code for example:
 [source,groovy]
 .Main.groovy
 ----
-include::{includedir}/../test/ScriptsAndClassesSpecTest.groovy[tags=groovy_class_with_main_method,indent=0]
+include::../test/ScriptsAndClassesSpecTest.groovy[tags=groovy_class_with_main_method,indent=0]
 ----
 <1> define a `Main` class, the name is arbitrary
 <2> the `public static void main(String[])` method is usable as the main method of the class
@@ -178,7 +178,7 @@ Groovy makes it easier, the following code is equivalent:
 [source,groovy]
 .Main.groovy
 ----
-include::{includedir}/../test/ScriptsAndClassesSpecTest.groovy[tags=groovy_script,indent=0]
+include::../test/ScriptsAndClassesSpecTest.groovy[tags=groovy_script,indent=0]
 ----
 
 A script can be considered as a class without needing to declare it, with some differences.
@@ -192,7 +192,7 @@ following:
 [source,groovy]
 .Main.groovy
 ----
-include::{includedir}/../test/ScriptsAndClassesSpecTest.groovy[tags=groovy_script_equiv,indent=0]
+include::../test/ScriptsAndClassesSpecTest.groovy[tags=groovy_script_equiv,indent=0]
 ----
 <1> The `Main` class extends the `groovy.lang.Script` class
 <2> `groovy.lang.Script` requires a `run` method returning a value
@@ -209,7 +209,7 @@ It is possible to define methods into a script, as illustrated here:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ScriptsAndClassesSpecTest.groovy[tags=method_in_script,indent=0]
+include::../test/ScriptsAndClassesSpecTest.groovy[tags=method_in_script,indent=0]
 ----
 
 You can also mix methods and code. The generated script class will carry all methods into the script class, and
@@ -217,7 +217,7 @@ assemble all script bodies into the `run` method:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ScriptsAndClassesSpecTest.groovy[tags=multiple_methods_assembly,indent=0]
+include::../test/ScriptsAndClassesSpecTest.groovy[tags=multiple_methods_assembly,indent=0]
 ----
 <1> script begins
 <2> a method is defined within the script body
@@ -227,7 +227,7 @@ This code is internally converted into:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ScriptsAndClassesSpecTest.groovy[tags=multiple_methods_assembly_equiv,indent=0]
+include::../test/ScriptsAndClassesSpecTest.groovy[tags=multiple_methods_assembly_equiv,indent=0]
 ----
 <1> the `power` method is copied as is into the generated script class
 <2> first statement is copied into the `run` method
@@ -243,14 +243,14 @@ Variables in a script do not require a type definition. This means that this scr
 
 [source,groovy]
 ----
-include::{includedir}/../test/ScriptsAndClassesSpecTest.groovy[tags=script_with_variables,indent=0]
+include::../test/ScriptsAndClassesSpecTest.groovy[tags=script_with_variables,indent=0]
 ----
 
 will behave the same as:
 
 [source,groovy]
 ----
-include::{includedir}/../test/ScriptsAndClassesSpecTest.groovy[tags=script_with_untyped_variables,indent=0]
+include::../test/ScriptsAndClassesSpecTest.groovy[tags=script_with_untyped_variables,indent=0]
 ----
 
 However, there is a semantic difference between the two:

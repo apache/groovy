@@ -29,7 +29,7 @@ Suppose we have the following classes:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=adapter_delegation_classes,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=adapter_delegation_classes,indent=0]
 ----
 
 We can ask the `RoundHole` class if a `RoundPeg` fits in it, but if we ask the same question for a `SquarePeg`, then it will fail because the `SquarePeg` class doesn't have a `radius` property (i.e. doesn't satisfy the required interface).
@@ -38,14 +38,14 @@ To get around this problem, we can create an adapter to make it appear to have t
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=adapter_delegation_code,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=adapter_delegation_code,indent=0]
 ----
 
 We can use the adapter like this:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=adapter_delegation_usage,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=adapter_delegation_usage,indent=0]
 ----
 
 Which results in the following output:
@@ -63,21 +63,21 @@ Let's consider the same example again using inheritance. First, here are the ori
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=adapter_inheritance_classes,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=adapter_inheritance_classes,indent=0]
 ----
 
 An adapter using inheritance:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=adapter_inheritance_code,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=adapter_inheritance_code,indent=0]
 ----
 
 Using the adapter:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=adapter_inheritance_usage,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=adapter_inheritance_usage,indent=0]
 ----
 
 The output:
@@ -95,21 +95,21 @@ As a variation of the previous examples, we could instead define the following i
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=adapter_closure_interface,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=adapter_closure_interface,indent=0]
 ----
 
 We can then define an adapter as a closure as follows:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=adapter_closure_define,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=adapter_closure_define,indent=0]
 ----
 
 And use it like this:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=adapter_closure_usage,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=adapter_closure_usage,indent=0]
 ----
 
 == Adapting using the ExpandoMetaClass
@@ -120,7 +120,7 @@ Here is how the example would work using that feature:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=adapter_expando_meta_class,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=adapter_expando_meta_class,indent=0]
 ----
 
 After you create a peg object, you can simply add a property to it on the fly. No need to change the original class and no need for an adapter class.

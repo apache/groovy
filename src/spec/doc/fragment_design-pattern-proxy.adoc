@@ -30,12 +30,12 @@ One common use of the proxy pattern is when talking to remote objects in a diffe
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=proxy_client,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=proxy_client,indent=0]
 ----
 
 Here is what your server code might look like (start this first):
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=proxy_server,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=proxy_server,indent=0]
 ----

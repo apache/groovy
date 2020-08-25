@@ -27,12 +27,12 @@ Here is a simple example using the StAX implementation of Java to generate XML:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/StaxBuilderTest.groovy[tags=stax_builder,indent=0]
+include::../test/StaxBuilderTest.groovy[tags=stax_builder,indent=0]
 ----
 
 An external library such as https://github.com/jettison-json/jettison[Jettison] can be used as follows:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/StaxBuilderTest.groovy[tags=stax_builder_external_library,indent=0]
+include::../test/StaxBuilderTest.groovy[tags=stax_builder_external_library,indent=0]
 ----

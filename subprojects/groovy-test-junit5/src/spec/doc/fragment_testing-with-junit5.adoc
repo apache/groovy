@@ -29,8 +29,8 @@ Create your test classes as per normal JUnit5 guidelines as shown in this exampl
 
 [source,groovy]
 ----
-include::{rootprojectdir}/subprojects/groovy-test-junit5/src/spec/test/MyTestViaRun.groovy[tags=junit5_test_part1,indent=0]
-include::{rootprojectdir}/subprojects/groovy-test-junit5/src/spec/test/MyTestViaRun.groovy[tags=junit5_test_part2,indent=0]
+include::../test/MyTestViaRun.groovy[tags=junit5_test_part1,indent=0]
+include::../test/MyTestViaRun.groovy[tags=junit5_test_part2,indent=0]
 ----
 <1> This test requires the additional `org.junit.jupiter:junit-jupiter-params` dependency if not already in your project.
 
@@ -39,7 +39,7 @@ If you run the above test in the GroovyConsole or via the `groovy` command, you 
 result of running the test:
 
 ----
-include::{rootprojectdir}/subprojects/groovy-test-junit5/src/spec/test/MyTestViaRun.groovy[tags=junit5_test_output,indent=0]
+include::../test/MyTestViaRun.groovy[tags=junit5_test_output,indent=0]
 ----
 
 More detailed information is available at the `FINE` logging level. You can configure your logging to display such
@@ -47,5 +47,5 @@ information or do it programmatically as follows:
 
 [source,groovy]
 ----
-include::{rootprojectdir}/subprojects/groovy-test-junit5/src/spec/test/MyTestViaRun.groovy[tags=junit5_test_part3,indent=0]
+include::../test/MyTestViaRun.groovy[tags=junit5_test_part3,indent=0]
 ----

@@ -31,7 +31,7 @@ Variables can be defined using either their type (like `String`) or by using the
 
 [source,groovy]
 ----
-include::{includedir}/../test/SemanticsTest.groovy[tags=variable_definition_example,indent=0]
+include::../test/SemanticsTest.groovy[tags=variable_definition_example,indent=0]
 ----
 
 `def` and `var` act as a type placeholder, i.e. a replacement for the type name,
@@ -57,7 +57,7 @@ You can assign values to variables for later use. Try the following:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SemanticsTest.groovy[tags=variable_assignment_example,indent=0]
+include::../test/SemanticsTest.groovy[tags=variable_assignment_example,indent=0]
 ----
 
 ==== Multiple assignment
@@ -66,28 +66,28 @@ Groovy supports multiple assignment, i.e. where multiple variables can be assign
 
 [source,groovy]
 ----
-include::{includedir}/../test/SemanticsTest.groovy[tags=multiple_assignment_example,indent=0]
+include::../test/SemanticsTest.groovy[tags=multiple_assignment_example,indent=0]
 ----
 
 You can provide types as part of the declaration if you wish:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SemanticsTest.groovy[tags=multiple_assignment_with_types,indent=0]
+include::../test/SemanticsTest.groovy[tags=multiple_assignment_with_types,indent=0]
 ----
 
 As well as used when declaring variables it also applies to existing variables:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SemanticsTest.groovy[tags=multiple_assignment_with_existing_variables,indent=0]
+include::../test/SemanticsTest.groovy[tags=multiple_assignment_with_existing_variables,indent=0]
 ----
 
 The syntax works for arrays as well as lists, as well as methods that return either of these:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SemanticsTest.groovy[tags=multiple_assignment_with_arrays_and_lists,indent=0]
+include::../test/SemanticsTest.groovy[tags=multiple_assignment_with_arrays_and_lists,indent=0]
 ----
 
 ==== Overflow and Underflow
@@ -96,14 +96,14 @@ If the left hand side has too many variables, excess ones are filled with null's
 
 [source,groovy]
 ----
-include::{includedir}/../test/SemanticsTest.groovy[tags=multiple_assignment_overflow,indent=0]
+include::../test/SemanticsTest.groovy[tags=multiple_assignment_overflow,indent=0]
 ----
 
 If the right hand side has too many variables, the extra ones are ignored:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SemanticsTest.groovy[tags=multiple_assignment_underflow,indent=0]
+include::../test/SemanticsTest.groovy[tags=multiple_assignment_underflow,indent=0]
 ----
 
 ==== Object destructuring with multiple assignment
@@ -119,14 +119,14 @@ and notice our implementation of the `getAt()` method:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SemanticsTest.groovy[tags=coordinates-class,indent=0]
+include::../test/SemanticsTest.groovy[tags=coordinates-class,indent=0]
 ----
 
 Now let's instantiate this class and destructure its longitude and latitude:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SemanticsTest.groovy[tags=destructuring,indent=0]
+include::../test/SemanticsTest.groovy[tags=destructuring,indent=0]
 ----
 <1> we create an instance of the `Coordinates` class
 <2> then, we use a multiple assignment to get the individual longitude and latitude values
@@ -140,7 +140,7 @@ Groovy supports the usual if - else syntax from Java
 
 [source,groovy]
 ----
-include::{includedir}/../test/SemanticsTest.groovy[tags=if_else_example,indent=0]
+include::../test/SemanticsTest.groovy[tags=if_else_example,indent=0]
 ----
 
 Groovy also supports the normal Java "nested" if then else if syntax:
@@ -164,7 +164,7 @@ One difference though is that the Groovy switch statement can handle any kind of
 
 [source,groovy]
 ----
-include::{includedir}/../test/SemanticsTest.groovy[tags=switch_case_example,indent=0]
+include::../test/SemanticsTest.groovy[tags=switch_case_example,indent=0]
 ----
 
 Switch supports the following kinds of comparisons:
@@ -184,7 +184,7 @@ Groovy supports the standard Java / C for loop:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SemanticsTest.groovy[tags=classic_for_loop_example,indent=0]
+include::../test/SemanticsTest.groovy[tags=classic_for_loop_example,indent=0]
 ----
 
 ===== Enhanced classic Java-style for loop
@@ -231,7 +231,7 @@ The for loop in Groovy is much simpler and works with any kind of array, collect
 
 [source,groovy]
 ----
-include::{includedir}/../test/SemanticsTest.groovy[tags=groovy_for_loop_example,indent=0]
+include::../test/SemanticsTest.groovy[tags=groovy_for_loop_example,indent=0]
 ----
 
 [NOTE]
@@ -243,7 +243,7 @@ Groovy supports the usual while {...} loops like Java:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SemanticsTest.groovy[tags=while_loop_example,indent=0]
+include::../test/SemanticsTest.groovy[tags=while_loop_example,indent=0]
 ----
 
 ===== do/while loop
@@ -274,14 +274,14 @@ NOTE: Braces are required around each block's body.
 
 [source,groovy]
 ----
-include::{includedir}/../test/SemanticsTest.groovy[tags=try_catch_example,indent=0]
+include::../test/SemanticsTest.groovy[tags=try_catch_example,indent=0]
 ----
 
 We can put code within a 'finally' clause following a matching 'try' clause, so that regardless of whether the code in the 'try' clause throws an exception, the code in the finally clause will always execute:
 
 [source,groovy]
 ----
-include::{includedir}/../test/SemanticsTest.groovy[tags=try_catch_finally_example,indent=0]
+include::../test/SemanticsTest.groovy[tags=try_catch_finally_example,indent=0]
 ----
 
 ==== Multi-catch
@@ -372,7 +372,7 @@ expression being asserted. For example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/PowerAssertTest.groovy[tags=assert_code_1,indent=0]
+include::../test/semantics/PowerAssertTest.groovy[tags=assert_code_1,indent=0]
 ----
 
 Will yield:
@@ -380,21 +380,21 @@ Will yield:
 ----
 Caught: Assertion failed:
 
-include::{includedir}/../test/semantics/PowerAssertTest.groovy[tags=assert_error_1,indent=0]
+include::../test/semantics/PowerAssertTest.groovy[tags=assert_error_1,indent=0]
 ----
 
 Power asserts become very interesting when the expressions are more complex, like in the next example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/PowerAssertTest.groovy[tags=assert_code_2,indent=0]
+include::../test/semantics/PowerAssertTest.groovy[tags=assert_code_2,indent=0]
 ----
 
 Which will print the value for each sub-expression:
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/PowerAssertTest.groovy[tags=assert_error_2,indent=0]
+include::../test/semantics/PowerAssertTest.groovy[tags=assert_error_2,indent=0]
 ----
 
 In case you don't want a pretty printed error message like above, you can fallback to a custom error message by
@@ -402,14 +402,14 @@ changing the optional message part of the assertion, like in this example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/PowerAssertTest.groovy[tags=assert_code_3,indent=0]
+include::../test/semantics/PowerAssertTest.groovy[tags=assert_code_3,indent=0]
 ----
 
 Which will print the following error message:
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/PowerAssertTest.groovy[tags=assert_error_3,indent=0]
+include::../test/semantics/PowerAssertTest.groovy[tags=assert_error_3,indent=0]
 ----
 
 
@@ -420,7 +420,7 @@ the code easier to read like in the following example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/LabelsTest.groovy[tags=test_labels,indent=0]
+include::../test/semantics/LabelsTest.groovy[tags=test_labels,indent=0]
 ----
 
 Despite not changing the semantics of the labelled statement, it is possible to use labels in the `break` instruction
@@ -429,7 +429,7 @@ a bad practice:
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/LabelsTest.groovy[tags=label_bad_practice,indent=0]
+include::../test/semantics/LabelsTest.groovy[tags=label_bad_practice,indent=0]
 ----
 
 It is important to understand that by default labels have no impact on the semantics of the code, however they belong to the abstract
@@ -445,7 +445,7 @@ does to make testing easier.
 [[gpath_expressions]]
 === GPath expressions
 ////
-This is covered in {rootprojectdir}/subprojects/groovy-xml/{specfolder}/xml-userguide.adoc, where the legacy codehaus GPath wiki page
+This is covered in ../../../subprojects/groovy-xml/src/spec/doc/xml-userguide.adoc, where the legacy codehaus GPath wiki page
 have been converted.
 Current section should explain what is an GPath expression (not just example, but more like a formal language specification, but kept simple).
 
@@ -483,14 +483,14 @@ class having another method named `aMethodFoo`
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/GPathTest.groovy[tags=gpath_on_reflection_1,indent=0]
+include::../test/semantics/GPathTest.groovy[tags=gpath_on_reflection_1,indent=0]
 ----
 
 the following GPath expression will get the name of that method:
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/GPathTest.groovy[tags=gpath_on_reflection_2,indent=0]
+include::../test/semantics/GPathTest.groovy[tags=gpath_on_reflection_2,indent=0]
 ----
 
 _More precisely_, the above GPath expression produces a list of String, each being the name of an existing method on `this` where that name ends with `Foo`.
@@ -499,14 +499,14 @@ Now, given the following methods also defined in that class:
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/GPathTest.groovy[tags=gpath_on_reflection_3,indent=0]
+include::../test/semantics/GPathTest.groovy[tags=gpath_on_reflection_3,indent=0]
 ----
 
 then the following GPath expression will get the names of *(1)* and *(3)*, but not *(2)* or *(0)*:
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/GPathTest.groovy[tags=gpath_on_reflection_4,indent=0]
+include::../test/semantics/GPathTest.groovy[tags=gpath_on_reflection_4,indent=0]
 ----
 
 ==== Expression Deconstruction
@@ -535,7 +535,7 @@ return methodNames;
 Array access notation can also be used in a GPath expression where a collection is present :
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/GPathTest.groovy[tags=gpath_array_access_1,indent=0]
+include::../test/semantics/GPathTest.groovy[tags=gpath_array_access_1,indent=0]
 ----
 
 NOTE: array access are zero-based in GPath expressions
@@ -545,7 +545,7 @@ NOTE: array access are zero-based in GPath expressions
 Here is an example with a XML document and various form of GPath expressions:
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/GPathTest.groovy[tags=gpath_on_xml_1,indent=0]
+include::../test/semantics/GPathTest.groovy[tags=gpath_on_xml_1,indent=0]
 ----
 
 <1> There is one `level` node under `root`
@@ -568,34 +568,34 @@ A SAM type is a type which defines a single abstract method. This includes:
 [source,groovy]
 .Functional interfaces
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=filter_sam_type,indent=0]
+include::../test/CoercionTest.groovy[tags=filter_sam_type,indent=0]
 ----
 
 [source,groovy]
 .Abstract classes with single abstract method
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=greeter_sam_type,indent=0]
+include::../test/CoercionTest.groovy[tags=greeter_sam_type,indent=0]
 ----
 
 Any closure can be converted into a SAM type using the `as` operator:
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=assertions_explicit_closure_to_sam,indent=0]
+include::../test/CoercionTest.groovy[tags=assertions_explicit_closure_to_sam,indent=0]
 ----
 
 However, the `as Type` expression is optional since Groovy 2.2.0. You can omit it and simply write:
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=assertions_implicit_closure_to_sam,indent=0]
+include::../test/CoercionTest.groovy[tags=assertions_implicit_closure_to_sam,indent=0]
 ----
 
 which means you are also allowed to use method pointers, as shown in the following example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=assertions_implicit_closure_to_sam_and_method_pointer,indent=0]
+include::../test/CoercionTest.groovy[tags=assertions_implicit_closure_to_sam_and_method_pointer,indent=0]
 ----
 
 ==== Calling a method accepting a SAM type with a closure
@@ -605,21 +605,21 @@ a SAM type. Imagine the following method:
 
 [source,groovy]
 -----
-include::{includedir}/../test/CoercionTest.groovy[tags=method_accepting_filter,indent=0]
+include::../test/CoercionTest.groovy[tags=method_accepting_filter,indent=0]
 -----
 
 Then you can call it with a closure, without having to create an explicit implementation of the interface:
 
 [source,groovy]
 -----
-include::{includedir}/../test/CoercionTest.groovy[tags=method_call_with_explicit_coercion,indent=0]
+include::../test/CoercionTest.groovy[tags=method_call_with_explicit_coercion,indent=0]
 -----
 
 But since Groovy 2.2.0, you are also able to omit the explicit coercion and call the method as if it used a closure:
 
 [source,groovy]
 -----
-include::{includedir}/../test/CoercionTest.groovy[tags=method_call_with_implicit_coercion,indent=0]
+include::../test/CoercionTest.groovy[tags=method_call_with_implicit_coercion,indent=0]
 -----
 
 As you can see, this has the advantage of letting you use the closure syntax for method calls, that is to say put the
@@ -632,21 +632,21 @@ following interface:
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=foobar_interface,indent=0]
+include::../test/CoercionTest.groovy[tags=foobar_interface,indent=0]
 ----
 
 You can coerce a closure into the interface using the `as` keyword:
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=foobar2closure_coercion,indent=0]
+include::../test/CoercionTest.groovy[tags=foobar2closure_coercion,indent=0]
 ----
 
 This produces a class for which all methods are implemented using the closure:
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=foobarintf_assertions,indent=0]
+include::../test/CoercionTest.groovy[tags=foobarintf_assertions,indent=0]
 ----
 
 But it is also possible to coerce a closure to any class. For example, we can replace the `interface` that we defined
@@ -654,7 +654,7 @@ with `class` without changing the assertions:
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=closure2foobarclass,indent=0]
+include::../test/CoercionTest.groovy[tags=closure2foobarclass,indent=0]
 ----
 
 === Map to type coercion
@@ -666,7 +666,7 @@ coercion of a map into an `Iterator`:
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=coerce_map_to_iterator,indent=0]
+include::../test/CoercionTest.groovy[tags=coerce_map_to_iterator,indent=0]
 ----
 
 Of course this is a rather contrived example, but illustrates the concept. You only need to implement those methods
@@ -676,10 +676,10 @@ as in the following example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=define_x_interface,indent=0]
-include::{includedir}/../test/CoercionTest.groovy[tags=call_existing_method,indent=0]
-include::{includedir}/../test/CoercionTest.groovy[tags=call_non_existing_method,indent=0]
-include::{includedir}/../test/CoercionTest.groovy[tags=call_notimplemented_method,indent=0]
+include::../test/CoercionTest.groovy[tags=define_x_interface,indent=0]
+include::../test/CoercionTest.groovy[tags=call_existing_method,indent=0]
+include::../test/CoercionTest.groovy[tags=call_non_existing_method,indent=0]
+include::../test/CoercionTest.groovy[tags=call_notimplemented_method,indent=0]
 ----
 
 The type of the exception depends on the call itself:
@@ -693,35 +693,35 @@ Groovy allows transparent `String` (or `GString`) to enum values coercion. Imagi
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=state_enum,indent=0]
+include::../test/CoercionTest.groovy[tags=state_enum,indent=0]
 ----
 
 then you can assign a string to the enum without having to use an explicit `as` coercion:
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=enum_coerce_assignment,indent=0]
+include::../test/CoercionTest.groovy[tags=enum_coerce_assignment,indent=0]
 ----
 
 It is also possible to use a `GString` as the value:
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=enum_coerce_assignment_gstring,indent=0]
+include::../test/CoercionTest.groovy[tags=enum_coerce_assignment_gstring,indent=0]
 ----
 
 
 However, this would throw a runtime error (`IllegalArgumentException`):
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=enum_coerce_assignment_wrong,indent=0]
+include::../test/CoercionTest.groovy[tags=enum_coerce_assignment_wrong,indent=0]
 ----
 
 Note that it is also possible to use implicit coercion in switch statements:
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=enum_switch_method,indent=0]
+include::../test/CoercionTest.groovy[tags=enum_switch_method,indent=0]
 ----
 
 in particular, see how the `case` use string constants. But if you call a method that uses an enum with a `String`
@@ -729,7 +729,7 @@ argument, you still have to use an explicit `as` coercion:
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=enum_switch_test,indent=0]
+include::../test/CoercionTest.groovy[tags=enum_switch_test,indent=0]
 ----
 
 === Custom type coercion
@@ -740,9 +740,9 @@ imagine you defined two classes, `Polar` and `Cartesian`, like in the following 
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=polar_class_header,indent=0]
-include::{includedir}/../test/CoercionTest.groovy[tags=polar_class_footer,indent=0]
-include::{includedir}/../test/CoercionTest.groovy[tags=cartesian_class,indent=0]
+include::../test/CoercionTest.groovy[tags=polar_class_header,indent=0]
+include::../test/CoercionTest.groovy[tags=polar_class_footer,indent=0]
+include::../test/CoercionTest.groovy[tags=cartesian_class,indent=0]
 ----
 
 And that you want to convert from polar coordinates to cartesian coordinates. One way of doing this is to define
@@ -750,22 +750,22 @@ the `asType` method in the `Polar` class:
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=polar_class_astype,indent=0]
+include::../test/CoercionTest.groovy[tags=polar_class_astype,indent=0]
 ----
 
 which allows you to use the `as` coercion operator:
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=polar_astype_assert,indent=0]
+include::../test/CoercionTest.groovy[tags=polar_astype_assert,indent=0]
 ----
 
 Putting it all together, the `Polar` class looks like this:
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=polar_class_header,indent=0]
-include::{includedir}/../test/CoercionTest.groovy[tags=polar_class_astype,indent=4]
-include::{includedir}/../test/CoercionTest.groovy[tags=polar_class_footer,indent=0]
+include::../test/CoercionTest.groovy[tags=polar_class_header,indent=0]
+include::../test/CoercionTest.groovy[tags=polar_class_astype,indent=4]
+include::../test/CoercionTest.groovy[tags=polar_class_footer,indent=0]
 ----
 
 but it is also possible to define `asType` outside of the `Polar` class, which can be practical if you want to define
@@ -774,7 +774,7 @@ a metaclass:
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=polar_metaclass_astype,indent=0]
+include::../test/CoercionTest.groovy[tags=polar_metaclass_astype,indent=0]
 ----
 
 === Class literals vs variables and the as operator
@@ -783,28 +783,28 @@ Using the `as` keyword is only possible if you have a static reference to a clas
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=as_keyword,indent=0]
+include::../test/CoercionTest.groovy[tags=as_keyword,indent=0]
 ----
 
 But what if you get the class by reflection, for example by calling `Class.forName`?
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=clazz_greeter_header,indent=0]
+include::../test/CoercionTest.groovy[tags=clazz_greeter_header,indent=0]
 ----
 
 Trying to use the reference to the class with the `as` keyword would fail:
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=incorrect_as_usage,indent=0]
+include::../test/CoercionTest.groovy[tags=incorrect_as_usage,indent=0]
 ----
 
 It is failing because the `as` keyword only works with class literals. Instead, you need to call the `asType` method:
 
 [source,groovy]
 ----
-include::{includedir}/../test/CoercionTest.groovy[tags=fixed_as_usage,indent=0]
+include::../test/CoercionTest.groovy[tags=fixed_as_usage,indent=0]
 ----
 
 == Optionality
@@ -815,14 +815,14 @@ Method calls can omit the parentheses if there is at least one parameter and the
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/OptionalityTest.groovy[tags=optional_parentheses,indent=0]
+include::../test/semantics/OptionalityTest.groovy[tags=optional_parentheses,indent=0]
 ----
 
 Parentheses are required for method calls without parameters or ambiguous method calls: 
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/OptionalityTest.groovy[tags=required_parentheses,indent=0]
+include::../test/semantics/OptionalityTest.groovy[tags=required_parentheses,indent=0]
 ----
 
 === Optional semicolons
@@ -833,21 +833,21 @@ This means that:
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/OptionalityTest.groovy[tags=single_statement_with_semicolon,indent=0]
+include::../test/semantics/OptionalityTest.groovy[tags=single_statement_with_semicolon,indent=0]
 ----
 
 can be more idiomatically written as:
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/OptionalityTest.groovy[tags=single_statement_without_semicolon,indent=0]
+include::../test/semantics/OptionalityTest.groovy[tags=single_statement_without_semicolon,indent=0]
 ----
 
 Multiple statements in a line require semicolons to separate them:
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/OptionalityTest.groovy[tags=statements_separated_by_semicolon,indent=0]
+include::../test/semantics/OptionalityTest.groovy[tags=statements_separated_by_semicolon,indent=0]
 ----
 
 === Optional return keyword
@@ -856,14 +856,14 @@ In Groovy, the last expression evaluated in the body of a method or a closure is
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/OptionalityTest.groovy[tags=return_keyword,indent=0]
+include::../test/semantics/OptionalityTest.groovy[tags=return_keyword,indent=0]
 ----
 
 Can be shortened to:
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/OptionalityTest.groovy[tags=omitted_return_keyword,indent=0]
+include::../test/semantics/OptionalityTest.groovy[tags=omitted_return_keyword,indent=0]
 ----
 
 === Optional public keyword
@@ -872,14 +872,14 @@ By default, Groovy classes and methods are `public`. Therefore this class:
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/OptionalityTest.groovy[tags=public_keyword,indent=0]
+include::../test/semantics/OptionalityTest.groovy[tags=public_keyword,indent=0]
 ----
 
 is identical to this class:
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/OptionalityTest.groovy[tags=omitted_public,indent=0]
+include::../test/semantics/OptionalityTest.groovy[tags=omitted_public,indent=0]
 ----
 
 [[Groovy-Truth]]
@@ -891,56 +891,56 @@ Groovy decides whether a expression is true or false by applying the rules given
 True if the corresponding Boolean value is `true`.
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/TheGroovyTruthTest.groovy[tags=boolean_truth,indent=0]
+include::../test/semantics/TheGroovyTruthTest.groovy[tags=boolean_truth,indent=0]
 ----
 
 === Collections and Arrays
 Non-empty Collections and arrays are true.
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/TheGroovyTruthTest.groovy[tags=collection_truth,indent=0]
+include::../test/semantics/TheGroovyTruthTest.groovy[tags=collection_truth,indent=0]
 ----
 
 === Matchers
 True if the Matcher has at least one match.
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/TheGroovyTruthTest.groovy[tags=matcher_truth,indent=0]
+include::../test/semantics/TheGroovyTruthTest.groovy[tags=matcher_truth,indent=0]
 ----
 
 === Iterators and Enumerations
 Iterators and Enumerations with further elements are coerced to true.
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/TheGroovyTruthTest.groovy[tags=iterator_enumeration_truth,indent=0]
+include::../test/semantics/TheGroovyTruthTest.groovy[tags=iterator_enumeration_truth,indent=0]
 ----
 
 === Maps
 Non-empty Maps are evaluated to true.
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/TheGroovyTruthTest.groovy[tags=map_truth,indent=0]
+include::../test/semantics/TheGroovyTruthTest.groovy[tags=map_truth,indent=0]
 ----
 
 === Strings
 Non-empty Strings, GStrings and CharSequences are coerced to true.
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/TheGroovyTruthTest.groovy[tags=string_truth,indent=0]
+include::../test/semantics/TheGroovyTruthTest.groovy[tags=string_truth,indent=0]
 ----
 
 === Numbers
 Non-zero numbers are true.
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/TheGroovyTruthTest.groovy[tags=number_truth,indent=0]
+include::../test/semantics/TheGroovyTruthTest.groovy[tags=number_truth,indent=0]
 ----
 
 === Object References
 Non-null object references are coerced to true.
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/TheGroovyTruthTest.groovy[tags=object_truth,indent=0]
+include::../test/semantics/TheGroovyTruthTest.groovy[tags=object_truth,indent=0]
 ----
 
 === Customizing the truth with asBoolean() methods
@@ -948,14 +948,14 @@ include::{includedir}/../test/semantics/TheGroovyTruthTest.groovy[tags=object_tr
 In order to customize whether groovy evaluates your object to `true` or `false` implement the `asBoolean()` method:
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/TheGroovyTruthTest.groovy[tags=asBoolean_object,indent=0]
+include::../test/semantics/TheGroovyTruthTest.groovy[tags=asBoolean_object,indent=0]
 ----
 
 Groovy will call this method to coerce your object to a boolean value, e.g.:
 
 [source,groovy]
 ----
-include::{includedir}/../test/semantics/TheGroovyTruthTest.groovy[tags=asBoolean_usage,indent=0]
+include::../test/semantics/TheGroovyTruthTest.groovy[tags=asBoolean_usage,indent=0]
 ----
 
 == Typing
@@ -967,7 +967,7 @@ language, Groovy naturally implements that feature, for example when you declare
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/OptionalTypingTest.groovy[tags=optionaltyping_var,indent=0]
+include::../test/typing/OptionalTypingTest.groovy[tags=optionaltyping_var,indent=0]
 ----
 <1> `foo` is declared using an explicit type, `String`
 <2> we can call the `toUpperCase` method on a `String`
@@ -976,7 +976,7 @@ Groovy will let you write this instead:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/OptionalTypingTest.groovy[tags=optionaltyping_var_def,indent=0]
+include::../test/typing/OptionalTypingTest.groovy[tags=optionaltyping_var_def,indent=0]
 ----
 <1> `foo` is declared using `def`
 <2> we can still call the `toUpperCase` method, because the type of `aString` is resolved at runtime
@@ -988,7 +988,7 @@ Likewise, Groovy doesn't make it mandatory to declare the types of a parameter i
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/OptionalTypingTest.groovy[tags=optionaltyping_orig,indent=0]
+include::../test/typing/OptionalTypingTest.groovy[tags=optionaltyping_orig,indent=0]
 ----
 
 can be rewritten using `def` as both return type and parameter types, in order to take advantage of duck typing, as
@@ -996,7 +996,7 @@ illustrated in this example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/OptionalTypingTest.groovy[tags=optionaltyping_def,indent=0]
+include::../test/typing/OptionalTypingTest.groovy[tags=optionaltyping_def,indent=0]
 ----
 <1> both the return type and the parameter types use `def`
 <2> it makes it possible to use the method with `String`
@@ -1012,7 +1012,7 @@ between a method declaration and a method call, like illustrated in this example
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/OptionalTypingTest.groovy[tags=optionaltyping_notype,indent=0]
+include::../test/typing/OptionalTypingTest.groovy[tags=optionaltyping_notype,indent=0]
 ----
 <1> if we want to omit the return type, an explicit modifier has to be set.
 <2> it is still possible to use the method with `String`
@@ -1034,7 +1034,7 @@ following example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_intro,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_intro,indent=0]
 ----
 <1> the `Person` class only defines two properties, `firstName` and `lastName`
 <2> we can create an instance of Person
@@ -1047,7 +1047,7 @@ runtime metaprogramming. So just adding this line after the declaration of the `
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_intro_magic,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_intro_magic,indent=0]
 ----
 
 This means that in general, in Groovy, you can't make any assumption about the type of an object beyond its declaration
@@ -1079,14 +1079,14 @@ The `groovy.transform.TypeChecked` annotation enables type checking. It can be p
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=typechecked_class,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=typechecked_class,indent=0]
 ----
 
 Or on a method:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=typechecked_method,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=typechecked_method,indent=0]
 ----
 
 In the first case, all methods, properties, fields, inner classes, ... of the annotated class will be type checked, whereas
@@ -1099,7 +1099,7 @@ to skip a method by annotating it with `@TypeChecked(TypeCheckingMode.SKIP)`:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_skip,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_skip,indent=0]
 ----
 <1> the `GreetingService` class is marked as type checked
 <2> so the `greeting` method is automatically type checked
@@ -1125,7 +1125,7 @@ An object `o` of type `A` can be assigned to a variable of type `T` if and only 
 ====
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_equals,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_equals,indent=0]
 ----
 ====
 
@@ -1137,7 +1137,7 @@ include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_equ
 ====
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_specialcase,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_specialcase,indent=0]
 ----
 ====
 
@@ -1149,8 +1149,8 @@ include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_spe
 ====
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_null,indent=0]
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_null2prim,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_null,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_null2prim,indent=0]
 ----
 ====
 
@@ -1162,8 +1162,8 @@ include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_nul
 ====
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_array,indent=0]
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_array_fail,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_array,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_array_fail,indent=0]
 ----
 ====
 
@@ -1175,8 +1175,8 @@ include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_arr
 ====
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_array_list,indent=0]
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_array_list_fail,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_array_list,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_array_list_fail,indent=0]
 ----
 ====
 
@@ -1188,8 +1188,8 @@ include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_arr
 ====
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_superclass,indent=0]
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_superclass_fail,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_superclass,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_superclass_fail,indent=0]
 ----
 ====
 
@@ -1202,8 +1202,8 @@ include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_sup
 ====
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_interface,indent=0]
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_interface_fail,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_interface,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_interface_fail,indent=0]
 ----
 ====
 
@@ -1215,7 +1215,7 @@ include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_int
 ====
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_prim,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_prim,indent=0]
 ----
 ====
 
@@ -1227,7 +1227,7 @@ include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_pri
 ====
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_closure_coercion,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_closure_coercion,indent=0]
 ----
 ====
 
@@ -1244,42 +1244,42 @@ include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_closure_co
 |Any but BigDecimal or BigInteger
 | [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_to_double,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_to_double,indent=0]
 ----
 
 |Float
 |Any type but BigDecimal, BigInteger or Double
 | [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_to_float,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_to_float,indent=0]
 ----
 
 |Long
 |Any type but BigDecimal, BigInteger, Double or Float
 | [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_to_long,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_to_long,indent=0]
 ----
 
 |Integer
 |Any type but BigDecimal, BigInteger, Double, Float or Long
 | [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_to_int,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_to_int,indent=0]
 ----
 
 |Short
 |Any type but BigDecimal, BigInteger, Double, Float, Long or Integer
 | [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_to_short,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_to_short,indent=0]
 ----
 
 |Byte
 |Byte
 | [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_assign_to_byte,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_to_byte,indent=0]
 ----
 
 |===
@@ -1296,21 +1296,21 @@ For example, instead of writing:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_ctor_point_classic,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_ctor_point_classic,indent=0]
 ----
 
 You can use a "list constructor":
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_ctor_point_list,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_ctor_point_list,indent=0]
 ----
 
 or a "map constructor":
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_ctor_point_map,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_ctor_point_map,indent=0]
 ----
 
 If you use a map constructor, additional checks are done on the keys of the map to check if a property of the same name
@@ -1318,7 +1318,7 @@ is defined. For example, the following will fail at compile time:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_ctor_fail,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_ctor_fail,indent=0]
 ----
 <1> The type checker will throw an error `No such property: age for class: Person` at compile time
 
@@ -1337,7 +1337,7 @@ An argument `o` of type `A` can be used for a parameter of type `T` if and only 
 ====
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_equals,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_equals,indent=0]
 ----
 ====
 
@@ -1349,7 +1349,7 @@ include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_e
 ====
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_specialcase,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_specialcase,indent=0]
 ----
 ====
 
@@ -1361,8 +1361,8 @@ include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_s
 ====
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_null,indent=0]
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_null2prim,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_null,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_null2prim,indent=0]
 ----
 ====
 
@@ -1374,8 +1374,8 @@ include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_n
 ====
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_array,indent=0]
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_array_fail,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_array,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_array_fail,indent=0]
 ----
 ====
 
@@ -1387,8 +1387,8 @@ include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_a
 ====
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_superclass,indent=0]
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_superclass_fail,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_superclass,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_superclass_fail,indent=0]
 ----
 ====
 
@@ -1400,8 +1400,8 @@ include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_s
 ====
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_interface,indent=0]
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_interface_fail,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_interface,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_interface_fail,indent=0]
 ----
 ====
 
@@ -1413,7 +1413,7 @@ include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_i
 ====
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_prim,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_prim,indent=0]
 ----
 ====
 
@@ -1425,7 +1425,7 @@ include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_argparam_p
 ====
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=stc_arg_closure_coercion,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_arg_closure_coercion,indent=0]
 ----
 ====
 
@@ -1436,7 +1436,7 @@ illustrated in the following example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=method_not_type_checked,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=method_not_type_checked,indent=0]
 ----
 <1> `printLine` is an error, but since we're in a dynamic mode, the error is not caught at compile time
 
@@ -1447,7 +1447,7 @@ not in such a case, `@TypeChecked` comes handy:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=method_type_checked,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=method_type_checked,indent=0]
 ----
 <1> `printLine` is this time a compile-time error
 
@@ -1463,7 +1463,7 @@ is not aware of any kind of *runtime* metaprogramming that you do. This means th
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=ducktyping_failure,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=ducktyping_failure,indent=0]
 ----
 <1> we define a `Duck` class which defines a `quack` method
 <2> we define another `QuackingBird` class which also defines a `quack` method
@@ -1488,8 +1488,8 @@ The simplest example is inferring the type of a variable:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=simple_var_type_inference,indent=0]
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=simple_var_type_inference_fail,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=simple_var_type_inference,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=simple_var_type_inference_fail,indent=0]
 ----
 <1> a variable is declared using the `def` keyword
 <2> calling `toUpperCase` is allowed by the type checker
@@ -1505,7 +1505,7 @@ look at this example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=typeinference_field_vs_local_variable,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=typeinference_field_vs_local_variable,indent=0]
 ----
 <1> `someUntypedField` uses `def` as a declaration type
 <2> `someTypedField` uses `String` as a declaration type
@@ -1543,49 +1543,49 @@ The inferred type of a literal depends on the elements of the literal, as illust
 
 |[source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=empty_list_literal_inference,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=empty_list_literal_inference,indent=0]
 ----
 |`java.util.List`
 
 |[source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=list_literal_inference_simple,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=list_literal_inference_simple,indent=0]
 ----
 |`java.util.List<String>`
 
 |[source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=list_literal_inference_gstring,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=list_literal_inference_gstring,indent=0]
 ----
 |`java.util.List<GString>` be careful, a `GString` is *not* a `String`!
 
 |[source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=empty_map_literal_inference,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=empty_map_literal_inference,indent=0]
 ----
 |`java.util.LinkedHashMap`
 
 |[source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=map_literal_inference_simple,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=map_literal_inference_simple,indent=0]
 ----
 |`java.util.LinkedHashMap<String,String>`
 
 |[source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=map_literal_inference_gstring,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=map_literal_inference_gstring,indent=0]
 ----
 |`java.util.LinkedHashMap<GString,String>` be careful, the key is a `GString`!
 
 |[source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=intRange_literal_inference,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=intRange_literal_inference,indent=0]
 ----
 |`groovy.lang.IntRange`
 
 |[source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=charRange_literal_inference,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=charRange_literal_inference,indent=0]
 ----
 |`groovy.lang.Range<String>` : uses the type of the bounds to infer the component type of the range
 
@@ -1613,7 +1613,7 @@ are both `String`, then the LUB (least upper bound) of both is also `String`.
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=least_upper_bound_simple,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=least_upper_bound_simple,indent=0]
 ----
 <1> the LUB of `String` and `String` is `String`
 <2> the LUB of `ArrayList` and `LinkedList` is their common super type, `AbstractList`
@@ -1628,7 +1628,7 @@ let's continue with this example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=least_upper_bound_complex,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=least_upper_bound_complex,indent=0]
 ----
 
 What is the least upper bound of `Bottom` and `SerializableFooImpl`? They don't have a common super class (apart from `Object`),
@@ -1640,7 +1640,7 @@ components is inferred as the least upper bound. We can illustrate why this is i
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=least_upper_bound_collection_inference,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=least_upper_bound_collection_inference,indent=0]
 ----
 <1> the `Greeter` interface defines a single method, `greet`
 <2> the `Salute`  interface defines a single method, `salute`
@@ -1667,7 +1667,7 @@ In normal, non type checked, Groovy, you can write things like:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=instanceof_inference,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=instanceof_inference,indent=0]
 ----
 <1> guard the method call with an `instanceof` check
 <2> make the call
@@ -1677,7 +1677,7 @@ require to cast `o` to a `Greeter` before calling the `greeting` method, because
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=instanceof_java_equiv,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=instanceof_java_equiv,indent=0]
 ----
 
 However, in Groovy, even if you add `@TypeChecked` (and thus activate type checking) on the `doSomething` method, the
@@ -1691,7 +1691,7 @@ the compiler is capable of inferring the type of variables in the flow of the co
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=flowtyping_basics,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=flowtyping_basics,indent=0]
 ----
 <1> first, `o` is declared using `def` and assigned a `String`
 <2> the compiler inferred that `o` is a `String`, so calling `toUpperCase` is allowed
@@ -1703,7 +1703,7 @@ if you replace the last assignment with:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=flowtyping_basics_fail,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=flowtyping_basics_fail,indent=0]
 ----
 
 The type checker will now fail at compile time, because it knows that `o` is a `double` when `toUpperCase` is called,
@@ -1715,7 +1715,7 @@ can assign to the variable:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=flowtyping_typeconstraints,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=flowtyping_typeconstraints,indent=0]
 ----
 <1> `list` is declared as an unchecked `List` and assigned a list literal of `String`s
 <2> this line passes compilation because of flow typing: the type checker knows that `list` is at this point a `List<String>`
@@ -1726,7 +1726,7 @@ the component type. Therefore, such code would fail compilation:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=flowtyping_typeconstraints_failure,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=flowtyping_typeconstraints_failure,indent=0]
 ----
 <1> `list` is inferred as `List<String>`
 <2> so adding an `int` to a `List<String>` is a compile-time error
@@ -1735,7 +1735,7 @@ Fixing this requires adding an explicit generic type to the declaration:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=flowtyping_typeconstraints_fixed,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=flowtyping_typeconstraints_fixed,indent=0]
 ----
 <1> `list` declared as `List<? extends Serializable>` and initialized with an empty list
 <2> elements added to the list conform to the declaration type of the list
@@ -1746,8 +1746,8 @@ consider the behavior of this code in Java:
 
 [source,java]
 ----
-include::{includedir}/../test/typing/TypeCheckingJavaTest.java[tags=java_method_selection_head,indent=0]
-include::{includedir}/../test/typing/TypeCheckingJavaTest.java[tags=java_method_selection_body,indent=0]
+include::../test/typing/TypeCheckingJavaTest.java[tags=java_method_selection_head,indent=0]
+include::../test/typing/TypeCheckingJavaTest.java[tags=java_method_selection_body,indent=0]
 ----
 <1> `o` is declared as an `Object` and assigned a `String`
 <2> we call the `compute` method with `o`
@@ -1762,7 +1762,7 @@ In Groovy, we could write:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=groovy_method_selection,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=groovy_method_selection,indent=0]
 ----
 
 But this time, it will return `6`, because the method which is chosen is chosen *at runtime*, based on the _actual_
@@ -1788,8 +1788,8 @@ likely to alter the inferred type of a variable:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=flow_lub_ifelse_header,indent=0]
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=flow_lub_ifelse_test,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=flow_lub_ifelse_header,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=flow_lub_ifelse_test,indent=0]
 ----
 <1> if `someCondition` is true, `o` is assigned a `Top`
 <2> if `someCondition` is false, `o` is assigned a `Bottom`
@@ -1807,7 +1807,7 @@ which is defined outside of a closure, but used inside a closure, as in this exa
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=closure_shared_variable_definition,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=closure_shared_variable_definition,indent=0]
 ----
 <1> a variable named `text` is declared
 <2> `text` is used from inside a closure. It is a _closure shared variable_.
@@ -1817,7 +1817,7 @@ variable can be reassigned inside a closure:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=closure_shared_variable_ex1,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=closure_shared_variable_ex1,indent=0]
 ----
 
 The problem is that a closure is an independent block of code that can be executed (or not) at *any* time. In particular,
@@ -1828,7 +1828,7 @@ this example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=closure_shared_variable_ex2,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=closure_shared_variable_ex2,indent=0]
 ----
 <1> a closure-shared variable is first assigned a `Top`
 <2> inside the closure, it is assigned a `Bottom`
@@ -1851,7 +1851,7 @@ The first thing that the type checker is capable of doing is inferring the _retu
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=closure_return_type_inf,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=closure_return_type_inf,indent=0]
 ----
 <1> a closure is defined, and it returns a string (more precisely a `GString`)
 <2> we call the closure and assign the result to a variable
@@ -1870,7 +1870,7 @@ following example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=method_return_type_matters,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=method_return_type_matters,indent=0]
 ----
 <1> class `A` defines a method `compute` which effectively returns a `String`
 <2> this will fail compilation because the return type of `compute` is `def`(aka `Object`)
@@ -1898,7 +1898,7 @@ to infer the parameter types:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=cl_pt_failure,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=cl_pt_failure,indent=0]
 ----
 <1> the `inviteIf` method accepts a `Person` and a `Closure`
 <2> we call it with a `Person` and a `Closure`
@@ -1915,7 +1915,7 @@ the type of `it`. This means that the method call needs to be rewritten like thi
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround,indent=0]
 ----
 <1> the type of `it` needs to be declared explicitly
 
@@ -1930,7 +1930,7 @@ SAM type:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround_sam,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround_sam,indent=0]
 ----
 <1> declare a `SAM` interface with an `apply` method
 <2> `inviteIf` now uses a `Predicate<Person>` instead of a `Closure<Boolean>`
@@ -1960,9 +1960,9 @@ Let's illustrate this by fixing the original example, introducing the `@ClosureP
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround_closureparams_imports,indent=0]
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround_closureparams_method,indent=0]
-include::{includedir}/../test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround_closureparams_call,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround_closureparams_imports,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround_closureparams_method,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=cl_pt_workaround_closureparams_call,indent=0]
 ----
 <1> the closure parameter is annotated with `@ClosureParams`
 <2> it's not necessary to use an explicit type for `it`, which is inferred
@@ -1988,17 +1988,17 @@ various bundled type hints, illustrated in the table below:
 |The first (resp. second, third) parameter type of the method +
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_firstparam,indent=0]
+include::../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_firstparam,indent=0]
 ----
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_secondparam,indent=0]
+include::../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_secondparam,indent=0]
 ----
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_thirdparam,indent=0]
+include::../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_thirdparam,indent=0]
 ----
 
 |`FirstParam.FirstGenericType` +
@@ -2008,7 +2008,7 @@ include::{includedir}/../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_
 |The first generic type of the first (resp. second, third) parameter of the method +
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_firstgt,indent=0]
+include::../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_firstgt,indent=0]
 ----
 
 Variants for `SecondGenericType` and `ThirdGenericType` exist for all `FirstParam`, `SecondParam` and `ThirdParam`
@@ -2019,7 +2019,7 @@ type hints.
 |A type hint for which the type of closure parameters comes from the options string. +
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_simpletype,indent=0]
+include::../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_simpletype,indent=0]
 ----
 
 This type hint supports a *single* signature and each of the parameter is specified as a value of the _options_ array
@@ -2031,7 +2031,7 @@ using a fully-qualified type name or a primitive type.
 to the key and the value. +
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_mapentry,indent=0]
+include::../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_mapentry,indent=0]
 ----
 
 This type hint *requires* that the first argument is a `Map` type, and infers the closure parameter types from the map
@@ -2042,7 +2042,7 @@ actual key/value types.
 |Infers closure parameter types from the abstract method of some type. A signature is inferred for *each* abstract method. +
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_from_abstract_type,indent=0]
+include::../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_from_abstract_type,indent=0]
 ----
 
 If there are multiple signatures like in the example above, the type checker will *only* be able to infer the types of
@@ -2062,21 +2062,21 @@ A single signature for a closure accepting a `String`:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_from_string_1,indent=0]
+include::../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_from_string_1,indent=0]
 ----
 
 A polymorphic closure, accepting either a `String` or a `String, Integer`:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_from_string_2,indent=0]
+include::../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_from_string_2,indent=0]
 ----
 
 A polymorphic closure, accepting either a `T` or a pair `T,T`:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_from_string_3,indent=0]
+include::../test/typing/TypeCheckingHintsTest.groovy[tags=typehint_from_string_3,indent=0]
 ----
 
 |===
@@ -2120,7 +2120,7 @@ by definition only correct if no runtime specific behavior occurs. For example, 
 [[typechecked-defeated]]
 [source,groovy]
 ----
-include::{includedir}/../test/typing/StaticCompilationIntroTest.groovy[tags=intro_typesafe,indent=0]
+include::../test/typing/StaticCompilationIntroTest.groovy[tags=intro_typesafe,indent=0]
 ----
 
 There are two `compute` methods. One accepts a `String` and returns an `int`, the other accepts an `int` and returns
@@ -2131,7 +2131,7 @@ Now, before calling `test()`, consider adding the following line:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/StaticCompilationIntroTest.groovy[tags=intro_typesafe_magic,indent=0]
+include::../test/typing/StaticCompilationIntroTest.groovy[tags=intro_typesafe_magic,indent=0]
 ----
 
 Using runtime metaprogramming, we're actually modifying the behavior of the `compute(String)` method, so that instead of
@@ -2157,8 +2157,8 @@ with `@CompileStatic`:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/StaticCompilationIntroTest.groovy[tags=intro_typesafe_compilestatic,indent=0]
-include::{includedir}/../test/typing/StaticCompilationIntroTest.groovy[tags=intro_typesafe_magic,indent=0]
+include::../test/typing/StaticCompilationIntroTest.groovy[tags=intro_typesafe_compilestatic,indent=0]
+include::../test/typing/StaticCompilationIntroTest.groovy[tags=intro_typesafe_magic,indent=0]
 test()
 ----
 
@@ -2185,5 +2185,5 @@ There is only one way to determine which version you should choose: measuring. T
 *and* the JVM that you use, the performance can be significantly different. In particular, the _invokedynamic_ version of
 Groovy is very sensitive to the JVM version in use.
 
-include::{includedir}/fragment_type-checking-extensions.adoc[leveloffset=+1]
+include::fragment_type-checking-extensions.adoc[leveloffset=+1]
 

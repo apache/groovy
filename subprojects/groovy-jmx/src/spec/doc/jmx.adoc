@@ -18,6 +18,9 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::reldir[]
+:reldir: .
+endif::[]
 
 = Working with JMX
 
@@ -34,14 +37,14 @@ For example, the following code:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=introduction_example,indent=0]
+include::../test/JmxTest.groovy[tags=introduction_example,indent=0]
 ----
 
 can be simplified to:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=introduction_simplified_example,indent=0]
+include::../test/JmxTest.groovy[tags=introduction_simplified_example,indent=0]
 ----
 
 The remainder of this page shows you how to:
@@ -60,7 +63,7 @@ You can monitor the JVM through its platform MBeans with the following code:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=the_jvm,indent=0]
+include::../test/JmxTest.groovy[tags=the_jvm,indent=0]
 ----
 
 When run, you will see something like this:
@@ -184,7 +187,7 @@ extract the processing time for each web module and displays the result in a gra
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=tomcat,indent=0]
+include::../test/JmxTest.groovy[tags=tomcat,indent=0]
 ----
 
 When run, we will see a trace of progress being made:
@@ -201,7 +204,7 @@ Catalina:j2eeType=WebModule,name=//localhost/host-manager,J2EEApplication=none,J
 
 The output will look like this:
 
-image:{rootprojectdir}/subprojects/groovy-jmx/{specfolder}/assets/img/catalina.png[]
+image:{reldir}/assets/img/catalina.png[]
 
 Note: if you get errors running this script, see the **Troubleshooting** section below.
 
@@ -300,7 +303,7 @@ chart.draw(swing.canvas.graphics, swing.canvas.bounds)
 
 Which looks like:
 
-image:{rootprojectdir}/subprojects/groovy-jmx/{specfolder}/assets/img/oc4jpie.png[]
+image:{reldir}/assets/img/oc4jpie.png[]
 
 == WebLogic Example
 
@@ -308,7 +311,7 @@ This script prints out information about the server followed by information abou
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=weblogic,indent=0]
+include::../test/JmxTest.groovy[tags=weblogic,indent=0]
 ----
 
 Here is the output:
@@ -332,7 +335,7 @@ Here is an example class (Calculator.groovy):
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=spring_classes,indent=0]
+include::../test/JmxTest.groovy[tags=spring_classes,indent=0]
 ----
 
 Here is the Spring configuration file (beans.xml):
@@ -388,7 +391,7 @@ Here is a script which uses this bean and configuration:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=spring_usage,indent=0]
+include::../test/JmxTest.groovy[tags=spring_usage,indent=0]
 ----
 
 And here is the resulting output:
@@ -411,7 +414,7 @@ Operations:
 
 You can even attach to the process while it is running with https://docs.oracle.com/en/java/javase/14/management/using-jconsole.html[jconsole]. It will look something like:
 
-image:{rootprojectdir}/subprojects/groovy-jmx/{specfolder}/assets/img/jconsole.png[]
+image:{reldir}/assets/img/jconsole.png[]
 
 We started the Groovy application with the `-Dcom.sun.management.jmxremote` JVM argument.
 
@@ -434,7 +437,7 @@ To fix that, add an environment with the credentials when connecting, like this 
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=troubleshooting,indent=0]
+include::../test/JmxTest.groovy[tags=troubleshooting,indent=0]
 ----
 
 Details for the software you are trying to monitor/manage may differ slightly. Check out the other examples using credentials above if appropriate (e.g. OC4J and WebLogic). If you still have troubles, you will have to consult the documentation for the software you are trying to monitor/manage for details on how to provide credentials.
@@ -450,7 +453,7 @@ To start using JmxBuilder, simply make sure the jar file is on your class path. 
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=instantiating_jmxbuilder,indent=0]
+include::../test/JmxTest.groovy[tags=instantiating_jmxbuilder,indent=0]
 ----
 
 **That's it!** You are now ready to use the JmxBuilder.
@@ -494,7 +497,7 @@ Note that the serverConnector node will accept four ServerConnector property ali
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=connector_server,indent=0]
+include::../test/JmxTest.groovy[tags=connector_server,indent=0]
 ----
 
 The snippet above returns an RMI connector that will start listening on port 9000. By default, the builder will internally generate URL **"service:jmx:rmi:///jndi/rmi://localhost:9000/jmxrmi"**.
@@ -517,7 +520,7 @@ The example above does not create the RMI registry. So, in order to export, you 
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=connector_server_and_local_registry,indent=0]
+include::../test/JmxTest.groovy[tags=connector_server_and_local_registry,indent=0]
 ----
 
 ==== Connector Client
@@ -541,14 +544,14 @@ Creating a connector client can be done just as easily. With one line of code, y
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=client_connector,indent=0]
+include::../test/JmxTest.groovy[tags=client_connector,indent=0]
 ----
 
 You can then access the MBeanServerConnection associated with the connector using:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=client_connector_usage,indent=0]
+include::../test/JmxTest.groovy[tags=client_connector_usage,indent=0]
 ----
 
 === JmxBuilder MBean Export
@@ -565,7 +568,7 @@ The **JmxBuilder.export() node provides a container** where all management entit
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=jmxbuilder_export,indent=0]
+include::../test/JmxTest.groovy[tags=jmxbuilder_export,indent=0]
 ----
 
 In the code snippet above, **JmxBuilder.export() will export three management beans** to the MBean server.
@@ -596,7 +599,7 @@ This portion of this reference uses class **RequestController** to illustrate ho
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=request_controller,indent=0]
+include::../test/JmxTest.groovy[tags=request_controller,indent=0]
 ----
 
 ===== Implicit Export
@@ -607,7 +610,7 @@ The simplest way to export a POJO or POGO is listed below.
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=implicit_export,indent=0]
+include::../test/JmxTest.groovy[tags=implicit_export,indent=0]
 ----
 
 **What this does:**
@@ -621,7 +624,7 @@ Remember, **JmxBuilder.export() returns an array of GroovyMBean[] objects** for 
 
 ====== JConsole view of Exported Bean
 
-image:{rootprojectdir}/subprojects/groovy-jmx/{specfolder}/assets/img/jconsole-implicit-export.png[]
+image:{reldir}/assets/img/jconsole-implicit-export.png[]
 
 ==== JmxBuilder.bean() Syntax
 
@@ -694,7 +697,7 @@ Using the bean() node descriptors, you can specify your own MBean ObjectName.
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=using_bean,indent=0]
+include::../test/JmxTest.groovy[tags=using_bean,indent=0]
 ----
 
 The ObjectName can be specified as a String or an instance of the ObjectName.
@@ -709,7 +712,7 @@ The following code snippet **will describe and export all attributes** on the be
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=export_all_attributes,indent=0]
+include::../test/JmxTest.groovy[tags=export_all_attributes,indent=0]
 ----
 
 ==== Export Attribute List
@@ -718,7 +721,7 @@ JmxBuilder will let you specify a list of attributes to export.
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=export_attribute_list,indent=0]
+include::../test/JmxTest.groovy[tags=export_attribute_list,indent=0]
 ----
 
 In the snippet above, **only the "Resource" and "RequestCount" attributes will be exported**. Again, since no descriptors are provided, **JmxBuilder will use sensible defaults** to describe the exported attributes.
@@ -729,7 +732,7 @@ One of the strengths of JmxBuilder is its flexibility in describing MBean. With 
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=export_attribute_with_explicit_descriptors,indent=0]
+include::../test/JmxTest.groovy[tags=export_attribute_with_explicit_descriptors,indent=0]
 ----
 
 In the snippet above, attribute **"Resource" is fully-described** using all supported descriptors (i.e. desc, readable, writable, defaultValue) for a JMX attribute. However, we use the wildcard to describe attribute **RequestCount** and it will be exported and described using defaults.
@@ -744,7 +747,7 @@ You can use the builder's special "*" **notation to export all constructors** de
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=export_all_constructors,indent=0]
+include::../test/JmxTest.groovy[tags=export_all_constructors,indent=0]
 ----
 
 ==== Export Constructors using Parameter Descriptor
@@ -753,7 +756,7 @@ JmxBuilder lets you **target specific constructor** to export **by describing th
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=export_constructors_using_parameter_descriptor,indent=0]
+include::../test/JmxTest.groovy[tags=export_constructors_using_parameter_descriptor,indent=0]
 ----
 
 Here, JmxBuilder will **export a constructor that takes one parameter of type "Object"**. Again, JmxBuilder will use default values to fill in the description of the constructor and the parameters.
@@ -764,7 +767,7 @@ JmxBuilder allows you to **fully-describe** the constructor that you want to tar
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=export_constructor_with_explicit_descriptors,indent=0]
+include::../test/JmxTest.groovy[tags=export_constructor_with_explicit_descriptors,indent=0]
 ----
 
 In the code above, JmxBuilder will target a constructor that takes one parameter for export to the MBeanServer. Notice how the constructor can be fully-described using all optional descriptor keys including parameter descriptors.
@@ -779,7 +782,7 @@ You can use the builder's special "*" **notation to export all operations** defi
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=export_all_operations,indent=0]
+include::../test/JmxTest.groovy[tags=export_all_operations,indent=0]
 ----
 
 In this snippet, JmxBuilder will **export all bean operations** and will use default values to describe them in the MBeanServer.
@@ -790,7 +793,7 @@ JmxBuilder has a shorthand notation that lets you quickly target operations to b
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=export_operation_list,indent=0]
+include::../test/JmxTest.groovy[tags=export_operation_list,indent=0]
 ----
 
 In the snippet above, the **builder will only export methods start() and stop()**. All other methods will be ignored. JmxBuilder will use default descriptor values to describe the operations being exported.
@@ -801,7 +804,7 @@ Using JmxBuilder, you can target methods to export for management using the meth
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=export_operations_by_signature,indent=0]
+include::../test/JmxTest.groovy[tags=export_operations_by_signature,indent=0]
 ----
 
 In the snippet above, JmxBuilder would **select method makeRequest(String)** to be exported instead of the other version makeRequest() which takes no parameter. In this shorthand context, the signature is specified as a list of type (i.e. "String").
@@ -812,7 +815,7 @@ JmxBuilder supports detailed descriptors for bean operations. You can supply dee
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=export_operations_with_explicit_descriptors,indent=0]
+include::../test/JmxTest.groovy[tags=export_operations_with_explicit_descriptors,indent=0]
 ----
 
 The snippet above shows all of the ways JmxBuilder allows you to describe an operation targeted for management:
@@ -829,7 +832,7 @@ JmxBuilder supports the ability to **embed descriptors directly in your Groovy c
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=embedding_descriptor,indent=0]
+include::../test/JmxTest.groovy[tags=embedding_descriptor,indent=0]
 ----
 
 There are two things going on in the code above:
@@ -869,7 +872,7 @@ The timer() node supports several attributes:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=exporting_timer,indent=0]
+include::../test/JmxTest.groovy[tags=exporting_timer,indent=0]
 ----
 
 This snippet above **describes, creates, and exports a standard JMX Timer** component. Here, the **timer()** node **returns a GroovyMBean** that represents the registered timer MBean in the MBeanServer.
@@ -878,7 +881,7 @@ An **alternative way of exporting timers** is within the JmxBuilder.export() nod
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=exporting_timer_beans,indent=0]
+include::../test/JmxTest.groovy[tags=exporting_timer_beans,indent=0]
 ----
 
 ==== Timer Period
@@ -905,7 +908,7 @@ JmxBuilder leverages Groovy's use of closures to provide simple, yet elegant, me
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=event_handling_closures,indent=0]
+include::../test/JmxTest.groovy[tags=event_handling_closures,indent=0]
 ----
 
 JmxBuilder executes the closure and passes no information about the event that was captured on the bus.
@@ -914,7 +917,7 @@ JmxBuilder executes the closure and passes no information about the event that w
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=event_handling_closures_event,indent=0]
+include::../test/JmxTest.groovy[tags=event_handling_closures_event,indent=0]
 ----
 
 JmxBuilder will pass an **"event" object to the closure** using this format. The event object contains information about the event was intercepted so that it can be handled by the handler. The parameter will contain different set of info depending on the event that was captured.
@@ -925,7 +928,7 @@ When describing attributes (see bean() node section above), you can **provide a 
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=handling_attribute_onchange_event,indent=0]
+include::../test/JmxTest.groovy[tags=handling_attribute_onchange_event,indent=0]
 ----
 
 The sample snippet above shows how to **specify an "onChange" callback closure** when describing MBean attributes. In this sample code, whenever attribute "Resource" is updated via the exported MBean, the **onChange event will be executed**.
@@ -947,12 +950,12 @@ Similar to mbean attributes, JmxBuilder affords developers the **ability to list
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=event_handler,indent=0]
+include::../test/JmxTest.groovy[tags=event_handler,indent=0]
 ----
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=event_handler_usage,indent=0]
+include::../test/JmxTest.groovy[tags=event_handler_usage,indent=0]
 ----
 
 The snippet above **shows how to declare an "onCall" closure to be used as listener** when operation "start()" is invoked on the MBean. This sample **uses the method pointer syntax** to illustrate the versatility of JmxBuilder.
@@ -973,7 +976,7 @@ When you export an MBean with the bean() node, you can define events the MBean c
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=listener_mbean,indent=0]
+include::../test/JmxTest.groovy[tags=listener_mbean,indent=0]
 ----
 
 In the sample above, we see the **syntax for adding listeners to an exported MBean**.
@@ -1009,7 +1012,7 @@ Here is an example of JmxBuilder's listener node:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=jmxbuilders_listener,indent=0]
+include::../test/JmxTest.groovy[tags=jmxbuilders_listener,indent=0]
 ----
 
 This example shows how you can use a stand alone listener (outside of an MBean export). Here, we **export a timer with a 1 second** resolution. Then, we specify a listener to that timer that will print "beep" every second.
@@ -1033,7 +1036,7 @@ The attributes for the node Emitter() can be summarized as follows:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=declare_emitter,indent=0]
+include::../test/JmxTest.groovy[tags=declare_emitter,indent=0]
 ----
 
 The snippet **declares the emitter using implicit descriptor syntax**. JmxBuilder will do the followings:
@@ -1050,7 +1053,7 @@ Once you have declared your emitter, you can broadcast your event.
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=emitter_broadcast_event,indent=0]
+include::../test/JmxTest.groovy[tags=emitter_broadcast_event,indent=0]
 ----
 
 The sample above shows the **emitter sending an event**, once it has been declared. Any JMX component registered in the MBeanServer can register to receive message from this emitter.
@@ -1061,7 +1064,7 @@ You can optionally pass data to the receiver when you send the message.
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-jmx/src/spec/test/JmxTest.groovy[tags=emitter_broadcast_event_with_objects,indent=0]
+include::../test/JmxTest.groovy[tags=emitter_broadcast_event_with_objects,indent=0]
 ----
 
 If you use an **event listener closure (see above) that accepts a parameter**, you can access that value.

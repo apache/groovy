@@ -18,6 +18,9 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::reldir[]
+:reldir: .
+endif::[]
 
 [[swingbuilder]]
 = SwingBuilder
@@ -27,14 +30,15 @@ Builders handle the busywork of creating complex objects for you, such as instan
 As a consequence, your code is much more readable and maintainable, while still allowing you access to the full range of Swing components.
 
 Here's a simple example of using `SwingBuilder`:
+
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-swing/src/spec/test/SwingBuilderTest.groovy[tags=simple_example,indent=0]
+include::../test/SwingBuilderTest.groovy[tags=simple_example,indent=0]
 ----
 
 Here is what it will look like:
 
-image::assets/img/SwingBuilder001.gif[]
+image:{reldir}/assets/img/SwingBuilder001.png[]
 
 This hierarchy of components would normally be created through a series of repetitive instantiations, setters, and finally attaching this child to its respective parent.
 Using `SwingBuilder`, however, allows you to define this hierarchy in its native form, which makes the interface design understandable simply by reading the code.
@@ -46,14 +50,14 @@ Here is a slightly more involved example, with an example of `SwingBuilder` code
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-swing/src/spec/test/SwingBuilderTest.groovy[tags=more_involved_example,indent=0]
+include::../test/SwingBuilderTest.groovy[tags=more_involved_example,indent=0]
 ----
 
 Here's another variation that relies on observable beans and binding:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-swing/src/spec/test/SwingBuilderTest.groovy[tags=observable_binding_example,indent=0]
+include::../test/SwingBuilderTest.groovy[tags=observable_binding_example,indent=0]
 ----
 
 <<core-metaprogramming.adoc#xform-Bindable,@Bindable>> is one of the core AST Transformations. It generates all the required boilerplate code to turn a simple bean into an observable one. The `bind()` node creates appropriate `PropertyChangeListeners` that will update the interested parties whenever a `PropertyChangeEvent` is fired.

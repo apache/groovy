@@ -27,19 +27,19 @@ For example this XML `String`:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/DOMBuilderTest.groovy[tags=xml_string,indent=0]
+include::../test/DOMBuilderTest.groovy[tags=xml_string,indent=0]
 ----
 
 Can be parsed into a DOM tree with a `DOMBuilder` like this:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/DOMBuilderTest.groovy[tags=dom_builder_parse,indent=0]
+include::../test/DOMBuilderTest.groovy[tags=dom_builder_parse,indent=0]
 ----
 
 And then processed further e.g. by using <<xml-userguide.adoc#_domcategory,DOMCategory>>:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/DOMBuilderTest.groovy[tags=dom_builder_process_result,indent=0]
+include::../test/DOMBuilderTest.groovy[tags=dom_builder_process_result,indent=0]
 ----

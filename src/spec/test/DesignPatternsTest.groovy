@@ -447,7 +447,7 @@ class DesignPatternsTest extends CompilableTestSupport {
             class CircleAreaCalculator {
                 def next
                 def area(shape) {
-                    if (shape instanceof Circle) {
+                    if (shape instanceof Circle) {            // <1>
                         return shape.radius ** 2 * π
                     } else {
                         next.area(shape)
@@ -457,7 +457,7 @@ class DesignPatternsTest extends CompilableTestSupport {
             class SquareAreaCalculator {
                 def next
                 def area(shape) {
-                    if (shape instanceof Polygon && shape.numSides == 4) {
+                    if (shape instanceof Polygon && shape.numSides == 4) {      // <1>
                         return shape.lengthSide ** 2
                     } else {
                         next.area(shape)

@@ -29,26 +29,26 @@ The usage of `StreamingJsonBuilder` is similar to `JsonBuilder`. In order to cre
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/StreamingJsonBuilderTest.groovy[tags=json_string,indent=0]
+include::../test/json/StreamingJsonBuilderTest.groovy[tags=json_string,indent=0]
 ----
 
 you use a `StreamingJsonBuilder` like this:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/StreamingJsonBuilderTest.groovy[tags=streaming_json_builder,indent=0]
+include::../test/json/StreamingJsonBuilderTest.groovy[tags=streaming_json_builder,indent=0]
 ----
 
 We use https://github.com/lukas-krecan/JsonUnit[JsonUnit] to check the expected result:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/StreamingJsonBuilderTest.groovy[tags=json_assert,indent=0]
+include::../test/json/StreamingJsonBuilderTest.groovy[tags=json_assert,indent=0]
 ----
 
 If you need to customize the generated output you can pass a `JsonGenerator` instance when creating a `StreamingJsonBuilder`:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/StreamingJsonBuilderTest.groovy[tags=streaming_json_builder_generator,indent=0]
+include::../test/json/StreamingJsonBuilderTest.groovy[tags=streaming_json_builder_generator,indent=0]
 ----

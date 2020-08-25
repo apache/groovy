@@ -32,7 +32,7 @@ With GContracts in your class-path, contracts can be applied on a Groovy class o
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-contracts/src/spec/test/ContractsTest.groovy[tags=basic_example,indent=0]
+include::../test/ContractsTest.groovy[tags=basic_example,indent=0]
 ----
 
 == More Features
@@ -57,8 +57,8 @@ as annotations with closures, where closures allow you to specify arbitrary code
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-contracts/src/spec/test/ContractsTest.groovy[tags=stack_prelim,indent=0]
-include::{rootProjectDir}/subprojects/groovy-contracts/src/spec/test/ContractsTest.groovy[tags=stack_example,indent=0]
+include::../test/ContractsTest.groovy[tags=stack_prelim,indent=0]
+include::../test/ContractsTest.groovy[tags=stack_example,indent=0]
 ----
 
 The example above specifies a class-invariant and methods with pre- and post-conditions.

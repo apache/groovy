@@ -72,7 +72,7 @@ Here is the code:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=composite_code,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=composite_code,indent=0]
 ----
 
 Here is the resulting output:

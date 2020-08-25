@@ -30,7 +30,7 @@ Here is an example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=state_example,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=state_example,indent=0]
 ----
 
 Here is the output:
@@ -53,14 +53,14 @@ One approach we could take is to leverage http://www.pragmaticprogrammer.com/tit
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=state_variation1_interface,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=state_variation1_interface,indent=0]
 ----
 
 Then our `Client`, `Online` and 'Offline` classes could be modified to implement that interface, e.g.:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=state_variation1_impl,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=state_variation1_impl,indent=0]
 ----
 
 You might ask: Haven't we just introduced additional boilerplate code? Can't we rely on duck-typing for this? The answer is 'yes' and 'no'. We can get away with duck-typing but one of the key intentions of the state pattern is to partition complexity. If we know that the __client__ class and each __state__ class all satisfy one interface, then we have placed some key boundaries around the complexity. We can look at any state class in isolation and know the bounds of behaviour possible for that state.
@@ -73,14 +73,14 @@ Alternatively, or in combination with other variations, we might decide to extra
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=state_variation2_classes,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=state_variation2_classes,indent=0]
 ----
 
 This is all quite generic and can be used wherever we want to introduce the state pattern. Here is what our code would look like now:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=state_variation2_impl,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=state_variation2_impl,indent=0]
 ----
 
 You can see here the `startFrom` and `transitionTo` methods begin to give our example code a DSL feel.
@@ -93,19 +93,19 @@ We can define the following generic helper functions (first discussed https://we
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=state_variation31,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=state_variation31,indent=0]
 ----
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=state_variation32,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=state_variation32,indent=0]
 ----
 
 Now we can define and test our state machine like this:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=state_variation33,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=state_variation33,indent=0]
 ----
 
 This example isn't an exact equivalent of the others. It doesn't use predefined `Online` and `Offline` classes.

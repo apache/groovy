@@ -37,14 +37,14 @@ method:
 
 [source,groovy]
 ----
-include::{includedir}/../test/IntegrationTest.groovy[tags=eval_me,indent=0]
+include::../test/IntegrationTest.groovy[tags=eval_me,indent=0]
 ----
 
 `Eval` supports multiple variants that accept parameters for simple evaluation:
 
 [source,groovy]
 ----
-include::{includedir}/../test/IntegrationTest.groovy[tags=eval_x,indent=0]
+include::../test/IntegrationTest.groovy[tags=eval_x,indent=0]
 ----
 <1> Simple evaluation with one bound parameter named `x`
 <2> Same evaluation, with a custom bound parameter named `k`
@@ -63,7 +63,7 @@ class offers more options.
 
 [source,groovy]
 ----
-include::{includedir}/../test/IntegrationTest.groovy[tags=groovyshell_simple,indent=0]
+include::../test/IntegrationTest.groovy[tags=groovyshell_simple,indent=0]
 ----
 <1> create a new `GroovyShell` instance
 <2> can be used as `Eval` with direct execution of the code
@@ -77,7 +77,7 @@ It is possible to share data between the application and the script using a `gro
 
 [source,groovy]
 ----
-include::{includedir}/../test/IntegrationTest.groovy[tags=groovyshell_binding,indent=0]
+include::../test/IntegrationTest.groovy[tags=groovyshell_binding,indent=0]
 ----
 <1> create a new `Binding` that will contain shared data
 <2> create a `GroovyShell` using this shared data
@@ -89,7 +89,7 @@ Note that it is also possible to write from the script into the binding:
 
 [source,groovy]
 ----
-include::{includedir}/../test/IntegrationTest.groovy[tags=groovyshell_binding_output,indent=0]
+include::../test/IntegrationTest.groovy[tags=groovyshell_binding_output,indent=0]
 ----
 <1> create a new `Binding` instance
 <2> create a new `GroovyShell` using that shared data
@@ -101,7 +101,7 @@ It is important to understand that you need to use an undeclared variable if you
 
 [source,groovy]
 ----
-include::{includedir}/../test/IntegrationTest.groovy[tags=groovyshell_binding_localvariable,indent=0]
+include::../test/IntegrationTest.groovy[tags=groovyshell_binding_localvariable,indent=0]
 ----
 
 WARNING: You must be very careful when using shared data in a multithreaded environment. The `Binding` instance that
@@ -112,7 +112,7 @@ by `parse`:
 
 [source,groovy]
 ----
-include::{includedir}/../test/IntegrationTest.groovy[tags=groovyshell_parse_binding,indent=0]
+include::../test/IntegrationTest.groovy[tags=groovyshell_parse_binding,indent=0]
 ----
 <1> will store the `x` variable inside `b1`
 <2> will store the `x` variable inside `b2`
@@ -123,7 +123,7 @@ script instances:
 
 [source,groovy]
 ----
-include::{includedir}/../test/IntegrationTest.groovy[tags=groovyshell_threadsafe,indent=0]
+include::../test/IntegrationTest.groovy[tags=groovyshell_threadsafe,indent=0]
 ----
 <1> create an instance of script for thread 1
 <2> create an instance of script for thread 2
@@ -144,7 +144,7 @@ the example below:
 
 [source,groovy]
 ----
-include::{includedir}/../test/IntegrationTest.groovy[tags=custom_script_scriptclass,indent=0]
+include::../test/IntegrationTest.groovy[tags=custom_script_scriptclass,indent=0]
 ----
 
 The custom class defines a property called `name` and a new method called `greet`. This class can be used as the script
@@ -152,9 +152,9 @@ base class by using a custom configuration:
 
 [source,groovy]
 ----
-include::{includedir}/../test/IntegrationTest.groovy[tags=custom_script_imports,indent=0]
+include::../test/IntegrationTest.groovy[tags=custom_script_imports,indent=0]
 
-include::{includedir}/../test/IntegrationTest.groovy[tags=custom_script_usage,indent=0]
+include::../test/IntegrationTest.groovy[tags=custom_script_usage,indent=0]
 ----
 <1> create a `CompilerConfiguration` instance
 <2> instruct it to use `MyScript` as the base class for scripts
@@ -176,7 +176,7 @@ of scripts:
 
 [source,groovy]
 ----
-include::{includedir}/../test/IntegrationTest.groovy[tags=gcl,indent=0]
+include::../test/IntegrationTest.groovy[tags=gcl,indent=0]
 ----
 <1> create a new `GroovyClassLoader`
 <2> `parseClass` will return an instance of `Class`
@@ -189,7 +189,7 @@ particular, if you execute the same script twice, if it is a String, then you ob
 
 [source,groovy]
 ----
-include::{includedir}/../test/IntegrationTest.groovy[tags=gcl_distinct_classes,indent=0]
+include::../test/IntegrationTest.groovy[tags=gcl_distinct_classes,indent=0]
 ----
 <1> dynamically create a class named "Foo"
 <2> create an identical looking class, using a separate `parseClass` call
@@ -201,7 +201,7 @@ then the source *must* be a file, like in this example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/IntegrationTest.groovy[tags=gcl_same_classes,indent=0]
+include::../test/IntegrationTest.groovy[tags=gcl_same_classes,indent=0]
 ----
 <1> parse a class from a `File`
 <2> parse a class from a distinct file instance, but pointing to the same physical file
@@ -224,18 +224,18 @@ a directory with the following script inside:
 [source,groovy]
 .ReloadingTest.groovy
 ----
-include::{includedir}/../test-resources/reloading/source1.groovy[tags=greeter,indent=0]
+include::../test-resources/reloading/source1.groovy[tags=greeter,indent=0]
 ----
 
 then you can execute this code using a `GroovyScriptEngine`:
 
 [source,groovy]
 ----
-include::{includedir}/../test/IntegrationTest.groovy[tags=gse_init,indent=0]
+include::../test/IntegrationTest.groovy[tags=gse_init,indent=0]
 
-include::{includedir}/../test/IntegrationTest.groovy[tags=gse_script_fakeloop_begin,indent=0]
-include::{includedir}/../test/IntegrationTest.groovy[tags=gse_script1,indent=4]
-include::{includedir}/../test/IntegrationTest.groovy[tags=gse_script_fakeloop_end,indent=0]
+include::../test/IntegrationTest.groovy[tags=gse_script_fakeloop_begin,indent=0]
+include::../test/IntegrationTest.groovy[tags=gse_script1,indent=4]
+include::../test/IntegrationTest.groovy[tags=gse_script_fakeloop_end,indent=0]
 ----
 <1> create a script engine which will look for sources into our source directory
 <2> execute the script, which will return an instance of `Greeter`
@@ -254,7 +254,7 @@ Hello, world!
 [source,groovy]
 .ReloadingTest.groovy
 ----
-include::{includedir}/../test-resources/reloading/source2.groovy[tags=greeter,indent=0]
+include::../test-resources/reloading/source2.groovy[tags=greeter,indent=0]
 ----
 
 And the message should change to:
@@ -273,7 +273,7 @@ the same directory, without interrupting the executing script:
 [source,groovy]
 .Depencency.groovy
 ----
-include::{includedir}/../test-resources/reloading/dependency1.groovy[tags=dependency,indent=0]
+include::../test-resources/reloading/dependency1.groovy[tags=dependency,indent=0]
 ----
 
 and update the `ReloadingTest` script like this:
@@ -281,7 +281,7 @@ and update the `ReloadingTest` script like this:
 [source,groovy]
 .ReloadingTest.groovy
 ----
-include::{includedir}/../test-resources/reloading/source3.groovy[tags=greeter,indent=0]
+include::../test-resources/reloading/source3.groovy[tags=greeter,indent=0]
 ----
 
 And this time, the message should change to:
@@ -299,7 +299,7 @@ And as a last test, you can update the `Dependency.groovy` file without touching
 [source,groovy]
 .Depencency.groovy
 ----
-include::{includedir}/../test-resources/reloading/dependency2.groovy[tags=dependency,indent=0]
+include::../test-resources/reloading/dependency2.groovy[tags=dependency,indent=0]
 ----
 
 And you should observe that the dependent file was reloaded:
@@ -320,8 +320,8 @@ stub generation is done, for the joint compiler.
 
 However, overriding `CompilationUnit` is not recommended and should only be done if no other standard solution works.
 
-include::{rootprojectdir}/subprojects/groovy-bsf/{specfolder}/fragment_integrating-bsf.adoc[leveloffset=+1]
+include::../../../subprojects/groovy-bsf/src/spec/doc/fragment_integrating-bsf.adoc[leveloffset=+1]
 
-include::{rootprojectdir}/subprojects/groovy-jsr223/{specfolder}/fragment_integrating-jsr223.adoc[leveloffset=+1]
+include::../../../subprojects/groovy-jsr223/src/spec/doc/fragment_integrating-jsr223.adoc[leveloffset=+1]
 
 

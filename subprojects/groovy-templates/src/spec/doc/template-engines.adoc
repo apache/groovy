@@ -46,7 +46,7 @@ in your template in order to generate parametrized text. Here is an example of u
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEnginesTest.groovy[tags=simple_template_engine1,indent=0]
+include::../test/TemplateEnginesTest.groovy[tags=simple_template_engine1,indent=0]
 ----
 
 While it is generally not deemed good practice to mix processing logic in your template (or view), sometimes very simple logic can be useful.
@@ -54,28 +54,28 @@ E.g. in the example above, we could change this:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEnginesTest.groovy[tags=simple_template_engine2,indent=0]
+include::../test/TemplateEnginesTest.groovy[tags=simple_template_engine2,indent=0]
 ----
 
 to this (assuming we have set up a static import for capitalize **inside** the template):
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEnginesTest.groovy[tags=simple_template_engine3,indent=0]
+include::../test/TemplateEnginesTest.groovy[tags=simple_template_engine3,indent=0]
 ----
 
 or this:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEnginesTest.groovy[tags=simple_template_engine4,indent=0]
+include::../test/TemplateEnginesTest.groovy[tags=simple_template_engine4,indent=0]
 ----
 
 to this:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEnginesTest.groovy[tags=simple_template_engine5,indent=0]
+include::../test/TemplateEnginesTest.groovy[tags=simple_template_engine5,indent=0]
 ----
 
 === Advanced Usage Note
@@ -87,14 +87,14 @@ E.g. if we wanted quotes around __The Big Apple__ above, we would use:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEnginesTest.groovy[tags=simple_template_engine6,indent=0]
+include::../test/TemplateEnginesTest.groovy[tags=simple_template_engine6,indent=0]
 ----
 
 Similarly, if we wanted a newline, we would use:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEnginesTest.groovy[tags=simple_template_engine7,indent=0]
+include::../test/TemplateEnginesTest.groovy[tags=simple_template_engine7,indent=0]
 ----
 
 in any GString expression or scriptlet $$'code'$$ that appears inside a Groovy script. A normal "`\n`" is fine within
@@ -103,14 +103,14 @@ Similarly, to represent an actual backslash in your text you would need
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEnginesTest.groovy[tags=simple_template_engine8,indent=0]
+include::../test/TemplateEnginesTest.groovy[tags=simple_template_engine8,indent=0]
 ----
 
 in an external file or
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEnginesTest.groovy[tags=simple_template_engine8,indent=0]
+include::../test/TemplateEnginesTest.groovy[tags=simple_template_engine8,indent=0]
 ----
 
 in any GString expression or scriptlet $$'code'$$. (Note: the necessity to have this extra slash may go away
@@ -129,7 +129,7 @@ Frequently, the template source will be a file but here we show a simple example
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEnginesTest.groovy[tags=streaming_template_engine,indent=0]
+include::../test/TemplateEnginesTest.groovy[tags=streaming_template_engine,indent=0]
 ----
 
 == GStringTemplateEngine
@@ -140,7 +140,7 @@ First we will store the template in a file this time:
 [source,groovy]
 .test.template
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEnginesTest.groovy[tags=gstring_template_engine1,indent=0]
+include::../test/TemplateEnginesTest.groovy[tags=gstring_template_engine1,indent=0]
 ----
 
 Note that we used `out` instead of `print` to support the streaming nature of `GStringTemplateEngine`.
@@ -148,7 +148,7 @@ Because we have the template in a separate file, there is no need to escape the 
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEnginesTest.groovy[tags=gstring_template_engine2,indent=0]
+include::../test/TemplateEnginesTest.groovy[tags=gstring_template_engine2,indent=0]
 ----
 
 and here is the output:
@@ -178,7 +178,7 @@ Normally, the template source will be in a file but here is a simple example pro
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEnginesTest.groovy[tags=xml_template_engine,indent=0]
+include::../test/TemplateEnginesTest.groovy[tags=xml_template_engine,indent=0]
 ----
 
 This example will produce this output:
@@ -194,7 +194,7 @@ This example will produce this output:
 </document>
 ----
 
-include::{rootProjectDir}/subprojects/groovy-templates/{specfolder}/fragment_markup-template-engine.adoc[leveloffset=+1]
+include::../doc/fragment_markup-template-engine.adoc[leveloffset=+1]
 
 == Other solutions
 

@@ -30,7 +30,7 @@ For example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=iterator_example,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=iterator_example,indent=0]
 ----
 
 Results in the output:
@@ -51,7 +51,7 @@ Another example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=iterator_example2,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=iterator_example2,indent=0]
 ----
 
 Results in:

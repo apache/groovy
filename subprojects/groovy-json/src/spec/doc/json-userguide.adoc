@@ -37,7 +37,7 @@ types.
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.groovy[tags=parse_text,indent=0]
+include::../test/json/JsonTest.groovy[tags=parse_text,indent=0]
 ----
 
 Notice the result is a plain map and can be handled like a normal Groovy object instance. `JsonSlurper` parses the
@@ -48,7 +48,7 @@ In addition to maps `JsonSlurper` supports JSON arrays which are converted to li
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.groovy[tags=parse_list,indent=0]
+include::../test/json/JsonTest.groovy[tags=parse_list,indent=0]
 ----
 
 The JSON standard supports the following primitive data types: string, number, object, `true`, `false` and `null`. `JsonSlurper`
@@ -56,7 +56,7 @@ converts these JSON types into corresponding Groovy types.
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.groovy[tags=parse_number,indent=0]
+include::../test/json/JsonTest.groovy[tags=parse_number,indent=0]
 ----
 
 As `JsonSlurper` is returning pure Groovy object instances without any special JSON classes in the back, its usage
@@ -150,7 +150,7 @@ Changing the parser implementation is as easy as setting the `JsonParserType` wi
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.groovy[tags=set_type,indent=0]
+include::../test/json/JsonTest.groovy[tags=set_type,indent=0]
 ----
 
 == JsonOutput
@@ -165,7 +165,7 @@ The result of a `toJson` call is a `String` containing the JSON code.
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.groovy[tags=json_output,indent=0]
+include::../test/json/JsonTest.groovy[tags=json_output,indent=0]
 ----
 
 `JsonOutput` does not only support primitive, maps or list data types to be serialized to JSON, it goes further and even
@@ -173,7 +173,7 @@ has support for serialising POGOs, that is, plain-old Groovy objects.
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.groovy[tags=json_output_pogo,indent=0]
+include::../test/json/JsonTest.groovy[tags=json_output_pogo,indent=0]
 ----
 
 === Customizing Output
@@ -185,7 +185,7 @@ configured instance that will generate output based on the options selected.
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.groovy[tags=json_output_generator,indent=0]
+include::../test/json/JsonTest.groovy[tags=json_output_generator,indent=0]
 ----
 
 A closure can be used to transform a type.  These closure converters are registered for a given type and will be
@@ -195,7 +195,7 @@ type for which the converter is registered and this parameter is required. The c
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.groovy[tags=json_output_converter,indent=0]
+include::../test/json/JsonTest.groovy[tags=json_output_converter,indent=0]
 ----
 
 ==== Formatted Output
@@ -205,7 +205,7 @@ to rescue for this task.
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-json/src/spec/test/json/JsonTest.groovy[tags=pretty_print,indent=0]
+include::../test/json/JsonTest.groovy[tags=pretty_print,indent=0]
 ----
 
 `prettyPrint` takes a `String` as single parameter; therefore, it can be applied on arbitrary JSON `String` instances, not only the result of

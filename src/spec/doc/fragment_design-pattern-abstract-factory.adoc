@@ -35,21 +35,21 @@ First let's look at the game-specific code for a http://en.wikipedia.org/wiki/Tw
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=abstract_factory_example1,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=abstract_factory_example1,indent=0]
 ----
 
 Now, let's look at the game-specific code for a number guessing game:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=abstract_factory_example2,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=abstract_factory_example2,indent=0]
 ----
 
 Now, let's write our factory code:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=abstract_factory_code,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=abstract_factory_code,indent=0]
 ----
 
 The important aspect of this factory is that it allows selection of an entire family of concrete classes.
@@ -58,7 +58,7 @@ Here is how we would use the factory:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=abstract_factory_usage,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=abstract_factory_usage,indent=0]
 ----
 
 Note that the first line configures which family of concrete game classes we will use. It's not important that we selected which family to use by using the factory property as shown in the first line. Other ways would be equally valid examples of this pattern. For example, we may have asked the user which game they wanted to play or determined which game from an environment setting.

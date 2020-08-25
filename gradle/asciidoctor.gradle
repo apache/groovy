@@ -19,7 +19,7 @@
 apply plugin: 'org.asciidoctor.jvm.convert'
 
 asciidoctor {
-    baseDirIsRootProjectDir() // needed for asciidocAll
+    baseDirFollowsSourceFile()
     def (full, major, minor, patch, flavor) = (groovyVersion =~ /(\d+)\.(\d++)\.(\d+)(?:-(.+))?/)[0]
     logDocuments = true
     sourceDir = project.file('src/spec/doc')
@@ -34,8 +34,7 @@ asciidoctor {
         }
         into 'assets'
     }
-    attributes 'rootProjectDir': rootProject.projectDir,
-            'source-highlighter': 'prettify',
+    attributes 'source-highlighter': 'prettify',
             groovyversion: groovyVersion,
             'groovy-major-version': major,
             'groovy-minor-version': minor,
@@ -46,7 +45,6 @@ asciidoctor {
             revnumber: groovyVersion,
             icons: 'font',
             toc2: '',
-            specfolder: 'src/spec/doc',
             linkcss: '',
             stylesheet: "assets/css/style.css",
             encoding: 'utf-8',

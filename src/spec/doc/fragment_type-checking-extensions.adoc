@@ -35,7 +35,7 @@ example, you wouldn’t be able to use type checking on code that uses the marku
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=intro_stc_extensions,indent=0]
+include::../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=intro_stc_extensions,indent=0]
 ----
 
 In the previous example, none of the `html`, `head`, `body` or `p` methods
@@ -131,14 +131,14 @@ Imagine that you have this rover DSL at hand. A user would write:
 
 [source,groovy]
 --------------
-include::{includedir}/../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_script,indent=0]
+include::../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_script,indent=0]
 --------------
 
 If you have a class defined as such:
 
 [source,groovy]
 ----------------------------
-include::{includedir}/../test/typing/Robot.groovy[tags=example_robot_classdef,indent=0]
+include::../test/typing/Robot.groovy[tags=example_robot_classdef,indent=0]
 ----------------------------
 
 The script can be type checked before being executed using the following
@@ -146,7 +146,7 @@ script:
 
 [source,groovy]
 ------------------------------------------------------------------------------
-include::{includedir}/../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_setup,indent=0]
+include::../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_setup,indent=0]
 ------------------------------------------------------------------------------
 <1> a compiler configuration adds the `@TypeChecked` annotation to all classes
 <2> use the configuration in a `GroovyShell`
@@ -157,7 +157,7 @@ transparently to the script. In that case, it will fail at compile
 time:
 
 ------------------------------------------------------------
-include::{includedir}/../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_expected_err,indent=0]
+include::../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_expected_err,indent=0]
 ------------------------------------------------------------
 
 Now, we will slightly update the configuration to include the
@@ -165,7 +165,7 @@ Now, we will slightly update the configuration to include the
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_fixed_conf,indent=0]
+include::../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_fixed_conf,indent=0]
 ----
 
 Then add the following to your classpath:
@@ -173,7 +173,7 @@ Then add the following to your classpath:
 [source,groovy]
 .robotextension.groovy
 -------------------------------------
-include::{includedir}/../test-resources/robotextension.groovy[tags=example_robot_extension,indent=0]
+include::../test-resources/robotextension.groovy[tags=example_robot_extension,indent=0]
 -------------------------------------
 
 Here, we’re telling the compiler that if an _unresolved variable_ is found
@@ -211,7 +211,7 @@ script can react:
 |
 [source,groovy]
 ----
-include::{includedir}/../test-resources/setup.groovy[tags=event,indent=0]
+include::../test-resources/setup.groovy[tags=event,indent=0]
 ----
 
 Can be used to perform setup of your extension
@@ -231,7 +231,7 @@ Can be used to perform setup of your extension
 |
 [source,groovy]
 ----
-include::{includedir}/../test-resources/finish.groovy[tags=event,indent=0]
+include::../test-resources/finish.groovy[tags=event,indent=0]
 ----
 
 Can be used to perform additional checks after the type checker has finished its job.
@@ -251,7 +251,7 @@ Can be used to perform additional checks after the type checker has finished its
 |
 [source,groovy]
 ----
-include::{includedir}/../test-resources/unresolvedvariable.groovy[tags=event,indent=0]
+include::../test-resources/unresolvedvariable.groovy[tags=event,indent=0]
 ----
 
 Allows the developer to help the type checker with user-injected variables.
@@ -271,7 +271,7 @@ Allows the developer to help the type checker with user-injected variables.
 |
 [source,groovy]
 ----
-include::{includedir}/../test-resources/unresolvedproperty.groovy[tags=event,indent=0]
+include::../test-resources/unresolvedproperty.groovy[tags=event,indent=0]
 ----
 
 Allows the developer to handle "dynamic" properties
@@ -291,7 +291,7 @@ Allows the developer to handle "dynamic" properties
 |
 [source,groovy]
 ----
-include::{includedir}/../test-resources/unresolvedattribute.groovy[tags=event,indent=0]
+include::../test-resources/unresolvedattribute.groovy[tags=event,indent=0]
 ----
 
 Allows the developer to handle missing attributes
@@ -311,7 +311,7 @@ Allows the developer to handle missing attributes
 |
 [source,groovy]
 ----
-include::{includedir}/../test-resources/beforemethodcall.groovy[tags=event,indent=0]
+include::../test-resources/beforemethodcall.groovy[tags=event,indent=0]
 ----
 
 Allows you to intercept method calls before the
@@ -335,7 +335,7 @@ checker skips its own checks.
 |
 [source,groovy]
 ----
-include::{includedir}/../test-resources/aftermethodcall.groovy[tags=event,indent=0]
+include::../test-resources/aftermethodcall.groovy[tags=event,indent=0]
 ----
 
 Allow you to perform additional checks after the type
@@ -360,7 +360,7 @@ other.Note that `afterMethodCall` is called even if you did
 |
 [source,groovy]
 ----
-include::{includedir}/../test-resources/onmethodselection.groovy[tags=event,indent=0]
+include::../test-resources/onmethodselection.groovy[tags=event,indent=0]
 ----
 
 The type checker works by inferring
@@ -386,7 +386,7 @@ of expressions, not only method calls (binary expressions for example).
 |
 [source,groovy]
 ----
-include::{includedir}/../test-resources/methodnotfound.groovy[tags=event,indent=0]
+include::../test-resources/methodnotfound.groovy[tags=event,indent=0]
 ----
 
 Unlike `onMethodSelection`, this event is
@@ -418,7 +418,7 @@ directly instead of wrapping it into a list.
 |
 [source,groovy]
 ----
-include::{includedir}/../test-resources/beforevisitmethod.groovy[tags=event,indent=0]
+include::../test-resources/beforevisitmethod.groovy[tags=event,indent=0]
 ----
 
 The type checker will call this method before
@@ -443,7 +443,7 @@ only if you are inside method foo).
 |
 [source,groovy]
 ----
-include::{includedir}/../test-resources/aftervisitmethod.groovy[tags=event,indent=0]
+include::../test-resources/aftervisitmethod.groovy[tags=event,indent=0]
 ----
 
 Gives you the opportunity to perform additional
@@ -465,7 +465,7 @@ additional checks once everything has been collected.
 |
 [source,groovy]
 ----
-include::{includedir}/../test-resources/beforevisitclass.groovy[tags=event,indent=0]
+include::../test-resources/beforevisitclass.groovy[tags=event,indent=0]
 ----
 
 If a class is type checked, then
@@ -490,7 +490,7 @@ implementation. For that, you would have to set the `handled` flag to
 |
 [source,groovy]
 ----
-include::{includedir}/../test-resources/aftervisitclass.groovy[tags=event,indent=0]
+include::../test-resources/aftervisitclass.groovy[tags=event,indent=0]
 ----
 
 Called
@@ -514,7 +514,7 @@ inner/anonymous class defined in the same class with is not skipped.
 |
 [source,groovy]
 ----
-include::{includedir}/../test-resources/incompatibleassignment.groovy[tags=event,indent=0]
+include::../test-resources/incompatibleassignment.groovy[tags=event,indent=0]
 ----
 
 Gives the
@@ -539,7 +539,7 @@ valid (using `handled` set to `true`).
 |
 [source,groovy]
 ----
-include::{includedir}/../test-resources/ambiguousmethods.groovy[tags=event,indent=0]
+include::../test-resources/ambiguousmethods.groovy[tags=event,indent=0]
 ----
 
 Gives the
@@ -605,7 +605,7 @@ write:
 
 [source,groovy]
 --------------------
-include::{includedir}/../test-resources/selfcheck.groovy[tags=classnodefor,indent=0]
+include::../test-resources/selfcheck.groovy[tags=classnodefor,indent=0]
 --------------------
 
 You would also note that there is a variant of _classNodeFor_ that takes
@@ -625,7 +625,7 @@ using `lookupClassNodeFor`:
 
 [source,groovy]
 ----
-include::{includedir}/../test-resources/selfcheck.groovy[tags=lookupclassnodefor,indent=0]
+include::../test-resources/selfcheck.groovy[tags=lookupclassnodefor,indent=0]
 ----
 
 [[Typecheckingextensions-Helpingthetypechecker]]
@@ -724,7 +724,7 @@ pretty complex type checking including handling of forward references.
 
 [source,groovy]
 ----------------------------------------------------------------------------------------------
-include::{includedir}/../test-resources/newmethod.groovy[tags=newmethod,indent=0]
+include::../test-resources/newmethod.groovy[tags=newmethod,indent=0]
 ----------------------------------------------------------------------------------------------
 
 Should you need more than the name and return type, you can always
@@ -781,8 +781,8 @@ you would handle forward references: 
 
 [source,groovy]
 ------------------------------------------------------
-include::{includedir}/../test-resources/scoping.groovy[tags=newscope,indent=0]
-include::{includedir}/../test-resources/scoping.groovy[tags=scopeexit,indent=0]
+include::../test-resources/scoping.groovy[tags=newscope,indent=0]
+include::../test-resources/scoping.groovy[tags=scopeexit,indent=0]
 ------------------------------------------------------
 
 That is to say, that if at some point you are not able to determine the
@@ -793,7 +793,7 @@ provide some interesting syntactic sugar:
 
 [source,groovy]
 ------------------------------------------------------
-include::{includedir}/../test-resources/scoping_alt.groovy[tags=newscope,indent=0]
+include::../test-resources/scoping_alt.groovy[tags=newscope,indent=0]
 ------------------------------------------------------
 
 At anytime in the DSL, you can access the current scope
@@ -801,7 +801,7 @@ using `getCurrentScope()` or more simply `currentScope`:
 
 [source,groovy]
 ------------------------------------------------------
-include::{includedir}/../test-resources/scoping_alt.groovy[tags=currentscope,indent=0]
+include::../test-resources/scoping_alt.groovy[tags=currentscope,indent=0]
 ------------------------------------------------------
 
 The general schema would then be:
@@ -857,7 +857,7 @@ script becomes the body of the main method of a type checking extension class, a
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/PrecompiledExtension.groovy[tags=precompiled_groovy_extension,indent=0]
+include::../test/typing/PrecompiledExtension.groovy[tags=precompiled_groovy_extension,indent=0]
 ----
 <1> extending the `TypeCheckingDSL` class is the easiest
 <2> then the extension code needs to go inside the `run` method
@@ -867,7 +867,7 @@ Setting up the extension is very similar to using a source form extension:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=setup_precompiled,indent=0]
+include::../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=setup_precompiled,indent=0]
 ----
 
 The difference is that instead of using a path in classpath, you just specify the fully qualified class name of the
@@ -878,7 +878,7 @@ The extension above can be rewritten in Java this way:
 
 [source,java]
 ----
-include::{includedir}/../test/typing/PrecompiledJavaExtension.java[tags=precompiled_java_extension,indent=0]
+include::../test/typing/PrecompiledJavaExtension.java[tags=precompiled_java_extension,indent=0]
 ----
 <1> extend the `AbstractTypeCheckingExtension` class
 <2> then override the `handleXXX` methods as required
@@ -944,14 +944,14 @@ To illustrate this, let's come back to the `Robot` example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_script,indent=0]
+include::../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_script,indent=0]
 ----
 
 And let's try to activate our type checking extension using `@CompileStatic` instead of `@TypeChecked`:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_setup_compilestatic,indent=0]
+include::../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_setup_compilestatic,indent=0]
 ----
 <1> Apply `@CompileStatic` transparently
 <2> Activate the type checking extension
@@ -964,7 +964,7 @@ let's slightly update our example, starting from the robot script:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_script_direct,indent=0]
+include::../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_script_direct,indent=0]
 ----
 
 Here you can notice that there is no reference to `robot` anymore. Our extension will not help then because we will not
@@ -973,7 +973,7 @@ totally dynamic way thanks to the help of a gapi:groovy.util.DelegatingScript[]:
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_setup_dynamic,indent=0]
+include::../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_setup_dynamic,indent=0]
 ----
 <1> we configure the compiler to use a `DelegatingScript` as the base class
 <2> the script source needs to be parsed and will return an instance of `DelegatingScript`
@@ -984,7 +984,7 @@ If we want this to pass with `@CompileStatic`, we have to use a type checking ex
 
 [source,groovy]
 ----
-include::{includedir}/../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_setup_compilestatic2,indent=0]
+include::../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=example_robot_setup_compilestatic2,indent=0]
 ----
 <1> apply `@CompileStatic` transparently
 <2> use an alternate type checking extension meant to recognize the call to `move`
@@ -995,7 +995,7 @@ extension:
 [source,groovy]
 .robotextension2.groovy
 -------------------------------------
-include::{includedir}/../test-resources/robotextension2.groovy[tags=example_robot_extension,indent=0]
+include::../test-resources/robotextension2.groovy[tags=example_robot_extension,indent=0]
 -------------------------------------
 <1> if the call is a method call (not a static method call)
 <2> that this call is made on "implicit this" (no explicit `this.`)
@@ -1008,7 +1008,7 @@ include::{includedir}/../test-resources/robotextension2.groovy[tags=example_robo
 If you try to execute this code, then you could be surprised that it actually fails at runtime:
 
 ----
-include::{includedir}/../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=robot_runtime_error_cs,indent=0]
+include::../test/typing/TypeCheckingExtensionSpecTest.groovy[tags=robot_runtime_error_cs,indent=0]
 ----
 
 The reason is very simple: while the type checking extension is sufficient for `@TypeChecked`, which does not involve
@@ -1021,7 +1021,7 @@ Fixing this is very easy and just implies replacing the `newMethod` call with so
 [source,groovy]
 .robotextension3.groovy
 -------------------------------------
-include::{includedir}/../test-resources/robotextension3.groovy[tags=example_robot_extension,indent=0]
+include::../test-resources/robotextension3.groovy[tags=example_robot_extension,indent=0]
 -------------------------------------
 <1> tell the compiler that the call should be make dynamic
 

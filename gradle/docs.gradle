@@ -31,15 +31,13 @@ task asciidocAll(type: Copy) {
 }
 
 asciidoctorPdf {
-    baseDirIsRootProjectDir() // needed for asciidocAll
+    baseDirFollowsSourceFile()
     logDocuments = true
     sourceDir = project.file('src/spec/doc')
     sources {
         include 'index.adoc'
     }
-    outputDir = "$buildDir/asciidoc/pdf"
-    attributes 'rootProjectDir': rootProject.projectDir,
-            specfolder: 'src/spec/doc'
+    outputDir = "$buildDir/asciidocAll/pdf"
 }
 
 def javadocSpec = {

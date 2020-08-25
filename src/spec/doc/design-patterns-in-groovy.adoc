@@ -31,41 +31,41 @@ Design patterns also apply to Groovy:
 
 == Patterns
 
-include::{includedir}/fragment_design-pattern-abstract-factory.adoc[leveloffset=+2]
+include::fragment_design-pattern-abstract-factory.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-adapter.adoc[leveloffset=+2]
+include::fragment_design-pattern-adapter.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-bouncer.adoc[leveloffset=+2]
+include::fragment_design-pattern-bouncer.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-chain-of-responsibility.adoc[leveloffset=+2]
+include::fragment_design-pattern-chain-of-responsibility.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-composite.adoc[leveloffset=+2]
+include::fragment_design-pattern-composite.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-decorator.adoc[leveloffset=+2]
+include::fragment_design-pattern-decorator.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-delegation.adoc[leveloffset=+2]
+include::fragment_design-pattern-delegation.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-flyweight.adoc[leveloffset=+2]
+include::fragment_design-pattern-flyweight.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-iterator.adoc[leveloffset=+2]
+include::fragment_design-pattern-iterator.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-loan-my-resource.adoc[leveloffset=+2]
+include::fragment_design-pattern-loan-my-resource.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-null-object.adoc[leveloffset=+2]
+include::fragment_design-pattern-null-object.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-pimp-my-library.adoc[leveloffset=+2]
+include::fragment_design-pattern-pimp-my-library.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-proxy.adoc[leveloffset=+2]
+include::fragment_design-pattern-proxy.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-singleton.adoc[leveloffset=+2]
+include::fragment_design-pattern-singleton.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-state.adoc[leveloffset=+2]
+include::fragment_design-pattern-state.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-strategy.adoc[leveloffset=+2]
+include::fragment_design-pattern-strategy.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-template-method.adoc[leveloffset=+2]
+include::fragment_design-pattern-template-method.adoc[leveloffset=+2]
 
-include::{includedir}/fragment_design-pattern-visitor.adoc[leveloffset=+2]
+include::fragment_design-pattern-visitor.adoc[leveloffset=+2]
 
 == References
 

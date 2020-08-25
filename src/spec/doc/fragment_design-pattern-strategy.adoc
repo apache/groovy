@@ -66,7 +66,7 @@ First let's look at the traditional way of encapsulating the Strategy Pattern.
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=strategy_traditional,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=strategy_traditional,indent=0]
 ----
 
 Here we have defined an interface `Calc` which our concrete strategy classes will implement (we could also have used an abstract class).
@@ -79,7 +79,7 @@ Here is the Groovier way to achieve the same thing using Closures:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=strategy_groovy_way,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=strategy_groovy_way,indent=0]
 ----
 
 == Example using lambdas
@@ -88,12 +88,12 @@ For Groovy 3+, we can leverage lambda syntax:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=strategy_lambdas_with_explicit_interface,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=strategy_lambdas_with_explicit_interface,indent=0]
 ----
 
 Or we can use the built-in JDK `BiFunction` class:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=strategy_lambdas_using_bifunction,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=strategy_lambdas_using_bifunction,indent=0]
 ----

@@ -44,7 +44,7 @@ As a first example, let's see how you would print all lines of a text file in Gr
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=print_file_lines,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=print_file_lines,indent=0]
 ----
 
 The `eachLine` method is a method added to the `File` class automatically by Groovy and has many variants, for example
@@ -52,7 +52,7 @@ if you need to know the line number, you can use this variant:
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=print_file_lines2,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=print_file_lines2,indent=0]
 ----
 
 If for whatever reason an exception is thrown in the `eachLine` body, the method makes sure that the resource
@@ -63,21 +63,21 @@ from Groovy. In the next example, the reader *will* be closed even if the except
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=withreader_exception,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=withreader_exception,indent=0]
 ----
 
 Should you need to collect the lines of a text file into a list, you can do:
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=collect_lines,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=collect_lines,indent=0]
 ----
 
 Or you can even leverage the `as` operator to get the contents of the file into an array of lines:
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=lines_as_strings,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=lines_as_strings,indent=0]
 ----
 
 How many times did you have to get the contents of a file into a `byte[]` and how much code does it require? Groovy
@@ -85,7 +85,7 @@ makes it very easy actually:
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=file_bytes,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=file_bytes,indent=0]
 ----
 
 Working with I/O is not limited to dealing with files. In fact, a lot of operations rely on input/output streams,
@@ -96,7 +96,7 @@ As an example, you can obtain an `InputStream` from a `File` very easily:
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=newinputstream,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=newinputstream,indent=0]
 ----
 
 However you can see that it requires you to deal with closing the inputstream. In Groovy it is in general a better
@@ -104,7 +104,7 @@ idea to use the `withInputStream` idiom that will take care of that for you:
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=withinputstream,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=withinputstream,indent=0]
 ----
 
 == Writing files
@@ -113,14 +113,14 @@ Of course in some cases you won't want to read but write a file. One of the opti
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=withwriter_example,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=withwriter_example,indent=0]
 ----
 
 But for such a simple example, using the `<<` operator would have been enough:
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=file_leftshift,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=file_leftshift,indent=0]
 ----
 
 Of course we do not always deal with text contents, so you could use the `Writer` or directly write bytes as in
@@ -128,7 +128,7 @@ this example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=file_setbytes,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=file_setbytes,indent=0]
 ----
 
 Of course you can also directly deal with output streams. For example, here is how you would create an output
@@ -136,7 +136,7 @@ stream to write into a file:
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=newoutputstream,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=newoutputstream,indent=0]
 ----
 
 However you can see that it requires you to deal with closing the output stream. Again it is in general a better
@@ -144,7 +144,7 @@ idea to use the `withOutputStream` idiom that will handle the exceptions and clo
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=withoutputstream,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=withoutputstream,indent=0]
 ----
 
 == Traversing file trees
@@ -155,7 +155,7 @@ of a directory:
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=eachfile,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=eachfile,indent=0]
 ----
 <1> executes the closure code on each file found in the directory
 <2> executes the closure code on files in the directory matching the specified pattern
@@ -164,7 +164,7 @@ Often you will have to deal with a deeper hierarchy of files, in which case you 
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=eachfilerecurse,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=eachfilerecurse,indent=0]
 ----
 <1> executes the closure code on each file or directory found in the directory, recursively
 <2> executes the closure code only on files, but recursively
@@ -174,7 +174,7 @@ indicating what to do with the traversal:
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=traverse,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=traverse,indent=0]
 ----
 <1> if the current file is a directory and its name is `bin`, stop the traversal
 <2> otherwise print the file name and continue
@@ -187,7 +187,7 @@ serialize data into a file and deserialize it using this code:
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=data_in_out,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=data_in_out,indent=0]
 ----
 
 And similarily, if the data you want to serialize implements the `Serializable` interface, you can proceed with
@@ -195,7 +195,7 @@ an object output stream, as illustrated here:
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=object_in_out,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=object_in_out,indent=0]
 ----
 
 [[process-management]]
@@ -211,7 +211,7 @@ commands installed), you can execute this:
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=process_list_files,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=process_list_files,indent=0]
 ----
 <1> executes the `ls` command in an external process
 <2> consume the output of the command and retrieve the text
@@ -225,7 +225,7 @@ resulting stream a line at a time:
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=process_list_files_line_by_line,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=process_list_files_line_by_line,indent=0]
 ----
 <1> executes the `ls` command in an external process
 <2> for each line of the input stream of the process
@@ -240,7 +240,7 @@ machine and write:
 
 [source,groovy]
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=dir_windows,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=dir_windows,indent=0]
 ----
 
 you will receive an `IOException` saying  _Cannot run program "dir":
@@ -251,7 +251,7 @@ can’t be run as a simple executable. Instead, you will need to write:
 
 [source,groovy]
 ----------------------------------
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=dir_windows_fixed,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=dir_windows_fixed,indent=0]
 ----------------------------------
 
 Also, because this functionality currently makes use of
@@ -274,7 +274,7 @@ output) from your process:
 
 [source,groovy]
 ----------------------------------
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=consumeoutput,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=consumeoutput,indent=0]
 ----------------------------------
 
 There are also variations of `consumeProcessOutput` that make use of `StringBuffer`, `InputStream`,
@@ -290,11 +290,11 @@ Here are some examples of use:
 [source,groovy]
 .Pipes in action
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=pipe_example_1,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=pipe_example_1,indent=0]
 ----
 
 [source,groovy]
 .Consuming errors
 ----
-include::{includedir}/../test/gdk/WorkingWithIOSpecTest.groovy[tags=pipe_example_2,indent=0]
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=pipe_example_2,indent=0]
 ----

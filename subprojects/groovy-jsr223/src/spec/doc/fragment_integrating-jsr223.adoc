@@ -31,23 +31,23 @@ Here is how you need to initialize the JSR-223 engine to talk to Groovy from Jav
 
 [source,java]
 --------------------------------------------------------------------------------------
-include::{rootProjectDir}/subprojects/groovy-jsr223/src/spec/test/JSR223SpecTest.java[tags=jsr223_imports,indent=0]
+include::../test/JSR223SpecTest.java[tags=jsr223_imports,indent=0]
 ...
-include::{rootProjectDir}/subprojects/groovy-jsr223/src/spec/test/JSR223SpecTest.java[tags=jsr223_init,indent=0]
+include::../test/JSR223SpecTest.java[tags=jsr223_init,indent=0]
 --------------------------------------------------------------------------------------
 
 Then you can execute Groovy scripts easily:
 
 [source,java]
 ----
-include::{rootProjectDir}/subprojects/groovy-jsr223/src/spec/test/JSR223SpecTest.java[tags=jsr223_basic,indent=0]
+include::../test/JSR223SpecTest.java[tags=jsr223_basic,indent=0]
 ----
 
 It is also possible to share variables:
 
 [source,java]
 ----
-include::{rootProjectDir}/subprojects/groovy-jsr223/src/spec/test/JSR223SpecTest.java[tags=jsr223_variables,indent=0]
+include::../test/JSR223SpecTest.java[tags=jsr223_variables,indent=0]
 ----
 
 This next example illustrates calling an invokable function:
@@ -56,7 +56,7 @@ This next example illustrates calling an invokable function:
 -------------------------------------------------------------------------------
 import javax.script.Invocable;
 ...
-include::{rootProjectDir}/subprojects/groovy-jsr223/src/spec/test/JSR223SpecTest.java[tags=jsr223_invocable,indent=0]
+include::../test/JSR223SpecTest.java[tags=jsr223_invocable,indent=0]
 -------------------------------------------------------------------------------
 
 The engine keeps per default hard references to the script functions. To

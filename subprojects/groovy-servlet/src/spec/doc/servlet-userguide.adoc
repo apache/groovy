@@ -33,14 +33,14 @@ Notice the use of implicit variables to access the session, output and request. 
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-servlet/src/spec/test/servlet/GroovyServletTest.groovy[tags=example,indent=0]
+include::../test/servlet/GroovyServletTest.groovy[tags=example,indent=0]
 ----
 
 Or, do the same thing using MarkupBuilder:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-servlet/src/spec/test/servlet/GroovyServletTest.groovy[tags=example_markup_builder,indent=0]
+include::../test/servlet/GroovyServletTest.groovy[tags=example_markup_builder,indent=0]
 ----
 
 == Implicit variables

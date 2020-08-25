@@ -115,7 +115,7 @@ As an example:
 
 [source,groovy]
 -------------------------------------
-include::{rootprojectdir}/subprojects/groovy-datetime/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=static_parsing,indent=0]
+include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=static_parsing,indent=0]
 -------------------------------------
 
 Note that these `parse` methods have a different argument ordering than the static
@@ -132,7 +132,7 @@ to single-argument methods of these names, a more natural expression syntax can 
 
 [source,groovy]
 -------------------------------------
-include::{rootprojectdir}/subprojects/groovy-datetime/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=plus_minus_period,indent=0]
+include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=plus_minus_period,indent=0]
 -------------------------------------
 
 Groovy provides additional `plus` and `minus` methods that accept an integer argument,
@@ -140,7 +140,7 @@ enabling the above to be rewritten more succinctly:
 
 [source,groovy]
 -------------------------------------
-include::{rootprojectdir}/subprojects/groovy-datetime/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=localdate_plus_minus_integer,indent=0]
+include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=localdate_plus_minus_integer,indent=0]
 -------------------------------------
 
 The unit of these integers depends on the JSR 310 type operand. As evident above,
@@ -155,7 +155,7 @@ such as `LocalTime`, for instance:
 
 [source,groovy]
 -------------------------------------
-include::{rootprojectdir}/subprojects/groovy-datetime/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=localtime_plus_minus_integer,indent=0]
+include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=localtime_plus_minus_integer,indent=0]
 -------------------------------------
 
 === Multiplication and division
@@ -165,7 +165,7 @@ integer value; the `/` operator can be used to divide `Duration` instances by an
 
 [source,groovy]
 -------------------------------------
-include::{rootprojectdir}/subprojects/groovy-datetime/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=multiply_divide,indent=0]
+include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=multiply_divide,indent=0]
 -------------------------------------
 
 === Incrementing and decrementing
@@ -176,7 +176,7 @@ reference.
 
 [source,groovy]
 -------------------------------------
-include::{rootprojectdir}/subprojects/groovy-datetime/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=next_previous,indent=0]
+include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=next_previous,indent=0]
 -------------------------------------
 
 === Negation
@@ -186,7 +186,7 @@ These can be negated with the unary `-` operator.
 
 [source,groovy]
 -------------------------------------
-include::{rootprojectdir}/subprojects/groovy-datetime/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=duration_negation,indent=0]
+include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=duration_negation,indent=0]
 -------------------------------------
 
 == Interacting with date/time values
@@ -203,7 +203,7 @@ Groovy's property notation. For example:
 
 [source,groovy]
 -------------------------------------
-include::{rootprojectdir}/subprojects/groovy-datetime/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=property_notation,indent=0]
+include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=property_notation,indent=0]
 -------------------------------------
 
 === Ranges, `upto`, and `downto`
@@ -215,7 +215,7 @@ this prints all seven days of the week.
 
 [source,groovy]
 -------------------------------------
-include::{rootprojectdir}/subprojects/groovy-datetime/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=date_ranges,indent=0]
+include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=date_ranges,indent=0]
 -------------------------------------
 
 The `upto` method will accomplish the same as the range in the above example.
@@ -224,7 +224,7 @@ The `upto` method iterates from the earlier `start` value (inclusive) to the lat
 
 [source,groovy]
 -------------------------------------
-include::{rootprojectdir}/subprojects/groovy-datetime/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=date_upto_date,indent=0]
+include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=date_upto_date,indent=0]
 -------------------------------------
 
 The `downto` method iterates in the opposite direction, from a later `start` value
@@ -242,7 +242,7 @@ https://docs.oracle.com/javase/8/docs/api/java/time/temporal/ChronoUnit.html#MON
 
 [source,groovy]
 -------------------------------------
-include::{rootprojectdir}/subprojects/groovy-datetime/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=date_upto_date_by_months,indent=0]
+include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=date_upto_date_by_months,indent=0]
 -------------------------------------
 
 Since the `start` date is inclusive, the closure is called with a `next` date value of March 1st.
@@ -262,14 +262,14 @@ For example, a `LocalDate` can be left-shifted into a `LocalTime` to produce a c
 
 [source,groovy]
 -------------------------------------
-include::{rootprojectdir}/subprojects/groovy-datetime/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=leftshift_operator,indent=0]
+include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=leftshift_operator,indent=0]
 -------------------------------------
 
 The left-shift operator is reflexive; the order of the operands does not matter.
 
 [source,groovy]
 -------------------------------------
-include::{rootprojectdir}/subprojects/groovy-datetime/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=leftshift_operator_reflexive,indent=0]
+include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=leftshift_operator_reflexive,indent=0]
 -------------------------------------
 
 === Creating periods and durations
@@ -280,14 +280,14 @@ a `Period` instance:
 
 [source,groovy]
 -------------------------------------
-include::{rootprojectdir}/subprojects/groovy-datetime/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=rightshift_operator_period,indent=0]
+include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=rightshift_operator_period,indent=0]
 -------------------------------------
 
 The operator produces a `Duration` for the time-aware JSR types:
 
 [source,groovy]
 -------------------------------------
-include::{rootprojectdir}/subprojects/groovy-datetime/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=rightshift_operator_duration,indent=0]
+include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=rightshift_operator_duration,indent=0]
 -------------------------------------
 
 If the value on the left-hand side of the operator is earlier than the value on the right-hand
@@ -296,7 +296,7 @@ result is negative:
 
 [source,groovy]
 -------------------------------------
-include::{rootprojectdir}/subprojects/groovy-datetime/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=rightshift_operator_negative,indent=0]
+include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=rightshift_operator_negative,indent=0]
 -------------------------------------
 
 == Converting between legacy and JSR 310 types
@@ -313,7 +313,7 @@ Both `ZoneId` and `ZoneOffset` have been given a `toTimeZone()` method for conve
 
 [source,groovy]
 -------------------------------------
-include::{rootprojectdir}/subprojects/groovy-datetime/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=todate_tocalendar,indent=0]
+include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=todate_tocalendar,indent=0]
 -------------------------------------
 
 Note that when converting to a legacy type:
@@ -334,5 +334,5 @@ for converting into the various JSR 310 types:
 
 [source,groovy]
 -------------------------------------
-include::{rootprojectdir}/subprojects/groovy-datetime/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=to_jsr310_types,indent=0]
+include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=to_jsr310_types,indent=0]
 -------------------------------------

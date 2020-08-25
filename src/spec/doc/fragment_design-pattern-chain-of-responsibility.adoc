@@ -29,7 +29,7 @@ In this example, the script sends requests to the `lister` object. The `lister` 
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=chain_of_responsibility,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=chain_of_responsibility,indent=0]
 ----
 
 The output will be a list of files (with slightly different format depending on the operating system).
@@ -69,21 +69,21 @@ Instead, use Groovy truth and the elvis operator as shown here:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=chain_of_responsibility_elvis,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=chain_of_responsibility_elvis,indent=0]
 ----
 
 Or Groovy's switch as shown here:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=chain_of_responsibility_switch,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=chain_of_responsibility_switch,indent=0]
 ----
 
 Alternatively, for Groovy 3+, consider using streams of lambdas as shown here:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=chain_of_responsibility_lambda,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=chain_of_responsibility_lambda,indent=0]
 ----
 
 == When not to use
@@ -92,22 +92,23 @@ If your use of chain of responsibility involves frequent use of the `instanceof`
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=chain_of_responsibility_shape,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=chain_of_responsibility_shape,indent=0]
 ----
+<1> instanceof code smell
 
 It could indicate that instead of using the chain of responsibility pattern, you might consider
 using richer types, perhaps in combination with Groovy's multimethods. For example, perhaps this:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=chain_of_responsibility_shape_multimethods,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=chain_of_responsibility_shape_multimethods,indent=0]
 ----
 
 or using more traditional object-oriented style like this:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=chain_of_responsibility_shape_oo,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=chain_of_responsibility_shape_oo,indent=0]
 ----
 
 == Going further

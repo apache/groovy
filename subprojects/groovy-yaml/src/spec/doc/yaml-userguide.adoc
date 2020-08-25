@@ -37,7 +37,7 @@ types.
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-yaml/src/spec/test/groovy/yaml/YamlParserTest.groovy[tags=parse_text,indent=0]
+include::../test/groovy/yaml/YamlParserTest.groovy[tags=parse_text,indent=0]
 ----
 
 Notice the result is a plain map and can be handled like a normal Groovy object instance. `YamlSlurper` parses the
@@ -94,5 +94,5 @@ DSL which allows to formulate an object graph which is then converted to YAML.
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-yaml/src/spec/test/groovy/yaml/YamlBuilderTest.groovy[tags=build_text,indent=0]
+include::../test/groovy/yaml/YamlBuilderTest.groovy[tags=build_text,indent=0]
 ----

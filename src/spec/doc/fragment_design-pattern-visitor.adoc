@@ -32,7 +32,7 @@ This example considers how to calculate the bounds of shapes (or collections of 
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=visitor_simple_example,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=visitor_simple_example,indent=0]
 ----
 
 That took quite a bit of code.
@@ -41,21 +41,21 @@ We can improve the clarity of our code (and make it about half the size) by maki
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=visitor_simple_example2,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=visitor_simple_example2,indent=0]
 ----
 
 == Advanced Example
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=visitor_advanced_example,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=visitor_advanced_example,indent=0]
 ----
 
 If we now use `NodeType1Counter` on a tree like this:
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=visitor_advanced_example2,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=visitor_advanced_example2,indent=0]
 ----
 
 Then we have one `NodeType1` object as root and one of the children is also a `NodeType1` instance. The other child is a `NodeType2` instance. That means using `NodeType1Counter` here should count 2 `NodeType1` objects.
@@ -74,7 +74,7 @@ Then you have a problem. since the node describes how to iterate, you have no in
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=visitor_advanced_example3,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=visitor_advanced_example3,indent=0]
 ----
 
 Some small changes but with big effect... the visitor is now recursive and tells me how to iterate. The implementation in the Nodes is minimized to `visitor.visit(this)`, `DefaultVisitor` is now able to catch the new types, we can stop iteration by not delegating to super. Of course the big disadvantage now is that it is no longer iterative, but you can't get all the benefits.
@@ -89,14 +89,14 @@ But don't let us stop here... do we need the `Visitor` interface? If we don't ha
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=visitor_advanced_example4,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=visitor_advanced_example4,indent=0]
 ----
 
 Looks like we saved a few lines of code here. But we made more. The `Visitable` nodes now do not refer to any `Visitor` class or interface. For me this is the best level of separation you could get here. But do we really need to stop here? No. Let us change the `Visitable` interface a little and let it return the children we want to visit next. This allows us a general iteration method.
 
 [source,groovy]
 ----
-include::{includedir}/../test/DesignPatternsTest.groovy[tags=visitor_advanced_example5,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=visitor_advanced_example5,indent=0]
 ----
 
 `DefaultVisitor` now looks a bit different. I added a `doIteration` method that will get the children it should iterate over and then call visit on each element. Per default this will call `visit(Visitable)` which then iterates over the children of this child. I changed `Visitable` to ensure that any node will be able to return children (even if empty). I didn't have to change the `NodeType1` and `NodeType2` class, because the way the children filed was defined already made them a property, which means Groovy is so nice to generate a get method for us. No the really interesting part is `NodeType1Counter`, it is interesting because we have not changed it. `super.visit(n1)` will now call `visit(Visitable)` which will call `doIteration` which will start the next level of iteration. So no change. But `visit(it)` will call `visit(NodeType1)` if it is of type `NodeType1`. In fact we don't need the `doIteration` method, we could do that in `visit(Visitable)` too, but I thought this variant is better, because it allows us to write a new `Visitor` that overwrites visit(`Visitable`) for error cases which of course means we must not do `super.visit(n1)` but `doIteration(n1)`.

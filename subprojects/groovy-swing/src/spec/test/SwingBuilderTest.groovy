@@ -28,7 +28,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         
         count = 0
         new SwingBuilder().edt {
-          frame(title: 'Frame', size: [300, 300], show: true) {
+          frame(title: 'Frame', size: [250, 75], show: true) {
             borderLayout()
             textlabel = label(text: 'Click the button!', constraints: BL.NORTH)
             button(text:'Click Me',

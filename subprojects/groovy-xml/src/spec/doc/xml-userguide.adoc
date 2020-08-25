@@ -40,7 +40,7 @@ or map of objects.
 [source,groovy]
 .XmlSlurper
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testParseText,indent=0]
+include::../test/UserGuideXmlSlurperTest.groovy[tags=testParseText,indent=0]
 ----
 
 <1> Parsing the XML an returning the root node as a GPathResult
@@ -50,7 +50,7 @@ include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurp
 [source,groovy]
 .XmlParser
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlParserTest.groovy[tags=testParseText,indent=0]
+include::../test/UserGuideXmlParserTest.groovy[tags=testParseText,indent=0]
 ----
 
 <1> Parsing the XML an returning the root node as a Node
@@ -109,7 +109,7 @@ Having a XML like the following:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideDOMCategoryTest.groovy[tags=testXML,indent=0]
+include::../test/UserGuideDOMCategoryTest.groovy[tags=testXML,indent=0]
 ----
 
 You can parse it using `groovy.xml.DOMBuilder` and
@@ -117,7 +117,7 @@ You can parse it using `groovy.xml.DOMBuilder` and
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideDOMCategoryTest.groovy[tags=testExample1,indent=0]
+include::../test/UserGuideDOMCategoryTest.groovy[tags=testExample1,indent=0]
 ----
 
 <1> Parsing the XML
@@ -152,7 +152,7 @@ Let's illustrate this with an example:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=books,indent=0]
+include::../test/UserGuideXmlSlurperTest.groovy[tags=books,indent=0]
 ----
 
 === Simply traversing the tree
@@ -163,7 +163,7 @@ get the first book's author's name
 [source,groovy]
 .Getting node value
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testGettingANodeText,indent=0]
+include::../test/UserGuideXmlSlurperTest.groovy[tags=testGettingANodeText,indent=0]
 ----
 
 First we parse the document with `XmlSlurper` and the we have to
@@ -202,7 +202,7 @@ we want to get the first book's author's id. We'll be using two different approa
 [source,groovy]
 .Getting an attribute's value
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testGettingAnAttributeText,indent=0]
+include::../test/UserGuideXmlSlurperTest.groovy[tags=testGettingAnAttributeText,indent=0]
 ----
 
 <1> Getting the first book node
@@ -233,7 +233,7 @@ The first example shows a simple use of `*`, which only iterates over the direct
 [source,groovy]
 .Using *
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testChildren,indent=0]
+include::../test/UserGuideXmlSlurperTest.groovy[tags=testChildren,indent=0]
 ----
 
 This test searches for any child nodes of the "books" node matching the given
@@ -252,7 +252,7 @@ we going to be able to find that book? Using `**` is the solution:
 [source,groovy]
 .Using **
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testDepthFirst1,indent=0]
+include::../test/UserGuideXmlSlurperTest.groovy[tags=testDepthFirst1,indent=0]
 ----
 
 `**` is the same as looking for something _everywhere in the
@@ -263,7 +263,7 @@ What if we want to collect all book's titles? That's easy, just use `findAll`:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testDepthFirst2,indent=0]
+include::../test/UserGuideXmlSlurperTest.groovy[tags=testDepthFirst2,indent=0]
 ----
 
 In the last two examples, `**` is used as a shortcut for the `depthFirst()`
@@ -276,7 +276,7 @@ The following example shows the difference between these two methods:
 [source,groovy]
 .depthFirst() vs .breadthFirst
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testDepthVsBreadth,indent=0]
+include::../test/UserGuideXmlSlurperTest.groovy[tags=testDepthVsBreadth,indent=0]
 ----
 
 In this example, we search for any nodes with an id attribute with value 2 or 3.
@@ -291,7 +291,7 @@ could be convenient when doing comparisons like this:
 [source,groovy]
 .helpers
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testHelpers,indent=0]
+include::../test/UserGuideXmlSlurperTest.groovy[tags=testHelpers,indent=0]
 ----
 
 In this case the number 2 has been hardcoded but imagine that value
@@ -312,7 +312,7 @@ Here is an example of using Groovy's MarkupBuilder to create a new XML file:
 [source,groovy]
 .Creating Xml with MarkupBuilder
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBuilderTest.groovy[tags=createCarsTest,indent=0]
+include::../test/UserGuideMarkupBuilderTest.groovy[tags=createCarsTest,indent=0]
 ----
 
 <1> Create an instance of `MarkupBuilder`
@@ -325,7 +325,7 @@ Let's take a look a little bit closer:
 [source,groovy]
 .Creating XML elements
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBuilderTest.groovy[tags=testCreateSimpleXml1,indent=0]
+include::../test/UserGuideMarkupBuilderTest.groovy[tags=testCreateSimpleXml1,indent=0]
 ----
 
 <1> We're creating a reference string to compare against
@@ -337,7 +337,7 @@ called `movie` and with content `the godfather`.
 [source,groovy]
 .Creating XML elements with attributes
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBuilderTest.groovy[tags=testCreateSimpleXml2,indent=0]
+include::../test/UserGuideMarkupBuilderTest.groovy[tags=testCreateSimpleXml2,indent=0]
 ----
 
 <1> This time in order to create both attributes and node content you
@@ -350,7 +350,7 @@ NOTE: The value could be any `Object`, the value will be serialized to its
 [source,groovy]
 .Creating XML nested elements
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBuilderTest.groovy[tags=testCreateSimpleXml3,indent=0]
+include::../test/UserGuideMarkupBuilderTest.groovy[tags=testCreateSimpleXml3,indent=0]
 ----
 
 <1> A closure represents the children elements of a given node. Notice
@@ -362,7 +362,7 @@ Sometimes you may want to use a specific namespace in your xml documents:
 [source,groovy]
 .Namespace aware
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBuilderTest.groovy[tags=testNamespaceAware,indent=0]
+include::../test/UserGuideMarkupBuilderTest.groovy[tags=testNamespaceAware,indent=0]
 ----
 
 <1> Creating a node with a given namespace `xmlns:x`
@@ -375,7 +375,7 @@ generate more elements, to have some logic when creating our XML:
 [source,groovy]
 .Mix code
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBuilderTest.groovy[tags=testComplexUse1,indent=0]
+include::../test/UserGuideMarkupBuilderTest.groovy[tags=testComplexUse1,indent=0]
 ----
 
 <1> Generating elements from a range
@@ -387,7 +387,7 @@ refactor/modularize your code:
 [source,groovy]
 .Mix code
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBuilderTest.groovy[tags=testComplexUse2,indent=0]
+include::../test/UserGuideMarkupBuilderTest.groovy[tags=testComplexUse2,indent=0]
 ----
 
 <1> In this case we've created a Closure to handle the creation of a list of movies
@@ -403,7 +403,7 @@ output.
 [source,groovy]
 .Using StreamingMarkupBuilder
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideStreamingMarkupBuilderTest.groovy[tags=testSimpleExample,indent=0]
+include::../test/UserGuideStreamingMarkupBuilderTest.groovy[tags=testSimpleExample,indent=0]
 ----
 
 <1> Note that `StreamingMarkupBuilder.bind` returns a `Writable`
@@ -434,7 +434,7 @@ accessed by the property `mkp`:
 [source,groovy]
 .Using MarkupBuilder's 'mkp'
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBuilderTest.groovy[tags=testMkp1,indent=0]
+include::../test/UserGuideMarkupBuilderTest.groovy[tags=testMkp1,indent=0]
 ----
 
 <1> Using `mkp` to create a comment in the XML
@@ -448,7 +448,7 @@ from within the `bind` method scope when using
 [source,groovy]
 .Using StreamingMarkupBuilder's 'mkp'
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideStreamingMarkupBuilderTest.groovy[tags=testMkp,indent=0]
+include::../test/UserGuideStreamingMarkupBuilderTest.groovy[tags=testMkp,indent=0]
 ----
 
 <1> If we want to generate a escaped value for the name attribute with
@@ -465,7 +465,7 @@ the following example:
 [source,groovy]
 .Building MarkupBuilder from DOMToGroovy
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideMarkupBuilderTest.groovy[tags=testDOMToGroovy,indent=0]
+include::../test/UserGuideMarkupBuilderTest.groovy[tags=testDOMToGroovy,indent=0]
 ----
 
 <1> Creating `DOMToGroovy` instance 
@@ -481,7 +481,7 @@ to be handling is the following:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlParserTest.groovy[tags=responseBookXml,indent=0]
+include::../test/UserGuideXmlParserTest.groovy[tags=responseBookXml,indent=0]
 ----
 
 === Adding nodes
@@ -503,7 +503,7 @@ XmlParser is through its method `createNode(..)`
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlParserTest.groovy[tags=testAddingNodes1,indent=0]
+include::../test/UserGuideXmlParserTest.groovy[tags=testAddingNodes1,indent=0]
 ----
 
 The `createNode()` method receives the following parameters:
@@ -525,7 +525,7 @@ the parameters):
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlParserTest.groovy[tags=testAddingNodes2,indent=0]
+include::../test/UserGuideXmlParserTest.groovy[tags=testAddingNodes2,indent=0]
 ----
 
 When using `XmlSlurper`, `GPathResult` instances don't have `createNode()`
@@ -539,7 +539,7 @@ example changes the first book information to actually another book.
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlParserTest.groovy[tags=testModifyingNodes1,indent=0]
+include::../test/UserGuideXmlParserTest.groovy[tags=testModifyingNodes1,indent=0]
 ----
 
 When using `replaceNode()` the closure we pass as parameter should
@@ -549,7 +549,7 @@ Here's the same example using `XmlSlurper`:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testModifyingNodes1,indent=0]
+include::../test/UserGuideXmlSlurperTest.groovy[tags=testModifyingNodes1,indent=0]
 ----
 
 Notice how using `XmlSlurper` we have to parse the transformed document
@@ -563,14 +563,14 @@ not. First `XmlParser`:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlParserTest.groovy[tags=testSettingAttributes1,indent=0]
+include::../test/UserGuideXmlParserTest.groovy[tags=testSettingAttributes1,indent=0]
 ----
 
 And `XmlSlurper`:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlSlurperTest.groovy[tags=testSettingAttributes1,indent=0]
+include::../test/UserGuideXmlSlurperTest.groovy[tags=testSettingAttributes1,indent=0]
 ----
 
 When using `XmlSlurper`, adding a new attribute does *not* require you to perform a new evaluation.
@@ -589,6 +589,6 @@ methods to serialize the xml fragment from several type of sources
 [source,groovy]
 .Getting a node as a string
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideXmlUtilTest.groovy[tags=testGettingANode,indent=0]
+include::../test/UserGuideXmlUtilTest.groovy[tags=testGettingANode,indent=0]
 ----
 

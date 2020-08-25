@@ -68,7 +68,7 @@ Here are a few examples of usage of those operators:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=binary_arith_ops,indent=0]
+include::../test/OperatorsTest.groovy[tags=binary_arith_ops,indent=0]
 ----
 
 === Unary operators
@@ -77,7 +77,7 @@ The `+` and `-` operators are also available as unary operators:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=unary_plus_minus,indent=0]
+include::../test/OperatorsTest.groovy[tags=unary_plus_minus,indent=0]
 ----
 <1> Note the usage of parentheses to surround an expression to apply the unary minus to that surrounded expression.
 
@@ -86,7 +86,7 @@ both in prefix and postfix notation:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=plusplus_minusminus,indent=0]
+include::../test/OperatorsTest.groovy[tags=plusplus_minusminus,indent=0]
 ----
 <1> The postfix increment will increment `a` after the expression has been evaluated and assigned into `b`
 <2> The postfix decrement will decrement `c` after the expression has been evaluated and assigned into `d`
@@ -110,7 +110,7 @@ Let's see them in action:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=binary_assign_operators,indent=0]
+include::../test/OperatorsTest.groovy[tags=binary_assign_operators,indent=0]
 ----
 
 == Relational operators
@@ -154,7 +154,7 @@ Here are some examples of simple number comparisons using these operators:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=simple_relational_op,indent=0]
+include::../test/OperatorsTest.groovy[tags=simple_relational_op,indent=0]
 ----
 
 Both `===` and `!==` are supported which are the same as calling the `is()` method,
@@ -191,7 +191,7 @@ Let's illustrate them with the following examples:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=logical_op,indent=0]
+include::../test/OperatorsTest.groovy[tags=logical_op,indent=0]
 ----
 <1> "not" false is true
 <2> true "and" true is true
@@ -203,7 +203,7 @@ The logical "not" has a higher priority than the logical "and".
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=logical_precendence_1,indent=0]
+include::../test/OperatorsTest.groovy[tags=logical_precendence_1,indent=0]
 ----
 <1> Here, the assertion is true (as the expression in parentheses is false), because "not" has a higher precedence than "and", so it only applies to the first "false" term; otherwise, it would have applied to the result of the "and", turned it into true, and the assertion would have failed
 
@@ -211,7 +211,7 @@ The logical "and" has a higher priority than the logical "or".
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=logical_precendence_2,indent=0]
+include::../test/OperatorsTest.groovy[tags=logical_precendence_2,indent=0]
 ----
 <1> Here, the assertion is true, because "and" has a higher precedence than "or", therefore the "or" is executed last and returns true, having one true argument; otherwise, the "and" would have executed last and returned false, having one false argument, and the assertion would have failed
 
@@ -225,7 +225,7 @@ The right operand will be evaluated only if the left operand is true.
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=logical_shortcircuit,indent=0]
+include::../test/OperatorsTest.groovy[tags=logical_shortcircuit,indent=0]
 ----
 <1> We create a function that sets the `called` flag to true whenever it's called
 <2> In the first case, after resetting the called flag, we confirm that if the left operand to `||` is true, the function is not called, as `||` short-circuits the evaluation of the right operand
@@ -251,7 +251,7 @@ otherwise, the result will be of type `int`:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=bitwise_op,indent=0]
+include::../test/OperatorsTest.groovy[tags=bitwise_op,indent=0]
 ----
 <1> bitwise and
 <2> bitwise and returns common bits
@@ -283,7 +283,7 @@ otherwise, the result will be of type `int`:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=bit_shift_op,indent=0]
+include::../test/OperatorsTest.groovy[tags=bit_shift_op,indent=0]
 ----
 <1> `equals` method used instead of `==` to confirm result type
 
@@ -298,7 +298,7 @@ particular, it is possible to combine the `not` operator with the <<core-semanti
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=conditional_op_not,indent=0]
+include::../test/OperatorsTest.groovy[tags=conditional_op_not,indent=0]
 ----
 <1> the negation of `true` is `false`
 <2> 'foo' is a non-empty string, evaluating to `true`, so negation returns `false`
@@ -311,20 +311,20 @@ The ternary operator is a shortcut expression that is equivalent to an if/else b
 Instead of:
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=conditional_op_ternary_if,indent=0]
+include::../test/OperatorsTest.groovy[tags=conditional_op_ternary_if,indent=0]
 ----
 
 You can write:
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=conditional_op_ternary_ternary,indent=0]
+include::../test/OperatorsTest.groovy[tags=conditional_op_ternary_ternary,indent=0]
 ----
 
 The ternary operator is also compatible with the <<core-semantics.adoc#Groovy-Truth,Groovy truth>>, so you can make it even simpler:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=conditional_op_ternary_groovytruth,indent=0]
+include::../test/OperatorsTest.groovy[tags=conditional_op_ternary_groovytruth,indent=0]
 ----
 
 === Elvis operator
@@ -335,7 +335,7 @@ a 'sensible default' value if an expression resolves to `false`-ish (as in
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=conditional_op_elvis,indent=0]
+include::../test/OperatorsTest.groovy[tags=conditional_op_elvis,indent=0]
 ----
 <1> with the ternary operator, you have to repeat the value you want to assign
 <2> with the Elvis operator, the value, which is tested, is used if it is not `false`-ish
@@ -375,7 +375,7 @@ navigation operator will simply return `null` instead of throwing an exception, 
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=nullsafe,indent=0]
+include::../test/OperatorsTest.groovy[tags=nullsafe,indent=0]
 ----
 <1> `find` will return a `null` instance
 <2> use of the null-safe operator prevents from a `NullPointerException`
@@ -387,7 +387,7 @@ Normally in Groovy, when you write code like this:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=direct_field_class,indent=0]
+include::../test/OperatorsTest.groovy[tags=direct_field_class,indent=0]
 ----
 <1> public field `name`
 <2> a getter for `name` that returns a custom string
@@ -398,7 +398,7 @@ you want to retrieve the field instead of calling the getter, you can use the di
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=direct_field_op,indent=0]
+include::../test/OperatorsTest.groovy[tags=direct_field_op,indent=0]
 ----
 <1> use of `.@` forces usage of the field instead of the getter
 
@@ -410,7 +410,7 @@ in order to call it later:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=method_pointer,indent=0]
+include::../test/OperatorsTest.groovy[tags=method_pointer,indent=0]
 ----
 <1> the `str` variable contains a `String`
 <2> we store a reference to the `toUpperCase` method on the `str` instance inside a variable named `fun`
@@ -423,7 +423,7 @@ convert an existing method for the needs of the strategy pattern:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=method_pointer_strategy,indent=0]
+include::../test/OperatorsTest.groovy[tags=method_pointer_strategy,indent=0]
 ----
 <1> the `transform` method takes each element of the list and calls the `action` closure on them, returning a new list
 <2> we define a function that takes a `Person` and returns a `String`
@@ -437,7 +437,7 @@ will be done at runtime:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=method_pointer_dispatch,indent=0]
+include::../test/OperatorsTest.groovy[tags=method_pointer_dispatch,indent=0]
 ----
 <1> define an overloaded `doSomething` method accepting a `String` as an argument
 <2> define an overloaded `doSomething` method accepting an `Integer` as an argument
@@ -449,7 +449,7 @@ To align with Java 8 method reference expectations, in Groovy 3 and above, you c
 method name to obtain a method pointer to the constructor:
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=method_pointer_new,indent=0]
+include::../test/OperatorsTest.groovy[tags=method_pointer_new,indent=0]
 ----
 
 Also in Groovy 3 and above, you can obtain a method pointer to an instance method of a class.
@@ -457,7 +457,7 @@ This method pointer takes an additional parameter being the receiver instance to
 invoke the method on:
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=method_pointer_class_instance,indent=0]
+include::../test/OperatorsTest.groovy[tags=method_pointer_class_instance,indent=0]
 ----
 For backwards compatibility, any static methods that happen to have the correct
 parameters for the call will be given precedence over instance methods for this case.
@@ -477,7 +477,7 @@ Some examples highlighting various supported method reference cases are shown in
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=method_refs,indent=0]
+include::../test/OperatorsTest.groovy[tags=method_refs,indent=0]
 ----
 <1> class instance method reference: add(BigInteger val) is an instance method in BigInteger
 <2> object instance method reference: add(BigInteger val) is an instance method for object 3G
@@ -488,7 +488,7 @@ Some examples highlighting various supported constructor reference cases are sho
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=constructor_refs,indent=0]
+include::../test/OperatorsTest.groovy[tags=constructor_refs,indent=0]
 ----
 <1> class constructor reference
 <2> array constructor reference
@@ -501,7 +501,7 @@ The pattern operator (`~`) provides a simple way to create a `java.util.regex.Pa
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=pattern_op,indent=0]
+include::../test/OperatorsTest.groovy[tags=pattern_op,indent=0]
 ----
 
 while in general, you find the pattern operator with an expression in a slashy-string, it can be used with any kind of
@@ -509,7 +509,7 @@ while in general, you find the pattern operator with an expression in a slashy-s
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=pattern_op_variants,indent=0]
+include::../test/OperatorsTest.groovy[tags=pattern_op_variants,indent=0]
 ----
 <1> using single quote strings
 <2> using double quotes strings
@@ -522,7 +522,7 @@ Alternatively to building a pattern, you can use the find operator `=~` to direc
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=pattern_matcher_op,indent=0]
+include::../test/OperatorsTest.groovy[tags=pattern_matcher_op,indent=0]
 ----
 <1> `=~` creates a matcher against the `text` variable, using the pattern on the right hand side
 <2> the return type of `=~` is a `Matcher`
@@ -539,7 +539,7 @@ and requires a strict match of the input string:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=pattern_matcher_strict_op,indent=0]
+include::../test/OperatorsTest.groovy[tags=pattern_matcher_strict_op,indent=0]
 ----
 <1> `==~` matches the subject with the regular expression, but match must be strict
 <2> the return type of `==~` is therefore a `boolean`
@@ -554,7 +554,7 @@ of an aggregate object. It is equivalent to calling the action on each item and 
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=spreaddot,indent=0]
+include::../test/OperatorsTest.groovy[tags=spreaddot,indent=0]
 ----
 <1> build a list of `Car` items. The list is an aggregate of objects.
 <2> call the spread operator on the list, accessing the `make` property of each item
@@ -571,7 +571,7 @@ it will return null instead of throwing a `NullPointerException`:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=spreaddot_nullsafe,indent=0]
+include::../test/OperatorsTest.groovy[tags=spreaddot_nullsafe,indent=0]
 ----
 <1> build a list for which of of the elements is `null`
 <2> using the spread operator will *not* throw a `NullPointerException`
@@ -581,7 +581,7 @@ The spread operator can be used on any class which implements the `Iterable` int
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=spreaddot_iterable,indent=0]
+include::../test/OperatorsTest.groovy[tags=spreaddot_iterable,indent=0]
 ----
 
 Use multiple invocations of the spread-dot operator (here `cars*.models*.name`) when
@@ -589,14 +589,14 @@ working with aggregates of data structures which themselves contain aggregates:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=spreaddot_multilevel,indent=0]
+include::../test/OperatorsTest.groovy[tags=spreaddot_multilevel,indent=0]
 ----
 
 Consider using the `collectNested` DGM method instead of the spread-dot operator for collections of collections:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=spreaddot_alternative,indent=0]
+include::../test/OperatorsTest.groovy[tags=spreaddot_alternative,indent=0]
 ----
 
 ==== Spreading method arguments
@@ -607,28 +607,28 @@ following method signature:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=spreadmethodargs_method,indent=0]
+include::../test/OperatorsTest.groovy[tags=spreadmethodargs_method,indent=0]
 ----
 
 then if you have the following list:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=spreadmethodargs_args,indent=0]
+include::../test/OperatorsTest.groovy[tags=spreadmethodargs_args,indent=0]
 ----
 
 you can call the method without having to define intermediate variables:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=spreadmethodargs_assert,indent=0]
+include::../test/OperatorsTest.groovy[tags=spreadmethodargs_assert,indent=0]
 ----
 
 It is even possible to mix normal arguments with spread ones:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=spreadmethodargs_mixed,indent=0]
+include::../test/OperatorsTest.groovy[tags=spreadmethodargs_mixed,indent=0]
 ----
 
 ==== Spread list elements
@@ -637,7 +637,7 @@ When used inside a list literal, the spread operator acts as if the spread eleme
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=spread_list,indent=0]
+include::../test/OperatorsTest.groovy[tags=spread_list,indent=0]
 ----
 <1> `items` is a list
 <2> we want to insert the contents of the `items` list directly into `list` without having to call `addAll`
@@ -650,7 +650,7 @@ the contents of a map into another map literal, like in the following example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=spread_map,indent=0]
+include::../test/OperatorsTest.groovy[tags=spread_map,indent=0]
 ----
 <1> `m1` is the map that we want to inline
 <2> we use the `*:m1` notation to spread the contents of `m1` into `map`
@@ -660,7 +660,7 @@ The position of the spread map operator is relevant, like illustrated in the fol
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=spread_map_position,indent=0]
+include::../test/OperatorsTest.groovy[tags=spread_map_position,indent=0]
 ----
 <1> `m1` is the map that we want to inline
 <2> we use the `*:m1` notation to spread the contents of `m1` into `map`, but redefine the key `d` **after** spreading
@@ -672,7 +672,7 @@ Groovy supports the concept of ranges and provides a notation (`..`) to create r
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=intrange,indent=0]
+include::../test/OperatorsTest.groovy[tags=intrange,indent=0]
 ----
 <1> a simple range of integers, stored into a local variable
 <2> an `IntRange`, with inclusive bounds
@@ -686,16 +686,16 @@ For example, you can create a range of characters this way:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=charrange,indent=0]
+include::../test/OperatorsTest.groovy[tags=charrange,indent=0]
 ----
 
 === Spaceship operator
 
-The spaceship operator (`pass:[<=>]`) delegates to the `compareTo` method:
+The spaceship operator (`\<\=>`) delegates to the `compareTo` method:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=spaceship,indent=0]
+include::../test/OperatorsTest.groovy[tags=spaceship,indent=0]
 ----
 
 [[subscript-operator]]
@@ -706,7 +706,7 @@ the left hand side or the right hand side of an assignment:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=subscript_op,indent=0]
+include::../test/OperatorsTest.groovy[tags=subscript_op,indent=0]
 ----
 <1> `[2]` can be used instead of `getAt(2)`
 <2> if on left hand side of an assignment, will call `putAt`
@@ -720,7 +720,7 @@ objects:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=subscript_destructuring,indent=0]
+include::../test/OperatorsTest.groovy[tags=subscript_destructuring,indent=0]
 ----
 <1> the `User` class defines a custom `getAt` implementation
 <2> the `User` class defines a custom `putAt` implementation
@@ -765,7 +765,7 @@ to calling `contains`, like in the following example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=membership_op,indent=0]
+include::../test/OperatorsTest.groovy[tags=membership_op,indent=0]
 ----
 <1> equivalent to calling `list.contains('Emmy')` or `list.isCase('Emmy')`
 
@@ -776,7 +776,7 @@ If you want to compare reference equality, you should use `is` like in the follo
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=identity_op,indent=0]
+include::../test/OperatorsTest.groovy[tags=identity_op,indent=0]
 ----
 <1> Create a list of strings
 <2> Create another list of strings containing the same elements
@@ -790,7 +790,7 @@ being compatible for assignment. Let's take an example:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=coerce_op_cast,indent=0]
+include::../test/OperatorsTest.groovy[tags=coerce_op_cast,indent=0]
 ----
 <1> `Integer` is not assignable to a `String`, so it will produce a `ClassCastException` at runtime
 
@@ -798,7 +798,7 @@ This can be fixed by using _coercion_ instead:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=coerce_op,indent=0]
+include::../test/OperatorsTest.groovy[tags=coerce_op,indent=0]
 ----
 <1> `Integer` is not assignable to a `String`, but use of `as` will _coerce_ it to a `String`
 
@@ -808,7 +808,7 @@ rules are found. Custom conversion rules may be implemented thanks to the `asTyp
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=coerce_op_custom,indent=0]
+include::../test/OperatorsTest.groovy[tags=coerce_op_custom,indent=0]
 ----
 <1> the `User` class defines a custom conversion rule from `User` to `Identifiable`
 <2> we create an instance of `User`
@@ -823,7 +823,7 @@ same name in Java 7. It is used to indicate that generic types should be inferre
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=diamond_op,indent=0]
+include::../test/OperatorsTest.groovy[tags=diamond_op,indent=0]
 ----
 
 In dynamic Groovy, this is totally unused. In statically type checked Groovy, it is also optional since the Groovy
@@ -836,7 +836,7 @@ The call operator `()` is used to call a method named `call` implicitly. For any
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=call_op,indent=0]
+include::../test/OperatorsTest.groovy[tags=call_op,indent=0]
 ----
 <1> `MyCallable` defines a method named `call`. Note that it doesn't need to implement `java.util.concurrent.Callable`
 <2> we can call the method using the classic method call syntax
@@ -848,20 +848,20 @@ The table below lists all groovy operators in order of precedence.
 [options="header"]
 |======================
 |Level | Operator(s) | Name(s)
-| 1 | `new` &#160; `()` | object creation, explicit parentheses
-|   | `()` &#160; `{}` &#160; `[]` | method call, closure, literal list/map
-|   | `.` &#160; `.&` &#160; `.@` | member access, method closure, field/attribute access
-|   | `?.` &#160; `\*` &#160; `*.` &#160; `*:` | safe dereferencing, spread, spread-dot, spread-map
-|   | `~` &#160; `!` &#160; `(type)` | bitwise negate/pattern, not, typecast
-|   | `[]` &#160; `?[]` &#160; `++` &#160; `--` | list/map/array (safe) index, post inc/decrement
+| 1 | `new` {nbsp} `()` | object creation, explicit parentheses
+|   | `()` {nbsp} `{}` {nbsp} `[]` | method call, closure, literal list/map
+|   | `.` {nbsp} `.&` {nbsp} `.@` | member access, method closure, field/attribute access
+|   | `?.` {nbsp} `\*` {nbsp} `*.` {nbsp} `*:` | safe dereferencing, spread, spread-dot, spread-map
+|   | `~` {nbsp} `!` {nbsp} `(type)` | bitwise negate/pattern, not, typecast
+|   | `[]` {nbsp} `?[]` {nbsp} `++` {nbsp} `--` | list/map/array (safe) index, post inc/decrement
 | 2 | `**` | power
-| 3 | `++` &#160; `--` &#160; `+` &#160; `-` | pre inc/decrement, unary plus, unary minus
-| 4 | `*` &#160; `/` &#160; `%` | multiply, div, remainder
-| 5 | `+` &#160; `-` | addition, subtraction
-| 6 | `<<` &#160; `>>` &#160; `>>>` &#160; `..` &#160; `..<` | left/right (unsigned) shift, inclusive/exclusive range
-| 7 | `<` &#160; `\<=` &#160; `>` &#160; `>=` &#160; `in` &#160; `!in` &#160; `instanceof` &#160; `!instanceof` &#160; `as` | less/greater than/or equal, in, not in, instanceof, not instanceof, type coercion
-| 8 | `==` &#160; `!=` &#160; `pass:[<=>]` &#160; `===` &#160; `!==` | equals, not equals, compare to, identical to, not identical to
-|   | `=~` &#160; `==~` | regex find, regex match
+| 3 | `++` {nbsp} `--` {nbsp} `+` {nbsp} `-` | pre inc/decrement, unary plus, unary minus
+| 4 | `*` {nbsp} `/` {nbsp} `%` | multiply, div, remainder
+| 5 | `+` {nbsp} `-` | addition, subtraction
+| 6 | `\<\<` {nbsp} `>>` {nbsp} `>>>` {nbsp} `..` {nbsp} `..\<` | left/right (unsigned) shift, inclusive/exclusive range
+| 7 | `\<` {nbsp} `\<=` {nbsp} `>` {nbsp} `>=` {nbsp} `in` &0#160; `!in` {nbsp} `instanceof` {nbsp} `!instanceof` {nbsp} `as` | less/greater than/or equal, in, not in, instanceof, not instanceof, type coercion
+| 8 | `==` {nbsp} `!=` {nbsp} `\<\=>` {nbsp} `===` {nbsp} `!==` | equals, not equals, compare to, identical to, not identical to
+|   | `=~` {nbsp} `==~` | regex find, regex match
 | 9 | `&` | binary/bitwise and
 | 10 | `^` | binary/bitwise xor
 | 11 | `\|` | binary/bitwise or
@@ -869,8 +869,8 @@ The table below lists all groovy operators in order of precedence.
 | 13 | `\|\|` | logical or
 | 14 | `? :` | ternary conditional
 |    | `?:` | elvis operator
-| 15 | `=` &#160; `\**=` &#160; `*=` &#160; `/=` &#160; `%=` &#160; `+=` &#160; `-=` &#160; +
-`pass:[<<=]` &#160; `>>=` &#160; `>>>=` &#160; `&=` &#160; `^=` &#160; `\|=` &#160; &#160; `?=` | various assignments
+| 15 | `=` {nbsp} `\**=` {nbsp} `*=` {nbsp} `/=` {nbsp} `%=` {nbsp} `+=` {nbsp} `-=` {nbsp} +
+`\<\<=` {nbsp} `>>=` {nbsp} `>>>=` {nbsp} `&=` {nbsp} `^=` {nbsp} `\|=` {nbsp} {nbsp} `?=` | various assignments
 |======================
 
 [[Operator-Overloading]]
@@ -881,7 +881,7 @@ class:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=operator_overload_class,indent=0]
+include::../test/OperatorsTest.groovy[tags=operator_overload_class,indent=0]
 ----
 <1> `Bucket` implements a special method called `plus()`
 
@@ -889,7 +889,7 @@ Just by implementing the `plus()` method, the `Bucket` class can now be used wit
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=operator_overload_op,indent=0]
+include::../test/OperatorsTest.groovy[tags=operator_overload_op,indent=0]
 ----
 <1> The two `Bucket` objects can be added together with the `+` operator
 
@@ -900,14 +900,14 @@ the statement
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=operator_overload_mixed_op,indent=0]
+include::../test/OperatorsTest.groovy[tags=operator_overload_mixed_op,indent=0]
 ----
 
 by implementing the `plus()` method with this signature:
 
 [source,groovy]
 ----
-include::{includedir}/../test/OperatorsTest.groovy[tags=operator_overload_mixed_class,indent=0]
+include::../test/OperatorsTest.groovy[tags=operator_overload_mixed_class,indent=0]
 ----
 
 Here is a complete list of the operators and their corresponding methods:

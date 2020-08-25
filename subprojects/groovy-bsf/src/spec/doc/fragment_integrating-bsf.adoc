@@ -40,7 +40,7 @@ following Java code to run a sample Groovy script:
 
 [source,java]
 -------------------------------------------------------------------------------
-include::{rootProjectDir}/subprojects/groovy-bsf/src/spec/test/BSFSpecTest.java[tags=bsf_simple,indent=0]
+include::../test/BSFSpecTest.java[tags=bsf_simple,indent=0]
 -------------------------------------------------------------------------------
 
 == Passing in variables
@@ -54,7 +54,7 @@ approach is the normal approach used with Groovy. Here is an example:
 
 [source,java]
 -----------------------------------------------------------------------
-include::{rootProjectDir}/subprojects/groovy-bsf/src/spec/test/BSFSpecTest.java[tags=bsf_variable_passing,indent=0]
+include::../test/BSFSpecTest.java[tags=bsf_variable_passing,indent=0]
 -----------------------------------------------------------------------
 
 == Other calling options
@@ -69,7 +69,7 @@ closures. Here is an example:
 
 [source,java]
 --------------------------------------------------------------------------------
-include::{rootProjectDir}/subprojects/groovy-bsf/src/spec/test/BSFSpecTest.java[tags=bsf_apply,indent=0]
+include::../test/BSFSpecTest.java[tags=bsf_apply,indent=0]
 --------------------------------------------------------------------------------
 
 == Access to the scripting engine
@@ -81,6 +81,6 @@ is an example:
 
 [source,java]
 --------------------------------------------------------------------------
-include::{rootProjectDir}/subprojects/groovy-bsf/src/spec/test/BSFSpecTest.java[tags=bsf_access,indent=0]
+include::../test/BSFSpecTest.java[tags=bsf_access,indent=0]
 --------------------------------------------------------------------------
 

@@ -51,7 +51,7 @@ on the standard output:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-ant/src/spec/test/builder/AntBuilderSpecTest.groovy[tags=example_echo,indent=0]
+include::../test/builder/AntBuilderSpecTest.groovy[tags=example_echo,indent=0]
 ----
 <1> creates an instance of `AntBuilder`
 <2> executes the `echo` task with the message in parameter
@@ -60,8 +60,8 @@ Imagine that you need to create a ZIP file. It can be as simple as:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-ant/src/spec/test/builder/AntBuilderSpecTest.groovy[tags=create_zip_builder,indent=0]
-include::{rootProjectDir}/subprojects/groovy-ant/src/spec/test/builder/AntBuilderSpecTest.groovy[tags=create_zip_zip,indent=0]
+include::../test/builder/AntBuilderSpecTest.groovy[tags=create_zip_builder,indent=0]
+include::../test/builder/AntBuilderSpecTest.groovy[tags=create_zip_zip,indent=0]
 ----
 
 In the next example, we demonstrate the use of `AntBuilder` to copy a list of files
@@ -69,28 +69,28 @@ using a classical Ant pattern directly in Groovy:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-ant/src/spec/test/builder/AntBuilderSpecTest.groovy[tags=copy_files,indent=0]
+include::../test/builder/AntBuilderSpecTest.groovy[tags=copy_files,indent=0]
 ----
 
 Another example would be iterating over a list of files matching a specific pattern:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-ant/src/spec/test/builder/AntBuilderSpecTest.groovy[tags=filescanner,indent=0]
+include::../test/builder/AntBuilderSpecTest.groovy[tags=filescanner,indent=0]
 ----
 
 Or executing a JUnit test:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-ant/src/spec/test/builder/AntBuilderSpecTest.groovy[tags=run_junit,indent=0]
+include::../test/builder/AntBuilderSpecTest.groovy[tags=run_junit,indent=0]
 ----
 
 We can even go further by compiling and executing a Java file directly from Groovy:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-ant/src/spec/test/builder/AntBuilderSpecTest.groovy[tags=compile_java,indent=0]
+include::../test/builder/AntBuilderSpecTest.groovy[tags=compile_java,indent=0]
 ----
 
 It is worth mentioning that `AntBuilder` is included in https://gradle.org/[Gradle], so you can use it in Gradle

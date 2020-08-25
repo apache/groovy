@@ -27,21 +27,21 @@ builder syntax. Here is a sample template:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=example1_template,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=example1_template,indent=0]
 ----
 
 If you feed it with the following model:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=example1_model,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=example1_model,indent=0]
 ----
 
 It would be rendered as:
 
 [source,xml]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=example1_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=example1_expected,indent=0]
 ----
 
 The key features of this template engine are:
@@ -61,7 +61,7 @@ Templates consist of Groovy code. Let's explore the first example more thoroughl
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=example1_template_with_bullets,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=example1_template_with_bullets,indent=0]
 ----
 <1> renders the XML declaration string.
 <2> opens a `cars` tag
@@ -76,7 +76,7 @@ In a similar fashion, rendering HTML code is as simple as this:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=example2_template,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=example2_template,indent=0]
 ----
 <1> renders the HTML doctype special tag
 <2> opens the `html` tag with an attribute
@@ -93,7 +93,7 @@ The output is straightforward:
 
 [source,html]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=example2_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=example2_expected,indent=0]
 ----
 
 NOTE: With some <<markuptemplate-config,configuration>>, you can have the output pretty printed, with newlines and indent automatically added.
@@ -110,90 +110,90 @@ The template engine provides several support methods that will help you render c
 |Renders contents, but escapes it before rendering
 |*Template*:
 ```groovy
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=yield,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=yield,indent=0]
 ```
 
 *Output*:
 ```html
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=yield_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=yield_expected,indent=0]
 ```
 |yieldUnescaped
 |Renders raw contents. The argument is rendered as is, without escaping.
 |*Template*:
 ```groovy
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=yieldUnescaped,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=yieldUnescaped,indent=0]
 ```
 
 *Output*:
 ```html
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=yieldUnescaped_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=yieldUnescaped_expected,indent=0]
 ```
 
 |xmlDeclaration
 |Renders an XML declaration String. If the encoding is specified in the configuration, it is written in the declaration.
 |*Template*:
 ```groovy
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=xmlDeclaration,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=xmlDeclaration,indent=0]
 ```
 
 *Output*:
 ```html
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=xmlDeclaration_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=xmlDeclaration_expected,indent=0]
 ```
 
 If `TemplateConfiguration#getDeclarationEncoding` is not null:
 
 *Output*:
 ```html
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=xmlDeclaration_encoding_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=xmlDeclaration_encoding_expected,indent=0]
 ```
 
 |comment
 |Renders raw contents inside an XML comment
 |*Template*:
 ```groovy
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=comment,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=comment,indent=0]
 ```
 
 *Output*:
 ```html
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=comment_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=comment_expected,indent=0]
 ```
 
 |newLine
 |Renders a new line. See also `TemplateConfiguration#setAutoNewLine` and `TemplateConfiguration#setNewLineString`.
 |*Template*:
 ```groovy
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=newline,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=newline,indent=0]
 ```
 
 *Output*:
 ```html
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=newline_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=newline_expected,indent=0]
 ```
 
 |pi
 |Renders an XML processing instruction.
 |*Template*:
 ```groovy
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=pi,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=pi,indent=0]
 ```
 
 *Output*:
 ```xml
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=pi_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=pi_expected,indent=0]
 ```
 
 |tryEscape
 |Returns an escaped string for an object, if it is a `String` (or any type derived from `CharSequence`). Otherwise returns the object itself.
 |*Template*:
 ```groovy
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=tryEscape,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=tryEscape,indent=0]
 ```
 
 *Output*:
 ```html
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=tryEscape_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=tryEscape_expected,indent=0]
 ```
 
 |=======================================================================
@@ -210,21 +210,21 @@ Including another template can be done using:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=include_template,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=include_template,indent=0]
 ----
 
 Including a file as raw contents, without escaping it, can be done like this:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=include_raw,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=include_raw,indent=0]
 ----
 
 Eventually, inclusion of text that should be escaped before rendering can be done using:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=include_escaped,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=include_escaped,indent=0]
 ----
 
 Alternatively, you can use the following helper methods instead:
@@ -247,7 +247,7 @@ a string, the inner template, and a model, used to render this template. Conside
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=fragment_template,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=fragment_template,indent=0]
 ----
 
 The `fragment` element creates a nested template, and renders it with a model which is specific to this template. Here,
@@ -256,7 +256,7 @@ we will generate a single `li` element for each page in our model:
 
 [source,html]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=fragment_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=fragment_expected,indent=0]
 ----
 
 Fragments are interesting to factorize template elements. They come at the price of the compilation of a fragment per template, and they cannot
@@ -271,7 +271,7 @@ with a _layout_. First of all, you need to create a layout template:
 [source,groovy]
 .layout-main.tpl
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test-resources/layout-main.tpl[tags=layout_main,indent=0]
+include::../test-resources/layout-main.tpl[tags=layout_main,indent=0]
 ----
 <1> the `title` variable (inside the title tag) is a layout variable
 <2> the `bodyContents` call will render the body
@@ -281,7 +281,7 @@ Then what you need is a template that includes the layout:
 [[example-layout-simple]]
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=layout_template,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=layout_template,indent=0]
 ----
 <1> use the `main-layout.tpl` layout file
 <2> set the `title` variable
@@ -292,7 +292,7 @@ a result, the template will be rendered as this:
 
 [source,html]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=layout_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=layout_expected,indent=0]
 ----
 
 The call to the `contents` method is used to tell the template engine that the block of code is in fact a specification of a
@@ -307,14 +307,14 @@ to make them inherit from the parent model. Imagine that the model is defined li
 
 [source,java]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=layout_template_inherit_model,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=layout_template_inherit_model,indent=0]
 ----
 
 and the following template:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=layout_template_inherit,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=layout_template_inherit,indent=0]
 ----
 <1> note the use of `true` to enable model inheritance
 
@@ -322,14 +322,14 @@ then it is not necessary to pass the `title` value to the layout as in the <<exa
 
 [source,html]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=layout_expected_2,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=layout_expected_2,indent=0]
 ----
 
 But it is also possible to override a value from the parent model:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=layout_template_inherit_override,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=layout_template_inherit_override,indent=0]
 ----
 <1> `true` means inherit from the parent model
 <2> but `title` is overridden
@@ -338,7 +338,7 @@ then the output will be:
 
 [source,html]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=layout_expected_3,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=layout_expected_3,indent=0]
 ----
 
 == Rendering contents
@@ -348,7 +348,7 @@ On the server side, rendering templates require an instance of `groovy.text.mark
 
 [source,java]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=rendering_setup,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=rendering_setup,indent=0]
 ----
 <1> creates a template configuration
 <2> creates a template engine with this configuration
@@ -368,7 +368,7 @@ The last version should in general be preferred:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=rendering_by_name,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=rendering_by_name,indent=0]
 ----
 
 [[markuptemplate-config]]
@@ -384,19 +384,19 @@ The behavior of the engine can be tweaked with several configuration options acc
 |Determines the value of the encoding to be written when `xmlDeclaration` is called. It does *not* influence the writer you are using as output.
 |*Template*:
 ```groovy
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=xmlDeclaration,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=xmlDeclaration,indent=0]
 ```
 
 *Output*:
 ```html
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=xmlDeclaration_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=xmlDeclaration_expected,indent=0]
 ```
 
 If `TemplateConfiguration#getDeclarationEncoding` is not null:
 
 *Output*:
 ```html
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=xmlDeclaration_encoding_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=xmlDeclaration_encoding_expected,indent=0]
 ```
 
 |expandEmptyElements
@@ -404,19 +404,19 @@ include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTempl
 |If true, empty tags are rendered in their expanded form.
 |*Template*:
 ```groovy
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=expandEmptyElements,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=expandEmptyElements,indent=0]
 ```
 
 *Output*:
 ```html
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=expandEmptyElements_false,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=expandEmptyElements_false,indent=0]
 ```
 
 If `expandEmptyElements` is true:
 
 *Output*:
 ```html
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=expandEmptyElements_true,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=expandEmptyElements_true,indent=0]
 ```
 
 |useDoubleQuotes
@@ -424,19 +424,19 @@ include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTempl
 |If true, use double quotes for attributes instead of simple quotes
 |*Template*:
 ```groovy
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=useDoubleQuotes,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=useDoubleQuotes,indent=0]
 ```
 
 *Output*:
 ```html
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=useDoubleQuotes_false,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=useDoubleQuotes_false,indent=0]
 ```
 
 If `useDoubleQuotes` is true:
 
 *Output*:
 ```xml
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=useDoubleQuotes_true,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=useDoubleQuotes_true,indent=0]
 ```
 
 |newLineString
@@ -444,14 +444,14 @@ include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTempl
 |Allows to choose what string is used when a new line is rendered
 |*Template*:
 ```groovy
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=newLineString,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=newLineString,indent=0]
 ```
 
 If `newLineString='BAR'`:
 
 *Output*:
 ```html
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=newLineString_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=newLineString_expected,indent=0]
 ```
 
 |autoEscape
@@ -500,35 +500,35 @@ In general, it is recommended to set both `autoIndent` and `autoNewLine` to true
 
 [source,java]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=autoformat_setup,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=autoformat_setup,indent=0]
 ----
 
 Using the following template:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=autoformat_template,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=autoformat_template,indent=0]
 ----
 
 The output will now be:
 
 [source,html]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=autoformat_template_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=autoformat_template_expected,indent=0]
 ----
 
 We can slightly change the template so that the `title` instruction is found on the same line as the `head` one:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=autoformat_template2,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=autoformat_template2,indent=0]
 ----
 
 And the output will reflect that:
 
 [source,html]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=autoformat_template2_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=autoformat_template2_expected,indent=0]
 ----
 
 New lines are *only* inserted where curly braces for tags are found, and the insertion corresponds to where the nested content is found. This means that
@@ -536,7 +536,7 @@ tags in the body of another tag will *not* trigger new lines unless they use cur
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=autoformat_template3,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=autoformat_template3,indent=0]
 ----
 <1> a new line is inserted because `meta` is not on the same line as `head`
 <2> no new line is inserted, because we're on the same depth as the previous tag
@@ -547,7 +547,7 @@ This time, the output will be:
 
 [source,html]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=autoformat_template3_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=autoformat_template3_expected,indent=0]
 ----
 
 By default, the renderer uses four(4) spaces as indent, but you can change it by setting the `TemplateConfiguration#autoIndentString` property.
@@ -563,35 +563,35 @@ Let's imagine the following setup:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=autoescape_setup,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=autoescape_setup,indent=0]
 ----
 
 and the following template:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=autoescape_template,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=autoescape_template,indent=0]
 ----
 
 Then you wouldn't want the HTML from `unsafeContents` to be rendered as is, because of potential security issues:
 
 [source,html]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=autoescape_template_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=autoescape_template_expected,indent=0]
 ----
 
 Automatic escaping will fix this:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=autoescape_setup_fixed,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=autoescape_setup_fixed,indent=0]
 ----
 
 And now the output is properly escaped:
 
 [source,html]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=autoescape_template_fixed_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=autoescape_template_fixed_expected,indent=0]
 ----
 
 Note that using automatic escaping doesn't prevent you from including unescaped contents from the model. To do this, your template should then explicitly
@@ -600,7 +600,7 @@ mention that a model variable should not be escaped by prefixing it with `unesca
 [source,html]
 .Explicit bypass of automatic escaping
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=autoescape_template_unescaped,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=autoescape_template_unescaped,indent=0]
 ----
 
 [[markuptemplate-gotchas]]
@@ -611,28 +611,28 @@ Say that you want to generate a `<p>` tag which contains a string containing mar
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=gotcha_strings_longversion,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=gotcha_strings_longversion,indent=0]
 ----
 
 and generates:
 
 [source,html]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=gotcha_strings_longversion_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=gotcha_strings_longversion_expected,indent=0]
 ----
 
 Can't this be written shorter? A naive alternative would be:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=gotcha_strings_naive_fail,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=gotcha_strings_naive_fail,indent=0]
 ----
 
 but the result will not look as expected:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=gotcha_strings_naive_fail_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=gotcha_strings_naive_fail_expected,indent=0]
 ----
 
 The reason is that the markup template engine is a _streaming_ engine. In the original version, the first `yield` call
@@ -648,7 +648,7 @@ call. This can be done this way:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=gotcha_strings_stringof,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=gotcha_strings_stringof,indent=0]
 ----
 
 Note the `stringOf` call, which basically tells the markup template engine that the underlying markup needs to be rendered
@@ -657,7 +657,7 @@ notation that starts with a _dollar_ sign:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=gotcha_strings_stringof_dollar,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=gotcha_strings_stringof_dollar,indent=0]
 ----
 
 TIP: It is worth noting that using `stringOf` or the special `$tag` notation triggers the creation of a distinct string writer
@@ -686,7 +686,7 @@ For example, imagine the default locale is set to `Locale.ENGLISH` and that the 
 [source,groovy]
 .Use an explicit locale in include
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=locale_explicit_import,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=locale_explicit_import,indent=0]
 ----
 
 then the template is rendered using the specific template:
@@ -694,7 +694,7 @@ then the template is rendered using the specific template:
 [source,html]
 .Bypass the template configuration
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=locale_explicit_import_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=locale_explicit_import_expected,indent=0]
 ----
 
 Using an include without specifying a locale will make the template engine look for a template with the configured locale, and if not, fallback to the default, like here:
@@ -702,13 +702,13 @@ Using an include without specifying a locale will make the template engine look 
 [source,groovy]
 .Don't use a locale in include
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=locale_implicit_import,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=locale_implicit_import,indent=0]
 ----
 
 [source,html]
 .Fallback to the default template
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=locale_implicit_import_expected,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=locale_implicit_import_expected,indent=0]
 ----
 
 However, changing the default locale of the template engine to `Locale.FRANCE` will change the output, because the template engine will now look for a file
@@ -717,7 +717,7 @@ with the `fr_FR` locale:
 [source,html]
 .Don't fallback to the default template because a locale specific template was found
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=locale_implicit_import_expected2,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=locale_implicit_import_expected2,indent=0]
 ----
 
 This strategy lets you translate your templates one by one, by relying on default templates, for which no locale is set in the file name.
@@ -733,21 +733,21 @@ The template engine provides this ability by setting an alternative `baseTemplat
 
 [source,java]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=custombase_config,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=custombase_config,indent=0]
 ----
 
 The custom base class has to extend `BaseClass` like in this example:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MyTemplate.groovy[tags=basetemplate_class,indent=0]
+include::../test/MyTemplate.groovy[tags=basetemplate_class,indent=0]
 ----
 
 This example shows a class which provides an additional method named `hasModule`, which can then be used directly in the template:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=custombase_template,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=custombase_template,indent=0]
 ----
 
 == Type checked templates
@@ -763,21 +763,21 @@ template creation time, which is the types of the variables found in the model. 
 [source,groovy]
 .Page.groovy
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=page_class,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=page_class,indent=0]
 ----
 
 Then a list of pages can be exposed in the model, like this:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=typechecked_setup_no_stc,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=typechecked_setup_no_stc,indent=0]
 ----
 
 A template can use it easily:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=typechecked_template,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=typechecked_template,indent=0]
 ----
 <1> iterate on pages from the model
 <2> `page.title` is valid
@@ -795,7 +795,7 @@ In some situations, this can be complicated to sort out or even notice. By decla
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=typechecked_setup_fixed,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=typechecked_setup_fixed,indent=0]
 ----
 <1> create a map which will hold the model types
 <2> declare the type of the `pages` variables (note the use of a string for the type)
@@ -818,7 +818,7 @@ directly in the template. In this case, even if you call `createTemplate`, it wi
 [source,groovy]
 .Inline declaration of types
 ----
-include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/MarkupTemplateEngineSpecTest.groovy[tags=typechecked_inlined_template,indent=0]
+include::../test/MarkupTemplateEngineSpecTest.groovy[tags=typechecked_inlined_template,indent=0]
 ----
 <1> types need to be declared in the `modelTypes` header
 <2> declare one variable per object in the model
