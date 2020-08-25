@@ -1310,7 +1310,6 @@ final class InnerClassTest {
             import groovy.transform.ASTTest
             import org.codehaus.groovy.ast.expr.*
             import static org.codehaus.groovy.classgen.Verifier.*
-            import static org.codehaus.groovy.control.CompilePhase.*
 
             class A {
                 @ASTTest(phase=CLASS_GENERATION, value={
@@ -1339,7 +1338,6 @@ final class InnerClassTest {
             import groovy.transform.ASTTest
             import org.codehaus.groovy.ast.expr.*
             import static org.codehaus.groovy.classgen.Verifier.*
-            import static org.codehaus.groovy.control.CompilePhase.*
 
             @ASTTest(phase=CLASS_GENERATION, value={
                 def init = node.parameters[0].getNodeMetaData(INITIAL_EXPRESSION)
@@ -1366,7 +1364,6 @@ final class InnerClassTest {
             import org.codehaus.groovy.ast.expr.*
             import org.codehaus.groovy.ast.stmt.*
             import static org.codehaus.groovy.classgen.Verifier.*
-            import static org.codehaus.groovy.control.CompilePhase.*
 
             @ASTTest(phase=CLASS_GENERATION, value={
                 def init = node.parameters[0].getNodeMetaData(INITIAL_EXPRESSION)
@@ -1579,9 +1576,7 @@ final class InnerClassTest {
     @Test // GROOVY-7312
     void testInnerClassOfInterfaceIsStatic2() {
         assertScript '''
-            import java.lang.reflect.Modifier
             import groovy.transform.ASTTest
-            import org.codehaus.groovy.control.CompilePhase
             import org.objectweb.asm.Opcodes
 
             @ASTTest(phase = CLASS_GENERATION, value = {
@@ -1709,7 +1704,6 @@ final class InnerClassTest {
             import java.util.concurrent.Callable
             import org.codehaus.groovy.ast.expr.*
             import static org.codehaus.groovy.classgen.Verifier.*
-            import static org.codehaus.groovy.control.CompilePhase.*
 
             class A {
                 @ASTTest(phase=CLASS_GENERATION, value={

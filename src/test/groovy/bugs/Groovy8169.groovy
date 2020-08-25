@@ -32,7 +32,6 @@ final class Groovy8169 {
             import groovy.transform.*
             import org.codehaus.groovy.ast.stmt.*
             import static org.codehaus.groovy.ast.ClassHelper.*
-            import static org.codehaus.groovy.control.CompilePhase.*
 
             @ASTTest(phase=CLASS_GENERATION, value={
                 def loop = node.code.statements.find { it instanceof ForStatement }

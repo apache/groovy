@@ -21,6 +21,7 @@ package groovy.transform;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -41,7 +42,6 @@ import java.lang.annotation.Target;
  *    assert owner.fields.any { it.name == 'x' }
  *  })
  * {@code @Field int x}
- *
  * </pre>
  *
  * The closure code is executed after the specified phase has completed. If no phase is selected, then the
@@ -50,12 +50,10 @@ import java.lang.annotation.Target;
  * it means that <i>node</i> refers to the declaration node (int x).
  *
  * @since 2.0.0
- *
  */
-@java.lang.annotation.Documented
+@Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.FIELD,
-ElementType.LOCAL_VARIABLE, ElementType.PACKAGE, ElementType.PARAMETER})
+@Target({ElementType.PACKAGE, ElementType.TYPE, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER, ElementType.LOCAL_VARIABLE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.ASTTestTransformation")
 public @interface ASTTest {
     /**
