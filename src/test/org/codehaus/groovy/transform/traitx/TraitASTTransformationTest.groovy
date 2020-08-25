@@ -284,14 +284,13 @@ final class TraitASTTransformationTest {
     void testPrivateFieldInTraitShouldBeRemapped() {
         assertScript '''
             import groovy.transform.ASTTest
-            import org.codehaus.groovy.control.CompilePhase
 
             trait Foo {
                 private int i = 0
                 int sum(int x) { x+i }
                 void setIndex(int index) { this.i = index }
             }
-            @ASTTest(phase=CompilePhase.INSTRUCTION_SELECTION, value={
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.fields.any { it.name == 'Foo__i' }
             })
             class Bob implements Foo {
@@ -2444,7 +2443,7 @@ final class TraitASTTransformationTest {
     void testFieldInTraitModifiers() {
         assertScript '''
             import groovy.transform.ASTTest
-            import static org.codehaus.groovy.control.CompilePhase.INSTRUCTION_SELECTION
+
             trait A {
                 public int foo
             }
@@ -2460,7 +2459,6 @@ final class TraitASTTransformationTest {
             import groovy.transform.ASTTest
             import java.lang.reflect.Modifier
 
-            import static org.codehaus.groovy.control.CompilePhase.INSTRUCTION_SELECTION
             trait A {
                 private int foo
             }

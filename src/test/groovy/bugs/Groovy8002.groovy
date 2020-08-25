@@ -30,7 +30,6 @@ final class Groovy8002 {
     void testSourcePositionOfMethodInChainAssignmentCS() {
         assertScript '''
             import groovy.transform.*
-            import static org.codehaus.groovy.control.CompilePhase.*
 
             class B {
                 private String z

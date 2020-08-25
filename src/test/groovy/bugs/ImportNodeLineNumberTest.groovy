@@ -18,29 +18,35 @@
  */
 package groovy.bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class ImportNodeLineNumberTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+final class ImportNodeLineNumberTest {
+    @Test
     void testLineNumberOfImports() {
-        assertScript '''import groovy.transform.ASTTest
-        import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
-        import groovy.transform.*
-        import static java.lang.Math.*
+        assertScript '''\
+            import groovy.lang.Grab
+            import groovy.transform.*
+            import static java.lang.Math.*
+            import static java.lang.Math.PI as pi
 
-        @ASTTest(phase=SEMANTIC_ANALYSIS, value={
-            def module = node.declaringClass.module
-            def astTestImport = module.getImport('ASTTest')
-            assert astTestImport.lineNumber == 1
-            def staticImport = module.staticImports['SEMANTIC_ANALYSIS']
-            assert staticImport.lineNumber == 2
-            def starImport = module.starImports[0]
-            assert starImport.lineNumber == 3
-            def staticStar = module.staticStarImports['java.lang.Math']
-            assert staticStar.lineNumber == 4
-        })
-        void foo() {}
+            @ASTTest({
+                def moduleNode = sourceUnit.AST
 
-        foo()
+                def importNode = moduleNode.getImport('Grab')
+                assert importNode.lineNumber == 1
+
+                importNode = moduleNode.starImports[0]
+                assert importNode.lineNumber == 2
+
+                importNode = moduleNode.staticStarImports['java.lang.Math']
+                assert importNode.lineNumber == 3
+
+                importNode = moduleNode.staticImports['pi']
+                assert importNode.lineNumber == 4
+            })
+            def var
         '''
     }
 }

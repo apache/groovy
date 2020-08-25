@@ -46,17 +46,17 @@ public class FieldExpression extends Expression {
         return this;
     }
 
-    public String getFieldName() {
-        return field.getName();
-    }
-
     public FieldNode getField() {
         return field;
     }
 
+    public String getFieldName() {
+        return field.getName();
+    }
+
     @Override
     public String getText() {
-        return "this." + field.getName();
+        return "this." + getFieldName();
     }
 
     @Override

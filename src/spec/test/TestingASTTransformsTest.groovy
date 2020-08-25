@@ -56,7 +56,6 @@ new MathsTest().testFib()'''
         assertScript '''// tag::asttest_basic[]
 import groovy.transform.ASTTest
 import org.codehaus.groovy.ast.ClassNode
-import static org.codehaus.groovy.control.CompilePhase.*
 
 @ASTTest(phase=CONVERSION, value={   // <1>
     assert node instanceof ClassNode // <2>
@@ -75,8 +74,6 @@ def p = new Person()
 // tag::asttest_packagescope[]
 import groovy.transform.ASTTest
 import groovy.transform.PackageScope
-
-import static org.codehaus.groovy.control.CompilePhase.*
 
 @ASTTest(phase=SEMANTIC_ANALYSIS, value= {
     def nameNode = node.properties.find { it.name == 'name' }
@@ -102,8 +99,6 @@ import groovy.transform.PackageScope
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.expr.DeclarationExpression
 import org.codehaus.groovy.ast.stmt.ForStatement
-
-import static org.codehaus.groovy.control.CompilePhase.*
 
 class Something {
     @ASTTest(phase=SEMANTIC_ANALYSIS, value= {

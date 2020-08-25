@@ -114,7 +114,7 @@ class AnnotationCollectorTest extends GroovyTestCase {
             class Foo {
                 Integer a, b
             }
-            assert Foo.class.annotations.size() == 3 
+            assert Foo.class.annotations.size() == 3
             assert new Foo(a: 1, b: 2).toString() == "Foo(2)"
             def data = NotPreCompiledAlias.getAnnotation(AnnotationCollector).serializeClass().value()
             assert data.length == 0
@@ -148,7 +148,7 @@ class AnnotationCollectorTest extends GroovyTestCase {
         '''
         assertScript '''
             import groovy.transform.*
-    
+
             @OtherPreCompiledAlias(applyToAllClasses=false, value={ counter++> 10})
             class X {
                 def counter = 0
@@ -175,7 +175,7 @@ class AnnotationCollectorTest extends GroovyTestCase {
             @interface Alias {}
 
             @Alias(excludes=["a"])
-            @ASTTest(phase=org.codehaus.groovy.control.CompilePhase.INSTRUCTION_SELECTION, value={
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def annotations = node.annotations
                 assert annotations.size() == 4 //ASTTest + 3
                 annotations.each {
