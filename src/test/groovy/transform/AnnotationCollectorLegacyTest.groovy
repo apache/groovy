@@ -162,7 +162,7 @@ class AnnotationCollectorLegacyTest extends GroovyTestCase {
     }
 
     void testAST() {
-        assertScript """
+        assertScript '''
             import groovy.transform.*
             @AnnotationCollector(value = [ToString, EqualsAndHashCode, Sortable], serializeClass = Alias)
             @interface Alias {}
@@ -178,11 +178,11 @@ class AnnotationCollectorLegacyTest extends GroovyTestCase {
             class Foo {
                 Integer a, b
             }
-            assert Foo.class.annotations.size() == 4
+            assert Foo.class.annotations.size() == 3
             assert new Foo(a: 1, b: 2).toString() == "Foo(2)"
             assert Alias.value().length == 0
             assert Alias.value() instanceof Object[][]
-        """
+        '''
     }
 
     void testConflictingAnnotations() {
