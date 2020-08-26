@@ -71,6 +71,8 @@ include::../test/DesignPatternsTest.groovy[tags=command_traditional,indent=0]
 Our client scripts sends `execute` commands to an intermediary and knows nothing
 about any specific receivers, or any specific action method names and arguments.
 
+== Simplifying variations
+
 Given that Groovy has first-class function support, we can do away with the
 actual command classes (like `SwitchOnCommand`) by instead using closures as shown here:
 

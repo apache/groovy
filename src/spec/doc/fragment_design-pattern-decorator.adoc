@@ -194,8 +194,8 @@ Now, we define our wiring in a file called `beans.xml` as follows:
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:lang="http://www.springframework.org/schema/lang"
 	xsi:schemaLocation="
-		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-		http://www.springframework.org/schema/lang http://www.springframework.org/schema/lang/spring-lang.xsd">
+		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/lang https://www.springframework.org/schema/lang/spring-lang.xsd">
 
     <bean id="performanceInterceptor" autowire="no"
           class="org.springframework.aop.interceptor.PerformanceMonitorInterceptor">

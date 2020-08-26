@@ -31,7 +31,7 @@ classpath, making scripting even easier. The simplest use is as simple as adding
 
 [source,groovy]
 --------------------------------------------------------------------
-@Grab(group='org.springframework', module='spring-orm', version='3.2.5.RELEASE')
+@Grab(group='org.springframework', module='spring-orm', version='5.2.8.RELEASE')
 import org.springframework.jdbc.core.JdbcTemplate
 --------------------------------------------------------------------
 
@@ -39,7 +39,7 @@ import org.springframework.jdbc.core.JdbcTemplate
 
 [source,groovy]
 --------------------------------------------------------------------
-@Grab('org.springframework:spring-orm:3.2.5.RELEASE')
+@Grab('org.springframework:spring-orm:5.2.8.RELEASE')
 import org.springframework.jdbc.core.JdbcTemplate
 --------------------------------------------------------------------
 

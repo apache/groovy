@@ -894,6 +894,7 @@ class DesignPatternsTest extends CompilableTestSupport {
 
     void testDecoratorSpring() {
         shouldCompile '''
+            package util // to match bean wiring
             // tag::decorator_spring_calc[]
             interface Calc {
                 def add(a, b)
@@ -907,7 +908,7 @@ class DesignPatternsTest extends CompilableTestSupport {
             // end::decorator_spring_calc_impl[]
 
             // tag::decorator_spring_context[]
-            @Grab('org.springframework:spring-context:3.2.2.RELEASE')
+            @Grab('org.springframework:spring-context:5.2.8.RELEASE')
             import org.springframework.context.support.ClassPathXmlApplicationContext
 
             def ctx = new ClassPathXmlApplicationContext('beans.xml')
@@ -1536,7 +1537,7 @@ class DesignPatternsTest extends CompilableTestSupport {
     void testSingletonSpring() {
         shouldCompile '''
             // tag::singleton_spring[]
-            @Grapes([@Grab('org.springframework:spring-core:3.2.2.RELEASE'), @Grab('org.springframework:spring-beans:3.2.2.RELEASE')])
+            @Grapes([@Grab('org.springframework:spring-core:5.2.8.RELEASE'), @Grab('org.springframework:spring-beans:5.2.8.RELEASE')])
             import org.springframework.beans.factory.support.*
 
             interface Calculator {
