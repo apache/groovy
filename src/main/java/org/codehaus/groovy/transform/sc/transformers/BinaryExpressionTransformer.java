@@ -107,11 +107,31 @@ public class BinaryExpressionTransformer {
             MethodNode directMCT = leftExpression.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
             if (directMCT != null) {
                 Expression left = staticCompilationTransformer.transform(leftExpression);
+                Expression right = staticCompilationTransformer.transform(rightExpression);
                 if (left instanceof PropertyExpression) {
-                    Expression right = staticCompilationTransformer.transform(rightExpression);
-                    return transformPropertyAssignmentToSetterCall((PropertyExpression) left, right, directMCT);
+                    // transform "a.x = val" into "def tmp = val; a.setX(tmp); tmp"
+                    PropertyExpression pe = (PropertyExpression) left;
+                    return transformAssignmentToSetterCall(
+                            pe.getObjectExpression(), // "a"
+                            directMCT, // "setX"
+                            right, // "val"
+                            false,
+                            pe.isSafe(),
+                            pe.getProperty(), // "x"
+                            bin // "a.x = val"
+                    );
+                } else if (left instanceof VariableExpression) {
+                    // transform "x = val" into "def tmp = val; this.setX(tmp); tmp"
+                    return transformAssignmentToSetterCall(
+                            new VariableExpression("this"),
+                            directMCT, // "setX"
+                            right, // "val"
+                            true,
+                            false,
+                            left, // "x"
+                            bin // "x = val"
+                    );
                 }
-                // TODO: Handle left instanceof VariableExpression and has DIRECT_METHOD_CALL_TARGET?
             }
         } else if (operationType == Types.COMPARE_EQUAL || operationType == Types.COMPARE_NOT_EQUAL) {
             // let's check if one of the operands is the null constant
@@ -376,23 +396,34 @@ public class BinaryExpressionTransformer {
         throw new IllegalArgumentException("Unsupported conversion");
     }
 
-    private Expression transformPropertyAssignmentToSetterCall(final PropertyExpression leftExpression, final Expression rightExpression, final MethodNode directMCT) {
-        // transform "a.x = b" into "def tmp = b; a.setX(tmp); tmp"
-        Expression arg = staticCompilationTransformer.transform(rightExpression);
+    protected static boolean isNullConstant(final Expression expression) {
+        return org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant(expression);
+    }
+
+    /**
+     * Adapter for {@link StaticPropertyAccessHelper#transformToSetterCall}.
+     */
+    private static Expression transformAssignmentToSetterCall(
+            final Expression receiver,
+            final MethodNode setterMethod,
+            final Expression valueExpression,
+            final boolean implicitThis,
+            final boolean safeNavigation,
+            final Expression nameExpression,
+            final Expression binaryExpression) {
+        // expression that will transfer assignment and name positions
+        Expression pos = new PropertyExpression(null, nameExpression);
+        pos.setSourcePosition(binaryExpression);
+
         return StaticPropertyAccessHelper.transformToSetterCall(
-                leftExpression.getObjectExpression(),
-                directMCT,
-                arg,
-                false,
-                leftExpression.isSafe(),
-                false,
-                true, // to be replaced with a proper test whether a return value should be used or not
-                leftExpression
+                receiver,
+                setterMethod,
+                valueExpression,
+                implicitThis,
+                safeNavigation,
+                false, // spreadSafe
+                true, // TODO: replace with a proper test whether a return value is required or not
+                pos
         );
     }
-
-    protected static boolean isNullConstant(final Expression expression) {
-        return expression instanceof ConstantExpression && ((ConstantExpression) expression).getValue() == null;
-    }
-
 }
