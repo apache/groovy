@@ -812,7 +812,7 @@ include::../test/SyntaxTest.groovy[tags=number_type_suffixes_example,indent=0]
 
 === Math operations
 
-Although <<core-operators.adoc#_operators,operators>> are covered in more detail elsewhere, it's important to discuss the behavior of math operations
+Although <<core-operators.adoc#groovy-operators,operators>> are covered in more detail elsewhere, it's important to discuss the behavior of math operations
 and what their resulting types are.
 
 Division and power binary operations aside (covered below),

@@ -324,6 +324,152 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    void testCommand() {
+        shouldCompile '''
+            // tag::command_traditional[]
+            interface Command {
+                void execute()
+            }
+
+            // invoker class
+            class Switch {
+                private final Map<String, Command> commandMap = new HashMap<>()
+                
+                void register(String commandName, Command command) {
+                    commandMap[commandName] = command
+                }
+                
+                void execute(String commandName) {
+                    Command command = commandMap[commandName]
+                    if (!command) {
+                        throw new IllegalStateException("no command registered for " + commandName)
+                    }
+                    command.execute()
+                }
+            }
+
+            // receiver class
+            class Light {
+                void turnOn() {
+                    println "The light is on"
+                }
+            
+                void turnOff() {
+                    println "The light is off"
+                }
+            }
+
+            class SwitchOnCommand implements Command {
+                Light light
+            
+                @Override // Command
+                void execute() {
+                    light.turnOn()
+                }
+            }
+
+            class SwitchOffCommand implements Command {
+                Light light
+            
+                @Override // Command
+                void execute() {
+                    light.turnOff()
+                }
+            }
+
+            Light lamp = new Light()
+            Command switchOn = new SwitchOnCommand(light: lamp)
+            Command switchOff = new SwitchOffCommand(light: lamp)
+
+            Switch mySwitch = new Switch()
+            mySwitch.register("on", switchOn)
+            mySwitch.register("off", switchOff)
+
+            mySwitch.execute("on")
+            mySwitch.execute("off")
+            // end::command_traditional[]
+        '''
+        shouldCompile '''
+            // tag::command_closures[]
+            interface Command {
+                void execute()
+            }
+
+            // invoker class
+            class Switch {
+                private final Map<String, Command> commandMap = [:]
+                
+                void register(String commandName, Command command) {
+                    commandMap[commandName] = command
+                }
+                
+                void execute(String commandName) {
+                    Command command = commandMap[commandName]
+                    if (!command) {
+                        throw new IllegalStateException("no command registered for $commandName")
+                    }
+                    command.execute()
+                }
+            }
+
+            // receiver class
+            class Light {
+                void turnOn() {
+                    println 'The light is on'
+                }
+            
+                void turnOff() {
+                    println 'The light is off'
+                }
+            }
+
+            Light lamp = new Light()
+
+            Switch mySwitch = new Switch()
+            mySwitch.register("on", lamp.&turnOn)       // <1>
+            mySwitch.register("off", lamp.&turnOff)     // <1>
+
+            mySwitch.execute("on")
+            mySwitch.execute("off")
+            // end::command_closures[]
+        '''
+        shouldCompile '''
+            // tag::command_lambda[]
+            class Light {
+                void turnOn() {
+                    println 'The light is on'
+                }
+            
+                void turnOff() {
+                    println 'The light is off'
+                }
+            }
+
+            class Door {
+                static void unlock() {
+                    println 'The door is unlocked'
+                }
+            }
+
+            Light lamp = new Light()
+            Map<String, Runnable> mySwitch = [
+                on: lamp::turnOn,
+                off: lamp::turnOff,
+                unlock: Door::unlock
+            ]
+
+            mySwitch.on()
+            mySwitch.off()
+            mySwitch.unlock()
+            // end::command_lambda[]
+            // tag::command_lambda_variant[]
+            // ...
+            List<Runnable> tasks = [lamp::turnOn, lamp::turnOff, Door::unlock]
+            tasks.each{ it.run() }
+            // end::command_lambda_variant[]
+        '''
+    }
+
     void testChainOfResponsibility() {
         shouldCompile '''
             // tag::chain_of_responsibility[]

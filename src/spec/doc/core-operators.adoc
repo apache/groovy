@@ -22,6 +22,7 @@
 [[groovy-operators]]
 = Operators
 
+
 This chapter covers the operators of the Groovy programming language.
 
 == Arithmetic operators

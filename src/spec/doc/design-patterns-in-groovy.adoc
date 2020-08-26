@@ -39,6 +39,8 @@ include::fragment_design-pattern-bouncer.adoc[leveloffset=+2]
 
 include::fragment_design-pattern-chain-of-responsibility.adoc[leveloffset=+2]
 
+include::fragment_design-pattern-command.adoc[leveloffset=+2]
+
 include::fragment_design-pattern-composite.adoc[leveloffset=+2]
 
 include::fragment_design-pattern-decorator.adoc[leveloffset=+2]

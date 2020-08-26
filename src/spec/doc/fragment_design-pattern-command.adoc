@@ -1,0 +1,106 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Command Pattern
+
+
+The https://en.wikipedia.org/wiki/Command_pattern[Command Pattern] is a pattern for
+loosely coupling a client object which wants to execute a series of commands and
+receiver objects which enact those commands.
+Instead of talking to receivers directly, clients interact with an intermediary object
+which then relays the necessary commands to the receivers.
+The pattern is in common use within the JDK, for example the api:javax.swing.Action[] class in Swing
+decouples swing code from receivers like buttons, menu items and panels.
+
+The class diagram showing the typical classes is:
+
+[plantuml, CommandClasses, png]
+....
+skinparam nodesep 100
+hide fields
+interface Command {
+    +execute(String command)
+}
+object client
+class Command1 implements Command {
+    +execute(String command)
+}
+class Receiver1 {
+    +action1(args1)
+}
+client ..r..> "command" Command
+Command1 --r--> Receiver1
+....
+
+The sequence of interactions is as shown below for an arbitrary receiver:
+
+[plantuml, CommandSequence, png]
+....
+client -> intermediary: command
+intermediary -> receiverN: actionN
+....
+
+== Example with traditional classes
+
+The relevant classes required for turning a light on and off (see the example in the earlier wikipedia reference)
+would be as follows:
+
+[source,groovy]
+----
+include::../test/DesignPatternsTest.groovy[tags=command_traditional,indent=0]
+----
+
+Our client scripts sends `execute` commands to an intermediary and knows nothing
+about any specific receivers, or any specific action method names and arguments.
+
+Given that Groovy has first-class function support, we can do away with the
+actual command classes (like `SwitchOnCommand`) by instead using closures as shown here:
+
+[source,groovy]
+----
+include::../test/DesignPatternsTest.groovy[tags=command_closures,indent=0]
+----
+<1> Command closures (here method closures) but could be lambdas/method references for Groovy 3+
+
+We can simplify further using the JDK's existing `Runnable` interface
+and using a switch map rather than a separate `Switch` class as shown here:
+
+[source,groovy]
+----
+include::../test/DesignPatternsTest.groovy[tags=command_lambda,indent=0]
+----
+
+We have added an additional `Door` receiver to illustrate how to expand the original example.
+Running this script results in:
+
+----
+The light is on
+The light is off
+The door is unlocked
+----
+
+As a variation, if the command names aren't important to us,
+we can forgo using the switch map and just have a list of tasks to invoke as shown here:
+
+[source,groovy]
+----
+include::../test/DesignPatternsTest.groovy[tags=command_lambda_variant,indent=0]
+----
