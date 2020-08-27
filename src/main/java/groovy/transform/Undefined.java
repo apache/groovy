@@ -18,6 +18,7 @@
  */
 package groovy.transform;
 
+import groovy.lang.Closure;
 import org.codehaus.groovy.ast.ClassNode;
 
 /**
@@ -28,6 +29,9 @@ public final class Undefined {
     private Undefined() {}
     public static final String STRING = "<DummyUndefinedMarkerString-DoNotUse>";
     public static final class CLASS {}
+    public static final class CLOSURE_CLASS extends Closure {
+        public CLOSURE_CLASS(Object owner) { super(owner); }
+    }
     public static final class EXCEPTION extends RuntimeException {
         private static final long serialVersionUID = -3960500360386581172L;
     }

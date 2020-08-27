@@ -18,6 +18,7 @@
  */
 package groovy.transform;
 
+import groovy.lang.Closure;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
@@ -66,5 +67,5 @@ public @interface ASTTest {
     /**
      * A closure which is executed against the annotated node after the specified phase has completed.
      */
-    Class value();
+    Class<? extends Closure> value() default Undefined.CLOSURE_CLASS.class;
 }
