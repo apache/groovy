@@ -392,6 +392,22 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9460
+    void testMethodCallWithClassParameterUnbounded() {
+        assertScript '''
+            class Bar {
+                static void baz(Class<?> target) {
+                }
+            }
+            class Foo<D> { // cannot be "T" because that matches type parameter in Class
+                void test(Class<D> param) {
+                    Bar.baz(param) // Cannot call Bar#baz(java.lang.Class<?>) with arguments [java.lang.Class<D>]
+                }
+            }
+            new Foo<String>().test(String.class)
+        '''
+    }
+
     void testConstructorCallWithClassParameterUsingClassLiteralArg() {
         assertScript '''
             class A {}
