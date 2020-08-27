@@ -11886,20 +11886,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Reverse the items in an array. If mutate is true, the original array is modified in place and returned.
      * Otherwise, a new array containing the reversed items is produced.
      *
+     * <pre class="groovyTestCase">
+     * def array = new Object[] {1,2,3}
+     * def yarra = array.reverse(true)
+     * assert array == 3..1
+     * assert yarra == 3..1
+     *
+     * yarra = array.reverse(false)
+     * assert array == 3..1
+     * assert yarra == 1..3
+     * </pre>
+     *
      * @param self   an array
-     * @param mutate true if the array itself should be reversed in place and returned, false if a new array should be created
+     * @param mutate {@code true} if the array itself should be reversed in place, {@code false} if a new array should be created
      * @return an array containing the reversed items
+     *
      * @since 1.8.1
      */
-    @SuppressWarnings("unchecked")
     public static <T> T[] reverse(T[] self, boolean mutate) {
-        if (!mutate) {
-            return (T[]) toList(new ReverseListIterator<T>(Arrays.asList(self))).toArray();
+        List<T> list = Arrays.asList(self);
+        if (mutate) {
+            Collections.reverse(list);
+            return self;
         }
-        List<T> items = Arrays.asList(self);
-        Collections.reverse(items);
-        System.arraycopy(items.toArray(), 0, self, 0, items.size());
-        return self;
+        @SuppressWarnings("unchecked")
+        T[] result = (T[]) toList(new ReverseListIterator<>(list)).toArray();
+        return result;
     }
 
     /**
