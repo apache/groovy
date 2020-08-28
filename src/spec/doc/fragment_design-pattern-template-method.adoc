@@ -25,7 +25,7 @@
 The https://en.wikipedia.org/wiki/Template_method_pattern[Template Method Pattern] abstracts
 away the details of several algorithms.
 The generic part of an algorithm is contained within a base class.
-Particular implementation details are captured within base classes.
+Particular implementation details are captured within child classes.
 The generic pattern of classes involved looks like this:
 
 [plantuml, TemplateMethodClasses, png]
@@ -55,7 +55,7 @@ AbstractClass <|-- ConcreteClass2
 == Example with traditional classes
 
 In this example, the base `Accumulator` class captures the essence of the accumulation algorithm.
-The concrete classes `Sum` and `Product` provide particular customised ways to use the generic accumulation algorithm.
+The child classes `Sum` and `Product` provide particular customised ways to use the generic accumulation algorithm.
 
 [source,groovy]
 ----
