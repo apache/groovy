@@ -2043,7 +2043,7 @@ class DesignPatternsTest extends CompilableTestSupport {
     }
 
     void testTemplateMethod() {
-        shouldCompile '''
+        assertScript '''
             // tag::template_method_example[]
             abstract class Accumulator {
                 protected initial
@@ -2065,30 +2065,38 @@ class DesignPatternsTest extends CompilableTestSupport {
                 def doAccumulate(total, v) { total * v }
             }
 
-            println new Sum().accumulate([1,2,3,4])
-            println new Product().accumulate([1,2,3,4])
+            assert 10 == new Sum().accumulate([1,2,3,4])
+            assert 24 == new Product().accumulate([1,2,3,4])
             // end::template_method_example[]
         '''
     }
 
     void testTemplateMethod2() {
-        shouldCompile '''
+        assertScript '''
             // tag::template_method_example2[]
             Closure addAll = { total, item -> total += item }
             def accumulated = [1, 2, 3, 4].inject(0, addAll)
-            println accumulated    // => 10
+            assert accumulated == 10
             // end::template_method_example2[]
 
             // tag::template_method_example3[]
             accumulated = [ "1", "2", "3", "4" ].inject("", addAll)
-            println accumulated    // => "1234"
+            assert accumulated == "1234"
             // end::template_method_example3[]
 
             // tag::template_method_example4[]
-            Closure multAll = { total, item -> total *= item }
-            accumulated = [1, 2, 3, 4].inject(1, multAll)
-            println accumulated    // => 24
+            assert 24 == [1, 2, 3, 4].inject(1) { total, item -> total *= item }
             // end::template_method_example4[]
+        '''
+    }
+
+    void testTemplateMethod3() {
+        assertScript '''
+            // tag::template_method_example5[]
+            assert 10 == [1, 2, 3, 4].stream().reduce(0, (l, r) -> l + r)
+            assert 24 == [1, 2, 3, 4].stream().reduce(1, (l, r) -> l * r)
+            assert '1234' == ['1', '2', '3', '4'].stream().reduce('', (l, r) -> l + r)
+            // end::template_method_example5[]
         '''
     }
 

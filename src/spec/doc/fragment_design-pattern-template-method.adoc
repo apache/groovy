@@ -22,7 +22,8 @@
 = Template Method Pattern
 
 
-The http://en.wikipedia.org/wiki/Template_method_pattern[Template Method Pattern] abstracts away the details of several algorithms.
+The https://en.wikipedia.org/wiki/Template_method_pattern[Template Method Pattern] abstracts
+away the details of several algorithms.
 The generic part of an algorithm is contained within a base class.
 Particular implementation details are captured within base classes.
 The generic pattern of classes involved looks like this:
@@ -33,8 +34,8 @@ skinparam nodesep 100
 class AbstractClass {
     +algorithm1()
     +algorithm2()
-    +primitiveOperationA()
-    +primitiveOperationB()
+    {abstract} +primitiveOperationA()
+    {abstract} +primitiveOperationB()
 }
 class ConcreteClass1 {
     +primitiveOperationA()
@@ -51,21 +52,17 @@ AbstractClass <|-- ConcreteClass1
 AbstractClass <|-- ConcreteClass2
 ....
 
-== Example
+== Example with traditional classes
 
-In this example, `Accumulator` captures the essence of the accumulation algorithm. The base classes `Sum` and `Product` provide particular customised ways to use the generic accumulation algorithm.
+In this example, the base `Accumulator` class captures the essence of the accumulation algorithm.
+The concrete classes `Sum` and `Product` provide particular customised ways to use the generic accumulation algorithm.
 
 [source,groovy]
 ----
 include::../test/DesignPatternsTest.groovy[tags=template_method_example,indent=0]
 ----
 
-The resulting output is:
-
-----
-10
-24
-----
+== Example with simplifying strategies
 
 In this particular case, you could use Groovy's inject method to achieve a similar result using Closures:
 
@@ -74,20 +71,29 @@ In this particular case, you could use Groovy's inject method to achieve a simil
 include::../test/DesignPatternsTest.groovy[tags=template_method_example2,indent=0]
 ----
 
-Thanks to duck-typing, this would also work with other objects which support an add (plus() in Groovy) method, e.g.:
-
-In this particular case, you could use Groovy's inject method to achieve a similar result using Closures:
+Thanks to duck-typing, this would also work with other objects which support an add (`plus()` in Groovy) method, e.g.:
 
 [source,groovy]
 ----
 include::../test/DesignPatternsTest.groovy[tags=template_method_example3,indent=0]
 ----
 
-We could also do the multiplication case as follows:
+We could also do the multiplication case as follows (re-writing as a one-liner):
 
 [source,groovy]
 ----
 include::../test/DesignPatternsTest.groovy[tags=template_method_example4,indent=0]
 ----
+Using closures this way looks like the <<_strategy_pattern,Strategy Pattern>>, but if we realise
+that Groovy's `inject` method is the generic part of the algorithm for our template method,
+then the Closures become the customised parts of the template method pattern.
 
-Using closures this way looks more like the <<_strategy_pattern,Strategy Pattern>> but if we realise that the built-in ++inject++ method is the generic part of the algorithm for our template method, then the Closures become the customised parts of the template method pattern.
+For Groovy 3+, we can use lambda syntax as an alternative to the closure syntax:
+
+[source,groovy]
+----
+include::../test/DesignPatternsTest.groovy[tags=template_method_example5,indent=0]
+----
+
+Here the stream api's `reduce` method is the generic part of the algorithm for our template method,
+and the lambdas are the customised parts of the template method pattern.
