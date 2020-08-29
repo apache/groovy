@@ -18,43 +18,35 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
-import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClassImpl;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 
-import java.lang.reflect.Field;
-
 class GetEffectivePojoFieldSite extends AbstractCallSite {
     private final MetaClassImpl metaClass;
-    private final Field effective;
-    private final int version;
+    private final CachedField effective;
+    private final int metaClassVersion;
 
-    public GetEffectivePojoFieldSite(CallSite site, MetaClassImpl metaClass, CachedField effective) {
+    public GetEffectivePojoFieldSite(final CallSite site, final MetaClassImpl metaClass, final CachedField effective) {
         super(site);
         this.metaClass = metaClass;
-        this.effective = effective.getCachedField();
-        version = metaClass.getVersion();
+        this.effective = effective;
+        this.metaClassVersion = metaClass.getVersion();
     }
 
-//    public final Object callGetProperty (Object receiver) throws Throwable {
-//        return acceptGetProperty(receiver).getProperty(receiver);
-//    }
+    @Override
+    public final CallSite acceptGetProperty(final Object receiver) {
+        if (GroovyCategorySupport.hasCategoryInCurrentThread()
+            || metaClass.getTheClass() != receiver.getClass()
+            || metaClass.getVersion() != metaClassVersion) {
 
-    public final CallSite acceptGetProperty(Object receiver) {
-        if (GroovyCategorySupport.hasCategoryInCurrentThread() || receiver.getClass() != metaClass.getTheClass()
-            || version != metaClass.getVersion()) { // metaClass is invalid
             return createGetPropertySite(receiver);
-        } else {
-            return this;
         }
+        return this;
     }
 
-    public final Object getProperty(Object receiver) {
-        try {
-            return effective.get(receiver);
-        } catch (IllegalAccessException e) {
-            throw new GroovyRuntimeException("Cannot get the property '" + name + "'.", e);
-        }
+    @Override
+    public final Object getProperty(final Object receiver) {
+        return effective.getProperty(receiver);
     }
 }
