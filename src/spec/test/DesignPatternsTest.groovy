@@ -808,6 +808,8 @@ class DesignPatternsTest extends CompilableTestSupport {
             logger.log('x')
             // => message: X
             // end::decorator_runtime_behaviour[]
+        '''
+        shouldCompile '''
             // tag::decorating_logger_closure[]
             class DecoratingLogger {
                 def decoration = Closure.IDENTITY
