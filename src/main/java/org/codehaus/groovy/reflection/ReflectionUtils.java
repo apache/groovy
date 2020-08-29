@@ -196,8 +196,14 @@ public class ReflectionUtils {
 
     // to be run in PrivilegedAction!
     public static Optional<AccessibleObject> makeAccessible(final AccessibleObject ao) {
-        AccessibleObject[] result = makeAccessible(new AccessibleObject[] {ao});
-        return Optional.ofNullable(result.length == 0 ? null : result[0]);
+        try {
+            if (ao.isAccessible() || trySetAccessible(ao)) {
+                return Optional.of(ao);
+            }
+        } catch (Throwable ignore) {
+            // swallow for strict security managers, module systems, android, etc.
+        }
+        return Optional.empty();
     }
 
     // to be run in PrivilegedAction!
