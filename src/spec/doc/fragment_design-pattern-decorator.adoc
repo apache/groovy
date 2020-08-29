@@ -57,6 +57,24 @@ include::../test/DesignPatternsTest.groovy[tags=decorator_traditional_usage2,ind
 
 Now the timestamp itself has also been changed to be uppercase.
 
+== Simplifying with closures or lambdas
+
+Closures make it easy to represent code. We can use that fact to
+make a general purpose logger class that accepts the decoration code as a closure.
+This saves us defining many decoration classes.
+
+[source,groovy]
+----
+include::../test/DesignPatternsTest.groovy[tags=decorating_logger_closure,indent=0]
+----
+
+We can use the same approach with lambdas:
+
+[source,groovy]
+----
+include::../test/DesignPatternsTest.groovy[tags=decorating_logger_lambda,indent=0]
+----
+
 == A touch of dynamic behaviour
 
 Our previous decorators were specific to `Logger` objects. We can use Groovy's Meta-Object Programming capabilities to create a decorator which is far more general purpose in nature. Consider this class:
@@ -167,7 +185,7 @@ If there were many methods to intercept, then this approach could be modified to
 
 == Decorating with Spring
 
-The http://www.springframework.org[Spring Framework] allows decorators to be applied with __interceptors__ (you may have heard the terms __advice__ or __aspect__). You can leverage this mechanism from Groovy as well.
+The https://spring.io/[Spring Framework] allows decorators to be applied with __interceptors__ (you may have heard the terms __advice__ or __aspect__). You can leverage this mechanism from Groovy as well.
 
 First define a class that you want to decorate (we'll also use an interface as is normal Spring practice):
 
@@ -227,7 +245,8 @@ You may have to adjust your `logging.properties` file for messages at log level 
 
 == Asynchronous Decorators using GPars
 
-The following example is inspired by some of the early example code for the http://design.cs.iastate.edu/~panini/[Panini] programming language.
+The following example is inspired by some of the early example code for the
+http://design.cs.iastate.edu/~panini/[Panini] programming language.
 These days, you'll see this style used with async functions in JavaScript.
 
 [source,groovy]

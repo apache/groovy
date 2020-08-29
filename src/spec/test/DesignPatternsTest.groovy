@@ -808,6 +808,40 @@ class DesignPatternsTest extends CompilableTestSupport {
             logger.log('x')
             // => message: X
             // end::decorator_runtime_behaviour[]
+            // tag::decorating_logger_closure[]
+            class DecoratingLogger {
+                def decoration = Closure.IDENTITY
+
+                def log(String message) {
+                    println decoration(message)
+                }
+            }
+
+            def upper = { it.toUpperCase() }
+            def stamp = { "$Calendar.instance.time: $it" }
+            def logger = new DecoratingLogger(decoration: stamp << upper)
+            logger.log("G'day Mate")
+            // Sat Aug 29 15:28:29 AEST 2020: G'DAY MATE
+            // end::decorating_logger_closure[]
+        '''
+        shouldCompile '''
+            // tag::decorating_logger_lambda[]
+            import java.util.function.Function
+
+            class DecoratingLogger {
+                Function<String, String> decoration = Function.identity()
+
+                def log(String message) {
+                    println decoration.apply(message)
+                }
+            }
+
+            Function<String, String> upper = s -> s.toUpperCase()
+            Function<String, String> stamp = s -> "$Calendar.instance.time: $s"
+            def logger = new DecoratingLogger(decoration: upper.andThen(stamp))
+            logger.log("G'day Mate")
+            // => Sat Aug 29 15:38:28 AEST 2020: G'DAY MATE
+            // end::decorating_logger_lambda[]
         '''
     }
 
