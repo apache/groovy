@@ -305,7 +305,8 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             b.m()
             assert b.isGetterCalled() == false
         '''
-        assert astTrees['B'][1].contains('GETFIELD A.x')
+        def b = astTrees['B'][1]
+        assert b.contains('GETFIELD A.x')
     }
 
     void testUseGetterFieldAccess() {
@@ -328,7 +329,10 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             b.usingGetter()
             assert b.isGetterCalled() == true
         '''
-        assert astTrees['B'][1].contains('INVOKEVIRTUAL B.getX')
+        def b = astTrees['B'][1]
+        assert !b.contains('GETFIELD A.x')
+        assert !b.contains('GETFIELD B.x')
+        assert b.contains('INVOKEVIRTUAL B.getX')
     }
 
     void testUseAttributeExternal() {

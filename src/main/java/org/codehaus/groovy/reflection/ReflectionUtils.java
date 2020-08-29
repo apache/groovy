@@ -42,32 +42,37 @@ import java.util.function.Function;
  * current class to multiple levels of depth.  Calls used to handle the
  * groovy MOP are excluded from the level counting.
  */
+@SuppressWarnings("rawtypes")
 public class ReflectionUtils {
-    // these are packages in the call stack that are only part of the groovy MOP
-    private static final Set<String> IGNORED_PACKAGES = new HashSet<String>();
     private static final VMPlugin VM_PLUGIN = VMPluginFactory.getPlugin();
 
+    /** The packages in the call stack that are only part of the Groovy MOP. */
+    private static final Set<String> IGNORED_PACKAGES;
     static {
-        //IGNORED_PACKAGES.add("java.lang.reflect");
-        IGNORED_PACKAGES.add("groovy.lang");
-        IGNORED_PACKAGES.add("org.codehaus.groovy.reflection");
-        IGNORED_PACKAGES.add("org.codehaus.groovy.runtime.callsite");
-        IGNORED_PACKAGES.add("org.codehaus.groovy.runtime.metaclass");
-        IGNORED_PACKAGES.add("org.codehaus.groovy.runtime");
-        IGNORED_PACKAGES.add("sun.reflect");
-        IGNORED_PACKAGES.add("java.security");
-        IGNORED_PACKAGES.add("java.lang.invoke");
-        IGNORED_PACKAGES.add("org.codehaus.groovy.vmplugin.v5");
-        IGNORED_PACKAGES.add("org.codehaus.groovy.vmplugin.v6");
-        IGNORED_PACKAGES.add("org.codehaus.groovy.vmplugin.v7");
-        IGNORED_PACKAGES.add("org.codehaus.groovy.vmplugin.v8");
-        IGNORED_PACKAGES.add("org.codehaus.groovy.vmplugin.v9");
+        Set<String> set = new HashSet<>();
+
+        set.add("groovy.lang");
+        set.add("sun.reflect");
+        set.add("java.security");
+        set.add("java.lang.invoke");
+      //set.add("java.lang.reflect");
+        set.add("org.codehaus.groovy.reflection");
+        set.add("org.codehaus.groovy.runtime");
+        set.add("org.codehaus.groovy.runtime.callsite");
+        set.add("org.codehaus.groovy.runtime.metaclass");
+        set.add("org.codehaus.groovy.vmplugin.v5");
+        set.add("org.codehaus.groovy.vmplugin.v6");
+        set.add("org.codehaus.groovy.vmplugin.v7");
+        set.add("org.codehaus.groovy.vmplugin.v8");
+        set.add("org.codehaus.groovy.vmplugin.v9");
+
+        IGNORED_PACKAGES = Collections.unmodifiableSet(set);
     }
 
     private static final ClassContextHelper HELPER = new ClassContextHelper();
 
     /**
-     * Determine whether or not the getCallingClass methods will return
+     * Determines whether or not the getCallingClass methods will return
      * any sensible results.  On JVMs that are not Sun derived i.e.
      * (gcj, Harmony) this will likely return false.  When not available
      * all getCallingClass methods will return null.
@@ -80,7 +85,7 @@ public class ReflectionUtils {
     }
 
     /**
-     * Get the immediate calling class, ignoring MOP frames.
+     * Gets the immediate calling class, ignoring MOP frames.
      *
      * @return The Class of the caller
      */
@@ -89,7 +94,7 @@ public class ReflectionUtils {
     }
 
     /**
-     * Get the called that is matchLevel stack frames before the call,
+     * Gets the called that is matchLevel stack frames before the call,
      * ignoring MOP frames.
      *
      * @param matchLevel how may call stacks down to look.
@@ -97,12 +102,12 @@ public class ReflectionUtils {
      * @return The Class of the matched caller, or null if there aren't
      *         enough stackframes to satisfy matchLevel
      */
-    public static Class getCallingClass(int matchLevel) {
+    public static Class getCallingClass(final int matchLevel) {
         return getCallingClass(matchLevel, Collections.emptySet());
     }
 
     /**
-     * Get the called that is matchLevel stack frames before the call,
+     * Gets the called that is matchLevel stack frames before the call,
      * ignoring MOP frames and desired exclude packages.
      *
      * @param matchLevel           how may call stacks down to look.
@@ -112,32 +117,31 @@ public class ReflectionUtils {
      * @return The Class of the matched caller, or null if there aren't
      *         enough stackframes to satisfy matchLevel
      */
-    public static Class getCallingClass(int matchLevel, Collection<String> extraIgnoredPackages) {
+    public static Class getCallingClass(final int matchLevel, final Collection<String> extraIgnoredPackages) {
         Class[] classContext = HELPER.getClassContext();
-
-        int depth = 0;
+        int depth = 0, level = matchLevel;
         try {
             Class c;
             do {
                 do {
                     c = classContext[depth++];
                 } while (classShouldBeIgnored(c, extraIgnoredPackages));
-            } while (c != null && matchLevel-- > 0 && depth<classContext.length);
+            } while (c != null && level-- > 0 && depth < classContext.length);
             return c;
-        } catch (Throwable t) {
+        } catch (Throwable ignore) {
             return null;
         }
     }
 
-    public static List<Method> getDeclaredMethods(Class<?> type, String name, Class<?>... parameterTypes) {
+    public static List<Method> getDeclaredMethods(final Class<?> type, final String name, final Class<?>... parameterTypes) {
         return doGetMethods(type, name, parameterTypes, Class::getDeclaredMethods);
     }
 
-    public static List<Method> getMethods(Class<?> type, String name, Class<?>... parameterTypes) {
+    public static List<Method> getMethods(final Class<?> type, final String name, final Class<?>... parameterTypes) {
         return doGetMethods(type, name, parameterTypes, Class::getMethods);
     }
 
-    private static List<Method> doGetMethods(Class<?> type, String name, Class<?>[] parameterTypes, Function<? super Class<?>, ? extends Method[]> f) {
+    private static List<Method> doGetMethods(final Class<?> type, final String name, final Class<?>[] parameterTypes, final Function<? super Class<?>, ? extends Method[]> f) {
         List<Method> methodList = new LinkedList<>();
 
         out:
@@ -151,7 +155,7 @@ public class ReflectionUtils {
                 continue;
             }
 
-            for (int i = 0, n = methodParameterTypes.length; i < n; i++) {
+            for (int i = 0, n = methodParameterTypes.length; i < n; i += 1) {
                 Class<?> parameterType = TypeUtil.autoboxType(parameterTypes[i]);
                 if (null == parameterType) {
                     continue out;
@@ -169,21 +173,20 @@ public class ReflectionUtils {
         return methodList;
     }
 
-    public static boolean checkCanSetAccessible(AccessibleObject accessibleObject, Class<?> caller) {
+    public static boolean checkCanSetAccessible(final AccessibleObject accessibleObject, final Class<?> caller) {
         return VM_PLUGIN.checkCanSetAccessible(accessibleObject, caller);
     }
 
-    public static boolean checkAccessible(Class<?> callerClass, Class<?> declaringClass, int memberModifiers, boolean allowIllegalAccess) {
+    public static boolean checkAccessible(final Class<?> callerClass, final Class<?> declaringClass, final int memberModifiers, final boolean allowIllegalAccess) {
         return VM_PLUGIN.checkAccessible(callerClass, declaringClass, memberModifiers, allowIllegalAccess);
     }
 
-    public static boolean trySetAccessible(AccessibleObject ao) {
+    public static boolean trySetAccessible(final AccessibleObject ao) {
         try {
             return VM_PLUGIN.trySetAccessible(ao);
-        } catch (Throwable t) {
+        } catch (Throwable ignore) {
             // swallow for strict security managers, module systems, android or others
         }
-
         return false;
     }
 
@@ -193,9 +196,8 @@ public class ReflectionUtils {
 
     // to be run in PrivilegedAction!
     public static Optional<AccessibleObject> makeAccessible(final AccessibleObject ao) {
-        AccessibleObject[] result = makeAccessible(new AccessibleObject[] { ao });
-
-        return Optional.ofNullable(0 == result.length ? null : result[0]);
+        AccessibleObject[] result = makeAccessible(new AccessibleObject[] {ao});
+        return Optional.ofNullable(result.length == 0 ? null : result[0]);
     }
 
     // to be run in PrivilegedAction!
@@ -203,10 +205,10 @@ public class ReflectionUtils {
         try {
             AccessibleObject.setAccessible(aoa, true);
             return aoa;
-        } catch (Throwable outer) {
+        } catch (Throwable ignore) {
             // swallow for strict security managers, module systems, android or others,
             // but try one-by-one to get the allowed ones at least
-            final List<AccessibleObject> ret = new ArrayList<>(aoa.length);
+            List<AccessibleObject> ret = new ArrayList<>(aoa.length);
             for (final AccessibleObject ao : aoa) {
                 boolean accessible = trySetAccessible(ao);
                 if (accessible) {
@@ -217,8 +219,8 @@ public class ReflectionUtils {
         }
     }
 
-    private static boolean classShouldBeIgnored(Class c, Collection<String> extraIgnoredPackages) {
-        return ((c != null)
+    private static boolean classShouldBeIgnored(final Class c, final Collection<String> extraIgnoredPackages) {
+        return (c != null
                 && (c.isSynthetic()
                     || (c.getPackage() != null
                         && (IGNORED_PACKAGES.contains(c.getPackage().getName())
