@@ -11887,7 +11887,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Otherwise, a new array containing the reversed items is produced.
      *
      * <pre class="groovyTestCase">
-     * def array = new Object[] {1,2,3}
+     * def array = [1,2,3] as Object[]
      * def yarra = array.reverse(true)
      * assert array == 3..1
      * assert yarra == 3..1
