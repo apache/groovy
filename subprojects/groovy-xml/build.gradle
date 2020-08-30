@@ -21,6 +21,13 @@ dependencies {
     testImplementation rootProject.sourceSets.test.runtimeClasspath
     testImplementation "xmlunit:xmlunit:$xmlunitVersion"
     testImplementation project(':groovy-test')
+    testImplementation ("org.spockframework:spock-core:$spockVersion") {
+        exclude group: 'org.codehaus.groovy'
+    }
+}
+
+test {
+    useJUnitPlatform()
 }
 
 task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {

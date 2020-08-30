@@ -61,6 +61,8 @@ import java.util.Map;
  * </ul>
  */
 public class MarkupBuilder extends BuilderSupport {
+    public enum CharFilter { XML_STRICT, XML_ALL, NONE }
+
     private IndentPrinter out;
     private boolean nospace;
     private int state;
@@ -70,6 +72,7 @@ public class MarkupBuilder extends BuilderSupport {
     private boolean omitEmptyAttributes = false;
     private boolean expandEmptyElements = false;
     private boolean escapeAttributes = true;
+    private CharFilter characterFilter = CharFilter.NONE;
 
     /**
      * Returns the escapeAttributes property value.
@@ -221,6 +224,45 @@ public class MarkupBuilder extends BuilderSupport {
     public void setExpandEmptyElements(boolean expandEmptyElements) {
         this.expandEmptyElements = expandEmptyElements;
     }
+
+    /**
+     * Returns the current character filter.
+     *
+     * @return the character filter used by this builder.
+     */
+    public CharFilter getCharacterFilter() { return this.characterFilter; }
+
+    /**
+     * Set a filter to limit the characters, that can appear in attribute values and text nodes.
+     * <p>
+     *     Some unicode character are either not allowed, discouraged or not referenceable  with an escape sequence
+     *     by specification. Especially XML parsers might have trouble dealing with some of those characters.
+     *     Since HTML strives for closeness to XML, filtering might be helpful there, too, albeit to a lesser degree.
+     * </p>
+     * <p>
+     *     Examples include null bytes (0x0), control characters (0x1C "file separator"), surrogates or non-characters.
+     *     If a filter policy is used, characters that fail to pass will be replaced by 0xFFFD (&#xFFFD;) in the output.
+     * </p>
+     * <p>
+     *     Available policies are:
+     *     <dl>
+     *         <dt>NONE (Default)</dt>
+     *         <dd>No filter is applied to the output</dd>
+     *         <dt>XML_ALL</dt>
+     *         <dd>
+     *             Allow all characters, that are neccessarily supported. According to the XML spec.<br>
+     *             Given as #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] ( | [#x10000-#x10FFFF] )<br>
+     *             (as of Aug. 2020)
+     *         </dd>
+     *         <dt>XML_STRICT</dt>
+     *         <dd>
+     *             Filter out none-supported <it>and</it> discouraged characters, according to XML spec.
+     *         </dd>
+     *     </dl>
+     * </p>
+     * @param characterFilter character policy to use
+     */
+    public void setCharacterFilter(CharFilter characterFilter) { this.characterFilter = characterFilter; }
 
     protected IndentPrinter getPrinter() {
         return this.out;
@@ -391,21 +433,26 @@ public class MarkupBuilder extends BuilderSupport {
     private String escapeXmlValue(String value, boolean isAttrValue) {
         if (value == null)
             throw new IllegalArgumentException();
-        return StringGroovyMethods.collectReplacements(value, new ReplacingClosure(isAttrValue, useDoubleQuotes));
+        return StringGroovyMethods.collectReplacements(value, new ReplacingClosure(isAttrValue, useDoubleQuotes, characterFilter));
     }
 
     private static class ReplacingClosure extends Closure<String> {
         private final boolean isAttrValue;
         private final boolean useDoubleQuotes;
+        private final CharFilter characterFilter;
 
-        public ReplacingClosure(boolean isAttrValue, boolean useDoubleQuotes) {
+        public ReplacingClosure(boolean isAttrValue, boolean useDoubleQuotes, CharFilter characterFilter) {
             super(null);
             this.isAttrValue = isAttrValue;
             this.useDoubleQuotes = useDoubleQuotes;
+            this.characterFilter = characterFilter;
         }
 
         public String doCall(Character ch) {
             switch (ch) {
+                case 0:
+                    if (characterFilter != CharFilter.NONE) return "\uFFFD";
+                    break;
                 case '&':
                     return "&amp;";
                 case '<':
@@ -435,7 +482,21 @@ public class MarkupBuilder extends BuilderSupport {
                     if (isAttrValue && !useDoubleQuotes) return "&apos;";
                     break;
             }
+            if (characterFilter != CharFilter.NONE) {
+                if (Character.isSurrogate(ch)
+                        || ch < 127 && ch !=  9 && ch != 10 && ch != 12 && ch != 13) {
+                    return "\uFFFD";
+                }
+            }
+            if (characterFilter == CharFilter.XML_STRICT) {
+                if (Character.isISOControl(ch) || isNonCharacter(ch))  return "\uFFFD";
+            }
             return null;
+        }
+
+        private boolean isNonCharacter(char ch) {
+            return 0xFDD0 <= ch && ch <= 0xFDEF
+                    || ((ch % 0x10000 ^ 0xFFFE) == 0 || (ch % 0x10000 ^ 0xFFFF) == 0) && ch >> 16 <= 0x10;
         }
     }
 
