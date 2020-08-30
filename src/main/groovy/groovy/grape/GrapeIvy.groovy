@@ -18,9 +18,7 @@
  */
 package groovy.grape
 
-import groovy.transform.CompileStatic
-import groovy.transform.NamedParam
-import groovy.transform.NamedParams
+import groovy.transform.*
 import org.apache.groovy.plugin.GroovyRunner
 import org.apache.groovy.plugin.GroovyRunnerRegistry
 import org.apache.ivy.Ivy
@@ -61,65 +59,58 @@ import java.util.zip.ZipFile
 /**
  * Implementation supporting {@code @Grape} and {@code @Grab} annotations based on Ivy.
  */
+@AutoFinal @CompileStatic
 class GrapeIvy implements GrapeEngine {
 
     private static final String METAINF_PREFIX = 'META-INF/services/'
-    private static final String RUNNER_PROVIDER_CONFIG = GroovyRunner.name
-    private static final List<String> DEF_CONFIG = ['default']
-
-    private final exclusiveGrabArgs = [
+    private static final String RUNNER_PROVIDER_CONFIG = GroovyRunner.getName()
+    private static final List<String> DEFAULT_CONF = Collections.singletonList('default')
+    private static final Map<String, Set<String>> MUTUALLY_EXCLUSIVE_KEYS = processGrabArgs([
             ['group', 'groupId', 'organisation', 'organization', 'org'],
             ['module', 'artifactId', 'artifact'],
             ['version', 'revision', 'rev'],
             ['conf', 'scope', 'configuration'],
-    ].inject([:], { m, g -> g.each { a -> m[a] = (g - a) as Set }; m })
+    ])
 
-    boolean enableGrapes
-    Ivy ivyInstance
-    Set<String> resolvedDependencies
-    Set<String> downloadedArtifacts
-    // weak hash map so we don't leak loaders directly
-    Map<ClassLoader, Set<IvyGrabRecord>> loadedDeps = new WeakHashMap<ClassLoader, Set<IvyGrabRecord>>()
-    // set that stores the IvyGrabRecord(s) for all the dependencies in each grab() call
-    Set<IvyGrabRecord> grabRecordsForCurrDependencies = new LinkedHashSet<IvyGrabRecord>()
-    // we keep the settings so that addResolver can add to the resolver chain
-    IvySettings settings
-
-    GrapeIvy() {
-        // if we are already initialized, quit
-        if (enableGrapes) return
-
-        // start ivy
-        Message.defaultLogger = new DefaultMessageLogger(System.getProperty('ivy.message.logger.level', '-1') as int)
-        settings = new IvySettings()
-        settings.setVariable('user.home.url', new File(System.getProperty('user.home')).toURI().toURL() as String)
-
-        // configure settings
-        def grapeConfig = localGrapeConfig
-        if (!grapeConfig.exists()) {
-            grapeConfig = GrapeIvy.getResource('defaultGrapeConfig.xml')
-        }
-        try {
-            settings.load(grapeConfig) // exploit multi-methods for convenience
-        } catch (java.text.ParseException ex) {
-            def configLocation = grapeConfig instanceof File ? grapeConfig.canonicalPath : grapeConfig.toString()
-            System.err.println "Local Ivy config file '$configLocation' appears corrupt - ignoring it and using default config instead\nError was: ${ex.message}"
-            settings.load(GrapeIvy.getResource('defaultGrapeConfig.xml'))
-        }
-
-        // set up the cache dirs
-        settings.defaultCache = grapeCacheDir
-
-        settings.setVariable('ivy.default.configuration.m2compatible', 'true')
-        ivyInstance = Ivy.newInstance(settings)
-        IvyContext.context.ivy = ivyInstance
-        resolvedDependencies = []
-        downloadedArtifacts = []
-
-        enableGrapes = true
+    @CompileDynamic // maps a->[b,c], b->[a,c] and c->[a,b] given [a,b,c]
+    private static Map<String, Set<String>> processGrabArgs(List<List<String>> grabArgs) {
+        grabArgs.inject([:]) { Map m, List g -> g.each { a -> m[a] = (g - a) as Set }; m }
     }
 
-    @CompileStatic
+    boolean enableGrapes = true
+
+    Ivy ivyInstance
+    IvySettings settings
+    Set<String> downloadedArtifacts = []
+    Set<String> resolvedDependencies = []
+    // weak hash map so we don't leak loaders directly
+    final Map<ClassLoader, Set<IvyGrabRecord>> loadedDeps = [] as WeakHashMap
+    /** Stores the IvyGrabRecord(s) for all dependencies in each grab() call. */
+    final Set<IvyGrabRecord> grabRecordsForCurrDependencies = [] as LinkedHashSet
+
+    GrapeIvy() {
+        Message.setDefaultLogger(new DefaultMessageLogger(System.getProperty('ivy.message.logger.level', '-1') as int))
+
+        settings = new IvySettings()
+        settings.setVariable('user.home.url', new File(System.getProperty('user.home')).toURI().toURL() as String)
+        File grapeConfig = getLocalGrapeConfig()
+        if (grapeConfig.exists()) {
+            try {
+                settings.load(grapeConfig)
+            } catch (java.text.ParseException e) {
+                System.err.println("Local Ivy config file '${grapeConfig.getCanonicalPath()}' appears corrupt - ignoring it and using default config instead\nError was: ${e.getMessage()}")
+                settings.load(GrapeIvy.getResource('defaultGrapeConfig.xml'))
+            }
+        } else {
+            settings.load(GrapeIvy.getResource('defaultGrapeConfig.xml'))
+        }
+        settings.setDefaultCache(getGrapeCacheDir())
+        settings.setVariable('ivy.default.configuration.m2compatible', 'true')
+
+        ivyInstance = Ivy.newInstance(settings)
+        IvyContext.getContext().setIvy(ivyInstance)
+    }
+
     File getGroovyRoot() {
         String root = System.getProperty('groovy.root')
         def groovyRoot
@@ -129,38 +120,27 @@ class GrapeIvy implements GrapeEngine {
             groovyRoot = new File(root)
         }
         try {
-            groovyRoot = groovyRoot.canonicalFile
+            groovyRoot = groovyRoot.getCanonicalFile()
         } catch (IOException ignore) {
             // skip canonicalization then, it may not exist yet
         }
         groovyRoot
     }
 
-    @CompileStatic
-    File getLocalGrapeConfig() {
-        String grapeConfig = System.getProperty('grape.config')
-        if (grapeConfig) {
-            return new File(grapeConfig)
-        }
-        new File(grapeDir, 'grapeConfig.xml')
-    }
-
-    @CompileStatic
     File getGrapeDir() {
         String root = System.getProperty('grape.root')
         if (root == null) {
-            return groovyRoot
+            return getGroovyRoot()
         }
         File grapeRoot = new File(root)
         try {
-            grapeRoot = grapeRoot.canonicalFile
+            grapeRoot = grapeRoot.getCanonicalFile()
         } catch (IOException ignore) {
             // skip canonicalization then, it may not exist yet
         }
         grapeRoot
     }
 
-    @CompileStatic
     File getGrapeCacheDir() {
         File cache = new File(grapeDir, 'grapes')
         if (!cache.exists()) {
@@ -171,22 +151,30 @@ class GrapeIvy implements GrapeEngine {
         cache
     }
 
-    @CompileStatic
+    File getLocalGrapeConfig() {
+        String grapeConfig = System.getProperty('grape.config')
+        if (grapeConfig) {
+            new File(grapeConfig)
+        } else {
+            new File(getGrapeDir(), 'grapeConfig.xml')
+        }
+    }
+
     ClassLoader chooseClassLoader(Map args) {
         ClassLoader loader = (ClassLoader) args.classLoader
         if (!isValidTargetClassLoader(loader)) {
-            loader = ((Class) ((args.refObject?.class
-                    ?: ReflectionUtils.getCallingClass((int) (args.calleeDepth ?: 1))
-            )))?.classLoader
+            Class caller = args.refObject?.getClass() ?:
+                    ReflectionUtils.getCallingClass((int) args.calleeDepth ?: 1)
+            loader = caller?.getClassLoader()
             while (loader && !isValidTargetClassLoader(loader)) {
-                loader = loader.parent
+                loader = loader.getParent()
             }
-            //if (!isValidTargetClassLoader(loader)) {
-            //    loader = Thread.currentThread().contextClassLoader
-            //}
-            //if (!isValidTargetClassLoader(loader)) {
-            //    loader = GrapeIvy.class.classLoader
-            //}
+            /*if (!isValidTargetClassLoader(loader)) {
+                loader = Thread.currentThread().getContextClassLoader()
+            }
+            if (!isValidTargetClassLoader(loader)) {
+                loader = GrapeIvy.getClass().getClassLoader()
+            }*/
             if (!isValidTargetClassLoader(loader)) {
                 throw new RuntimeException('No suitable ClassLoader found for grab')
             }
@@ -194,67 +182,61 @@ class GrapeIvy implements GrapeEngine {
         loader
     }
 
-    @CompileStatic
-    private boolean isValidTargetClassLoader(loader) {
-        isValidTargetClassLoaderClass(loader?.class)
+    private boolean isValidTargetClassLoader(ClassLoader loader) {
+        isValidTargetClassLoaderClass(loader?.getClass())
     }
 
-    @CompileStatic
     private boolean isValidTargetClassLoaderClass(Class loaderClass) {
-        loaderClass != null &&
-                (
-                        (loaderClass.name == 'groovy.lang.GroovyClassLoader') ||
-                                (loaderClass.name == 'org.codehaus.groovy.tools.RootLoader') ||
-                                isValidTargetClassLoaderClass(loaderClass.superclass)
-                )
+        loaderClass != null && (loaderClass.getName() == 'groovy.lang.GroovyClassLoader'
+                || loaderClass.getName() == 'org.codehaus.groovy.tools.RootLoader'
+                || isValidTargetClassLoaderClass(loaderClass.getSuperclass()))
     }
 
-    @SuppressWarnings('Instanceof')
-    IvyGrabRecord createGrabRecord(Map deps) {
-        // parse the actual dependency arguments
-        String module = deps.module ?: deps.artifactId ?: deps.artifact
+    IvyGrabRecord createGrabRecord(Map dep) {
+        String module = dep.module ?: dep.artifactId ?: dep.artifact
         if (!module) {
             throw new RuntimeException('grab requires at least a module: or artifactId: or artifact: argument')
         }
 
-        String groupId = deps.group ?: deps.groupId ?: deps.organisation ?: deps.organization ?: deps.org ?: ''
-        String ext = deps.ext ?: deps.type ?: ''
-        String type = deps.type ?: ''
-
-        //TODO accept ranges and decode them?  except '1.0.0'..<'2.0.0' won't work in groovy
-        String version = deps.version ?: deps.revision ?: deps.rev ?: '*'
-        if ('*' == version) version = 'latest.default'
+        String groupId = dep.group ?: dep.groupId ?: dep.organisation ?: dep.organization ?: dep.org ?: ''
+        // TODO: accept ranges and decode them?  except '1.0.0'..<'2.0.0' won't work in groovy
+        String version = dep.version ?: dep.revision ?: dep.rev ?: '*'
+        if (version == '*') version = 'latest.default'
+        String classifier = dep.classifier ?: null
+        String ext = dep.ext ?: dep.type ?: ''
+        String type = dep.type ?: ''
 
         ModuleRevisionId mrid = ModuleRevisionId.newInstance(groupId, module, version)
 
-        boolean force = deps.containsKey('force') ? deps.force : true
-        boolean changing = deps.containsKey('changing') ? deps.changing : false
-        boolean transitive = deps.containsKey('transitive') ? deps.transitive : true
-        def conf = deps.conf ?: deps.scope ?: deps.configuration ?: DEF_CONFIG
+        boolean force = dep.containsKey('force') ? dep.force : true
+        boolean changing = dep.containsKey('changing') ? dep.changing : false
+        boolean transitive = dep.containsKey('transitive') ? dep.transitive : true
+
+        new IvyGrabRecord(mrid: mrid, conf: getConfList(dep), force: force, changing: changing, transitive: transitive, ext: ext, type: type, classifier: classifier)
+    }
+
+    @CompileDynamic
+    private List<String> getConfList(Map dep) {
+        def conf = dep.conf ?: dep.scope ?: dep.configuration ?: DEFAULT_CONF
         if (conf instanceof String) {
             if (conf.startsWith('[') && conf.endsWith(']')) conf = conf[1..-2]
             conf = conf.split(',').toList()
         }
-        def classifier = deps.classifier ?: null
-
-        new IvyGrabRecord(mrid: mrid, conf: conf, changing: changing, transitive: transitive, force: force, classifier: classifier, ext: ext, type: type)
+        conf
     }
 
     @Override
-    @CompileStatic
     grab(String endorsedModule) {
-        grab(group: 'groovy.endorsed', module: endorsedModule, version: GroovySystem.version)
+        grab(group: 'groovy.endorsed', module: endorsedModule, version: GroovySystem.getVersion())
     }
 
     @Override
-    @CompileStatic
     grab(Map args) {
         args.calleeDepth = args.calleeDepth ?: DEFAULT_CALLEE_DEPTH + 1
         grab(args, args)
     }
 
     @Override
-    @CompileStatic
     grab(Map args, Map... dependencies) {
         ClassLoader loader = null
         grabRecordsForCurrDependencies.clear()
@@ -262,22 +244,22 @@ class GrapeIvy implements GrapeEngine {
         try {
             // identify the target classloader early, so we fail before checking repositories
             loader = chooseClassLoader(
-                    classLoader: args.remove('classLoader'),
                     refObject: args.remove('refObject'),
+                    classLoader: args.remove('classLoader'),
                     calleeDepth: args.calleeDepth ?: DEFAULT_CALLEE_DEPTH,
             )
 
-            // check for non-fail null.
-            // If we were in fail mode we would have already thrown an exception
+            // check for non-fail null
+            // if we were in fail mode we would have already thrown an exception
             if (!loader) return
 
-            def uris = resolve(loader, args, dependencies)
-            for (URI uri in uris) {
+            URI[] uris = resolve(loader, args, dependencies)
+            for (URI uri : uris) {
                 addURL(loader, uri)
             }
             boolean runnerServicesFound = false
-            for (URI uri in uris) {
-                //TODO check artifact type, jar vs library, etc
+            for (URI uri : uris) {
+                // TODO: check artifact type, jar vs library, etc.
                 File file = new File(uri)
                 processCategoryMethods(loader, file)
                 Collection<String> services = processMetaInfServices(loader, file)
@@ -286,7 +268,7 @@ class GrapeIvy implements GrapeEngine {
                 }
             }
             if (runnerServicesFound) {
-                GroovyRunnerRegistry.instance.load(loader)
+                GroovyRunnerRegistry.getInstance().load(loader)
             }
         } catch (Exception e) {
             // clean-up the state first
@@ -302,19 +284,18 @@ class GrapeIvy implements GrapeEngine {
         null
     }
 
+    @CompileDynamic
     private void addURL(ClassLoader loader, URI uri) {
         loader.addURL(uri.toURL())
     }
 
-    @SuppressWarnings('Instanceof')
-    @CompileStatic
     private processCategoryMethods(ClassLoader loader, File file) {
         // register extension methods if jar
-        if (file.name.toLowerCase().endsWith('.jar')) {
-            def mcRegistry = GroovySystem.metaClassRegistry
+        if (file.getName().toLowerCase().endsWith('.jar')) {
+            def mcRegistry = GroovySystem.getMetaClassRegistry()
             if (mcRegistry instanceof MetaClassRegistryImpl) {
                 try (JarFile jar = new JarFile(file)) {
-                    def entry = jar.getEntry(ExtensionModuleScanner.MODULE_META_INF_FILE)
+                    ZipEntry entry = jar.getEntry(ExtensionModuleScanner.MODULE_META_INF_FILE)
                     if (!entry) {
                         entry = jar.getEntry(ExtensionModuleScanner.LEGACY_MODULE_META_INF_FILE)
                     }
@@ -325,7 +306,7 @@ class GrapeIvy implements GrapeEngine {
                             props.load(is)
                         }
 
-                        Map<CachedClass, List<MetaMethod>> metaMethods = new HashMap<CachedClass, List<MetaMethod>>()
+                        Map<CachedClass, List<MetaMethod>> metaMethods = [:]
                         mcRegistry.registerExtensionModuleFromProperties(props, loader, metaMethods)
                         // add old methods to the map
                         metaMethods.each { CachedClass c, List<MetaMethod> methods ->
@@ -333,21 +314,20 @@ class GrapeIvy implements GrapeEngine {
                             // have their own ClassInfo, and we must change them as well!
                             Set<CachedClass> classesToBeUpdated = [c].toSet()
                             ClassInfo.onAllClassInfo { ClassInfo info ->
-                                if (c.theClass.isAssignableFrom(info.cachedClass.theClass)) {
-                                    classesToBeUpdated << info.cachedClass
+                                if (c.getTheClass().isAssignableFrom(info.getCachedClass().getTheClass())) {
+                                    classesToBeUpdated << info.getCachedClass()
                                 }
                             }
                             classesToBeUpdated*.addNewMopMethods(methods)
                         }
                     }
-                } catch (ZipException zipException) {
-                    throw new RuntimeException("Grape could not load jar '$file'", zipException)
+                } catch (ZipException e) {
+                    throw new RuntimeException("Grape could not load jar '$file'", e)
                 }
             }
         }
     }
 
-    @CompileStatic
     void processOtherServices(ClassLoader loader, File f) {
         processMetaInfServices(loader, f) // ignore result
     }
@@ -360,9 +340,8 @@ class GrapeIvy implements GrapeEngine {
      * @param f ZipFile in which to search for services
      * @return a collection of service provider files that were found
      */
-    @CompileStatic
     private Collection<String> processMetaInfServices(ClassLoader loader, File f) {
-        List<String> services = new ArrayList<>()
+        List<String> services = []
         try (ZipFile zf = new ZipFile(f)) {
             String providerConfig = 'org.codehaus.groovy.runtime.SerializedCategoryMethods'
             ZipEntry serializedCategoryMethods = zf.getEntry(METAINF_PREFIX + providerConfig)
@@ -380,7 +359,7 @@ class GrapeIvy implements GrapeEngine {
                 services.add(providerConfig)
 
                 try (InputStream is = zf.getInputStream(pluginRunners)) {
-                    processRunners(is, f.name, loader)
+                    processRunners(is, f.getName(), loader)
                 }
             }
             // GroovyRunners are loaded per ClassLoader using a ServiceLoader so here
@@ -390,44 +369,42 @@ class GrapeIvy implements GrapeEngine {
             }
         } catch (ZipException ignore) {
             // ignore files we can't process, e.g. non-jar/zip artifacts
-            // TODO log a warning
+            // TODO: log a warning
         }
         services
     }
 
-    @CompileStatic
     void processSerializedCategoryMethods(InputStream is) {
-        is.text.readLines().each {
-            System.err.println it.trim() // TODO implement this or delete it
+        is.getText().readLines().each {
+            System.err.println(it.trim()) // TODO: implement this or delete it
         }
     }
 
-    @CompileStatic
     void processRunners(InputStream is, String name, ClassLoader loader) {
-        GroovyRunnerRegistry registry = GroovyRunnerRegistry.instance
-        is.text.readLines()*.trim().findAll { String line -> !line.isEmpty() && line[0] != '#' }.each {
-            String line = (String) it
+        GroovyRunnerRegistry registry = GroovyRunnerRegistry.getInstance()
+        is.getText().readLines()*.trim().each { String line ->
+            if (!line.isEmpty() && line[0] != '#')
             try {
                 registry[name] = (GroovyRunner) loader.loadClass(line).newInstance()
-            } catch (Exception ex) {
-                throw new IllegalStateException("Error registering runner class '$it'", ex)
+            } catch (Exception e) {
+                throw new IllegalStateException("Error registering runner class '$line'", e)
             }
         }
     }
 
     ResolveReport getDependencies(Map args, IvyGrabRecord... grabRecords) {
-        def cacheManager = ivyInstance.resolutionCacheManager
+        def cacheManager = ivyInstance.getResolutionCacheManager()
         def millis = System.currentTimeMillis()
         def md = new DefaultModuleDescriptor(ModuleRevisionId.newInstance('caller', 'all-caller', 'working' + millis.toString()[-2..-1]), 'integration', null, true)
         md.addConfiguration(new Configuration('default'))
-        md.lastModified = millis
+        md.setLastModified(millis)
 
         addExcludesIfNeeded(args, md)
 
         for (IvyGrabRecord grabRecord : grabRecords) {
-            def confs = grabRecord.conf ?: ['*']
-            DefaultDependencyDescriptor dd = (DefaultDependencyDescriptor) md.dependencies.find {
-                it.dependencyRevisionId == grabRecord.mrid
+            List<String> confs = grabRecord.conf ?: ['*']
+            DefaultDependencyDescriptor dd = (DefaultDependencyDescriptor) md.getDependencies().find {
+                it.getDependencyRevisionId() == grabRecord.mrid
             }
             if (!dd) {
                 dd = new DefaultDependencyDescriptor(md, grabRecord.mrid, grabRecord.force, grabRecord.changing, grabRecord.transitive)
@@ -446,13 +423,12 @@ class GrapeIvy implements GrapeEngine {
 
         // resolve grab and dependencies
         def resolveOptions = new ResolveOptions(
-            confs: DEF_CONFIG as String[],
-            outputReport: false,
-            validate: (boolean) (args.containsKey('validate') ? args.validate : false)
+            confs: DEFAULT_CONF as String[], outputReport: false,
+            validate: (args.containsKey('validate') ? (boolean) args.validate : false)
         )
-        ivyInstance.settings.defaultResolver = args.autoDownload ? 'downloadGrapes' : 'cachedGrapes'
+        ivyInstance.getSettings().setDefaultResolver(args.autoDownload ? 'downloadGrapes' : 'cachedGrapes')
         if (args.disableChecksums) {
-            ivyInstance.settings.setVariable('ivy.checksums', '')
+            ivyInstance.getSettings().setVariable('ivy.checksums', '')
         }
         boolean reportDownloads = Boolean.getBoolean('groovy.grape.report.downloads')
         if (reportDownloads) {
@@ -465,28 +441,27 @@ class GrapeIvy implements GrapeEngine {
             try {
                 report = ivyInstance.resolve(md, resolveOptions)
                 break
-            } catch (IOException ioe) {
+            } catch (IOException e) {
                 if (attempt--) {
-                    if (reportDownloads)
-                        System.err.println 'Grab Error: retrying...'
-                    sleep attempt > 4 ? 350 : 1000
+                    if (reportDownloads) System.err.println('Grab Error: retrying...')
+                    sleep(attempt > 4 ? 350 : 1000)
                     continue
                 }
-                throw new RuntimeException("Error grabbing grapes -- $ioe.message")
+                throw new RuntimeException("Error grabbing grapes -- ${e.getMessage()}")
             }
         }
 
         if (report.hasError()) {
-            throw new RuntimeException("Error grabbing Grapes -- $report.allProblemMessages")
+            throw new RuntimeException("Error grabbing Grapes -- ${report.getAllProblemMessages()}")
         }
-        if (report.downloadSize && reportDownloads) {
-            System.err.println "Downloaded ${report.downloadSize >> 10} Kbytes in ${report.downloadTime}ms:\n  ${report.allArtifactsReports*.toString().join('\n  ')}"
+        if (report.getDownloadSize() && reportDownloads) {
+            System.err.println("Downloaded ${report.getDownloadSize() >> 10} Kbytes in ${report.getDownloadTime()}ms:\n  ${report.getAllArtifactsReports()*.toString().join('\n  ')}")
         }
-        md = report.moduleDescriptor
+        md = report.getModuleDescriptor()
 
         if (!args.preserveFiles) {
-            cacheManager.getResolvedIvyFileInCache(md.moduleRevisionId).delete()
-            cacheManager.getResolvedIvyPropertiesInCache(md.moduleRevisionId).delete()
+            cacheManager.getResolvedIvyFileInCache(md.getModuleRevisionId()).delete()
+            cacheManager.getResolvedIvyPropertiesInCache(md.getModuleRevisionId()).delete()
         }
 
         report
@@ -496,20 +471,18 @@ class GrapeIvy implements GrapeEngine {
         ivyInstance.eventManager.addIvyListener { ivyEvent ->
             switch (ivyEvent) {
             case StartResolveEvent:
-                ivyEvent.moduleDescriptor.dependencies.each {
+                ((StartResolveEvent) ivyEvent).getModuleDescriptor().getDependencies().each {
                     def name = it.toString()
-                    if (!resolvedDependencies.contains(name)) {
-                        resolvedDependencies << name
-                        System.err.println "Resolving $name"
+                    if (resolvedDependencies.add(name)) {
+                        System.err.println("Resolving $name")
                     }
                 }
                 break
             case PrepareDownloadEvent:
-                ivyEvent.artifacts.each {
+                ((PrepareDownloadEvent) ivyEvent).getArtifacts().each {
                     def name = it.toString()
-                    if (!downloadedArtifacts.contains(name)) {
-                        downloadedArtifacts << name
-                        System.err.println "Preparing to download artifact $name"
+                    if (downloadedArtifacts.add(name)) {
+                        System.err.println("Preparing to download artifact $name")
                     }
                 }
                 break
@@ -518,21 +491,21 @@ class GrapeIvy implements GrapeEngine {
     }
 
     void uninstallArtifact(String group, String module, String rev) {
-        // TODO consider transitive uninstall as an option
-        Pattern ivyFilePattern = ~/ivy-(.*)\.xml/ //TODO get pattern from ivy conf
+        // TODO: consider transitive uninstall as an option
+        Pattern ivyFilePattern = ~/ivy-(.*)\.xml/ // TODO: get pattern from ivy conf
         grapeCacheDir.eachDir { File groupDir ->
-            if (groupDir.name == group) groupDir.eachDir { File moduleDir ->
-                if (moduleDir.name == module) moduleDir.eachFileMatch(ivyFilePattern) { File ivyFile ->
-                    def m = ivyFilePattern.matcher(ivyFile.name)
+            if (groupDir.getName() == group) groupDir.eachDir { File moduleDir ->
+                if (moduleDir.getName() == module) moduleDir.eachFileMatch(ivyFilePattern) { File ivyFile ->
+                    def m = ivyFilePattern.matcher(ivyFile.getName())
                     if (m.matches() && m.group(1) == rev) {
-                        // TODO handle other types? e.g. 'dlls'
+                        // TODO: handle other types? e.g. 'dlls'
                         def jardir = new File(moduleDir, 'jars')
                         if (!jardir.exists()) return
                         def db = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder()
-                        def root = db.parse(ivyFile).documentElement
+                        def root = db.parse(ivyFile).getDocumentElement()
                         def publis = root.getElementsByTagName('publications')
-                        for (int i = 0; i < publis.length; i++) {
-                            def artifacts = publis.item(i).getElementsByTagName('artifact')
+                        for (int i = 0; i < publis.length; i += 1) {
+                            def artifacts = ((org.w3c.dom.Element) publis.item(i)).getElementsByTagName('artifact')
                             processArtifacts(artifacts, rev, jardir)
                         }
                         ivyFile.delete()
@@ -542,106 +515,102 @@ class GrapeIvy implements GrapeEngine {
         }
     }
 
-    private void processArtifacts(artifacts, String rev, File jardir) {
-        for (int j = 0; j < artifacts.length; j++) {
-            def artifact = artifacts.item(j)
-            def attrs = artifact.attributes
-            def name = attrs.getNamedItem('name').textContent + "-$rev"
-            def classifier = attrs.getNamedItemNS('m', 'classifier')?.textContent
+    private void processArtifacts(org.w3c.dom.NodeList artifacts, String rev, File jardir) {
+        for (int i = 0, n = artifacts.getLength(); i < n; i += 1) {
+            org.w3c.dom.Node artifact = artifacts.item(i)
+            def attrs = artifact.getAttributes()
+            def name = attrs.getNamedItem('name').getTextContent() + "-$rev"
+            def classifier = attrs.getNamedItemNS('m', 'classifier')?.getTextContent()
             if (classifier) name += "-$classifier"
-            name += ".${attrs.getNamedItem('ext').textContent}"
+            name += ".${attrs.getNamedItem('ext').getTextContent()}"
             def jarfile = new File(jardir, name)
             if (jarfile.exists()) {
-                System.err.println "Deleting ${jarfile.name}"
+                System.err.println("Deleting ${jarfile.getName()}")
                 jarfile.delete()
             }
         }
     }
 
     private addExcludesIfNeeded(Map args, DefaultModuleDescriptor md) {
-        if (!args.containsKey('excludes')) return
-        args.excludes.each { map ->
-            def excludeRule = new DefaultExcludeRule(new ArtifactId(
-                    new ModuleId(map.group, map.module), PatternMatcher.ANY_EXPRESSION,
-                    PatternMatcher.ANY_EXPRESSION,
-                    PatternMatcher.ANY_EXPRESSION),
-                    ExactPatternMatcher.INSTANCE, null)
+        args.excludes?.each { Map<String, String> map ->
+            def excludeRule = new DefaultExcludeRule(
+                    new ArtifactId(
+                            new ModuleId(map.group, map.module),
+                            PatternMatcher.ANY_EXPRESSION,
+                            PatternMatcher.ANY_EXPRESSION,
+                            PatternMatcher.ANY_EXPRESSION),
+                    ExactPatternMatcher.INSTANCE,
+                    null)
             excludeRule.addConfiguration('default')
             md.addExcludeRule(excludeRule)
         }
     }
 
     @Override
-    @CompileStatic
     Map<String, Map<String, List<String>>> enumerateGrapes() {
         Map<String, Map<String, List<String>>> bunches = [:]
-        Pattern ivyFilePattern = ~/ivy-(.*)\.xml/ //TODO get pattern from ivy conf
+        Pattern ivyFilePattern = ~/ivy-(.*)\.xml/ // TODO: get pattern from ivy conf
         grapeCacheDir.eachDir { File groupDir ->
             Map<String, List<String>> grapes = [:]
-            bunches[groupDir.name] = grapes
+            bunches[groupDir.getName()] = grapes
             groupDir.eachDir { File moduleDir ->
                 List<String> versions = []
                 moduleDir.eachFileMatch(ivyFilePattern) { File ivyFile ->
-                    def m = ivyFilePattern.matcher(ivyFile.name)
+                    def m = ivyFilePattern.matcher(ivyFile.getName())
                     if (m.matches()) versions += m.group(1)
                 }
-                grapes[moduleDir.name] = versions
+                grapes[moduleDir.getName()] = versions
             }
         }
         bunches
     }
 
     @Override
-    @CompileStatic
     URI[] resolve(Map args, Map... dependencies) {
         resolve(args, null, dependencies)
     }
 
     @Override
-    @CompileStatic
     URI[] resolve(Map args, List depsInfo, Map... dependencies) {
         // identify the target classloader early, so we fail before checking repositories
         ClassLoader loader = chooseClassLoader(
-                classLoader: args.remove('classLoader'),
                 refObject: args.remove('refObject'),
+                classLoader: args.remove('classLoader'),
                 calleeDepth: args.calleeDepth ?: DEFAULT_CALLEE_DEPTH,
         )
 
-        // check for non-fail null.
-        // If we were in fail mode we would have already thrown an exception
+        // check for non-fail null
+        // if we were in fail mode we would have already thrown an exception
         if (!loader) {
-            return [] as URI[]
+            return new URI[0]
         }
 
         resolve(loader, args, depsInfo, dependencies)
     }
 
-    @CompileStatic
     URI[] resolve(ClassLoader loader, Map args, Map... dependencies) {
         resolve(loader, args, null, dependencies)
     }
 
     URI[] resolve(ClassLoader loader, Map args, List depsInfo, Map... dependencies) {
         // check for mutually exclusive arguments
-        Set keys = args.keySet()
-        keys.each { a ->
-            Set badArgs = exclusiveGrabArgs[a]
+        Set<String> keys = args.keySet()
+        keys.each { key ->
+            Set<String> badArgs = MUTUALLY_EXCLUSIVE_KEYS[key]
             if (badArgs && !badArgs.disjoint(keys)) {
-                throw new RuntimeException("Mutually exclusive arguments passed into grab: ${keys.intersect(badArgs) + a}")
+                throw new RuntimeException("Mutually exclusive arguments passed into grab: ${keys.intersect(badArgs) + key}")
             }
         }
 
         // check the kill switch
         if (!enableGrapes) {
-            return [] as URI[]
+            return new URI[0]
         }
 
         boolean populateDepsInfo = (depsInfo != null)
-
         Set<IvyGrabRecord> localDeps = getLoadedDepsForLoader(loader)
-
-        dependencies.each {
-            IvyGrabRecord igr = createGrabRecord(it)
+        dependencies.each { Map dep ->
+            IvyGrabRecord igr = createGrabRecord(dep)
             grabRecordsForCurrDependencies.add(igr)
             localDeps.add(igr)
         }
@@ -653,26 +622,24 @@ class GrapeIvy implements GrapeEngine {
         // with a different version
         ResolveReport report = null
         try {
-            report = getDependencies(args, *localDeps.asList().reverse())
+            report = getDependencies(args, (localDeps as IvyGrabRecord[]).reverse(true))
         } catch (Exception e) {
-            // clean-up the state first
             localDeps.removeAll(grabRecordsForCurrDependencies)
             grabRecordsForCurrDependencies.clear()
             throw e
         }
 
         List<URI> results = []
-        for (ArtifactDownloadReport adl in report.allArtifactsReports) {
-            //TODO check artifact type, jar vs library, etc
-            if (adl.localFile) {
-                results += adl.localFile.toURI()
+        for (ArtifactDownloadReport adl : report.getAllArtifactsReports()) {
+            // TODO: check artifact type, jar vs library, etc.
+            if (adl.getLocalFile()) {
+                results += adl.getLocalFile().toURI()
             }
         }
 
         if (populateDepsInfo) {
-            def deps = report.dependencies
-            deps.each { depNode ->
-                def id = depNode.id
+            report.getDependencies().each { ivyNode ->
+                def id = ivyNode.id
                 depsInfo << ['group': id.organisation, 'module': id.name, 'revision': id.revision]
             }
         }
@@ -680,57 +647,46 @@ class GrapeIvy implements GrapeEngine {
         results as URI[]
     }
 
-    @CompileStatic
     private Set<IvyGrabRecord> getLoadedDepsForLoader(ClassLoader loader) {
-        Set<IvyGrabRecord> localDeps = loadedDeps.get(loader)
-        if (localDeps == null) {
-            // use a linked set to preserve initial insertion order
-            localDeps = new LinkedHashSet<IvyGrabRecord>()
-            loadedDeps.put(loader, localDeps)
-        }
-        localDeps
+        // use a LinkedHashSet to preserve the initial insertion order
+        loadedDeps.computeIfAbsent(loader, k -> [] as LinkedHashSet)
     }
 
     @Override
     Map[] listDependencies(ClassLoader classLoader) {
-        if (loadedDeps.containsKey(classLoader)) {
-            List<Map> results = []
-            loadedDeps[classLoader].each { IvyGrabRecord grabbed ->
-                def dep = [
-                        group  : grabbed.mrid.organisation,
-                        module : grabbed.mrid.name,
-                        version: grabbed.mrid.revision
-                ]
-                if (grabbed.conf != DEF_CONFIG) {
-                    dep.conf = grabbed.conf
-                }
-                if (grabbed.changing) {
-                    dep.changing = grabbed.changing
-                }
-                if (!grabbed.transitive) {
-                    dep.transitive = grabbed.transitive
-                }
-                if (!grabbed.force) {
-                    dep.force = grabbed.force
-                }
-                if (grabbed.classifier) {
-                    dep.classifier = grabbed.classifier
-                }
-                if (grabbed.ext) {
-                    dep.ext = grabbed.ext
-                }
-                if (grabbed.type) {
-                    dep.type = grabbed.type
-                }
-                results << dep
+        List<? extends Map> results = loadedDeps[classLoader]?.collect { IvyGrabRecord grabbed ->
+            def dep = [
+                    group  : grabbed.mrid.getOrganisation(),
+                    module : grabbed.mrid.getName(),
+                    version: grabbed.mrid.getRevision()
+            ]
+            if (grabbed.conf != DEFAULT_CONF) {
+                dep.conf = grabbed.conf
             }
-            return results
+            if (grabbed.changing) {
+                dep.changing = grabbed.changing
+            }
+            if (!grabbed.transitive) {
+                dep.transitive = grabbed.transitive
+            }
+            if (!grabbed.force) {
+                dep.force = grabbed.force
+            }
+            if (grabbed.classifier) {
+                dep.classifier = grabbed.classifier
+            }
+            if (grabbed.ext) {
+                dep.ext = grabbed.ext
+            }
+            if (grabbed.type) {
+                dep.type = grabbed.type
+            }
+            dep
         }
-        null
+        results as Map[]
     }
 
     @Override
-    @CompileStatic
     void addResolver(@NamedParams([
         @NamedParam(value='name', type=String, required=true),
         @NamedParam(value='root', type=String, required=true),
@@ -739,8 +695,8 @@ class GrapeIvy implements GrapeEngine {
         def resolver = new IBiblioResolver(
             name: (String) args.name,
             root: (String) args.root,
-            m2compatible: (boolean) args.getOrDefault('m2Compatible', Boolean.TRUE),
-            settings: (ResolverSettings) settings
+            settings: (ResolverSettings) settings,
+            m2compatible: (boolean) args.getOrDefault('m2Compatible', Boolean.TRUE)
         )
 
         def chainResolver = (ChainResolver) settings.getResolver('downloadGrapes')
@@ -753,38 +709,14 @@ class GrapeIvy implements GrapeEngine {
 }
 
 @CompileStatic
+@EqualsAndHashCode
 class IvyGrabRecord {
     ModuleRevisionId mrid
     List<String> conf
-    boolean changing
-    boolean transitive
-    boolean force
-    String classifier
     String ext
     String type
-
-    @Override
-    int hashCode() {
-        (mrid.hashCode() ^ conf.hashCode()
-                ^ (changing ? 0xaaaaaaaa : 0x55555555)
-                ^ (transitive ? 0xbbbbbbbb : 0x66666666)
-                ^ (force ? 0xcccccccc : 0x77777777)
-                ^ (classifier ? classifier.hashCode() : 0)
-                ^ (ext ? ext.hashCode() : 0)
-                ^ (type ? type.hashCode() : 0))
-    }
-
-    @Override
-    boolean equals(Object that) {
-        if (that instanceof IvyGrabRecord) {
-            return (this.mrid == that.mrid)
-                && (this.conf == that.conf)
-                && (this.changing == that.changing)
-                && (this.transitive == that.transitive)
-                && (this.force == that.force)
-                && (this.classifier == that.classifier)
-                && (this.ext == that.ext)
-                && (this.type == that.type)
-        }
-    }
+    String classifier
+    boolean force
+    boolean changing
+    boolean transitive
 }
