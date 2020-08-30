@@ -1376,6 +1376,30 @@ method()
         '''
     }
 
+    void testGroovy9570() {
+        assertScript '''
+            interface Item {}
+
+            class C<I extends Item> {
+                Queue<I> queue
+
+                def c = { ->
+                    queue.each { I item ->
+                        println item
+                    }
+                }
+
+                def m() {
+                    queue.each { I item ->
+                        println item
+                    }
+                }
+            }
+
+            new C()
+        '''
+    }
+
     void testGroovy9597a() {
         assertScript '''
             import groovy.transform.stc.*

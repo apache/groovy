@@ -2026,6 +2026,16 @@ public abstract class StaticTypeCheckingSupport {
         return false;
     }
 
+    static Map<GenericsTypeName, GenericsType> extractGenericsParameterMapOfThis(TypeCheckingContext context) {
+        ClassNode cn = context.getEnclosingClassNode();
+        MethodNode mn = context.getEnclosingMethod();
+        // GROOVY-9570: find the innermost class or method
+        if (cn != null && cn.getEnclosingMethod() == mn) {
+            return getGenericsParameterMapOfThis(cn);
+        }
+        return extractGenericsParameterMapOfThis(mn);
+    }
+
     static Map<GenericsTypeName, GenericsType> extractGenericsParameterMapOfThis(MethodNode mn) {
         if (mn == null) return null;
 
