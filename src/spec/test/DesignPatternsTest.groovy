@@ -2137,23 +2137,25 @@ class DesignPatternsTest extends CompilableTestSupport {
     }
 
     void testVisitorSimpleExample() {
-        shouldCompile '''
+        assertScript '''
+            import groovy.transform.ToString
             // tag::visitor_simple_example[]
             abstract class Shape { }
 
+            @ToString(includeNames=true)
             class Rectangle extends Shape {
-                def x, y, width, height
+                def x, y, w, h
 
-                Rectangle(x, y, width, height) {
-                    this.x = x; this.y = y; this.width = width; this.height = height
+                Rectangle(x, y, w, h) {
+                    this.x = x; this.y = y; this.w = w; this.h = h
                 }
 
                 def union(rect) {
                     if (!rect) return this
                     def minx = [rect.x, x].min()
-                    def maxx = [rect.x + width, x + width].max()
+                    def maxx = [rect.x + rect.w, x + w].max()
                     def miny = [rect.y, y].min()
-                    def maxy = [rect.y + height, y + height].max()
+                    def maxy = [rect.y + rect.h, y + h].max()
                     new Rectangle(minx, miny, maxx - minx, maxy - miny)
                 }
 
@@ -2194,7 +2196,10 @@ class DesignPatternsTest extends CompilableTestSupport {
                 }
 
                 def visit_line(line) {
-                    def line_bounds = new Rectangle(line.x1, line.y1, line.x2-line.y1, line.x2-line.y2)
+                    def line_bounds = new Rectangle([line.x1, line.x2].min(),
+                                                    [line.y1, line.y2].min(),
+                                                    line.x2 - line.y1,
+                                                    line.x2 - line.y2)
                     if (bounds)
                         bounds = bounds.union(line_bounds)
                     else
@@ -2213,27 +2218,29 @@ class DesignPatternsTest extends CompilableTestSupport {
             def visitor = new BoundingRectangleVisitor()
             group.accept(visitor)
             bounding_box = visitor.bounds
-            println bounding_box.dump()
+            assert bounding_box.toString() == 'Rectangle(x:60, y:5, w:50, h:70)'
             // end::visitor_simple_example[]
         '''
     }
 
     void testVisitorSimpleExample2() {
-        shouldCompile '''
+        assertScript '''
+            import groovy.transform.ToString
             // tag::visitor_simple_example2[]
             abstract class Shape {
                 def accept(Closure yield) { yield(this) }
             }
 
+            @ToString(includeNames=true)
             class Rectangle extends Shape {
                 def x, y, w, h
                 def bounds() { this }
                 def union(rect) {
                     if (!rect) return this
                     def minx = [ rect.x, x ].min()
-                    def maxx = [ rect.x + w, x + w ].max()
+                    def maxx = [ rect.x + rect.w, x + w ].max()
                     def miny = [ rect.y, y ].min()
-                    def maxy = [ rect.y + h, y + h ].max()
+                    def maxy = [ rect.y + rect.h, y + h ].max()
                     new Rectangle(x:minx, y:miny, w:maxx - minx, h:maxy - miny)
                 }
             }
@@ -2241,7 +2248,8 @@ class DesignPatternsTest extends CompilableTestSupport {
             class Line extends Shape {
                 def x1, y1, x2, y2
                 def bounds() {
-                    new Rectangle(x:[x1, x2].min(), y:[y1, y2].min(), w:(x2 - x1).abs(), h:(y2 - y1).abs())
+                    new Rectangle(x:[x1, x2].min(), y:[y1, y2].min(),
+                                  w:(x2 - x1).abs(), h:(y2 - y1).abs())
                 }
             }
 
@@ -2257,13 +2265,70 @@ class DesignPatternsTest extends CompilableTestSupport {
             group << new Line(x1:90, y1:30, x2:60, y2:5)
             def bounds
             group.accept{ bounds = it.bounds().union(bounds) }
-            println bounds.dump()
+            assert bounds.toString() == 'Rectangle(x:60, y:5, w:50, h:70)'
             // end::visitor_simple_example2[]
         '''
     }
 
+    void testVisitorSimpleExample3() {
+        assertScript '''
+            import groovy.transform.ToString
+            import java.util.function.Function
+            // tag::visitor_simple_example3[]
+            abstract class Shape {
+                def accept(Function<Shape, Shape> yield) { yield.apply(this) }
+            }
+
+            @ToString(includeNames=true)
+            class Rectangle extends Shape {
+            // end::visitor_simple_example3[]
+                def x, y, w, h
+                def bounds() { this }
+                def union(rect) {
+                    if (!rect) return this
+                    def minx = [ rect.x, x ].min()
+                    def maxx = [ rect.x + rect.w, x + w ].max()
+                    def miny = [ rect.y, y ].min()
+                    def maxy = [ rect.y + rect.h, y + h ].max()
+                    new Rectangle(x:minx, y:miny, w:maxx - minx, h:maxy - miny)
+                }
+            // tag::visitor_simple_example3[]
+                /* ... same as with Closures ... */
+            }
+
+            class Line extends Shape {
+            // end::visitor_simple_example3[]
+                def x1, y1, x2, y2
+                def bounds() {
+                    new Rectangle(x:[x1, x2].min(), y:[y1, y2].min(),
+                                  w:(x2 - x1).abs(), h:(y2 - y1).abs())
+                }
+                /*
+            // tag::visitor_simple_example3[]
+                /* ... same as with Closures ... */
+            }
+
+            class Group {
+                def shapes = []
+                def leftShift(shape) { shapes += shape }
+                def accept(Function<Shape, Shape> yield) {
+                    shapes.stream().forEach(s -> s.accept(yield))
+                }
+            }
+
+            def group = new Group()
+            group << new Rectangle(x:100, y:40, w:10, h:5)
+            group << new Rectangle(x:100, y:70, w:10, h:5)
+            group << new Line(x1:90, y1:30, x2:60, y2:5)
+            def bounds
+            group.accept(s -> { bounds = s.bounds().union(bounds) })
+            assert bounds.toString() == 'Rectangle(x:60, y:5, w:50, h:70)'
+            // end::visitor_simple_example3[]
+        '''
+    }
+
     void testVisitorAdvancedExample() {
-        shouldCompile '''
+        assertScript '''
             // tag::visitor_advanced_example[]
             interface Visitor {
                 void visit(NodeType1 n1)
@@ -2305,15 +2370,17 @@ class DesignPatternsTest extends CompilableTestSupport {
 
             // tag::visitor_advanced_example2[]
             NodeType1 root = new NodeType1()
-            root.children = new Visitable[2]
-            root.children[0] = new NodeType1()
-            root.children[1] = new NodeType2()
+            root.children = new Visitable[]{new NodeType1(), new NodeType2()}
+
+            def counter = new NodeType1Counter()
+            root.accept(counter)
+            assert counter.count == 2
             // end::visitor_advanced_example2[]
         '''
     }
 
     void testVisitorAdvancedExample3() {
-        shouldCompile '''
+        assertScript '''
             // tag::visitor_advanced_example3[]
             interface Visitor {
                 void visit(NodeType1 n1)
@@ -2359,11 +2426,17 @@ class DesignPatternsTest extends CompilableTestSupport {
                 }
             }
             // end::visitor_advanced_example3[]
+            NodeType1 root = new NodeType1()
+            root.children = new Visitable[]{new NodeType1(), new NodeType2()}
+
+            def counter = new NodeType1Counter()
+            root.accept(counter)
+            assert counter.count == 2
         '''
     }
 
     void testVisitorAdvancedExample4() {
-        shouldCompile '''
+        assertScript '''
             // tag::visitor_advanced_example4[]
             class DefaultVisitor {
                 void visit(NodeType1 n1) {
@@ -2393,17 +2466,23 @@ class DesignPatternsTest extends CompilableTestSupport {
                 }
             }
             // end::visitor_advanced_example4[]
-        '''
+            NodeType1 root = new NodeType1()
+            root.children = new Visitable[]{new NodeType1(), new NodeType2()}
+
+            def counter = new NodeType1Counter()
+            counter.visit(root)
+            assert counter.count == 2
+      '''
     }
 
     void testVisitorAdvancedExample5() {
-        shouldCompile '''
+        assertScript '''
             // tag::visitor_advanced_example5[]
             class DefaultVisitor {
                 void visit(Visitable v) {
-                    doIteraton(v)
+                    doIteration(v)
                 }
-                void doIteraton(Visitable v) {
+                void doIteration(Visitable v) {
                     v.children.each {
                         visit(it)
                     }
@@ -2430,6 +2509,12 @@ class DesignPatternsTest extends CompilableTestSupport {
                 }
             }
             // end::visitor_advanced_example5[]
+            NodeType1 root = new NodeType1()
+            root.children = new Visitable[]{new NodeType1(), new NodeType2()}
+
+            def counter = new NodeType1Counter()
+            counter.visit(root)
+            assert counter.count == 2
         '''
     }
 }
