@@ -62,7 +62,7 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper impl
         if (top == int_TYPE || top == long_TYPE || top == short_TYPE || top == byte_TYPE || top == char_TYPE) {
             bytecodeX(mv -> {
                 if (top == long_TYPE) {
-                    mv.visitLdcInsn(-1);
+                    mv.visitLdcInsn(-1L);
                     mv.visitInsn(LXOR);
                 } else {
                     mv.visitInsn(ICONST_M1);
