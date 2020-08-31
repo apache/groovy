@@ -61,7 +61,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9704
-    void _FIXME_testBitwiseNegate_long() {
+    void testBitwiseNegate_long() {
         assertScript '''
             long x = 1L
             assert ~x == -2L
