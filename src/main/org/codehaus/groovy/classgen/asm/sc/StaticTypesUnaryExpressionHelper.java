@@ -46,8 +46,6 @@ import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 /**
  * An unary expression helper which generates optimized bytecode depending on
  * the current type on top of the operand stack.
- *
- * @author Cedric Champeau
  */
 public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper implements Opcodes {
     private static final UnaryMinusExpression EMPTY_UNARY_MINUS = new UnaryMinusExpression(EmptyExpression.INSTANCE);
@@ -71,7 +69,7 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper impl
                     @Override
                     public void visit(final MethodVisitor mv) {
                         if (long_TYPE==top) {
-                            mv.visitLdcInsn(-1);
+                            mv.visitLdcInsn(-1L);
                             mv.visitInsn(LXOR);
                         } else {
                             mv.visitInsn(ICONST_M1);
