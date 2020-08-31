@@ -1508,7 +1508,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-6455
     void testDelegateWithGenerics() {
         assertScript '''
-            @groovy.transform.CompileStatic
             class IntList {
                 @Delegate List<Integer> delegate = new ArrayList<Integer>()
             }
@@ -1792,13 +1791,11 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             import groovy.transform.*
 
-            @CompileStatic
             @TupleConstructor(includeFields=true)
             abstract class A<N extends Number> {
                 protected final N number
             }
 
-            @CompileStatic
             class C<L extends Long> extends A<L> { // further restriction of type parameter
                 C(L longNumber) {
                     super(longNumber)
@@ -1818,13 +1815,11 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             import groovy.transform.*
 
-            @CompileStatic
             @TupleConstructor
             abstract class A<N extends Number> {
                 final N number
             }
 
-            @CompileStatic
             class C<L extends Long> extends A<L> {
                 C(L longNumber) {
                     super(longNumber)
@@ -1843,7 +1838,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             import groovy.transform.*
 
-            @CompileStatic
             @TupleConstructor(includeFields=true)
             abstract class A<N extends Number> {
                 protected final N number
@@ -1853,7 +1847,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
 
-            @CompileStatic
             class C<L extends Long> extends A<L> {
                 C(L longNumber) {
                     super(longNumber)
@@ -1873,13 +1866,11 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             import groovy.transform.*
 
-            @CompileStatic
             @TupleConstructor(includeFields=true)
             abstract class A<N extends Number> {
                 final N number
             }
 
-            @CompileStatic
             class C<L extends Long> extends A<L> {
                 C(L longNumber) {
                     super(longNumber)
@@ -1891,6 +1882,29 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
 
             assert new C<Long>(42L).value == 42L
+        '''
+    }
+
+    // GROOVY-9635
+    void testCovariantReturnTypeInferredFromMethod3() {
+        assertScript '''
+            import java.util.function.Function
+
+            class C<R extends Number> {
+                def <V> V m(Function<C, V> f) { // R from C is confused with R->V from Function
+                    V result = f.apply(this)
+                    return result
+                }
+            }
+
+            def ret = new C().m(new Function<C, String>() {
+                @Override
+                String apply(C that) {
+                    return 'foo'
+                }
+            })
+
+            assert ret == 'foo'
         '''
     }
 
