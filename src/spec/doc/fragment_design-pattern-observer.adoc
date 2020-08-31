@@ -1,0 +1,105 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Observer Pattern
+
+
+The https://en.wikipedia.org/wiki/Observer_pattern[Observer Pattern] allows one or more _observers_ to be notified
+about changes or events from a _subject_ object.
+
+[plantuml, ChainOfResponsibilityClasses, png]
+....
+skinparam ClassBorderColor<<Hidden>> Transparent
+skinparam ClassBackgroundColor<<Hidden>> Transparent
+skinparam ClassStereotypeFontColor<<Hidden>> Transparent
+skinparam ClassFontSize<<Hidden>> 24
+skinparam ClassFontStyle<<Hidden>> bold
+skinparam shadowing<<Hidden>> false
+hide <<Hidden>> circle
+class "..." as ConcreteHidden
+class ConcreteHidden <<Hidden>> {
+}
+class Observer {
+    +update()
+}
+class ConcreteObserver1 {
+    +update()
+}
+class ConcreteObserverN {
+    +update()
+}
+hide Observer fields
+class Subject {
+    -observerCollection
+    +registerObserver(observer)
+    +unregisterObserver(observer)
+    +notifyObservers()
+}
+Observer <|-- ConcreteObserver1
+Observer <|-[hidden]- ConcreteHidden
+Observer <|-- ConcreteObserverN
+Observer ---r---o Subject
+ConcreteObserver1 .r[hidden]. ConcreteHidden
+....
+
+== Example
+
+Here is a typical implementation of the classic pattern:
+
+[source,groovy]
+----
+include::../test/DesignPatternsTest.groovy[tags=observer_classic,indent=0]
+----
+
+Using Closures, we can avoid creating the concrete observer classes as shown below:
+
+[source,groovy]
+----
+include::../test/DesignPatternsTest.groovy[tags=observer_closures,indent=0]
+----
+
+As a variation for Groovy 3+, let's consider dropping the `Observer` interface and using lambdas as shown below:
+
+[source,groovy]
+----
+include::../test/DesignPatternsTest.groovy[tags=observer_lambdas,indent=0]
+----
+
+We are now calling the `accept` method from `Consumer` rather
+than the `update` method from `Observer`.
+
+== @Bindable and @Vetoable
+
+The JDK has some built-in classes which follow the observer pattern.
+The `java.util.Observer` and `java.util.Observable` classes are deprecated from JDK 9 due to various limitations.
+Instead, you are recommended to use various more powerful classes in the `java.beans` package such as `java.beans.PropertyChangeListener`.
+Luckily, Groovy has some built-in transforms (gapi:groovy.beans.Bindable[] and gapi:groovy.beans.Vetoable[])
+which support for some key classes from that package.
+
+[source,groovy]
+----
+include::../test/DesignPatternsTest.groovy[tags=observer_bindable,indent=0]
+----
+
+Here, methods like `addPropertyChangeListener` perform the same role as `registerObserver` in previous examples.
+There is a `firePropertyChange` method corresponding to `notifyAll`/`notifyObservers` in previous examples but Groovy adds that
+automatically here, so it isn't visible in the source code. There is also a `propertyChange` method that corresponds
+to the `update` method in previous examples, though again, that isn't visible here.

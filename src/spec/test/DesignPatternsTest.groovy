@@ -1359,6 +1359,165 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    void testObserverExample() {
+        assertScript '''
+            // tag::observer_classic[]
+            interface Observer {
+                void update(message)
+            }
+
+            class Subject {
+                private List observers = []
+                void register(observer) {
+                    observers << observer
+                }
+                void unregister(observer) {
+                    observers -= observer
+                }
+                void notifyAll(message) {
+                    observers.each{ it.update(message) }
+                }
+            }
+
+            class ConcreteObserver1 implements Observer {
+                def messages = []
+                void update(message) {
+                    messages << message
+                }
+            }
+
+            class ConcreteObserver2 implements Observer {
+                def messages = []
+                void update(message) {
+                    messages << message.toUpperCase()
+                }
+            }
+
+            def o1a = new ConcreteObserver1()
+            def o1b = new ConcreteObserver1()
+            def o2 = new ConcreteObserver2()
+            def observers = [o1a, o1b, o2]
+            new Subject().with {
+                register(o1a)
+                register(o2)
+                notifyAll('one')
+            }
+            new Subject().with {
+                register(o1b)
+                register(o2)
+                notifyAll('two')
+            }
+            def expected = [['one'], ['two'], ['ONE', 'TWO']]
+            assert observers*.messages == expected
+            // end::observer_classic[]
+        '''
+        assertScript '''
+            // tag::observer_closures[]
+            interface Observer {
+                void update(message)
+            }
+
+            class Subject {
+                private List observers = []
+                void register(Observer observer) {
+                    observers << observer
+                }
+                void unregister(observer) {
+                    observers -= observer
+                }
+                void notifyAll(message) {
+                    observers.each{ it.update(message) }
+                }
+            }
+
+            def messages1a = [], messages1b = [], messages2 = []
+            def o2 = { messages2 << it.toUpperCase() }
+            new Subject().with {
+                register{ messages1a << it }
+                register(o2)
+                notifyAll('one')
+            }
+            new Subject().with {
+                register{ messages1b << it }
+                register(o2)
+                notifyAll('two')
+            }
+            def expected = [['one'], ['two'], ['ONE', 'TWO']]
+            assert [messages1a, messages1b, messages2] == expected
+            // end::observer_closures[]
+        '''
+        assertScript '''
+            // tag::observer_lambdas[]
+            import java.util.function.Consumer
+
+            class Subject {
+                private List<Consumer> observers = []
+                void register(Consumer observer) {
+                    observers << observer
+                }
+                void unregister(observer) {
+                    observers -= observer
+                }
+                void notifyAll(message) {
+                    observers.each{ it.accept(message) }
+                }
+            }
+
+            def messages1a = [], messages1b = [], messages2 = []
+            def o2 = { messages2 << it.toUpperCase() }
+            new Subject().with {
+                register(s -> messages1a << s)
+                register(s -> messages2 << s.toUpperCase())
+                notifyAll('one')
+            }
+            new Subject().with {
+                register(s -> messages1b << s)
+                register(s -> messages2 << s.toUpperCase())
+                notifyAll('two')
+            }
+            def expected = [['one'], ['two'], ['ONE', 'TWO']]
+            assert [messages1a, messages1b, messages2] == expected
+            // end::observer_lambdas[]
+        '''
+        assertScript '''
+            // tag::observer_bindable[]
+            import groovy.beans.*
+            import java.beans.*
+
+            class PersonBean {
+                @Bindable String first
+                @Bindable String last
+                @Vetoable Integer age
+            }
+
+            def messages = [:].withDefault{[]}
+            new PersonBean().with {
+                addPropertyChangeListener{ PropertyChangeEvent ev ->
+                    messages[ev.propertyName] << "prop: $ev.newValue"
+                }
+                addVetoableChangeListener{ PropertyChangeEvent ev ->
+                    def name = ev.propertyName
+                    if (name == 'age' && ev.newValue > 40)
+                        throw new PropertyVetoException()
+                    messages[name] << "veto: $ev.newValue"
+                }
+                first = 'John'
+                age = 35
+                last = 'Smith'
+                first = 'Jane'
+                age = 42
+            }
+
+            def expected = [
+                first:['prop: John', 'prop: Jane'],
+                age:['veto: 35'],
+                last:['prop: Smith']
+            ]
+            assert messages == expected
+            // end::observer_bindable[]
+        '''
+    }
+
     void testPimpMyLibraryExample() {
         shouldCompile '''
             // tag::pimp_my_library_example[]

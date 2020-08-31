@@ -55,6 +55,8 @@ include::fragment_design-pattern-loan-my-resource.adoc[leveloffset=+2]
 
 include::fragment_design-pattern-null-object.adoc[leveloffset=+2]
 
+include::fragment_design-pattern-observer.adoc[leveloffset=+2]
+
 include::fragment_design-pattern-pimp-my-library.adoc[leveloffset=+2]
 
 include::fragment_design-pattern-proxy.adoc[leveloffset=+2]

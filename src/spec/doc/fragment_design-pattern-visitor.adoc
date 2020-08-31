@@ -146,7 +146,7 @@ include::../test/DesignPatternsTest.groovy[tags=visitor_advanced_example4,indent
 Looks like we saved a few lines of code here, but we made more.
 The `Visitable` nodes now do not refer to any `Visitor` class or interface.
 This is about the best level of separation you might expect here, but we can go further.
-Let us change the `Visitable` interface a little and let it return the children we want to visit next.
+Let's change the `Visitable` interface a little and let it return the children we want to visit next.
 This allows us a general iteration method.
 
 [source,groovy]
