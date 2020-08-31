@@ -25,7 +25,6 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
 import org.codehaus.groovy.ast.expr.UnaryPlusExpression;
-import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.classgen.asm.UnaryExpressionHelper;
 import org.codehaus.groovy.classgen.asm.WriterController;
@@ -38,66 +37,59 @@ import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 
 /**
- * An unary expression helper which generates optimized bytecode depending on
- * the current type on top of the operand stack.
+ * An expression helper which generates optimized bytecode depending on the
+ * current type on top of the operand stack.
  */
 public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper implements Opcodes {
+
+    private static final BitwiseNegationExpression EMPTY_BITWISE_NEGATE = new BitwiseNegationExpression(EmptyExpression.INSTANCE);
     private static final UnaryMinusExpression EMPTY_UNARY_MINUS = new UnaryMinusExpression(EmptyExpression.INSTANCE);
     private static final UnaryPlusExpression EMPTY_UNARY_PLUS = new UnaryPlusExpression(EmptyExpression.INSTANCE);
-    private static final BitwiseNegationExpression EMPTY_BITWISE_NEGATE = new BitwiseNegationExpression(EmptyExpression.INSTANCE);
-
-    private final WriterController controller;
 
     public StaticTypesUnaryExpressionHelper(final WriterController controller) {
         super(controller);
-        this.controller = controller;
     }
 
     @Override
     public void writeBitwiseNegate(final BitwiseNegationExpression expression) {
         expression.getExpression().visit(controller.getAcg());
-        if (isPrimitiveOnTop()) {
-            ClassNode top = getTopOperand();
-            if (top == int_TYPE || top == short_TYPE || top == byte_TYPE || top == char_TYPE || top == long_TYPE) {
-                BytecodeExpression bytecodeExpression = bytecodeX(mv -> {
-                    if (long_TYPE == top) {
-                        mv.visitLdcInsn(-1);
-                        mv.visitInsn(LXOR);
-                    } else {
-                        mv.visitInsn(ICONST_M1);
-                        mv.visitInsn(IXOR);
-                        if (byte_TYPE == top) {
-                            mv.visitInsn(I2B);
-                        } else if (char_TYPE == top) {
-                            mv.visitInsn(I2C);
-                        } else if (short_TYPE == top) {
-                            mv.visitInsn(I2S);
-                        }
+        ClassNode top = controller.getOperandStack().getTopOperand();
+        if (top == int_TYPE || top == long_TYPE || top == short_TYPE || top == byte_TYPE || top == char_TYPE) {
+            bytecodeX(mv -> {
+                if (top == long_TYPE) {
+                    mv.visitLdcInsn(-1);
+                    mv.visitInsn(LXOR);
+                } else {
+                    mv.visitInsn(ICONST_M1);
+                    mv.visitInsn(IXOR);
+                    if (top == byte_TYPE) {
+                        mv.visitInsn(I2B);
+                    } else if (top == char_TYPE) {
+                        mv.visitInsn(I2C);
+                    } else if (top == short_TYPE) {
+                        mv.visitInsn(I2S);
                     }
-                });
-                bytecodeExpression.visit(controller.getAcg());
-                controller.getOperandStack().remove(1);
-                return;
-            }
+                }
+            }).visit(controller.getAcg());
+            controller.getOperandStack().remove(1);
+        } else {
+            super.writeBitwiseNegate(EMPTY_BITWISE_NEGATE);
         }
-        super.writeBitwiseNegate(EMPTY_BITWISE_NEGATE);
     }
 
     @Override
     public void writeNotExpression(final NotExpression expression) {
-        TypeChooser typeChooser = controller.getTypeChooser();
         Expression subExpression = expression.getExpression();
-        ClassNode classNode = controller.getClassNode();
-        if (typeChooser.resolveType(subExpression, classNode) == boolean_TYPE) {
+        TypeChooser typeChooser = controller.getTypeChooser();
+        if (typeChooser.resolveType(subExpression, controller.getClassNode()) == boolean_TYPE) {
             subExpression.visit(controller.getAcg());
             controller.getOperandStack().doGroovyCast(boolean_TYPE);
-            BytecodeExpression bytecodeExpression = bytecodeX(mv -> {
+            bytecodeX(mv -> {
                 Label ne = new Label();
                 mv.visitJumpInsn(IFNE, ne);
                 mv.visitInsn(ICONST_1);
@@ -106,62 +98,50 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper impl
                 mv.visitLabel(ne);
                 mv.visitInsn(ICONST_0);
                 mv.visitLabel(out);
-            });
-            bytecodeExpression.visit(controller.getAcg());
+            }).visit(controller.getAcg());
             controller.getOperandStack().remove(1);
-            return;
+        } else {
+            super.writeNotExpression(expression);
         }
-        super.writeNotExpression(expression);
     }
 
     @Override
     public void writeUnaryMinus(final UnaryMinusExpression expression) {
         expression.getExpression().visit(controller.getAcg());
-        if (isPrimitiveOnTop()) {
-            ClassNode top = getTopOperand();
-            if (top != boolean_TYPE) {
-                BytecodeExpression bytecodeExpression = bytecodeX(mv -> {
-                    if (int_TYPE == top || short_TYPE == top || byte_TYPE == top || char_TYPE == top) {
-                        mv.visitInsn(INEG);
-                        if (byte_TYPE == top) {
-                            mv.visitInsn(I2B);
-                        } else if (char_TYPE == top) {
-                            mv.visitInsn(I2C);
-                        } else if (short_TYPE == top) {
-                            mv.visitInsn(I2S);
-                        }
-                    } else if (long_TYPE == top) {
-                        mv.visitInsn(LNEG);
-                    } else if (float_TYPE == top) {
-                        mv.visitInsn(FNEG);
-                    } else if (double_TYPE == top) {
-                        mv.visitInsn(DNEG);
+        ClassNode top = controller.getOperandStack().getTopOperand();
+        if (top == int_TYPE || top == long_TYPE || top == short_TYPE || top == float_TYPE || top == double_TYPE || top == byte_TYPE || top == char_TYPE) {
+            bytecodeX(mv -> {
+                if (top == int_TYPE || top == short_TYPE || top == byte_TYPE || top == char_TYPE) {
+                    mv.visitInsn(INEG);
+                    if (top == byte_TYPE) {
+                        mv.visitInsn(I2B);
+                    } else if (top == char_TYPE) {
+                        mv.visitInsn(I2C);
+                    } else if (top == short_TYPE) {
+                        mv.visitInsn(I2S);
                     }
-                });
-                bytecodeExpression.visit(controller.getAcg());
-                controller.getOperandStack().remove(1);
-                return;
-            }
+                } else if (top == long_TYPE) {
+                    mv.visitInsn(LNEG);
+                } else if (top == float_TYPE) {
+                    mv.visitInsn(FNEG);
+                } else if (top == double_TYPE) {
+                    mv.visitInsn(DNEG);
+                }
+            }).visit(controller.getAcg());
+            controller.getOperandStack().remove(1);
+        } else {
+            super.writeUnaryMinus(EMPTY_UNARY_MINUS);
         }
-        // we already visited the sub expression
-        super.writeUnaryMinus(EMPTY_UNARY_MINUS);
     }
 
     @Override
     public void writeUnaryPlus(final UnaryPlusExpression expression) {
         expression.getExpression().visit(controller.getAcg());
-        if (isPrimitiveOnTop()) {
-            // only visit the expression
-            return;
+        ClassNode top = controller.getOperandStack().getTopOperand();
+        if (top == int_TYPE || top == long_TYPE || top == short_TYPE || top == float_TYPE || top == double_TYPE || top == byte_TYPE || top == char_TYPE) {
+            // only visit the sub-expression
+        } else {
+            super.writeUnaryPlus(EMPTY_UNARY_PLUS);
         }
-        super.writeUnaryPlus(EMPTY_UNARY_PLUS);
-    }
-
-    private boolean isPrimitiveOnTop() {
-        return isPrimitiveType(getTopOperand());
-    }
-
-    private ClassNode getTopOperand() {
-        return controller.getOperandStack().getTopOperand();
     }
 }

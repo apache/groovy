@@ -21,9 +21,31 @@ package org.codehaus.groovy.classgen.asm.sc
 import groovy.transform.stc.UnaryOperatorSTCTest
 
 /**
- * Unit tests for static type checking : unary operator.
+ * Unit tests for static compilation : unary operators.
  */
 class UnaryOperatorStaticCompileTest extends UnaryOperatorSTCTest implements StaticCompilationTestSupport {
 
-}
+    @Override
+    void testUnaryPlus_char() {
+        assertScript '''
+            char x = 1
+            assert +x == 1
+        '''
+    }
 
+    @Override
+    void testUnaryMinus_char() {
+        assertScript '''
+            char x = 1
+            assert -x == 0xFFFF
+        '''
+    }
+
+    @Override
+    void testBitwiseNegate_char() {
+        assertScript '''
+            char x = 1
+            assert ~x == 0xFFFE
+        '''
+    }
+}
