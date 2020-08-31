@@ -41,7 +41,7 @@ public class UnaryExpressionHelper {
     static final MethodCaller unaryMinus = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "unaryMinus");
     static final MethodCaller bitwiseNegate = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "bitwiseNegate");
 
-    private final WriterController controller;
+    protected final WriterController controller;
 
     public UnaryExpressionHelper(final WriterController controller) {
         this.controller = controller;
