@@ -69,7 +69,7 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper impl
                     @Override
                     public void visit(final MethodVisitor mv) {
                         if (long_TYPE==top) {
-                            mv.visitLdcInsn(-1);
+                            mv.visitLdcInsn(-1L);
                             mv.visitInsn(LXOR);
                         } else {
                             mv.visitInsn(ICONST_M1);

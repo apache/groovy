@@ -23,117 +23,125 @@ package groovy.transform.stc
  */
 class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
 
-     void testUnaryPlusOnInt() {
-         assertScript '''
+    // GROOVY-9704
+    void testBitwiseNegate_long() {
+        assertScript '''
+            long x = 1L
+            assert ~x == -2L
+        '''
+    }
+
+    void testUnaryPlusOnInt() {
+        assertScript '''
             int x = 1
             assert +x == 1
-         '''
-     }
+        '''
+    }
 
-     void testUnaryPlusOnInteger() {
-         assertScript '''
+    void testUnaryPlusOnInteger() {
+        assertScript '''
             Integer x = new Integer(1)
             assert +x == 1
-         '''
-     }
+        '''
+    }
 
-     void testUnaryMinusOnInt() {
-         assertScript '''
+    void testUnaryMinusOnInt() {
+        assertScript '''
             int x = 1
             assert -x == -1
-         '''
-     }
+        '''
+    }
 
-     void testUnaryMinusOnInteger() {
-         assertScript '''
+    void testUnaryMinusOnInteger() {
+        assertScript '''
             Integer x = new Integer(1)
             assert -x == -1
-         '''
-     }
+        '''
+    }
 
-     void testUnaryPlusOnShort() {
-         assertScript '''
+    void testUnaryPlusOnShort() {
+        assertScript '''
             short x = 1
             assert +x == 1
-         '''
-     }
+        '''
+    }
 
-     void testUnaryPlusOnBoxedShort() {
-         assertScript '''
+    void testUnaryPlusOnBoxedShort() {
+        assertScript '''
             Short x = new Short((short)1)
             assert +x == 1
-         '''
-     }
+        '''
+    }
 
-     void testUnaryMinusOnShort() {
-         assertScript '''
+    void testUnaryMinusOnShort() {
+        assertScript '''
             short x = 1
             assert -x == -1
-         '''
-     }
+        '''
+    }
 
-     void testUnaryMinusOnBoxedShort() {
-         assertScript '''
+    void testUnaryMinusOnBoxedShort() {
+        assertScript '''
             Short x = new Short((short)1)
             assert -x == -1
-         '''
-     }
+        '''
+    }
 
-     void testUnaryPlusOnFloat() {
-         assertScript '''
+    void testUnaryPlusOnFloat() {
+        assertScript '''
             float x = 1f
             assert +x == 1f
-         '''
-     }
+        '''
+    }
 
-     void testUnaryPlusOnBoxedFloat() {
-         assertScript '''
+    void testUnaryPlusOnBoxedFloat() {
+        assertScript '''
             Float x = new Float(1f)
             assert +x == 1f
-         '''
-     }
+        '''
+    }
 
-     void testUnaryMinusOnFloat() {
-         assertScript '''
+    void testUnaryMinusOnFloat() {
+        assertScript '''
             float x = 1f
             assert -x == -1f
-         '''
-     }
+        '''
+    }
 
-     void testUnaryMinusOnBoxedFloat() {
-         assertScript '''
+    void testUnaryMinusOnBoxedFloat() {
+        assertScript '''
             Float x = new Float(1f)
             assert -x == -1f
-         '''
-     }
+        '''
+    }
 
-     void testUnaryPlusOnDouble() {
-         assertScript '''
+    void testUnaryPlusOnDouble() {
+        assertScript '''
             double x = 1d
             assert +x == 1d
-         '''
-     }
+        '''
+    }
 
-     void testUnaryPlusOnBoxedDouble() {
-         assertScript '''
+    void testUnaryPlusOnBoxedDouble() {
+        assertScript '''
             Double x = new Double(1d)
             assert +x == 1d
-         '''
-     }
+        '''
+    }
 
-     void testUnaryMinusOnDouble() {
-         assertScript '''
+    void testUnaryMinusOnDouble() {
+        assertScript '''
             double x = 1d
             assert -x == -1d
-         '''
-     }
+        '''
+    }
 
-     void testUnaryMinusOnBoxedDouble() {
-         assertScript '''
+    void testUnaryMinusOnBoxedDouble() {
+        assertScript '''
             Double x = new Double(1d)
             assert -x == -1d
-         '''
-     }
+        '''
+    }
 
     void testIntXIntInferredType() {
         assertScript '''
