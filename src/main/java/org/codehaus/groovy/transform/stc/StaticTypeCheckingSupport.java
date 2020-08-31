@@ -1673,43 +1673,37 @@ public abstract class StaticTypeCheckingSupport {
     ) {
         if (connections == null) return;
         int count = 0;
-        while (count < 10000) {
-            count++;
-            boolean checkForMorePlaceHolders = false;
-            for (Entry<GenericsTypeName, GenericsType> entry : resolvedPlaceholders.entrySet()) {
-                GenericsTypeName name = entry.getKey();
-                GenericsType replacement = connections.get(name);
-                if (replacement == null) {
-                    GenericsType value = entry.getValue();
-                    GenericsType newValue = applyGenericsContext(connections, value);
-                    entry.setValue(newValue);
-                    checkForMorePlaceHolders = checkForMorePlaceHolders || !equalIncludingGenerics(value, newValue);
-                    continue;
-                }
-                GenericsType original = entry.getValue();
-                if (!original.isWildcard() && !original.isPlaceholder()) {
-                    continue;
-                }
-                boolean placeholderReplacement = replacement.isPlaceholder();
-                if (placeholderReplacement) {
-                    GenericsType connectedType = resolvedPlaceholders.get(name);
-                    if (replacement == connectedType) continue;
-                }
-                // GROOVY-6787: Don't override the original if the replacement placeholder doesn't respect the bounds,
-                // otherwise the original bounds are lost which can result in accepting an incompatible type as an
-                // argument, for example.
-                ClassNode replacementType = extractType(replacement);
-                if (original.isCompatibleWith(replacementType)) {
-                    entry.setValue(replacement);
-                    if (placeholderReplacement) {
-                        checkForMorePlaceHolders = checkForMorePlaceHolders || !equalIncludingGenerics(original, replacement);
+
+        while (count++ < 10000) {
+            boolean checkForMorePlaceholders = false;
+            for (Map.Entry<GenericsTypeName, GenericsType> entry : resolvedPlaceholders.entrySet()) {
+                // entry could be T=T, T=T extends U, T=V, T=String, T=? extends String, etc.
+                GenericsType oldValue = entry.getValue();
+                if (oldValue.isPlaceholder()) { // T=T or V, not T=String or ? ...
+                    GenericsTypeName name = new GenericsTypeName(oldValue.getName());
+                    GenericsType newValue = connections.get(name); // find "V" in T=V
+                    if (newValue == oldValue) continue;
+                    if (newValue == null) {
+                        entry.setValue(newValue = applyGenericsContext(connections, oldValue));
+                        checkForMorePlaceholders = checkForMorePlaceholders || !equalIncludingGenerics(oldValue, newValue);
+                    } else if (!newValue.isPlaceholder() || newValue != resolvedPlaceholders.get(name)) {
+                        // GROOVY-6787: Don't override the original if the replacement doesn't respect the bounds otherwise
+                        // the original bounds are lost, which can result in accepting an incompatible type as an argument.
+                        ClassNode replacementType = extractType(newValue);
+                        if (oldValue.isCompatibleWith(replacementType)) {
+                            entry.setValue(newValue);
+                            if (newValue.isPlaceholder()) {
+                                checkForMorePlaceholders = checkForMorePlaceholders || !equalIncludingGenerics(oldValue, newValue);
+                            }
+                        }
                     }
                 }
             }
-            if (!checkForMorePlaceHolders) break;
+            if (!checkForMorePlaceholders) break;
         }
-        if (count >= 10000)
+        if (count >= 10000) {
             throw new GroovyBugError("unable to handle generics in " + resolvedPlaceholders + " with connections " + connections);
+        }
     }
 
     private static ClassNode extractType(GenericsType gt) {

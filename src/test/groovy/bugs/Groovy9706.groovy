@@ -18,8 +18,6 @@
  */
 package groovy.bugs
 
-import groovy.test.GroovyTestCase
-
 class Groovy9706 extends GroovyTestCase {
     void testVarargsPrimitive() {
         assertScript '''
