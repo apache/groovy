@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform
 
 import gls.CompilableTestSupport
+import groovy.transform.Sortable
 
 class SortableTransformTest extends CompilableTestSupport {
     void testSortableWithCustomOrdering() {
@@ -188,5 +189,55 @@ class SortableTransformTest extends CompilableTestSupport {
             assert persons.sort()*.age == [40, 25]
             assert persons.sort(false, Person.comparatorByAge())*.age == [40, 25]
         '''
+    }
+
+    // GROOVY-9711
+    @Sortable
+    class SortableBase {
+        Integer num
+    }
+
+    @Sortable
+    class SortableChild1 extends SortableBase {
+        String str
+    }
+
+    @Sortable(includeSuperProperties = true, includes = ['str'])
+    class SortableChild2 extends SortableBase {
+        String str
+    }
+
+    @Sortable(includeSuperProperties = true, includes = ['str','num'])
+    class SortableChild3 extends SortableBase {
+        String str
+    }
+
+    @Sortable(includeSuperProperties = true, includes = ['num','str'])
+    class SortableChild4 extends SortableBase {
+        String str
+    }
+
+    void testSortableExtendingSortable1() {
+        List<SortableChild1> unsortedList = [new SortableChild1(str: 'B', num: 1), new SortableChild1(str: 'A', num: 2)]
+        List<SortableChild1> sortedList = unsortedList.toSorted()
+        assert sortedList[0].str == 'A'
+    }
+
+    void testSortableExtendingSortable2() {
+        List<SortableChild2> unsortedList = [new SortableChild2(str: 'B', num: 1), new SortableChild2(str: 'A', num: 2)]
+        List<SortableChild2> sortedList = unsortedList.toSorted()
+        assert sortedList[0].str == 'A'
+    }
+
+    void testSortableExtendingSortable3() {
+        List<SortableChild3> unsortedList = [new SortableChild3(str: 'B', num: 1), new SortableChild3(str: 'A', num: 2)]
+        List<SortableChild3> sortedList = unsortedList.toSorted()
+        assert sortedList[0].str == 'A'
+    }
+
+    void testSortableExtendingSortable4() {
+        List<SortableChild4> unsortedList = [new SortableChild4(str: 'B', num: 1), new SortableChild4(str: 'A', num: 2)]
+        List<SortableChild4> sortedList = unsortedList.toSorted()
+        assert sortedList[0].str == 'B'
     }
 }
