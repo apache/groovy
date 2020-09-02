@@ -22,7 +22,7 @@
 = Null Object Pattern
 
 
-The http://en.wikipedia.org/wiki/Null_Object_pattern[Null Object Pattern] involves using a special object place-marker object representing null. Typically, if you have a reference to null, you can't invoke `reference.field` or `reference.method()` You receive the dreaded `NullPointerException`. The null object pattern uses a special object representing null, instead of using an actual `null`. This allows you to invoke field and method references on the null object. The result of using the null object should semantically be equivalent to __doing nothing__.
+The https://en.wikipedia.org/wiki/Null_object_pattern[Null Object Pattern] involves using a special object place-marker object representing null. Typically, if you have a reference to null, you can't invoke `reference.field` or `reference.method()` You receive the dreaded `NullPointerException`. The null object pattern uses a special object representing null, instead of using an actual `null`. This allows you to invoke field and method references on the null object. The result of using the null object should semantically be equivalent to __doing nothing__.
 
 == Simple Example
 
