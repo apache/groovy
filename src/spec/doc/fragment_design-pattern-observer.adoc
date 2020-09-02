@@ -25,7 +25,7 @@
 The https://en.wikipedia.org/wiki/Observer_pattern[Observer Pattern] allows one or more _observers_ to be notified
 about changes or events from a _subject_ object.
 
-[plantuml, ChainOfResponsibilityClasses, png]
+[plantuml, ObserverClasses, png]
 ....
 skinparam ClassBorderColor<<Hidden>> Transparent
 skinparam ClassBackgroundColor<<Hidden>> Transparent
