@@ -1242,6 +1242,95 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    void testMonoids() {
+        assertScript '''
+        // tag::monoids_intro[]
+        def nums = [1, 2, 3, 4]
+        
+        def sum = 0    // <1>
+        for (num in nums) { sum += num }    // <2>
+        assert sum == 10
+        
+        def product = 1    // <1>
+        for (num in nums) { product *= num }    // <2>
+        assert product == 24
+        
+        def letters = ['a', 'b', 'c']
+        
+        def concat = ''    // <1>
+        for (letter in letters) { concat += letter }    // <2>
+        assert concat == 'abc'
+        // end::monoids_intro[]
+        // tag::monoids_inject[]
+        assert nums.inject(0){ total, next -> total + next } == 10
+        assert nums.inject(1){ total, next -> total * next } == 24
+        assert letters.inject(''){ total, next -> total + next } == 'abc'
+        // end::monoids_inject[]
+        // tag::monoids_lambdas[]
+        assert nums.stream().reduce(0, (total, next) -> total + next) == 10
+        assert nums.stream().reduce(1, (total, next) -> total * next) == 24
+        assert letters.stream().reduce('', (total, next) -> total + next) == 'abc'
+        // end::monoids_lambdas[]
+        '''
+        assertScript '''
+        import groovyx.gpars.GParsPool
+
+        // tag::monoids_gpars[]
+        def nums = 10..16
+        GParsPool.withPool {
+            assert 91 == nums.injectParallel(0){ total, next -> total + next }
+            assert 91 == nums.parallel.reduce(0, (total, next) -> total + next)
+        }
+        // end::monoids_gpars[]
+        // tag::monoids_average_1to10[]
+        assert (1..10).average() == 5.5
+        // end::monoids_average_1to10[]
+        // tag::monoids_average_0to10[]
+        assert (0..10).average() == 5
+        // end::monoids_average_0to10[]
+        '''
+        assertScript '''
+        // tag::monoids_average_bad[]
+        def avg = { a, b -> (a + b) / 2 }
+        // end::monoids_average_bad[]
+        // tag::monoids_average_assoc[]
+        assert 6 == avg(avg(10, 2), 6)
+        assert 7 == avg(10, avg(2, 6))
+        // end::monoids_average_assoc[]
+        '''
+        assertScript '''
+        // tag::monoids_average_split[]
+        def nums = 1..10
+        def total = nums.sum()
+        def avg = total / nums.size()
+        assert avg == 5.5
+        // end::monoids_average_split[]
+        '''
+        assertScript '''
+        // tag::monoids_average_reworked[]
+        class AverageHolder {
+            int total
+            int count
+            AverageHolder plus(AverageHolder other) {
+                return new AverageHolder(total: total + other.total,
+                                         count: count + other.count)
+            }
+            static final AverageHolder ZERO =
+                new AverageHolder(total: 0, count: 0)
+        }
+        def nums = 1..10
+        def aggregate = nums.inject(AverageHolder.ZERO) { aggregate, next ->
+            if (next instanceof Integer) {
+                next = new AverageHolder(total: next, count : 1)
+            }
+            aggregate + next
+        }
+        def avg = aggregate.with{ total / count }
+        assert avg == 5.5
+        // end::monoids_average_reworked[]
+        '''
+    }
+
     void testNullObjectSimpleExample() {
         shouldCompile '''
             // tag::null_object_simple_example[]
