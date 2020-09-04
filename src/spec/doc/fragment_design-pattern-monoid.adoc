@@ -46,7 +46,7 @@ include::../test/DesignPatternsTest.groovy[tags=monoids_inject,indent=0]
 
 Here the first parameter is the initial value, and the supplied closure contains the algorithm-specific logic.
 
-Similarly, we can use the JDK stream API and lambda syntax as follows:
+Similarly, for Groovy 3+, we can use the JDK stream API and lambda syntax as follows:
 
 [source,groovy]
 ----
@@ -66,7 +66,7 @@ the type _odd numbers_ with respect to addition, algorithms which don't handle n
 ****
 [NOTE]
 ====
-When using the term _Closure_ here, we simply mean closed under the operation, not the Groovy `Closure` class.
+When using the term _closure_ here, we simply mean closed under the operation, not the Groovy `Closure` class.
 ====
 * Associativity: the order in which we apply the aggregation step should not matter.
 ****
@@ -179,22 +179,22 @@ include::../test/DesignPatternsTest.groovy[tags=monoids_average_1to10,indent=0]
 ----
 
 Now, suppose we want to build our own monoid solution instead of using the built-in version.
-It might seem difficult to find the _Identity_ element. After all:
+It might seem difficult to find the _identity_ element. After all:
 
 [source,groovy]
 ----
 include::../test/DesignPatternsTest.groovy[tags=monoids_average_0to10,indent=0]
 ----
 
-Similarly, if we are tempted to write the aggregation closure it might be something like:
+Similarly, if we are tempted to write the pairwise aggregation closure it might be something like:
 
 [source,groovy]
 ----
 include::../test/DesignPatternsTest.groovy[tags=monoids_average_bad,indent=0]
 ----
 
-What `b` can we use for the _Identity_ element here so that our equation returns the original?
-We need to use `a`, but that isn't a fixed value, so there is no _Identity_.
+What `b` can we use for the _identity_ element here so that our equation returns the original?
+We need to use `a`, but that isn't a fixed value, so there is no _identity_.
 
 Also, associativity doesn't hold for this initial attempt at defining `avg` as these examples show:
 
@@ -203,11 +203,12 @@ Also, associativity doesn't hold for this initial attempt at defining `avg` as t
 include::../test/DesignPatternsTest.groovy[tags=monoids_average_assoc,indent=0]
 ----
 
-Also, what about our _Closure_ property? Our original numbers were integers, but our average (`5.5`)
+Also, what about our _closure_ property? Our original numbers were integers, but our average (`5.5`)
 is not. We can solve this by making our average work for any `Number` instances, but it might not always be this easy.
 
 It might appear that this problem is not amenable to a monoidal solution.
 However, there are numerous ways to bring monoids into the solution.
+
 We can split it into two parts:
 
 [source,groovy]
@@ -216,10 +217,30 @@ include::../test/DesignPatternsTest.groovy[tags=monoids_average_split,indent=0]
 ----
 
 The calculation of `sum()` can follow monoid rules and then our last step can calculate the average.
-
-Alternatively, we can introduce a helper data structure that reworks the problem to be a monoid as follows:
+We can even do a concurrent version with GPars:
 
 [source,groovy]
 ----
-include::../test/DesignPatternsTest.groovy[tags=monoids_average_reworked,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=monoids_average_split_gpars,indent=0]
+----
+
+Here, we were using the built-in `sum()` method (and `sumParallel()` for the GPars example),
+but if you were doing it by hand, the monoid nature of that part of your calculation would
+make it easier to write your own code for that step.
+
+Alternatively, we can introduce a helper data structure that reworks the problem to be a monoid.
+Instead of just keeping the total, let's keep a list containing the total and count of numbers.
+The code could look something like this:
+
+[source,groovy]
+----
+include::../test/DesignPatternsTest.groovy[tags=monoids_average_reworked_simple,indent=0]
+----
+
+Or, to be a little fancier, we could introduce a class for our data structure and even calculate
+concurrently:
+
+[source,groovy]
+----
+include::../test/DesignPatternsTest.groovy[tags=monoids_average_reworked_gpars,indent=0]
 ----

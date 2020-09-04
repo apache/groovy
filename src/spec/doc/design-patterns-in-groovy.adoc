@@ -53,6 +53,8 @@ include::fragment_design-pattern-iterator.adoc[leveloffset=+2]
 
 include::fragment_design-pattern-loan-my-resource.adoc[leveloffset=+2]
 
+include::fragment_design-pattern-monoid.adoc[leveloffset=+2]
+
 include::fragment_design-pattern-null-object.adoc[leveloffset=+2]
 
 include::fragment_design-pattern-observer.adoc[leveloffset=+2]

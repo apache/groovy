@@ -1305,9 +1305,27 @@ class DesignPatternsTest extends CompilableTestSupport {
         def avg = total / nums.size()
         assert avg == 5.5
         // end::monoids_average_split[]
+        import static groovyx.gpars.GParsPool.withPool
+        // tag::monoids_average_split_gpars[]
+        withPool {
+            assert 5.5 == nums.sumParallel() / nums.size()
+        }
+        // end::monoids_average_split_gpars[]
         '''
         assertScript '''
-        // tag::monoids_average_reworked[]
+        def nums = 1..10
+        // tag::monoids_average_reworked_simple[]
+        def holder = nums
+            .collect{ [it, 1] }
+            .inject{ a, b -> [a[0] + b[0], a[1] + b[1]] }
+        def avg = holder[0] / holder[1]
+        assert avg == 5.5
+        // end::monoids_average_reworked_simple[]
+        '''
+        assertScript '''
+        import static groovyx.gpars.GParsPool.withPool
+        def nums = 1..10
+        // tag::monoids_average_reworked_gpars[]
         class AverageHolder {
             int total
             int count
@@ -1318,16 +1336,19 @@ class DesignPatternsTest extends CompilableTestSupport {
             static final AverageHolder ZERO =
                 new AverageHolder(total: 0, count: 0)
         }
-        def nums = 1..10
-        def aggregate = nums.inject(AverageHolder.ZERO) { aggregate, next ->
-            if (next instanceof Integer) {
-                next = new AverageHolder(total: next, count : 1)
-            }
-            aggregate + next
+
+        def asHolder = {
+            it instanceof Integer ? new AverageHolder(total: it, count : 1) : it
         }
-        def avg = aggregate.with{ total / count }
-        assert avg == 5.5
-        // end::monoids_average_reworked[]
+        def pairwiseAggregate = { aggregate, next ->
+            asHolder(aggregate) + asHolder(next)
+        }
+        withPool {
+            def holder = nums.injectParallel(AverageHolder.ZERO, pairwiseAggregate)
+            def avg = holder.with{ total / count }
+            assert avg == 5.5
+        }
+        // end::monoids_average_reworked_gpars[]
         '''
     }
 
