@@ -158,24 +158,23 @@ public class JavaStubGenerator {
         Writer writer = new StringBuilderWriter(DEFAULT_BUFFER_SIZE);
 
         try (PrintWriter out = new PrintWriter(writer)) {
-            printPackage(out, classNode);
+            boolean packageInfo = "package-info".equals(classNode.getNameWithoutPackage());
+            String packageName = classNode.getPackageName();
+            if (packageName != null) {
+                if (packageInfo) {
+                    printAnnotations(out, classNode.getPackage());
+                }
+                out.println("package " + packageName + ";");
+            }
 
             // should just output the package statement for `package-info` class node
-            if (!"package-info".equals(classNode.getNameWithoutPackage())) {
+            if (!packageInfo) {
                 printImports(out, classNode);
                 printClassContents(out, classNode);
             }
         }
 
         return writer.toString();
-    }
-
-    private void printPackage(PrintWriter out, ClassNode classNode) {
-        String packageName = classNode.getPackageName();
-        if (packageName != null) {
-            printAnnotations(out, classNode.getPackage());
-            out.println("package " + packageName + ";");
-        }
     }
 
     private static Iterable<ClassNode> findTraits(ClassNode node) {
