@@ -22,6 +22,6 @@ package org.apache.groovy.contracts.ast.visitor;
  * Holds all constants to be used as AST node meta data keys.
  */
 public interface ASTNodeMetaData {
-    String PROCESSED = "org.apache.groovy.contracts.CLOSURE_REPLACED";
+    String PROCESSED = "org.apache.groovy.contracts.PROCESSED";
     String CLOSURE_REPLACED = "org.apache.groovy.contracts.CLOSURE_REPLACED";
 }
