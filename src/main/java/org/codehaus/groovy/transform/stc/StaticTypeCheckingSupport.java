@@ -430,7 +430,7 @@ public abstract class StaticTypeCheckingSupport {
         ClassNode lastParamType = parameters[parameters.length - 1].getType();
         ClassNode ptype = lastParamType.getComponentType();
         ClassNode arg = argumentTypes[argumentTypes.length - 1];
-        if (isNumberType(ptype) && isNumberType(arg) && !ptype.equals(arg)) return -1;
+        if (isNumberType(ptype) && isNumberType(arg) && !getWrapper(ptype).equals(getWrapper(arg))) return -1;
         return isAssignableTo(arg, ptype) ? min(getDistance(arg, lastParamType), getDistance(arg, ptype)) : -1;
     }
 
