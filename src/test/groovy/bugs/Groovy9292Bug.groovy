@@ -28,13 +28,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 protected String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -42,13 +42,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package b
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     'something'.with {
@@ -67,13 +67,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 protected String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -81,13 +81,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package a
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     'something'.with {
@@ -107,13 +107,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 protected String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -121,13 +121,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package b
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     this.with {
@@ -146,13 +146,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 protected String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -160,13 +160,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package b
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     'something'.with {
@@ -186,13 +186,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 protected String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -200,13 +200,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package b
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     'something'.with {
@@ -225,13 +225,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 protected String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -239,13 +239,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package b
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     'something'.with {
@@ -264,13 +264,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 protected String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -278,13 +278,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package b
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     this.with {
@@ -303,13 +303,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 @groovy.transform.PackageScope String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -317,13 +317,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package a
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     this.with {
@@ -342,13 +342,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 @groovy.transform.PackageScope String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -356,13 +356,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package a
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     this.with {
@@ -381,13 +381,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 @groovy.transform.PackageScope String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -395,13 +395,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package a
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     this.with {
@@ -421,13 +421,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 @groovy.transform.PackageScope String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -435,13 +435,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package a
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     this.with {
@@ -460,13 +460,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 @groovy.transform.PackageScope String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -474,13 +474,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package a
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     this.with {
@@ -499,13 +499,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 @groovy.transform.PackageScope String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -513,13 +513,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package a
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     this.with {
@@ -539,13 +539,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 public String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -553,13 +553,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package b
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     this.with {
@@ -578,13 +578,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 public String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -592,13 +592,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package b
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     this.with {
@@ -618,13 +618,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 public String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -632,13 +632,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package b
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     this.with {
@@ -657,13 +657,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 public String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -671,13 +671,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package b
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     this.with {
@@ -696,13 +696,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 public String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -710,13 +710,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package b
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     this.with {
@@ -735,13 +735,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 public String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -749,13 +749,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package b
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     this.with {
@@ -775,13 +775,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -789,13 +789,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package b
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     this.with {
@@ -815,13 +815,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -829,13 +829,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package b
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     this.with {
@@ -854,13 +854,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -868,13 +868,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package b
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     this.with {
@@ -894,13 +894,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -908,13 +908,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package b
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     this.with {
@@ -933,13 +933,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -947,13 +947,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package b
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     this.with {
@@ -972,13 +972,13 @@ final class Groovy9292Bug {
         GroovyShell shell = new GroovyShell()
         shell.evaluate('''
             package a
-            
+
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             abstract class Abstract_Class {
                 String superField = 'field'
-                
+
                 abstract String doThing()
             }
             assert true
@@ -986,13 +986,13 @@ final class Groovy9292Bug {
 
         shell.evaluate('''
             package b
-            
+
             import a.Abstract_Class
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             class ConcreteClass extends Abstract_Class {
-               
+
                 @Override
                 String doThing() {
                     this.with {
