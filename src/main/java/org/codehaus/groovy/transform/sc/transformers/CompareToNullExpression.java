@@ -19,7 +19,6 @@
 package org.codehaus.groovy.transform.sc.transformers;
 
 import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -31,25 +30,47 @@ import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 
-public class CompareToNullExpression extends BinaryExpression implements Opcodes {
+import static org.objectweb.asm.Opcodes.GOTO;
+import static org.objectweb.asm.Opcodes.ICONST_0;
+import static org.objectweb.asm.Opcodes.ICONST_1;
+import static org.objectweb.asm.Opcodes.IFNONNULL;
+import static org.objectweb.asm.Opcodes.IFNULL;
+
+public class CompareToNullExpression extends BinaryExpression {
     private final boolean equalsNull;
-    private final Expression objectExpression;
 
     public CompareToNullExpression(final Expression objectExpression, final boolean compareToNull) {
         super(objectExpression, new Token(Types.COMPARE_TO, compareToNull ? "==" : "!=", -1, -1), ConstantExpression.NULL);
-        this.objectExpression = objectExpression;
+        super.setType(ClassHelper.boolean_TYPE);
         this.equalsNull = compareToNull;
     }
 
     public Expression getObjectExpression() {
-        return objectExpression;
+        return getLeftExpression();
+    }
+
+    @Override
+    public void setLeftExpression(final Expression expression) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setRightExpression(final Expression expression) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setType(final org.codehaus.groovy.ast.ClassNode type) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Expression transformExpression(final ExpressionTransformer transformer) {
-        return this;
+        Expression ret = new CompareToNullExpression(transformer.transform(getObjectExpression()), equalsNull);
+        ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
+        return ret;
     }
 
     @Override
@@ -58,23 +79,26 @@ public class CompareToNullExpression extends BinaryExpression implements Opcodes
             AsmClassGenerator acg = (AsmClassGenerator) visitor;
             WriterController controller = acg.getController();
             MethodVisitor mv = controller.getMethodVisitor();
-            objectExpression.visit(acg);
-            ClassNode top = controller.getOperandStack().getTopOperand();
-            if (ClassHelper.isPrimitiveType(top)) {
+
+            getObjectExpression().visit(acg);
+
+            if (ClassHelper.isPrimitiveType(controller.getOperandStack().getTopOperand())) {
                 controller.getOperandStack().pop();
                 mv.visitInsn(equalsNull ? ICONST_0 : ICONST_1);
+
                 controller.getOperandStack().push(ClassHelper.boolean_TYPE);
-                return;
+            } else {
+                Label zero = new Label();
+                mv.visitJumpInsn(equalsNull ? IFNONNULL : IFNULL, zero);
+                mv.visitInsn(ICONST_1);
+                Label end = new Label();
+                mv.visitJumpInsn(GOTO, end);
+                mv.visitLabel(zero);
+                mv.visitInsn(ICONST_0);
+                mv.visitLabel(end);
+
+                controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
             }
-            Label zero = new Label();
-            mv.visitJumpInsn(equalsNull ? IFNONNULL : IFNULL, zero);
-            mv.visitInsn(ICONST_1);
-            Label end = new Label();
-            mv.visitJumpInsn(GOTO, end);
-            mv.visitLabel(zero);
-            mv.visitInsn(ICONST_0);
-            mv.visitLabel(end);
-            controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
         } else {
             super.visit(visitor);
         }
