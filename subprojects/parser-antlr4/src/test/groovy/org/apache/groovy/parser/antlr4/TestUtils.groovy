@@ -59,21 +59,15 @@ final class TestUtils {
 
     public static final String RESOURCES_PATH = Optional.of('subprojects/parser-antlr4/src/test/resources').filter(path -> new File(path).exists()).orElse('src/test/resources')
 
-    static doTest(String path) {
-        doTest(path, ASTComparatorCategory.DEFAULT_CONFIGURATION)
-    }
-
-    static doTest(String path, conf) {
-        doTest(path, conf, new CompilerConfiguration(CompilerConfiguration.DEFAULT))
-    }
-
     static doTest(String path, Collection<Class> ignoreSourcePosition) {
         doTest(path, addIgnore(ignoreSourcePosition, ASTComparatorCategory.LOCATION_IGNORE_LIST))
     }
 
     @CompileDynamic
-    static doTest(String path, conf, CompilerConfiguration compilerConfiguration) {
-        def file = new File("$RESOURCES_PATH/$path")
+    static doTest(String path, conf = ASTComparatorCategory.DEFAULT_CONFIGURATION, CompilerConfiguration compilerConfiguration = CompilerConfiguration.DEFAULT) {
+        File file = new File("$RESOURCES_PATH/$path")
+        assert file.exists() : "Test resource not found: $file.absolutePath"
+
         def (newAST, newElapsedTime) = profile { buildAST(file, getAntlr4Config(compilerConfiguration)) }
 //        def (oldAST, oldElapsedTime) = profile { buildAST(file, getAntlr2Config(compilerConfiguration)) }
 
@@ -87,17 +81,15 @@ final class TestUtils {
         return [newAST, null]
     }
 
-    static void shouldFail(String path, boolean toCheckNewParserOnly = false) {
-        shouldFail(path, ASTComparatorCategory.DEFAULT_CONFIGURATION, toCheckNewParserOnly)
-    }
-
     static void shouldFail(String path, Collection<Class> ignoreSourcePosition, boolean toCheckNewParserOnly = false) {
         shouldFail(path, addIgnore(ignoreSourcePosition, ASTComparatorCategory.LOCATION_IGNORE_LIST), toCheckNewParserOnly)
     }
 
     @CompileDynamic
-    static void shouldFail(String path, conf, boolean toCheckNewParserOnly = false) {
-        def file = new File("$RESOURCES_PATH/$path")
+    static void shouldFail(String path, conf = ASTComparatorCategory.DEFAULT_CONFIGURATION, boolean toCheckNewParserOnly = false) {
+        File file = new File("$RESOURCES_PATH/$path")
+        assert file.exists() : "Test resource not found: $file.absolutePath"
+
         def (newAST, newElapsedTime) = profile { buildAST(file, antlr4Config) }
 //        def (oldAST, oldElapsedTime) = profile { buildAST(file, antlr2Config) }
 
