@@ -524,6 +524,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
             addError("The " + getDescription(node) + " is declared multiple times.", node);
         }
         checkInterfaceFieldModifiers(node);
+        checkInvalidFieldModifiers(node);
         checkGenericsUsage(node, node.getType());
         if (node.getType().equals(VOID_TYPE)) {
             addError("The " + getDescription(node) + " has invalid type void", node);
@@ -560,6 +561,12 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
                 (node.getModifiers() & (ACC_PRIVATE | ACC_PROTECTED)) != 0) {
             addError("The " + getDescription(node) + " is not 'public static final' but is defined in " +
                     getDescription(currentClass) + ".", node);
+        }
+    }
+
+    private void checkInvalidFieldModifiers(FieldNode node) {
+        if ((node.getModifiers() & (ACC_FINAL | ACC_VOLATILE)) == (ACC_FINAL | ACC_VOLATILE)) {
+            addError("Illegal combination of modifiers, final and volatile, for field '" + node.getName() + "'", node);
         }
     }
 
