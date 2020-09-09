@@ -20,7 +20,7 @@
 //////////////////////////////////////////
 
 = Object orientation
-:jls: http://docs.oracle.com/javase/specs/jls/se8/html/
+:jls: https://docs.oracle.com/javase/specs/jls/se14/html/
 :javabeans: https://download.oracle.com/otndocs/jcp/7224-javabeans-1.01-fr-spec-oth-JSpec/
 
 This chapter covers the object orientation of the Groovy programming language.
@@ -136,16 +136,19 @@ There are some reasons for using inner classes:
  * They provide a good organization, by grouping classes that are used by only one class.
  * They lead to more maintainable codes, since inner classes are near the classes that use them.
 
-In several cases, inner classes are implementation of interfaces whose methods are needed by the outer class. The code below illustrates this with the usage of threads, which are very common.
+It is common for an inner class to be an implementation of some interface whose method(s) are needed by the outer class.
+The code below illustrates this typical usage pattern, here being used with threads.
 
 [source,groovy]
 ----
 include::../test/ClassTest.groovy[tags=inner_class2,indent=0]
 ----
 
-Note that the class `Inner2` is defined only to provide an implementation of the method `run` to class `Outer2`. Anonymous inner classes help to eliminate verbosity in this case.
+Note that the class `Inner2` is defined only to provide an implementation of the method `run` to class `Outer2`.
+Anonymous inner classes help to eliminate verbosity in this case.
+That topic is covered shortly.
 
-Since Groovy 3.0.0, Java syntax for non-static inner class instantiation is now supported, for example:
+Groovy 3+ also supports Java syntax for non-static inner class instantiation, for example:
 
 [source,groovy]
 --------------------------------------
@@ -154,7 +157,8 @@ include::../test/ClassTest.groovy[tags=inner_instantiation,indent=0]
 
 ===== Anonymous inner class
 
-The last example of inner class can be simplified with an anonymous inner class. The same functionality can be achieved with the following code.
+The earlier example of an inner class (`Inner2`) can be simplified with an anonymous inner class.
+The same functionality can be achieved with the following code:
 
 [source,groovy]
 ----
@@ -165,10 +169,11 @@ include::../test/ClassTest.groovy[tags=anonymous_inner_class,indent=0]
 
 Thus, there was no need to define a new class to be used just once.
 
-
 ==== Abstract class
 
-Abstract classes represent generic concepts, thus, they cannot be instantiated, being created to be subclassed. Their members include fields/properties and abstract or concrete methods. Abstract methods do not have implementation, and must be implemented by concrete subclasses.
+Abstract classes represent generic concepts, thus, they cannot be instantiated, being created to be subclassed.
+Their members include fields/properties and abstract or concrete methods.
+Abstract methods do not have implementation, and must be implemented by concrete subclasses.
 
 [source,groovy]
 ----
@@ -177,12 +182,32 @@ include::../test/ClassTest.groovy[tags=abstract_class,indent=0]
 <1> abstract classes must be declared with `abstract` keyword
 <2> abstract methods must also be declared with `abstract` keyword
 
-Abstract classes are commonly compared to interfaces. But there are at least two important differences of choosing one or another. First, while abstract classes may contain fields/properties and concrete methods, interfaces may contain only abstract methods (method signatures). Moreover, one class can implement several interfaces, whereas it can extend just one class, abstract or not. 
+Abstract classes are commonly compared to interfaces.
+There are at least two important differences of choosing one or another.
+First, while abstract classes may contain fields/properties and concrete methods, interfaces may contain only abstract methods (method signatures).
+Moreover, one class can implement several interfaces, whereas it can extend just one class, abstract or not.
+
+=== Inheritance
+
+Inheritance in Groovy resembles inheritance in Java.
+It provides a mechanism for a child class (or subclass) to reuse
+code or properties from a parent (or super class).
+Classes related through inheritance form an inheritance hierarchy.
+Common behavior and members are pushed up the hierarchy to reduce duplication.
+Specializations occur in child classes.
+
+Different forms of inheritance are supported:
+
+* _implementation_ inheritance where code (methods, fields or properties) from a <<superclass,superclass>> or from
+one or more <<_traits,traits>> is reused by a child class
+* _contract_ inheritance where a class promises to provide particular abstract methods defined in a <<superclass,superclass>>,
+or defined in one or more <<_traits,traits>> or <<_interface,interfaces>>.
 
 === Interface
 
-An interface defines a contract that a class needs to conform to. An interface only defines a list of methods that need
-to be implemented, but does not define the methods implementation.
+An interface defines a contract that a class needs to conform to.
+An interface only defines a list of methods that need
+to be implemented, but does not define the method's implementation.
 
 [source,groovy]
 ----
@@ -244,6 +269,13 @@ implement the interface. The other is an instance of `Greeter` that delegates to
 TIP: Groovy interfaces do not support default implementation like Java 8 interfaces. If you are looking for something
 similar (but not equal), <<_traits,traits>> are close to interfaces, but allow default implementation as well as other
 important features described in this manual.
+
+[[superclass]]
+=== Superclass
+
+Parent classes share visible fields, properties or methods with child classes.
+A child class may have at most one parent class.
+The `extends` keyword is used immediately prior to giving the superclass type.
 
 === Constructors
 
@@ -1102,11 +1134,6 @@ include::../test/ClassTest.groovy[tags=compiledynamic_processor,indent=0]
 In the example, the `visit` method is the only method which has to be overridden. It is meant to return a list of
 annotation nodes that will be added to the node annotated with the meta-annotation. In this example, we return a
 single one corresponding to `@CompileStatic(TypeCheckingMode.SKIP)`.
-
-=== Inheritance
-
-(TBD)
-
 
 [[generics]]
 === Generics
