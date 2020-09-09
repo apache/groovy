@@ -98,9 +98,9 @@ class SqlTest extends GroovyTestCase {
     void testConnectingUsingApacheDataSource() {
         assertScript '''
         // tag::sql_connecting_datasource_dbcp[]
-        @Grab('commons-dbcp:commons-dbcp:1.4')
+        @Grab('org.apache.commons:commons-dbcp2:2.7.0')
         import groovy.sql.Sql
-        import org.apache.commons.dbcp.BasicDataSource
+        import org.apache.commons.dbcp2.BasicDataSource
 
         def ds = new BasicDataSource(driverClassName: "org.hsqldb.jdbcDriver",
             url: 'jdbc:hsqldb:mem:yourDB', username: 'sa', password: '')
