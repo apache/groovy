@@ -1378,8 +1378,6 @@ method()
 
     void testGroovy9570() {
         assertScript '''
-            interface Item {}
-
             class C<I extends Item> {
                 Queue<I> queue
 
@@ -1395,6 +1393,37 @@ method()
                     }
                 }
             }
+
+            interface Item {}
+
+            new C()
+        '''
+    }
+
+    void testGroovy9735() {
+        assertScript '''
+            import groovy.transform.stc.*
+
+            class C<I extends Item> {
+                Queue<I> queue
+
+                def c = { ->
+                    x(queue) { I item ->
+                        println item
+                    }
+                }
+
+                def m() {
+                    x(queue) { I item ->
+                        println item
+                    }
+                }
+
+                def <T> T x(Collection<T> y, @ClosureParams(FirstParam.FirstGenericType) Closure z) {
+                }
+            }
+
+            interface Item {}
 
             new C()
         '''
