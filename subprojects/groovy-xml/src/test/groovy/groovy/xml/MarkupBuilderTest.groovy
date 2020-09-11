@@ -75,35 +75,48 @@ class MarkupBuilderTest extends BuilderTestSupport {
             }
         }
         assertExpectedXml m, '''\
-<root1 a='5' b='7'>hello1<elem1 c='4'>hello2<elem2 d='4'>hello3</elem2>
-</elem1>
-<elem1 c='4'>hello2<elem2>hello3</elem2>
-<elem2 d='4'>hello3</elem2>
-</elem1>
-<elem1 c='4'>hello2<elem2 d='4'>hello3</elem2>
-<elem2>hello3</elem2>
-</elem1>
-<elem1 c='4'>hello2<elem2 d='4' />
-<elem2 d='4'>hello3</elem2>
-</elem1>
-<elem1 c='4'>hello2<elem2 d='4'>hello3</elem2>
-<elem2 d='4' />
-</elem1>
-<elem1>hello2<elem2 d='4'>hello3</elem2>
-<elem2 d='4' />
-</elem1>
-</root1>'''
+            <root1 a='5' b='7'>
+                hello1
+                <elem1 c='4'>
+                    hello2
+                    <elem2 d='4'>hello3</elem2>
+                </elem1>
+                <elem1 c='4'>
+                    hello2
+                    <elem2>hello3</elem2>
+                    <elem2 d='4'>hello3</elem2>
+                </elem1>
+                <elem1 c='4'>
+                    hello2
+                    <elem2 d='4'>hello3</elem2>
+                    <elem2>hello3</elem2>
+                </elem1>
+                <elem1 c='4'>
+                    hello2
+                    <elem2 d='4' />
+                    <elem2 d='4'>hello3</elem2>
+                </elem1>
+                <elem1 c='4'>
+                    hello2
+                    <elem2 d='4'>hello3</elem2>
+                    <elem2 d='4' />
+                </elem1>
+                <elem1>hello2<elem2 d='4'>hello3</elem2>
+                    <elem2 d='4' />
+                </elem1>
+            </root1>
+        '''
     }
 
     void testMarkupWithColonsAndNamespaces() {
         def expectedXml = '''\
-<ns1:customer-description>
-  <last-name>Laforge</last-name>
-  <first-name>
-    <first>Guillaume</first>
-    <initial-letters>A.J.</initial-letters>
-  </first-name>
-</ns1:customer-description>'''
+            <ns1:customer-description>
+              <last-name>Laforge</last-name>
+              <first-name>
+                <first>Guillaume</first>
+                <initial-letters>A.J.</initial-letters>
+              </first-name>
+            </ns1:customer-description>'''.stripIndent()
         xml."ns1:customer-description"{
             "last-name"("Laforge")
             "first-name"{
@@ -121,23 +134,23 @@ class MarkupBuilderTest extends BuilderTestSupport {
      */
     void testBuilder() {
         String expectedXml = '''\
-<chars>
-  <ampersand a='&amp;'>&amp;</ampersand>
-  <quote attr='"'>"</quote>
-  <apostrophe attr='&apos;'>'</apostrophe>
-  <lessthan attr='value'>chars: &amp; &lt; &gt; '</lessthan>
-  <element attr='value 1 &amp; 2'>chars: &amp; &lt; &gt; " in middle</element>
-  <greaterthan>&gt;</greaterthan>
-  <emptyElement />
-  <null />
-  <nullAttribute t1='' />
-  <emptyWithAttributes attr1='set' />
-  <emptyAttribute t1='' />
-  <parent key='value'>
-    <label for='usernameId'>Username: </label>
-    <input name='test' id='1' />
-  </parent>
-</chars>'''
+            <chars>
+              <ampersand a='&amp;'>&amp;</ampersand>
+              <quote attr='"'>"</quote>
+              <apostrophe attr='&apos;'>'</apostrophe>
+              <lessthan attr='value'>chars: &amp; &lt; &gt; '</lessthan>
+              <element attr='value 1 &amp; 2'>chars: &amp; &lt; &gt; " in middle</element>
+              <greaterthan>&gt;</greaterthan>
+              <emptyElement />
+              <null />
+              <nullAttribute t1='' />
+              <emptyWithAttributes attr1='set' />
+              <emptyAttribute t1='' />
+              <parent key='value'>
+                <label for='usernameId'>Username: </label>
+                <input name='test' id='1' />
+              </parent>
+            </chars>'''.stripIndent()
 
         // Generate the markup.
         xml.chars {
@@ -166,15 +179,15 @@ class MarkupBuilderTest extends BuilderTestSupport {
      */
     void testBuilderWithDoubleQuotes() {
         String expectedXml = '''\
-<chars>
-  <ampersand a="&amp;">&amp;</ampersand>
-  <quote attr="&quot;">"</quote>
-  <apostrophe attr="'">'</apostrophe>
-  <lessthan attr="value">chars: &amp; &lt; &gt; '</lessthan>
-  <element attr="value 1 &amp; 2">chars: &amp; &lt; &gt; " in middle</element>
-  <greaterthan>&gt;</greaterthan>
-  <emptyElement />
-</chars>'''
+        <chars>
+          <ampersand a="&amp;">&amp;</ampersand>
+          <quote attr="&quot;">"</quote>
+          <apostrophe attr="'">'</apostrophe>
+          <lessthan attr="value">chars: &amp; &lt; &gt; '</lessthan>
+          <element attr="value 1 &amp; 2">chars: &amp; &lt; &gt; " in middle</element>
+          <greaterthan>&gt;</greaterthan>
+          <emptyElement />
+        </chars>'''.stripIndent()
 
         // Generate the markup.
         xml.doubleQuotes = true
@@ -250,11 +263,11 @@ class MarkupBuilderTest extends BuilderTestSupport {
             mkp.yieldUnescaped("\n  <inside>wow</inside>")
         }
         String expectedXml = '''\
-<?xml version='1.0' encoding='UTF-8'?>
-<element>&lt;&gt;
-  <inner>foobar</inner>
-  <inside>wow</inside>
-</element>'''
+        <?xml version='1.0' encoding='UTF-8'?>
+        <element>&lt;&gt;
+          <inner>foobar</inner>
+          <inside>wow</inside>
+        </element>'''.stripIndent()
         assertEquals expectedXml, fixEOLs(writer.toString())
     }
 
