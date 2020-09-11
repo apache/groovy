@@ -16,33 +16,22 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.lang;
+package org.codehaus.groovy.classgen
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import groovy.test.GroovyTestCase
 
-import java.beans.Transient;
-import java.util.Optional;
+class TransientMetaClassTest extends GroovyTestCase {
+    // GROOVY-8284
+    void testGetMetaClassMethodIsDeemedTransient() {
+        assertScript '''
+            def gcl = new GroovyClassLoader()
+            def fooClass = gcl.parseClass('class Foo {}')
+            def fooInfo = java.beans.Introspector.getBeanInfo(fooClass)
+            assert fooInfo.propertyDescriptors.find{ it.name == 'metaClass' }.transient
 
-/**
- * Base class for Java objects wishing to be Groovy objects.
- */
-public abstract class GroovyObjectSupport implements GroovyObject {
-
-    // never persist the MetaClass
-    private transient MetaClass metaClass = getDefaultMetaClass();
-
-    @Override
-    @Transient
-    public MetaClass getMetaClass() {
-        return this.metaClass;
-    }
-
-    @Override
-    public void setMetaClass(/*@Nullable*/ final MetaClass metaClass) {
-        this.metaClass = Optional.ofNullable(metaClass).orElseGet(this::getDefaultMetaClass);
-    }
-
-    private MetaClass getDefaultMetaClass() {
-        return InvokerHelper.getMetaClass(this.getClass());
+            Closure c = { -> }
+            def cInfo = java.beans.Introspector.getBeanInfo(c.getClass())
+            assert cInfo.propertyDescriptors.find{ it.name == 'metaClass' }.transient
+        '''
     }
 }
