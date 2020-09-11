@@ -71,6 +71,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import java.beans.Transient;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -143,6 +144,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     private static final Class<?> GENERATED_ANNOTATION = Generated.class;
     private static final Class<?> INTERNAL_ANNOTATION = Internal.class;
+    private static final Class<?> TRANSIENT_ANNOTATION = Transient.class;
 
     // NOTE: timeStamp constants shouldn't belong to Verifier but kept here for binary compatibility
     public static final String __TIMESTAMP = "__timeStamp";
@@ -405,6 +407,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         boolean shouldAnnotate = classNode.getModule().getContext() != null;
         AnnotationNode generatedAnnotation = shouldAnnotate ? new AnnotationNode(ClassHelper.make(GENERATED_ANNOTATION)) : null;
         AnnotationNode internalAnnotation = shouldAnnotate ? new AnnotationNode(ClassHelper.make(INTERNAL_ANNOTATION)) : null;
+        AnnotationNode transientAnnotation = shouldAnnotate ? new AnnotationNode(ClassHelper.make(TRANSIENT_ANNOTATION)) : null;
 
         if (!node.hasMethod("getMetaClass", Parameter.EMPTY_ARRAY)) {
             metaClassField = setMetaClassFieldIfNotExists(node, metaClassField);
@@ -451,6 +454,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             if (shouldAnnotate) {
                 methodNode.addAnnotation(generatedAnnotation);
                 methodNode.addAnnotation(internalAnnotation);
+                methodNode.addAnnotation(transientAnnotation);
             }
         }
 
