@@ -28,7 +28,7 @@ class MarkupBuilderIllegalCharactersSpec extends Specification {
     static final char[] extControl2    = (0x86..0x9F)
     static final char[] surrogates     = (0xD800..0xDFFF)
     static final char[] nonCharacters1 = (0xFDD0..0xFDEF)
-    static final char[] nonCharacters2 = (0x0..0x10).collect{ [0x10000*it + 0xFFFE, 0x10000*it + 0xFFFF] }.flatten()
+    static final char[] nonCharacters2 = [0xFFFE, 0xFFFF]
 
     def "Default MarkupBuilder character filter for #characterRange"(String characterRange, boolean shouldFilter,  char[] characters) {
         given:
