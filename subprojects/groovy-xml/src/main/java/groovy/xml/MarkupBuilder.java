@@ -495,8 +495,7 @@ public class MarkupBuilder extends BuilderSupport {
         }
 
         private boolean isNonCharacter(char ch) {
-            return 0xFDD0 <= ch && ch <= 0xFDEF
-                    || ((ch % 0x10000 ^ 0xFFFE) == 0 || (ch % 0x10000 ^ 0xFFFF) == 0) && ch >> 16 <= 0x10;
+            return 0xFDD0 <= ch && ch <= 0xFDEF || ((ch ^ 0xFFFE) == 0 || (ch ^ 0xFFFF) == 0);
         }
     }
 
