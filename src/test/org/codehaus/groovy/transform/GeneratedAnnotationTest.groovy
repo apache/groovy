@@ -85,7 +85,7 @@ class GeneratedAnnotationTest extends GroovyShellTestCase {
         def person = evaluate('''
             class Person {
                 String name
-                
+
                 def invokeMethod(String name, args) { }
             }
             new Person()
