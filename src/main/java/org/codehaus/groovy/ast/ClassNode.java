@@ -32,7 +32,6 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
-import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -52,6 +51,13 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
+import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
+import static org.objectweb.asm.Opcodes.ACC_ANNOTATION;
+import static org.objectweb.asm.Opcodes.ACC_ENUM;
+import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
 /**
  * Represents a class in the AST.
@@ -109,7 +115,7 @@ import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
  *
  * @see org.codehaus.groovy.ast.ClassHelper
  */
-public class ClassNode extends AnnotatedNode implements Opcodes {
+public class ClassNode extends AnnotatedNode {
 
     private static class MapOfLists {
         Map<Object, List<MethodNode>> map;

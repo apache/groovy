@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+
 /**
  * Represents the entire contents of a compilation step which consists of one or more
  * {@link ModuleNode} instances. There's one instance of this that's shared by all modules and

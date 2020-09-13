@@ -20,15 +20,18 @@ package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.classgen.ClassGeneratorException;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.Method;
 
+import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
+import static org.objectweb.asm.Opcodes.INVOKESTATIC;
+import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+
 /**
  * A helper class to invoke methods more easily in ASM
  */
-public class MethodCaller implements Opcodes {
+public class MethodCaller {
 
     private int opcode;
     private String internalName;
@@ -62,7 +65,7 @@ public class MethodCaller implements Opcodes {
     }
 
     public void call(MethodVisitor methodVisitor) {
-        methodVisitor.visitMethodInsn(opcode, internalName, name, getMethodDescriptor(), opcode == Opcodes.INVOKEINTERFACE);
+        methodVisitor.visitMethodInsn(opcode, internalName, name, getMethodDescriptor(), opcode == INVOKEINTERFACE);
     }
 
     public String getMethodDescriptor() {

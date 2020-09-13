@@ -70,6 +70,8 @@ class MacroStatementTest extends GroovyTestCase {
 @interface AddMethod { }
 // end::addmethodannotation[]
 
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC
+
 // tag::addmethodtransformationwithoutmacro[]
 @GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION)
 class AddMethodASTTransformation extends AbstractASTTransformation {

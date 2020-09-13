@@ -301,7 +301,7 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
             someNode.setNodeMetaData(CLOSURE_REPLACED, Boolean.TRUE);
     }
 
-    static class ClosureExpressionValidator extends ClassCodeVisitorSupport implements Opcodes {
+    static class ClosureExpressionValidator extends ClassCodeVisitorSupport {
 
         private final ClassNode classNode;
         private final MethodNode methodNode;

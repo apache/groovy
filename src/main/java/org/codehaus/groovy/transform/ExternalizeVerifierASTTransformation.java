@@ -36,6 +36,8 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFields;
+import static org.objectweb.asm.Opcodes.ACC_FINAL;
+import static org.objectweb.asm.Opcodes.ACC_TRANSIENT;
 
 @org.codehaus.groovy.transform.GroovyASTTransformation(phase = CompilePhase.CLASS_GENERATION)
 public class ExternalizeVerifierASTTransformation extends org.codehaus.groovy.transform.AbstractASTTransformation {

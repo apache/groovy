@@ -29,7 +29,6 @@ import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
 
@@ -42,11 +41,52 @@ import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
+import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.ARETURN;
+import static org.objectweb.asm.Opcodes.ASTORE;
+import static org.objectweb.asm.Opcodes.BIPUSH;
+import static org.objectweb.asm.Opcodes.CHECKCAST;
+import static org.objectweb.asm.Opcodes.DCMPL;
+import static org.objectweb.asm.Opcodes.DCONST_0;
+import static org.objectweb.asm.Opcodes.DLOAD;
+import static org.objectweb.asm.Opcodes.DRETURN;
+import static org.objectweb.asm.Opcodes.DSTORE;
+import static org.objectweb.asm.Opcodes.DUP;
+import static org.objectweb.asm.Opcodes.DUP2;
+import static org.objectweb.asm.Opcodes.FCMPL;
+import static org.objectweb.asm.Opcodes.FCONST_0;
+import static org.objectweb.asm.Opcodes.FLOAD;
+import static org.objectweb.asm.Opcodes.FRETURN;
+import static org.objectweb.asm.Opcodes.FSTORE;
+import static org.objectweb.asm.Opcodes.GETSTATIC;
+import static org.objectweb.asm.Opcodes.GOTO;
+import static org.objectweb.asm.Opcodes.ICONST_0;
+import static org.objectweb.asm.Opcodes.ICONST_1;
+import static org.objectweb.asm.Opcodes.ICONST_2;
+import static org.objectweb.asm.Opcodes.ICONST_3;
+import static org.objectweb.asm.Opcodes.ICONST_4;
+import static org.objectweb.asm.Opcodes.ICONST_5;
+import static org.objectweb.asm.Opcodes.IFEQ;
+import static org.objectweb.asm.Opcodes.IFNE;
+import static org.objectweb.asm.Opcodes.ILOAD;
+import static org.objectweb.asm.Opcodes.INVOKESTATIC;
+import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+import static org.objectweb.asm.Opcodes.IRETURN;
+import static org.objectweb.asm.Opcodes.ISTORE;
+import static org.objectweb.asm.Opcodes.LCMP;
+import static org.objectweb.asm.Opcodes.LCONST_0;
+import static org.objectweb.asm.Opcodes.LLOAD;
+import static org.objectweb.asm.Opcodes.LRETURN;
+import static org.objectweb.asm.Opcodes.LSTORE;
+import static org.objectweb.asm.Opcodes.POP;
+import static org.objectweb.asm.Opcodes.POP2;
+import static org.objectweb.asm.Opcodes.RETURN;
+import static org.objectweb.asm.Opcodes.SIPUSH;
 
 /**
  * A helper class for bytecode generation with AsmClassGenerator.
  */
-public class BytecodeHelper implements Opcodes {
+public class BytecodeHelper {
 
     private static String DTT_CLASSNAME = BytecodeHelper.getClassInternalName(DefaultTypeTransformation.class);
 
@@ -367,12 +407,11 @@ public class BytecodeHelper implements Opcodes {
 
     private static void writeGenericsBoundType(StringBuilder ret, ClassNode printType, boolean writeInterfaceMarker) {
         if (writeInterfaceMarker && printType.isInterface()) ret.append(":");
-        if (printType.isGenericsPlaceHolder() && printType.getGenericsTypes()!=null) {
+        if (printType.isGenericsPlaceHolder() && printType.getGenericsTypes() != null) {
             ret.append("T");
             ret.append(printType.getGenericsTypes()[0].getName());
             ret.append(";");
-        }
-        else {
+        } else {
             ret.append(getTypeDescription(printType, false));
             addSubTypes(ret, printType.getGenericsTypes(), "<", ">");
             if (!ClassHelper.isPrimitiveType(printType)) ret.append(";");
@@ -440,7 +479,8 @@ public class BytecodeHelper implements Opcodes {
      * Given a wrapped number type (Byte, Integer, Short, ...), generates bytecode
      * to convert it to a primitive number (int, long, double) using calls to
      * wrapped.[targetType]Value()
-     * @param mv method visitor
+     *
+     * @param mv         method visitor
      * @param sourceType the wrapped number type
      * @param targetType the primitive target type
      */
@@ -452,7 +492,8 @@ public class BytecodeHelper implements Opcodes {
      * Given a primitive number type (byte, integer, short, ...), generates bytecode
      * to convert it to a wrapped number (Integer, Long, Double) using calls to
      * [WrappedType].valueOf
-     * @param mv method visitor
+     *
+     * @param mv         method visitor
      * @param sourceType the primitive number type
      * @param targetType the wrapped target type
      */
@@ -469,7 +510,7 @@ public class BytecodeHelper implements Opcodes {
                     CHECKCAST,
                     type.isArray() ?
                             BytecodeHelper.getTypeDescription(type) :
-                                BytecodeHelper.getClassInternalName(type.getName()));
+                            BytecodeHelper.getClassInternalName(type.getName()));
         }
     }
 
@@ -544,6 +585,7 @@ public class BytecodeHelper implements Opcodes {
      * Tells if a class node is candidate for class literal bytecode optimization. If so,
      * bytecode may use LDC instructions instead of static constant Class fields to retrieve
      * class literals.
+     *
      * @param classNode the classnode for which we want to know if bytecode optimization is possible
      * @return true if the bytecode can be optimized
      */
@@ -557,6 +599,7 @@ public class BytecodeHelper implements Opcodes {
 
     /**
      * Returns true if the two classes share the same compilation unit.
+     *
      * @param a class a
      * @param b class b
      * @return true if both classes share the same compilation unit
@@ -570,6 +613,7 @@ public class BytecodeHelper implements Opcodes {
     /**
      * Computes a hash code for a string. The purpose of this hashcode is to be constant independently of
      * the JDK being used.
+     *
      * @param str the string for which to compute the hashcode
      * @return hashcode of the string
      */
@@ -585,7 +629,7 @@ public class BytecodeHelper implements Opcodes {
     /**
      * Converts a primitive type to boolean.
      *
-     * @param mv method visitor
+     * @param mv   method visitor
      * @param type primitive type to convert
      */
     public static void convertPrimitiveToBoolean(MethodVisitor mv, ClassNode type) {
@@ -604,7 +648,7 @@ public class BytecodeHelper implements Opcodes {
         Label trueLabel = new Label();
         Label falseLabel = new Label();
         // Convert long to int for IFEQ comparison using LCMP
-        if (type== long_TYPE) {
+        if (type == long_TYPE) {
             mv.visitInsn(LCONST_0);
             mv.visitInsn(LCMP);
         }
@@ -817,7 +861,9 @@ public class BytecodeHelper implements Opcodes {
         }
 
         protected abstract void handleDoubleType();
+
         protected abstract void handleFloatType();
+
         protected abstract void handleLongType();
 
         /**
@@ -826,6 +872,7 @@ public class BytecodeHelper implements Opcodes {
         protected abstract void handleIntType();
 
         protected abstract void handleVoidType();
+
         protected abstract void handleRefType();
     }
 }

@@ -32,7 +32,12 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
+
+import static org.objectweb.asm.Opcodes.ATHROW;
+import static org.objectweb.asm.Opcodes.DUP;
+import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static org.objectweb.asm.Opcodes.NEW;
+import static org.objectweb.asm.Opcodes.V1_3;
 
 /**
  * To generate a class that has all the fields and methods, except that fields are not initialized
@@ -72,7 +77,7 @@ public class DummyClassGenerator extends ClassGenerator {
             this.internalBaseClassName = BytecodeHelper.getClassInternalName(classNode.getSuperClass());
 
             cv.visit(
-                    Opcodes.V1_3,
+                    V1_3,
                     classNode.getModifiers(),
                     internalClassName,
                     null,

@@ -28,7 +28,6 @@ import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 
 import java.util.Collection;
 import java.util.Deque;
@@ -37,6 +36,17 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import static org.objectweb.asm.Opcodes.ACONST_NULL;
+import static org.objectweb.asm.Opcodes.ASTORE;
+import static org.objectweb.asm.Opcodes.DCONST_0;
+import static org.objectweb.asm.Opcodes.DUP_X1;
+import static org.objectweb.asm.Opcodes.FCONST_0;
+import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static org.objectweb.asm.Opcodes.LCONST_0;
+import static org.objectweb.asm.Opcodes.NEW;
+import static org.objectweb.asm.Opcodes.NOP;
+import static org.objectweb.asm.Opcodes.SWAP;
 
 /**
  * Manages different aspects of the code of a code block like handling labels,
@@ -66,7 +76,7 @@ import java.util.Map;
  *
  * @see org.codehaus.groovy.classgen.AsmClassGenerator
  */
-public class CompileStack implements Opcodes {
+public class CompileStack {
     // TODO: remove optimization of this.foo -> this.@foo
 
     /** state flag */
