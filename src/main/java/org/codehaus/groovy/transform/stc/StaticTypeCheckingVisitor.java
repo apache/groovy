@@ -1764,11 +1764,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return member;
     }
 
-    private void storeWithResolve(final ClassNode typeToResolve, final ClassNode receiver, final ClassNode declaringClass, final boolean isStatic, final Expression expressionToStoreOn) {
-        ClassNode type = typeToResolve;
-        if (missesGenericsTypes(type)) {
-            Map<GenericsTypeName, GenericsType> resolvedPlaceholders = resolvePlaceHoldersFromDeclaration(receiver, declaringClass, null, isStatic);
-            type = resolveGenericsWithContext(resolvedPlaceholders, type);
+    private void storeWithResolve(ClassNode type, final ClassNode receiver, final ClassNode declaringClass, final boolean isStatic, final Expression expressionToStoreOn) {
+        if (GenericsUtils.hasUnresolvedGenerics(type)) {
+            type = resolveGenericsWithContext(resolvePlaceHoldersFromDeclaration(receiver, declaringClass, null, isStatic), type);
         }
         if (expressionToStoreOn instanceof PropertyExpression) {
             storeInferredTypeForPropertyExpression((PropertyExpression) expressionToStoreOn, type);
@@ -5136,7 +5134,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
                     extractGenericsConnections(connections, argumentType, paramType);
                     extractGenericsConnectionsForSuperClassAndInterfaces(resolvedPlaceholders, connections);
+
                     applyGenericsConnections(connections, resolvedPlaceholders);
+                    applyGenericsConnections(placeholdersFromContext, resolvedPlaceholders);
                 }
             }
         }

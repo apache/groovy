@@ -105,7 +105,6 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.getSuperClass;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND_EQUAL;
@@ -1730,7 +1729,7 @@ public abstract class StaticTypeCheckingSupport {
      * Should the target not have any generics this method does nothing.
      */
     static void extractGenericsConnections(final Map<GenericsTypeName, GenericsType> connections, final ClassNode type, final ClassNode target) {
-        if (target == null || type == target || !isUsingGenericsOrIsArrayUsingGenerics(target)) return;
+        if (target == null || target == type || !isUsingGenericsOrIsArrayUsingGenerics(target)) return;
         if (type == null || type == UNKNOWN_PARAMETER_TYPE) return;
 
         if (target.isGenericsPlaceHolder()) {
@@ -1743,10 +1742,16 @@ public abstract class StaticTypeCheckingSupport {
             extractGenericsConnections(connections, type.getGenericsTypes(), target.getGenericsTypes());
 
         } else {
-            // first find matching super class or interface
-            ClassNode superClass = getSuperClass(type, target);
+            // find matching super class or interface
+            ClassNode superClass = GenericsUtils.getSuperClass(type, target);
             if (superClass != null) {
-                extractGenericsConnections(connections, getCorrectedClassNode(type, superClass, true), target);
+                if (GenericsUtils.hasUnresolvedGenerics(superClass)) {
+                    Map<String, ClassNode> spec = GenericsUtils.createGenericsSpec(type);
+                    if (!spec.isEmpty()) {
+                        superClass = GenericsUtils.correctToGenericsSpecRecurse(spec, superClass);
+                    }
+                }
+                extractGenericsConnections(connections, superClass, target);
             } else {
                 // if we reach here, we have an unhandled case
                 throw new GroovyBugError("The type " + type + " seems not to normally extend " + target + ". Sorry, I cannot handle this.");

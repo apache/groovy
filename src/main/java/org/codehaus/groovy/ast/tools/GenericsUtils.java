@@ -55,7 +55,6 @@ import java.util.function.Predicate;
 import static groovy.lang.Tuple.tuple;
 import static org.apache.groovy.util.SystemUtil.getSystemPropertySafe;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.plus;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getCorrectedClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 
 /**
@@ -514,12 +513,10 @@ public class GenericsUtils {
                 extractSuperClassGenerics(type.getGenericsTypes(), target.getGenericsTypes(), spec);
             }
         } else {
-            // have first to find matching super class or interface
+            // find matching super class or interface
             ClassNode superClass = getSuperClass(type, target);
-
             if (superClass != null) {
-                ClassNode corrected = getCorrectedClassNode(type, superClass, false);
-                extractSuperClassGenerics(corrected, target, spec);
+                extractSuperClassGenerics(correctToGenericsSpecRecurse(createGenericsSpec(type), superClass), target, spec);
             } else {
                 // if we reach here, we have an unhandled case
                 throw new GroovyBugError("The type " + type + " seems not to normally extend " + target + ". Sorry, I cannot handle this.");
@@ -907,39 +904,60 @@ public class GenericsUtils {
     }
 
     /**
-     * Check whether the ClassNode has non generics placeholders, aka not placeholder
+     * Checks if the type has any non-placeholder (aka resolved) generics.
      *
-     * @param parameterizedType the class node
-     * @return the result
      * @since 3.0.0
      */
-    public static boolean hasNonPlaceHolders(ClassNode parameterizedType) {
-        return checkPlaceHolders(parameterizedType, genericsType -> !genericsType.isPlaceholder());
+    public static boolean hasNonPlaceHolders(final ClassNode type) {
+        return checkPlaceHolders(type, gt -> !gt.isPlaceholder());
     }
 
     /**
-     * Check whether the ClassNode has generics placeholders
-     * @param parameterizedType the class node
-     * @return the result
+     * Checks if the type has any placeholder (aka unresolved) generics.
+     *
      * @since 3.0.0
      */
-    public static boolean hasPlaceHolders(ClassNode parameterizedType) {
-        return checkPlaceHolders(parameterizedType, GenericsType::isPlaceholder);
+    public static boolean hasPlaceHolders(final ClassNode type) {
+        return checkPlaceHolders(type, gt -> gt.isPlaceholder());
     }
 
-    private static boolean checkPlaceHolders(ClassNode parameterizedType, Predicate<GenericsType> p) {
-        if (null == parameterizedType) return false;
-
-        GenericsType[] genericsTypes = parameterizedType.getGenericsTypes();
-
-        if (null == genericsTypes) return false;
-
-        for (GenericsType genericsType : genericsTypes) {
-            if (p.test(genericsType)) {
-                return true;
+    private static boolean checkPlaceHolders(final ClassNode type, final Predicate<GenericsType> p) {
+        if (type != null) {
+            GenericsType[] genericsTypes = type.getGenericsTypes();
+            if (genericsTypes != null) {
+                for (GenericsType genericsType : genericsTypes) {
+                    if (p.test(genericsType)) {
+                        return true;
+                    }
+                }
             }
         }
+        return false;
+    }
 
+    /**
+     * Checks for any placeholder (aka unresolved) generics.
+     */
+    public static boolean hasUnresolvedGenerics(final ClassNode type) {
+        if (type.isGenericsPlaceHolder()) return true;
+        if (type.isArray()) {
+            return hasUnresolvedGenerics(type.getComponentType());
+        }
+        GenericsType[] genericsTypes = type.getGenericsTypes();
+        if (genericsTypes != null) {
+            for (GenericsType genericsType : genericsTypes) {
+                if (genericsType.isPlaceholder()) return true;
+                ClassNode lowerBound = genericsType.getLowerBound();
+                ClassNode[] upperBounds = genericsType.getUpperBounds();
+                if (lowerBound != null) {
+                    if (hasUnresolvedGenerics(lowerBound)) return true;
+                } else if (upperBounds != null) {
+                    for (ClassNode upperBound : upperBounds) {
+                        if (hasUnresolvedGenerics(upperBound)) return true;
+                    }
+                }
+            }
+        }
         return false;
     }
 
