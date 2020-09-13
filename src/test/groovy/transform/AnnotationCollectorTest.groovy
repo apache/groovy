@@ -185,7 +185,7 @@ class AnnotationCollectorTest extends GroovyTestCase {
             class Foo {
                 Integer a, b
             }
-            assert Foo.class.annotations.size() == 3
+            assert Foo.class.annotations.size() == 4
             assert new Foo(a: 1, b: 2).toString() == "Foo(2)"
             def data = Alias.getAnnotation(AnnotationCollector).serializeClass().value()
             assert data.length == 0

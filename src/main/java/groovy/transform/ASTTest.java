@@ -18,7 +18,6 @@
  */
 package groovy.transform;
 
-import groovy.lang.Closure;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
@@ -53,7 +52,7 @@ import java.lang.annotation.Target;
  * @since 2.0.0
  */
 @Documented
-@Retention(RetentionPolicy.SOURCE)
+@Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.PACKAGE, ElementType.TYPE, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER, ElementType.LOCAL_VARIABLE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.ASTTestTransformation")
 public @interface ASTTest {
@@ -65,5 +64,5 @@ public @interface ASTTest {
     /**
      * A closure which is executed against the annotated node after the specified phase has completed.
      */
-    Class<? extends /*@ClosureParams(value=FromString.class,options="")*/ Closure<?>> value();
+    Class value();
 }

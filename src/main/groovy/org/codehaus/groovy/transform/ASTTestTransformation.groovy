@@ -25,11 +25,9 @@ import org.codehaus.groovy.ast.ClassCodeVisitorSupport
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
-import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
-import org.codehaus.groovy.ast.stmt.EmptyStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilePhase
@@ -74,9 +72,7 @@ class ASTTestTransformation implements ASTTransformation, CompilationUnitAware {
         }
         // convert value into node metadata so that the expression doesn't mix up with other AST xforms like STC
         annotationNode.setNodeMetaData(ASTTestTransformation, member)
-        annotationNode.setMember('value', new ClosureExpression(
-            Parameter.EMPTY_ARRAY, EmptyStatement.INSTANCE))
-        member.variableScope.@parent = null
+        annotationNode.members.remove('value')
 
         def pcallback = compilationUnit.progressCallback
         def callback = new CompilationUnit.ProgressCallback() {
