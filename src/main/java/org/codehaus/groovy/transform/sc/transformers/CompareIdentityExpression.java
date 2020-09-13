@@ -29,7 +29,11 @@ import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
+
+import static org.objectweb.asm.Opcodes.GOTO;
+import static org.objectweb.asm.Opcodes.ICONST_0;
+import static org.objectweb.asm.Opcodes.ICONST_1;
+import static org.objectweb.asm.Opcodes.IF_ACMPNE;
 
 /**
  * Compares two objects using identity comparison.
@@ -39,7 +43,7 @@ import org.objectweb.asm.Opcodes;
  * This expression should only be used to compare to objects, not primitives, and only
  * in the context of reference equality check.
  */
-public class CompareIdentityExpression extends BinaryExpression implements Opcodes {
+public class CompareIdentityExpression extends BinaryExpression {
     private final Expression leftExpression;
     private final Expression rightExpression;
 

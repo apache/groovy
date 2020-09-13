@@ -270,10 +270,12 @@ class GroovyClassLoaderTestCustomGCL extends GroovyClassLoader {
     }
 }
 
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC
+
 class GroovyClassLoaderTestPropertyAdder implements CompilationUnit.IPrimaryClassNodeOperation {
     @Override
     void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
-        classNode.addProperty("id", ClassNode.ACC_PUBLIC, ClassHelper.long_TYPE, null, null, null)
+        classNode.addProperty("id", ACC_PUBLIC, ClassHelper.long_TYPE, null, null, null)
     }
 }
 

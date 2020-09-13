@@ -20,12 +20,15 @@ package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.objectweb.asm.Opcodes;
+
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
 
 /**
  * Represents a property (member variable, a getter and setter)
  */
-public class PropertyNode extends AnnotatedNode implements Opcodes, Variable {
+public class PropertyNode extends AnnotatedNode implements Variable {
 
     private FieldNode field;
 

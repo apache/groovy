@@ -41,7 +41,6 @@ import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 
 import java.util.List;
 
@@ -49,6 +48,11 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
+import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.ASTORE;
+import static org.objectweb.asm.Opcodes.DUP;
+import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static org.objectweb.asm.Opcodes.NEW;
 
 public class ConstructorCallTransformer {
     private final StaticCompilationTransformer staticCompilationTransformer;
@@ -99,7 +103,7 @@ public class ConstructorCallTransformer {
         return staticCompilationTransformer.superTransform(expr);
     }
 
-    private static class MapStyleConstructorCall extends BytecodeExpression implements Opcodes {
+    private static class MapStyleConstructorCall extends BytecodeExpression {
         private final StaticCompilationTransformer staticCompilationTransformer;
         private AsmClassGenerator acg;
         private final ClassNode declaringClass;

@@ -30,9 +30,14 @@ import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 
-public class CompareToNullExpression extends BinaryExpression implements Opcodes {
+import static org.objectweb.asm.Opcodes.GOTO;
+import static org.objectweb.asm.Opcodes.ICONST_0;
+import static org.objectweb.asm.Opcodes.ICONST_1;
+import static org.objectweb.asm.Opcodes.IFNONNULL;
+import static org.objectweb.asm.Opcodes.IFNULL;
+
+public class CompareToNullExpression extends BinaryExpression {
     private final boolean equalsNull;
 
     public CompareToNullExpression(final Expression objectExpression, final boolean compareToNull) {

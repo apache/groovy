@@ -21,15 +21,21 @@ package org.codehaus.groovy.ast;
 import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.objectweb.asm.Opcodes;
 
 import java.util.List;
 import java.util.Optional;
 
+import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
+import static org.objectweb.asm.Opcodes.ACC_FINAL;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_PROTECTED;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
+
 /**
  * Represents a method declaration.
  */
-public class MethodNode extends AnnotatedNode implements Opcodes {
+public class MethodNode extends AnnotatedNode {
 
     private final String name;
     private int modifiers;

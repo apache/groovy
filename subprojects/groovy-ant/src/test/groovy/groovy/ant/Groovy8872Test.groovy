@@ -70,6 +70,9 @@ class Groovy8872Test extends AntTestCase {
                     import org.codehaus.groovy.transform.*
                     import org.codehaus.groovy.control.*
                     import static org.codehaus.groovy.ast.tools.GeneralUtils.*
+                    import static org.objectweb.asm.Opcodes.ACC_FINAL;
+                    import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+                    import static org.objectweb.asm.Opcodes.ACC_STATIC;
 
                     @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
                     class ExtractParamNamesTransformation extends AbstractASTTransformation {

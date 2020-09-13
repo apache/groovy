@@ -120,7 +120,7 @@ public class ExpressionUtils {
         return result;
     }
 
-    static class AssertStatementCollector extends ClassCodeVisitorSupport implements Opcodes {
+    static class AssertStatementCollector extends ClassCodeVisitorSupport {
 
         public List<AssertStatement> assertStatements = new ArrayList<AssertStatement>();
 

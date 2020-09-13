@@ -57,6 +57,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.plusX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
+import static org.objectweb.asm.Opcodes.ACC_FINAL
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE
 
 /**
  * Allows "interrupt-safe" executions of scripts by adding timer expiration

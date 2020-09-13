@@ -59,6 +59,8 @@ class MacroVariableSubstitutionTest extends GroovyTestCase {
 @interface MD5 { }
 // end::md5annotation[]
 
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC
+
 // tag::md5transformation[]
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 class MD5ASTTransformation extends AbstractASTTransformation {

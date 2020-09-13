@@ -30,6 +30,8 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
+import static org.objectweb.asm.Opcodes.H_INVOKESTATIC;
+
 /**
  * Multi type dispatcher for binary expression backend combining indy and static compilation
  *

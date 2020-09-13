@@ -64,6 +64,8 @@ class MacroExpressionTest extends GroovyTestCase {
 @interface AddGetTwo { }
 // end::addgettwoannotation[]
 
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC
+
 // tag::addgettwotransformation[]
 @GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION)
 class AddGetTwoASTTransformation extends AbstractASTTransformation {

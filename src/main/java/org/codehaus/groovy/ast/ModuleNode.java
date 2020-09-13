@@ -25,7 +25,6 @@ import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.transform.BaseScriptASTTransformation;
-import org.objectweb.asm.Opcodes;
 
 import java.io.File;
 import java.net.URI;
@@ -47,13 +46,17 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
+import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
 
 /**
  * Represents a module, which consists typically of a class declaration
  * but could include some imports, some statements and multiple classes
  * intermixed with statements like scripts in Python or Ruby
  */
-public class ModuleNode extends ASTNode implements Opcodes {
+public class ModuleNode extends ASTNode {
 
     private List<ClassNode> classes = new LinkedList<>();
     private final List<MethodNode> methods = new ArrayList<>();

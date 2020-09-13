@@ -29,7 +29,6 @@ import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.classgen.asm.UnaryExpressionHelper;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.Opcodes;
 
 import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
@@ -40,12 +39,26 @@ import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
+import static org.objectweb.asm.Opcodes.DNEG;
+import static org.objectweb.asm.Opcodes.FNEG;
+import static org.objectweb.asm.Opcodes.GOTO;
+import static org.objectweb.asm.Opcodes.I2B;
+import static org.objectweb.asm.Opcodes.I2C;
+import static org.objectweb.asm.Opcodes.I2S;
+import static org.objectweb.asm.Opcodes.ICONST_0;
+import static org.objectweb.asm.Opcodes.ICONST_1;
+import static org.objectweb.asm.Opcodes.ICONST_M1;
+import static org.objectweb.asm.Opcodes.IFNE;
+import static org.objectweb.asm.Opcodes.INEG;
+import static org.objectweb.asm.Opcodes.IXOR;
+import static org.objectweb.asm.Opcodes.LNEG;
+import static org.objectweb.asm.Opcodes.LXOR;
 
 /**
  * An expression helper which generates optimized bytecode depending on the
  * current type on top of the operand stack.
  */
-public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper implements Opcodes {
+public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper {
 
     private static final BitwiseNegationExpression EMPTY_BITWISE_NEGATE = new BitwiseNegationExpression(EmptyExpression.INSTANCE);
     private static final UnaryMinusExpression EMPTY_UNARY_MINUS = new UnaryMinusExpression(EmptyExpression.INSTANCE);

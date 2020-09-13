@@ -40,6 +40,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import java.util.List;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
+import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 
 /**
  * Handles transformation for the @BaseScript annotation.
