@@ -332,9 +332,8 @@ public class ModuleNode extends ASTNode implements Opcodes {
             return classNode;
         }
 
-        handleMainMethodIfPresent(methods);
+        MethodNode existingMain = handleMainMethodIfPresent(methods);
 
-        // return new Foo(new ShellContext(args)).run()
         classNode.addMethod(
             new MethodNode(
                 "main",
@@ -342,6 +341,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
                 ClassHelper.VOID_TYPE,
                 params(param(ClassHelper.STRING_TYPE.makeArray(), "args")),
                 ClassNode.EMPTY_ARRAY,
+                // InvokerHelper.runScript(scriptClass, args)
                 stmt(
                     callX(
                         classX(ClassHelper.make(InvokerHelper.class)),
@@ -354,6 +354,9 @@ public class ModuleNode extends ASTNode implements Opcodes {
 
         MethodNode methodNode = new MethodNode("run", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, statementBlock);
         methodNode.setIsScriptBody();
+        if (existingMain != null) {
+            methodNode.addAnnotations(existingMain.getAnnotations());
+        }
         classNode.addMethod(methodNode);
 
         classNode.addConstructor(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
@@ -388,8 +391,9 @@ public class ModuleNode extends ASTNode implements Opcodes {
     /*
      * If a main method is provided by user, account for it under run() as scripts generate their own 'main' so they can run.
      */
-    private void handleMainMethodIfPresent(final List<MethodNode> methods) {
+    private MethodNode handleMainMethodIfPresent(final List<MethodNode> methods) {
         boolean found = false;
+        MethodNode result = null;
         for (Iterator<MethodNode> iter = methods.iterator(); iter.hasNext();) {
             MethodNode node = iter.next();
             if (node.getName().equals("main")) {
@@ -400,12 +404,12 @@ public class ModuleNode extends ASTNode implements Opcodes {
 
                     argTypeMatches = (argType.equals(ClassHelper.OBJECT_TYPE) || argType.getName().contains("String[]"));
                     retTypeMatches = (retType == ClassHelper.VOID_TYPE || retType == ClassHelper.OBJECT_TYPE);
-
                     if (retTypeMatches && argTypeMatches) {
                         if (found) {
                             throw new RuntimeException("Repetitive main method found.");
                         } else {
                             found = true;
+                            result = node;
                         }
                         // if script has both loose statements as well as main(), then main() is ignored
                         if (statementBlock.isEmpty()) {
@@ -416,6 +420,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
                 }
             }
         }
+        return result;
     }
 
     protected String extractClassFromFileDescription() {

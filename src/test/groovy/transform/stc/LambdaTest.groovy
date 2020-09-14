@@ -1814,6 +1814,17 @@ final class LambdaTest {
     }
 
     @Test
+    void testScriptWithExistingMainCS() { // GROOVY-9146
+        assertScript '''
+            @groovy.transform.CompileStatic
+            static void main(args) {
+                java.util.function.Function<String, String> lower = String::toLowerCase
+                assert lower.toString().contains('$$Lambda$')
+            }
+        '''
+    }
+
+    @Test
     void testDeserializeNestedLambda4() {
         assertScript '''
             import java.util.function.Function
