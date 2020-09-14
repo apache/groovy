@@ -21,6 +21,8 @@ package org.codehaus.groovy.ast.expr;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
+import java.util.Objects;
+
 /**
  * Represents a typecast expression.
  */
@@ -43,9 +45,9 @@ public class CastExpression extends Expression {
     }
 
     public CastExpression(final ClassNode type, final Expression expression, final boolean ignoreAutoboxing) {
-        this.setType(type);
         this.expression = expression;
         this.ignoreAutoboxing = ignoreAutoboxing;
+        super.setType(Objects.requireNonNull(type));
     }
 
     public Expression getExpression() {
@@ -107,6 +109,6 @@ public class CastExpression extends Expression {
 
     @Override
     public void setType(final ClassNode type) {
-        super.setType(type);
+        throw new UnsupportedOperationException();
     }
 }
