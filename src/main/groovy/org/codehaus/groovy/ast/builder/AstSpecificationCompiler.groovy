@@ -19,6 +19,8 @@
 package org.codehaus.groovy.ast.builder
 
 import groovy.transform.CompileStatic
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
@@ -97,11 +99,11 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.param
 /**
  * Handles parsing the properties from the closure into values that can be referenced.
  *
- * This object is very stateful and not threadsafe. It accumulates expressions in the 
- * 'expression' field as they are found and executed within the DSL. 
+ * This object is very stateful and not threadsafe. It accumulates expressions in the
+ * 'expression' field as they are found and executed within the DSL.
  *
  * Note: this class consists of many one-line method calls. A better implementation
- * might be to take a declarative approach and replace the one-liners with map entries. 
+ * might be to take a declarative approach and replace the one-liners with map entries.
  */
 @SuppressWarnings('BuilderMethodWithSideEffects')
 class AstSpecificationCompiler implements GroovyInterceptable {
@@ -160,17 +162,18 @@ class AstSpecificationCompiler implements GroovyInterceptable {
      *       name of object being constructed, used to create helpful error message.
      * @param argBlock
      *       the actual parameters being specified for the node
-     * @param constructorStatement
-     *       the type specific construction code that will be run
+     * @param ctorBlock
+     *       the type-specific construction code that will be run
      */
     @CompileStatic
-    private void captureAndCreateNode(String name, @DelegatesTo(AstSpecificationCompiler) Closure argBlock, Closure constructorStatement) {
+    private void captureAndCreateNode(String name, @DelegatesTo(AstSpecificationCompiler) Closure argBlock,
+            @ClosureParams(value=SimpleType, options="java.util.List<org.codehaus.groovy.ast.ASTNode>") Closure ctorBlock) {
         if (!argBlock) throw new IllegalArgumentException("nodes of type $name require arguments to be specified")
 
-        def oldProps = new ArrayList(expression)
+        def oldProps = new ArrayList<>(expression)
         expression.clear()
         new AstSpecificationCompiler(argBlock)
-        def result = constructorStatement(expression) // invoke custom constructor for node
+        def result = ctorBlock(expression) // invoke custom constructor for node
         expression.clear()
         expression.addAll(oldProps)
         ((List) expression).add(result)

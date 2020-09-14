@@ -993,25 +993,7 @@ public abstract class StaticTypeCheckingSupport {
      * @return true if it is using any placeholder in generics types
      */
     public static boolean isUsingUncheckedGenerics(final ClassNode node) {
-        if (node.isArray()) return isUsingUncheckedGenerics(node.getComponentType());
-        GenericsType[] genericsTypes = node.getGenericsTypes();
-        if (genericsTypes != null) {
-            for (GenericsType genericsType : genericsTypes) {
-                if (genericsType.isPlaceholder()) return true;
-                if (genericsType.isWildcard()) {
-                    ClassNode lowerBound = genericsType.getLowerBound();
-                    ClassNode[] upperBounds = genericsType.getUpperBounds();
-                    if (lowerBound != null) {
-                        if (lowerBound.isGenericsPlaceHolder() || isUsingUncheckedGenerics(lowerBound)) return true;
-                    } else if (upperBounds != null) {
-                        if (upperBounds[0].isGenericsPlaceHolder() || isUsingUncheckedGenerics(upperBounds[0])) return true;
-                    }
-                } else {
-                    if (isUsingUncheckedGenerics(genericsType.getType())) return true;
-                }
-            }
-        }
-        return false;
+        return GenericsUtils.hasUnresolvedGenerics(node);
     }
 
     /**

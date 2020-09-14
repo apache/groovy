@@ -142,7 +142,7 @@ class GrapeIvy implements GrapeEngine {
     }
 
     File getGrapeCacheDir() {
-        File cache = new File(grapeDir, 'grapes')
+        File cache = new File(getGrapeDir(), 'grapes')
         if (!cache.exists()) {
             cache.mkdirs()
         } else if (!cache.isDirectory()) {
