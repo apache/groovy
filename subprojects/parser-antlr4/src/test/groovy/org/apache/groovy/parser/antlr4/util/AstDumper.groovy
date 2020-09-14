@@ -105,10 +105,10 @@ import java.lang.reflect.Modifier
  */
 @CompileStatic
 class AstDumper {
-    private ModuleNode ast;
+    private final ModuleNode ast
 
-    AstDumper(ModuleNode ast) {
-        this.ast = ast;
+    AstDumper(final ModuleNode ast) {
+        this.ast = ast
     }
 
     /**
@@ -117,23 +117,19 @@ class AstDumper {
      * @return the groovy source code
      */
     String gen() {
-        StringWriter out = new StringWriter();
+        try (StringWriter out = new StringWriter()) {
+            AstNodeToScriptVisitor visitor = new AstNodeToScriptVisitor(out, true, true)
 
-        try {
-            AstNodeToScriptVisitor visitor = new AstNodeToScriptVisitor(out, true, true);
-
-            new LinkedList<ClassNode>((List) this.ast?.classes ?: []).sort { c1, c2 -> c1.name <=> c2.name }?.each {
+            new LinkedList<ClassNode>(this.ast?.classes ?: Collections.<ClassNode>emptyList()).sort { c1, c2 -> c1.name <=> c2.name }?.each {
                 visitor.call(new SourceUnit((String) null, (ReaderSource) null, null, null, null) {
                     @Override
-                    public ModuleNode getAST() {
-                        return AstDumper.this.ast;
+                    ModuleNode getAST() {
+                        return AstDumper.this.ast
                     }
                 }, null, it)
             }
 
-            return out.toString().replaceAll(/([\w_$]+)@[0-9a-z]+/, '$1@<hashcode>');
-        } finally {
-            out.close();
+            return out.toString().replaceAll(/([\w_$]+)@[0-9a-z]+/, '$1@<hashcode>')
         }
     }
 }
