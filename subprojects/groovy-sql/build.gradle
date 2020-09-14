@@ -18,7 +18,7 @@
  */
 dependencies {
     api rootProject // Sql uses Closure...
-    testImplementation group: 'org.hsqldb', name: 'hsqldb', version: '2.3.3'
+    testImplementation group: 'org.hsqldb', name: 'hsqldb', version: '2.5.1'
 // uncomment to test with other databases (requires changes elsewhere too)
 //    testImplementation 'com.h2database:h2:1.3.164'
 //    testImplementation 'hsqldb:hsqldb:1.8.0.10'
