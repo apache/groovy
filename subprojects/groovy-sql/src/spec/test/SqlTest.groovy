@@ -72,7 +72,7 @@ class SqlTest extends GroovyTestCase {
         /*
         commented out as already on classpath
 // tag::sql_connecting_grab[]
-        @Grab('org.hsqldb:hsqldb:2.3.3')
+        @Grab('org.hsqldb:hsqldb:2.5.1')
         @GrabConfig(systemClassLoader=true)
         // create, use, and then close sql instance ...
 // end::sql_connecting_grab[]
@@ -335,8 +335,8 @@ class SqlTest extends GroovyTestCase {
               // tag::sql_basic_table_metadata[]
               def md = sql.connection.metaData
               assert md.driverName == 'HSQL Database Engine Driver'
-              assert md.databaseProductVersion == '2.3.3'
-              assert ['JDBCMajorVersion', 'JDBCMinorVersion'].collect{ md[it] } == [4, 0]
+              assert md.databaseProductVersion == '2.5.1'
+              assert ['JDBCMajorVersion', 'JDBCMinorVersion'].collect{ md[it] } == [4, 2]
               assert md.stringFunctions.tokenize(',').contains('CONCAT')
               def rs = md.getTables(null, null, 'AUTH%', null)
               assert rs.next()
