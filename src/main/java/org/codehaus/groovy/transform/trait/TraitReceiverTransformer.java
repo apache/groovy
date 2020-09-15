@@ -49,6 +49,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.List;
 
@@ -120,27 +121,19 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         } else if (exp instanceof VariableExpression) {
             VariableExpression vexp = (VariableExpression) exp;
             Variable accessedVariable = vexp.getAccessedVariable();
-            if (accessedVariable instanceof FieldNode) {
-                FieldNode fn = (FieldNode) accessedVariable;
-                Expression receiver = createFieldHelperReceiver();
-                MethodCallExpression mce;
-                boolean isStatic = fn.isStatic();
-                if (isStatic) {
-                    receiver = createStaticReceiver(receiver);
-                }
-                mce = new MethodCallExpression(
-                        receiver,
-                        Traits.helperGetterName(fn),
-                        ArgumentListExpression.EMPTY_ARGUMENTS
-                );
-                mce.setSourcePosition(exp);
-                mce.setImplicitThis(false);
-                markDynamicCall(mce, fn, isStatic);
-                return mce;
-            } else if (accessedVariable instanceof PropertyNode) {
-                String propName = accessedVariable.getName();
-                if (knownFields.contains(propName)) {
-                    return createFieldHelperCall(exp, weavedType, propName);
+            if (accessedVariable instanceof FieldNode || accessedVariable instanceof PropertyNode) {
+                if (knownFields.contains(accessedVariable.getName())) {
+                    boolean isStatic = Modifier.isStatic(accessedVariable.getModifiers());
+                    Expression receiver = createFieldHelperReceiver();
+                    if (isStatic) {
+                        receiver = createStaticReceiver(receiver);
+                    }
+                    FieldNode fn = accessedVariable instanceof FieldNode ? (FieldNode) accessedVariable : ((PropertyNode) accessedVariable).getField();
+                    MethodCallExpression mce = new MethodCallExpression(receiver, Traits.helperGetterName(fn), ArgumentListExpression.EMPTY_ARGUMENTS);
+                    mce.setImplicitThis(false);
+                    mce.setSourcePosition(exp);
+                    markDynamicCall(mce, fn, isStatic);
+                    return mce;
                 } else {
                     PropertyExpression propertyExpression = new PropertyExpression(
                             new VariableExpression(weaved), accessedVariable.getName());
