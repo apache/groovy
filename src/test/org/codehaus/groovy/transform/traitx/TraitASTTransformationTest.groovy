@@ -1733,6 +1733,37 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    @Test // GROOVY-9739
+    void testTraitExtendsTraitWithDelegate() {
+        assertScript '''
+            class Main implements ClientSupport {
+                static main(args) {
+                    def tester = new Main(client: new Client())
+
+                    assert tester.isReady()
+                    assert tester.client.getValue() == 'works'
+                }
+            }
+
+            class Client {
+                def getValue() { 'works' }
+                boolean waitForServer(int seconds) { true }
+            }
+
+            trait ClientDelegate {
+                @Delegate Client client
+            }
+
+            trait ClientSupport implements ClientDelegate {
+                boolean isReady() {
+                    boolean ready = client.waitForServer(60)
+                    // assert, log, etc.
+                    return ready
+                }
+            }
+        '''
+    }
+
     @Test
     void testAnnotationShouldBeCarriedOver() {
         assertScript '''
