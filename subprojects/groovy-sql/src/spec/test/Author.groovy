@@ -16,24 +16,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-dependencies {
-    api rootProject // Sql uses Closure...
-    testImplementation group: 'org.hsqldb', name: 'hsqldb', version: '2.3.3'
-// uncomment to test with other databases (requires changes elsewhere too)
-//    testImplementation 'com.h2database:h2:1.3.164'
-//    testImplementation 'hsqldb:hsqldb:1.8.0.10'
-    testImplementation project(':groovy-test')
-}
 
-// TODO move to parent build.gradle subprojects
-tasks.withType(Test) {
-    excludes = ['**/*TestCase.class', '**/*$*.class']
-// required for DataSet tests
-    classpath = classpath + files('src/test/groovy') + files('src/spec/test')
+// tag::dataset_class[]
+class Author {
+    String firstname
+    String lastname
 }
-
-task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {
-    extensionClasses = 'org.apache.groovy.sql.extensions.SqlExtensions'
-}
-
-compileJava.dependsOn moduleDescriptor
+// end::dataset_class[]
