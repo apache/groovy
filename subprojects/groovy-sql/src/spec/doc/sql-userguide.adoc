@@ -475,4 +475,29 @@ include::../test/SqlTest.groovy[tags=sql_use_stored_fun_inout_parameter,indent=0
 
 == Using DataSets
 
-(TBD)
+Groovy provides a gapi:groovy.sql.DataSet[] class which enhances the gapi:groovy.sql.Sql[] class
+with what can be thought of as mini https://en.wikipedia.org/wiki/Object-relational_mapping[ORM] functionality.
+Databases are accessed and queried using POGO fields and operators rather than JDBC-level API calls and RDBMS column names.
+
+So, instead of a query like:
+[source,groovy]
+----
+include::../test/SqlTest.groovy[tags=without_dataset,indent=0]
+----
+
+You can write code like this:
+
+[source,groovy]
+----
+include::../test/AuthorTestHelper.groovy[tags=with_dataset,indent=0]
+----
+
+Here we have a helper "domain" class:
+
+[source,groovy]
+----
+include::../test/Author.groovy[tags=dataset_class,indent=0]
+----
+
+Database access and manipulation involves creating or working with
+instances of the domain class.
