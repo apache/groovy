@@ -81,7 +81,7 @@ public abstract class MetaProperty {
     /**
      * Gets the name for the getter for this property
      *
-     * @return The name of the property. The name is "get"+ the capitalized propertyName
+     * @return The name of the property. The name is "get" + the capitalized propertyName
      *         or, in the case of boolean values, "is" + the capitalized propertyName
      */
     public static String getGetterName(String propertyName, Class type) {

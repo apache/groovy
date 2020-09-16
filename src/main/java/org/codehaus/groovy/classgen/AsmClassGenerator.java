@@ -126,11 +126,11 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
-import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
@@ -1022,7 +1022,7 @@ public class AsmClassGenerator extends ClassGenerator {
         ClassNode classNode = controller.getClassNode();
 
         if (!controller.getCompileStack().isLHS()) {
-            String methodName = "get" + capitalize(propertyName); // TODO: "is"
+            String methodName = getGetterName(propertyName); // TODO: "is"
             callX(pexp.getObjectExpression(), methodName).visit(this);
             return true;
         }
@@ -1037,7 +1037,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         MethodNode setter = classNode.getSuperClass().getSetterMethod(getSetterName(propertyName));
-        MethodNode getter = classNode.getSuperClass().getGetterMethod("get" + capitalize(propertyName));
+        MethodNode getter = classNode.getSuperClass().getGetterMethod(getGetterName(propertyName));
 
         if (fieldNode.isPrivate() && (setter == null || getter == null || !setter.getDeclaringClass().equals(getter.getDeclaringClass()))) {
             throw new RuntimeParserException("Cannot access private field[" + propertyName + "] of " + classNode.getName() + "'s super class", pexp);

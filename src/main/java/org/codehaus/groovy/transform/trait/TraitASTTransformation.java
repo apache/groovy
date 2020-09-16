@@ -397,8 +397,8 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         FieldNode field = node.getField();
         int propNodeModifiers = node.getModifiers() & 0x1F; // GROOVY-3726
 
-        String getterName = GeneralUtils.getGetterName(node);
-        String setterName = GeneralUtils.getSetterName(name);
+        String getterName = node.getGetterName();
+        String setterName = node.getSetterName();
 
         Statement getterBlock = node.getGetterBlock();
         if (getterBlock == null) {

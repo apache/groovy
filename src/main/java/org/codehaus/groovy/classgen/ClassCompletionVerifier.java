@@ -61,7 +61,6 @@ import static java.lang.reflect.Modifier.isStrict;
 import static java.lang.reflect.Modifier.isSynchronized;
 import static java.lang.reflect.Modifier.isTransient;
 import static java.lang.reflect.Modifier.isVolatile;
-import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -541,12 +540,11 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     private void checkDuplicateProperties(PropertyNode node) {
         ClassNode cn = node.getDeclaringClass();
         String name = node.getName();
-        String getterName = "get" + capitalize(name);
+        String getterName = node.getGetterName();
         if (Character.isUpperCase(name.charAt(0))) {
-            for (PropertyNode propNode : cn.getProperties()) {
-                String otherName = propNode.getField().getName();
-                String otherGetterName = "get" + capitalize(otherName);
-                if (node != propNode && getterName.equals(otherGetterName)) {
+            for (PropertyNode otherNode : cn.getProperties()) {
+                String otherName = otherNode.getName();
+                if (node != otherNode && getterName.equals(otherNode.getGetterName())) {
                     String msg = "The field " + name + " and " + otherName + " on the class " +
                             cn.getName() + " will result in duplicate JavaBean properties, which is not allowed";
                     addError(msg, node);

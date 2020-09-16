@@ -66,7 +66,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.eqX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.hasDeclaredMethod;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
@@ -254,7 +253,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
                                 ),
                                 declS(
                                         localVarX("oldValue", ClassHelper.OBJECT_TYPE),
-                                        callThisX(getGetterName(pNode))
+                                        callThisX(pNode.getGetterName())
                                 ),
                                 ifS(
                                         neX(
@@ -287,7 +286,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
                                         "put",
                                         args(
                                                 constX(pNode.getName()),
-                                                callThisX(getGetterName(pNode))
+                                                callThisX(pNode.getGetterName())
                                         )
                                 ))
                         )

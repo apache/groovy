@@ -42,7 +42,6 @@ import java.beans.VetoableChangeListener;
 import java.beans.VetoableChangeSupport;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
-import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
@@ -51,7 +50,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
@@ -156,9 +154,10 @@ public class VetoableASTTransformation extends BindableASTTransformation {
     /**
      * Wrap an existing setter.
      */
-    private static void wrapSetterMethod(ClassNode classNode, boolean bindable, String propertyName) {
-        String getterName = "get" + capitalize(propertyName);
-        MethodNode setter = classNode.getSetterMethod(getSetterName(propertyName));
+    private static void wrapSetterMethod(ClassNode classNode, boolean bindable, PropertyNode propertyNode) {
+        String getterName = propertyNode.getGetterName();
+        String propertyName = propertyNode.getName();
+        MethodNode setter = classNode.getSetterMethod(propertyNode.getSetterName());
 
         if (setter != null) {
             // Get the existing code block
@@ -199,7 +198,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         if (needsVetoableChangeSupport(declaringClass, source)) {
             addVetoableChangeSupport(declaringClass);
         }
-        String setterName = getSetterName(propertyNode.getName());
+        String setterName = propertyNode.getSetterName();
         if (declaringClass.getMethods(setterName).isEmpty()) {
             Expression fieldExpression = fieldX(propertyNode.getField());
             BlockStatement setterBlock = new BlockStatement();
@@ -213,7 +212,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
             // create method void <setter>(<type> fieldName)
             createSetterMethod(declaringClass, propertyNode, setterName, setterBlock);
         } else {
-            wrapSetterMethod(declaringClass, bindable, propertyNode.getName());
+            wrapSetterMethod(declaringClass, bindable, propertyNode);
         }
     }
 

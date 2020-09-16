@@ -79,8 +79,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import static org.apache.groovy.util.BeanUtils.capitalize;
-
 /**
  * Handy methods when working with the Groovy AST
  */
@@ -519,7 +517,7 @@ public class GeneralUtils {
     public static Expression getterThisX(final ClassNode annotatedNode, final PropertyNode pNode) {
         ClassNode owner = pNode.getDeclaringClass();
         if (annotatedNode.equals(owner)) {
-            return callThisX(getterName(annotatedNode, pNode));
+            return callThisX(pNode.getGetterName());
         }
         return propX(varX("this"), pNode.getName());
     }
@@ -536,7 +534,7 @@ public class GeneralUtils {
     public static Expression getterX(final ClassNode annotatedNode, final Expression receiver, final PropertyNode pNode) {
         ClassNode owner = pNode.getDeclaringClass();
         if (annotatedNode.equals(owner)) {
-            return callX(receiver, getterName(annotatedNode, pNode));
+            return callX(receiver, pNode.getGetterName());
         }
         return propX(receiver, pNode.getName());
     }
@@ -555,7 +553,7 @@ public class GeneralUtils {
 
     @Deprecated
     public static BinaryExpression hasEqualPropertyX(final PropertyNode pNode, final Expression other) {
-        String getterName = getGetterName(pNode);
+        String getterName = pNode.getGetterName();
         return eqX(callThisX(getterName), callX(other, getterName));
     }
 
@@ -871,17 +869,28 @@ public class GeneralUtils {
         return ifElseS(equalsNullX(value), assignInit, assignS(fieldExpr, castX(fType, value)));
     }
 
-    private static String getterName(final ClassNode annotatedNode, final PropertyNode pNode) {
-        String getterName = getGetterName(pNode);
-        if (ClassHelper.boolean_TYPE.equals(pNode.getOriginType())
-                && annotatedNode.getMethod(getterName, Parameter.EMPTY_ARRAY) == null) {
-            getterName = "is" + capitalize(pNode.getName());
-        }
-        return getterName;
+    /**
+     * Generally preferred to use {@link PropertyNode#getGetterName()} directly.
+     */
+    public static String getGetterName(final PropertyNode pNode) {
+        return pNode.getGetterName();
     }
 
-    public static String getGetterName(final PropertyNode pNode) {
-        return "get" + capitalize(pNode.getName());
+    /**
+     * WARNING: Avoid this method unless just the name and type are available.
+     * Use {@link #getGetterName(PropertyNode)} if the propertyNode is available.
+     */
+    public static String getGetterName(final String name, final Class<?> type) {
+        return MetaProperty.getGetterName(name, type);
+    }
+
+    /**
+     * WARNING: Avoid this method unless just the name is available.
+     * Use {@link #getGetterName(PropertyNode)} if the propertyNode is available.
+     * Use {@link #getGetterName(String, Class)} if the type is available.
+     */
+    public static String getGetterName(final String name) {
+        return MetaProperty.getGetterName(name, Object.class);
     }
 
     public static String getSetterName(final String name) {

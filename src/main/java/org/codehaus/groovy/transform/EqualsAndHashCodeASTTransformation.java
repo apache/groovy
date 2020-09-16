@@ -57,7 +57,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFields;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getterThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.hasClassX;
@@ -314,7 +313,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
     }
 
     private static BinaryExpression differentSelfRecursivePropertyX(PropertyNode pNode, Expression other) {
-        String getterName = getGetterName(pNode);
+        String getterName = pNode.getGetterName();
         Expression selfGetter = callThisX(getterName);
         Expression otherGetter = callX(other, getterName);
         return orX(
@@ -324,7 +323,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
     }
 
     private static BinaryExpression bothSelfRecursivePropertyX(PropertyNode pNode, Expression other) {
-        String getterName = getGetterName(pNode);
+        String getterName = pNode.getGetterName();
         Expression selfGetter = callThisX(getterName);
         Expression otherGetter = callX(other, getterName);
         return andX(

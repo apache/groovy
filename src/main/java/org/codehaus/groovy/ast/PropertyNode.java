@@ -18,12 +18,15 @@
  */
 package org.codehaus.groovy.ast;
 
+import groovy.lang.MetaProperty;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.Statement;
 
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
+
+import static org.apache.groovy.util.BeanUtils.capitalize;
 
 /**
  * Represents a property (member variable, a getter and setter)
@@ -34,6 +37,8 @@ public class PropertyNode extends AnnotatedNode implements Variable {
 
     private Statement getterBlock;
     private Statement setterBlock;
+    private String getterName = null;
+    private String setterName = null;
     private final int modifiers;
 
     public PropertyNode(
@@ -64,6 +69,37 @@ public class PropertyNode extends AnnotatedNode implements Variable {
 
     public void setSetterBlock(Statement setterBlock) {
         this.setterBlock = setterBlock;
+    }
+
+    public String getGetterName() {
+        if (getterName != null) return getterName;
+        String defaultName = "get" + capitalize(getName());
+        if (ClassHelper.boolean_TYPE.equals(getOriginType())
+                && getDeclaringClass().getMethod(defaultName, Parameter.EMPTY_ARRAY) == null) {
+            String altName = "is" + capitalize(getName());
+            if (getDeclaringClass().getMethod(altName, Parameter.EMPTY_ARRAY) != null) {
+                defaultName = altName;
+            }
+        }
+        return defaultName;
+    }
+
+    public void setGetterName(String getterName) {
+        if (getterName == null || getterName.isEmpty()) {
+            throw new IllegalArgumentException("A non-null non-empty getter name is required");
+        }
+        this.getterName = getterName;
+    }
+
+    public String getSetterName() {
+        return setterName != null ? setterName : MetaProperty.getSetterName(getName());
+    }
+
+    public void setSetterName(String setterName) {
+        if (setterName == null || setterName.isEmpty()) {
+            throw new IllegalArgumentException("A non-null non-empty setter name is required");
+        }
+        this.setterName = setterName;
     }
 
     public int getModifiers() {
