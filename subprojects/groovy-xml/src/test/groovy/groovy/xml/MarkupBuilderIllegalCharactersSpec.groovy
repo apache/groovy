@@ -34,7 +34,7 @@ class MarkupBuilderIllegalCharactersSpec extends Specification {
         given:
         def writer
         def xml
-        def characterFilter = MarkupBuilder.CharFilter.XML_STRICT
+        def characterFilter = MarkupCharFilter.XML_STRICT
 
         expect:
         characters.each {
@@ -66,7 +66,7 @@ class MarkupBuilderIllegalCharactersSpec extends Specification {
         given:
         def writer
         def xml
-        def characterFilter = MarkupBuilder.CharFilter.XML_ALL
+        def characterFilter = MarkupCharFilter.XML_ALL
 
         expect:
         characters.each {
@@ -98,7 +98,7 @@ class MarkupBuilderIllegalCharactersSpec extends Specification {
         given:
         def writer
         def xml
-        def characterFilter = MarkupBuilder.CharFilter.NONE
+        def characterFilter = MarkupCharFilter.NONE
 
         expect:
         characters.each {

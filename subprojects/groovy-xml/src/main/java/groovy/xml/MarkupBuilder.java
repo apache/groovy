@@ -60,9 +60,8 @@ import java.util.Map;
  *     <li>Note that tab, newline and carriage return characters are escaped within attributes, i.e. will become &amp;#09;, &amp;#10; and &amp;#13; respectively</li>
  * </ul>
  */
-public class MarkupBuilder extends BuilderSupport {
-    public enum CharFilter { XML_STRICT, XML_ALL, NONE }
 
+public class MarkupBuilder extends BuilderSupport {
     private IndentPrinter out;
     private boolean nospace;
     private int state;
@@ -72,7 +71,7 @@ public class MarkupBuilder extends BuilderSupport {
     private boolean omitEmptyAttributes = false;
     private boolean expandEmptyElements = false;
     private boolean escapeAttributes = true;
-    private CharFilter characterFilter = CharFilter.NONE;
+    private MarkupCharFilter characterFilter = MarkupCharFilter.NONE;
 
     /**
      * Returns the escapeAttributes property value.
@@ -230,7 +229,7 @@ public class MarkupBuilder extends BuilderSupport {
      *
      * @return the character filter used by this builder.
      */
-    public CharFilter getCharacterFilter() { return this.characterFilter; }
+    public MarkupCharFilter getCharacterFilter() { return this.characterFilter; }
 
     /**
      * Set a filter to limit the characters, that can appear in attribute values and text nodes.
@@ -262,7 +261,7 @@ public class MarkupBuilder extends BuilderSupport {
      * </p>
      * @param characterFilter character policy to use
      */
-    public void setCharacterFilter(CharFilter characterFilter) { this.characterFilter = characterFilter; }
+    public void setCharacterFilter(MarkupCharFilter characterFilter) { this.characterFilter = characterFilter; }
 
     protected IndentPrinter getPrinter() {
         return this.out;
@@ -439,9 +438,9 @@ public class MarkupBuilder extends BuilderSupport {
     private static class ReplacingClosure extends Closure<String> {
         private final boolean isAttrValue;
         private final boolean useDoubleQuotes;
-        private final CharFilter characterFilter;
+        private final MarkupCharFilter characterFilter;
 
-        public ReplacingClosure(boolean isAttrValue, boolean useDoubleQuotes, CharFilter characterFilter) {
+        public ReplacingClosure(boolean isAttrValue, boolean useDoubleQuotes, MarkupCharFilter characterFilter) {
             super(null);
             this.isAttrValue = isAttrValue;
             this.useDoubleQuotes = useDoubleQuotes;
@@ -451,7 +450,7 @@ public class MarkupBuilder extends BuilderSupport {
         public String doCall(Character ch) {
             switch (ch) {
                 case 0:
-                    if (characterFilter != CharFilter.NONE) return "\uFFFD";
+                    if (characterFilter != MarkupCharFilter.NONE) return "\uFFFD";
                     break;
                 case '&':
                     return "&amp;";
@@ -482,18 +481,19 @@ public class MarkupBuilder extends BuilderSupport {
                     if (isAttrValue && !useDoubleQuotes) return "&apos;";
                     break;
             }
-            if (characterFilter != CharFilter.NONE) {
-                if (Character.isSurrogate(ch)
-                        || ch < 127 && ch !=  9 && ch != 10 && ch != 12 && ch != 13) {
-                    return "\uFFFD";
-                }
-            }
-            if (characterFilter == CharFilter.XML_STRICT) {
-                if (Character.isISOControl(ch) || isNonCharacter(ch))  return "\uFFFD";
+            if (ch < 127 && !isXmlAllowedControl(ch) && characterFilter != MarkupCharFilter.NONE) {
+                return "\uFFFD";
+            } else if (Character.isSurrogate(ch) && characterFilter != MarkupCharFilter.NONE) {
+                return "\uFFFD";
+            } else if ((Character.isISOControl(ch) || isNonCharacter(ch)) && characterFilter == MarkupCharFilter.XML_STRICT) {
+                return "\uFFFD";
             }
             return null;
         }
 
+        private boolean isXmlAllowedControl(char ch) {
+            return ch ==  9 || ch == 10 || ch == 12 || ch == 13;
+        }
         private boolean isNonCharacter(char ch) {
             return 0xFDD0 <= ch && ch <= 0xFDEF || ((ch ^ 0xFFFE) == 0 || (ch ^ 0xFFFF) == 0);
         }
