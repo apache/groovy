@@ -3432,6 +3432,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 returnType = typeCheckingContext.getEnclosingClassNode();
                             }
                         }
+                        // GROOVY-8961, GROOVY-9734
+                        resolvePlaceholdersFromImplicitTypeHints(args, argumentList, directMethodCallCandidate);
                         if (typeCheckMethodsWithGenericsOrFail(chosenReceiver.getType(), args, directMethodCallCandidate, call)) {
                             returnType = adjustWithTraits(directMethodCallCandidate, chosenReceiver.getType(), args, returnType);
 
@@ -5152,6 +5154,53 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     resolvedPlaceholders.put(new GenericsTypeName(methodGenericType.getName()), explicitTypeHint);
                 }
             }
+        }
+    }
+
+    /**
+     * Given method call like "m(Collections.emptyList())", the type of the call
+     * argument is {@code List<T>} without explicit type arguments. Knowning the
+     * method target of "m", {@code T} could be resolved.
+     */
+    private static void resolvePlaceholdersFromImplicitTypeHints(final ClassNode[] actuals, final ArgumentListExpression argumentList, final MethodNode inferredMethod) {
+        for (int i = 0, n = actuals.length; i < n; i += 1) {
+            // check for method call with known target
+            Expression a = argumentList.getExpression(i);
+            if (!(a instanceof MethodCallExpression)) continue;
+            if (((MethodCallExpression) a).isUsingGenerics()) continue;
+            MethodNode aNode = a.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+            if (aNode == null || aNode.getGenericsTypes() == null) continue;
+
+            // and unknown generics
+            ClassNode at = actuals[i];
+            if (!GenericsUtils.hasUnresolvedGenerics(at)) continue;
+
+            int np = inferredMethod.getParameters().length;
+            Parameter p = inferredMethod.getParameters()[Math.min(i, np - 1)];
+
+            ClassNode pt = p.getOriginType();
+            if (i >= (np - 1) && pt.isArray() && !at.isArray()) pt = pt.getComponentType();
+
+            // try to resolve placeholder(s) in argument type using parameter type
+
+            Map<GenericsTypeName, GenericsType> linked = new HashMap<>();
+            Map<GenericsTypeName, GenericsType> source = GenericsUtils.extractPlaceholders(at);
+            Map<GenericsTypeName, GenericsType> target = GenericsUtils.extractPlaceholders(pt);
+
+            // connect E:T from source to E:Type from target
+            for (GenericsType placeholder : aNode.getGenericsTypes()) {
+                for (Map.Entry<GenericsTypeName, GenericsType> e : source.entrySet()) {
+                    if (e.getValue() == placeholder) {
+                        Optional.ofNullable(target.get(e.getKey()))
+                            // skip "f(g())" for "f(T<String>)" and "<U extends Number> U g()"
+                            .filter(gt -> isAssignableTo(gt.getType(), placeholder.getType()))
+                            .ifPresent(gt -> linked.put(new GenericsTypeName(placeholder.getName()), gt));
+                        break;
+                    }
+                }
+            }
+
+            actuals[i] = applyGenericsContext(linked, at);
         }
     }
 
