@@ -195,7 +195,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-
     void testLinkedListWithListArgument() {
         assertScript '''
             List<String> list = new LinkedList<String>(['1','2','3'])
@@ -457,7 +456,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testShouldComplainAboutToInteger() {
-
         String code = '''
             class Test {
                 static test2() {
@@ -528,6 +526,70 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
         new ClassB()
         ''', 'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA <Long>#bar(java.lang.Class <Long>) with arguments [java.lang.Class <? extends java.lang.Object>]'
+    }
+
+    // GROOVY-8961
+    void testShouldUseMethodGenericType3() {
+        assertScript '''
+            void setM(List<String> strings) {
+            }
+            void test() {
+              m = Collections.emptyList() // Cannot assign value of type List<T> to variable of List<String>
+            }
+            test()
+        '''
+        assertScript '''
+            void setM(Collection<String> strings) {
+            }
+            void test() {
+              m = Collections.emptyList()
+            }
+            test()
+        '''
+        assertScript '''
+            void setM(Iterable<String> strings) {
+            }
+            void test() {
+              m = Collections.emptyList()
+            }
+            test()
+        '''
+
+        shouldFailWithMessages '''
+            void setM(List<String> strings) {
+            }
+            void test() {
+              m = Collections.<Integer>emptyList()
+            }
+        ''', '[Static type checking] - Cannot assign value of type java.util.List <Integer> to variable of type java.util.List <String>'
+    }
+
+    // GROOVY-9734
+    void testShouldUseMethodGenericType4() {
+        assertScript '''
+            void m(List<String> strings) {
+            }
+            void test() {
+              m(Collections.emptyList()) // Cannot call m(List<String>) with arguments [List<T>]
+            }
+            test()
+        '''
+        assertScript '''
+            void m(Collection<String> strings) {
+            }
+            void test() {
+              m(Collections.emptyList())
+            }
+            test()
+        '''
+        assertScript '''
+            void m(Iterable<String> strings) {
+            }
+            void test() {
+              m(Collections.emptyList())
+            }
+            test()
+        '''
     }
 
     // GROOVY-5516
@@ -1459,7 +1521,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def cl = {1}
             assert foo(cl.class, cl) == cl
          '''
-         //GROOVY-5885
+         // GROOVY-5885
          assertScript '''
             class Test {
                 public <X extends Test> X castToMe(Class<X> type, Object o) {
@@ -1471,7 +1533,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
          '''
     }
 
-    // Groovy-5839
+    // GROOVY-5839
     void testMethodShadowGenerics() {
         shouldFailWithMessages '''
             public class GoodCodeRed<T> {
