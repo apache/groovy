@@ -3431,7 +3431,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 returnType = md.getType();
                             }
                         }
-                        if (typeCheckMethodsWithGenericsOrFail(chosenReceiver.getType(), args, mn.get(0), call)) {
+                        if (typeCheckMethodsWithGenericsOrFail(chosenReceiver.getType(), args, directMethodCallCandidate, call)) {
                             returnType = adjustWithTraits(directMethodCallCandidate, chosenReceiver.getType(), args, returnType);
 
                             storeType(call, returnType);
