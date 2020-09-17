@@ -60,7 +60,7 @@ class MarkupBuilderIllegalCharactersSpec extends Specification {
         'ext control I'             | true         | extControl1           // Discouraged XML, not in HTML char references
         'Next line NEL'             | true         | nextLine              // Not in HTML char references
         'ext control II'            | true         | extControl2           // Discouraged XML, not in HTML char references
-        'Surrogates'                | true         | surrogates            // Not necessarily XML, not in HTML char references
+        'Surrogates'                | true         | surrogates            // Not necessarily XML
         'Non-characters I'          | true         | nonCharacters1        // Discouraged XML, not in HTML char references
         'Non-characters II'         | true         | nonCharacters2        // Discouraged XML, not in HTML char references
     }
@@ -92,7 +92,7 @@ class MarkupBuilderIllegalCharactersSpec extends Specification {
         'ext control I'             | false        | extControl1           // Discouraged XML, not in HTML char references
         'Next line NEL'             | false        | nextLine              // Not in HTML char references
         'ext control II'            | false        | extControl2           // Discouraged XML, not in HTML char references
-        'Surrogates'                | true         | surrogates            // Not necessarily XML, not in HTML char references
+        'Surrogates'                | true         | surrogates            // Not necessarily XML
         'Non-characters I'          | false        | nonCharacters1        // Discouraged XML, not in HTML char references
         'Non-characters II'         | false        | nonCharacters2        // Discouraged XML, not in HTML char references
     }
@@ -122,7 +122,7 @@ class MarkupBuilderIllegalCharactersSpec extends Specification {
         'ext control I'             | false        | extControl1           // Discouraged XML, not in HTML char references
         'Next line NEL'             | false        | nextLine              // Not in HTML char references
         'ext control II'            | false        | extControl2           // Discouraged XML, not in HTML char references
-        'Surrogates'                | false        | surrogates            // Not necessarily XML, not in HTML char references
+        'Surrogates'                | false        | surrogates            // Not necessarily XML
         'Non-characters I'          | false        | nonCharacters1        // Discouraged XML, not in HTML char references
         'Non-characters II'         | false        | nonCharacters2        // Discouraged XML, not in HTML char references
     }
