@@ -1163,7 +1163,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5724
-    void testJunitHamcrest() {
+    void testJUnitHamcrest() {
         assertScript '''
             public class Matcher<T> {}
             public <T> void assertThat(T obj, Matcher<T> matcher) {}
@@ -1171,6 +1171,41 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             String result = '12345'.substring(2)
             // assert
             assertThat(result, notNullValue())
+        '''
+    }
+
+    // GROOVY-8103
+    void testJUnitFestAssert() {
+        assertScript '''
+            import static Fluent.*
+            import Util.Ours
+
+            class Fluent {
+                static FluentAPI  fluent(String s) { return new FluentAPI() }
+                static <T extends FluentExtension> T fluent(T t) { return t }
+            }
+
+            class FluentAPI {
+                FluentAPI isEqualTo(String s) { return this }
+            }
+
+            interface FluentExtension {
+            }
+
+            class Util {
+                static class Ours implements FluentExtension {
+                    Ours isSimilarTo(String json) { return this }
+                }
+                static Ours factory(String json) { new Ours() }
+            }
+
+            void test() {
+                fluent('string').isEqualTo('x') // fine
+                fluent(new Ours()).isSimilarTo('') // fine
+                fluent(Util.factory('{}')).isSimilarTo('{"key":"val"}') // STC error
+            }
+
+            test()
         '''
     }
 
