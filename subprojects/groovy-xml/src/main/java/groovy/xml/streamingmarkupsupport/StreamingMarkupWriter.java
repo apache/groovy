@@ -19,12 +19,18 @@
 package groovy.xml.streamingmarkupsupport;
 
 import groovy.io.EncodingAwareBufferedWriter;
+import groovy.xml.markupsupport.DoubleQuoteFilter;
+import groovy.xml.markupsupport.SingleQuoteFilter;
+import groovy.xml.markupsupport.StandardXmlAttributeFilter;
+import groovy.xml.markupsupport.StandardXmlFilter;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
+import java.util.Optional;
+import java.util.function.Function;
 
 public class StreamingMarkupWriter extends Writer {
     protected final Writer writer;
@@ -34,7 +40,9 @@ public class StreamingMarkupWriter extends Writer {
     protected boolean writingAttribute = false;
     protected boolean haveHighSurrogate = false;
     protected StringBuilder surrogatePair = new StringBuilder(2);
-    private boolean useDoubleQuotes;
+    private final Function<Character, Optional<String>> stdFilter = new StandardXmlFilter();
+    private final Function<Character, Optional<String>> attrFilter = new StandardXmlAttributeFilter();
+    private final Function<Character, Optional<String>> quoteFilter;
     private final Writer escapedWriter = new Writer() {
         /* (non-Javadoc)
         * @see java.io.Writer#close()
@@ -54,15 +62,12 @@ public class StreamingMarkupWriter extends Writer {
         * @see java.io.Writer#write(int)
         */
         public void write(final int c) throws IOException {
-            if (c == '<') {
-                StreamingMarkupWriter.this.writer.write("&lt;");
-            } else if (c == '>') {
-                StreamingMarkupWriter.this.writer.write("&gt;");
-            } else if (c == '&') {
-                StreamingMarkupWriter.this.writer.write("&amp;");
-            } else {
-                StreamingMarkupWriter.this.write(c);
+            Optional<String> transformed = stdFilter.apply((char) c);
+            if (transformed.isPresent()) {
+                StreamingMarkupWriter.this.writer.write(transformed.get());
+                return;
             }
+            StreamingMarkupWriter.this.write(c);
         }
 
         /* (non-Javadoc)
@@ -92,7 +97,7 @@ public class StreamingMarkupWriter extends Writer {
     }
 
     public StreamingMarkupWriter(final Writer writer, final String encoding, boolean useDoubleQuotes) {
-        this.useDoubleQuotes = useDoubleQuotes;
+        this.quoteFilter = useDoubleQuotes ? new DoubleQuoteFilter() : new SingleQuoteFilter();
         this.writer = writer;
 
         if (encoding != null) {
@@ -168,19 +173,21 @@ public class StreamingMarkupWriter extends Writer {
                 this.writer.write("&#x");
                 this.writer.write(Integer.toHexString(c));
                 this.writer.write(';');
-            } else if (c == '\'' && this.writingAttribute && !useDoubleQuotes) {
-                this.writer.write("&apos;");
-            } else if (c == '"' && this.writingAttribute && useDoubleQuotes) {
-                this.writer.write("&quot;");
-            } else if (c == '\n' && this.writingAttribute) {
-                this.writer.write("&#10;");
-            } else if (c == '\r' && this.writingAttribute) {
-                this.writer.write("&#13;");
-            } else if (c == '\t' && this.writingAttribute) {
-                this.writer.write("&#09;");
-            } else {
-                this.writer.write(c);
+                return;
             }
+            if (this.writingAttribute) {
+                Optional<String> transformed = attrFilter.apply((char) c);
+                if (transformed.isPresent()) {
+                    this.writer.write(transformed.get());
+                    return;
+                }
+                transformed = quoteFilter.apply((char) c);
+                if (transformed.isPresent()) {
+                    this.writer.write(transformed.get());
+                    return;
+                }
+            }
+            this.writer.write(c);
         }
     }
 

@@ -49,8 +49,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -668,6 +670,59 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
                     sb.append(self, 0, i);
                 }
                 sb.append(replacement);
+            } else if (sb != null) {
+                // earlier output differs from input; we write to our local buffer
+                sb.append(ch);
+            }
+        }
+
+        return sb == null ? self : sb.toString();
+    }
+
+    /**
+     * Iterates through this String a character at a time collecting either the
+     * original character or a transformed replacement String.
+     * The return value is an {@code Optional} either having a value equal to the transformed replacement String
+     * or {@code empty()} to indicate that no transformation is required.
+     * <p>
+     * <pre class="groovyTestCase">
+     * import java.util.function.Function
+     * import static java.util.Optional.*
+     *
+     * Function<Character, Optional<String>> xform1 = s -> s == 'o' ? of('_O') : empty()
+     * Function<Character, Optional<String>> xform2 = { it == 'G' ? of('G_') : empty() }
+     * assert "Groovy".collectReplacements([xform1, xform2]) == 'G_r_O_Ovy'
+     * </pre>
+     *
+     * @param self the original String
+     * @param transforms one or more transforms which potentially convert a single character to a transformed string
+     * @return A new string in which all characters that require escaping
+     *         have been replaced with the corresponding replacements
+     *         as determined by the {@code transform} function.
+     *
+     * @since 3.0.6
+     */
+    public static String collectReplacements(final String self, final List<Function<Character, Optional<String>>> transforms) {
+        if (self == null) return self;
+
+        StringBuilder sb = null; // lazy create for edge-case efficiency
+        for (int i = 0, len = self.length(); i < len; i++) {
+            final char ch = self.charAt(i);
+            Optional<String> replacement = Optional.empty();
+            for (Function<Character, Optional<String>> next : transforms) {
+                replacement = next.apply(ch);
+                if (replacement.isPresent()) {
+                    break;
+                }
+            }
+
+            if (replacement.isPresent()) {
+                // output differs from input; we write to our local buffer
+                if (sb == null) {
+                    sb = new StringBuilder((int) (1.1 * len));
+                    sb.append(self, 0, i);
+                }
+                sb.append(replacement.get());
             } else if (sb != null) {
                 // earlier output differs from input; we write to our local buffer
                 sb.append(ch);
