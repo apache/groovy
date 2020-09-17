@@ -18,6 +18,9 @@
  */
 package groovy.xml
 
+import groovy.xml.markupsupport.AllControlToUndefined
+import groovy.xml.markupsupport.StandardControlToUndefined
+import groovy.xml.markupsupport.SurrogateToUndefined
 import spock.lang.Specification
 
 class MarkupBuilderIllegalCharactersSpec extends Specification {
@@ -34,13 +37,13 @@ class MarkupBuilderIllegalCharactersSpec extends Specification {
         given:
         def writer
         def xml
-        def characterFilter = MarkupBuilder.CharFilter.XML_STRICT
+        def additionalFilters = [new SurrogateToUndefined(), new AllControlToUndefined()]
 
         expect:
         characters.each {
             writer = new StringWriter()
             xml = new MarkupBuilder(writer)
-            xml.characterFilter = characterFilter
+            xml.additionalFilters = additionalFilters
             def encoded = shouldFilter ? '\uFFFD' : it
 
             xml.tag(attr: it, it)
@@ -52,12 +55,12 @@ class MarkupBuilderIllegalCharactersSpec extends Specification {
 
         where:
         characterRange              | shouldFilter | characters
-        'Null'                      | true         | nullCharacter         // Not neccessarily XML, not allowed in HTML
-        'C0 control w/o whitespace' | true         | c0Controls            // Not neccessarily XML, not in HTML char references
+        'Null'                      | true         | nullCharacter         // Not necessarily XML, not allowed in HTML
+        'C0 control w/o whitespace' | true         | c0Controls            // Not necessarily XML, not in HTML char references
         'ext control I'             | true         | extControl1           // Discouraged XML, not in HTML char references
         'Next line NEL'             | true         | nextLine              // Not in HTML char references
         'ext control II'            | true         | extControl2           // Discouraged XML, not in HTML char references
-        'Surrogates'                | true         | surrogates            // Not neccessarily XML, not in HTML char references
+        'Surrogates'                | true         | surrogates            // Not necessarily XML, not in HTML char references
         'Non-characters I'          | true         | nonCharacters1        // Discouraged XML, not in HTML char references
         'Non-characters II'         | true         | nonCharacters2        // Discouraged XML, not in HTML char references
     }
@@ -66,13 +69,13 @@ class MarkupBuilderIllegalCharactersSpec extends Specification {
         given:
         def writer
         def xml
-        def characterFilter = MarkupBuilder.CharFilter.XML_ALL
+        def additionalFilters = [new SurrogateToUndefined(), new StandardControlToUndefined()]
 
         expect:
         characters.each {
             writer = new StringWriter()
             xml = new MarkupBuilder(writer)
-            xml.characterFilter = characterFilter
+            xml.additionalFilters = additionalFilters
             def encoded = shouldFilter ? '\uFFFD' : it
 
             xml.tag(attr: it, it)
@@ -84,12 +87,12 @@ class MarkupBuilderIllegalCharactersSpec extends Specification {
 
         where:
         characterRange              | shouldFilter | characters
-        'Null'                      | true         | nullCharacter         // Not neccessarily XML, not allowed in HTML
-        'C0 control w/o whitespace' | true         | c0Controls            // Not neccessarily XML, not in HTML char references
+        'Null'                      | true         | nullCharacter         // Not necessarily XML, not allowed in HTML
+        'C0 control w/o whitespace' | true         | c0Controls            // Not necessarily XML, not in HTML char references
         'ext control I'             | false        | extControl1           // Discouraged XML, not in HTML char references
         'Next line NEL'             | false        | nextLine              // Not in HTML char references
         'ext control II'            | false        | extControl2           // Discouraged XML, not in HTML char references
-        'Surrogates'                | true         | surrogates            // Not neccessarily XML, not in HTML char references
+        'Surrogates'                | true         | surrogates            // Not necessarily XML, not in HTML char references
         'Non-characters I'          | false        | nonCharacters1        // Discouraged XML, not in HTML char references
         'Non-characters II'         | false        | nonCharacters2        // Discouraged XML, not in HTML char references
     }
@@ -98,13 +101,11 @@ class MarkupBuilderIllegalCharactersSpec extends Specification {
         given:
         def writer
         def xml
-        def characterFilter = MarkupBuilder.CharFilter.NONE
 
         expect:
         characters.each {
             writer = new StringWriter()
             xml = new MarkupBuilder(writer)
-            xml.characterFilter = characterFilter
             def encoded = shouldFilter ? '\uFFFD' : it
 
             xml.tag(attr: it, it)
@@ -116,12 +117,12 @@ class MarkupBuilderIllegalCharactersSpec extends Specification {
 
         where:
         characterRange              | shouldFilter | characters
-        'Null'                      | false        | nullCharacter         // Not neccessarily XML, not allowed in HTML
-        'C0 control w/o whitespace' | false        | c0Controls            // Not neccessarily XML, not in HTML char references
+        'Null'                      | false        | nullCharacter         // Not necessarily XML, not allowed in HTML
+        'C0 control w/o whitespace' | false        | c0Controls            // Not necessarily XML, not in HTML char references
         'ext control I'             | false        | extControl1           // Discouraged XML, not in HTML char references
         'Next line NEL'             | false        | nextLine              // Not in HTML char references
         'ext control II'            | false        | extControl2           // Discouraged XML, not in HTML char references
-        'Surrogates'                | false        | surrogates            // Not neccessarily XML, not in HTML char references
+        'Surrogates'                | false        | surrogates            // Not necessarily XML, not in HTML char references
         'Non-characters I'          | false        | nonCharacters1        // Discouraged XML, not in HTML char references
         'Non-characters II'         | false        | nonCharacters2        // Discouraged XML, not in HTML char references
     }

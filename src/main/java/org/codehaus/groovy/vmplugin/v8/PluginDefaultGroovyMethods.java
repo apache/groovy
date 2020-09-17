@@ -54,6 +54,7 @@ import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
 import java.util.function.LongFunction;
 import java.util.function.LongPredicate;
+import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
@@ -871,5 +872,15 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return DoubleStream.empty();
         }
         return DoubleStream.of(self.getAsDouble());
+    }
+
+    /**
+     * Provide JDK9 {@code or} on JDK8.
+     */
+    public static <T> Optional<T> orElse(Optional<T> self, Supplier<? extends Optional<? extends T>> supplier) {
+        if (self.isPresent()) {
+            return self;
+        }
+        return (Optional<T>) supplier.get();
     }
 }
