@@ -154,7 +154,7 @@ ext {
     spockVersion = '2.0-M3-groovy-3.0'
     spotbugsVersion = '4.1.2'
     spotbugsAnnotationsVersion = '4.1.2'
-    checkstyleVersion = '8.35'
+    checkstyleVersion = '8.36.1'
     junit5Version = '5.7.0'
     junit5PlatformVersion = '1.7.0'
     jcipAnnotationsVersion = '1.0'
