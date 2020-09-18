@@ -2551,11 +2551,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             for (MetaMethodIndex.Entry e = header.head; e != null; e = e.nextClassEntry) {
                 String methodName = e.name;
                 // name too short?
-                if (methodName.length() < 3 ||
-                        (!methodName.startsWith("is") && methodName.length() < 4)) continue;
+                final int methodNameLength = methodName.length();
+                if (methodNameLength < 3 ||
+                        (methodNameLength < 4 && !methodName.startsWith("is"))) continue;
                 // possible getter/setter?
-                boolean isGetter = methodName.startsWith("get") || methodName.startsWith("is");
                 boolean isBooleanGetter = methodName.startsWith("is");
+                boolean isGetter = methodName.startsWith("get") || isBooleanGetter;
                 boolean isSetter = methodName.startsWith("set");
                 if (!isGetter && !isSetter) continue;
 
