@@ -23,7 +23,7 @@ import groovy.test.GroovyTestCase
 class MetaClassPropertyTest extends GroovyTestCase {
 
     void testForJavaClass() {
-        checkMetaClassBehavior("hello world")
+        checkMetaClassBehavior(Short.valueOf("1"))
     }
 
     void testForGroovyClass() {
