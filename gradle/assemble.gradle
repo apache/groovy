@@ -260,7 +260,7 @@ allprojects {
             dependsOn jarjar
             from = file(jarjar.outputFile)
             if (isRoot) {
-                repackagedLibraries = files(configurations.runtime.incoming.artifactView {
+                repackagedLibraries = files(configurations.runtimeClasspath.incoming.artifactView {
                     componentFilter { component ->
                         if (component instanceof ModuleComponentIdentifier) {
                             return component.module in ['openbeans']
