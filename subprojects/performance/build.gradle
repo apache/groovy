@@ -128,3 +128,7 @@ task performanceTests {
 compileJmhGroovy {
     classpath += compileJmhJava.classpath
 }
+
+sonarqube {
+    skipProject = true
+}
