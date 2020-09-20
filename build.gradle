@@ -91,7 +91,12 @@ allprojects {
         }
         jcenter()
 //        maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
-        maven { url 'https://dl.bintray.com/melix/thirdparty-apache' } // openbeans
+        maven { // openbeans
+            url 'https://dl.bintray.com/melix/thirdparty-apache'
+            metadataSources {
+                artifact()
+            }
+        }
 //        mavenLocal()
     }
 
@@ -177,6 +182,7 @@ dependencies {
         exclude(group: 'jmock', module: 'jmock')
         exclude(group: 'xmlpull', module: 'xmlpull')
     }
+    implementation "com.googlecode:openbeans:$openbeansVersion"
     implementation "org.fusesource.jansi:jansi:$jansiVersion"
     implementation("org.apache.ivy:ivy:$ivyVersion") {
         transitive = false
