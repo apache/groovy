@@ -75,3 +75,7 @@ rootProject.allprojects {
         thisProject.tasks.checkBinaryCompatibility.dependsOn(singleProjectCheck)
     }
 }
+
+sonarqube {
+    skipProject = true
+}

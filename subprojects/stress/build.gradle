@@ -26,3 +26,7 @@ test {
 
     outputs.upToDateWhen { false }
 }
+
+sonarqube {
+    skipProject = true
+}
