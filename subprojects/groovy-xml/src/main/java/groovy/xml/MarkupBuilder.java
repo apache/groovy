@@ -36,7 +36,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
-import static org.codehaus.groovy.vmplugin.v8.PluginDefaultGroovyMethods.orElse;
+import static org.codehaus.groovy.vmplugin.v8.PluginDefaultGroovyMethods.orOptional;
 
 /**
  * A helper class for creating XML or HTML markup.
@@ -433,10 +433,10 @@ public class MarkupBuilder extends BuilderSupport {
         }
 
         public Optional<String> apply(Character ch) {
-            return orElse(stdFilter.apply(ch),
+            return orOptional(stdFilter.apply(ch),
                     () -> {
                         if (isAttrValue) {
-                            return orElse(attrFilter.apply(ch), () -> quoteFilter.apply(ch));
+                            return orOptional(attrFilter.apply(ch), () -> quoteFilter.apply(ch));
                         }
                         return Optional.empty();
                     }
