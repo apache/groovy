@@ -21,7 +21,6 @@ package org.codehaus.groovy.transform.stc;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import groovy.lang.IntRange;
-import groovy.lang.Range;
 import groovy.transform.NamedParam;
 import groovy.transform.NamedParams;
 import groovy.transform.TypeChecked;
@@ -66,6 +65,7 @@ import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.MethodPointerExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
@@ -90,7 +90,6 @@ import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
-import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode;
 import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
@@ -231,6 +230,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.evalua
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsConnections;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsParameterMapOfThis;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findSetters;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findTargetVariable;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.fullyResolveType;
@@ -775,8 +775,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (Integer_TYPE.equals(fromType) && Integer_TYPE.equals(toType)) {
             storeType(expression, ClassHelper.make(IntRange.class));
         } else {
-            ClassNode rangeType = ClassHelper.make(Range.class).getPlainNodeReference();
-            rangeType.setGenericsTypes(new GenericsType[]{new GenericsType(WideningCategories.lowestUpperBound(fromType, toType))});
+            ClassNode rangeType = RANGE_TYPE.getPlainNodeReference();
+            rangeType.setGenericsTypes(new GenericsType[]{new GenericsType(lowestUpperBound(fromType, toType))});
             storeType(expression, rangeType);
         }
     }
@@ -2385,6 +2385,65 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    @Override
+    public void visitMethodPointerExpression(final MethodPointerExpression expression) {
+        super.visitMethodPointerExpression(expression);
+        Expression nameExpr = expression.getMethodName();
+        if (nameExpr instanceof ConstantExpression
+                && getType(nameExpr).equals(STRING_TYPE)) {
+            String nameText = nameExpr.getText();
+
+            if ("new".equals(nameText)) {
+                ClassNode receiverType = getType(expression.getExpression());
+                if (isClassClassNodeWrappingConcreteType(receiverType)) {
+                    storeType(expression, wrapClosureType(receiverType));
+                }
+                return;
+            }
+
+            List<Receiver<String>> receivers = new ArrayList<>();
+            addReceivers(receivers, makeOwnerList(expression.getExpression()), false);
+
+            List<MethodNode> candidates = EMPTY_METHODNODE_LIST;
+            for (Receiver<String> currentReceiver : receivers) {
+                ClassNode receiverType = wrapTypeIfNecessary(currentReceiver.getType());
+
+                candidates = findMethodsWithGenerated(receiverType, nameText);
+                collectAllInterfaceMethodsByName(receiverType, nameText, candidates);
+                if (isBeingCompiled(receiverType)) candidates.addAll(GROOVY_OBJECT_TYPE.getMethods(nameText));
+                candidates.addAll(findDGMMethodsForClassNode(getTransformLoader(), receiverType, nameText));
+                candidates = filterMethodsByVisibility(candidates);
+                if (!candidates.isEmpty()) {
+                    break;
+                }
+            }
+
+            if (candidates.isEmpty()) {
+                candidates = extension.handleMissingMethod(
+                    getType(expression.getExpression()), nameText, null, null, null);
+            } else if (candidates.size() > 1) {
+                candidates = extension.handleAmbiguousMethods(candidates, expression);
+            }
+
+            int n = candidates.size();
+            if (n > 0) {
+                ClassNode returnType;
+                if (n == 1) {
+                    returnType = candidates.get(0).getReturnType();
+                } else {
+                    List<ClassNode> returnTypes = new ArrayList<>(n);
+                    for (MethodNode candidate : candidates) {
+                        returnTypes.add(candidate.getReturnType());
+                    }
+                    returnType = lowestUpperBound(returnTypes);
+                }
+                if (!returnType.equals(OBJECT_TYPE)) {
+                    storeType(expression, wrapClosureType(returnType));
+                }
+            }
+        }
+    }
+
     private static ClassNode wrapClosureType(final ClassNode returnType) {
         ClassNode inferredType = CLOSURE_TYPE.getPlainNodeReference();
         inferredType.setGenericsTypes(new GenericsType[]{new GenericsType(wrapTypeIfNecessary(returnType))});
@@ -3053,7 +3112,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else {
             ClassNode[] upperBounds = genericsType.getUpperBounds();
             if (upperBounds != null) {
-                value = WideningCategories.lowestUpperBound(Arrays.asList(upperBounds));
+                value = lowestUpperBound(Arrays.asList(upperBounds));
             }
         }
         return value;
