@@ -2404,6 +2404,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
+            if (candidates.isEmpty()) {
+                candidates = extension.handleMissingMethod(
+                    getType(expression.getExpression()), nameText, null, null, null);
+            } else if (candidates.size() > 1) {
+                candidates = extension.handleAmbiguousMethods(candidates, expression);
+            }
+
             if (!candidates.isEmpty()) {
                 candidates.stream().map(MethodNode::getReturnType)
                         .reduce(WideningCategories::lowestUpperBound)
