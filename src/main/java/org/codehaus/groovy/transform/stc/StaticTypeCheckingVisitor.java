@@ -2416,6 +2416,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         .reduce(WideningCategories::lowestUpperBound)
                         .filter(returnType -> !returnType.equals(OBJECT_TYPE))
                         .ifPresent(returnType -> storeType(expression, wrapClosureType(returnType)));
+            } else if (!(expression instanceof MethodReferenceExpression)) {
+                ClassNode type = wrapTypeIfNecessary(getType(expression.getExpression()));
+                if (isClassClassNodeWrappingConcreteType(type)) type = type.getGenericsTypes()[0].getType();
+                addStaticTypeError("Cannot find matching method " + type.getText() + "#" + nameText + ". Please check if the declared type is correct and if the method exists.", nameExpr);
             }
         }
     }
