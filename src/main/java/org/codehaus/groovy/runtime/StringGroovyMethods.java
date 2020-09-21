@@ -689,8 +689,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * import java.util.function.Function
      * import static java.util.Optional.*
      *
-     * Function<Character, Optional<String>> xform1 = s -> s == 'o' ? of('_O') : empty()
-     * Function<Character, Optional<String>> xform2 = { it == 'G' ? of('G_') : empty() }
+     * Function&lt;Character, Optional&lt;String&gt;&gt; xform1 = s -&gt; s == 'o' ? of('_O') : empty()
+     * Function&lt;Character, Optional&lt;String&gt;&gt; xform2 = { it == 'G' ? of('G_') : empty() }
      * assert "Groovy".collectReplacements([xform1, xform2]) == 'G_r_O_Ovy'
      * </pre>
      *

@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  * One of:
  * <ul>
  *     <li>a fixed size array (e.g. {@code new String[3]} or {@code new Integer[2][3])}</li>
- *     <li>an array with an explicit initializer (e.g. {@code new String[]{ "foo", "bar" &#125;})</li>
+ *     <li>an array with an explicit initializer (e.g. {@code new String[]&#123; "foo", "bar" &#125;})</li>
  * </ul>
  */
 public class ArrayExpression extends Expression {
