@@ -18,10 +18,13 @@
  */
 package groovy.transform.stc
 
+import groovy.transform.NotYetImplemented
+
 /**
  * Unit tests for static type checking : bug fixes.
  */
 class BugsSTCTest extends StaticTypeCheckingTestCase {
+
     // GROOVY-5456
     void testShouldNotAllowDivOnUntypedVariable() {
         shouldFailWithMessages '''
@@ -87,17 +90,50 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-7929
     void testShouldDetectInvalidMethodUseWithinTraitWithCompileStaticAndSelfType() {
         shouldFailWithMessages '''
-            class C1 {
-                def c1() { }
+            class C {
+                def m() { }
             }
             @groovy.transform.CompileStatic
-            @groovy.transform.SelfType(C1)
-            trait TT {
-                def foo() {
-                    c2()
+            @groovy.transform.SelfType(C)
+            trait T {
+                void test() {
+                    x()
                 }
             }
-        ''', 'Cannot find matching method <UnionType:C1+TT>#c2'
+        ''', 'Cannot find matching method <UnionType:C+T>#x'
+    }
+
+    @NotYetImplemented // GROOVY-10102
+    void testShouldDetectValidMethodUseWithinTraitWithCompileStaticAndSelfType() {
+        assertScript '''
+            import groovy.transform.*
+
+            trait A {
+                String foo = 'foo'
+                String m(String s, Closure x) {
+                    s + x()
+                }
+            }
+            @SelfType(A)
+            trait B {
+            }
+            @SelfType(B)
+            trait C {
+            }
+            @CompileStatic
+            @SelfType(C)
+            trait D {
+                def test() {
+                    String s = foo
+                    m(s) {
+                        s.toUpperCase()
+                    }
+                }
+            }
+
+            class E implements A, B, C, D { }
+            assert new E().test() == 'fooFOO'
+        '''
     }
 
     // GROOVY-10106
@@ -136,24 +172,24 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
 
     void testGroovy5444() {
         assertScript '''
-                def curr = { System.currentTimeMillis() }
+            def millis = { System.currentTimeMillis() }
 
-                5.times {
-                    @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-                        assert node.getNodeMetaData(INFERRED_TYPE) == Long_TYPE
-                    })
-                    def t0 = curr()
-                    100000.times {
-                        "echo"
-                    }
-                    println (curr() - t0)
-                }'''
-
+            5.times {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.getNodeMetaData(INFERRED_TYPE) == Long_TYPE
+                })
+                def t0 = millis()
+                1000.times {
+                    "echo"
+                }
+                def elapsed = millis() - t0
+            }
+        '''
     }
 
     void testGroovy5487ReturnNull() {
         assertScript '''
-        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+        @ASTTest(phase=INSTRUCTION_SELECTION, value={
             assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == null // null since 2.1.9
         })
         List getList() {
@@ -164,7 +200,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
 
     void testGroovy5487ReturnNullWithExplicitReturn() {
         assertScript '''
-        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+        @ASTTest(phase=INSTRUCTION_SELECTION, value={
             assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == null // null since 2.1.9
         })
         List getList() {
@@ -175,7 +211,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
 
     void testGroovy5487ReturnNullWithEmptyBody() {
         assertScript '''
-        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+        @ASTTest(phase=INSTRUCTION_SELECTION, value={
             assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == null // null since 2.1.9
         })
         List getList() {
@@ -224,70 +260,87 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         new StaticGroovy2()'''
     }
 
-    void testClosureDelegateThisOwner() {
+    void testClosureThisObjectDelegateOwnerProperty() {
         assertScript '''
-            class A {
-                A that = this
+            class C {
                 void m() {
-                    def cl = {
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                    C that = this;
+
+                    { ->
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
                         })
-                        def foo = this
-                        assert this == that
-                    }
-                    cl()
-                    cl = {
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                        def ref = thisObject
+                        assert ref == that
+                    }();
+
+                    { ->
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
                         })
-                        def foo = delegate
-                        assert delegate == that
-                    }
-                    cl()
-                    cl = {
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                        def ref = delegate
+                        assert ref == that
+                    }();
+
+                    { ->
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
                         })
-                        def foo = owner
-                        assert owner == that
-                    }
+                        def ref = owner
+                        assert ref == that
+                    }();
                 }
             }
-            new A().m()
+            new C().m()
         '''
     }
-    void testClosureDelegateThisOwnerUsingGetters() {
+
+    void testClosureThisObjectDelegateOwnerAccessor() {
         assertScript '''
-            class A {
-                A that = this
+            class C {
                 void m() {
-                    def cl = {
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                    C that = this;
+
+                    { ->
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
                         })
-                        def foo = getThisObject()
-                        assert getThisObject() == that
-                    }
-                    cl()
-                    cl = {
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                        def ref = getThisObject()
+                        assert ref == that
+                    }();
+
+                    { ->
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
                         })
-                        def foo = getDelegate()
-                        assert getDelegate() == that
-                    }
-                    cl()
-                    cl = {
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                        def ref = getDelegate()
+                        assert ref == that
+                    }();
+
+                    { ->
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
                         })
-                        def foo = getOwner()
-                        assert getOwner() == that
-                    }
+                        def ref = getOwner()
+                        assert ref == that
+                    }();
                 }
             }
-            new A().m()
+            new C().m()
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-9604
+    void testClosureResolveStrategy() {
+        assertScript '''
+            class C {
+                def m() {
+                    return { ->
+                        resolveStrategy + getResolveStrategy()
+                    }();
+                }
+            }
+            assert new C().m() == 0
         '''
     }
 
@@ -369,7 +422,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         execute()'''
     }
 
-    // GROOVY-5874-part-1
+    // GROOVY-5874 (pt.1)
     void testClosureSharedVariableInBinExp() {
         shouldFailWithMessages '''
             def sum = 0
@@ -627,7 +680,7 @@ Printer
     }
 
     // GROOVY-6970
-    void testShouldBeAbleToChooseBetweenTwoEquivalentInterfaceMethods() {
+    void testShouldBeAbleToChooseBetweenTwoEquivalentInterfaceMethods1() {
         assertScript '''
             interface A { void m() }
             interface B { void m() }
@@ -645,7 +698,8 @@ Printer
             new D(new CImpl())
         '''
     }
-    void testShouldBeAbleToChooseBetweenTwoEquivalentInterfaceMethodsVariant() {
+
+    void testShouldBeAbleToChooseBetweenTwoEquivalentInterfaceMethods2() {
         assertScript '''
             interface A { void m() }
             interface B { void m() }
@@ -662,7 +716,7 @@ Printer
         '''
     }
 
-    void testShouldBeAbleToChooseBetweenTwoEquivalentInterfaceMethodsVariant2() {
+    void testShouldBeAbleToChooseBetweenTwoEquivalentInterfaceMethods3() {
         assertScript '''
             interface A { void m() }
             interface B { void m() }
@@ -680,7 +734,8 @@ Printer
         '''
     }
 
-    void testAmbiguousMethodResolutionGroovy6849() {
+    // GROOVY-6849
+    void testAmbiguousMethodResolution() {
         assertScript '''
             interface ObservableList<E> extends List<E> {
                 public boolean addAll(E... elements)
@@ -691,13 +746,15 @@ Printer
         '''
     }
 
-    void testAmbiguousMethodResolutionGroovy7710NoArgsOverloaded() {
+    // GROOVY-7710
+    void testAmbiguousMethodResolutionNoArgsOverload() {
         shouldFailWithMessages '''
             Arrays.sort()
         ''', 'Reference to method is ambiguous. Cannot choose between '
     }
 
-    void testAmbiguousMethodResolutionGroovy7711NoArgsCovariantOverride() {
+    // GROOVY-7711
+    void testAmbiguousMethodResolutionNoArgsCovariantOverride() {
         assertScript '''
             class A {}
             class B {
@@ -805,7 +862,7 @@ Printer
         '''
     }
 
-    // GROOVY-8255 and GROOVY-8382
+    // GROOVY-8255, GROOVY-8382
     void testTargetTypingEmptyCollectionLiterals() {
         assertScript '''
             class Foo {
@@ -863,6 +920,13 @@ Printer
             }
             assert m(new Source()) == 32
         '''
+    }
+
+    // GROOVY-9463
+    void testMethodPointerUnknownReference() {
+        shouldFailWithMessages '''
+            def ptr = String.&toLowerCaseX
+        ''', 'Cannot find matching method java.lang.String#toLowerCaseX.'
     }
 
     // GROOVY-9938
@@ -938,6 +1002,21 @@ Printer
                     assert result == 'retval'
                 }
             }
+        '''
+    }
+
+    // GROOVY-9951
+    void testInnerImmutable() {
+        assertScript '''
+            class Outer {
+                @groovy.transform.Immutable
+                static class Inner {
+                    String proper
+                }
+            }
+
+            def obj = new Outer.Inner('value')
+            assert obj.proper == 'value'
         '''
     }
 
