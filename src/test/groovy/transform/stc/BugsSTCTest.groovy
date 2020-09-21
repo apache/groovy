@@ -820,7 +820,7 @@ Printer
         '''
     }
 
-    //GROOVY-8590
+    // GROOVY-8590
     void testNestedMethodCallInferredTypeInReturnStmt() {
         assertScript '''
             class Source {
@@ -833,4 +833,10 @@ Printer
         '''
     }
 
+    // GROOVY-9463
+    void testMethodPointerUnknownReference() {
+        shouldFailWithMessages '''
+            def ptr = String.&toLowerCaseX
+        ''', 'Cannot find matching method java.lang.String#toLowerCaseX.'
+    }
 }
