@@ -587,6 +587,40 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9751
+    void testShouldUseMethodGenericType5() {
+        assertScript '''
+            interface Service {
+                Number transform(String s)
+            }
+            void test(Service service) {
+                Set<Number> numbers = []
+                List<String> strings = ['1','2','3']
+                numbers.addAll(strings.collect(service.&transform))
+            }
+            test({ String s -> Integer.valueOf(s) } as Service)
+        '''
+    }
+
+    void testShouldUseMethodGenericType6() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                assert type.equals(CLOSURE_TYPE)
+                assert type.getGenericsTypes()[0].getType().equals(STRING_TYPE)
+            })
+            def ptr = "".&toString
+        '''
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
+                assert type.equals(CLOSURE_TYPE)
+                assert type.getGenericsTypes()[0].getType().equals(Double_TYPE)
+            })
+            def ptr = Math.&abs
+        '''
+    }
+
     // GROOVY-5516
     void testAddAllWithCollectionShouldBeAllowed() {
         assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
