@@ -171,8 +171,8 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
      * Wrap an existing setter.
      */
     private static void wrapSetterMethod(ClassNode classNode, PropertyNode propertyNode) {
-        String getterName = propertyNode.getGetterName();
-        MethodNode setter = classNode.getSetterMethod(propertyNode.getSetterName());
+        String getterName = propertyNode.getGetterNameOrDefault();
+        MethodNode setter = classNode.getSetterMethod(propertyNode.getSetterNameOrDefault());
 
         if (setter != null) {
             // Get the existing code block
@@ -200,7 +200,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private void createListenerSetter(ClassNode classNode, PropertyNode propertyNode) {
-        String setterName = propertyNode.getSetterName();
+        String setterName = propertyNode.getSetterNameOrDefault();
         if (classNode.getMethods(setterName).isEmpty()) {
             Statement setterBlock = createBindableStatement(propertyNode, fieldX(propertyNode.getField()));
 

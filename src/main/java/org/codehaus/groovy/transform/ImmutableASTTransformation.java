@@ -253,7 +253,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
                                 ),
                                 declS(
                                         localVarX("oldValue", ClassHelper.OBJECT_TYPE),
-                                        callThisX(pNode.getGetterName())
+                                        callThisX(pNode.getGetterNameOrDefault())
                                 ),
                                 ifS(
                                         neX(
@@ -286,7 +286,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
                                         "put",
                                         args(
                                                 constX(pNode.getName()),
-                                                callThisX(pNode.getGetterName())
+                                                callThisX(pNode.getGetterNameOrDefault())
                                         )
                                 ))
                         )

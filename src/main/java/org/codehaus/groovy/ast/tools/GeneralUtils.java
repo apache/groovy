@@ -517,7 +517,7 @@ public class GeneralUtils {
     public static Expression getterThisX(final ClassNode annotatedNode, final PropertyNode pNode) {
         ClassNode owner = pNode.getDeclaringClass();
         if (annotatedNode.equals(owner)) {
-            return callThisX(pNode.getGetterName());
+            return callThisX(pNode.getGetterNameOrDefault());
         }
         return propX(varX("this"), pNode.getName());
     }
@@ -534,7 +534,7 @@ public class GeneralUtils {
     public static Expression getterX(final ClassNode annotatedNode, final Expression receiver, final PropertyNode pNode) {
         ClassNode owner = pNode.getDeclaringClass();
         if (annotatedNode.equals(owner)) {
-            return callX(receiver, pNode.getGetterName());
+            return callX(receiver, pNode.getGetterNameOrDefault());
         }
         return propX(receiver, pNode.getName());
     }
@@ -553,7 +553,7 @@ public class GeneralUtils {
 
     @Deprecated
     public static BinaryExpression hasEqualPropertyX(final PropertyNode pNode, final Expression other) {
-        String getterName = pNode.getGetterName();
+        String getterName = pNode.getGetterNameOrDefault();
         return eqX(callThisX(getterName), callX(other, getterName));
     }
 
@@ -870,10 +870,10 @@ public class GeneralUtils {
     }
 
     /**
-     * Generally preferred to use {@link PropertyNode#getGetterName()} directly.
+     * Generally preferred to use {@link PropertyNode#getGetterNameOrDefault()} directly.
      */
     public static String getGetterName(final PropertyNode pNode) {
-        return pNode.getGetterName();
+        return pNode.getGetterNameOrDefault();
     }
 
     /**

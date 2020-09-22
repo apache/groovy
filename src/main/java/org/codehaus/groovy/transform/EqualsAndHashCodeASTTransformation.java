@@ -313,7 +313,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
     }
 
     private static BinaryExpression differentSelfRecursivePropertyX(PropertyNode pNode, Expression other) {
-        String getterName = pNode.getGetterName();
+        String getterName = pNode.getGetterNameOrDefault();
         Expression selfGetter = callThisX(getterName);
         Expression otherGetter = callX(other, getterName);
         return orX(
@@ -323,7 +323,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
     }
 
     private static BinaryExpression bothSelfRecursivePropertyX(PropertyNode pNode, Expression other) {
-        String getterName = pNode.getGetterName();
+        String getterName = pNode.getGetterNameOrDefault();
         Expression selfGetter = callThisX(getterName);
         Expression otherGetter = callX(other, getterName);
         return andX(

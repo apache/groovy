@@ -679,8 +679,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         String name = node.getName();
         FieldNode field = node.getField();
 
-        String getterName = getGetterName(name);
-        String setterName = node.getSetterName();
+        String getterName = node.getGetterName();
+        if (getterName == null) {
+            getterName = "get" + capitalize(name); // we handle "is" below
+        }
+        String setterName = node.getSetterNameOrDefault();
 
         int accessorModifiers = adjustPropertyModifiersForMethod(node);
 
@@ -712,8 +715,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (getterBlock != null) {
             visitGetter(node, getterBlock, getterModifiers, getterName);
 
-            if (node.getType().equals(ClassHelper.boolean_TYPE) || node.getType().equals(ClassHelper.Boolean_TYPE)) {
-                visitGetter(node, getterBlock, getterModifiers, "is" + capitalize(name));
+            if (node.getGetterName() == null && getterName.startsWith("get") && (node.getType().equals(ClassHelper.boolean_TYPE) || node.getType().equals(ClassHelper.Boolean_TYPE))) {
+                String altGetterName = "is" + capitalize(name);
+                MethodNode altGetter = classNode.getGetterMethod(altGetterName, !node.isStatic());
+                if (methodNeedsReplacement(altGetter)) {
+                    visitGetter(node, getterBlock, getterModifiers, altGetterName);
+                }
             }
         }
         if (setterBlock != null) {

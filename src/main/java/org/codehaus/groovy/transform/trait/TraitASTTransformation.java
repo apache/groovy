@@ -397,8 +397,8 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         FieldNode field = node.getField();
         int propNodeModifiers = node.getModifiers() & 0x1F; // GROOVY-3726
 
-        String getterName = node.getGetterName();
-        String setterName = node.getSetterName();
+        String getterName = node.getGetterNameOrDefault();
+        String setterName = node.getSetterNameOrDefault();
 
         Statement getterBlock = node.getGetterBlock();
         if (getterBlock == null) {
@@ -425,10 +425,12 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             getter.setSynthetic(true);
             cNode.addMethod(getter);
 
-            if (node.getType().equals(ClassHelper.boolean_TYPE) || node.getType().equals(ClassHelper.Boolean_TYPE)) {
+            if (node.getGetterName() == null && getterName.startsWith("get") && (node.getType().equals(ClassHelper.boolean_TYPE) || node.getType().equals(ClassHelper.Boolean_TYPE))) {
                 MethodNode secondGetter = new MethodNode("is" + capitalize(name), propNodeModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
-                secondGetter.setSynthetic(true);
-                cNode.addMethod(secondGetter);
+                if (methodNeedsReplacement(cNode, secondGetter)) {
+                    secondGetter.setSynthetic(true);
+                    cNode.addMethod(secondGetter);
+                }
             }
         }
         if (setterBlock != null) {

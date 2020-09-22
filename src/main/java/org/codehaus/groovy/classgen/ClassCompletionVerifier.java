@@ -540,11 +540,11 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     private void checkDuplicateProperties(PropertyNode node) {
         ClassNode cn = node.getDeclaringClass();
         String name = node.getName();
-        String getterName = node.getGetterName();
+        String getterName = node.getGetterNameOrDefault();
         if (Character.isUpperCase(name.charAt(0))) {
             for (PropertyNode otherNode : cn.getProperties()) {
                 String otherName = otherNode.getName();
-                if (node != otherNode && getterName.equals(otherNode.getGetterName())) {
+                if (node != otherNode && getterName.equals(otherNode.getGetterNameOrDefault())) {
                     String msg = "The field " + name + " and " + otherName + " on the class " +
                             cn.getName() + " will result in duplicate JavaBean properties, which is not allowed";
                     addError(msg, node);

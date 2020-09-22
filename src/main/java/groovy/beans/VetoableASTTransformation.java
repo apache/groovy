@@ -155,9 +155,9 @@ public class VetoableASTTransformation extends BindableASTTransformation {
      * Wrap an existing setter.
      */
     private static void wrapSetterMethod(ClassNode classNode, boolean bindable, PropertyNode propertyNode) {
-        String getterName = propertyNode.getGetterName();
+        String getterName = propertyNode.getGetterNameOrDefault();
         String propertyName = propertyNode.getName();
-        MethodNode setter = classNode.getSetterMethod(propertyNode.getSetterName());
+        MethodNode setter = classNode.getSetterMethod(propertyNode.getSetterNameOrDefault());
 
         if (setter != null) {
             // Get the existing code block
@@ -198,7 +198,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         if (needsVetoableChangeSupport(declaringClass, source)) {
             addVetoableChangeSupport(declaringClass);
         }
-        String setterName = propertyNode.getSetterName();
+        String setterName = propertyNode.getSetterNameOrDefault();
         if (declaringClass.getMethods(setterName).isEmpty()) {
             Expression fieldExpression = fieldX(propertyNode.getField());
             BlockStatement setterBlock = new BlockStatement();

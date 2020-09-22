@@ -72,14 +72,22 @@ public class PropertyNode extends AnnotatedNode implements Variable {
     }
 
     public String getGetterName() {
+        return getterName;
+    }
+
+    /**
+     * If an explicit getterName has been set, return that, otherwise return the default name for the property.
+     * For a property {@code foo}, the default name is {@code getFoo} except for a boolean property where
+     * {@code isFoo} is the default if no {@code getFoo} method exists in the declaring class.
+     */
+    public String getGetterNameOrDefault() {
+//        return setterName != null ? setterName : MetaProperty.getSetterName(getName());
+
         if (getterName != null) return getterName;
         String defaultName = "get" + capitalize(getName());
         if (ClassHelper.boolean_TYPE.equals(getOriginType())
                 && getDeclaringClass().getMethod(defaultName, Parameter.EMPTY_ARRAY) == null) {
-            String altName = "is" + capitalize(getName());
-            if (getDeclaringClass().getMethod(altName, Parameter.EMPTY_ARRAY) != null) {
-                defaultName = altName;
-            }
+            defaultName = "is" + capitalize(getName());
         }
         return defaultName;
     }
@@ -92,6 +100,10 @@ public class PropertyNode extends AnnotatedNode implements Variable {
     }
 
     public String getSetterName() {
+        return setterName;
+    }
+
+    public String getSetterNameOrDefault() {
         return setterName != null ? setterName : MetaProperty.getSetterName(getName());
     }
 
