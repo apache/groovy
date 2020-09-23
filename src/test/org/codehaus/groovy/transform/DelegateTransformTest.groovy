@@ -594,7 +594,7 @@ class DelegateTransformTest extends CompilableTestSupport {
         try {
             assertScript '''import groovy.transform.ASTTest
 
-    @ASTTest(phase=CompilePhase.CANONICALIZATION, value={
+    @ASTTest(phase=CANONICALIZATION, value={
         def fieldNode = node.getDeclaredField('thingie')
         def blowupMethod = node.getDeclaredMethod('blowup')
         def mce = blowupMethod.code.expression
