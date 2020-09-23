@@ -20,7 +20,6 @@ package org.codehaus.groovy.transform;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.transform.CompilationUnitAware;
-import groovy.transform.MapConstructor;
 import groovy.transform.TupleConstructor;
 import groovy.transform.options.PropertyHandler;
 import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
@@ -46,7 +45,6 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -58,6 +56,7 @@ import java.util.Set;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasExplicitConstructor;
+import static org.apache.groovy.ast.tools.ConstructorNodeUtils.checkPropNamesExpr;
 import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
@@ -92,8 +91,6 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode LHMAP_TYPE = makeWithoutCaching(LinkedHashMap.class, false);
-    private static final ClassNode CHECK_METHOD_TYPE = make(ImmutableASTTransformation.class);
-    private static final Class<? extends Annotation> MAP_CONSTRUCTOR_CLASS = MapConstructor.class;
     private static final Map<Class<?>, Expression> primitivesInitialValues;
 
     static {
@@ -343,7 +340,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                     assignS(varX(pNode), propX(namedArgs, pNode.getName())));
             block.addStatement(ifStatement);
         }
-        block.addStatement(stmt(callX(CHECK_METHOD_TYPE, "checkPropNames", args(varX("this"), namedArgs))));
+        block.addStatement(stmt(checkPropNamesExpr(namedArgs)));
         return block;
     }
 

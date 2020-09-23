@@ -18,18 +18,29 @@
  */
 package org.apache.groovy.ast.tools;
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.transform.ImmutableASTTransformation;
 
 import java.util.List;
+
+import static org.codehaus.groovy.ast.ClassHelper.make;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Utility class for working with ConstructorNodes
  */
 public class ConstructorNodeUtils {
+    private static final ClassNode IMMUTABLE_TYPE = make(ImmutableASTTransformation.class);
+
     private ConstructorNodeUtils() { }
 
     /**
@@ -56,5 +67,9 @@ public class ConstructorNodeUtils {
         ConstructorCallExpression cce = (ConstructorCallExpression) expression;
         if (cce.isSpecialCall()) return cce;
         return null;
+    }
+
+    public static StaticMethodCallExpression checkPropNamesExpr(VariableExpression namedArgs) {
+        return callX(IMMUTABLE_TYPE, "checkPropNames", args(varX("this"), namedArgs));
     }
 }

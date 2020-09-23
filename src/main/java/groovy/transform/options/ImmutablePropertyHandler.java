@@ -19,6 +19,7 @@
 package groovy.transform.options;
 
 import groovy.lang.ReadOnlyPropertyException;
+import groovy.transform.stc.POJO;
 import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -31,6 +32,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -47,6 +49,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 
+import static org.apache.groovy.ast.tools.ConstructorNodeUtils.checkPropNamesExpr;
 import static org.apache.groovy.ast.tools.ImmutablePropertyUtils.cloneArrayOrCloneableExpr;
 import static org.apache.groovy.ast.tools.ImmutablePropertyUtils.cloneDateExpr;
 import static org.apache.groovy.ast.tools.ImmutablePropertyUtils.derivesFromDate;
@@ -119,8 +122,9 @@ public class ImmutablePropertyHandler extends PropertyHandler {
     @Override
     public boolean validateProperties(AbstractASTTransformation xform, BlockStatement body, ClassNode cNode, List<PropertyNode> props) {
         if (xform instanceof MapConstructorASTTransformation) {
-            body.addStatement(ifS(equalsNullX(varX("args")), assignS(varX("args"), new MapExpression())));
-            body.addStatement(stmt(callX(SELF_TYPE, "checkPropNames", args("this", "args"))));
+            VariableExpression namedArgs = varX("args");
+            body.addStatement(ifS(equalsNullX(namedArgs), assignS(namedArgs, new MapExpression())));
+            body.addStatement(stmt(checkPropNamesExpr(namedArgs)));
         }
         return super.validateProperties(xform, body, cNode, props);
     }

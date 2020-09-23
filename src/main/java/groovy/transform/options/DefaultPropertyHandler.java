@@ -27,15 +27,15 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
-import org.codehaus.groovy.transform.ImmutableASTTransformation;
 import org.codehaus.groovy.transform.MapConstructorASTTransformation;
 
 import java.util.List;
 
-import static org.codehaus.groovy.ast.ClassHelper.make;
+import static org.apache.groovy.ast.tools.ConstructorNodeUtils.checkPropNamesExpr;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
@@ -49,7 +49,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 public class DefaultPropertyHandler extends PropertyHandler {
-    private static final ClassNode IMMUTABLE_XFORM_TYPE = make(ImmutableASTTransformation.class);
 
     @Override
     public boolean validateAttributes(AbstractASTTransformation xform, AnnotationNode anno) {
@@ -61,8 +60,9 @@ public class DefaultPropertyHandler extends PropertyHandler {
     @Override
     public boolean validateProperties(AbstractASTTransformation xform, BlockStatement body, ClassNode cNode, List<PropertyNode> props) {
         if (xform instanceof MapConstructorASTTransformation) {
-            body.addStatement(ifS(equalsNullX(varX("args")), assignS(varX("args"), new MapExpression())));
-            body.addStatement(stmt(callX(IMMUTABLE_XFORM_TYPE, "checkPropNames", args("this", "args"))));
+            VariableExpression namedArgs = varX("args");
+            body.addStatement(ifS(equalsNullX(namedArgs), assignS(namedArgs, new MapExpression())));
+            body.addStatement(stmt(checkPropNamesExpr(namedArgs)));
         }
         return super.validateProperties(xform, body, cNode, props);
     }
