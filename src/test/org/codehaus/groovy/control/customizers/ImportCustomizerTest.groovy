@@ -130,7 +130,7 @@ final class ImportCustomizerTest {
         importCustomizer.addImports('java.text.SimpleDateFormat')
         def shell = new GroovyShell(configuration)
         shell.evaluate('''\
-            @groovy.transform.ASTTest({
+            @groovy.transform.ASTTest(phase=SEMANTIC_ANALYSIS, value={
                 def imports = node.module.imports*.text
                 assert imports == ['import java.text.SimpleDateFormat as SimpleDateFormat']
             })
@@ -155,7 +155,7 @@ final class ImportCustomizerTest {
         importCustomizer.addStarImports('java.text', 'groovy.transform')
         def shell = new GroovyShell(configuration)
         shell.evaluate('''\
-            @groovy.transform.ASTTest({
+            @groovy.transform.ASTTest(phase=SEMANTIC_ANALYSIS, value={
                 def imports = node.module.starImports*.text
                 assert imports == ['import java.text.*', 'import groovy.transform.*']
             })

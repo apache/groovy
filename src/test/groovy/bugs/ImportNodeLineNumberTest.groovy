@@ -31,7 +31,7 @@ final class ImportNodeLineNumberTest {
             import static java.lang.Math.*
             import static java.lang.Math.PI as pi
 
-            @ASTTest({
+            @ASTTest(phase=SEMANTIC_ANALYSIS, value={
                 def moduleNode = sourceUnit.AST
 
                 def importNode = moduleNode.getImport('Grab')
