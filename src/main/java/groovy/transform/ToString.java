@@ -351,4 +351,16 @@ public @interface ToString {
      * @since 2.5.0
      */
     boolean allNames() default false;
+
+    /**
+     * Whether to avoid using Groovy runtime methods when printing the toString for class members.
+     * The generated code is more similar to what is typically used in POJO classes.
+     * The presence of the {@code @POJO} annotation on a class is looked for by default but this annotation attribute
+     * allows the feature to be explicitly configured if desired.
+     *
+     * <em>NOTE:</em> this is an incubating feature and may change in future versions.
+     *
+     * @since 4.0.0
+     */
+    boolean pojo() default false;
 }
