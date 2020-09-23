@@ -31,7 +31,7 @@ class AutoFinalTransformTest extends CompilableTestSupport {
             import groovy.transform.*
             import static java.lang.reflect.Modifier.isFinal
 
-            @ASTTest(phase=SEMANTIC_ANALYSIS, value = {
+            @ASTTest({
                 assert node.methods.size() == 1
                 node.methods[0].with {
                     assert it.name == 'fullName'
@@ -66,7 +66,7 @@ class AutoFinalTransformTest extends CompilableTestSupport {
             import groovy.transform.*
             import static java.lang.reflect.Modifier.isFinal
 
-            @ASTTest(phase=SEMANTIC_ANALYSIS, value = {
+            @ASTTest({
                 assert node.methods.size() == 2
                 node.methods[0].with {
                     assert it.name == 'fullName'

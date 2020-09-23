@@ -22,6 +22,7 @@ import gls.CompilableTestSupport
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+
 import java.util.Map.Entry
 
 /**
@@ -32,7 +33,7 @@ class NewifyTransformBlackBoxTest extends CompilableTestSupport {
 
   @Test
   void testNewifyWithoutNamePattern() {
-    final String classPart = """  
+    final String classPart = """
             final a = A('XyZ')
             String foo(final x = null) { x?.toString() }
         """
@@ -67,12 +68,11 @@ class NewifyTransformBlackBoxTest extends CompilableTestSupport {
               import groovy.transform.Canonical
               import groovy.transform.CompileStatic
               import groovy.lang.Newify
-              import groovy.transform.ASTTest
               import java.lang.StringBuilder
               import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
-  
-              @Canonical class TheClass { String classField }            
-   
+
+              @Canonical class TheClass { String classField }
+
               @Newify(pattern=/[A-Z][A-Za-z0-9_]+/)
               @CompileStatic
               def newTheClassField() {
@@ -82,7 +82,7 @@ class NewifyTransformBlackBoxTest extends CompilableTestSupport {
                 sb.append(sb.capacity())
                 return sb
               }
-              
+
                newTheClassField()
           """
 
@@ -100,20 +100,19 @@ class NewifyTransformBlackBoxTest extends CompilableTestSupport {
               import groovy.transform.Canonical
               import groovy.transform.CompileStatic
               import groovy.lang.Newify
-              import groovy.transform.ASTTest
               import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
-  
-              @Canonical class A { String a }            
-              @Canonical class AB { String a; String b }            
-              @Canonical class ABC { String a; String b; String c }            
-               
+
+              @Canonical class A { String a }
+              @Canonical class AB { String a; String b }
+              @Canonical class ABC { String a; String b; String c }
+
               @Newify(pattern=/[A-Z].*/)
               @CompileStatic
               def createClassList() {
                 final l = [ A('2018-04-08'), AB("I am", "class AB"), ABC("A","B","C") ]
                 [ l.collect { it.getClass().getCanonicalName() }, l.collect { it.toString() } ]
               }
-              
+
               createClassList()
           """
 
@@ -128,26 +127,25 @@ class NewifyTransformBlackBoxTest extends CompilableTestSupport {
 
   @Test
   void testInnerClassesNewifyWithNamePattern() {
-    final String script = """           
+    final String script = """
         import groovy.transform.Canonical
         import groovy.transform.CompileStatic
         import groovy.lang.Newify
-        import groovy.transform.ASTTest
         import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
-  
+
         @Newify(pattern=/[A-Z].*/)
         class Foo {
-          @Canonical class A { String a }            
-          @Canonical class AB { String a; String b }            
-          @Canonical class ABC { String a; String b; String c }            
-           
+          @Canonical class A { String a }
+          @Canonical class AB { String a; String b }
+          @Canonical class ABC { String a; String b; String c }
+
           List createClassList() {
             final l = [ A('2018-04-08'), AB("I am", "class AB"), ABC("A","B","C") ]
             //final l = [ A(this, '2018-04-08'), AB(this, "I am", "class AB"), ABC(this, "A","B","C") ]
             [ l.collect { it.getClass().getCanonicalName() }, l.collect { it.toString() } ]
           }
         }
-        
+
         final Foo foo = new Foo()
         foo.createClassList()
       """
@@ -167,21 +165,20 @@ class NewifyTransformBlackBoxTest extends CompilableTestSupport {
           import groovy.transform.Canonical
           import groovy.transform.CompileStatic
           import groovy.lang.Newify
-          import groovy.transform.ASTTest
           import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
-  
+
           @Newify(pattern=/[A-Z].*/)
           class Foo {
-            @Canonical static class A { String a }            
-            @Canonical static class AB { String a; String b }            
-            @Canonical static class ABC { String a; String b; String c }            
-             
+            @Canonical static class A { String a }
+            @Canonical static class AB { String a; String b }
+            @Canonical static class ABC { String a; String b; String c }
+
             List createClassList() {
               final l = [ A('2018-04-08'), AB("I am", "class AB"), ABC("A","B","C") ]
               [ l.collect { it.getClass().getCanonicalName() }, l.collect { it.toString() } ]
             }
           }
-          
+
           final Foo foo = new Foo()
           foo.createClassList()
       """
@@ -200,9 +197,8 @@ class NewifyTransformBlackBoxTest extends CompilableTestSupport {
     final String script = """
           import groovy.transform.CompileStatic
           import groovy.lang.Newify
-          import groovy.transform.ASTTest
           import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
-  
+
           @Newify(pattern=/[A-Z].*/)
           class Foo {
             static class Foo {
@@ -213,7 +209,7 @@ class NewifyTransformBlackBoxTest extends CompilableTestSupport {
               [ l.collect { it.getClass().getCanonicalName() }, l.collect { it.toString() } ]
             }
           }
-          
+
           final Foo foo = new Foo()
           foo.createClassList()
       """
@@ -231,21 +227,20 @@ class NewifyTransformBlackBoxTest extends CompilableTestSupport {
         import groovy.transform.Canonical
         import groovy.transform.CompileStatic
         import groovy.lang.Newify
-        import groovy.transform.ASTTest
         import java.lang.StringBuilder
         import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
 
-        @Canonical class A { String a }            
-        @Canonical class AB { String a; String b }            
-        @Canonical class ABC { String a; String b; String c }            
-         
+        @Canonical class A { String a }
+        @Canonical class AB { String a; String b }
+        @Canonical class ABC { String a; String b; String c }
+
         @Newify(pattern=/[A-Z][A-Za-z0-9_]*/)
         @CompileStatic
         def createClassList() {
           final l = [ A('2018-04-08'), StringBuilder('*lol*'), AB("I am", "class AB"), ABC("A","B","C") ]
           [ l.collect { it.getClass().getCanonicalName() }, l.collect { it.toString() } ]
         }
-        
+
         createClassList()
       """
 
@@ -264,21 +259,20 @@ class NewifyTransformBlackBoxTest extends CompilableTestSupport {
               import groovy.transform.Canonical
               import groovy.transform.CompileStatic
               import groovy.lang.Newify
-              import groovy.transform.ASTTest
               import java.lang.StringBuilder
               import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
-  
-              @Canonical class A { String a }            
-              @Canonical class AB { String a; String b }            
-              @Canonical class ABC { String a; String b; String c }            
-               
+
+              @Canonical class A { String a }
+              @Canonical class AB { String a; String b }
+              @Canonical class ABC { String a; String b; String c }
+
               @Newify(pattern=/[A-Z][A-Za-z0-9_]*/)
               @CompileStatic
               def createClassList() {
                 final l = [ A('2018-04-08'), StringBuilder('*lol*'), AB("I am", "class AB"), ABC("A","B","C"), Object() ]
                 [ l.collect { it.getClass().getName() }, l.collect { it.toString().replaceAll(/@[a-f0-9]+\\b/,'') } ]
               }
-              
+
               createClassList()
           """
 
@@ -297,26 +291,25 @@ class NewifyTransformBlackBoxTest extends CompilableTestSupport {
               import groovy.transform.Canonical
               import groovy.transform.CompileStatic
               import groovy.lang.Newify
-              import groovy.transform.ASTTest
               import java.lang.StringBuilder
               import groovy.lang.Binding
               import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
-  
-              @Canonical class A { String a }            
-              @Canonical class AB { String a; String b }            
-              @Canonical class ABC { String a; String b; String c }            
-               
+
+              @Canonical class A { String a }
+              @Canonical class AB { String a; String b }
+              @Canonical class ABC { String a; String b; String c }
+
               @Newify(pattern=/[A-Z][A-Za-z0-9_]*/)
               @CompileStatic
               def createClassList() {
-                final l = [ 
+                final l = [
                   A('2018-04-08'), StringBuilder('*lol*'), AB("I am", "class AB"), ABC("A","B","C"), Object(),
                   Reference(), Binding(), Double(123.456d), Integer(987), BigInteger('987654321',10),
                   BigDecimal('1234.5678')
                 ]
                 [ l.collect { it.getClass().getName() }, l.collect { it.toString().replaceAll(/@[a-f0-9]+\\b/,'') } ]
               }
-              
+
               createClassList()
           """
 
@@ -341,7 +334,6 @@ class NewifyTransformBlackBoxTest extends CompilableTestSupport {
   void testAliasImportedClassesNewifyWithNamePattern() {
     final String script = """
         import groovy.lang.Newify
-        import groovy.transform.ASTTest
         import java.lang.StringBuilder as WobblyOneDimensionalObjectBuilda
         import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
 
@@ -350,7 +342,7 @@ class NewifyTransformBlackBoxTest extends CompilableTestSupport {
           final l = [ WobblyOneDimensionalObjectBuilda('Discrete Reality') ]
           [ l.collect { it.getClass().getCanonicalName() }, l.collect { it.toString() } ]
         }
-        
+
         createClassList()
       """
 
@@ -365,10 +357,9 @@ class NewifyTransformBlackBoxTest extends CompilableTestSupport {
 
   @Test
   void testAliasShadowededImportedClassesNewifyWithNamePatternFails() {
-    final String script = """   
+    final String script = """
         import groovy.transform.CompileStatic
         import groovy.lang.Newify
-        import groovy.transform.ASTTest
         import java.lang.StringBuilder as WobblyOneDimensionalObjectBuilda
         import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
 
@@ -378,7 +369,7 @@ class NewifyTransformBlackBoxTest extends CompilableTestSupport {
           final l = [ WobblyOneDimensionalObjectBuilda('Discrete Reality'), StringBuilder('Quantum Loops') ]
           [ l.collect { it.getClass().getCanonicalName() }, l.collect { it.toString() } ]
         }
-        
+
         createClassList()
       """
 
@@ -391,10 +382,9 @@ class NewifyTransformBlackBoxTest extends CompilableTestSupport {
 
   @Test
   void testInvalidNamePatternNewifyWithNamePatternFails() {
-    final String script = """   
+    final String script = """
         import groovy.transform.CompileStatic
         import groovy.lang.Newify
-        import groovy.transform.ASTTest
         import java.lang.StringBuilder as WobblyOneDimensionalObjectBuilda
         import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
 
@@ -404,7 +394,7 @@ class NewifyTransformBlackBoxTest extends CompilableTestSupport {
           final l = [ WobblyOneDimensionalObjectBuilda('Discrete Reality'), StringBuilder('Quantum Loops') ]
           [ l.collect { it.getClass().getCanonicalName() }, l.collect { it.toString() } ]
         }
-        
+
         createClassList()
       """
 
@@ -497,22 +487,21 @@ class NewifyTransformBlackBoxTest extends CompilableTestSupport {
             import groovy.lang.Newify
             import java.lang.StringBuilder
             import groovy.lang.Binding
-            import groovy.transform.ASTTest
             import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
-    
+
             $newifyAnnotation
             ${compileStaticOrDynamicCls()}
             class Foo {
-              @Canonical static class A { String a }            
-              @Canonical static class AB { String a; String b }            
-              @Canonical static class ABC { String a; String b; String c }            
-               
+              @Canonical static class A { String a }
+              @Canonical static class AB { String a; String b }
+              @Canonical static class ABC { String a; String b; String c }
+
               List createClassList() {
                 final l = [ A('2018-04-08'), AB("I am", "class AB"), ABC("A","B","C") ]
                 [ l.collect { it.getClass().getCanonicalName() }, l.collect { it.toString() } ]
               }
             }
-            
+
             final Foo foo = new Foo()
             foo.createClassList()
         """
@@ -550,18 +539,17 @@ class NewifyTransformBlackBoxTest extends CompilableTestSupport {
             import groovy.transform.Canonical
             import groovy.transform.CompileStatic
             import groovy.lang.Newify
-            import groovy.transform.ASTTest
             import static org.codehaus.groovy.control.CompilePhase.SEMANTIC_ANALYSIS
 
-            @Canonical class A { String a }            
-            @Canonical class AB { String a; String b }            
-            @Canonical class ABC { String a; String b; String c }            
+            @Canonical class A { String a }
+            @Canonical class AB { String a; String b }
+            @Canonical class ABC { String a; String b; String c }
 
             @CompileStatic
             ${hasAnnotation ? "@Newify${annotationParametersTerm}" : ''}
             class $newifyTestClassName {
                 $classPart
-            } 
+            }
 
             $scriptPart
         """
