@@ -49,7 +49,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 
-import static org.apache.groovy.ast.tools.ConstructorNodeUtils.checkPropNamesExpr;
+import static org.apache.groovy.ast.tools.ConstructorNodeUtils.checkPropNamesS;
 import static org.apache.groovy.ast.tools.ImmutablePropertyUtils.cloneArrayOrCloneableExpr;
 import static org.apache.groovy.ast.tools.ImmutablePropertyUtils.cloneDateExpr;
 import static org.apache.groovy.ast.tools.ImmutablePropertyUtils.derivesFromDate;
@@ -91,6 +91,7 @@ public class ImmutablePropertyHandler extends PropertyHandler {
     private static final ClassNode SET_CLASSNODE = make(Set.class);
     private static final ClassNode MAP_CLASSNODE = make(Map.class);
     private static final ClassNode READONLYEXCEPTION_TYPE = make(ReadOnlyPropertyException.class);
+    private static final ClassNode POJO_TYPE = make(POJO.class);
 
     @Override
     public Statement createPropGetter(PropertyNode pNode) {
@@ -124,7 +125,8 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         if (xform instanceof MapConstructorASTTransformation) {
             VariableExpression namedArgs = varX("args");
             body.addStatement(ifS(equalsNullX(namedArgs), assignS(namedArgs, new MapExpression())));
-            body.addStatement(stmt(checkPropNamesExpr(namedArgs)));
+            boolean pojo = !cNode.getAnnotations(POJO_TYPE).isEmpty();
+            body.addStatement(checkPropNamesS(namedArgs, pojo, props));
         }
         return super.validateProperties(xform, body, cNode, props);
     }

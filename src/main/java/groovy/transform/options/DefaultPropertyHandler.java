@@ -18,6 +18,7 @@
  */
 package groovy.transform.options;
 
+import groovy.transform.stc.POJO;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -35,7 +36,8 @@ import org.codehaus.groovy.transform.MapConstructorASTTransformation;
 
 import java.util.List;
 
-import static org.apache.groovy.ast.tools.ConstructorNodeUtils.checkPropNamesExpr;
+import static org.apache.groovy.ast.tools.ConstructorNodeUtils.checkPropNamesS;
+import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
@@ -49,6 +51,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 public class DefaultPropertyHandler extends PropertyHandler {
+    private static final ClassNode POJO_TYPE = make(POJO.class);
 
     @Override
     public boolean validateAttributes(AbstractASTTransformation xform, AnnotationNode anno) {
@@ -62,7 +65,8 @@ public class DefaultPropertyHandler extends PropertyHandler {
         if (xform instanceof MapConstructorASTTransformation) {
             VariableExpression namedArgs = varX("args");
             body.addStatement(ifS(equalsNullX(namedArgs), assignS(namedArgs, new MapExpression())));
-            body.addStatement(stmt(checkPropNamesExpr(namedArgs)));
+            boolean pojo = !cNode.getAnnotations(POJO_TYPE).isEmpty();
+            body.addStatement(checkPropNamesS(namedArgs, pojo, props));
         }
         return super.validateProperties(xform, body, cNode, props);
     }
