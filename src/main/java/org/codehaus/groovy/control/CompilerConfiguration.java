@@ -87,6 +87,8 @@ public class CompilerConfiguration {
     public static final String JDK14 = "14";
     /** This (<code>"15"</code>) is the value for targetBytecode to compile for a JDK 15. */
     public static final String JDK15 = "15";
+    /** This (<code>"16"</code>) is the value for targetBytecode to compile for a JDK 16. */
+    public static final String JDK16 = "16";
 
     /**
      * This constant is for comparing targetBytecode to ensure it is set to JDK 1.5 or later.
@@ -117,7 +119,8 @@ public class CompilerConfiguration {
             JDK12, Opcodes.V12,
             JDK13, Opcodes.V13,
             JDK14, Opcodes.V14,
-            JDK15, Opcodes.V15
+            JDK15, Opcodes.V15,
+            JDK16, Opcodes.V16
     );
 
     /**
