@@ -31,7 +31,7 @@ final class Groovy9010 {
     @NotYetImplemented @Test
     void testASTTestWithArrowInClosure() {
         assertScript '''\
-            @groovy.transform.ASTTest({ -> assert true })
+            @groovy.transform.ASTTest(phase=SEMANTIC_ANALYSIS, value={ -> assert true })
             def x
         '''
     }
@@ -39,11 +39,11 @@ final class Groovy9010 {
     @Test
     void testASTTestWithNoSpacesInClosure() {
         assertScript '''
-            @groovy.transform.ASTTest({assert 1==1})
+            @groovy.transform.ASTTest(phase=SEMANTIC_ANALYSIS, value={assert 1==1})
             def x
         '''
         def err = shouldFail '''
-            @groovy.transform.ASTTest({assert 0==1})
+            @groovy.transform.ASTTest(phase=SEMANTIC_ANALYSIS, value={assert 0==1})
             def x
         '''
         assert err =~ /(?s)Assertion failed:.*assert 0==1.*false\b/

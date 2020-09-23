@@ -34,7 +34,7 @@ final class Groovy9691 {
             }
 
             sourceSets {
-                @groovy.transform.ASTTest({
+                @groovy.transform.ASTTest(phase=SEMANTIC_ANALYSIS, value={
                     def call = node.rightExpression
                     assert call instanceof MethodCall
                     assert !(call instanceof StaticMethodCallExpression)

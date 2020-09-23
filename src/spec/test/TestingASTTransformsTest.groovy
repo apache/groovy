@@ -19,6 +19,7 @@
 import groovy.test.GroovyTestCase
 
 class TestingASTTransformsTest extends GroovyTestCase {
+
     void testNotYetImplemented() {
         assertScript '''// tag::notyetimplemented[]
 import groovy.test.GroovyTestCase
@@ -75,7 +76,7 @@ def p = new Person()
 import groovy.transform.ASTTest
 import groovy.transform.PackageScope
 
-@ASTTest(phase=SEMANTIC_ANALYSIS, value= {
+@ASTTest(phase=SEMANTIC_ANALYSIS, value={
     def nameNode = node.properties.find { it.name == 'name' }
     def ageNode = node.properties.find { it.name == 'age' }
     assert nameNode
@@ -91,6 +92,7 @@ class Person {
 def p = new Person()
 '''
     }
+
     void testASTTestWithForLoop() {
         assertScript '''
 // tag::asttest_forloop[]
@@ -101,7 +103,7 @@ import org.codehaus.groovy.ast.expr.DeclarationExpression
 import org.codehaus.groovy.ast.stmt.ForStatement
 
 class Something {
-    @ASTTest(phase=SEMANTIC_ANALYSIS, value= {
+    @ASTTest(phase=SEMANTIC_ANALYSIS, value={
         def forLoop = lookup('anchor')[0]
         assert forLoop instanceof ForStatement
         def decl = forLoop.collectionExpression.expressions[0]
@@ -163,11 +165,11 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.control.CompilePhase
 
 @ASTTest(value={
-    if (compilePhase==CompilePhase.INSTRUCTION_SELECTION) {             // <1>
+    if (compilePhase == CompilePhase.INSTRUCTION_SELECTION) {           // <1>
         println "toString() was added at phase: ${added}"
         assert added == CompilePhase.CANONICALIZATION                   // <2>
     } else {
-        if (node.getDeclaredMethods('toString') && added==null) {       // <3>
+        if (node.getDeclaredMethods('toString') && added == null) {     // <3>
             added = compilePhase                                        // <4>
         }
     }
