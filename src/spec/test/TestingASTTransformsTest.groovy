@@ -54,7 +54,7 @@ new MathsTest().testFib()'''
     }
 
     void testASTTest() {
-        assertScript '''// tag::asttest_basic[]
+        def err = shouldFail '''// tag::asttest_basic[]
 import groovy.transform.ASTTest
 import org.codehaus.groovy.ast.ClassNode
 
@@ -63,11 +63,11 @@ import org.codehaus.groovy.ast.ClassNode
     assert node.name == 'Person'     // <3>
 })
 class Person {
-
 }
 // end::asttest_basic[]
 def p = new Person()
 '''
+        assert err =~ /ASTTest phase must be at least SEMANTIC_ANALYSIS/
     }
 
     void testASTTestWithPackageScope() {
