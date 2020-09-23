@@ -22,6 +22,7 @@ import groovy.lang.GroovyClassLoader;
 import groovy.transform.CompilationUnitAware;
 import groovy.transform.TupleConstructor;
 import groovy.transform.options.PropertyHandler;
+import groovy.transform.stc.POJO;
 import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -56,7 +57,7 @@ import java.util.Set;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasExplicitConstructor;
-import static org.apache.groovy.ast.tools.ConstructorNodeUtils.checkPropNamesExpr;
+import static org.apache.groovy.ast.tools.ConstructorNodeUtils.checkPropNamesS;
 import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
@@ -91,6 +92,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode LHMAP_TYPE = makeWithoutCaching(LinkedHashMap.class, false);
+    private static final ClassNode POJO_TYPE = make(POJO.class);
     private static final Map<Class<?>, Expression> primitivesInitialValues;
 
     static {
@@ -331,6 +333,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
 
     private static BlockStatement processArgsBlock(ClassNode cNode, VariableExpression namedArgs) {
         BlockStatement block = new BlockStatement();
+        List<PropertyNode> props = new ArrayList<>();
         for (PropertyNode pNode : cNode.getProperties()) {
             if (pNode.isStatic()) continue;
 
@@ -339,8 +342,10 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                     callX(namedArgs, "containsKey", constX(pNode.getName())),
                     assignS(varX(pNode), propX(namedArgs, pNode.getName())));
             block.addStatement(ifStatement);
+            props.add(pNode);
         }
-        block.addStatement(stmt(checkPropNamesExpr(namedArgs)));
+        boolean pojo = !cNode.getAnnotations(POJO_TYPE).isEmpty();
+        block.addStatement(checkPropNamesS(namedArgs, pojo, props));
         return block;
     }
 

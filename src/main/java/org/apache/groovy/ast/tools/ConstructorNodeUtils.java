@@ -18,10 +18,13 @@
  */
 package org.apache.groovy.ast.tools;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
@@ -33,6 +36,17 @@ import java.util.List;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.forS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.notX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.plusX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
@@ -40,13 +54,14 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  */
 public class ConstructorNodeUtils {
     private static final ClassNode IMMUTABLE_TYPE = make(ImmutableASTTransformation.class);
+    private static final ClassNode EXCEPTION = make(IllegalArgumentException.class);
 
     private ConstructorNodeUtils() { }
 
     /**
      * Return the first statement from the constructor code if it is a call to super or this, otherwise null.
      *
-     * @param code
+     * @param code the code to check
      * @return the first statement if a special call or null
      */
     public static ConstructorCallExpression getFirstIfSpecialConstructorCall(Statement code) {
@@ -69,7 +84,21 @@ public class ConstructorNodeUtils {
         return null;
     }
 
-    public static StaticMethodCallExpression checkPropNamesExpr(VariableExpression namedArgs) {
-        return callX(IMMUTABLE_TYPE, "checkPropNames", args(varX("this"), namedArgs));
+    public static Statement checkPropNamesS(VariableExpression namedArgs, boolean pojo, List<PropertyNode> props) {
+        if (!pojo) {
+            return stmt(callX(IMMUTABLE_TYPE, "checkPropNames", args(varX("this"), namedArgs)));
+        }
+        BlockStatement block = new BlockStatement();
+        ListExpression knownPropNames = new ListExpression();
+        for (PropertyNode pNode : props) {
+            knownPropNames.addExpression(constX(pNode.getName()));
+        }
+        VariableExpression validNames = localVarX("validNames", ClassHelper.LIST_TYPE);
+        Parameter name = param(ClassHelper.STRING_TYPE, "arg");
+        Statement loopS = ifS(notX(callX(validNames, "contains", varX(name))),
+                throwS(ctorX(EXCEPTION, plusX(constX("Unknown named argument: "), varX(name)))));
+        block.addStatement(declS(validNames, knownPropNames));
+        block.addStatement(forS(name, callX(namedArgs, "keySet"), loopS));
+        return block;
     }
 }

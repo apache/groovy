@@ -56,6 +56,7 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -339,6 +340,10 @@ public class GeneralUtils {
 
     public static Expression findArg(final String argName) {
         return propX(varX("args"), argName);
+    }
+
+    public static ForStatement forS(Parameter variable, Expression collectionExpression, Statement loopS) {
+        return new ForStatement(variable, collectionExpression, loopS);
     }
 
     public static List<MethodNode> getAllMethods(final ClassNode type) {
