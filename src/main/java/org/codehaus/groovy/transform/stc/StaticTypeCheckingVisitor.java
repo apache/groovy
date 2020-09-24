@@ -2404,10 +2404,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            if (candidates.isEmpty()) {
+            int candidateCnt = candidates.size();
+            if (0 == candidateCnt) {
                 candidates = extension.handleMissingMethod(
                     getType(expression.getExpression()), nameText, null, null, null);
-            } else if (candidates.size() > 1) {
+            } else if (candidateCnt > 1) {
                 candidates = extension.handleAmbiguousMethods(candidates, expression);
             }
 
