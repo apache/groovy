@@ -548,4 +548,10 @@ public class LoggableTextifier extends Textifier {
         super.visitRecordComponentEnd();
         log();
     }
+
+    @Override
+    public void visitPermittedSubclass(String permittedSubclass) {
+        super.visitPermittedSubclass(permittedSubclass);
+        log();
+    }
 }
