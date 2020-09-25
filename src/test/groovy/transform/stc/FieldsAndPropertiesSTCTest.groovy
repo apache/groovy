@@ -969,6 +969,27 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
         '''
     }
 
+    // GROOVY-9759
+    void testPrivateFieldAsMapKeyInClosure() {
+        assertScript '''
+            class Foo {
+                private static final Integer ANSWER = 42
+
+                def checkMap() {
+                    Map failures = [:]
+
+                    def closure = {
+                        assert ANSWER.longValue() == 42L // OKAY
+                        failures[ANSWER.longValue()] = 1  // <== STC error here
+                    }
+                    closure()
+                    failures
+                }
+            }
+            assert new Foo().checkMap() == [42L:1]
+        '''
+    }
+
     static interface InterfaceWithField {
         String boo = "I don't fancy fields in interfaces"
     }

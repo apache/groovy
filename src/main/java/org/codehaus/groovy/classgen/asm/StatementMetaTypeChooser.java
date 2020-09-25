@@ -33,11 +33,13 @@ public class StatementMetaTypeChooser implements TypeChooser {
     @Override
     public ClassNode resolveType(final Expression exp, final ClassNode current) {
         ClassNode type = null;
-        if (exp instanceof ClassExpression) { type = exp.getType();
-            ClassNode classType = ClassHelper.makeWithoutCaching("java.lang.Class");
-            classType.setGenericsTypes(new GenericsType[] {new GenericsType(type)});
-            classType.setRedirect(ClassHelper.CLASS_Type);
-            return classType;
+        if (exp instanceof ClassExpression) {
+            return ClassHelper.CLASS_Type;
+//            type = exp.getType();
+//            ClassNode classType = ClassHelper.makeWithoutCaching("java.lang.Class");
+//            classType.setGenericsTypes(new GenericsType[] {new GenericsType(type)});
+//            classType.setRedirect(ClassHelper.CLASS_Type);
+//            return classType;
         }
 
         OptimizingStatementWriter.StatementMeta meta = exp.getNodeMetaData(OptimizingStatementWriter.StatementMeta.class);
