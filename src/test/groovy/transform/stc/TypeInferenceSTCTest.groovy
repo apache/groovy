@@ -18,16 +18,16 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
-import org.codehaus.groovy.control.customizers.CompilationCustomizer
+import org.codehaus.groovy.ast.tools.WideningCategories
+import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.classgen.GeneratorContext
-import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.control.customizers.CompilationCustomizer
 import org.codehaus.groovy.transform.stc.StaticTypesMarker
-import org.codehaus.groovy.ast.tools.WideningCategories
 
 /**
  * Unit tests for static type checking : type inference.
@@ -141,6 +141,32 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 o.toUpperCase() // ensure that type information is lost in else()
             }
         ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
+    }
+
+    // GROOVY-9454
+    void testInstanceOfOnGenericProperty() {
+        assertScript '''
+            interface Face {
+            }
+            class Impl implements Face {
+                String something
+            }
+            class Task<R extends Face> implements java.util.concurrent.Callable<String> {
+                R request
+                @Override
+                String call() {
+                    if (request instanceof Impl) {
+                        def thing = request.something // No such property: something for class: R
+                        def lower = thing.toLowerCase()
+                    } else {
+                        // ...
+                        return null
+                    }
+                }
+            }
+            def task = new Task<Impl>(request: new Impl(something: 'Hello World'))
+            assert task.call() == 'hello world'
+        '''
     }
 
     void testMultipleInstanceOf() {
@@ -482,7 +508,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             keys*.toUpperCase()
             values*.toUpperCase()
         '''
-        
+
         shouldFailWithMessages '''
             List values = [x:1,y:2,z:3]*.value
             values*.toUpperCase()

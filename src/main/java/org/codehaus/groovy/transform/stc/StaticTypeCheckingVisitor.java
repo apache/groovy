@@ -643,7 +643,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else {
                 checkOrMarkPrivateAccess(vexp, fieldNode, isLHSOfEnclosingAssignment(vexp));
 
-                storeType(vexp, getType(vexp));
+                ClassNode inferredType = getInferredTypeFromTempInfo(vexp, null);
+                if (inferredType != null && !inferredType.equals(OBJECT_TYPE)) {
+                    vexp.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, inferredType);
+                } else {
+                    storeType(vexp, getType(vexp));
+                }
             }
         }
 
