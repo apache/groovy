@@ -492,19 +492,67 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
     void testPrivateFieldAccessInClosure() {
         assertScript '''
-            class A {
+            class C {
                 private int x
-                void foo() {
-                    def cl = { x = 666 }
-                    cl()
-                }
-                void ensure() {
+                void test() {
+                    def c = { -> x = 666 }
+                    c()
                     assert x == 666
                 }
             }
-            def a = new A()
-            a.foo()
-            a.ensure()
+            new C().test()
+        '''
+    }
+
+    // GROOVY-9683
+    void testPrivateFieldAccessInClosure2() {
+        assertScript '''
+            class C {
+                private static X = 'xxx'
+                void test() {
+                    [:].with {
+                        assert X == 'xxx'
+                    }
+                }
+            }
+            new C().test()
+        '''
+    }
+
+    void testPrivateFieldAccessInClosure3() {
+        assertScript '''
+            class C {
+                private static X = 'xxx'
+                void test() {
+                    [:].withDefault { throw new MissingPropertyException(it.toString()) }.with {
+                        assert X == 'xxx'
+                    }
+                }
+            }
+            new C().test()
+        '''
+    }
+
+    // GROOVY-9695
+    void testPrivateFieldAccessInClosure4() {
+        assertScript '''
+            class C {
+                private static final X = 'xxx'
+                void test() {
+                    Map m = [:]
+                    def c = { ->
+                        assert X == 'xxx'
+                        m[X] = 123
+                    }
+                    c()
+                    assert m == [xxx:123]
+                }
+            }
+            new C().test()
+
+            class D extends C {
+            }
+            new D().test()
         '''
     }
 

@@ -1023,20 +1023,18 @@ public class AsmClassGenerator extends ClassGenerator {
                             field = classNode.getDeclaredField(name); // params are stored as fields
                     } else {
                         field = classNode.getDeclaredField(name);
-                        if (field == null) {
-                            if (expression instanceof AttributeExpression) {
-                                // GROOVY-6183
-                                if (controller.isStaticContext()) {
-                                    field = classNode.getField(name); // checks supers
-                                    if (!field.isPublic() && !field.isProtected()) {
-                                        field = null;
-                                    }
-                                }
-                            } else if (!isValidFieldNodeForByteCodeAccess(classNode.getField(name), classNode)) {
-                                // GROOVY-5259, GROOVY-9501, GROOVY-9569
-                                if (checkStaticOuterField(expression, name)) return;
+                        if (field == null && controller.isStaticContext()
+                                && expression instanceof AttributeExpression) {
+                            // GROOVY-6183: checks supers
+                            field = classNode.getField(name);
+                            if (!field.isPublic() && !field.isProtected()) {
+                                field = null;
                             }
                         }
+                    }
+                    if (field == null && !isValidFieldNodeForByteCodeAccess(classNode.getField(name), classNode)) {
+                        // GROOVY-5259, GROOVY-9501, GROOVY-9569
+                        if (checkStaticOuterField(expression, name)) return;
                     }
                 }
                 if (field != null && !privateSuperField) { // GROOVY-4497: don't visit super field if it is private
