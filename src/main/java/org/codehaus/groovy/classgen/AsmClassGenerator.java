@@ -1084,11 +1084,10 @@ public class AsmClassGenerator extends ClassGenerator {
                         if (expression.isImplicitThis()) fieldNode = classNode.getDeclaredField(name);
                     } else {
                         fieldNode = classNode.getDeclaredField(name);
-
-                        if (fieldNode == null && !isValidFieldNodeForByteCodeAccess(classNode.getField(name), classNode)) {
-                            // GROOVY-9501, GROOVY-9569
-                            if (checkStaticOuterField(expression, name)) return;
-                        }
+                    }
+                    if (fieldNode == null && !isValidFieldNodeForByteCodeAccess(classNode.getField(name), classNode)) {
+                        // GROOVY-9501, GROOVY-9569, GROOVY-9650, GROOVY-9655, GROOVY-9665, GROOVY-9683, GROOVY-9695
+                        if (checkStaticOuterField(expression, name)) return;
                     }
                 } else {
                     fieldNode = classNode.getSuperClass().getDeclaredField(name);
