@@ -19,6 +19,7 @@
 package groovy.transform.stc
 
 import groovy.test.NotYetImplemented
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 
 /**
  * Unit tests for static type checking : generics.
@@ -238,6 +239,70 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<? super Number> list = ['string']
         ''', 'Number'
+    }
+
+    // GROOVY-9555
+    void testAssignmentShouldWorkForProperUpperBound() {
+        assertScript '''
+            interface I<T> {
+            }
+            class C implements I<Object> {
+            }
+            interface Factory {
+                def <T extends I> T getInstance(Class<T> clazz)
+            }
+
+            void test(Factory f) {
+                C c = f.getInstance(C)
+                assert c instanceof C
+                assert c instanceof I
+            }
+            test { Class clazz -> clazz.newInstance() }
+        '''
+
+        config.with {
+            targetDirectory = File.createTempDir()
+            jointCompilationOptions = [stubDir: File.createTempDir()]
+        }
+        File parentDir = File.createTempDir()
+        try {
+            def a = new File(parentDir, 'Face.java')
+            a.write '''
+                public interface Face<T> {
+                }
+            '''
+            def b = new File(parentDir, 'Impl.java')
+            b.write '''
+                public class Impl implements Face<Object> {
+                }
+            '''
+            def c = new File(parentDir, 'Supplier.java')
+            c.write '''
+                public interface Supplier {
+                    public <T extends Face> T getInstance(Class<T> clazz);
+                }
+            '''
+            def d = new File(parentDir, 'Tester.groovy')
+            d.write '''
+                void test(Supplier s) {
+                    def x = s.getInstance(Impl)
+                    assert x instanceof Impl
+                    assert x instanceof Face
+                }
+                test { Class clazz -> clazz.newInstance() }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b, c, d)
+            cu.compile()
+
+            loader.loadClass('Tester').main()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+            config.jointCompilationOptions.stubDir.deleteDir()
+        }
     }
 
     void testGroovy5154() {
