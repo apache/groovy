@@ -16,14 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
 class Groovy7361Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
     void testShouldNotThrowVerifyError() {
         assertScript '''
                 class TaskManager {
@@ -57,6 +56,35 @@ class Groovy7361Bug extends StaticTypeCheckingTestCase implements StaticCompilat
             }
             def a = new A()
             assert a.foo() == [a:'b']
+        '''
+    }
+
+    // GROOVY-9699
+    void testShouldNotEmitErrorForSubscriptPrivateAccess() {
+        assertScript '''
+            class A {
+                private static final java.util.regex.Pattern PATTERN = ~/.*/
+                void checkList() {
+                    def list = []
+                    def closure = { ->
+                        list << PATTERN.pattern()
+                    }
+                    closure()
+                }
+                void checkMap() {
+                    def map = [:]
+                    def closure = { ->
+                        map[PATTERN.pattern()] = 1
+                    }
+                    closure()
+                }
+            }
+            class B extends A {
+            }
+            new A().checkList()
+            new B().checkList()
+            new A().checkMap()
+            new B().checkMap()
         '''
     }
 }

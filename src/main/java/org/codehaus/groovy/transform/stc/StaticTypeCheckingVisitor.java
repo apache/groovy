@@ -178,8 +178,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.findActualTypeByGenericsPlaceholderName;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.makeDeclaringAndActualGenericsTypeMapOfExactType;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.toGenericTypesString;
 import static org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isBigDecCategory;
@@ -642,17 +640,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
                     }
                 }
-            }
+            } else {
+                checkOrMarkPrivateAccess(vexp, fieldNode, isLHSOfEnclosingAssignment(vexp));
 
-            ClassNode actualType =
-                    findActualTypeByGenericsPlaceholderName(
-                        fieldNode.getOriginType().getUnresolvedName(),
-                        makeDeclaringAndActualGenericsTypeMapOfExactType(fieldNode.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode())
-                    );
-
-            if (null != actualType) {
-                storeType(vexp, actualType);
-                return;
+                storeType(vexp, getType(vexp));
             }
         }
 
@@ -1243,12 +1234,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode inferredRightExpressionType = inferredRightExpressionTypeOrig;
         if (!typeCheckMultipleAssignmentAndContinue(leftExpression, rightExpression)) return;
 
-        if (leftExpression instanceof VariableExpression
-                && ((VariableExpression) leftExpression).getAccessedVariable() instanceof FieldNode) {
-            checkOrMarkPrivateAccess(leftExpression, (FieldNode) ((VariableExpression) leftExpression).getAccessedVariable(), true);
-        }
-
-        //TODO: need errors for write-only too!
+        // TODO: need errors for write-only too!
         if (addedReadOnlyPropertyError(leftExpression)) return;
 
         ClassNode leftRedirect = leftExpressionType.redirect();
@@ -3503,21 +3489,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * e.g. c(b(a())),      a() and b() are nested method call, but c() is not
-     *      new C(b(a()))   a() and b() are nested method call
-     *
-     *      a().b().c(),    a() and b() are sandwiched method call, but c() is not
-     *
-     *      a().b().c       a() and b() are sandwiched method call
-     *
-     */
-    private boolean isNestedOrSandwichedMethodCall() {
-        return typeCheckingContext.getEnclosingMethodCalls().size() > 1
-                || typeCheckingContext.getEnclosingConstructorCalls().size() > 0
-                || typeCheckingContext.getEnclosingPropertyExpressions().size() > 0;
-    }
-
-    /**
      * A special method handling the "withTrait" call for which the type checker knows more than
      * what the type signature is able to tell. If "withTrait" is detected, then a new class node
      * is created representing the list of trait interfaces.
@@ -4689,10 +4660,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (vexp.isSuperExpression()) return makeSuper();
             final Variable variable = vexp.getAccessedVariable();
             if (variable instanceof FieldNode) {
-                FieldNode fieldNode = (FieldNode) variable;
+                ClassNode fieldType = variable.getOriginType();
+                if (isUsingGenericsOrIsArrayUsingGenerics(fieldType)) {
+                    boolean isStatic = (variable.getModifiers() & Opcodes.ACC_STATIC) != 0;
+                    ClassNode thisType = typeCheckingContext.getEnclosingClassNode(), declType = ((FieldNode) variable).getDeclaringClass();
+                    Map<GenericsTypeName, GenericsType> placeholders = resolvePlaceHoldersFromDeclaration(thisType, declType, null, isStatic);
 
-                checkOrMarkPrivateAccess(vexp, fieldNode, isLHSOfEnclosingAssignment(vexp));
-                return getType(fieldNode);
+                    fieldType = resolveGenericsWithContext(placeholders, fieldType);
+                }
+                return fieldType;
             }
             if (variable != vexp && variable instanceof VariableExpression) {
                 return getType((Expression) variable);
@@ -4735,6 +4711,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode ret = getInferredReturnType(exp);
             return ret != null ? ret : ((MethodNode) exp).getReturnType();
         }
+        if (exp instanceof FieldNode || exp instanceof PropertyNode) {
+            return ((Variable) exp).getOriginType();
+        }
         if (exp instanceof RangeExpression) {
             ClassNode plain = ClassHelper.RANGE_TYPE.getPlainNodeReference();
             RangeExpression re = (RangeExpression) exp;
@@ -4762,14 +4741,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         if (exp instanceof Parameter) {
             return ((Parameter) exp).getOriginType();
-        }
-        if (exp instanceof FieldNode) {
-            FieldNode fn = (FieldNode) exp;
-            return getGenericsResolvedTypeOfFieldOrProperty(fn, fn.getOriginType());
-        }
-        if (exp instanceof PropertyNode) {
-            PropertyNode pn = (PropertyNode) exp;
-            return getGenericsResolvedTypeOfFieldOrProperty(pn, pn.getOriginType());
         }
         if (exp instanceof ClosureExpression) {
             ClassNode irt = getInferredReturnType(exp);
@@ -4810,43 +4781,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return null;
     }
 
-    /**
-     * resolves a Field or Property node generics by using the current class and
-     * the declaring class to extract the right meaning of the generics symbols
-     *
-     * @param an   a FieldNode or PropertyNode
-     * @param type the origin type
-     * @return the new ClassNode with corrected generics
-     */
-    private ClassNode getGenericsResolvedTypeOfFieldOrProperty(AnnotatedNode an, ClassNode type) {
-        if (!type.isUsingGenerics()) return type;
-        Map<GenericsTypeName, GenericsType> connections = new HashMap<GenericsTypeName, GenericsType>();
-        //TODO: inner classes mean a different this-type. This is ignored here!
-        extractGenericsConnections(connections, typeCheckingContext.getEnclosingClassNode(), an.getDeclaringClass());
-        type = applyGenericsContext(connections, type);
-        return type;
-    }
-
     private ClassNode makeSuper() {
-        ClassNode ret = typeCheckingContext.getEnclosingClassNode().getSuperClass();
-        if (typeCheckingContext.isInStaticContext) {
-            ClassNode staticRet = CLASS_Type.getPlainNodeReference();
-            GenericsType gt = new GenericsType(ret);
-            staticRet.setGenericsTypes(new GenericsType[]{gt});
-            ret = staticRet;
-        }
-        return ret;
+        return makeType(typeCheckingContext.getEnclosingClassNode().getSuperClass(), typeCheckingContext.isInStaticContext);
     }
 
     private ClassNode makeThis() {
-        ClassNode ret = typeCheckingContext.getEnclosingClassNode();
-        if (typeCheckingContext.isInStaticContext) {
-            ClassNode staticRet = CLASS_Type.getPlainNodeReference();
-            GenericsType gt = new GenericsType(ret);
-            staticRet.setGenericsTypes(new GenericsType[]{gt});
-            ret = staticRet;
-        }
-        return ret;
+        return makeType(typeCheckingContext.getEnclosingClassNode(), typeCheckingContext.isInStaticContext);
     }
 
     private static ClassNode makeSelf(ClassNode trait) {
