@@ -838,4 +838,42 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             assert new A(['foo1', 'foo2']).fooNames.size() == 2
         '''
     }
+
+    // GROOVY-9683
+    void testPrivateFieldAccessInClosure3() {
+        assertScript '''
+            class A {
+                private static X = 'xxx'
+                void test() {
+                    [:].with {
+                        assert X == 'xxx'
+                    }
+                }
+            }
+            new A().test()
+        '''
+    }
+
+    // GROOVY-9695
+    void testPrivateFieldAccessInClosure4() {
+        assertScript '''
+            class A {
+                private static final X = 'xxx'
+                void test() {
+                    Map m = [:]
+                    def c = { ->
+                        assert X == 'xxx'
+                        m[X] = 123
+                    }
+                    c()
+                    assert m == [xxx:123]
+                }
+            }
+            new A().test()
+
+            class B extends A {
+            }
+            new B().test()
+        '''
+    }
 }

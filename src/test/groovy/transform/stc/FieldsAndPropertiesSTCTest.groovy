@@ -503,21 +503,32 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         ''', 'No such property: p for class: Outer$Inner'
     }
 
-    void testPrivateFieldAccessInClosure() {
+    void testPrivateFieldAccessInClosure1() {
         assertScript '''
             class A {
                 private int x
-                void foo() {
-                    def cl = { x = 666 }
-                    cl()
-                }
-                void ensure() {
+                void test() {
+                    def c = { -> x = 666 }
+                    c()
                     assert x == 666
                 }
             }
-            def a = new A()
-            a.foo()
-            a.ensure()
+            new A().test()
+        '''
+    }
+
+    // GROOVY-9683
+    void testPrivateFieldAccessInClosure2() {
+        assertScript '''
+            class A {
+                private static X = 'xxx'
+                void test() {
+                    [:].withDefault { throw new MissingPropertyException(it.toString()) }.with {
+                        assert X == 'xxx'
+                    }
+                }
+            }
+            new A().test()
         '''
     }
 
