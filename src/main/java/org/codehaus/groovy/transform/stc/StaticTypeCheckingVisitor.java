@@ -2432,7 +2432,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected DelegationMetadata getDelegationMetadata(final ClosureExpression expression) {
-        return (DelegationMetadata) expression.getNodeMetaData(DELEGATION_METADATA);
+        return expression.getNodeMetaData(DELEGATION_METADATA);
     }
 
     protected void restoreVariableExpressionMetadata(final Map<VariableExpression, Map<StaticTypesMarker, Object>> typesBeforeVisit) {
@@ -5031,7 +5031,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @return the inferred type, as stored on node metadata.
      */
     protected ClassNode getInferredReturnType(final ASTNode exp) {
-        return (ClassNode) exp.getNodeMetaData(INFERRED_RETURN_TYPE);
+        return exp.getNodeMetaData(INFERRED_RETURN_TYPE);
     }
 
     protected ClassNode inferListExpressionType(final ListExpression list) {
