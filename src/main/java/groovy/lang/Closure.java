@@ -66,7 +66,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * owner first, then the delegate (<b>this is the default strategy</b>).
      *
      * For example the following code:
-     * <pre>
+     * <pre class="groovyTestCase">
      * class Test {
      *     def x = 30
      *     def y = 40
@@ -122,7 +122,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * With this resolveStrategy set the closure will resolve property references and methods to the owner only
      * and not call the delegate at all. For example the following code :
      *
-     * <pre>
+     * <pre class="groovyTestCase">
      * class Test {
      *     def x = 30
      *     def y = 40
@@ -139,7 +139,9 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      *     }
      * }
      *
-     * new Test().run()
+     * groovy.test.GroovyAssert.shouldFail(MissingPropertyException) {
+     *     new Test().run()
+     * }
      * </pre>
      *
      * will throw "No such property: z" error because even if the z variable is declared in the delegate, no
@@ -152,7 +154,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * With this resolveStrategy set the closure will resolve property references and methods to the delegate
      * only and entirely bypass the owner. For example the following code :
      *
-     * <pre>
+     * <pre class="groovyTestCase">
      * class Test {
      *     def x = 30
      *     def y = 40
@@ -170,7 +172,9 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      *     }
      * }
      *
-     * new Test().run()
+     * groovy.test.GroovyAssert.shouldFail {
+     *     new Test().run()
+     * }
      * </pre>
      *
      * will throw an error because even if the owner declares a "z" field, the resolution strategy will bypass
