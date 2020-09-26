@@ -66,9 +66,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
- * <pe
  * Base class for groovy-contracts code generators.
- * </p>
  */
 public abstract class BaseGenerator {
 

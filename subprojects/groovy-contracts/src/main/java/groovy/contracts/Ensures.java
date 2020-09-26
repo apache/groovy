@@ -60,7 +60,7 @@ import java.lang.annotation.Target;
  * Accessing the <tt>result</tt> closure parameter:
  *
  * <pre>
- *   &#064;Ensures({ result -> result != argument1 })
+ *   &#064;Ensures({ result -&gt; result != argument1 })
  *   def T someOperation(def argument1, def argument2)  {
  *     ...
  *   }
@@ -69,7 +69,7 @@ import java.lang.annotation.Target;
  * Accessing the <tt>old</tt> closure parameter:
  *
  * <pre>
- *   &#064;Ensures({ old -> old.counter + 1 == counter })
+ *   &#064;Ensures({ old -&gt; old.counter + 1 == counter })
  *   def T someOperation(def argument1, def argument2)  {
  *     ...
  *   }

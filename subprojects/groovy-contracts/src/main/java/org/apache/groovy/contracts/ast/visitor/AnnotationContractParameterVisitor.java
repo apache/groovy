@@ -31,7 +31,7 @@ import java.util.List;
 
 /**
  * This {@link BaseVisitor} walks up the class hierarchy for the given {@link org.codehaus.groovy.ast.ClassNode}
- * and adds {@link org.apache.groovy.contracts.annotations.meta.AnnotationContract} annotations to method parameters.
+ * and adds {@link org.apache.groovy.contracts.annotations.meta.ContractElement} annotations to method parameters.
  */
 public class AnnotationContractParameterVisitor extends BaseVisitor {
 
@@ -64,6 +64,6 @@ public class AnnotationContractParameterVisitor extends BaseVisitor {
     @Override
     public void visitAnnotations(AnnotatedNode node) {
         if (!(node instanceof Parameter) || currentMethodNode == null) return;
-        List<AnnotationNode> annotationNodes = AnnotationUtils.hasMetaAnnotations(node, "org.apache.groovy.contracts.annotations.meta.AnnotationContract");
+        List<AnnotationNode> annotationNodes = AnnotationUtils.hasMetaAnnotations(node, "org.apache.groovy.contracts.annotations.meta.ContractElement");
     }
 }
