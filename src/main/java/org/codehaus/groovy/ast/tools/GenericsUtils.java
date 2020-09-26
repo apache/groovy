@@ -536,13 +536,27 @@ public class GenericsUtils {
         return superClass;
     }
 
-    private static void extractSuperClassGenerics(GenericsType[] usage, GenericsType[] declaration, Map<String, ClassNode> spec) {
+    private static void extractSuperClassGenerics(final GenericsType[] usage, final GenericsType[] declaration, final Map<String, ClassNode> spec) {
         // if declaration does not provide generics, there is no connection to make
-        if (usage == null || declaration == null || declaration.length == 0) return;
+        if (declaration == null || declaration.length == 0) return;
+
+        // if usage is a raw type, remove type parameters from spec
+        if (usage == null) {
+            for (GenericsType dt : declaration) {
+                String name = dt.getName();
+                ClassNode type = spec.get(name);
+                if (type != null && type.isGenericsPlaceHolder()
+                        && type.getUnresolvedName().equals(name)) {
+                    type = type.asGenericsType().getUpperBounds()[0];
+                    spec.put(name, type);
+                }
+            }
+            return;
+        }
+
         if (usage.length != declaration.length) return;
 
-        // both have generics
-        for (int i = 0; i < usage.length; i++) {
+        for (int i = 0, n = usage.length; i < n; i += 1) {
             GenericsType ui = usage[i];
             GenericsType di = declaration[i];
             if (di.isPlaceholder()) {
