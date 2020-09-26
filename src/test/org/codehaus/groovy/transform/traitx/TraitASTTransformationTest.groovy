@@ -528,6 +528,33 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
         '''
     }
 
+    // GROOVY-9760
+    void testTraitWithGenerics3() {
+        assertScript '''
+            trait Provider<T> {
+                T get(T ref) {
+                    ref
+                }
+            }
+            class UnspecifiedProvider implements Provider {
+            }
+            assert new UnspecifiedProvider().get('foo') == 'foo'
+        '''
+
+        assertScript '''
+            @groovy.transform.CompileStatic
+            trait Provider<T> {
+                T get(T ref) {
+                    ref
+                }
+            }
+            @groovy.transform.CompileStatic
+            class UnspecifiedProvider implements Provider {
+            }
+            assert new UnspecifiedProvider().get('foo') == 'foo'
+        '''
+    }
+
     void testTraitWithGenericProperty() {
         assertScript '''
             trait PropertyProvider<T> {
