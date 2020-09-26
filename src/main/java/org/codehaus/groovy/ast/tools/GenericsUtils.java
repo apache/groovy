@@ -536,15 +536,6 @@ public class GenericsUtils {
         return superClass;
     }
 
-    private static GenericsType asGenericsType(ClassNode type) {
-        if (!type.isGenericsPlaceHolder()) {
-            return new GenericsType(type);
-        } else {
-            ClassNode upper = (type.redirect() != null ? type.redirect() : type);
-            return new GenericsType(type, new ClassNode[]{upper}, null);
-        }
-    }
-
     private static void extractSuperClassGenerics(final GenericsType[] usage, final GenericsType[] declaration, final Map<String, ClassNode> spec) {
         // if declaration does not provide generics, there is no connection to make
         if (declaration == null || declaration.length == 0) return;
@@ -556,7 +547,7 @@ public class GenericsUtils {
                 ClassNode type = spec.get(name);
                 if (type != null && type.isGenericsPlaceHolder()
                         && type.getUnresolvedName().equals(name)) {
-                    type = asGenericsType(type).getUpperBounds()[0];
+                    type = type.asGenericsType().getUpperBounds()[0];
                     spec.put(name, type);
                 }
             }
