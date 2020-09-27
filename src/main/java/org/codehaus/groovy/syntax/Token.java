@@ -79,7 +79,7 @@ public class Token extends CSTNode {
     }
 
     /**
-     * Sets the meaning for this node (and it's root Token).  Not
+     * Sets the meaning for this node (and its root Token).  Not
      * valid if the node isEmpty().  Returns this token, for
      * convenience.
      */

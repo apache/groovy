@@ -80,7 +80,7 @@ class GroovyMainTest extends GroovyTestCase {
 
     /**
      * GROOVY-6561 : Correct handling of scripts from a URI.
-     * GROOVY-1642 : Enable a script to get it's URI by annotating a field.
+     * GROOVY-1642 : Enable a script to get its URI by annotating a field.
      */
     void testURISource() {
         def tempFile = File.createTempFile("groovy-ui-GroovyMainTest-testURISource", ".groovy")

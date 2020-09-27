@@ -147,7 +147,7 @@ public class LoaderConfiguration {
     }
 
     /*
-    * Expands the properties inside the given string to it's values.
+    * Expands the properties inside the given string to their values.
     */
     private static String assignProperties(String str) {
         int propertyIndexStart = 0, propertyIndexEnd = 0;

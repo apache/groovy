@@ -79,7 +79,7 @@ import java.util.function.Function;
  * <p>
  * By default, values are held using a normal strong reference. This provides
  * the commonly desired guarantee that a value will always have at least the
- * same life-span as it's key. For this reason, care should be taken to ensure
+ * same life-span as its key. For this reason, care should be taken to ensure
  * that a value never refers, either directly or indirectly, to its key, thereby
  * preventing reclamation. If this is unavoidable, then it is recommended to use
  * the same reference type in use for the key. However, it should be noted that

@@ -365,7 +365,7 @@ public class ModuleNode extends ASTNode {
         classNode.addConstructor(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
 
         Statement stmt;
-        // A script's contextual constructor should call it's super class' contextual constructor, if it has one.
+        // A script's contextual constructor should call its super class' contextual constructor, if it has one.
         // In practice this will always be true because currently this visitor is run before the AST transformations
         // (like @BaseScript) that could change this.  But this is cautious and anticipates possible compiler changes.
         if (classNode.getSuperClass().getDeclaredConstructor(params(param(ClassHelper.BINDING_TYPE, "context"))) != null) {

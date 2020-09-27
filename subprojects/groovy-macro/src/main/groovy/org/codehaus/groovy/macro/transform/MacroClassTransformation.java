@@ -46,7 +46,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 
 /**
- * Transforms {@link MacroClass} calls into it's ClassNode
+ * Transforms {@link MacroClass} calls into its ClassNode
  *
  * @since 2.5.0
  */

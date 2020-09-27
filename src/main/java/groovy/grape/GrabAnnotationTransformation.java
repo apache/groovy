@@ -292,7 +292,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                         } catch (URISyntaxException e) {
                             // We'll be silent here.
                             // If the URI scheme is unknown or not hierarchical, then we just can't help them and shouldn't cause any trouble either.
-                            // addError("Attribute \"root\" has value '" + root + "' which can't be turned into a valid URI relative to it's source '" + getSourceUnit().getName() + "' @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
+                            // addError("Attribute \"root\" has value '" + root + "' which can't be turned into a valid URI relative to its source '" + getSourceUnit().getName() + "' @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
                         }
                     }
 

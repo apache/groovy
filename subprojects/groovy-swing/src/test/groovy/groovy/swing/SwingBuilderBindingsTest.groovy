@@ -809,9 +809,9 @@ class SwingBuilderBindingsTest extends GroovySwingTestCase {
                 slider(id: 's1', value: bind(target: spin1, targetProperty: 'value', id: 'binding1', value: 15))
                 slider(id: 's2', value: bind(source: spin2, sourceProperty: 'value', id: 'binding2', value: 16))
             }
-            // s1 is the source, so it's value should be reflected
+            // s1 is the source, so its value should be reflected
             assert swing.s1.value == 15
-            // s2 is target, not source, so it's value setting should have no effect
+            // s2 is target, not source, so its value setting should have no effect
             assert swing.s2.value == 8
 
             swing.actions {
@@ -824,9 +824,9 @@ class SwingBuilderBindingsTest extends GroovySwingTestCase {
                         id: 'binding4', value: '16',
                         converter: {Integer.parseInt(String.valueOf(it))}))
             }
-            // s1 is the source, so it's value should be reflected
+            // s1 is the source, so its value should be reflected
             assert swing.s3.value == 15
-            // s2 is target, not source, so it's value setting should have no effect
+            // s2 is target, not source, so its value setting should have no effect
             assert swing.s4.value == 8
         }
     }

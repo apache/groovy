@@ -689,7 +689,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
             def locationLast = frame.location
 
             // setLocationReativeTo(null) places the component in the center of
-            // the screen, relative to it's size, so centering it after sizing it
+            // the screen, relative to its size, so centering it after sizing it
             // should result in a 250,250 offset from centering it before sizing it
             assert locationFirst != locationLast
         }

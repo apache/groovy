@@ -256,10 +256,10 @@ different `ClassLoader` context then resolution may be re-run.
 be in the `ClassLoader` chain of the calling class. By default failure to
 have such a `ClassLoader` available will result in module resolution and
 an exception being thrown
-** The ClassLoader passed in via the `classLoader:` argument and it’s
+** The ClassLoader passed in via the `classLoader:` argument and its
 parent classloaders.
 ** The ClassLoader of the object passed in as the `referenceObject:`
-argument, and it’s parent classloaders.
+argument, and its parent classloaders.
 ** The ClassLoader of the class issuing the call to `grab`
 
 [[Grape-grabHashMapParameters]]
@@ -282,7 +282,7 @@ maven `runtime` and `master` scopes.
 revision must be used in case of conflicts, independently of
 * conflicts manager
 * `changing:` - <boolean>, default false - Whether the artifact can
-change without it’s version designation changing.
+change without its version designation changing.
 * `transitive:` - <boolean>, default true - Whether to resolve other
 dependencies this module has or not.
 

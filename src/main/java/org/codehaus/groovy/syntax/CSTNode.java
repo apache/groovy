@@ -28,7 +28,7 @@ import java.io.Writer;
 /**
  * An abstract base class for nodes in the concrete syntax tree that is
  * the result of parsing.  Note that the CSTNode is inextricably linked
- * with the Token in that every CSTNode has a Token as it's root.
+ * with the Token in that every CSTNode has a Token as its root.
  *
  * @see Token
  * @see org.codehaus.groovy.syntax.Reduction
@@ -49,7 +49,7 @@ public abstract class CSTNode {
     }
 
     /**
-     * Sets the meaning for this node (and it's root Token).  Not
+     * Sets the meaning for this node (and its root Token).  Not
      * valid if the node isEmpty().  Returns the node, for convenience.
      */
     public CSTNode setMeaning(int meaning) {
@@ -134,7 +134,7 @@ public abstract class CSTNode {
     }
 
     /**
-     * Returns true if the node and it's first child match the specified
+     * Returns true if the node and its first child match the specified
      * types.  Missing nodes are Token.NULL.
      */
     boolean matches(int type, int child1) {
@@ -142,7 +142,7 @@ public abstract class CSTNode {
     }
 
     /**
-     * Returns true if the node and it's first and second child match the
+     * Returns true if the node and its first and second child match the
      * specified types.  Missing nodes are Token.NULL.
      */
     boolean matches(int type, int child1, int child2) {
@@ -150,7 +150,7 @@ public abstract class CSTNode {
     }
 
     /**
-     * Returns true if the node and it's first three children match the
+     * Returns true if the node and its first three children match the
      * specified types.  Missing nodes are Token.NULL.
      */
     boolean matches(int type, int child1, int child2, int child3) {
@@ -158,7 +158,7 @@ public abstract class CSTNode {
     }
 
     /**
-     * Returns true if the node an it's first four children match the
+     * Returns true if the node an its first four children match the
      * specified types.  Missing nodes have type Types.NULL.
      */
     boolean matches(int type, int child1, int child2, int child3, int child4) {
@@ -225,7 +225,7 @@ public abstract class CSTNode {
     public abstract Token getRoot();
 
     /**
-     * Returns the root of the node, the Token that indicates it's
+     * Returns the root of the node, the Token that indicates its
      * type.  Returns a Token.NULL if safe and the actual root is null.
      */
     public Token getRoot(boolean safe) {

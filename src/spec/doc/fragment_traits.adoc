@@ -686,7 +686,7 @@ properties and field are accessed dynamically (it's a limitation from the JVM).
 * Static methods do not appear within the generated interfaces for each trait.
 * The trait is interpreted as a _template_ for the implementing class, which means that each
 implementing class will get its own static methods, properties and fields. So a static member
-declared on a trait doesn't belong to the `Trait`, but to it's implementing class.
+declared on a trait doesn't belong to the `Trait`, but to its implementing class.
 * You should typically not mix static and instance methods of the same signature. The normal
 rules for applying traits apply (including multiple inheritance conflict resolution). If the
 method chosen is static but some implemented trait has an instance variant, a compilation error

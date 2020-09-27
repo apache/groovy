@@ -57,7 +57,7 @@ public class Reduction extends CSTNode {
 
     /**
      * Creates a new <code>Reduction</code> with <code>Token.NULL</code>
-     * as it's root.
+     * as its root.
      */
     public static Reduction newContainer() {
         return new Reduction(Token.NULL);
@@ -94,7 +94,7 @@ public class Reduction extends CSTNode {
     }
 
     /**
-     * Returns the root of the node, the Token that indicates it's
+     * Returns the root of the node, the Token that indicates its
      * type.  Returns null if there is no root (usually only if the
      * node is a placeholder of some kind -- see isEmpty()).
      */
