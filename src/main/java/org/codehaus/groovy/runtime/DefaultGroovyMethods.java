@@ -8790,7 +8790,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (self == null)
             throw new GroovyRuntimeException("Fail to convert Object[] to SpreadMap, because it is null.");
         else if (self.length % 2 != 0)
-            throw new GroovyRuntimeException("Fail to convert Object[] to SpreadMap, because it's size is not even.");
+            throw new GroovyRuntimeException("Fail to convert Object[] to SpreadMap, because its size is not even.");
         else
             return new SpreadMap(self);
     }
@@ -8808,7 +8808,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (self == null)
             throw new GroovyRuntimeException("Fail to convert List to SpreadMap, because it is null.");
         else if (self.size() % 2 != 0)
-            throw new GroovyRuntimeException("Fail to convert List to SpreadMap, because it's size is not even.");
+            throw new GroovyRuntimeException("Fail to convert List to SpreadMap, because its size is not even.");
         else
             return new SpreadMap(self);
     }

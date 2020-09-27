@@ -113,7 +113,7 @@ public class LineColumnReader extends BufferedReader {
                     mark(1);
                     c = (char)super.read();
                     // check if we have \r\n like on Windows
-                    // if it's not \r\n we reset, otherwise, the \n is just consummed
+                    // if it's not \r\n we reset, otherwise, the \n is just consumed
                     if (c != '\n') {
                         reset();
                     }

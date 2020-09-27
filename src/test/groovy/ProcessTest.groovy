@@ -75,7 +75,7 @@ class ProcessTest extends GroovyTestCase {
         assert myProcess.out != null
     }
 
-    // @todo - ps.waitForOrKill(secs) creates it's own thread, leave this out of test suite for now...
+    // @todo - ps.waitForOrKill(secs) creates its own thread, leave this out of test suite for now...
 
     void tearDown() {
         myProcess.destroy()

@@ -30,7 +30,7 @@ public interface Factory {
     boolean isLeaf();
 
     /**
-     * Does this factory "Own" it's child closure.
+     * Does this factory "Own" its child closure.
      *
      * @return true  if the factory should have onContentClosure() called,
      *         false if the builder should handle it

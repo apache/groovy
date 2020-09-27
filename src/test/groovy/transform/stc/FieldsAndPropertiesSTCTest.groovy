@@ -420,7 +420,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 String getFooFromTop() { foo }
             }
 
-            // a subclass defining it's own field
+            // a subclass defining its own field
             class Bottom extends Top {
                 private String foo
 

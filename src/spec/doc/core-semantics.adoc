@@ -1973,7 +1973,7 @@ is `groovy.transform.stc.FirstParam` which indicated to the type checker that th
 whose type is the type of the first parameter of the method. In this case, the first parameter of the method is `Person`,
 so it indicates to the type checker that the first parameter of the closure is in fact a `Person`.
 
-A second optional argument is named _options_. It's semantics depend on the _type hint_ class. Groovy comes with
+A second optional argument is named _options_. Its semantics depend on the _type hint_ class. Groovy comes with
 various bundled type hints, illustrated in the table below:
 
 [cols="1a,1,4a"]
