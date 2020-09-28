@@ -23,14 +23,18 @@
  */
 
 import org.apache.groovy.gradle.ReleaseInfoGenerator
-import org.apache.groovy.gradle.SharedConfiguration
+import org.apache.groovy.gradle.GroovyLibraryExtension
 
 plugins {
     id 'org.apache.groovy-shared-repositories'
     id 'java-library'
     id 'groovy'
-    id 'org.apache.published-library'
+    id 'org.apache.groovy-base'
+    id 'org.apache.groovy-documented'
+    id 'org.apache.groovy-published-library'
 }
+
+project.extensions.create("groovyLibrary", GroovyLibraryExtension, project.objects)
 
 java {
     withSourcesJar()
@@ -38,11 +42,6 @@ java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
 }
-
-def config = rootProject.extensions.getByType(SharedConfiguration)
-
-group = 'org.apache.groovy'
-version = config.groovyVersion.get()
 
 task generateReleaseInfo(type: ReleaseInfoGenerator)
 
@@ -52,7 +51,7 @@ task groovydocJar(type: Jar, dependsOn: groovydoc) {
 }
 
 configurations {
-    groovyDocElements {
+    groovydocElements {
         canBeConsumed = true
         canBeResolved = false
         attributes {
@@ -65,14 +64,47 @@ configurations {
             artifact groovydocJar
         }
     }
+    sourcesForAggregation {
+        canBeConsumed = true
+        canBeResolved = false
+        extendsFrom implementation, runtimeOnly
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
+            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
+            attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, DocsType.SOURCES))
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, "aggregation"))
+        }
+        outgoing {
+            sourceSets.main.java.srcDirs.each {
+                artifact(it)
+            }
+            sourceSets.main.groovy.srcDirs.each {
+                artifact(it)
+            }
+        }
+    }
+    javadocClasspath {
+        canBeConsumed = true
+        canBeResolved = false
+        extendsFrom implementation, runtimeOnly, compileOnly, compileOnlyApi
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, "javadocClasspath"))
+        }
+        outgoing {
+            artifact jar
+        }
+    }
 }
 
 components.java {
-    addVariantsFromConfiguration(configurations.groovyDocElements) {
+    addVariantsFromConfiguration(configurations.groovydocElements) {
         mapToOptional()
     }
 }
 
+// TODO: Convert to proper task
 task dgmConverter(dependsOn: compileJava) {
     outputs.cacheIf { true }
 
@@ -96,9 +128,8 @@ task dgmConverter(dependsOn: compileJava) {
     outputs.dir outputDir
 }
 
-tasks.withType(JavaCompile).configureEach {
+tasks.withType(AbstractCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.incremental = true
     //options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 
     if (classpath) {

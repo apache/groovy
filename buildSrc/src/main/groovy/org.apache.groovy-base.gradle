@@ -1,0 +1,7 @@
+import org.apache.groovy.gradle.SharedConfiguration
+
+def config = rootProject.extensions.getByType(SharedConfiguration)
+
+group = 'org.apache.groovy'
+version = config.groovyVersion.get()
+

@@ -21,11 +21,8 @@ plugins {
 }
 
 dependencies {
-    api('javax.servlet:javax.servlet-api:3.0.1') { dep ->
-        provided dep
-    }
-    api('javax.servlet:jsp-api:2.0') { dep ->
-        provided dep
+    compileOnlyApi('javax.servlet:javax.servlet-api:3.0.1')
+    compileOnlyApi('javax.servlet:jsp-api:2.0') { dep ->
         exclude(group: 'javax.servlet', module: 'servlet-api')
     }
 
@@ -35,6 +32,10 @@ dependencies {
     // needed by TemplateServlet
     implementation project(':groovy-templates')
 
+    testImplementation('javax.servlet:javax.servlet-api:3.0.1')
+    testImplementation('javax.servlet:jsp-api:2.0') { dep ->
+        exclude(group: 'javax.servlet', module: 'servlet-api')
+    }
     testImplementation "jmock:jmock:$jmockVersion"
     testImplementation rootProject.sourceSets.test.runtimeClasspath
     testImplementation project(':groovy-json')

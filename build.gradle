@@ -292,6 +292,10 @@ task checkCompatibility {
     }
 }
 
+javadoc {
+    exclude '**/GroovyRecognizer.java' // generated file
+}
+
 if (!JavaVersion.current().java9Compatible) {
     logger.lifecycle '''
     **************************************** WARNING ********************************************
@@ -309,7 +313,6 @@ apply from: 'gradle/test.gradle'
 apply from: 'gradle/groovydoc.gradle'
 apply from: 'gradle/docs.gradle'
 apply from: 'gradle/assemble.gradle'
-apply from: 'gradle/upload.gradle'
 apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
 apply from: 'gradle/quality.gradle'

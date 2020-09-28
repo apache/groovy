@@ -1,0 +1,86 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+
+configurations {
+    /*
+     * This setup is very specific to the Groovy project:
+     *
+     * because we want to execute groovydoc with the _currently built_ version
+     * of Groovy doc, we need to create a configuration which will resolve the
+     * currently built groovydoc tool and set it as the "groovy path" of the
+     * Groovydoc task
+     */
+    groovydocClasspath {
+        canBeConsumed = false
+        canBeResolved = true
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+        }
+    }
+}
+
+dependencies {
+    groovydocClasspath project(":groovy-groovydoc")
+    groovydocClasspath project(":groovy-ant")
+}
+
+tasks.withType(Javadoc).configureEach {
+    maxMemory = javaDoc_mx
+    options {
+        if (JavaVersion.current().isJava9Compatible()) {
+            addBooleanOption('html5', true)
+        }
+        addStringOption('Xdoclint:none', '-quiet')
+        windowTitle = "Groovy ${version}"
+        docTitle = "Groovy ${version}"
+        locale = 'en_US'
+        encoding = 'UTF-8'
+        version = true
+        overview = rootProject.file('src/main/java/overviewj.html')
+        footer = 'Copyright &copy; 2003-2020 The Apache Software Foundation. All rights reserved.'
+        source = '1.8'
+        links('https://docs.oracle.com/javase/8/docs/api/',
+                'https://docs.oracle.com/javaee/7/api/',
+                'https://commons.apache.org/proper/commons-cli/javadocs/api-release/',
+                'https://junit.org/junit4/javadoc/latest/',
+                'https://docs.oracle.com/javaee/6/api/')
+    }
+}
+
+tasks.withType(Groovydoc).configureEach {
+    source = sourceSets.main.allSource
+    groovyClasspath = configurations.groovydocClasspath
+    use = true
+    ext.windowtitle = "Groovy ${version}"
+    ext.doctitle = "Groovy ${version}"
+    header = "Groovy ${version}"
+    footer = 'Copyright &copy; 2003-2020 The Apache Software Foundation. All rights reserved.'
+    overviewText = rootProject.resources.text.fromFile('src/main/java/overview.html')
+    includePrivate = false
+    link 'https://docs.oracle.com/javaee/7/api/', 'javax.servlet.', 'javax.management.'
+    link 'https://docs.oracle.com/javase/8/docs/api/', 'java.', 'org.xml.', 'javax.', 'org.w3c.'
+    link 'https://docs.groovy-lang.org/docs/ant/api/', 'org.apache.ant.', 'org.apache.tools.ant.'
+    link 'https://junit.org/junit4/javadoc/latest/', 'org.junit.', 'junit.'
+    link 'https://junit.org/junit5/docs/current/api/', 'org.junit.jupiter.', 'org.junit.platform.'
+    link 'https://www.antlr.org/api/Java/', 'org.antlr.v4.'
+    link 'https://commons.apache.org/proper/commons-cli/javadocs/api-release/', 'org.apache.commons.cli.'
+    link 'https://picocli.info/apidocs/', 'picocli.'
+}
