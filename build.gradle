@@ -131,6 +131,21 @@ ext {
     jcipAnnotationsVersion = '1.0'
 }
 
+java {
+    registerFeature("gpars") {
+        usingSourceSet(sourceSets.main)
+    }
+    registerFeature("grapes") {
+        usingSourceSet(sourceSets.main)
+    }
+    registerFeature("xstreamAst") {
+        usingSourceSet(sourceSets.main)
+    }
+    registerFeature("logging") {
+        usingSourceSet(sourceSets.main)
+    }
+}
+
 dependencies {
     // for internal CLI usage
     api "info.picocli:picocli:$picocliVersion" // marked as api but manually excluded later in assemble.gradle - modules will use shaded version
@@ -141,19 +156,21 @@ dependencies {
     implementation "org.ow2.asm:asm-commons:$asmVersion"
     implementation "org.ow2.asm:asm-tree:$asmVersion"
     implementation "org.ow2.asm:asm-util:$asmVersion"
-    implementation("com.thoughtworks.xstream:xstream:$xstreamVersion") {
+    implementation "com.googlecode:openbeans:$openbeansVersion"
+
+    loggingImplementation "org.fusesource.jansi:jansi:$jansiVersion"
+
+    xstreamAstImplementation("com.thoughtworks.xstream:xstream:$xstreamVersion") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
         exclude(group: 'xmlpull', module: 'xmlpull')
     }
-    implementation "com.googlecode:openbeans:$openbeansVersion"
-    implementation "org.fusesource.jansi:jansi:$jansiVersion"
-    implementation("org.apache.ivy:ivy:$ivyVersion") {
+    grapesImplementation("org.apache.ivy:ivy:$ivyVersion") {
         transitive = false
     }
 
-    implementation("org.codehaus.gpars:gpars:$gparsVersion") {
+    gparsImplementation("org.codehaus.gpars:gpars:$gparsVersion") {
         exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
     }
 
