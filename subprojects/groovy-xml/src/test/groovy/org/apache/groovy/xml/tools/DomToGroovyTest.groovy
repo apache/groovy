@@ -86,7 +86,7 @@ class DomToGroovyTest extends GroovyTestCase {
 
     protected DocumentBuilder builder
     protected DomToGroovy converter
-    protected File dir = new File("target/generated-groovyxml")
+    protected File dir = new File("build/generated-groovyxml")
 
     void testConversion() {
         convert("test1.xml", "test1.groovy")

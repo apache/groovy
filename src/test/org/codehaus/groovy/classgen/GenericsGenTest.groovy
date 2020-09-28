@@ -69,7 +69,7 @@ class GenericsGenTest extends GroovyTestCase {
                 "stubDir": createTempDir("groovy-stub-", "-stub"),
                 "namedValues": ["target", "1.7", "source", "1.7"] as String[]
         ]
-        config.classpath = "target/classes"
+        config.classpath = "build/classes"
         FileSystemCompiler compiler = new FileSystemCompiler(config)
         compiler.compile(fileList.toArray(new File[fileList.size()]))
     }

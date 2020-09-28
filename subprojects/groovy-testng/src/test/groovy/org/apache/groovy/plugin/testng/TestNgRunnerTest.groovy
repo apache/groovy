@@ -25,7 +25,7 @@ class TestNgRunnerTest extends GroovyShellTestCase {
     @Override
     void setUp() {
         super.setUp()
-        System.setProperty('groovy.plugin.testng.output', 'target/testng-output')
+        System.setProperty('groovy.plugin.testng.output', 'build/testng-output')
     }
 
     @Override

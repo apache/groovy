@@ -63,7 +63,7 @@ class InterfaceTest extends GroovyTestCase {
                 "stubDir": createTempDir("groovy-stub-", "-stub"),
 //            "namedValues" : ["target","1.5","source","1.5"] as String[]
         ]
-        config.classpath = "target/classes"
+        config.classpath = "build/classes"
         FileSystemCompiler compiler = new FileSystemCompiler(config)
         compiler.compile(fileList.toArray(new File[fileList.size()]))
     }

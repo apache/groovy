@@ -68,7 +68,7 @@ public class CompilerPerformanceTest {
         }
 
         System.out.println("Compilation took " + stats.getMean() + "ms ± " + stats.getStandardDeviation() + "ms");
-        FileWriter wrt = new FileWriter(new File("target/compilation-stats.csv"), true);
+        FileWriter wrt = new FileWriter(new File("build/compilation-stats.csv"), true);
         wrt.append(String.format("%s;%s;%s\n", GROOVY_VERSION, stats.getMean(), stats.getStandardDeviation()));
         wrt.close();
     }

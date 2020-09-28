@@ -232,7 +232,7 @@ class DocGenerator {
 
         def start = System.currentTimeMillis()
 
-        def outputDir = new File(options.outputDir ?: "target/html/groovy-jdk")
+        def outputDir = new File(options.outputDir ?: "build/html/groovy-jdk")
         outputDir.mkdirs()
         CONFIG.title = options.title ?: "Groovy JDK"
         if (options.links) {

@@ -108,11 +108,11 @@ print myURI
     // Gotta use configscript for this because : separated paths can't have : in them
     // and GroovyMain ignores -cp.
     void testURIClasspath() {
-        def tempDir1 = new File("target/tmp/GroovyMainTest1")
+        def tempDir1 = new File("build/tmp/GroovyMainTest1")
         tempDir1.mkdirs()
         def interfaceFile = File.createTempFile("GroovyMainTestInterface", ".groovy", tempDir1)
         interfaceFile.deleteOnExit()
-        def tempDir2 = new File("target/tmp/GroovyMainTest2")
+        def tempDir2 = new File("build/tmp/GroovyMainTest2")
         tempDir2.mkdirs()
         def concreteFile = File.createTempFile("GroovyMainTestConcrete", ".groovy", tempDir2)
         concreteFile.deleteOnExit()
@@ -127,7 +127,7 @@ print myURI
             concreteFile.write """class MyConcreteClass implements $interfaceName { }
 assert new MyConcreteClass() != null"""
 
-            def tempDir = new File("target/tmp/GroovyMainTest3")
+            def tempDir = new File("build/tmp/GroovyMainTest3")
             tempDir.mkdirs()
             def configScriptFile = File.createTempFile("config", ".groovy", tempDir)
             configScriptFile.deleteOnExit()
@@ -145,7 +145,7 @@ assert new MyConcreteClass() != null"""
         // current xstream causes illegal access errors on JDK9+ - skip on those JDK versions, get coverage on older versions
         if (isAtLeastJdk('9.0')) return
 
-        def temporaryDirectory = new File("target/tmp/testGroovyXMLAstGeneration/")
+        def temporaryDirectory = new File("build/tmp/testGroovyXMLAstGeneration/")
         temporaryDirectory.mkdirs()
 
         def scriptFile = new File(temporaryDirectory, "Script1.groovy")

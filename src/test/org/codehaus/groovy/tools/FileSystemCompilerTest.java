@@ -57,7 +57,7 @@ public class FileSystemCompilerTest extends GroovyTestCase {
     }
 
     protected void setUp() throws Exception {
-        File dir = new File("target/test-generated-classes");
+        File dir = new File("build/test-generated-classes");
         dir.mkdirs();
         Map options = new HashMap();
         options.put("stubDir", dir);
@@ -78,7 +78,7 @@ public class FileSystemCompilerTest extends GroovyTestCase {
             // this is why shouldFail {} exists in Groovy tests
         }
 
-        File dir = new File("target/test-generated-classes/cl");
+        File dir = new File("build/test-generated-classes/cl");
         dir.mkdirs();
         FileSystemCompiler.commandLineCompile(new String[] {"src/test/groovy/LittleClosureTest.groovy", "-d", dir.getPath()});
     }

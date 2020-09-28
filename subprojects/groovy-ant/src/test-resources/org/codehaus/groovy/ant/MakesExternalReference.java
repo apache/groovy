@@ -25,7 +25,7 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
 public class MakesExternalReference {
     public static void main(String[] args) throws IOException {
         FileOutputStream fout = new FileOutputStream(
-            new File("target/classes/groovy/test/org/codehaus/groovy/ant/MakesExternalReference_Result.txt"));
+            new File("build/classes/groovy/test/org/codehaus/groovy/ant/MakesExternalReference_Result.txt"));
         try {
             assert !isEmpty(" ");
             fout.write("OK.".getBytes());

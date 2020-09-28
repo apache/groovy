@@ -35,30 +35,30 @@ jobs:
         run: ./gradlew clean dist --no-build-cache --no-scan
         timeout-minutes: 60
       - name: Move binary distribution
-        run:  mkdir target/distributions/binary/ && mv target/distributions/apache-groovy-binary-*.zip target/distributions/binary/
+        run:  mkdir build/distributions/binary/ && mv build/distributions/apache-groovy-binary-*.zip build/distributions/binary/
       - name: Move src distribution
-        run:  mkdir target/distributions/src/ && mv target/distributions/apache-groovy-src-*.zip target/distributions/src/
+        run:  mkdir build/distributions/src/ && mv build/distributions/apache-groovy-src-*.zip build/distributions/src/
       - name: Move docs distribution
-        run:  mkdir target/distributions/docs/ && mv target/distributions/apache-groovy-docs-*.zip target/distributions/docs/
+        run:  mkdir build/distributions/docs/ && mv build/distributions/apache-groovy-docs-*.zip build/distributions/docs/
       - name: Move sdk distribution
-        run:  mkdir target/distributions/sdk/ && mv target/distributions/apache-groovy-sdk-*.zip target/distributions/sdk/
+        run:  mkdir build/distributions/sdk/ && mv build/distributions/apache-groovy-sdk-*.zip build/distributions/sdk/
       - name: Upload binary distribution
         uses: actions/upload-artifact@v1
         with:
           name: apache-groovy-binary-SNAPSHOT
-          path: target/distributions/binary/
+          path: build/distributions/binary/
       - name: Upload src distribution
         uses: actions/upload-artifact@v1
         with:
           name: apache-groovy-src-SNAPSHOT
-          path: target/distributions/src/
+          path: build/distributions/src/
       - name: Upload docs distribution
         uses: actions/upload-artifact@v1
         with:
           name: apache-groovy-docs-SNAPSHOT
-          path: target/distributions/docs/
+          path: build/distributions/docs/
       - name: Upload sdk distribution
         uses: actions/upload-artifact@v1
         with:
           name: apache-groovy-sdk-SNAPSHOT
-          path: target/distributions/sdk/
+          path: build/distributions/sdk/

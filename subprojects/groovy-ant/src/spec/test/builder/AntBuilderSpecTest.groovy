@@ -68,7 +68,7 @@ class AntBuilderSpecTest extends AntTestCase {
             // here is an example of a block of Ant inside GroovyMarkup
             ant.sequential {
                 echo("inside sequential")
-                def myDir = "target/AntTest/"
+                def myDir = "build/AntTest/"
                 mkdir(dir: myDir)
                 copy(todir: myDir) {
                     fileset(dir: "src/test") {
@@ -79,7 +79,7 @@ class AntBuilderSpecTest extends AntTestCase {
             }
 
             // now let's do some normal Groovy again
-            def file = new File(ant.project.baseDir,"target/AntTest/some/pkg/MyTest.groovy")
+            def file = new File(ant.project.baseDir,"build/AntTest/some/pkg/MyTest.groovy")
             assert file.exists()
             // end::copy_files[]
         }
