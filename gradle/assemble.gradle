@@ -20,16 +20,14 @@
 import org.apache.tools.ant.filters.ReplaceTokens
 import org.apache.groovy.gradle.JarJarTask
 
-group = 'org.apache.groovy'
 archivesBaseName = 'groovy'
 
 ext.srcSpec = copySpec {
     from(projectDir) {
-        exclude 'target',
-                'build',
+        exclude 'build',
                 'benchmark',
-                'subprojects/*/target',
-                'buildSrc/target',
+                'subprojects/*/build',
+                'buildSrc/build',
                 buildDir.path,
                 'classes/**',
                 'cruise/**',
@@ -302,24 +300,13 @@ subprojects { sp ->
     }
 }
 
-task sourceAllJar(type: Jar, dependsOn: { modules()*.sourceJar + rootProject.sourceJar }) {
-    with sourceJar.rootSpec
-    modules()*.sourceJar.each {
+task sourceAllJar(type: Jar, dependsOn: { modules()*.sourcesJar + rootProject.sourcesJar }) {
+    with sourcesJar.rootSpec
+    modules()*.sourcesJar.each {
         with it.rootSpec
     }
     archiveBaseName = 'groovy-all'
     archiveClassifier = 'sources'
-}
-
-allprojects {
-    task javadocJar(type: Jar, dependsOn: javadoc) {
-        from javadoc.destinationDir
-        archiveClassifier = 'javadoc'
-    }
-    task groovydocJar(type: Jar, dependsOn: groovydoc) {
-        from groovydoc.destinationDir
-        archiveClassifier = 'groovydoc'
-    }
 }
 
 task javadocAllJar(type: Jar, dependsOn: javadocAll) {

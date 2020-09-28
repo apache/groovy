@@ -28,7 +28,7 @@ allprojects {
 }
 
 gradle.taskGraph.whenReady { taskGraph ->
-    if (project.ext.isReleaseVersion &&
+    if (project.sharedConfiguration.isReleaseVersion.get() &&
             (taskGraph.hasTask(':artifactoryPublish') || project.hasProperty('forceSign'))) {
         // Use Java 6's console or Swing to read input (not suitable for CI)
         if (!project.hasProperty('signing.keyId') ||

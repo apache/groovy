@@ -16,6 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+plugins {
+    id 'org.apache.groovy-library'
+}
 
 ext {
     jacksonVersion = '2.11.2'

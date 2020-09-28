@@ -17,4 +17,6 @@
  *  under the License.
  */
 
-buildDir = 'target'
+plugins {
+    id 'groovy-gradle-plugin'
+}

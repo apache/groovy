@@ -16,6 +16,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+plugins {
+    id 'org.apache.groovy-library'
+}
+
 dependencies {
     api rootProject // Sql uses Closure...
     testImplementation group: 'org.hsqldb', name: 'hsqldb', version: '2.5.1'

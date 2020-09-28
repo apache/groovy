@@ -1,0 +1,17 @@
+plugins {
+    id 'maven-publish'
+}
+
+publishing {
+    repositories {
+        maven {
+            name "FileRepo"
+            url "${rootProject.buildDir}/repo"
+        }
+    }
+    publications {
+        maven(MavenPublication) {
+            from components.java
+        }
+    }
+}

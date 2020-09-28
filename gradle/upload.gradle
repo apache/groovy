@@ -59,21 +59,21 @@ allprojects {
             }
         }
         ext.signWithClassifier = { String c, File f ->
-            if (rootProject.isReleaseVersion) {
+            if (rootProject.sharedConfiguration.isReleaseVersion.get()) {
                 signing.sign(c, f)
                 def ascFile = new File(f.parent, f.name + '.asc')
                 addSigFile(ascFile, c, 'jar.asc', null)
             }
         }
         ext.signWithName = { String baseName, File f ->
-            if (rootProject.isReleaseVersion) {
+            if (rootProject.sharedConfiguration.isReleaseVersion.get()) {
                 signing.sign(null, f)
                 def ascFile = new File(f.parent, f.name + '.asc')
                 addSigFile(ascFile, null, 'jar.asc', baseName)
             }
         }
         ext.signArchiveTask = { archiveTask ->
-            if (rootProject.isReleaseVersion) {
+            if (rootProject.sharedConfiguration.isReleaseVersion.get()) {
                 signing.sign(archiveTask.classifier, archiveTask.archivePath)
                 def ascFile = new File(archiveTask.destinationDir, archiveTask.archiveName + '.asc')
                 addSigFile(ascFile, archiveTask.classifier, archiveTask.extension + '.asc', archiveTask.baseName)
@@ -84,7 +84,7 @@ allprojects {
             repositories {
                 mavenDeployer {
                     pom pomConfigureClosure
-                    beforeDeployment { MavenDeployment deployment -> if (rootProject.isReleaseVersion) signing.signPom(deployment) }
+                    beforeDeployment { MavenDeployment deployment -> if (rootProject.sharedConfiguration.isReleaseVersion.get()) signing.signPom(deployment) }
                 }
             }
         }
@@ -93,14 +93,14 @@ allprojects {
             repositories {
                 mavenInstaller {
                     pom pomConfigureClosure
-                    beforeDeployment { MavenDeployment deployment -> if (rootProject.isReleaseVersion) signing.signPom(deployment) }
+                    beforeDeployment { MavenDeployment deployment -> if (rootProject.sharedConfiguration.isReleaseVersion.get()) signing.signPom(deployment) }
                 }
             }
         }
 
         artifacts {
             archives jarjar.outputFile
-            archives sourceJar
+            archives sourcesJar
             archives javadocJar
             archives groovydocJar
         }
@@ -110,7 +110,7 @@ allprojects {
         }
 
         [uploadArchives, install]*.with {
-            dependsOn([grooidjar, jarjar, sourceJar, javadocJar, groovydocJar])
+            dependsOn([grooidjar, jarjar, sourcesJar, javadocJar, groovydocJar])
             doFirst {
                 def grooidJarFile = rootProject.ext.deriveFile(jarjar.outputFile, 'grooid')
                 if (grooidJarFile.exists()) {
@@ -124,7 +124,7 @@ allprojects {
                 // gradle doesn't expect us to mutate configurations like we do here
                 // so signing the configuration won't work and we do it manually here
                 signWithName(jar.baseName, jarjar.outputFile)
-                signArchiveTask(sourceJar)
+                signArchiveTask(sourcesJar)
                 signArchiveTask(javadocJar)
                 signArchiveTask(groovydocJar)
                 def grooidJarFile = rootProject.ext.deriveFile(jarjar.outputFile, 'grooid')

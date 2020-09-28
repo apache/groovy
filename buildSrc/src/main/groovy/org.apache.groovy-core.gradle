@@ -16,18 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-plugins {
-    id 'org.apache.groovy-library'
+import org.apache.groovy.gradle.SharedConfiguration
+
+if (project == rootProject) {
+    project.extensions.create(SharedConfiguration, 'sharedConfiguration', SharedConfiguration, project.objects, project.providers)
 }
 
-dependencies {
-    api rootProject  // SwingBuilder extends FactoryBuilderSupport...
-    testImplementation rootProject.sourceSets.test.runtimeClasspath
-    testImplementation project(':groovy-test')
-}
-task moduleDescriptor(type: org.apache.groovy.gradle.WriteExtensionDescriptorTask) {
-    extensionClasses = 'org.apache.groovy.swing.extensions.SwingExtensions'
-}
-compileJava.dependsOn moduleDescriptor
+pluginManager.apply('org.apache.groovy-library')
 
-apply from: "${rootProject.projectDir}/gradle/jacoco/jacocofix.gradle"
+

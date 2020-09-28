@@ -20,34 +20,46 @@ package org.apache.groovy.gradle
 
 import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
-import org.gradle.api.tasks.TaskAction
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.TaskAction
 
 import java.text.SimpleDateFormat
 
 @CompileStatic
 class ReleaseInfoGenerator extends DefaultTask {
+    @Internal
     String description = "Generates the release info properties file"
 
     @Input
-    String version
+    final Property<String> version = project.objects.property(String).convention(
+            project.providers.gradleProperty("groovyVersion")
+    )
 
     @Input
-    String bundleVersion
+    final Property<String> bundleVersion = project.objects.property(String).convention(
+            project.providers.gradleProperty("groovyBundleVersion")
+    )
 
     @Input
-    Date buildDate
+    final Property<Date> buildDate  = project.objects.property(Date).convention(
+            project.rootProject.extensions.getByType(SharedConfiguration).buildDate
+    )
 
     @OutputFile
-    File outputFile
+    final RegularFileProperty outputFile = project.objects.fileProperty().convention(
+            project.layout.buildDirectory.file("release-info/groovy-release-info.properties")
+    )
 
     @TaskAction
     void generateDescriptor() {
-        String date = new SimpleDateFormat('dd-MMM-yyyy').format(buildDate)
-        String time = new SimpleDateFormat('hh:mm aa').format(buildDate)
+        String date = new SimpleDateFormat('dd-MMM-yyyy').format(buildDate.get())
+        String time = new SimpleDateFormat('hh:mm aa').format(buildDate.get())
 
-        outputFile.withWriter('utf-8') {
+        outputFile.get().asFile.withWriter('utf-8') {
             it.write("""#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -67,8 +79,8 @@ class ReleaseInfoGenerator extends DefaultTask {
 #  under the License.
 #
 
-ImplementationVersion=$version
-BundleVersion=$bundleVersion
+ImplementationVersion=${version.get()}
+BundleVersion=${bundleVersion.get()}
 BuildDate=$date
 BuildTime=$time
 """)

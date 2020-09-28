@@ -1,0 +1,107 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+
+/**
+ * This script defines a conventional plugin for Groovy libraries produced by
+ * the build
+ */
+
+import org.apache.groovy.gradle.ReleaseInfoGenerator
+import org.apache.groovy.gradle.SharedConfiguration
+
+plugins {
+    id 'org.apache.groovy-shared-repositories'
+    id 'java-library'
+    id 'groovy'
+    id 'org.apache.published-library'
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+def config = rootProject.extensions.getByType(SharedConfiguration)
+
+group = 'org.apache.groovy'
+version = config.groovyVersion.get()
+
+task generateReleaseInfo(type: ReleaseInfoGenerator)
+
+task groovydocJar(type: Jar, dependsOn: groovydoc) {
+    from groovydoc.destinationDir
+    archiveClassifier = 'groovydoc'
+}
+
+configurations {
+    groovyDocElements {
+        canBeConsumed = true
+        canBeResolved = false
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
+            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
+            attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, "groovydoc"))
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+        }
+        outgoing {
+            artifact groovydocJar
+        }
+    }
+}
+
+components.java {
+    addVariantsFromConfiguration(configurations.groovyDocElements) {
+        mapToOptional()
+    }
+}
+
+task dgmConverter(dependsOn: compileJava) {
+    outputs.cacheIf { true }
+
+    description = 'Generates DGM info file required for faster startup.'
+    def classpath = files(sourceSets.main.output.classesDirs, configurations.compileClasspath)
+    ext.outputDir = file("$buildDir/dgm")
+
+    //main = 'org.codehaus.groovy.tools.DgmConverter'
+    //args = ['--info', classesDir.absolutePath]
+    doFirst {
+        file("$outputDir/META-INF").mkdirs()
+        // we use ant.java because Gradle is a bit "too smart" with JavaExec
+        // as it will invalidate the task if classpath changes, which will
+        // happen once Groovy files are compiled
+        ant.java(classname: 'org.codehaus.groovy.tools.DgmConverter', classpath: classpath.asPath) {
+            arg(value: '--info')
+            arg(value: "$outputDir.absolutePath")
+        }
+    }
+    inputs.files fileTree('src/main').include('**/*GroovyMethods.java')
+    outputs.dir outputDir
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.incremental = true
+    //options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+
+    if (classpath) {
+        classpath = classpath + files(dgmConverter.outputDir)
+    }
+}

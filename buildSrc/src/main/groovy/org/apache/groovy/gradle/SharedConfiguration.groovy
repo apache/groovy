@@ -16,18 +16,22 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-plugins {
-    id 'org.apache.groovy-library'
-}
+package org.apache.groovy.gradle
 
-dependencies {
-    api rootProject  // SwingBuilder extends FactoryBuilderSupport...
-    testImplementation rootProject.sourceSets.test.runtimeClasspath
-    testImplementation project(':groovy-test')
-}
-task moduleDescriptor(type: org.apache.groovy.gradle.WriteExtensionDescriptorTask) {
-    extensionClasses = 'org.apache.groovy.swing.extensions.SwingExtensions'
-}
-compileJava.dependsOn moduleDescriptor
+import groovy.transform.CompileStatic
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
 
-apply from: "${rootProject.projectDir}/gradle/jacoco/jacocofix.gradle"
+@CompileStatic
+class SharedConfiguration {
+    final Provider<String> groovyVersion
+    final Provider<Boolean> isReleaseVersion
+    final Provider<Date> buildDate
+
+    SharedConfiguration(ObjectFactory factory, ProviderFactory providers) {
+        groovyVersion = providers.gradleProperty("groovyVersion").forUseAtConfigurationTime()
+        isReleaseVersion = groovyVersion.map { !it.toLowerCase().contains("snapshot") }
+        buildDate = isReleaseVersion.map { it ? new Date() : new Date(0) }
+    }
+}
