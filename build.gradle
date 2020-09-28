@@ -245,19 +245,6 @@ apply from: 'wrapper.gradle'
 
 
 
-    // Gradle classloading magic with Groovy will only work if it finds a *jar*
-    // on classpath. This "bootstrap jar" contains the minimal compiler, without .groovy compiled files
-
-task bootstrapJar(type:Jar ) {
-    dependsOn compileJava, dgmConverter
-
-    from compileJava.destinationDir
-    from dgmConverter.outputDir
-
-    destinationDir = file("$buildDir/bootstrap")
-    classifier = 'bootstrap'
-}
-
 allprojects {
     pluginManager.withPlugin('org.apache.groovy-library') {
         dependencies {

@@ -22,8 +22,8 @@
  * the build
  */
 
-import org.apache.groovy.gradle.ReleaseInfoGenerator
 import org.apache.groovy.gradle.GroovyLibraryExtension
+import org.apache.groovy.gradle.ReleaseInfoGenerator
 
 plugins {
     id 'org.apache.groovy-shared-repositories'
@@ -43,10 +43,10 @@ java {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-task generateReleaseInfo(type: ReleaseInfoGenerator)
+tasks.register("generateReleaseInfo", ReleaseInfoGenerator)
 
-task groovydocJar(type: Jar, dependsOn: groovydoc) {
-    from groovydoc.destinationDir
+tasks.register("groovydocJar", Jar) {
+    from groovydoc
     archiveClassifier = 'groovydoc'
 }
 
@@ -104,35 +104,6 @@ components.java {
     }
 }
 
-// TODO: Convert to proper task
-task dgmConverter(dependsOn: compileJava) {
-    outputs.cacheIf { true }
-
-    description = 'Generates DGM info file required for faster startup.'
-    def classpath = files(sourceSets.main.output.classesDirs, configurations.compileClasspath)
-    ext.outputDir = file("$buildDir/dgm")
-
-    //main = 'org.codehaus.groovy.tools.DgmConverter'
-    //args = ['--info', classesDir.absolutePath]
-    doFirst {
-        file("$outputDir/META-INF").mkdirs()
-        // we use ant.java because Gradle is a bit "too smart" with JavaExec
-        // as it will invalidate the task if classpath changes, which will
-        // happen once Groovy files are compiled
-        ant.java(classname: 'org.codehaus.groovy.tools.DgmConverter', classpath: classpath.asPath) {
-            arg(value: '--info')
-            arg(value: "$outputDir.absolutePath")
-        }
-    }
-    inputs.files fileTree('src/main').include('**/*GroovyMethods.java')
-    outputs.dir outputDir
-}
-
 tasks.withType(AbstractCompile).configureEach {
     options.encoding = 'UTF-8'
-    //options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
-
-    if (classpath) {
-        classpath = classpath + files(dgmConverter.outputDir)
-    }
 }

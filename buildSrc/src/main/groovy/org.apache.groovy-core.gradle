@@ -16,7 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 import org.apache.groovy.gradle.SharedConfiguration
+import org.apache.groovy.gradle.DgmConverter
 
 if (project == rootProject) {
     project.extensions.create(SharedConfiguration, 'sharedConfiguration', SharedConfiguration, project.objects, project.providers)
@@ -24,4 +26,23 @@ if (project == rootProject) {
 
 pluginManager.apply('org.apache.groovy-library')
 
+def dgmConverter = tasks.register("dgmConverter", DgmConverter) {
+    classpath.from files(compileJava, configurations.compileClasspath)
+    sources.from('src/main').include('**/*GroovyMethods.java')
+}
+
+jar {
+    from dgmConverter
+}
+
+// Gradle classloading magic with Groovy will only work if it finds a *jar*
+// on classpath. This "bootstrap jar" contains the minimal compiler, without .groovy compiled files
+
+tasks.register("bootstrapJar", Jar) {
+    from compileJava
+    from dgmConverter
+
+    destinationDirectory = layout.buildDirectory.dir("bootstrap")
+    archiveClassifier = 'bootstrap'
+}
 
