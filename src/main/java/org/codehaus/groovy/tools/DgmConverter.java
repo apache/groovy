@@ -58,7 +58,7 @@ import static org.objectweb.asm.Opcodes.V1_3;
 public class DgmConverter {
 
     public static void main(String[] args) throws IOException {
-        String targetDirectory = "target/classes/";
+        String targetDirectory = "build/classes/";
         boolean info = (args.length == 1 && args[0].equals("--info"))
                 || (args.length==2 && args[0].equals("--info"));
         if (info && args.length==2) {

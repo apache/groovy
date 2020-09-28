@@ -16,10 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-import org.codehaus.groovy.tools.FileSystemCompiler as Compiler
-
-
 def benchData = [
     hello           :   [1],
     ackermann       :   [5, 6, 7, 8],
@@ -140,7 +136,7 @@ void execBenchmark(bench, input) {
     input.each { param -> 
         def cp = "./exec/" + File.pathSeparatorChar
         cp += GROOVY_LIB + File.pathSeparatorChar
-        cp += "../target/lib/runtime/*"
+        cp += "../build/lib/runtime/*"
 
         def time1 = System.nanoTime()
 
@@ -168,7 +164,7 @@ void printProgress(it) {
 }
 
 void setGroovyLib() {
-    def f = new File("../target/libs")
+    def f = new File("../build/libs")
     f.eachFile { entry ->
         def name = entry.name
         if (!name.startsWith("groovy-all")) return

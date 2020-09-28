@@ -28,7 +28,7 @@ import static groovy.io.FileVisitResult.*
  */
 class FileTest extends GroovyTestCase {
 
-    def baseDir = new File("target/test-resources/filetest")
+    def baseDir = new File("build/test-resources/filetest")
 
     void setUp() {
         createFolder "emptyFolder"

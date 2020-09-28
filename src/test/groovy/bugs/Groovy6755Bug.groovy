@@ -25,7 +25,7 @@ import org.codehaus.groovy.tools.FileSystemCompiler
 class Groovy6755Bug extends GroovyTestCase {
 
     public void testDeeepGenericJointCompilationImportResolution() {
-        File workDir = new File("target/tmp/Groovy6755Bug")
+        File workDir = new File("build/tmp/Groovy6755Bug")
         workDir.deleteDir()
         workDir.mkdirs()
 

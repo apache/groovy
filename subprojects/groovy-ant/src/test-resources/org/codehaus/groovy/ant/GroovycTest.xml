@@ -23,7 +23,7 @@
 <project name="Test Groovyc Task" default="test1">
 
     <property name="srcPath" value="."/>
-    <property name="destPath" value="${user.dir}/target/classes/groovy/test"/>
+    <property name="destPath" value="${user.dir}/build/classes/groovy/test"/>
 
     <property name="javaVersion" value="7"/>
 

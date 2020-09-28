@@ -114,7 +114,7 @@ class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
         try {
             // On the latest update of the Mac JDK (as of 2009/06/24), the default placement of temp files seems problematic
             // specifying explicitly a custom target directory seems to solve the build issue.
-            tempFolder = new File('./target/generated')
+            tempFolder = new File('./build/generated')
             tempFolder.mkdir()
             file = File.createTempFile("Foo", ".groovy", tempFolder)
 

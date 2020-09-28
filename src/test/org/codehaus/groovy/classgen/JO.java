@@ -37,9 +37,9 @@ public class JO {
     }
 
     public static void main(String[] args) throws Exception {
-        ASMifier.main(new String[]{"target/classes/groovy/swing/SwingBuilder.class"});
-//        ASMifierClassVisitor.main(new String[]{"target/classes/org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite.class"});
-//        ASMifierClassVisitor.main(new String[]{"target/test-classes/spectralnorm.class"});
-//        ASMifierClassVisitor.main(new String[]{"target/test-classes/groovy/bugs/CustomMetaClassTest.class"});
+        ASMifier.main(new String[]{"build/classes/groovy/swing/SwingBuilder.class"});
+//        ASMifierClassVisitor.main(new String[]{"build/classes/org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite.class"});
+//        ASMifierClassVisitor.main(new String[]{"build/test-classes/spectralnorm.class"});
+//        ASMifierClassVisitor.main(new String[]{"build/test-classes/groovy/bugs/CustomMetaClassTest.class"});
     }
 }

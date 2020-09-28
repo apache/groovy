@@ -48,7 +48,7 @@ public class CompilerTest extends GroovyTestCase {
     }
 
     protected void setUp() throws Exception {
-        File dir = new File("target/test-generated-classes");
+        File dir = new File("build/test-generated-classes");
         dir.mkdirs();
 
         CompilerConfiguration config = new CompilerConfiguration();

@@ -54,11 +54,11 @@ grant codeBase "file:${user.dir}/out/-" {
 };
 
 // Gradle build output directory
-grant codeBase "file:${user.dir}/target/-" {
+grant codeBase "file:${user.dir}/build/-" {
     permission java.security.AllPermission;
 };
 
-grant codeBase "file:${user.dir}/subprojects/groovy-test/target/-" {
+grant codeBase "file:${user.dir}/subprojects/groovy-test/build/-" {
     permission java.security.AllPermission;
 };
 
