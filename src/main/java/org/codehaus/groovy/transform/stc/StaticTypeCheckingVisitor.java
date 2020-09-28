@@ -1142,15 +1142,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return null;
     }
 
-    private static ClassNode adjustTypeForSpreading(final ClassNode inferredRightExpressionType, final Expression leftExpression) {
+    private ClassNode adjustTypeForSpreading(final ClassNode inferredRightExpressionType, final Expression leftExpression) {
         // imagine we have: list*.foo = 100
         // then the assignment must be checked against [100], not 100
         ClassNode wrappedRHS = inferredRightExpressionType;
         if (leftExpression instanceof PropertyExpression && ((PropertyExpression) leftExpression).isSpreadSafe()) {
-            wrappedRHS = LIST_TYPE.getPlainNodeReference();
-            wrappedRHS.setGenericsTypes(new GenericsType[]{
-                    new GenericsType(getWrapper(inferredRightExpressionType))
-            });
+            wrappedRHS = extension.buildListType(inferredRightExpressionType);
         }
         return wrappedRHS;
     }
@@ -1679,9 +1676,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         PropertyExpression subExp = new PropertyExpression(varX("{}", contentType), pexp.getPropertyAsString());
         AtomicReference<ClassNode> result = new AtomicReference<>();
         if (existsProperty(subExp, true, new PropertyLookupVisitor(result))) {
-            ClassNode intf = LIST_TYPE.getPlainNodeReference();
-            intf.setGenericsTypes(new GenericsType[]{new GenericsType(getWrapper(result.get()))});
-            return intf;
+            return extension.buildListType(result.get());
         }
         return null;
     }
@@ -1695,10 +1690,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         PropertyExpression subExp = new PropertyExpression(varX("{}", types[0].getType()), pexp.getPropertyAsString());
         AtomicReference<ClassNode> result = new AtomicReference<>();
         if (existsProperty(subExp, true, new PropertyLookupVisitor(result))) {
-            intf = LIST_TYPE.getPlainNodeReference();
-            ClassNode itemType = result.get();
-            intf.setGenericsTypes(new GenericsType[]{new GenericsType(wrapTypeIfNecessary(itemType))});
-            return intf;
+            return extension.buildListType(result.get());
         }
         return null;
     }
@@ -1805,9 +1797,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected void storeInferredTypeForPropertyExpression(final PropertyExpression pexp, final ClassNode flatInferredType) {
         if (pexp.isSpreadSafe()) {
-            ClassNode list = LIST_TYPE.getPlainNodeReference();
-            list.setGenericsTypes(new GenericsType[]{new GenericsType(flatInferredType)});
-            storeType(pexp, list);
+            storeType(pexp, extension.buildListType(flatInferredType));
         } else {
             storeType(pexp, flatInferredType);
         }
@@ -3303,10 +3293,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 subcall.setImplicitThis(call.isImplicitThis());
                 visitMethodCallExpression(subcall);
                 // the inferred type here should be a list of what the subcall returns
-                ClassNode subcallReturnType = getType(subcall);
-                ClassNode listType = LIST_TYPE.getPlainNodeReference();
-                listType.setGenericsTypes(new GenericsType[]{new GenericsType(wrapTypeIfNecessary(subcallReturnType))});
-                storeType(call, listType);
+                storeType(call, extension.buildListType(getType(subcall)));
                 storeTargetMethod(call, subcall.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
             }
             typeCheckingContext.popEnclosingMethodCall();

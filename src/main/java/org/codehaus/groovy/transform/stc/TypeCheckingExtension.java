@@ -36,6 +36,7 @@ import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -324,19 +325,21 @@ public class TypeCheckingExtension {
         return null;
     }
 
-    public ClassNode parameterizedType(ClassNode baseType, ClassNode... genericsTypeArguments) {
+    public ClassNode parameterizedType(final ClassNode baseType, final ClassNode... genericsTypeArguments) {
+        if (baseType.isArray()) {
+            return parameterizedType(baseType.getComponentType(), genericsTypeArguments).makeArray();
+        }
         ClassNode result = baseType.getPlainNodeReference();
-        if (result.isUsingGenerics()) {
-            GenericsType[] gts = new GenericsType[genericsTypeArguments.length];
-            int expectedLength = result.getGenericsTypes().length;
-            if (expectedLength!=genericsTypeArguments.length) {
-                throw new GroovyBugError("Expected number of generic type arguments for "+baseType.toString(false)+" is "+expectedLength
-                + " but you gave "+genericsTypeArguments.length);
+        GenericsType[] generics = baseType.redirect().getGenericsTypes();
+        if (generics != null) {
+            int expectedLength = generics.length;
+            if (expectedLength != genericsTypeArguments.length) {
+                throw new GroovyBugError("Expected number of generic type arguments for " + baseType.toString(false) + " is " + expectedLength + " but you gave " + genericsTypeArguments.length);
             }
-            for (int i = 0; i < gts.length; i++) {
-                gts[i] = new GenericsType(genericsTypeArguments[i]);
-            }
-            result.setGenericsTypes(gts);
+            result.setGenericsTypes(Arrays.stream(genericsTypeArguments)
+                    .map(StaticTypeCheckingVisitor::wrapTypeIfNecessary)
+                    .map(GenericsType::new).toArray(GenericsType[]::new)
+            );
         }
         return result;
     }
