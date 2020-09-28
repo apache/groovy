@@ -2,6 +2,11 @@ plugins {
     id 'maven-publish'
 }
 
+def componentName = 'java'
+if (pluginManager.hasPlugin('java-platform')) {
+    componentName = 'javaPlatform'
+}
+
 publishing {
     repositories {
         maven {
@@ -11,7 +16,7 @@ publishing {
     }
     publications {
         maven(MavenPublication) {
-            from components.java
+            from components[componentName]
         }
     }
 }

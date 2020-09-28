@@ -29,9 +29,12 @@ gradleEnterprise {
     }
 }
 
-def subprojects = ['groovy-ant',
+def subprojects = [
+        'groovy-all',
+        'groovy-ant',
         'groovy-astbuilder',
         'groovy-bsf',
+        'groovy-bom',
         'groovy-cli-commons',
         'groovy-cli-picocli',
         'groovy-console',

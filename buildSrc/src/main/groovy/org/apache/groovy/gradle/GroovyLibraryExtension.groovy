@@ -16,36 +16,19 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-plugins {
-    id 'org.apache.groovy-library'
-}
+package org.apache.groovy.gradle
 
-groovyLibrary {
-    includeInGroovyAll = false
-}
+import groovy.transform.CompileStatic
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Property
+/**
+ * Provides information about Groovy libraries
+ */
+@CompileStatic
+class GroovyLibraryExtension {
+    final Property<Boolean> includeInGroovyAll
 
-configurations {
-    jaxb
-    jaxbRuntime
-}
-
-dependencies {
-    implementation rootProject
-    testImplementation project(':groovy-test')
-    jaxb 'javax.xml.bind:jaxb-api:2.3.0'
-    jaxbRuntime 'com.sun.xml.bind:jaxb-core:2.3.0.1'
-    jaxbRuntime 'com.sun.xml.bind:jaxb-impl:2.3.0.1'
-    jaxbRuntime 'javax.activation:activation:1.1.1'
-}
-
-task moduleDescriptor(type: org.apache.groovy.gradle.WriteExtensionDescriptorTask) {
-    extensionClasses = 'org.apache.groovy.jaxb.extensions.JaxbExtensions'
-}
-compileJava.dependsOn moduleDescriptor
-
-if (JavaVersion.current().isJava9Compatible()) {
-    configurations {
-        implementation.extendsFrom(jaxb)
-        runtimeOnly.extendsFrom(jaxbRuntime)
+    GroovyLibraryExtension(ObjectFactory factory) {
+        includeInGroovyAll = factory.property(Boolean).convention(true)
     }
 }

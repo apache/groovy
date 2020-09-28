@@ -58,10 +58,10 @@ ext.srcSpec = copySpec {
 
 ext.docSpec = copySpec {
     into('html/api') {
-        from javadocAll.destinationDir
+        //from javadocAll.destinationDir
     }
     into('html/gapi') {
-        from groovydocAll.destinationDir
+//        from groovydocAll.destinationDir
     }
     into('html/documentation') {
         from "$buildDir/asciidocAll/html5"
@@ -300,26 +300,6 @@ subprojects { sp ->
     }
 }
 
-task sourceAllJar(type: Jar, dependsOn: { modules()*.sourcesJar + rootProject.sourcesJar }) {
-    with sourcesJar.rootSpec
-    modules()*.sourcesJar.each {
-        with it.rootSpec
-    }
-    archiveBaseName = 'groovy-all'
-    archiveClassifier = 'sources'
-}
-
-task javadocAllJar(type: Jar, dependsOn: javadocAll) {
-    archiveBaseName = 'groovy-all'
-    from javadocAll.destinationDir
-    archiveClassifier = 'javadoc'
-}
-
-task groovydocAllJar(type: Jar, dependsOn: groovydocAll) {
-    archiveBaseName = 'groovy-all'
-    from groovydocAll.destinationDir
-    archiveClassifier = 'groovydoc'
-}
 
 evaluationDependsOn('groovy-jaxb')
 

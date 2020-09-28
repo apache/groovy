@@ -1,0 +1,14 @@
+plugins {
+    id 'org.apache.groovy-platform'
+}
+
+dependencies {
+    constraints {
+        api(platform(project(":groovy-all")))
+        rootProject.allprojects { p ->
+            p.pluginManager.withPlugin('org.apache.groovy-library') {
+                api(p)
+            }
+        }
+    }
+}
