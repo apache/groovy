@@ -2404,11 +2404,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            int candidateCnt = candidates.size();
-            if (0 == candidateCnt) {
+            if (candidates.isEmpty()) {
                 candidates = extension.handleMissingMethod(
                     getType(expression.getExpression()), nameText, null, null, null);
-            } else if (candidateCnt > 1) {
+            } else if (candidates.size() > 1) {
                 candidates = extension.handleAmbiguousMethods(candidates, expression);
             }
 
@@ -3291,60 +3290,67 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         objectExpression.visit(this);
         call.getMethod().visit(this);
 
-        // if the call expression is a spread operator call, then we must make sure that
-        // the call is made on a collection type
+        ClassNode receiver = getType(objectExpression);
+        // if it's a spread operator call, then make sure receiver is array or collection
         if (call.isSpreadSafe()) {
-            // TODO: check if this should not be change to iterator based call logic
-            ClassNode expressionType = getType(objectExpression);
-            if (!implementsInterfaceOrIsSubclassOf(expressionType, Collection_TYPE) && !expressionType.isArray()) {
+            if (!receiver.isArray() && !implementsInterfaceOrIsSubclassOf(receiver, Collection_TYPE)) {
                 addStaticTypeError("Spread operator can only be used on collection types", objectExpression);
-                return;
             } else {
                 // type check call as if it was made on component type
-                ClassNode componentType = inferComponentType(expressionType, int_TYPE);
+                ClassNode componentType = inferComponentType(receiver, int_TYPE);
                 MethodCallExpression subcall = callX(castX(componentType, EmptyExpression.INSTANCE), name, call.getArguments());
-                subcall.setLineNumber(call.getLineNumber());
-                subcall.setColumnNumber(call.getColumnNumber());
+                subcall.setLineNumber(call.getLineNumber()); subcall.setColumnNumber(call.getColumnNumber());
                 subcall.setImplicitThis(call.isImplicitThis());
                 visitMethodCallExpression(subcall);
                 // the inferred type here should be a list of what the subcall returns
                 ClassNode subcallReturnType = getType(subcall);
-                ClassNode listNode = LIST_TYPE.getPlainNodeReference();
-                listNode.setGenericsTypes(new GenericsType[]{new GenericsType(wrapTypeIfNecessary(subcallReturnType))});
-                storeType(call, listNode);
-                // store target method
+                ClassNode listType = LIST_TYPE.getPlainNodeReference();
+                listType.setGenericsTypes(new GenericsType[]{new GenericsType(wrapTypeIfNecessary(subcallReturnType))});
+                storeType(call, listType);
                 storeTargetMethod(call, subcall.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
-                typeCheckingContext.popEnclosingMethodCall();
-                return;
             }
+            typeCheckingContext.popEnclosingMethodCall();
+            return;
         }
 
         Expression callArguments = call.getArguments();
         ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(callArguments);
 
         checkForbiddenSpreadArgument(argumentList);
-
-        // for arguments, we need to visit closures *after* the method has been chosen
-
-        ClassNode receiver = getType(objectExpression);
+        // visit closures *after* the method has been chosen
         visitMethodCallArguments(receiver, argumentList, false, null);
 
-        ClassNode[] args = getArgumentTypes(argumentList);
-        boolean isCallOnClosure = isClosureCall(name, objectExpression, callArguments);
+        boolean isThisObjectExpression = isThisExpression(objectExpression);
+        boolean isCallOnClosure = false;
+        FieldNode fieldNode = null;
+        switch (name) {
+            case "call":
+            case "doCall":
+                if (!isThisObjectExpression) {
+                    isCallOnClosure = receiver.equals(CLOSURE_TYPE);
+                    break;
+                }
+            default:
+                if (isThisObjectExpression) {
+                    ClassNode enclosingType = typeCheckingContext.getEnclosingClassNode();
+                    fieldNode = enclosingType.getDeclaredField(name);
+                    if (fieldNode != null && getType(fieldNode).equals(CLOSURE_TYPE)
+                            && !enclosingType.hasPossibleMethod(name, callArguments)) {
+                        isCallOnClosure = true;
+                    }
+                }
+        }
 
         try {
+            ClassNode[] args = getArgumentTypes(argumentList);
             boolean callArgsVisited = false;
             if (isCallOnClosure) {
-                // this is a closure.call() call
-                if (isThisExpression(objectExpression)) {
-                    // isClosureCall() check verified earlier that a field exists
-                    FieldNode field = typeCheckingContext.getEnclosingClassNode().getDeclaredField(name);
-                    GenericsType[] genericsTypes = field.getType().getGenericsTypes();
+                if (fieldNode != null) {
+                    GenericsType[] genericsTypes = getType(fieldNode).getGenericsTypes();
                     if (genericsTypes != null) {
                         ClassNode closureReturnType = genericsTypes[0].getType();
-                        Object data = field.getNodeMetaData(CLOSURE_ARGUMENTS);
-                        if (data != null) {
-                            Parameter[] parameters = (Parameter[]) data;
+                        Parameter[] parameters = fieldNode.getNodeMetaData(CLOSURE_ARGUMENTS);
+                        if (parameters != null) {
                             typeCheckClosureCall(callArguments, args, parameters);
                         }
                         storeType(call, closureReturnType);
@@ -3352,19 +3358,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 } else if (objectExpression instanceof VariableExpression) {
                     Variable variable = findTargetVariable((VariableExpression) objectExpression);
                     if (variable instanceof ASTNode) {
-                        Object data = ((ASTNode) variable).getNodeMetaData(CLOSURE_ARGUMENTS);
-                        if (data != null) {
-                            Parameter[] parameters = (Parameter[]) data;
+                        Parameter[] parameters = ((ASTNode) variable).getNodeMetaData(CLOSURE_ARGUMENTS);
+                        if (parameters != null) {
                             typeCheckClosureCall(callArguments, args, parameters);
                         }
                         ClassNode type = getType(((ASTNode) variable));
-                        if (type != null && type.equals(CLOSURE_TYPE)) {
+                        if (CLOSURE_TYPE.equals(type)) {
                             GenericsType[] genericsTypes = type.getGenericsTypes();
                             type = OBJECT_TYPE;
-                            if (genericsTypes != null) {
-                                if (!genericsTypes[0].isPlaceholder()) {
-                                    type = genericsTypes[0].getType();
-                                }
+                            if (genericsTypes != null && !genericsTypes[0].isPlaceholder()) {
+                                type = genericsTypes[0].getType();
                             }
                         }
                         if (type != null) {
@@ -3375,24 +3378,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     // we can get actual parameters directly
                     Parameter[] parameters = ((ClosureExpression) objectExpression).getParameters();
                     typeCheckClosureCall(callArguments, args, parameters);
-                    ClassNode data = getInferredReturnType(objectExpression);
-                    if (data != null) {
-                        storeType(call, data);
+                    ClassNode type = getInferredReturnType(objectExpression);
+                    if (type != null) {
+                        storeType(call, type);
                     }
                 }
 
-                int nbOfArgs;
+                int nArgs = 0;
                 if (callArguments instanceof ArgumentListExpression) {
-                    ArgumentListExpression list = (ArgumentListExpression) callArguments;
-                    nbOfArgs = list.getExpressions().size();
-                } else {
-                    // todo : other cases
-                    nbOfArgs = 0;
+                    nArgs = ((ArgumentListExpression) callArguments).getExpressions().size();
                 }
-                storeTargetMethod(call,
-                        nbOfArgs == 0 ? CLOSURE_CALL_NO_ARG :
-                                nbOfArgs == 1 ? CLOSURE_CALL_ONE_ARG :
-                                        CLOSURE_CALL_VARGS);
+                storeTargetMethod(call, nArgs == 0 ? CLOSURE_CALL_NO_ARG : nArgs == 1 ? CLOSURE_CALL_ONE_ARG : CLOSURE_CALL_VARGS);
             } else {
                 // method call receivers are :
                 //   - possible "with" receivers
@@ -3413,7 +3409,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     // if we are not in a static context but the current receiver is a static class, we must
                     // ensure that all methods are either static or declared by the current receiver or a superclass
                     if (!mn.isEmpty()
-                            && (call.isImplicitThis() || isThisExpression(objectExpression))
+                            && (isThisObjectExpression || call.isImplicitThis())
                             && (typeCheckingContext.isInStaticContext || (receiverType.getModifiers() & Opcodes.ACC_STATIC) != 0)) {
                         // we create separate method lists just to be able to print out
                         // a nice error message to the user
@@ -3422,8 +3418,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         List<MethodNode> accessibleMethods = new LinkedList<>();
                         List<MethodNode> inaccessibleMethods = new LinkedList<>();
                         for (final MethodNode node : mn) {
-                            if (node.isStatic()
-                                    || (!typeCheckingContext.isInStaticContext && implementsInterfaceOrIsSubclassOf(receiverType, node.getDeclaringClass()))) {
+                            if (node.isStatic() || (!typeCheckingContext.isInStaticContext
+                                    && implementsInterfaceOrIsSubclassOf(receiverType, node.getDeclaringClass()))) {
                                 accessibleMethods.add(node);
                             } else {
                                 inaccessibleMethods.add(node);
@@ -3443,7 +3439,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         break;
                     }
                 }
-                if (mn.isEmpty() && call.isImplicitThis() && isThisExpression(objectExpression) && typeCheckingContext.getEnclosingClosure() != null) {
+                if (mn.isEmpty() && isThisObjectExpression && call.isImplicitThis() && typeCheckingContext.getEnclosingClosure() != null) {
                     mn = CLOSURE_TYPE.getDeclaredMethods(name);
                     if (!mn.isEmpty()) {
                         chosenReceiver = Receiver.make(CLOSURE_TYPE);
@@ -3463,14 +3459,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                     if (mn.size() == 1) {
                         MethodNode directMethodCallCandidate = mn.get(0);
+                        ClassNode declaringClass = directMethodCallCandidate.getDeclaringClass();
                         if (call.getNodeMetaData(DYNAMIC_RESOLUTION) == null
-                                && !directMethodCallCandidate.isStatic() && objectExpression instanceof ClassExpression
-                                && !"java.lang.Class".equals(directMethodCallCandidate.getDeclaringClass().getName())) {
-                            ClassNode owner = directMethodCallCandidate.getDeclaringClass();
-                            addStaticTypeError("Non static method " + owner.getName() + "#" + directMethodCallCandidate.getName() + " cannot be called from static context", call);
+                                && objectExpression instanceof ClassExpression
+                                && !directMethodCallCandidate.isStatic()
+                                && !declaringClass.equals(CLASS_Type)) {
+                            addStaticTypeError("Non static method " + declaringClass.getName() + "#" + directMethodCallCandidate.getName() + " cannot be called from static context", call);
                         }
                         if (chosenReceiver == null) {
-                            chosenReceiver = Receiver.make(directMethodCallCandidate.getDeclaringClass());
+                            chosenReceiver = Receiver.make(declaringClass);
                         }
 
                         ClassNode returnType = getType(directMethodCallCandidate);
@@ -3829,20 +3826,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 call.putNodeMetaData(SUPER_MOP_METHOD_REQUIRED, current);
             }
         }
-    }
-
-    protected boolean isClosureCall(final String name, final Expression objectExpression, final Expression arguments) {
-        if (objectExpression instanceof ClosureExpression && ("call".equals(name) || "doCall".equals(name))) return true;
-        if (isThisExpression(objectExpression)) {
-            FieldNode fieldNode = typeCheckingContext.getEnclosingClassNode().getDeclaredField(name);
-            if (fieldNode != null && CLOSURE_TYPE.equals(fieldNode.getType())
-                    && !typeCheckingContext.getEnclosingClassNode().hasPossibleMethod(name, arguments)) {
-                return true;
-            }
-        } else if (!"call".equals(name) && !"doCall".equals(name)) {
-            return false;
-        }
-        return getType(objectExpression).equals(CLOSURE_TYPE);
     }
 
     protected void typeCheckClosureCall(final Expression callArguments, final ClassNode[] args, final Parameter[] parameters) {
