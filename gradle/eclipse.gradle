@@ -20,7 +20,7 @@ allprojects {
     apply plugin: 'eclipse'
 
     eclipse.classpath.file.whenMerged {
-        entries.removeAll { entry -> entry.path =~ '/target/' } // affects: cli-commons, cli-picocli, console, groovydoc, macro, servlet, swing, templates, xml
+        entries.removeAll { entry -> entry.path =~ '/build/' } // affects: cli-commons, cli-picocli, console, groovydoc, macro, servlet, swing, templates, xml
         entries.unique(true) { entry -> entry.path } // affects: console, groovydoc, macro, servlet, swing, templates, xml
         entries.sort(true) { entry ->
             if (entry.class.simpleName != 'SourceFolder') {
@@ -129,7 +129,7 @@ allprojects {
 eclipse.classpath.file.whenMerged {
     entries.removeAll { entry -> entry.path == '/groovy-groovydoc' }
 
-    entries.findAll { entry -> entry.path =~ '^target/generated/sources/antlr' }.each { entry ->
+    entries.findAll { entry -> entry.path =~ '^build/generated/sources/antlr' }.each { entry ->
         entry.entryAttributes['ignore_optional_problems'] = 'true'
         entry.entryAttributes['optional'] = 'true'
     }

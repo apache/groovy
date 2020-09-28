@@ -177,7 +177,7 @@ subprojects { sp ->
     }
     rat {
         inputDir = sp.projectDir
-        excludes = [ 'target/**', 'build/**', '.gradle/**', '*.iml', '.classpath', '.project', '.settings/**', 'bin/**' , *extras]
+        excludes = [ 'build/**', '.gradle/**', '*.iml', '.classpath', '.project', '.settings/**', 'bin/**' , *extras]
     }
 }
 
@@ -193,7 +193,7 @@ rat {
                  '**/.gradle/**', '**/wrapper/**', 'gradlew*',  // gradle wrapper files excluded from src zip
                  'artifactory.properties',  // potential file on CI server
                  'gradle.properties',  // artifactory release plugin removes header when bumping version
-                 '**/target/**', '**/build/**', 'licenses/**', 'notices/**',
+                 '**/build/**', 'licenses/**', 'notices/**',
                  'out/**', '*.ipr',  '**/*.iml', '*.iws', '.idea/**', // Intellij files
                  '**/style.css', // MIT license as per NOTICE/LICENSE files
                  '**/jquery-2.1.1.min.js', // MIT license as per NOTICE/LICENSE files

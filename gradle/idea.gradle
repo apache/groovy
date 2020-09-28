@@ -31,7 +31,7 @@ allprojects {
             // remove target classes from libraries
             def moduleRoot = node.component.find { it.'@name' == 'NewModuleRootManager' }
             def entries = moduleRoot.orderEntry.findAll { oe ->
-                oe.library.CLASSES.root.'@url' =~ /target/
+                oe.library.CLASSES.root.'@url' =~ /build/
             }
             if (entries) {
                 entries.each { moduleRoot.remove(it) }

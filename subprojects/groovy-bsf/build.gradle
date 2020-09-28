@@ -16,6 +16,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+plugins {
+    id 'org.apache.groovy-library'
+}
+
 dependencies {
     api('bsf:bsf:2.4.0') {  // GroovyEngine...
         exclude(group: 'commons-logging', module: 'commons-logging')

@@ -98,14 +98,14 @@ allprojects {
 
 artifactoryPublish {
     def curDate = new Date()
-    def pomSource = { a -> "$projectDir/target/poms/pom-${a.name - 'groovy-'}.xml" }
+    def pomSource = { a -> "$projectDir/build/poms/pom-${a.name - 'groovy-'}.xml" }
     def destBase = { a -> "org/apache/groovy/${a.name}/${version}/${a.name}-${version}${a.classifier ? '-' + a.classifier : ''}" }
     def newDetails = { orig, newFile, newExt, newType -> gradleDeployDetails(new DefaultPublishArtifact(
             orig.name, newExt, newType, orig.classifier, curDate, newFile), 'artifacts', destBase(orig) + '.' + newExt) }
     def makeTransformedDetails = { orig -> newDetails(orig, orig.file, orig.extension, orig.extension) }
     def makeTransformedPomDetails = { orig -> newDetails(orig, file(pomSource(orig)), 'pom', 'pom') }
     def makeTransformedPomSigDetails = { orig -> newDetails(orig, file(pomSource(orig) + '.asc'), 'pom.asc', 'asc') }
-    mavenDescriptor = new File("$projectDir/target/poms/pom-groovy.xml")
+    mavenDescriptor = new File("$projectDir/build/poms/pom-groovy.xml")
     doFirst{
         configurations.archives.artifacts.findAll{ it.name != project.name }.each {
             // the plugin we are using uses the project name rather than the artifact name
@@ -132,7 +132,7 @@ artifactoryPublish {
                         it.name == project.name && it.type == 'jar' && it.extension == 'jar' && !it.classifier
                     }.each {
                         // add pom signatures
-                        def pomSigLocation = "$project.projectDir/target/poms/pom-${project == rootProject ? 'groovy' : 'default'}.xml.asc"
+                        def pomSigLocation = "$project.projectDir/build/poms/pom-${project == rootProject ? 'groovy' : 'default'}.xml.asc"
                         deployDetails.add(newDetails(it, file(pomSigLocation), 'pom.asc', 'pom'))
                     }
                 }

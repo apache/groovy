@@ -16,6 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+plugins {
+    id 'org.apache.groovy-library'
+}
 
 dependencies {
     api rootProject  // NioExtensions uses Closure...

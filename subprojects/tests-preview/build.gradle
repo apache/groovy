@@ -16,6 +16,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+plugins {
+    id 'groovy'
+}
+
 dependencies {
     compile rootProject
     testCompile project(':groovy-test')

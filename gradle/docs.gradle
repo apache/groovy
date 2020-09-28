@@ -85,8 +85,10 @@ def groovydocSpec = groovydocBaseSpec >> {
 }
 
 allprojects {
-    javadoc javadocSpec
-    groovydoc groovydocSpec
+    pluginManager.withPlugin('java-library') {
+        javadoc javadocSpec
+        groovydoc groovydocSpec
+    }
 }
 
 javadoc {
@@ -102,8 +104,10 @@ javadocAll {
     source = javadoc.source
     classpath = javadoc.classpath
     subprojects.each { sp ->
-        source += sp.javadoc.source
-        classpath += sp.javadoc.classpath
+        sp.pluginManager.withPlugin('java-library') {
+            source += sp.javadoc.source
+            classpath += sp.javadoc.classpath
+        }
     }
     exclude '**/GroovyRecognizer.java' // generated file
 }
@@ -119,9 +123,11 @@ groovydocAll {
     classpath = groovydoc.classpath
     groovyClasspath = groovydoc.groovyClasspath
     subprojects.each { sp ->
-        source += sp.groovydoc.source
-        classpath += sp.groovydoc.classpath
-        groovyClasspath += sp.groovydoc.groovyClasspath
+        sp.pluginManager.withPlugin('groovy') {
+            source += sp.groovydoc.source
+            classpath += sp.groovydoc.classpath
+            groovyClasspath += sp.groovydoc.groovyClasspath
+        }
     }
 }
 groovydocAll groovydocBaseSpec
@@ -139,7 +145,7 @@ task docProjectVersionInfo(type: Copy) {
 
 task docGDK {
     outputs.cacheIf { true }
-    dependsOn([project(':groovy-groovydoc'), project(':groovy-docgenerator')]*.classes)
+    dependsOn { [project(':groovy-groovydoc'), project(':groovy-docgenerator')]*.classes }
     dependsOn docProjectVersionInfo
     ext.destinationDir = "$buildDir/html/groovy-jdk"
     inputs.files sourceSets.main.runtimeClasspath + configurations.tools + files(docProjectVersionInfo.destinationDir)

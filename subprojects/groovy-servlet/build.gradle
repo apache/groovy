@@ -16,6 +16,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+plugins {
+    id 'org.apache.groovy-library'
+}
+
 dependencies {
     api('javax.servlet:javax.servlet-api:3.0.1') { dep ->
         provided dep

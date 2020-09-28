@@ -25,27 +25,36 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.java.archives.Manifest
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Classpath
 
 @CacheableTask
 class JarJarTask extends DefaultTask {
     private final static String JARJAR_CLASS_NAME = 'org.pantsbuild.jarjar.JarJarTask'
 
+    @Internal
     String description = "Repackages dependencies into a shaded jar"
 
     private List<Action<? super Manifest>> manifestTweaks = []
 
-    @Input
+    @InputFile
+    @Classpath
     File from
 
-    @Input
+    @InputFiles
+    @Classpath
     FileCollection repackagedLibraries
 
-    @Input
+    @InputFiles
+    @Classpath
     FileCollection jarjarToolClasspath
 
-    @Input
+    @InputFiles
+    @Classpath
     @org.gradle.api.tasks.Optional
     List<String> untouchedFiles = []
 
@@ -72,13 +81,13 @@ class JarJarTask extends DefaultTask {
     File outputFile
 
     @Input
-    @org.gradle.api.tasks.Optional
     boolean createManifest = true
 
     void withManifest(Action<? super Manifest> action) {
         manifestTweaks << action
     }
 
+    @Internal
     String getArchiveName() {
         outputFile.name
     }
