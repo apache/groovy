@@ -421,20 +421,3 @@ licenseReport {
 //licenseFormat.dependsOn licenseFormatGradle
 //
 
-def checkRepo(repo) {
-    if (repo instanceof MavenArtifactRepository) {
-        def repoUrl = repo.url.toString()
-        if (repoUrl.startsWith("http://")) {
-            throw new GradleException("Build should not use insecure HTTP-based URLs for repositories. Found: " + repoUrl)
-        }
-    }
-}
-
-project.afterEvaluate {
-    allprojects.repositories.each { handler ->
-        handler.each { checkRepo(it) }
-    }
-    buildscript.repositories.each { handler ->
-        handler.each { checkRepo(it) }
-    }
-}
