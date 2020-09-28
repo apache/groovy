@@ -274,13 +274,6 @@ allprojects {
     }
 }
 
-def producedJars = [jar]
-
-producedJars.each {
-    it.dependsOn('dgmConverter')
-    it.from files(dgmConverter.outputDir)
-}
-
 subprojects { sp ->
     jar {
         metaInf {
