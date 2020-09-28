@@ -21,7 +21,7 @@ dependencies {
     testImplementation project(':groovy-test')
 }
 
-task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {
+task moduleDescriptor(type: org.apache.groovy.gradle.WriteExtensionDescriptorTask) {
     extensionClasses = 'org.apache.groovy.dateutil.extensions.DateUtilExtensions'
     staticExtensionClasses = 'org.apache.groovy.dateutil.extensions.DateUtilStaticExtensions'
 }

@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.gradle
+package org.apache.groovy.gradle
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction

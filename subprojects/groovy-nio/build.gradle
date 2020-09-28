@@ -26,7 +26,7 @@ dependencies {
     testImplementation ("org.spockframework:spock-junit4:$spockVersion")
 }
 
-task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {
+task moduleDescriptor(type: org.apache.groovy.gradle.WriteExtensionDescriptorTask) {
     extensionClasses = 'org.apache.groovy.nio.extensions.NioExtensions'
 }
 

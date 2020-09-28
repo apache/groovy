@@ -30,7 +30,7 @@ dependencies {
     jaxbRuntime 'javax.activation:activation:1.1.1'
 }
 
-task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {
+task moduleDescriptor(type: org.apache.groovy.gradle.WriteExtensionDescriptorTask) {
     extensionClasses = 'org.apache.groovy.jaxb.extensions.JaxbExtensions'
 }
 compileJava.dependsOn moduleDescriptor

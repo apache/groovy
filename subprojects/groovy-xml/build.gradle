@@ -30,7 +30,7 @@ test {
     useJUnitPlatform()
 }
 
-task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {
+task moduleDescriptor(type: org.apache.groovy.gradle.WriteExtensionDescriptorTask) {
     extensionClasses = 'org.apache.groovy.xml.extensions.XmlExtensions'
 }
 compileJava.dependsOn moduleDescriptor

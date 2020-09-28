@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-import org.codehaus.groovy.gradle.ReleaseInfoGenerator
+import org.apache.groovy.gradle.ReleaseInfoGenerator
 
 buildscript {
     repositories {
