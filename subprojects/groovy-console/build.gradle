@@ -20,15 +20,13 @@ plugins {
     id 'org.apache.groovy-library'
 }
 
-evaluationDependsOn(':groovy-swing')
-
 dependencies {
     api rootProject // AstBrowser has methods with Closure params...
     implementation "com.github.javaparser:javaparser-core:$javaParserVersion"
     implementation project(':groovy-swing')
     implementation project(':groovy-templates')
     testImplementation project(':groovy-test')
-    testImplementation project(':groovy-swing').sourceSets.test.runtimeClasspath
+    testImplementation project(':groovy-swing')
 
     groovyCompilerClasspath(project(":")) {
         capabilities {

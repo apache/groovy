@@ -16,11 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-import org.apache.tools.ant.filters.ReplaceTokens
-import org.apache.groovy.gradle.JarJarTask
-
-
 ext.srcSpec = copySpec {
     from(projectDir) {
         exclude 'build',
@@ -79,7 +74,7 @@ ext.docSpec = copySpec {
     rename 'LICENSE-DOC', 'LICENSE'
     rename 'NOTICE-BASE', 'NOTICE'
 }
-
+/*
 task copy(type: Copy) {
     into "$buildDir/meta"
 }
@@ -122,138 +117,6 @@ allprojects {
     }
 }
 
-
-evaluationDependsOn('groovy-jaxb')
-
-ext.distSpec = copySpec {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    from("$projectDir/licenses/LICENSE-BINZIP")
-    from("$projectDir/notices/NOTICE-BINZIP")
-    rename '^([A-Z]+)-([^.]*)', '$1'
-    exclude { it.file.name =~ /-raw/ }
-    into('lib') {
-        from jarjar
-        from modules()*.jarjar
-        from(configurations.runtimeClasspath) {
-            exclude {
-                it.file.name.startsWith('openbeans-') ||
-                        it.file.name.startsWith('asm-') ||
-                        it.file.name.startsWith('antlr-') ||
-                        it.file.name.startsWith('antlr4-') ||
-                        it.file.name.startsWith('picocli-')
-            }
-        }
-        from('src/bin/groovy.icns')
-    }
-    modules().configurations.runtimeClasspath.each { conf ->
-        into('lib') {
-            from(conf) {
-                exclude {
-                    it.file.name.contains('livetribe-jsr223') ||
-                            it.file.name.matches(/groovy-\d.*/) ||
-                            it.file.name.startsWith('asm-') ||
-                            it.file.name.startsWith('antlr-') ||
-                            it.file.name.startsWith('antlr4-') ||
-                            it.file.name.startsWith('openbeans-') ||
-                            it.file.name.startsWith('picocli-')
-                }
-            }
-        }
-    }
-    into('lib/extras-jaxb') {
-        from project(':groovy-jaxb').configurations.jaxb
-        from project(':groovy-jaxb').configurations.jaxbRuntime
-    }
-    if (!rootProject.hasProperty('skipGrooid')) {
-        into('grooid') {
-            from { new File(jar.archivePath.parent, "${jar.baseName}-${jar.version}-grooid.jar") }
-            from {
-                modules()*.jar.collect { j ->
-                    new File(j.archivePath.parent, "${j.baseName}-${j.version}-grooid.jar")
-                }
-            }
-        }
-    }
-    into('conf') {
-        from 'src/conf'
-    }
-    into('bin') {
-        from('src/bin') {
-            filter(ReplaceTokens, tokens: [GROOVYJAR: jarjar.archiveName])
-            fileMode = 0755
-            exclude 'groovy.icns'
-        }
-        from('subprojects/groovy-docgenerator/src/main/resources/org/apache/groovy/docgenerator/groovy.ico')
-    }
-    into('licenses') {
-        from 'licenses'
-        include 'antlr4-license.txt'
-        include 'asm-license.txt'
-        include 'hamcrest-license.txt'
-        include 'jline2-license.txt'
-        include 'jsr166y-license.txt'
-        include 'jsr223-license.txt'
-        include 'junit4-license.txt'
-        include 'junit5-license.txt'
-        include 'xstream-license.txt'
-    }
-}
-
-task distBin(type: Zip) {
-    archiveBaseName = 'apache-groovy'
-    archiveAppendix = 'binary'
-    into("groovy-${project.version}") {
-        with distSpec
-    }
-    allprojects {
-        if (project.name in ['groovy', 'groovy-test']) {
-            distBin.dependsOn(grooidjar)
-        }
-    }
-}
-
-task distDoc(type: Zip, dependsOn: doc) {
-    archiveBaseName = 'apache-groovy'
-    archiveAppendix = 'docs'
-    into("groovy-${project.version}") {
-        with docSpec
-    }
-}
-
-task syncDoc(type: Copy, dependsOn: doc) {
-    inputs.files javadoc.outputs.files
-    inputs.files groovydoc.outputs.files
-
-    destinationDir(file("$buildDir/html"))
-    into('api') {
-        from javadoc.destinationDir
-    }
-    into('gapi') {
-        from groovydoc.destinationDir
-    }
-    // groovy-jdk already at the correct place
-}
-
-task distSrc(type: Zip) {
-    archiveBaseName = 'apache-groovy'
-    archiveAppendix = 'src'
-    into("groovy-${project.version}")
-    with srcSpec
-}
-
-def installDir = {
-    project.hasProperty('groovy_installPath') ? project.groovy_installPath :
-            System.properties.installDirectory ?: "$buildDir/install"
-}
-
-task installGroovy(type: Sync, dependsOn: [checkCompatibility, distBin]) {
-    description 'Generates a groovy distribution into an install directory'
-    doLast {
-        logger.lifecycle "Groovy installed under ${installDir()}"
-    }
-    with distSpec
-    into installDir
-}
 
 task checkNoSnapshotVersions {
     doLast {
@@ -402,3 +265,4 @@ task updateNotices {
         }
     }
 }
+*/

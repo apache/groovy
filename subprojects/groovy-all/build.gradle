@@ -37,7 +37,7 @@ javaPlatform {
 }
 
 def projectsIncludedInGroovyAll = rootProject.allprojects.findAll {
-    if (it.pluginManager.hasPlugin('org.apache.groovy-library')) {
+    if (it.pluginManager.hasPlugin('org.apache.groovy-base')) {
         return it.extensions.getByType(GroovyLibraryExtension).includeInGroovyAll.get()
     }
     return false
