@@ -19,14 +19,17 @@
 package org.apache.groovy.gradle
 
 import groovy.transform.CompileStatic
+import org.gradle.api.artifacts.ConfigurationContainer
+import org.gradle.api.component.AdhocComponentWithVariants
+import org.gradle.api.component.SoftwareComponentContainer
 import org.gradle.api.java.archives.Manifest
 import org.gradle.api.java.archives.ManifestMergeDetails
 import org.gradle.api.java.archives.ManifestMergeSpec
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
-
 /**
  * Provides information about Groovy libraries
  */
@@ -36,12 +39,49 @@ class GroovyLibraryExtension {
     final Property<Boolean> includeInGroovyAll
     final ListProperty<String> repackagedDependencies
     final JavaPluginConvention javaPluginConvention
+    final JavaPluginExtension javaPluginExtension
+    final SoftwareComponentContainer components
+    final ConfigurationContainer configurations
 
-    GroovyLibraryExtension(ObjectFactory factory, SharedConfiguration sharedConfiguration, JavaPluginConvention javaPluginConvention) {
+    GroovyLibraryExtension(ObjectFactory factory,
+                           SharedConfiguration sharedConfiguration,
+                           JavaPluginConvention javaPluginConvention,
+                           JavaPluginExtension javaPluginExtension,
+                           SoftwareComponentContainer components,
+                           ConfigurationContainer configurations
+    ) {
         this.sharedConfiguration = sharedConfiguration
         this.includeInGroovyAll = factory.property(Boolean).convention(true)
         this.repackagedDependencies = factory.listProperty(String).convention([])
         this.javaPluginConvention = javaPluginConvention
+        this.javaPluginExtension = javaPluginExtension
+        this.components = components
+        this.configurations = configurations
+    }
+
+    void registerOptionalFeature(String name) {
+        javaPluginExtension.registerFeature(name) {
+            it.usingSourceSet(javaPluginConvention.sourceSets.getByName("main"))
+        }
+        AdhocComponentWithVariants component = (AdhocComponentWithVariants) components.getByName("groovyLibrary")
+        def apiElements = configurations.getByName("${name}ApiElements")
+        apiElements.artifacts.clear()
+        component.addVariantsFromConfiguration(apiElements) {
+            if (it.configurationVariant.name != "${name}ApiElements") {
+                it.skip()
+            }
+            it.mapToMavenScope("compile")
+            it.mapToOptional()
+        }
+        def runtimeElements = configurations.getByName("${name}RuntimeElements")
+        runtimeElements.artifacts.clear()
+        component.addVariantsFromConfiguration(runtimeElements) {
+            if (it.configurationVariant.name != "${name}RuntimeElements") {
+                it.skip()
+            }
+            it.mapToMavenScope("runtime")
+            it.mapToOptional()
+        }
     }
 
     void configureManifest(Manifest manifest, List<String> exclusions) {

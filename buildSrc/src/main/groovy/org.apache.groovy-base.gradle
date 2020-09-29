@@ -17,10 +17,15 @@
  *  under the License.
  */
 
+
+import groovy.transform.CompileStatic
 import org.apache.groovy.gradle.GroovyLibraryExtension
 import org.apache.groovy.gradle.JarJarTask
 import org.apache.groovy.gradle.ReleaseInfoGenerator
 import org.apache.groovy.gradle.SharedConfiguration
+import org.gradle.api.attributes.java.TargetJvmVersion
+
+import javax.inject.Inject
 
 plugins {
     id 'java-library'
@@ -34,7 +39,7 @@ plugins {
  */
 
 def sharedConfiguration = rootProject.extensions.getByType(SharedConfiguration)
-def groovyLibrary = project.extensions.create("groovyLibrary", GroovyLibraryExtension, project.objects, sharedConfiguration, project.convention.plugins.java)
+def groovyLibrary = project.extensions.create("groovyLibrary", GroovyLibraryExtension, project.objects, sharedConfiguration, project.convention.plugins.java, java, components, configurations)
 
 java {
     withSourcesJar()
@@ -50,7 +55,39 @@ def groovydocJar = tasks.register("groovydocJar", Jar) {
     archiveClassifier = 'groovydoc'
 }
 
+def internalPublication = Attribute.of("org.apache.groovy.internal", Boolean)
+
 configurations {
+    apiElements {
+        attributes {
+            attribute(internalPublication, true)
+        }
+    }
+    runtimeElements {
+        attributes {
+            attribute(internalPublication, true)
+        }
+    }
+    compileClasspath {
+        attributes {
+            attribute(internalPublication, true)
+        }
+    }
+    runtimeClasspath {
+        attributes {
+            attribute(internalPublication, true)
+        }
+    }
+    testCompileClasspath {
+        attributes {
+            attribute(internalPublication, true)
+        }
+    }
+    testRuntimeClasspath {
+        attributes {
+            attribute(internalPublication, true)
+        }
+    }
     groovydocElements {
         canBeConsumed = true
         canBeResolved = false
@@ -101,8 +138,10 @@ configurations {
         canBeResolved = true
         attributes {
             attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+            attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, LibraryElements.JAR))
             attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
             attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+            attribute(internalPublication, true)
         }
     }
 }
@@ -203,4 +242,62 @@ tasks.withType(GroovyCompile).configureEach {
 
 tasks.named("compileTestGroovy") {
     options.forkOptions.jvmArgs += ["-Dspock.iKnowWhatImDoing.disableGroovyVersionCheck=true"]
+}
+
+
+interface Services {
+    @Inject
+    SoftwareComponentFactory getSoftwareComponentFactory()
+}
+
+// Groovy doesn't publish the regular jars: it publishes
+// the repackaged jars, which is why we can't use the
+// default publication, and need to create our own
+def factory = objects.newInstance(Services).softwareComponentFactory
+def component = factory.adhoc('groovyLibrary')
+components.add(component)
+// First we create the "API" and "runtime" variants of Groovy for publication
+def shadowApi = createConsumableConfiguration(objects, tasks, configurations, 'groovyApiElements', Usage.JAVA_API, 'jarjar')
+def shadowRuntime = createConsumableConfiguration(objects, tasks, configurations, 'groovyRuntimeElements', Usage.JAVA_RUNTIME, 'jarjar')
+dependencies {
+    constraints {
+        // All Groovy modules depend on the "Groovy-all" platform in order to get alignement
+        // However because groovy-all doesn't reference all modules this is partial alignement
+        groovyApiElements platform(project(":groovy-all"))
+        groovyRuntimeElements platform(project(":groovy-all"))
+    }
+}
+component.addVariantsFromConfiguration(shadowApi) {
+
+}
+component.addVariantsFromConfiguration(shadowRuntime) {
+
+}
+afterEvaluate {
+    def repackaged = groovyLibrary.repackagedDependencies.get()
+    if (!repackaged) {
+        // only modules which do not repackage dependencies are going to inherit dependencies
+        shadowApi.extendsFrom(configurations.api)
+        shadowRuntime.extendsFrom(configurations.implementation)
+        shadowRuntime.extendsFrom(configurations.runtimeOnly)
+    }
+}
+
+@CompileStatic
+Configuration createConsumableConfiguration(ObjectFactory objects, TaskContainer tasks, ConfigurationContainer container, String name, String usage, String artifactTask) {
+    container.create(name) { Configuration cnf ->
+        cnf.canBeConsumed = true
+        cnf.canBeResolved = false
+        cnf.attributes {
+            it.attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+            it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, LibraryElements.JAR))
+            it.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, usage))
+            // We use external because only Groovy core actually repackages dependencies
+            it.attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
+            it.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 8)
+        }
+        cnf.outgoing {
+            it.artifact tasks.named(artifactTask)
+        }
+    }
 }

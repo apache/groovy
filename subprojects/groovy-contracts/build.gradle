@@ -36,3 +36,7 @@ test {
     useJUnitPlatform()
     systemProperty "spock.iKnowWhatImDoing.disableGroovyVersionCheck", "true"
 }
+
+groovyLibrary {
+    includeInGroovyAll = false
+}

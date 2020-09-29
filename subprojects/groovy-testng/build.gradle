@@ -30,3 +30,7 @@ dependencies {
     }
     testImplementation project(':groovy-test')
 }
+
+groovyLibrary {
+    includeInGroovyAll = false
+}

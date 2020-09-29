@@ -27,3 +27,7 @@ dependencies {
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-dateutil')
 }
+
+groovyLibrary {
+    includeInGroovyAll = false
+}

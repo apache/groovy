@@ -25,3 +25,7 @@ dependencies {
     testImplementation project(':groovy-test')
     testImplementation rootProject.sourceSets.test.runtimeClasspath
 }
+
+groovyLibrary {
+    includeInGroovyAll = false
+}

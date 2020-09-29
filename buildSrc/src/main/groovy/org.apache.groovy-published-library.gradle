@@ -2,9 +2,11 @@ plugins {
     id 'maven-publish'
 }
 
-def componentName = 'java'
+def componentName
 if (pluginManager.hasPlugin('java-platform')) {
     componentName = 'javaPlatform'
+} else {
+    componentName = 'groovyLibrary'
 }
 
 publishing {
@@ -17,6 +19,7 @@ publishing {
     publications {
         maven(MavenPublication) {
             from components[componentName]
+            suppressAllPomMetadataWarnings()
             pom {
                 name = 'Apache Groovy'
                 description = 'Groovy: A powerful multi-faceted language for the JVM'
