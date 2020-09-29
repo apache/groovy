@@ -18,6 +18,7 @@
  */
 
 plugins {
-    id 'org.apache.groovy-common'
+    id 'org.apache.groovy-distribution'
+    id 'org.apache.groovy-published-library'
 }
 
