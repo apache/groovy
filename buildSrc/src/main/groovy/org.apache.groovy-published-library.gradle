@@ -1,5 +1,6 @@
 plugins {
     id 'maven-publish'
+    id 'signing'
 }
 
 def componentName
@@ -852,4 +853,75 @@ publishing {
             }
         }
     }
+}
+
+signing {
+    required {
+        project.sharedConfiguration.isReleaseVersion.get() &&
+                (gradle.taskGraph.hasTask(':artifactoryPublish') || rootProject.hasProperty('forceSign'))
+    }
+    sign publishing.publications.maven
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    if (project.sharedConfiguration.isReleaseVersion.get() &&
+            (taskGraph.hasTask(':artifactoryPublish') || project.hasProperty('forceSign'))) {
+        // Use Java 6's console or Swing to read input (not suitable for CI)
+        if (!project.hasProperty('signing.keyId') ||
+                !project.hasProperty('signing.secretKeyRingFile') ||
+                !project.hasProperty('signing.password')) {
+            printf "\n\nWe have to sign some things in this build." +
+                    "\n\nPlease enter your signing details.\n\n"
+            System.out.flush()
+
+            if (!project.hasProperty('signing.keyId')) {
+                project.ext.'signing.keyId' = promptUser('PGP Key Id')
+            }
+            if (!project.hasProperty('signing.secretKeyRingFile')) {
+                project.ext.'signing.secretKeyRingFile' = promptUser('PGP Secret Key Ring File (absolute path)')
+            }
+            if (!project.hasProperty('signing.password')) {
+                project.ext.'signing.password' = promptUser('PGP Private Key Password')
+            }
+
+            printf "\nThanks.\n\n"
+            System.out.flush()
+        }
+        // TODO: make this cleaner
+        allprojects { ext.'signing.keyId' = project.getProperty('signing.keyId') }
+        allprojects { ext.'signing.secretKeyRingFile' = project.getProperty('signing.secretKeyRingFile') }
+        allprojects { ext.'signing.password' = project.getProperty('signing.password') }
+    }
+}
+
+def promptUser(String prompt) {
+    def response = ''
+    if (System.console() == null) {
+        new groovy.swing.SwingBuilder().edt {
+            dialog(modal: true, // pause build
+                    title: 'Reponse required', // dialog title
+                    alwaysOnTop: true,
+                    resizable: false,
+                    locationRelativeTo: null, // centered on screen
+                    pack: true,
+                    show: true
+            ) {
+                vbox {
+                    label(text: "$prompt:")
+                    input = passwordField()
+                    button(defaultButton: true, text: 'OK', actionPerformed: {
+                        response = new String(input.password)
+                        dispose()
+                    })
+                }
+            }
+        }
+    } else {
+        response = new String(System.console().readPassword("\n$prompt: "))
+    }
+
+    if (!response) {
+        throw new InvalidUserDataException("Null response detected!")
+    }
+    response
 }
