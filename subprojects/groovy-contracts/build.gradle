@@ -29,7 +29,7 @@ dependencies {
         exclude group: 'org.codehaus.groovy'
     }
     testImplementation ("org.spockframework:spock-junit4:$spockVersion")
-    testRuntime("org.junit.vintage:junit-vintage-engine:$junit5Version")
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:$junit5Version")
 }
 
 test {
