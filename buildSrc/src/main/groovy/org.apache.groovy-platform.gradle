@@ -19,7 +19,7 @@
 
 plugins {
     id 'java-platform'
-    id 'org.apache.groovy-base'
+    id 'org.apache.groovy-common'
     id 'org.apache.groovy-published-library'
 }
 

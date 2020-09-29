@@ -29,6 +29,12 @@ dependencies {
     implementation project(':groovy-templates')
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-swing').sourceSets.test.runtimeClasspath
+
+    groovyCompilerClasspath(project(":")) {
+        capabilities {
+            requireCapability 'org.apache.groovy:groovy-grapes'
+        }
+    }
 }
 
 task console(type: JavaExec, dependsOn:classes) {

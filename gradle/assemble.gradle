@@ -20,7 +20,6 @@
 import org.apache.tools.ant.filters.ReplaceTokens
 import org.apache.groovy.gradle.JarJarTask
 
-archivesBaseName = 'groovy'
 
 ext.srcSpec = copySpec {
     from(projectDir) {
@@ -85,159 +84,8 @@ task copy(type: Copy) {
     into "$buildDir/meta"
 }
 
-// unnecessary entries which in addition may trigger unnecessary rebuilds
-def excludedFromManifest = [
-        'Ant-Version',
-        'Originally-Created-By',
-        'Bnd-LastModified',
-        'Created-By'
-]
-
-ext.allManifest = manifest {
-    attributes(
-            'Extension-Name': 'groovy',
-            'Specification-Title': 'Groovy: a powerful, multi-faceted language for the JVM',
-            'Specification-Version': groovyBundleVersion,
-            'Specification-Vendor': 'The Apache Software Foundation',
-            'Implementation-Title': 'Groovy: a powerful, multi-faceted language for the JVM',
-            'Implementation-Version': groovyBundleVersion,
-            'Implementation-Vendor': 'The Apache Software Foundation',
-            'Bundle-ManifestVersion': '2',
-            'Bundle-Name': 'Groovy Runtime',
-            'Bundle-Description': 'Groovy Runtime',
-            'Bundle-Version': groovyBundleVersion,
-            'Bundle-Vendor': 'The Apache Software Foundation',
-            'Bundle-ClassPath': '.',
-            'Eclipse-BuddyPolicy': 'dependent',
-            'DynamicImport-Package': '*',
-            'Main-Class': 'groovy.ui.GroovyMain')
-}
-
-ext.groovyOsgiManifest = {
-    // Exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
-    from(allManifest) {
-        eachEntry { details ->
-            if (excludedFromManifest.any { it == details.key }) {
-                details.exclude()
-            }
-        }
-    }
-    version = groovyBundleVersion
-    instruction '-nouses', 'true'
-    instruction 'Export-Package', "*;version=${groovyBundleVersion}"
-    instruction 'Eclipse-ExtensibleAPI', 'true'
-    classpath = sourceSets.main.runtimeClasspath
-}
-
-ext.subprojectOsgiManifest = {
-    // Exclude attributes not needed for subprojects.
-    from(allManifest) {
-        eachEntry { details ->
-            if (details.key in [*excludedFromManifest, 'Bnd-LastModified', 'Extension-Name', 'Bundle-Name', 'Bundle-Description', 'Main-Class']) {
-                details.exclude()
-            }
-        }
-    }
-    version = groovyBundleVersion
-    instruction '-nouses', 'true'
-    instruction 'Export-Package', "*;version=${groovyBundleVersion}"
-    def folder = new File( "${projectDir}/subprojects/${symbolicName}/src/main/resources/META-INF/services" )
-    if( folder.exists() ) {
-        if (folder.listFiles().count { it.name ==~ /^(?!(org.codehaus.groovy.transform.ASTTransformation)$).*$/ } > 0) {
-            instruction 'Require-Capability', 'osgi.extender;filter:="(osgi.extender=osgi.serviceloader.registrar)"'
-            instruction 'Require-Capability', 'osgi.extender;filter:="(osgi.extender=osgi.serviceloader.processor)"'
-            folder.eachFileMatch(~/^(?!(org.codehaus.groovy.transform.ASTTransformation)$).*$/) {
-                instruction 'Require-Capability', "osgi.serviceloader;filter:=\"(osgi.serviceloader=${it.name})\";cardinality:=multiple"
-                instruction 'Provide-Capability', "osgi.serviceloader;osgi.serviceloader=\"${it.name}\""
-            }
-        }
-    }
-    classpath = sourceSets.main.runtimeClasspath
-}
-
 allprojects {
     boolean isRoot = project == rootProject
-
-    def producedJars = [jar]
-    jar {
-        archiveAppendix = 'raw'
-        manifest {
-            from(allManifest) {
-                eachEntry { details ->
-                    if (excludedFromManifest.any { it == details.key }) {
-                        details.exclude()
-                    }
-                }
-            }
-        }
-    }
-    producedJars.each { arch ->
-        arch.metaInf {
-            from("$projectDir/licenses/LICENSE-JARJAR")
-            from("$projectDir/licenses") {
-                into('licenses')
-                include('asm-license.txt')
-                include('antlr4-license.txt')
-            }
-            from("$projectDir/notices/NOTICE-JARJAR")
-            from(generateReleaseInfo)
-            rename '^([A-Z]+)-([^.]*)', '$1'
-        }
-        arch.exclude '**/package-info.class'
-
-        task "jar${arch.name}"(type: JarJarTask) {
-            dependsOn arch
-            from = file(arch.archiveFile)
-            if (project == rootProject) {
-                repackagedLibraries = files(configurations.runtimeClasspath.incoming.artifactView {
-                    componentFilter { component ->
-                        if (component instanceof ModuleComponentIdentifier) {
-                            return component.module in [
-                                    'antlr', 'antlr-runtime', 'antlr4', 'antlr4-runtime', 'antlr4-annotations',
-                                    'asm', 'asm-commons', 'asm-tree', 'asm-util', 'picocli']
-                        }
-                        return false
-                    }
-                }.files)
-            } else {
-                repackagedLibraries = files()
-            }
-            jarjarToolClasspath = rootProject.configurations.tools
-            untouchedFiles = [
-                    'groovy/cli/picocli/CliBuilder*.class',
-                    'groovy/cli/picocli/OptionAccessor*.class'
-            ]
-            patterns = [
-                    'org.antlr.**': 'groovyjarjarantlr4.@1', // antlr4
-                    'org.objectweb.**': 'groovyjarjarasm.@1',
-                    'picocli.**': 'groovyjarjarpicocli.@1'
-            ]
-            excludesPerLibrary = [
-                    '*': ['META-INF/maven/**', 'META-INF/*', 'META-INF/services/javax.annotation.processing.Processor', '**/module-info.class']
-            ]
-            includesPerLibrary = [
-                    'asm-util': ['org/objectweb/asm/util/Printer.class',
-                                 'org/objectweb/asm/util/Textifier*',
-                                 'org/objectweb/asm/util/ASMifier.class',
-                                 'org/objectweb/asm/util/Trace*']
-            ]
-            outputFile = file("$buildDir/libs/${arch.baseName}-${arch.version}${arch.classifier ? '-' + arch.classifier : ''}.jar")
-
-            withManifest {
-                def moduleName = "org.apache.${project.name.replace('-', '.')}"
-                attributes('Automatic-Module-Name': moduleName)
-                from(allManifest) {
-                    eachEntry { details ->
-                        if (excludedFromManifest.any { it == details.key }) {
-                            details.exclude()
-                        }
-                    }
-                }
-            }
-            withManifest(isRoot ? groovyOsgiManifest : subprojectOsgiManifest)
-        }
-
-    }
 
     if (project.name in ['groovy', 'groovy-test']) {
         task grooidjar(type: JarJarTask) {
@@ -271,25 +119,6 @@ allprojects {
             ]
             outputFile = file("$buildDir/libs/${jar.baseName}-${jar.version}-grooid.jar")
         }
-    }
-}
-
-subprojects { sp ->
-    jar {
-        metaInf {
-            if (file("${projectDir}/LICENSE").exists()) {
-                from "${projectDir}/LICENSE"
-            } else {
-                from "${rootProject.projectDir}/licenses/LICENSE-BASE"
-            }
-            if (file("${projectDir}/NOTICE").exists()) {
-                from "${projectDir}/NOTICE"
-            } else {
-                from "${rootProject.projectDir}/notices/NOTICE-BASE"
-            }
-            rename '^([A-Z]+)-([^.]*)', '$1'
-        }
-        exclude '**/package-info.class'
     }
 }
 

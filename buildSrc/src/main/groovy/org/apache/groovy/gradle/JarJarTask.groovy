@@ -22,15 +22,16 @@ import groovy.transform.CompileStatic
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.java.archives.Manifest
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import org.gradle.api.tasks.Internal
-import org.gradle.api.tasks.Classpath
 
 @CacheableTask
 class JarJarTask extends DefaultTask {
@@ -43,7 +44,7 @@ class JarJarTask extends DefaultTask {
 
     @InputFile
     @Classpath
-    File from
+    final RegularFileProperty from = project.objects.fileProperty()
 
     @InputFiles
     @Classpath
@@ -78,7 +79,7 @@ class JarJarTask extends DefaultTask {
     Map<String, String> includedResources = [:]
 
     @OutputFile
-    File outputFile
+    final RegularFileProperty outputFile = project.objects.fileProperty()
 
     @Input
     boolean createManifest = true
@@ -89,15 +90,15 @@ class JarJarTask extends DefaultTask {
 
     @Internal
     String getArchiveName() {
-        outputFile.name
+        outputFile.get().asFile.name
     }
 
     @TaskAction
     void generateDescriptor() {
-        def originalJar = from
+        def originalJar = from.get()
+        def outputFile = this.outputFile.get().asFile
         def tmpJar = new File(temporaryDir, "${outputFile.name}.${Integer.toHexString(UUID.randomUUID().hashCode())}.tmp")
         def manifestFile = new File(temporaryDir, 'MANIFEST.MF')
-
         // First step is to create a repackaged jar
         outputFile.parentFile.mkdirs()
         try {

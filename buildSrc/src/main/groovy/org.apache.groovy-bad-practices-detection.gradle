@@ -28,7 +28,7 @@ allprojects { p ->
         cnf.incoming.beforeResolve {
             if (!resolvingAllowed) {
                 def e = new RuntimeException()
-                List<StackTraceElement> inGradleBuild = e.stackTrace.findAll { it.fileName?.endsWith('.gradle') && !it.fileName.endsWith('bad-practices.gradle') }
+                List<StackTraceElement> inGradleBuild = e.stackTrace.findAll { it.fileName?.endsWith('.gradle') && !it.fileName.endsWith('bad-practices-detection.gradle') }
                 def stack = inGradleBuild.collect {
                     "   at ${it.fileName}:${it.lineNumber}"
                 }.join("\n")

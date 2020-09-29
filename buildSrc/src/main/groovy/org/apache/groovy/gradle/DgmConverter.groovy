@@ -2,6 +2,7 @@ package org.apache.groovy.gradle
 
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
+import org.gradle.api.AntBuilder
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.ConfigurableFileTree
@@ -45,6 +46,7 @@ class DgmConverter extends DefaultTask {
         // we use ant.java because Gradle is a bit "too smart" with JavaExec
         // as it will invalidate the task if classpath changes, which will
         // happen once Groovy files are compiled
+        project.ant.lifecycleLogLevel = AntBuilder.AntMessagePriority.INFO
         project.ant.java(classname: 'org.codehaus.groovy.tools.DgmConverter', classpath: classpath.asPath) {
             arg(value: '--info')
             arg(value: "${outputDirectory.get().asFile.absolutePath}")
