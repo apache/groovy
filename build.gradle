@@ -128,22 +128,12 @@ ext {
     jcipAnnotationsVersion = '1.0'
 }
 
-java {
-    registerFeature("gpars") {
-        usingSourceSet(sourceSets.main)
-    }
-    registerFeature("grapes") {
-        usingSourceSet(sourceSets.main)
-    }
-    registerFeature("xstreamAst") {
-        usingSourceSet(sourceSets.main)
-    }
-    registerFeature("logging") {
-        usingSourceSet(sourceSets.main)
-    }
-}
-
 groovyLibrary {
+    registerOptionalFeature 'gpars'
+    registerOptionalFeature 'grapes'
+    registerOptionalFeature 'xstreamAst'
+    registerOptionalFeature 'logging'
+
     repackagedDependencies = [
             'antlr', 'antlr-runtime', 'antlr4', 'antlr4-runtime', 'antlr4-annotations',
             'asm', 'asm-commons', 'asm-tree', 'asm-util', 'picocli'

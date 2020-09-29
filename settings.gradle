@@ -33,6 +33,7 @@ def subprojects = [
         'groovy-all',
         'groovy-ant',
         'groovy-astbuilder',
+        'groovy-binary',
         'groovy-bsf',
         'groovy-bom',
         'groovy-cli-commons',

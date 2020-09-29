@@ -30,3 +30,7 @@ task moduleDescriptor(type: org.apache.groovy.gradle.WriteExtensionDescriptorTas
     staticExtensionClasses = 'org.apache.groovy.dateutil.extensions.DateUtilStaticExtensions'
 }
 compileJava.dependsOn moduleDescriptor
+
+groovyLibrary {
+    includeInGroovyAll = false
+}

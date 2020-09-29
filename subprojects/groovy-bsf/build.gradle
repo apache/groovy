@@ -28,3 +28,7 @@ dependencies {
     api rootProject // GroovyEngine#getEvalShell
     testImplementation project(':groovy-test')
 }
+
+groovyLibrary {
+    includeInGroovyAll = false
+}
