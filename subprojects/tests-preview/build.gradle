@@ -22,8 +22,8 @@ plugins {
 }
 
 dependencies {
-    compile rootProject
-    testCompile project(':groovy-test')
+    implementation rootProject
+    testImplementation project(':groovy-test')
 }
 
 tasks.withType(Test) {

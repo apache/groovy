@@ -117,7 +117,7 @@ allprojects {
             includedResources = [
                     ("$rootProject.projectDir/notices/${isRoot ? 'NOTICE-GROOIDJARJAR' : 'NOTICE-GROOID'}".toString()): 'META-INF/NOTICE'
             ]
-            outputFile = file("$buildDir/libs/${jar.baseName}-${jar.version}-grooid.jar")
+            outputFile = file("$buildDir/libs/${jar.archiveBaseName.get()}-${jar.archiveVersion.get()}-grooid.jar")
         }
     }
 }
@@ -202,7 +202,7 @@ ext.distSpec = copySpec {
 task distBin(type: Zip) {
     archiveBaseName = 'apache-groovy'
     archiveAppendix = 'binary'
-    into("groovy-$version") {
+    into("groovy-${project.version}") {
         with distSpec
     }
     allprojects {
@@ -215,7 +215,7 @@ task distBin(type: Zip) {
 task distDoc(type: Zip, dependsOn: doc) {
     archiveBaseName = 'apache-groovy'
     archiveAppendix = 'docs'
-    into("groovy-$version") {
+    into("groovy-${project.version}") {
         with docSpec
     }
 }
@@ -237,7 +237,7 @@ task syncDoc(type: Copy, dependsOn: doc) {
 task distSrc(type: Zip) {
     archiveBaseName = 'apache-groovy'
     archiveAppendix = 'src'
-    into("groovy-$version")
+    into("groovy-${project.version}")
     with srcSpec
 }
 
@@ -260,7 +260,7 @@ task checkNoSnapshotVersions {
         if (project.isReleaseVersion) {
             // TODO use modules() and exclusions as per distSpec
             allprojects {
-                project.configurations.runtime.resolvedConfiguration.resolvedArtifacts.each {
+                project.configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each {
                     if (it.moduleVersion.id.version.endsWith("-SNAPSHOT")) {
                         throw new GradleException("Found snapshot dependency for non-snapshot Groovy: " + it.moduleVersion)
                     }
@@ -276,7 +276,7 @@ task dist(type: Zip, dependsOn: [checkCompatibility, distBin, distSrc, distDoc, 
     archiveBaseName = 'apache-groovy'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     appendix 'sdk'
-    into "groovy-$version"
+    into "groovy-${project.version}"
     from("$projectDir/licenses/LICENSE-SDK")
     from("$projectDir/notices/NOTICE-SDK")
     rename '^([A-Z]+)-([^.]*)', '$1'
@@ -288,7 +288,7 @@ task dist(type: Zip, dependsOn: [checkCompatibility, distBin, distSrc, distDoc, 
         with srcSpec
     }
 
-    def av = version
+    def av = project.version
     if ((av.endsWith('SNAPSHOT') && !groovyBundleVersion.endsWith('SNAPSHOT'))
             || (!av.endsWith('SNAPSHOT') && groovyBundleVersion.endsWith('SNAPSHOT'))) {
         throw new GradleException("Incoherent versions. Found groovyVersion=$av and groovyBundleVersion=$groovyBundleVersion")

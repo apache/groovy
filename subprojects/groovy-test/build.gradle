@@ -28,11 +28,11 @@ dependencies {
     api rootProject   // GroovyTestCase uses Closure...
     api "junit:junit:$junitVersion" // GroovyTestCase extends TestCase...
     // groovy-ant needed for FileNameFinder used in AllTestSuite and JavadocAssertionTestSuite
-    testRuntime(project(':groovy-ant')) {
+    testRuntimeOnly(project(':groovy-ant')) {
         transitive = false // bring in just what we need below
     }
-    testRuntime "org.apache.ant:ant:$antVersion"
-    testRuntime "org.apache.ant:ant-launcher:$antVersion"
+    testRuntimeOnly "org.apache.ant:ant:$antVersion"
+    testRuntimeOnly "org.apache.ant:ant-launcher:$antVersion"
 }
 
 eclipse.classpath.file.whenMerged {

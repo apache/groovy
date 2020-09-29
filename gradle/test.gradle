@@ -120,12 +120,12 @@ task compileTestExtensionModule(type: JavaCompile) {
 task testExtensionModuleJar(type: Jar) {
     description = 'Builds a sample extension module used in tests'
     dependsOn compileTestExtensionModule
-    baseName = 'module-test'
-    version = '1.4'
+    archivesBaseName = 'module-test'
+    archiveVersion = '1.4'
     from { compileTestExtensionModule.destinationDir }
     from files("$extModuleFixtureDir/src/main/resources")
     // emulate Maven repo format for output
-    destinationDir = file("$extModuleRepoDir/jars/module-test/module-test/${version}")
+    destinationDirectory = file("$extModuleRepoDir/jars/module-test/module-test/${archiveVersion.get()}")
 }
 
 tasks.withType(Test) {
