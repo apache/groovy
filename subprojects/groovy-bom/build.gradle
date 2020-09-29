@@ -6,7 +6,7 @@ dependencies {
     constraints {
         api(platform(project(":groovy-all")))
         rootProject.allprojects { p ->
-            p.pluginManager.withPlugin('org.apache.groovy-library') {
+            p.pluginManager.withPlugin('org.apache.groovy-base') {
                 api(p)
             }
         }

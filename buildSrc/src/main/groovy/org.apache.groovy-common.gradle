@@ -16,6 +16,19 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+import org.apache.groovy.gradle.SharedConfiguration
+
+plugins {
+    id 'org.apache.groovy-bad-practices-detection'
+}
+
+if (project == rootProject) {
+    project.extensions.create(SharedConfiguration, 'sharedConfiguration', SharedConfiguration, project.providers)
+}
+def config = rootProject.extensions.getByType(SharedConfiguration)
+
+group = 'org.apache.groovy'
+version = config.groovyVersion.get()
 
 repositories {
     if (rootProject.hasProperty('buildInChina')) {

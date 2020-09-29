@@ -1,7 +1,206 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+
+import org.apache.groovy.gradle.GroovyLibraryExtension
+import org.apache.groovy.gradle.JarJarTask
+import org.apache.groovy.gradle.ReleaseInfoGenerator
 import org.apache.groovy.gradle.SharedConfiguration
 
-def config = rootProject.extensions.getByType(SharedConfiguration)
+plugins {
+    id 'java-library'
+    id 'groovy'
+    id 'org.apache.groovy-common'
+}
 
-group = 'org.apache.groovy'
-version = config.groovyVersion.get()
+/**
+ * This script defines a conventional plugin for all Groovy modules, be it
+ * Groovy core or any of its libraries.
+ */
 
+def sharedConfiguration = rootProject.extensions.getByType(SharedConfiguration)
+def groovyLibrary = project.extensions.create("groovyLibrary", GroovyLibraryExtension, project.objects, sharedConfiguration, project.convention.plugins.java)
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+def generateReleaseInfo = tasks.register("generateReleaseInfo", ReleaseInfoGenerator)
+
+def groovydocJar = tasks.register("groovydocJar", Jar) {
+    from groovydoc
+    archiveClassifier = 'groovydoc'
+}
+
+configurations {
+    groovydocElements {
+        canBeConsumed = true
+        canBeResolved = false
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
+            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
+            attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, "groovydoc"))
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+        }
+        outgoing {
+            artifact groovydocJar
+        }
+    }
+    sourcesForAggregation {
+        canBeConsumed = true
+        canBeResolved = false
+        extendsFrom implementation, runtimeOnly
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
+            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
+            attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, DocsType.SOURCES))
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, "aggregation"))
+        }
+        outgoing {
+            sourceSets.main.java.srcDirs.each {
+                artifact(it)
+            }
+            sourceSets.main.groovy.srcDirs.each {
+                artifact(it)
+            }
+        }
+    }
+    javadocClasspath {
+        canBeConsumed = true
+        canBeResolved = false
+        extendsFrom implementation, runtimeOnly, compileOnly, compileOnlyApi
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, "javadocClasspath"))
+        }
+        outgoing {
+            artifact tasks.named('jar')
+        }
+    }
+    groovyCompilerClasspath {
+        canBeConsumed = false
+        canBeResolved = true
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+        }
+    }
+}
+
+dependencies {
+    if (project != rootProject) {
+        groovyCompilerClasspath project(":")
+    }
+    compileOnly providers.provider { "com.github.spotbugs:spotbugs-annotations:${rootProject.ext.spotbugsAnnotationsVersion}" }
+}
+
+def excludedFromManifest = [
+        'Ant-Version',
+        'Originally-Created-By',
+        'Bnd-LastModified',
+        'Created-By'
+]
+
+tasks.named('jar') {
+    archiveAppendix = 'raw'
+    groovyLibrary.configureManifest(manifest, excludedFromManifest)
+}
+
+tasks.withType(Jar) {
+    metaInf {
+        if (file("${projectDir}/LICENSE").exists()) {
+            from "${projectDir}/LICENSE"
+        } else {
+            from "${rootProject.projectDir}/licenses/LICENSE-BASE"
+        }
+        if (file("${projectDir}/NOTICE").exists()) {
+            from "${projectDir}/NOTICE"
+        } else {
+            from "${rootProject.projectDir}/notices/NOTICE-BASE"
+        }
+    }
+    exclude '**/package-info.class'
+}
+
+tasks.register("jarjar", JarJarTask) {
+    from = jar.archiveFile
+    repackagedLibraries = files(configurations.runtimeClasspath.incoming.artifactView {
+        componentFilter { component ->
+            if (component instanceof ModuleComponentIdentifier) {
+                return component.module in groovyLibrary.repackagedDependencies.get()
+            }
+            return false
+        }
+    }.files)
+    jarjarToolClasspath = rootProject.configurations.tools
+    untouchedFiles = [
+            'groovy/cli/picocli/CliBuilder*.class',
+            'groovy/cli/picocli/OptionAccessor*.class'
+    ]
+    patterns = [
+            'org.antlr.**': 'groovyjarjarantlr4.@1', // antlr4
+            'org.objectweb.**': 'groovyjarjarasm.@1',
+            'picocli.**': 'groovyjarjarpicocli.@1'
+    ]
+    excludesPerLibrary = [
+            '*': ['META-INF/maven/**', 'META-INF/*', 'META-INF/services/javax.annotation.processing.Processor', '**/module-info.class']
+    ]
+    includesPerLibrary = [
+            'asm-util': ['org/objectweb/asm/util/Printer.class',
+                         'org/objectweb/asm/util/Textifier*',
+                         'org/objectweb/asm/util/ASMifier.class',
+                         'org/objectweb/asm/util/Trace*']
+    ]
+    outputFile = tasks.named('jar').flatMap { layout.buildDirectory.file("libs/${it.archiveBaseName.get()}-${it.archiveVersion.get()}${it.archiveClassifier.get() ? '-' + it.archiveClassifier.get() : ''}.jar") }
+
+    withManifest {
+        def moduleName = "org.apache.${project.name.replace('-', '.')}"
+        attributes('Automatic-Module-Name': moduleName)
+        groovyLibrary.configureManifest(it, excludedFromManifest)
+        classpath = configurations.runtimeClasspath
+    }
+}
+
+components.java {
+    addVariantsFromConfiguration(configurations.groovydocElements) {
+        mapToOptional()
+    }
+}
+
+tasks.withType(AbstractCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(GroovyCompile).configureEach {
+    groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4.cache.threshold=100"]
+    groovyOptions.fork(memoryMaximumSize: sharedConfiguration.groovycMaxMemory.get())
+    groovyClasspath = configurations.groovyCompilerClasspath
+
+    // TODO: this null check was required after adding JMH plugin to performance project
+    classpath = (classpath != null) ? files(classpath, groovyClasspath) : groovyClasspath
+    options.incremental = true
+}
+
+tasks.named("compileTestGroovy") {
+    options.forkOptions.jvmArgs += ["-Dspock.iKnowWhatImDoing.disableGroovyVersionCheck=true"]
+}

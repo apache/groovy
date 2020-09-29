@@ -16,94 +16,37 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-/**
- * This script defines a conventional plugin for Groovy libraries produced by
- * the build
- */
-
+import org.apache.groovy.gradle.JarJarTask
+import org.apache.groovy.gradle.SharedConfiguration
 import org.apache.groovy.gradle.GroovyLibraryExtension
-import org.apache.groovy.gradle.ReleaseInfoGenerator
 
 plugins {
-    id 'org.apache.groovy-shared-repositories'
-    id 'java-library'
-    id 'groovy'
+    id 'org.apache.groovy-common'
     id 'org.apache.groovy-base'
-    id 'org.apache.groovy-documented'
     id 'org.apache.groovy-published-library'
+    id 'org.apache.groovy-documented'
 }
 
-project.extensions.create("groovyLibrary", GroovyLibraryExtension, project.objects)
+def sharedConfiguration = rootProject.extensions.getByType(SharedConfiguration)
+def groovyLibrary = project.extensions.getByType(GroovyLibraryExtension)
 
-java {
-    withSourcesJar()
-    withJavadocJar()
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
-tasks.register("generateReleaseInfo", ReleaseInfoGenerator)
-
-tasks.register("groovydocJar", Jar) {
-    from groovydoc
-    archiveClassifier = 'groovydoc'
-}
-
-configurations {
-    groovydocElements {
-        canBeConsumed = true
-        canBeResolved = false
-        attributes {
-            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
-            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
-            attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, "groovydoc"))
-            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
-        }
-        outgoing {
-            artifact groovydocJar
-        }
-    }
-    sourcesForAggregation {
-        canBeConsumed = true
-        canBeResolved = false
-        extendsFrom implementation, runtimeOnly
-        attributes {
-            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
-            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
-            attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, DocsType.SOURCES))
-            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, "aggregation"))
-        }
-        outgoing {
-            sourceSets.main.java.srcDirs.each {
-                artifact(it)
-            }
-            sourceSets.main.groovy.srcDirs.each {
-                artifact(it)
+tasks.named('jarjar') { JarJarTask it ->
+    def groovyBundleVersion = sharedConfiguration.groovyBundleVersion.get()
+    def symbolicName = project.name
+    it.withManifest {
+        version = groovyBundleVersion
+        instruction '-nouses', 'true'
+        instruction 'Export-Package', "*;version=${groovyBundleVersion}"
+        def folder = new File( "${projectDir}/subprojects/${symbolicName}/src/main/resources/META-INF/services" )
+        if( folder.exists() ) {
+            if (folder.listFiles().count { it.name ==~ /^(?!(org.codehaus.groovy.transform.ASTTransformation)$).*$/ } > 0) {
+                instruction 'Require-Capability', 'osgi.extender;filter:="(osgi.extender=osgi.serviceloader.registrar)"'
+                instruction 'Require-Capability', 'osgi.extender;filter:="(osgi.extender=osgi.serviceloader.processor)"'
+                folder.eachFileMatch(~/^(?!(org.codehaus.groovy.transform.ASTTransformation)$).*$/) {
+                    instruction 'Require-Capability', "osgi.serviceloader;filter:=\"(osgi.serviceloader=${it.name})\";cardinality:=multiple"
+                    instruction 'Provide-Capability', "osgi.serviceloader;osgi.serviceloader=\"${it.name}\""
+                }
             }
         }
     }
-    javadocClasspath {
-        canBeConsumed = true
-        canBeResolved = false
-        extendsFrom implementation, runtimeOnly, compileOnly, compileOnlyApi
-        attributes {
-            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
-            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
-            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, "javadocClasspath"))
-        }
-        outgoing {
-            artifact jar
-        }
-    }
-}
-
-components.java {
-    addVariantsFromConfiguration(configurations.groovydocElements) {
-        mapToOptional()
-    }
-}
-
-tasks.withType(AbstractCompile).configureEach {
-    options.encoding = 'UTF-8'
 }

@@ -17,6 +17,10 @@
  *  under the License.
  */
 
+import org.apache.groovy.gradle.SharedConfiguration
+
+def sharedConfiguration = rootProject.extensions.getByType(SharedConfiguration)
+
 configurations {
     /*
      * This setup is very specific to the Groovy project:
@@ -43,7 +47,7 @@ dependencies {
 }
 
 tasks.withType(Javadoc).configureEach {
-    maxMemory = javaDoc_mx
+    maxMemory = sharedConfiguration.getJavadocMaxMemory().get()
     options {
         if (JavaVersion.current().isJava9Compatible()) {
             addBooleanOption('html5', true)

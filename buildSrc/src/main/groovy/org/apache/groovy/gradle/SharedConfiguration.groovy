@@ -19,7 +19,6 @@
 package org.apache.groovy.gradle
 
 import groovy.transform.CompileStatic
-import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 
@@ -28,9 +27,17 @@ class SharedConfiguration {
     final Provider<String> groovyVersion
     final Provider<Boolean> isReleaseVersion
     final Provider<Date> buildDate
+    final Provider<String> groovyBundleVersion
+    final Provider<String> javacMaxMemory
+    final Provider<String> groovycMaxMemory
+    final Provider<String> javadocMaxMemory
 
-    SharedConfiguration(ObjectFactory factory, ProviderFactory providers) {
+    SharedConfiguration(ProviderFactory providers) {
         groovyVersion = providers.gradleProperty("groovyVersion").forUseAtConfigurationTime()
+        groovyBundleVersion = providers.gradleProperty("groovyBundleVersion").forUseAtConfigurationTime()
+        javacMaxMemory = providers.gradleProperty("javacMain_mx").forUseAtConfigurationTime()
+        groovycMaxMemory = providers.gradleProperty("groovycMain_mx").forUseAtConfigurationTime()
+        javadocMaxMemory = providers.gradleProperty("javaDoc_mx").forUseAtConfigurationTime()
         isReleaseVersion = groovyVersion.map { !it.toLowerCase().contains("snapshot") }
         buildDate = isReleaseVersion.map { it ? new Date() : new Date(0) }
     }

@@ -22,7 +22,7 @@ import java.text.DecimalFormat
 plugins {
     id "me.champeau.gradle.jmh" version "0.5.0"
     id "groovy"
-    id "org.apache.groovy-shared-repositories"
+    id 'org.apache.groovy-common'
 }
 
 configurations {
