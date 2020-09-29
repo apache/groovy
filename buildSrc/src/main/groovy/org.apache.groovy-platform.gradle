@@ -21,14 +21,5 @@ plugins {
     id 'java-platform'
     id 'org.apache.groovy-common'
     id 'org.apache.groovy-published-library'
-}
-
-// Groovy platforms are aggregating so we're making sure they
-// are evaluated after all others
-
-def thisProject = project
-rootProject.allprojects {
-    if (!(project.name in ['groovy-all', 'groovy-bom'])) {
-        thisProject.evaluationDependsOn(it.path)
-    }
+    id 'org.apache.groovy-aggregating-project'
 }

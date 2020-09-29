@@ -31,6 +31,7 @@ class SharedConfiguration {
     final Provider<String> javacMaxMemory
     final Provider<String> groovycMaxMemory
     final Provider<String> javadocMaxMemory
+    final Provider<String> installationDirectory
 
     SharedConfiguration(ProviderFactory providers) {
         groovyVersion = providers.gradleProperty("groovyVersion").forUseAtConfigurationTime()
@@ -40,5 +41,7 @@ class SharedConfiguration {
         javadocMaxMemory = providers.gradleProperty("javaDoc_mx").forUseAtConfigurationTime()
         isReleaseVersion = groovyVersion.map { !it.toLowerCase().contains("snapshot") }
         buildDate = isReleaseVersion.map { it ? new Date() : new Date(0) }
+        installationDirectory = providers.gradleProperty("groovy_installPath")
+            .orElse(providers.systemProperty("installDirectory"))
     }
 }

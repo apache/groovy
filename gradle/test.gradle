@@ -120,7 +120,7 @@ task compileTestExtensionModule(type: JavaCompile) {
 task testExtensionModuleJar(type: Jar) {
     description = 'Builds a sample extension module used in tests'
     dependsOn compileTestExtensionModule
-    archivesBaseName = 'module-test'
+    archiveBaseName = 'module-test'
     archiveVersion = '1.4'
     from { compileTestExtensionModule.destinationDir }
     from files("$extModuleFixtureDir/src/main/resources")
