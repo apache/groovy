@@ -6,6 +6,8 @@ plugins {
 def componentName
 if (pluginManager.hasPlugin('java-platform')) {
     componentName = 'javaPlatform'
+} else if (pluginManager.hasPlugin('org.apache.groovy-distribution')) {
+    componentName = 'groovyDistribution'
 } else {
     componentName = 'groovyLibrary'
 }

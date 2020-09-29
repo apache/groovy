@@ -1,0 +1,110 @@
+import javax.inject.Inject
+
+plugins {
+    id 'org.apache.groovy-common'
+}
+
+tasks.register('distBin', Zip) {
+    archiveBaseName = 'apache-groovy'
+    into("groovy-${project.version}") {
+        with distSpec
+    }
+    allprojects {
+        if (project.name in ['groovy', 'groovy-test']) {
+            distBin.dependsOn(grooidjar)
+        }
+    }
+}
+
+tasks.register('distDoc', Zip) {
+    //dependsOn: doc
+    archiveBaseName = 'apache-groovy'
+    archiveClassifier = 'docs'
+    into("groovy-${project.version}") {
+        with docSpec
+    }
+}
+
+tasks.register('syncDoc', Copy) {
+    //dependsOn: doc
+    inputs.files javadoc.outputs.files
+    inputs.files groovydoc.outputs.files
+
+    destinationDir(file("$buildDir/html"))
+    into('api') {
+        from javadoc.destinationDir
+    }
+    into('gapi') {
+        from groovydoc.destinationDir
+    }
+    // groovy-jdk already at the correct place
+}
+
+tasks.register('distSrc', Zip) {
+    archiveBaseName = 'apache-groovy'
+    archiveClassifier = 'src'
+    into("groovy-${project.version}")
+    with srcSpec
+}
+
+interface Services {
+    @Inject
+    SoftwareComponentFactory getSoftwareComponentFactory()
+}
+
+// The Gradle distribution module isn't a Java library
+// so we create a custom publication
+def factory = objects.newInstance(Services).softwareComponentFactory
+def component = factory.adhoc('groovyDistribution')
+components.add(component)
+
+def bin = configurations.create("distributionBinary") {
+    canBeConsumed = true
+    canBeResolved = false
+    attributes {
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, "application"))
+    }
+    outgoing {
+        artifacts {
+            artifact tasks.named('distBin')
+        }
+    }
+}
+component.addVariantsFromConfiguration(bin) {
+    mapToOptional()
+}
+
+def doc = configurations.create("distributionDocs") {
+    canBeConsumed = true
+    canBeResolved = false
+    attributes {
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
+        attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, DocsType.USER_MANUAL))
+    }
+    outgoing {
+        artifacts {
+            artifact tasks.named('distDoc')
+        }
+    }
+}
+component.addVariantsFromConfiguration(doc) {
+    mapToOptional()
+}
+
+def src = configurations.create("distributionSources") {
+    canBeConsumed = true
+    canBeResolved = false
+    attributes {
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
+        attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, DocsType.SOURCES))
+    }
+    outgoing {
+        artifacts {
+            artifact tasks.named('distSrc')
+        }
+    }
+}
+component.addVariantsFromConfiguration(src) {
+    mapToOptional()
+}
+
