@@ -330,8 +330,6 @@ if (file('user.gradle').exists()) {
     apply from: 'user.gradle'
 }
 
-apply from: 'gradle/signing.gradle'
-
 licenseReport {
     excludeGroups = [
             'com.googlecode', // openbeans has no pom but is ASLv2
