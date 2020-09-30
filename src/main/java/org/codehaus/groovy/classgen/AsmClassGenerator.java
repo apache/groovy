@@ -1027,7 +1027,10 @@ public class AsmClassGenerator extends ClassGenerator {
             return true;
         }
 
-        FieldNode fieldNode = classNode.getSuperClass().getField(propertyName);
+        FieldNode fieldNode = null;
+        if (classNode.getSuperClass() != null) {
+            fieldNode = classNode.getSuperClass().getField(propertyName);
+        }
 
         if (fieldNode == null) {
             throw new RuntimeParserException("Failed to find field[" + propertyName + "] of " + classNode.getName() + "'s super class", pexp);
