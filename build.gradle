@@ -373,8 +373,12 @@ if (!JavaVersion.current().java9Compatible) {
 project.extensions.extraProperties.set('SpotBugsTask', com.github.spotbugs.snom.SpotBugsTask)
 
 apply from: 'gradle/licenses.gradle'
+
+// CC: This can probably be removed as the native IDEA import
+// works pretty nice, but it's up to the Groovy devs to decide
 apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
+
 apply from: 'gradle/quality.gradle'
 apply from: 'gradle/parallel-build-fixes.gradle'
 
