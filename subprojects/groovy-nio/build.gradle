@@ -29,13 +29,13 @@ dependencies {
     testImplementation ("org.spockframework:spock-junit4:$spockVersion")
 }
 
-task moduleDescriptor(type: org.apache.groovy.gradle.WriteExtensionDescriptorTask) {
-    extensionClasses = 'org.apache.groovy.nio.extensions.NioExtensions'
+groovyLibrary {
+    moduleDescriptor {
+        extensionClasses = 'org.apache.groovy.nio.extensions.NioExtensions'
+    }
 }
 
 test {
     useJUnitPlatform()
     systemProperty "spock.iKnowWhatImDoing.disableGroovyVersionCheck", "true"
 }
-
-compileJava.dependsOn moduleDescriptor

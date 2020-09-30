@@ -19,13 +19,14 @@
 package org.apache.groovy.gradle
 
 import groovy.transform.CompileStatic
+import org.gradle.api.Action
+import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.artifacts.component.ComponentIdentifier
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.attributes.Bundling
 import org.gradle.api.attributes.Category
-import org.gradle.api.attributes.DocsType
 import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.attributes.Usage
 import org.gradle.api.attributes.java.TargetJvmVersion
@@ -167,6 +168,12 @@ class GroovyLibraryExtension {
         }
     }
 
+    void moduleDescriptor(Action<? super ModuleDescriptorSpec> spec) {
+        def md = new ModuleDescriptorSpec()
+        spec.execute(md)
+        md.build()
+    }
+
     private AdhocComponentWithVariants findComponent() {
         (AdhocComponentWithVariants) components.getByName("groovyLibrary")
     }
@@ -205,4 +212,18 @@ class GroovyLibraryExtension {
 
     }
 
+    class ModuleDescriptorSpec {
+        String extensionClasses = ''
+        String staticExtensionClasses = ''
+
+        private void build() {
+            def moduleDescriptor = tasks.register("moduleDescriptor", WriteExtensionDescriptorTask) {
+                it.extensionClasses = extensionClasses
+                it.staticExtensionClasses = staticExtensionClasses
+            }
+            tasks.named("processResources") { Task t ->
+                t.dependsOn(moduleDescriptor)
+            }
+        }
+    }
 }
