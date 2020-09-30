@@ -514,6 +514,9 @@ public class AsmClassGenerator extends ClassGenerator {
         super.visitConstructorOrMethod(node, isConstructor);
 
         controller.getCompileStack().clear();
+
+        if (checkIfLastStatementIsReturn(code)) return;
+
         if (node.isVoidMethod()) {
             mv.visitInsn(RETURN);
         } else {
@@ -529,6 +532,21 @@ public class AsmClassGenerator extends ClassGenerator {
                 BytecodeHelper.doReturn(mv, type);
             }
         }
+    }
+
+    private boolean checkIfLastStatementIsReturn(Statement code) {
+        if (code instanceof BlockStatement) {
+            BlockStatement blockStatement = (BlockStatement) code;
+            List<Statement> statementList = blockStatement.getStatements();
+            int statementCnt = statementList.size();
+            if (statementCnt > 0) {
+                Statement lastStatement = statementList.get(statementCnt - 1);
+                if (lastStatement instanceof ReturnStatement) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private void visitAnnotationDefaultExpression(final AnnotationVisitor av, final ClassNode type, final Expression exp) {
