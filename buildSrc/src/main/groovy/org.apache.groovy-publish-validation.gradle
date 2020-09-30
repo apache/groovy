@@ -16,11 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-import org.apache.groovy.gradle.SharedConfiguration
 
 tasks.withType(PublishToMavenRepository).configureEach {
     doLast {
-        def sharedConfiguration = rootProject.extensions.getByType(SharedConfiguration)
         if (sharedConfiguration.isReleaseVersion.get()) {
             pluginManager.withPlugin('java') {
                 project.configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each {

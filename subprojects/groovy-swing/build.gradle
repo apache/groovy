@@ -18,13 +18,18 @@
  */
 plugins {
     id 'org.apache.groovy-library'
+    id 'java-test-fixtures'
 }
 
 dependencies {
     api rootProject  // SwingBuilder extends FactoryBuilderSupport...
-    testImplementation rootProject.sourceSets.test.runtimeClasspath
     testImplementation project(':groovy-test')
+    testImplementation testFixtures(project(':'))
+    testFixturesImplementation project(':groovy-test')
+    testFixturesImplementation testFixtures(project(':'))
 }
+
+
 task moduleDescriptor(type: org.apache.groovy.gradle.WriteExtensionDescriptorTask) {
     extensionClasses = 'org.apache.groovy.swing.extensions.SwingExtensions'
 }

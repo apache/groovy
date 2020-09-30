@@ -27,6 +27,15 @@ dependencies {
 //    testImplementation 'com.h2database:h2:1.3.164'
 //    testImplementation 'hsqldb:hsqldb:1.8.0.10'
     testImplementation project(':groovy-test')
+    testRuntimeOnly(project(':')) {
+        because "Tests are using Grapes"
+        capabilities {
+            requireCapability("org.apache.groovy:groovy-grapes")
+        }
+    }
+    testCompileOnly(project(":groovy-macro")) {
+        because "tests are using macro methods"
+    }
 }
 
 // TODO move to parent build.gradle subprojects

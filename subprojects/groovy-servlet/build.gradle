@@ -37,7 +37,6 @@ dependencies {
         exclude(group: 'javax.servlet', module: 'servlet-api')
     }
     testImplementation "jmock:jmock:$jmockVersion"
-    testImplementation rootProject.sourceSets.test.runtimeClasspath
     testImplementation project(':groovy-json')
     testImplementation project(':groovy-test')
 }

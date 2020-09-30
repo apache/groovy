@@ -26,6 +26,12 @@ dependencies {
     testImplementation project(':groovy-dateutil')
     testRuntimeOnly "org.slf4j:slf4j-api:$slf4jVersion"
     testRuntimeOnly project(':groovy-ant') // for JavadocAssertionTests
+    testRuntimeOnly(project(':')) {
+        because "Tests are using Grapes"
+        capabilities {
+            requireCapability("org.apache.groovy:groovy-grapes")
+        }
+    }
 }
 
 eclipse.classpath.file.whenMerged {

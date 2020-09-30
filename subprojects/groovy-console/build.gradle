@@ -23,10 +23,14 @@ plugins {
 dependencies {
     api rootProject // AstBrowser has methods with Closure params...
     implementation "com.github.javaparser:javaparser-core:$javaParserVersion"
+    implementation "org.ow2.asm:asm-util:$asmVersion"
     implementation project(':groovy-swing')
     implementation project(':groovy-templates')
+    implementation ("org.apache.ivy:ivy:$ivyVersion") {
+        transitive = false
+    }
     testImplementation project(':groovy-test')
-    testImplementation project(':groovy-swing')
+    testImplementation testFixtures(project(':groovy-swing'))
 
     groovyCompilerClasspath(project(":")) {
         capabilities {

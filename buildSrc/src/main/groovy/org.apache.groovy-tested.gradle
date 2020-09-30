@@ -1,0 +1,101 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+
+// Instead of adding to the test sources, this should
+// be a separate source set so that we can run spec tests in isolation
+sourceSets {
+    test {
+        groovy {
+            srcDirs += 'src/spec/test'
+        }
+        resources {
+            srcDirs += 'src/spec/test-resources'
+        }
+    }
+}
+
+tasks.withType(Test) {
+    def grapeDirectory = new File(temporaryDir, "grape")
+    def jdk8 = ['-XX:+UseConcMarkSweepGC']
+    def jdk9 = ['-Djava.locale.providers=COMPAT,SPI']
+//        def jdk9 = ['-Djava.locale.providers=COMPAT,SPI', '--illegal-access=debug']
+    def common = ['-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", "-Duser.language=en" ]
+    if (JavaVersion.current().isJava9Compatible()) {
+        jvmArgs (*common, *jdk9)
+        systemProperty "groovy.force.illegal.access", findProperty("groovy.force.illegal.access")
+    } else {
+        jvmArgs (*common, *jdk8)
+    }
+    def headless = System.properties['java.awt.headless']
+    if (headless == 'true') {
+        systemProperties 'java.awt.headless': 'true'
+    }
+    systemProperties 'apple.awt.UIElement': 'true',
+            'javadocAssertion.src.dir': './src/main',
+            'grape.root' : grapeDirectory.absolutePath,
+            'gradle.home': gradle.gradleHomeDir, // this is needed by the security.policy
+            'user.home': temporaryDir.absolutePath // make sure tests are isolated from real user home or tests using Grape may fail
+
+    forkEvery = 50
+    maxParallelForks = sharedConfiguration.isRunningOnCI ? 1 : Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+    scanForTestClasses = true
+    ignoreFailures = false
+    testLogging {
+        exceptionFormat = 'full'
+        // uncomment the following line if you need more logging
+        // events "failed", "started"
+    }
+    def testdb = System.properties['groovy.testdb.props']
+    if (testdb) {
+        systemProperties 'groovy.testdb.props': testdb
+    }
+
+    classpath = files('src/test') + classpath
+    exclude buildExcludeFilter(it.name == 'test')
+    ext.resultText = ''
+    doFirst {
+        grapeDirectory.deleteDir() // delete if it exists already to be in a clean state
+    }
+    doLast {
+        ant.delete {
+            fileset(dir: '.', includes: '*.class')
+        }
+    }
+}
+
+tasks.addRule('Pattern: testSingle<Name> will test **/<Name>.class') { String taskName ->
+    if (taskName.startsWith('testSingle')) {
+        tasks.create(taskName).dependsOn(test)
+        test.includes = ['**/' + taskName.substring(10) + '.class']
+        test.outputs.upToDateWhen { false }
+    }
+}
+
+Closure buildExcludeFilter(boolean legacyTestSuite) {
+    def excludes = []
+
+    // if no network available, disable Grapes
+    if (!providers.systemProperty('junit.network').forUseAtConfigurationTime().getOrNull()) {
+        excludes << 'groovy/grape/'
+    }
+
+    return { f ->
+        excludes.any { f.file =~ it }
+    }
+}

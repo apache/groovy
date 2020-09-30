@@ -18,7 +18,6 @@
  */
 package typing
 
-import groovy.$Temp
 import groovy.test.GroovyAssert
 import groovy.test.GroovyTestCase
 import groovy.transform.TypeChecked

@@ -25,7 +25,7 @@ dependencies {
     api "com.github.javaparser:javaparser-core:$javaParserVersion" // GroovydocJavaVisitor extends VoidVisitorAdapter...
     implementation project(':groovy-templates')
     implementation project(':groovy-docgenerator')
-    testImplementation rootProject.sourceSets.test.runtimeClasspath
+    testImplementation project(':groovy-ant')
     testImplementation project(':groovy-test')
     testImplementation "org.apache.ant:ant-testutil:$antVersion"
 }

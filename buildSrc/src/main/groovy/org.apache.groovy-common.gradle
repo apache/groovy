@@ -23,12 +23,11 @@ plugins {
 }
 
 if (project == rootProject) {
-    project.extensions.create(SharedConfiguration, 'sharedConfiguration', SharedConfiguration, project.providers)
+    project.extensions.create(SharedConfiguration, 'sharedConfiguration', SharedConfiguration, project.providers, rootProject.buildDir, rootProject.logger)
 }
-def config = rootProject.extensions.getByType(SharedConfiguration)
 
 group = 'org.apache.groovy'
-version = config.groovyVersion.get()
+version = sharedConfiguration.groovyVersion.get()
 
 repositories {
     if (rootProject.hasProperty('buildInChina')) {
