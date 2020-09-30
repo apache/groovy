@@ -861,43 +861,44 @@ publishing {
 
 signing {
     required {
-        project.sharedConfiguration.isReleaseVersion.get() &&
-                (gradle.taskGraph.hasTask(':artifactoryPublish') || rootProject.hasProperty('forceSign'))
+        sharedConfiguration.signing.shouldSign(gradle.taskGraph)
     }
     sign publishing.publications.maven
+    if (sharedConfiguration.signing.useGpgCmd.get()) {
+        useGpgCmd()
+    }
 }
 
 gradle.taskGraph.whenReady { taskGraph ->
     if (taskGraph.hasTask(":artifactoryPublish") && gradle.startParameter.parallelProjectExecutionEnabled) {
             throw new GradleException("In order to publish to artifactory you must use `--no-parallel`")
     }
-    if (project.sharedConfiguration.isReleaseVersion.get() &&
-            (taskGraph.hasTask(':artifactoryPublish') || project.hasProperty('forceSign'))) {
+    if (sharedConfiguration.signing.shouldSign(gradle.taskGraph)) {
         // Use Java 6's console or Swing to read input (not suitable for CI)
-        if (!project.hasProperty('signing.keyId') ||
-                !project.hasProperty('signing.secretKeyRingFile') ||
-                !project.hasProperty('signing.password')) {
+        if (!sharedConfiguration.signing.hasAllKeyDetails()) {
             printf "\n\nWe have to sign some things in this build." +
                     "\n\nPlease enter your signing details.\n\n"
             System.out.flush()
 
-            if (!project.hasProperty('signing.keyId')) {
-                project.ext.'signing.keyId' = promptUser('PGP Key Id')
+            if (!sharedConfiguration.signing.keyId.present) {
+                sharedConfiguration.signing.keyId.set promptUser('PGP Key Id')
             }
-            if (!project.hasProperty('signing.secretKeyRingFile')) {
-                project.ext.'signing.secretKeyRingFile' = promptUser('PGP Secret Key Ring File (absolute path)')
+            if (!sharedConfiguration.signing.secretKeyRingFile.present) {
+                sharedConfiguration.signing.secretKeyRingFile.set promptUser('PGP Secret Key Ring File (absolute path)')
             }
-            if (!project.hasProperty('signing.password')) {
-                project.ext.'signing.password' = promptUser('PGP Private Key Password')
+            if (!sharedConfiguration.signing.password.present) {
+                sharedConfiguration.signing.password.set promptUser('PGP Private Key Password')
+            }
+
+            allprojects {
+                project.properties.put("signing.keyId", sharedConfiguration.signing.keyId.get())
+                project.properties.put("signing.secretKeyRingFile", sharedConfiguration.signing.secretKeyRingFile.get())
+                project.properties.put("signing.password", sharedConfiguration.signing.password.get())
             }
 
             printf "\nThanks.\n\n"
             System.out.flush()
         }
-        // TODO: make this cleaner
-        allprojects { ext.'signing.keyId' = project.getProperty('signing.keyId') }
-        allprojects { ext.'signing.secretKeyRingFile' = project.getProperty('signing.secretKeyRingFile') }
-        allprojects { ext.'signing.password' = project.getProperty('signing.password') }
     }
 }
 

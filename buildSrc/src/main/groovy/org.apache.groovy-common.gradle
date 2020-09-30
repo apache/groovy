@@ -23,7 +23,7 @@ plugins {
 }
 
 if (project == rootProject) {
-    project.extensions.create(SharedConfiguration, 'sharedConfiguration', SharedConfiguration, rootProject.layout, project.providers, rootProject.buildDir, rootProject.logger)
+    project.extensions.create(SharedConfiguration, 'sharedConfiguration', SharedConfiguration, project.objects, rootProject.layout, project.providers, rootProject.buildDir, rootProject.logger)
 }
 
 group = 'org.apache.groovy'
