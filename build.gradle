@@ -53,6 +53,7 @@ plugins {
     id 'org.sonarqube' version '3.0'
 
     id 'org.apache.groovy-core'
+    id 'java-test-fixtures'
 }
 
 buildScanRecipes {
@@ -189,7 +190,6 @@ dependencies {
 
     testImplementation "jmock:jmock:$jmockVersion"
     testImplementation "jmock:jmock-cglib:$jmockVersion"
-    testImplementation "xmlunit:xmlunit:$xmlunitVersion"
     testImplementation "ch.qos.logback:logback-classic:$logbackVersion"
     testImplementation "log4j:log4j:$log4jVersion"
     testImplementation "org.apache.logging.log4j:log4j-core:$log4j2Version"
@@ -212,8 +212,17 @@ dependencies {
     testImplementation project(':groovy-dateutil')
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-macro')
+    testFixturesImplementation "xmlunit:xmlunit:$xmlunitVersion"
+    testFixturesImplementation project(':groovy-test')
+    testFixturesImplementation project(':groovy-xml')
     spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.10.1'
     testImplementation "net.jcip:jcip-annotations:$jcipAnnotationsVersion"
+
+    testRuntimeOnly(project(":")) {
+        capabilities {
+            requireCapability 'org.apache.groovy:groovy-grapes'
+        }
+    }
 }
 
 configurations {
@@ -328,6 +337,38 @@ tasks.named('jar') {
     }
 }
 
+
+// some tests require Jars, but those are not allowed in the source directory
+// by the Apache policy, so we need to build them and add them to the test
+// resources classpath
+
+def extModuleFixtureDir = project.layout.projectDirectory.dir("src/test-fixtures/extmodule")
+def extModuleOutputDir = project.layout.buildDirectory.dir("testFixtures/extmodule")
+def extModuleRepoDir = extModuleOutputDir.map { it.dir("repo") }
+
+def compileTestExtensionModule = tasks.register("compileTestExtensionModule", JavaCompile) {
+    classpath = files(tasks.named('jar'))
+    source fileTree(extModuleFixtureDir.dir("src/main/java"))
+    destinationDirectory = extModuleOutputDir.map  { it.dir("classes") }
+    sourceCompatibility = 1.7
+    targetCompatibility = 1.7
+}
+
+def testExtensionModuleJar = tasks.register("testExtensionModuleJar", Jar) {
+    description = 'Builds a sample extension module used in tests'
+    archiveBaseName = 'module-test'
+    archiveVersion = '1.4'
+    from compileTestExtensionModule
+    from extModuleFixtureDir.dir("src/main/resources")
+    // emulate Maven repo format for output
+    destinationDirectory = extModuleRepoDir.map { it.dir("jars/module-test/module-test/${archiveVersion.get()}") }
+}
+
+dependencies {
+    testImplementation files(testExtensionModuleJar)
+    testRuntimeOnly files(extModuleRepoDir)
+}
+
 if (!JavaVersion.current().java9Compatible) {
     logger.lifecycle '''
     **************************************** WARNING ********************************************
@@ -341,7 +382,6 @@ if (!JavaVersion.current().java9Compatible) {
 // More info: https://discuss.gradle.org/t/buildscript-dependencies-in-external-script/23243
 project.extensions.extraProperties.set('SpotBugsTask', com.github.spotbugs.snom.SpotBugsTask)
 
-apply from: 'gradle/test.gradle'
 apply from: 'gradle/groovydoc.gradle'
 apply from: 'gradle/docs.gradle'
 apply from: 'gradle/licenses.gradle'

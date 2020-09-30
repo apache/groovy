@@ -9,7 +9,6 @@ plugins {
     id 'org.apache.groovy-aggregating-project'
 }
 
-def sharedConfiguration = rootProject.extensions.getByType(SharedConfiguration)
 def distributionExtension = project.extensions.create('distribution', DistributionExtension, project)
 
 configurations {

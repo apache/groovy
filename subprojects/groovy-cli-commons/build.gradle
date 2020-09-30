@@ -26,6 +26,7 @@ dependencies {
     testImplementation rootProject.sourceSets.test.output
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-dateutil')
+    testRuntimeOnly testFixtures(project(":"))
 }
 
 groovyLibrary {

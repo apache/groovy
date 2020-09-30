@@ -31,7 +31,7 @@ abstract class CompilableTestSupport extends GroovyTestCase {
         } catch (CompilationFailedException cfe) {
             return cfe.message
         }
-        fail("the compilation succeeded but should have failed")
+        junit.framework.TestCase.fail("the compilation succeeded but should have failed")
     }
 
     protected void shouldCompile(String script) {

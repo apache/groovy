@@ -22,7 +22,6 @@ import groovy.transform.CompileStatic
 import org.apache.groovy.gradle.GroovyLibraryExtension
 import org.apache.groovy.gradle.JarJarTask
 import org.apache.groovy.gradle.ReleaseInfoGenerator
-import org.apache.groovy.gradle.SharedConfiguration
 import org.gradle.api.attributes.java.TargetJvmVersion
 
 import javax.inject.Inject
@@ -31,6 +30,7 @@ plugins {
     id 'java-library'
     id 'groovy'
     id 'org.apache.groovy-common'
+    id 'org.apache.groovy-tested'
 }
 
 /**
@@ -38,7 +38,6 @@ plugins {
  * Groovy core or any of its libraries.
  */
 
-def sharedConfiguration = rootProject.extensions.getByType(SharedConfiguration)
 def groovyLibrary = project.extensions.create("groovyLibrary", GroovyLibraryExtension, project.objects, sharedConfiguration, project.convention.plugins.java, java, components, configurations)
 
 java {
@@ -57,36 +56,22 @@ def groovydocJar = tasks.register("groovydocJar", Jar) {
 
 def internalPublication = Attribute.of("org.apache.groovy.internal", Boolean)
 
+def makeInternal = { Configuration cnf ->
+    cnf.attributes {
+        it.attribute(internalPublication, true)
+    }
+}
+
 configurations {
-    apiElements {
-        attributes {
-            attribute(internalPublication, true)
-        }
-    }
-    runtimeElements {
-        attributes {
-            attribute(internalPublication, true)
-        }
-    }
-    compileClasspath {
-        attributes {
-            attribute(internalPublication, true)
-        }
-    }
-    runtimeClasspath {
-        attributes {
-            attribute(internalPublication, true)
-        }
-    }
-    testCompileClasspath {
-        attributes {
-            attribute(internalPublication, true)
-        }
-    }
-    testRuntimeClasspath {
-        attributes {
-            attribute(internalPublication, true)
-        }
+    makeInternal(apiElements)
+    makeInternal(runtimeElements)
+    makeInternal(compileClasspath)
+    makeInternal(runtimeClasspath)
+    makeInternal(testCompileClasspath)
+    makeInternal(testRuntimeClasspath)
+    pluginManager.withPlugin('java-test-fixtures') {
+        makeInternal(testFixturesCompileClasspath)
+        makeInternal(testFixturesRuntimeClasspath)
     }
     groovydocElements {
         canBeConsumed = true
@@ -234,8 +219,6 @@ tasks.withType(GroovyCompile).configureEach {
     groovyOptions.fork(memoryMaximumSize: sharedConfiguration.groovycMaxMemory.get())
     groovyClasspath = configurations.groovyCompilerClasspath
 
-    // TODO: this null check was required after adding JMH plugin to performance project
-    classpath = (classpath != null) ? files(classpath, groovyClasspath) : groovyClasspath
     options.incremental = true
 }
 

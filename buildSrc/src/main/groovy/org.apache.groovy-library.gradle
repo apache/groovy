@@ -17,8 +17,6 @@
  *  under the License.
  */
 import org.apache.groovy.gradle.JarJarTask
-import org.apache.groovy.gradle.SharedConfiguration
-import org.apache.groovy.gradle.GroovyLibraryExtension
 
 plugins {
     id 'org.apache.groovy-common'
@@ -27,8 +25,9 @@ plugins {
     id 'org.apache.groovy-documented'
 }
 
-def sharedConfiguration = rootProject.extensions.getByType(SharedConfiguration)
-def groovyLibrary = project.extensions.getByType(GroovyLibraryExtension)
+dependencies {
+    testImplementation testFixtures(project(":"))
+}
 
 tasks.named('jarjar') { JarJarTask it ->
     def groovyBundleVersion = sharedConfiguration.groovyBundleVersion.get()

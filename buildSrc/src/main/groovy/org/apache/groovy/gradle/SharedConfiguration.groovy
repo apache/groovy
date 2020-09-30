@@ -21,6 +21,7 @@ package org.apache.groovy.gradle
 import groovy.transform.CompileStatic
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
+import org.gradle.api.logging.Logger
 
 @CompileStatic
 class SharedConfiguration {
@@ -32,8 +33,9 @@ class SharedConfiguration {
     final Provider<String> groovycMaxMemory
     final Provider<String> javadocMaxMemory
     final Provider<String> installationDirectory
+    final boolean isRunningOnCI
 
-    SharedConfiguration(ProviderFactory providers) {
+    SharedConfiguration(ProviderFactory providers, File rootProjectDirectory, Logger logger) {
         groovyVersion = providers.gradleProperty("groovyVersion").forUseAtConfigurationTime()
         groovyBundleVersion = providers.gradleProperty("groovyBundleVersion").forUseAtConfigurationTime()
         javacMaxMemory = providers.gradleProperty("javacMain_mx").forUseAtConfigurationTime()
@@ -43,5 +45,12 @@ class SharedConfiguration {
         buildDate = isReleaseVersion.map { it ? new Date() : new Date(0) }
         installationDirectory = providers.gradleProperty("groovy_installPath")
             .orElse(providers.systemProperty("installDirectory"))
+        isRunningOnCI = detectCi(rootProjectDirectory, logger)
+    }
+
+    private static boolean detectCi(File file, Logger logger) {
+        def isCi = file.absolutePath =~ /teamcity|jenkins|hudson|travis/
+        logger.lifecycle "Detected ${isCi ? 'Continuous Integration environment' : 'development environment'}"
+        isCi
     }
 }

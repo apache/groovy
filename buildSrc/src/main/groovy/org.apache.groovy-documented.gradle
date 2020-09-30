@@ -17,10 +17,6 @@
  *  under the License.
  */
 
-import org.apache.groovy.gradle.SharedConfiguration
-
-def sharedConfiguration = rootProject.extensions.getByType(SharedConfiguration)
-
 configurations {
     /*
      * This setup is very specific to the Groovy project:

@@ -22,6 +22,7 @@ class JmxTest extends CompilableTestSupport {
 
     void testIntroduction() {
         shouldCompile '''
+            import groovy.jmx.GroovyMBean
             import javax.management.Attribute
             import javax.management.MBeanServerConnection
 
