@@ -39,8 +39,8 @@ def checkBinaryCompatibility = tasks.register("checkBinaryCompatibility") {
     description = "Generates binary compatibility reports"
 }
 
-tasks.check {
-    dependsOn(checkBinaryCompatibility)
+tasks.register("check") {
+    dependsOn checkBinaryCompatibility
 }
 
 // for comparing between versions with different modules, set excludeModules to differing modules, e.g.

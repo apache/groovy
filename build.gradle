@@ -36,7 +36,6 @@ buildscript {
 
     dependencies {
         // using the old "classpath" style of plugins because the new one doesn't play well with multi-modules
-        classpath "org.asciidoctor:asciidoctor-gradle-jvm:3.2.0"
         classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.0.3"
         //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
         classpath "org.nosphere.apache:creadur-rat-gradle:0.7.0"
@@ -51,7 +50,6 @@ plugins {
     id 'com.github.ben-manes.versions' version '0.33.0'
     id 'com.github.blindpirate.osgi' version '0.0.3'
     id 'org.sonarqube' version '3.0'
-
     id 'org.apache.groovy-core'
     id 'java-test-fixtures'
 }
@@ -73,14 +71,6 @@ apply plugin: "com.github.jk1.dependency-license-report"
 
 File javaHome = new File(System.getProperty('java.home'))
 logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.version')})"
-
-allprojects {
-    apply from: "${rootProject.projectDir}/gradle/asciidoctor.gradle"
-
-    tasks.withType(org.asciidoctor.gradle.jvm.AbstractAsciidoctorTask) {
-        outputs.cacheIf { true }
-    }
-}
 
 task(copyTestResources, type: Copy)
         .from('src/test')
@@ -309,7 +299,7 @@ tasks.named('compileJava') {
 
 apply from: 'wrapper.gradle'
 
-compileTestGroovy {
+tasks.named('compileTestGroovy') {
     groovyOptions.fork(memoryMaximumSize: groovycTest_mx)
 }
 
@@ -382,7 +372,6 @@ if (!JavaVersion.current().java9Compatible) {
 // More info: https://discuss.gradle.org/t/buildscript-dependencies-in-external-script/23243
 project.extensions.extraProperties.set('SpotBugsTask', com.github.spotbugs.snom.SpotBugsTask)
 
-apply from: 'gradle/docs.gradle'
 apply from: 'gradle/licenses.gradle'
 apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
