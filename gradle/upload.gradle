@@ -39,8 +39,6 @@ allprojects {
     }
 }
 
-apply from: 'gradle/backports.gradle'
-
 ext.basename = { String s -> s.take(s.lastIndexOf('.')) }
 ext.deriveFile = { File archive, String suffix -> new File(archive.parent, basename(archive.name) + "-${suffix}.jar") }
 
