@@ -45,8 +45,8 @@ tasks.withType(Test) {
     classpath = classpath + files('src/test/groovy') + files('src/spec/test')
 }
 
-task moduleDescriptor(type: org.apache.groovy.gradle.WriteExtensionDescriptorTask) {
-    extensionClasses = 'org.apache.groovy.sql.extensions.SqlExtensions'
+groovyLibrary {
+    moduleDescriptor {
+        extensionClasses = 'org.apache.groovy.sql.extensions.SqlExtensions'
+    }
 }
-
-compileJava.dependsOn moduleDescriptor

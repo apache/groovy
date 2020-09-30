@@ -26,8 +26,9 @@ dependencies {
     testImplementation project(':groovy-dateutil')
 }
 
-task moduleDescriptor(type: org.apache.groovy.gradle.WriteExtensionDescriptorTask) {
-    extensionClasses = 'org.apache.groovy.datetime.extensions.DateTimeExtensions'
-    staticExtensionClasses = 'org.apache.groovy.datetime.extensions.DateTimeStaticExtensions'
+groovyLibrary {
+    moduleDescriptor {
+        extensionClasses = 'org.apache.groovy.datetime.extensions.DateTimeExtensions'
+        staticExtensionClasses = 'org.apache.groovy.datetime.extensions.DateTimeStaticExtensions'
+    }
 }
-compileJava.dependsOn moduleDescriptor

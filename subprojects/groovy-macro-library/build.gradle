@@ -26,12 +26,9 @@ dependencies {
     testImplementation project(':groovy-test')
 }
 
-task moduleDescriptor(type: org.apache.groovy.gradle.WriteExtensionDescriptorTask) {
-    extensionClasses = 'org.apache.groovy.macrolib.MacroLibGroovyMethods'
-}
-
-compileJava.dependsOn moduleDescriptor
-
 groovyLibrary {
     includeInGroovyAll = false
+    moduleDescriptor {
+        extensionClasses = 'org.apache.groovy.macrolib.MacroLibGroovyMethods'
+    }
 }

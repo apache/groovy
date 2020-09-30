@@ -25,8 +25,8 @@ dependencies {
     testImplementation project(':groovy-test')
 }
 
-task moduleDescriptor(type: org.apache.groovy.gradle.WriteExtensionDescriptorTask) {
-    extensionClasses = 'org.codehaus.groovy.macro.methods.MacroGroovyMethods,org.codehaus.groovy.macro.matcher.ASTMatcher'
+groovyLibrary {
+    moduleDescriptor {
+        extensionClasses = 'org.codehaus.groovy.macro.methods.MacroGroovyMethods,org.codehaus.groovy.macro.matcher.ASTMatcher'
+    }
 }
-
-compileJava.dependsOn moduleDescriptor
