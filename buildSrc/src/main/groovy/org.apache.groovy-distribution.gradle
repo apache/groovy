@@ -12,7 +12,12 @@ plugins {
 def distributionExtension = project.extensions.create('distribution', DistributionExtension, project)
 
 configurations {
+    baseProjects {
+        canBeConsumed = false
+        canBeResolved = false
+    }
     distributions {
+        extendsFrom baseProjects
         canBeConsumed = false
         canBeResolved = false
     }
@@ -46,6 +51,15 @@ configurations {
             attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, "groovydoc"))
         }
     }
+    allAsciidoc {
+        extendsFrom baseProjects
+        canBeConsumed = false
+        canBeResolved = true
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
+            attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, DocsType.USER_MANUAL))
+        }
+    }
     docgeneratorTool {
         canBeConsumed = false
         canBeResolved = true
@@ -61,7 +75,7 @@ configurations {
 dependencies {
     rootProject.allprojects {
         if (pluginManager.hasPlugin('org.apache.groovy-base')) {
-            distributions(it)
+            baseProjects(it)
         }
     }
     // also include optional features from main module
@@ -158,6 +172,15 @@ tasks.register("installGroovy", Sync) {
     }
     with distributionExtension.distSpec
     into installDir
+}
+
+tasks.register("doc") {
+    dependsOn 'javadocAll', 'groovydocAll', 'docGDK', 'asciidocAll', 'asciidoctorPdf'
+}
+
+tasks.register("asciidocAll", Copy) {
+    from configurations.allAsciidoc
+    into layout.buildDirectory.dir("asciidocAll/html5")
 }
 
 interface Services {

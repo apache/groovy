@@ -113,7 +113,7 @@ distribution {
             from configurations.allGroovydoc
         }
         into('html/documentation') {
-            from "$buildDir/asciidocAll/html5"
+            from configurations.allAsciidoc
         }
         into('html/groovy-jdk') {
             from docGDK

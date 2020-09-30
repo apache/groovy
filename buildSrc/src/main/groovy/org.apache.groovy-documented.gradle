@@ -84,3 +84,15 @@ tasks.withType(Groovydoc).configureEach {
     link 'https://commons.apache.org/proper/commons-cli/javadocs/api-release/', 'org.apache.commons.cli.'
     link 'https://picocli.info/apidocs/', 'picocli.'
 }
+
+pluginManager.withPlugin('org.asciidoctor.jvm.pdf') {
+    asciidoctorPdf {
+        baseDirFollowsSourceFile()
+        logDocuments = true
+        sourceDir = project.file('src/spec/doc')
+        sources {
+            include 'index.adoc'
+        }
+        outputDir = "$buildDir/asciidocAll/pdf"
+    }
+}

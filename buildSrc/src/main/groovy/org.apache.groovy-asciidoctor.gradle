@@ -16,7 +16,30 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-apply plugin: 'org.asciidoctor.jvm.convert'
+
+import org.asciidoctor.gradle.jvm.AbstractAsciidoctorTask
+
+plugins {
+    id 'org.asciidoctor.jvm.convert'
+}
+
+configurations {
+    asciidocElements {
+        canBeConsumed = true
+        canBeResolved = false
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
+            attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, DocsType.USER_MANUAL))
+        }
+        outgoing {
+            artifact tasks.named('asciidoctor')
+        }
+    }
+}
+
+tasks.withType(AbstractAsciidoctorTask) {
+    outputs.cacheIf { true }
+}
 
 asciidoctor {
     baseDirFollowsSourceFile()
@@ -83,7 +106,7 @@ asciidoctorj {
 // skip the asciidoctor task if there's no directory with asciidoc files
 asciidoctor.onlyIf { project.file('src/spec/doc').exists() }
 
-task asciidoctorAssets(type:Copy) {
+def asciidoctorAssets = tasks.register("asciidoctorAssets", Copy) {
     from project.fileTree('src/spec/doc/assets')
     into "${asciidoctor.outputDir}/assets"
 }
