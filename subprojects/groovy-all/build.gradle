@@ -135,6 +135,35 @@ createDocumentationPublication('sources', sourcesAllJar)
 createDocumentationPublication('javadoc', javadocAllJar)
 createDocumentationPublication('groovydoc', groovydocAllJar)
 
+configurations {
+    allJavadoc {
+        canBeConsumed = true
+        canBeResolved = false
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
+            attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, DocsType.JAVADOC))
+        }
+        outgoing {
+            artifacts {
+                artifact javadocAll
+            }
+        }
+    }
+    allGroovydoc {
+        canBeConsumed = true
+        canBeResolved = false
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
+            attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, "groovydoc"))
+        }
+        outgoing {
+            artifacts {
+                artifact groovydocAll
+            }
+        }
+    }
+}
+
 class JavadocClasspathCompatibilityRule implements AttributeCompatibilityRule<Usage> {
     @Override
     void execute(CompatibilityCheckDetails<Usage> details) {

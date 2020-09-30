@@ -1,6 +1,7 @@
 plugins {
     id 'maven-publish'
     id 'signing'
+    id 'org.apache.groovy-publish-validation'
 }
 
 def componentName
