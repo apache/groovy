@@ -344,7 +344,7 @@ project.extensions.extraProperties.set('SpotBugsTask', com.github.spotbugs.snom.
 apply from: 'gradle/test.gradle'
 apply from: 'gradle/groovydoc.gradle'
 apply from: 'gradle/docs.gradle'
-apply from: 'gradle/assemble.gradle'
+apply from: 'gradle/licenses.gradle'
 apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
 apply from: 'gradle/quality.gradle'
