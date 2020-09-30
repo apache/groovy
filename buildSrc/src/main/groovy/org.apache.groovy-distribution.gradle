@@ -1,5 +1,7 @@
 import javax.inject.Inject
 import org.apache.groovy.gradle.SharedConfiguration
+import org.apache.groovy.gradle.DistributionExtension
+import org.apache.groovy.gradle.DocGDK
 
 plugins {
     id 'jvm-ecosystem'
@@ -8,6 +10,7 @@ plugins {
 }
 
 def sharedConfiguration = rootProject.extensions.getByType(SharedConfiguration)
+def distributionExtension = project.extensions.create('distribution', DistributionExtension, project)
 
 configurations {
     distributions {
@@ -25,6 +28,35 @@ configurations {
             attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
         }
     }
+    doc
+    allJavadoc {
+        extendsFrom doc
+        canBeConsumed = false
+        canBeResolved = true
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
+            attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, DocsType.JAVADOC))
+        }
+    }
+    allGroovydoc {
+        extendsFrom doc
+        canBeConsumed = false
+        canBeResolved = true
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
+            attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, "groovydoc"))
+        }
+    }
+    docgeneratorTool {
+        canBeConsumed = false
+        canBeResolved = true
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
+            attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, LibraryElements.JAR))
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+        }
+    }
 }
 
 dependencies {
@@ -34,7 +66,6 @@ dependencies {
         }
     }
     // also include optional features from main module
-    distributions(project(path: ":", configuration: 'groovyRuntimeElements'))
     distributions(project(":")) {
         capabilities {
             requireCapability 'org.apache.groovy:groovy-xstream-ast'
@@ -55,79 +86,50 @@ dependencies {
             requireCapability 'org.apache.groovy:groovy-logging'
         }
     }
+    doc project(":groovy-all")
+    docgeneratorTool project(":groovy-docgenerator")
 }
 
-def distSpec = copySpec {
-    duplicatesStrategy = DuplicatesStrategy.FAIL
-    from rootProject.file("licenses/LICENSE-BINZIP")
-    from rootProject.file("notices/NOTICE-BINZIP")
-    rename '^([A-Z]+)-([^.]*)', '$1'
-    into('lib') {
-        from(configurations.distributionsRuntimeClasspath) {
-            exclude {
-                it.file.name.contains('activation') ||
-                it.file.name.contains('jaxb-') ||
-                it.file.name.contains('livetribe-jsr223') ||
-                it.file.name.startsWith('openbeans-') ||
-                        it.file.name.startsWith('asm-') ||
-                        it.file.name.startsWith('antlr-') ||
-                        it.file.name.startsWith('antlr4-') ||
-                        it.file.name.startsWith('picocli-')
-            }
-        }
-        from rootProject.file('src/bin/groovy.icns')
-    }
-    into('lib/extras-jaxb') {
-        from(configurations.distributionsRuntimeClasspath) {
-            include {
-                it.file.name.contains('activation') ||
-                        it.file.name.startsWith('jaxb-')
-            }
-        }
-    }
-//    if (!rootProject.hasProperty('skipGrooid')) {
-//        into('grooid') {
-//            from { new File(jar.archivePath.parent, "${jar.baseName}-${jar.version}-grooid.jar") }
-//            from {
-//                modules()*.jar.collect { j ->
-//                    new File(j.archivePath.parent, "${j.baseName}-${j.version}-grooid.jar")
-//                }
-//            }
-//        }
-//    }
-    into('conf') {
-        from rootProject.file('src/conf')
-    }
-    into('bin') {
-        from(rootProject.file('src/bin')) {
-            //filter(ReplaceTokens, tokens: [GROOVYJAR: jarjar.archiveName])
-            fileMode = 0755
-            exclude 'groovy.icns'
-        }
-        from project(':groovy-docgenerator').file('src/main/resources/org/apache/groovy/docgenerator/groovy.ico')
-    }
-    into('licenses') {
-        from rootProject.file('licenses')
-        include 'antlr4-license.txt'
-        include 'asm-license.txt'
-        include 'hamcrest-license.txt'
-        include 'jline2-license.txt'
-        include 'jsr166y-license.txt'
-        include 'jsr223-license.txt'
-        include 'junit4-license.txt'
-        include 'junit5-license.txt'
-        include 'xstream-license.txt'
-    }
+def docGDK = tasks.register('docGDK', DocGDK) {
+    classpath.from configurations.docgeneratorTool
+    classes.set(distributionExtension.docgeneratorClasses)
 }
 
 tasks.register('distBin', Zip) {
+    duplicatesStrategy = DuplicatesStrategy.FAIL
     archiveBaseName = 'apache-groovy'
     into("groovy-${project.version}") {
-        with distSpec
+        with distributionExtension.distSpec
     }
     allprojects {
         if (project.name in ['groovy', 'groovy-test']) {
             distBin.dependsOn(grooidjar)
+        }
+    }
+}
+
+tasks.register("dist", Zip) {
+    def groovyBundleVersion = sharedConfiguration.groovyBundleVersion.get()
+    description = 'Generates the binary, sources, documentation and full distributions'
+    archiveBaseName = 'apache-groovy'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    archiveClassifier = 'sdk'
+    into "groovy-${project.version}"
+    from rootProject.file("licenses/LICENSE-SDK")
+    from rootProject.file("notices/NOTICE-SDK")
+    rename '^([A-Z]+)-([^.]*)', '$1'
+    with distributionExtension.distSpec
+    into('doc') {
+        with distributionExtension.docSpec
+    }
+    into('src') {
+        with distributionExtension.srcSpec
+    }
+    doFirst {
+        def av = project.version
+        if ((av.endsWith('SNAPSHOT') && !groovyBundleVersion.endsWith('SNAPSHOT'))
+                || (!av.endsWith('SNAPSHOT') && groovyBundleVersion.endsWith('SNAPSHOT'))) {
+            throw new GradleException("Incoherent versions. Found groovyVersion=$av and groovyBundleVersion=$groovyBundleVersion")
         }
     }
 }
@@ -137,39 +139,25 @@ tasks.register('distDoc', Zip) {
     archiveBaseName = 'apache-groovy'
     archiveClassifier = 'docs'
     into("groovy-${project.version}") {
-        with docSpec
+        with distributionExtension.docSpec
     }
-}
-
-tasks.register('syncDoc', Copy) {
-    //dependsOn: doc
-    inputs.files javadoc.outputs.files
-    inputs.files groovydoc.outputs.files
-
-    destinationDir(file("$buildDir/html"))
-    into('api') {
-        from javadoc.destinationDir
-    }
-    into('gapi') {
-        from groovydoc.destinationDir
-    }
-    // groovy-jdk already at the correct place
 }
 
 tasks.register('distSrc', Zip) {
     archiveBaseName = 'apache-groovy'
     archiveClassifier = 'src'
     into("groovy-${project.version}")
-    with srcSpec
+    with distributionExtension.srcSpec
 }
 
 tasks.register("installGroovy", Sync) {
+    duplicatesStrategy = DuplicatesStrategy.FAIL
     def installDir = sharedConfiguration.installationDirectory.orElse(project.layout.buildDir.file("install"))
     description 'Generates a groovy distribution into an install directory'
     doLast {
         logger.lifecycle "Groovy installed under ${installDir.get()}"
     }
-    with distSpec
+    with distributionExtension.distSpec
     into installDir
 }
 
