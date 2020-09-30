@@ -37,6 +37,7 @@ public class Reference<T> extends GroovyObjectSupport implements Serializable {
         this.value = value;
     }
 
+    @Override
     public Object getProperty(String property) {
         Object value = get();
         if (value != null) {
@@ -45,6 +46,7 @@ public class Reference<T> extends GroovyObjectSupport implements Serializable {
         return super.getProperty(property);
     }
 
+    @Override
     public void setProperty(String property, Object newValue) {
         Object value = get();
         if (value != null) {
@@ -55,6 +57,7 @@ public class Reference<T> extends GroovyObjectSupport implements Serializable {
         }
     }
 
+    @Override
     public Object invokeMethod(String name, Object args) {
         Object value = get();
         if (value != null) {

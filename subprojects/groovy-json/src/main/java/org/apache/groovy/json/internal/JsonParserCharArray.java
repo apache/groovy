@@ -376,6 +376,7 @@ public class JsonParserCharArray extends BaseJsonParser {
         }
     }
 
+    @Override
     public Object parse(char[] chars) {
         return this.decodeFromChars(chars);
     }

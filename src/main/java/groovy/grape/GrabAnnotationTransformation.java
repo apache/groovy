@@ -151,14 +151,17 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     Boolean disableChecksums;
     Map<String, String> systemProperties;
 
+    @Override
     public SourceUnit getSourceUnit() {
         return sourceUnit;
     }
 
+    @Override
     public void setCompilationUnit(final CompilationUnit compilationUnit) {
         this.compilationUnit = compilationUnit;
     }
 
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         sourceUnit = source;
         loader = null;
@@ -605,6 +608,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
      *
      * @param node the AST node we are processing
      */
+    @Override
     public void visitAnnotations(AnnotatedNode node) {
         super.visitAnnotations(node);
         for (AnnotationNode an : node.getAnnotations()) {

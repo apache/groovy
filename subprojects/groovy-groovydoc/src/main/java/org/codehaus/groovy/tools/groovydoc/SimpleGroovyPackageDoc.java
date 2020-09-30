@@ -39,6 +39,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
         classDocs = new TreeMap<String, GroovyClassDoc>();
     }
 
+    @Override
     public GroovyClassDoc[] allClasses() {
         return classDocs.values().toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
@@ -63,15 +64,18 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
         }
     }
 
+    @Override
     public String nameWithDots() {
         return name().replace(FS, '.');
     }
 
+    @Override
     public GroovyClassDoc[] allClasses(boolean arg0) {
         List<GroovyClassDoc> classDocValues = new ArrayList<GroovyClassDoc>(classDocs.values());
         return classDocValues.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
+    @Override
     public GroovyClassDoc[] enums() {
         List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.values().size());
         for (GroovyClassDoc doc : classDocs.values()) {
@@ -82,6 +86,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
         return result.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
+    @Override
     public GroovyClassDoc[] errors() {
         List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.values().size());
         for (GroovyClassDoc doc : classDocs.values()) {
@@ -92,6 +97,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
         return result.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
+    @Override
     public GroovyClassDoc[] exceptions() {
         List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.values().size());
         for (GroovyClassDoc doc : classDocs.values()) {
@@ -102,10 +108,12 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
         return result.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
+    @Override
     public GroovyClassDoc findClass(String arg0) {/*todo*/
         return null;
     }
 
+    @Override
     public GroovyClassDoc[] interfaces() {
         List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.values().size());
         for (GroovyClassDoc doc : classDocs.values()) {
@@ -116,6 +124,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
         return result.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
+    @Override
     public GroovyClassDoc[] ordinaryClasses() {
         List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.values().size());
         for (GroovyClassDoc doc : classDocs.values()) {
@@ -126,14 +135,17 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
         return result.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
+    @Override
     public String description() {
         return description;
     }
 
+    @Override
     public String summary() {
         return summary;
     }
 
+    @Override
     public String getRelativeRootPath() {
         StringTokenizer tokenizer = new StringTokenizer(name(), "" + FS);
         StringBuilder sb = new StringBuilder();

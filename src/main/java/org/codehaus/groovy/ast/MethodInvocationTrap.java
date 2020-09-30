@@ -44,6 +44,7 @@ public abstract class MethodInvocationTrap extends CodeVisitorSupport {
      *
      * @param call the method call expression that may or may not be an AstBuilder 'from code' invocation.
      */
+    @Override
     public void visitMethodCallExpression(MethodCallExpression call) {
         boolean shouldContinueWalking = true;
 

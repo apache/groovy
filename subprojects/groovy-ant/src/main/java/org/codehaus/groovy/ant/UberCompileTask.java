@@ -145,6 +145,7 @@ public class UberCompileTask extends Task {
         }
     }
     
+    @Override
     public void execute() throws BuildException {
         validate();
 
@@ -215,6 +216,7 @@ public class UberCompileTask extends Task {
             return super.getImplicitFileSet();
         }
 
+        @Override
         public String getTaskName() {
             return UberCompileTask.this.getTaskName() + ":genstubs";
         }
@@ -225,6 +227,7 @@ public class UberCompileTask extends Task {
             return super.getImplicitFileSet();
         }
 
+        @Override
         public String getTaskName() {
             return UberCompileTask.this.getTaskName() + ":javac";
         }
@@ -235,6 +238,7 @@ public class UberCompileTask extends Task {
             return super.getImplicitFileSet();
         }
 
+        @Override
         public String getTaskName() {
             return UberCompileTask.this.getTaskName() + ":groovyc";
         }

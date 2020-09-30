@@ -55,11 +55,13 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
         sourceUnit = su;
     }
 
+    @Override
     public void visitClass(ClassNode node) {
         if (!node.isEnum()) return;
         completeEnum(node);
     }
 
+    @Override
     protected SourceUnit getSourceUnit() {
         return sourceUnit;
     }
@@ -153,6 +155,7 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
         if (code == null) return name;
         final Object[] found = new Object[1];
         CodeVisitorSupport cv = new CodeVisitorSupport() {
+            @Override
             public void visitVariableExpression(VariableExpression expression) {
                 if (expression.getName().equals(name)) found[0] = Boolean.TRUE;
             }

@@ -37,14 +37,17 @@ public abstract class NumberNumberMetaMethod extends CallSiteAwareMetaMethod {
         parameterTypes = NUMBER_CLASS_ARR;
     }
 
+    @Override
     public int getModifiers() {
         return Modifier.PUBLIC;
     }
 
+    @Override
     public Class getReturnType() {
         return NUMBER_CLASS.getTheClass();
     }
 
+    @Override
     public final CachedClass getDeclaringClass() {
         return NUMBER_CLASS;
     }
@@ -59,6 +62,7 @@ public abstract class NumberNumberMetaMethod extends CallSiteAwareMetaMethod {
         }
     }
 
+    @Override
     public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         Object firstArg = args[0];
 

@@ -80,6 +80,7 @@ import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_EXCEPTIO
  * The other annotation attributes for the {@code @Builder} transform for configuring the building process aren't applicable for this strategy.
  */
 public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStrategy {
+    @Override
     public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {
         if (!(annotatedNode instanceof ClassNode)) {
             transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME + " processing: building for " +

@@ -49,6 +49,7 @@ public class ExceptionMessage extends Message {
     /**
      * Writes out a nicely formatted summary of the exception.
      */
+    @Override
     public void write(final PrintWriter output, final Janitor janitor) {
         String description = "General error during " + owner.getPhaseDescription() + ": ";
 

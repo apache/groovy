@@ -25,6 +25,7 @@ import java.util.function.Function;
  * Convert surrogate chars to XML undefined character.
  */
 public class SurrogateToUndefined implements Function<Character, Optional<String>> {
+    @Override
     public Optional<String> apply(Character ch) {
         if (Character.isSurrogate(ch)) {
             return Optional.of("\uFFFD");

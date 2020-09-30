@@ -232,6 +232,7 @@ public class JsonLexer implements Iterator<JsonToken> {
      *
      * @return true if there are more tokens
      */
+    @Override
     public boolean hasNext() {
         currentToken = nextToken();
         return currentToken != null;
@@ -242,6 +243,7 @@ public class JsonLexer implements Iterator<JsonToken> {
      *
      * @return the next token
      */
+    @Override
     public JsonToken next() {
         return currentToken;
     }
@@ -251,6 +253,7 @@ public class JsonLexer implements Iterator<JsonToken> {
      *
      * @throws UnsupportedOperationException
      */
+    @Override
     public void remove() {
         throw new UnsupportedOperationException("The method remove() is not supported on this lexer.");
     }

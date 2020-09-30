@@ -134,6 +134,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
         return extractNamePattern.matcher(s).replaceFirst("$1");
     }
 
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         this.source = source;
         if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
@@ -294,6 +295,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
         return null;
     }
 
+    @Override
     public Expression transform(Expression expr) {
         if (expr == null) return null;
         if (expr instanceof MethodCallExpression && candidate == null) {
@@ -504,6 +506,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
         throw new GroovyBugError("Internal error: " + message);
     }
 
+    @Override
     protected SourceUnit getSourceUnit() {
         return source;
     }

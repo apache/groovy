@@ -43,6 +43,7 @@ public class PropertyPathFullBinding extends AbstractFullBinding implements Prop
      */
     boolean bound;
 
+    @Override
     public void bind() {
         updateObjects.clear();
         for (BindPath bp : bindPaths) {
@@ -51,6 +52,7 @@ public class PropertyPathFullBinding extends AbstractFullBinding implements Prop
         bound = true;
     }
 
+    @Override
     public void unbind() {
         updateObjects.clear();
         for (BindPath path : bindPaths) {
@@ -61,10 +63,12 @@ public class PropertyPathFullBinding extends AbstractFullBinding implements Prop
         bound = false;
     }
 
+    @Override
     public void rebind() {
         if (bound) bind();
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt) {
         if (updateObjects.contains(evt.getSource())) {
             for (BindPath bp : bindPaths) {

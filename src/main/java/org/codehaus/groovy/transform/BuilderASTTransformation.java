@@ -62,6 +62,7 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
 
     private CompilationUnit compilationUnit;
 
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
@@ -268,6 +269,7 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
         }
     }
 
+    @Override
     public void setCompilationUnit(final CompilationUnit unit) {
         this.compilationUnit = unit;
     }

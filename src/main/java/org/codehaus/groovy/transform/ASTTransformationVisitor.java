@@ -88,6 +88,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
         this.context = context;
     }
 
+    @Override
     protected SourceUnit getSourceUnit() {
         return source;
     }
@@ -103,6 +104,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
      *
      * @param classNode the class to visit
      */
+    @Override
     public void visitClass(ClassNode classNode) {
         // only descend if we have annotations to look for
         Map<Class<? extends ASTTransformation>, Set<ASTNode>> baseTransforms = classNode.getTransforms(phase);
@@ -151,6 +153,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
      *
      * @param node the node to be processed
      */
+    @Override
     public void visitAnnotations(final AnnotatedNode node) {
         super.visitAnnotations(node);
         for (AnnotationNode annotation : distinctAnnotations(node)) {

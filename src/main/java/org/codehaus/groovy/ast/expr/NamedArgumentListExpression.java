@@ -32,6 +32,7 @@ public class NamedArgumentListExpression extends MapExpression {
         super(mapEntryExpressions);
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new NamedArgumentListExpression(
             transformExpressions(getMapEntryExpressions(), transformer, MapEntryExpression.class)); 

@@ -53,6 +53,7 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
      * @param miv map value item.
      */
 
+    @Override
     public void add(MapItemValue miv) {
         if (len >= items.length) {
             items = LazyMap.grow(items);
@@ -61,14 +62,17 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
         len++;
     }
 
+    @Override
     public int len() {
         return len;
     }
 
+    @Override
     public boolean hydrated() {
         return map != null;
     }
 
+    @Override
     public Entry<String, Value>[] items() {
         return items;
     }
@@ -80,6 +84,7 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
      * @return the items for the given key
      */
 
+    @Override
     public Value get(Object key) {
         /* If the length is under and we are asking for the key, then just look for the key. Don't build the map. */
         if (map == null && items.length < 20) {
@@ -96,6 +101,7 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
         }
     }
 
+    @Override
     public Value put(String key, Value value) {
         die("Not that kind of map");
         return null;
@@ -105,6 +111,7 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
      * If the map has not been built yet, then we just return a fake entry set.
      */
 
+    @Override
     public Set<Entry<String, Value>> entrySet() {
         buildIfNeededMap();
         return map.entrySet();
@@ -129,6 +136,7 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
     /**
      * Return a collection of values.
      */
+    @Override
     public Collection<Value> values() {
         this.buildIfNeededMap();
         return map.values();
@@ -139,6 +147,7 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
      *
      * @return size
      */
+    @Override
     public int size() {
         this.buildIfNeededMap();
         return map.size();

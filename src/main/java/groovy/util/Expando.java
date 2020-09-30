@@ -66,6 +66,7 @@ public class Expando extends GroovyObjectSupport {
         return ret;
     }
 
+    @Override
     public Object getProperty(String property) {
         // always use the expando properties first
         Object result = getProperties().get(property);
@@ -79,11 +80,13 @@ public class Expando extends GroovyObjectSupport {
         return null;
     }
 
+    @Override
     public void setProperty(String property, Object newValue) {
         // always use the expando properties
         getProperties().put(property, newValue);
     }
 
+    @Override
     public Object invokeMethod(String name, Object args) {
         try {
             return super.invokeMethod(name, args);

@@ -39,10 +39,12 @@ public class StaticMethodCallExpression extends Expression implements MethodCall
         this.arguments = arguments;
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitStaticMethodCallExpression(this);
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new StaticMethodCallExpression(getOwnerType(), method, transformer.transform(arguments));
         ret.setSourcePosition(this);
@@ -50,14 +52,17 @@ public class StaticMethodCallExpression extends Expression implements MethodCall
         return ret;
     }
 
+    @Override
     public ASTNode getReceiver() {
         return ownerType;
     }
 
+    @Override
     public String getMethodAsString() {
         return method;
     }
 
+    @Override
     public Expression getArguments() {
         return arguments;
     }
@@ -66,6 +71,7 @@ public class StaticMethodCallExpression extends Expression implements MethodCall
         return method;
     }
 
+    @Override
     public String getText() {
         return getOwnerType().getName() + "." + method + arguments.getText();
     }

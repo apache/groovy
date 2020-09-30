@@ -332,6 +332,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      *
      * @return The class contained by this metaclass
      */
+    @Override
     public Class getTheClass() {
         return this.theClass;
     }
@@ -1029,6 +1030,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @return The return value of the method
      * @see MetaClass#invokeMethod(Class, Object, String, Object[], boolean, boolean)
      */
+    @Override
     public Object invokeMethod(Object object, String methodName, Object[] originalArguments) {
         return invokeMethod(theClass, object, methodName, originalArguments, false, false);
     }
@@ -1116,6 +1118,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @return The return value of the method
      * @see MetaClass#invokeMethod(Class, Object, String, Object[], boolean, boolean)
      */
+    @Override
     public Object invokeMethod(Class sender, Object object, String methodName, Object[] originalArguments, boolean isCallToSuper, boolean fromInsideClass) {
         checkInitalised();
         if (object == null) {
@@ -1299,6 +1302,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         return new TransformMetaMethod(method) {
+            @Override
             public Object invoke(Object object, Object[] arguments) {
                 Object firstArgument = arguments[0];
                 List list = (List) firstArgument;
@@ -1494,6 +1498,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return method;
     }
 
+    @Override
     public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
         checkInitalised();
 
@@ -1599,10 +1604,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
+    @Override
     public Object invokeConstructor(Object[] arguments) {
         return invokeConstructor(theClass, arguments);
     }
 
+    @Override
     public int selectConstructorAndTransformArguments(int numberOfConstructors, Object[] arguments) {
         if (numberOfConstructors == -1) {
             return selectConstructorAndTransformArguments1(arguments);
@@ -1852,6 +1859,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     /**
      * @return the given property's value on the object
      */
+    @Override
     public Object getProperty(Class sender, Object object, String name, boolean useSuper, boolean fromInsideClass) {
 
         //----------------------------------------------------------------------
@@ -1963,10 +1971,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return new MetaProperty(name, Object.class) {
                 final MetaClass mc = registry.getMetaClass((Class) object);
 
+                @Override
                 public Object getProperty(Object object) {
                     return mc.getProperty(sender, object, name, useSuper, false);
                 }
 
+                @Override
                 public void setProperty(Object object, Object newValue) {
                     throw new UnsupportedOperationException();
                 }
@@ -1980,10 +1990,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         if (!isStatic && this.isMap) {
             return new MetaProperty(name, Object.class) {
+                @Override
                 public Object getProperty(Object object) {
                     return ((Map) object).get(name);
                 }
 
+                @Override
                 public void setProperty(Object object, Object newValue) {
                     throw new UnsupportedOperationException();
                 }
@@ -2043,11 +2055,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         /* todo these special cases should be special MetaClasses maybe */
         if (theClass != Class.class && object instanceof Class) {
             return new MetaProperty(name, Object.class) {
+                @Override
                 public Object getProperty(Object object) {
                     MetaClass mc = registry.getMetaClass(Class.class);
                     return mc.getProperty(Class.class, object, name, useSuper, false);
                 }
 
+                @Override
                 public void setProperty(Object object, Object newValue) {
                     throw new UnsupportedOperationException();
                 }
@@ -2055,10 +2069,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
         if (object instanceof Collection) {
             return new MetaProperty(name, Object.class) {
+                @Override
                 public Object getProperty(Object object) {
                     return DefaultGroovyMethods.getAt((Collection) object, name);
                 }
 
+                @Override
                 public void setProperty(Object object, Object newValue) {
                     throw new UnsupportedOperationException();
                 }
@@ -2066,10 +2082,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
         if (object instanceof Object[]) {
             return new MetaProperty(name, Object.class) {
+                @Override
                 public Object getProperty(Object object) {
                     return DefaultGroovyMethods.getAt(Arrays.asList((Object[]) object), name);
                 }
 
+                @Override
                 public void setProperty(Object object, Object newValue) {
                     throw new UnsupportedOperationException();
                 }
@@ -2079,10 +2097,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (addListenerMethod != null) {
             //TODO: one day we could try return the previously registered Closure listener for easy removal
             return new MetaProperty(name, Object.class) {
+                @Override
                 public Object getProperty(Object object) {
                     return null;
                 }
 
+                @Override
                 public void setProperty(Object object, Object newValue) {
                     throw new UnsupportedOperationException();
                 }
@@ -2094,20 +2114,24 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         if (isStatic || object instanceof Class) {
             return new MetaProperty(name, Object.class) {
+                @Override
                 public Object getProperty(Object object) {
                     return invokeStaticMissingProperty(object, name, null, true);
                 }
 
+                @Override
                 public void setProperty(Object object, Object newValue) {
                     throw new UnsupportedOperationException();
                 }
             };
         }
         return new MetaProperty(name, Object.class) {
+            @Override
             public Object getProperty(Object object) {
                 return invokeMissingProperty(object, name, null, true);
             }
 
+            @Override
             public void setProperty(Object object, Object newValue) {
                 throw new UnsupportedOperationException();
             }
@@ -2212,6 +2236,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      *
      * @return a list of MetaProperty objects
      */
+    @Override
     public List<MetaProperty> getProperties() {
         checkInitalised();
         LinkedHashMap<String, MetaProperty> propertyMap = classPropertyIndex.get(theCachedClass);
@@ -2683,6 +2708,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      *
      * @param mp The MetaBeanProperty
      */
+    @Override
     public void addMetaBeanProperty(MetaBeanProperty mp) {
         MetaProperty staticProperty = establishStaticMetaProperty(mp);
         if (staticProperty != null) {
@@ -2723,6 +2749,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param useSuper        Whether the call is to a super class property
      * @param fromInsideClass Whether the call was invoked from the inside or the outside of the class.
      */
+    @Override
     public void setProperty(Class sender, Object object, String name, Object newValue, boolean useSuper, boolean fromInsideClass) {
         checkInitalised();
 
@@ -2928,6 +2955,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param useSuper    Whether to look-up on the super class or not
      * @return The attribute value
      */
+    @Override
     public Object getAttribute(final Class sender, final Object object, final String attribute, final boolean useSuper) {
         return getAttribute(sender, object, attribute, useSuper, false);
     }
@@ -2983,6 +3011,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param useSuper        Whether the call is to a super class property
      * @param fromInsideClass Whether the call was invoked from the inside or the outside of the class
      */
+    @Override
     public void setAttribute(final Class sender, final Object object, final String attribute, final Object newValue, final boolean useSuper, final boolean fromInsideClass) {
         checkInitalised();
 
@@ -3014,6 +3043,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      *
      * @return The original AST or null if it cannot be returned
      */
+    @Override
     public ClassNode getClassNode() {
         if (classNode == null && GroovyObject.class.isAssignableFrom(theClass)) {
             // let's try load it from the classpath
@@ -3077,6 +3107,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param method the MetaMethod
      * @see #initialize()
      */
+    @Override
     public void addMetaMethod(MetaMethod method) {
         if (isInitialized()) {
             throw new RuntimeException("Already initialized, cannot add new method: " + method);
@@ -3413,6 +3444,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * Reflector. It is suggested to synchronize this
      * method.
      */
+    @Override
     public synchronized void initialize() {
         if (!isInitialized()) {
             fillMethodIndex();
@@ -3485,6 +3517,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      *
      * @return A list of MetaMethods
      */
+    @Override
     public List<MetaMethod> getMethods() {
         return allMethods;
     }
@@ -3494,6 +3527,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      *
      * @return A list of MetaMethods
      */
+    @Override
     public List<MetaMethod> getMetaMethods() {
         return new ArrayList<>(newGroovyMethodsSet);
     }
@@ -3849,6 +3883,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param property The name of the property
      * @return The properties value
      */
+    @Override
     public Object getProperty(Object object, String property) {
         return getProperty(theClass, object, property, false, false);
     }
@@ -3860,6 +3895,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param property The name of the property
      * @param newValue The new value
      */
+    @Override
     public void setProperty(Object object, String property, Object newValue) {
         setProperty(theClass, object, property, newValue, false, false);
     }
@@ -3871,6 +3907,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param attribute The name of the attribute
      * @return The attribute value
      */
+    @Override
     public Object getAttribute(final Object object, final String attribute) {
         return getAttribute(theClass, object, attribute, false, false);
     }
@@ -3882,6 +3919,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param attribute The name of the attribute
      * @param newValue  The new value of the attribute
      */
+    @Override
     public void setAttribute(final Object object, final String attribute, final Object newValue) {
         setAttribute(theClass, object, attribute, newValue, false, false);
     }
@@ -3899,6 +3937,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @return a matching MetaMethod or null
      * @throws GroovyRuntimeException if there is more than one matching method
      */
+    @Override
     public MetaMethod pickMethod(String methodName, Class[] arguments) {
         return getMethodWithoutCaching(theClass, methodName, arguments, false);
     }
@@ -3964,6 +4003,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return (MethodIndex) SingleKeyHashMap.copy(new MethodIndex(false), this, METHOD_INDEX_COPIER);
         }
 
+        @Override
         protected Object clone() throws CloneNotSupportedException {
             return super.clone();
         }
@@ -4008,18 +4048,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private static class DummyMetaMethod extends MetaMethod {
 
+        @Override
         public int getModifiers() {
             return 0;
         }
 
+        @Override
         public String getName() {
             return null;
         }
 
+        @Override
         public Class getReturnType() {
             return null;
         }
 
+        @Override
         public CachedClass getDeclaringClass() {
             return null;
         }
@@ -4028,6 +4072,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return null;
         }
 
+        @Override
         public Object invoke(Object object, Object[] arguments) {
             return null;
         }

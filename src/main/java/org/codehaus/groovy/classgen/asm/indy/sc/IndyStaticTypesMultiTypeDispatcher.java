@@ -66,6 +66,7 @@ public class IndyStaticTypesMultiTypeDispatcher extends StaticTypesBinaryExpress
         }
     }
 
+    @Override
     protected BinaryExpressionWriter[] initializeDelegateHelpers() {
         BinaryExpressionWriter[] bewArray = super.initializeDelegateHelpers();
         /* 1: int    */

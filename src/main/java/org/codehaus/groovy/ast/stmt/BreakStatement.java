@@ -39,6 +39,7 @@ public class BreakStatement extends Statement {
         return label;
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitBreakStatement(this);
     }

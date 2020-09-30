@@ -48,6 +48,7 @@ public class MapItemValue implements Map.Entry<String, Value> {
         this.value = value;
     }
 
+    @Override
     public String getKey() {
         if (key == null) {
             if (internKeys) {
@@ -67,10 +68,12 @@ public class MapItemValue implements Map.Entry<String, Value> {
         return key;
     }
 
+    @Override
     public Value getValue() {
         return value;
     }
 
+    @Override
     public Value setValue(Value value) {
         Exceptions.die("not that kind of Entry");
         return null;

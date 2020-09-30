@@ -46,6 +46,7 @@ public class Attribute extends GPathResult {
         this.value = value;
     }
 
+    @Override
     public String name() {
         // this name contains @name we need to return name
         return this.name.substring(1);
@@ -55,6 +56,7 @@ public class Attribute extends GPathResult {
      * Returns the size of this Attribute, which is always <code>1</code>.
      * @return <code>1</code>
      */
+    @Override
     public int size() {
         return 1;
     }
@@ -63,6 +65,7 @@ public class Attribute extends GPathResult {
      * Returns the value of this Attribute.
      * @return the value of this Attribute
      */
+    @Override
     public String text() {
         return this.value;
     }
@@ -80,6 +83,7 @@ public class Attribute extends GPathResult {
     /**
      * Throws a <code>GroovyRuntimeException</code>, because this method is not implemented yet.
      */
+    @Override
     public GPathResult parents() {
         // TODO Auto-generated method stub
         throw new GroovyRuntimeException("parents() not implemented yet");
@@ -88,14 +92,17 @@ public class Attribute extends GPathResult {
     /**
      * Throws a <code>GroovyRuntimeException</code>, because an attribute can have no children.
      */
+    @Override
     public Iterator childNodes() {
         throw new GroovyRuntimeException("can't call childNodes() in the attribute " + this.name);
     }
 
+    @Override
     public Iterator iterator() {
         return nodeIterator();
     }
 
+    @Override
     public GPathResult find(final Closure closure) {
         if (DefaultTypeTransformation.castToBoolean(closure.call(new Object[]{this}))) {
             return this;
@@ -104,19 +111,23 @@ public class Attribute extends GPathResult {
         }
     }
 
+    @Override
     public GPathResult findAll(final Closure closure) {
         return find(closure);
     }
 
+    @Override
     public Iterator nodeIterator() {
         return createIterator(this);
     }
 
+    @Override
     public Writer writeTo(final Writer out) throws IOException {
         out.write(this.value);
         return out;
     }
 
+    @Override
     public void build(final GroovyObject builder) {
         builder.getProperty("mkp");
         builder.invokeMethod("yield", new Object[]{this.value});
@@ -125,18 +136,21 @@ public class Attribute extends GPathResult {
     /**
      * NOP, because an attribute does not have any Node to replace.
      */
+    @Override
     protected void replaceNode(final Closure newValue) {
     }
 
     /**
      * NOP, because an attribute does not have a Body.
      */
+    @Override
     protected void replaceBody(final Object newValue) {
     }
 
     /**
      * NOP, because an node can not be appended to an attribute.
      */
+    @Override
     protected void appendNode(final Object newValue) {
     }
 }

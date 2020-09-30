@@ -42,6 +42,7 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
     /* (non-Javadoc)
      * @see groovy.lang.MetaClassRegistry.MetaClassCreationHandle#create(java.lang.Class, groovy.lang.MetaClassRegistry)
      */
+    @Override
     protected MetaClass createNormalMetaClass(Class theClass, MetaClassRegistry registry) {
         if(theClass != ExpandoMetaClass.class) {
             return new ExpandoMetaClass(theClass, true, true);

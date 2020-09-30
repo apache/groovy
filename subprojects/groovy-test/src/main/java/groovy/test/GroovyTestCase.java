@@ -48,6 +48,7 @@ public class GroovyTestCase extends TestCase {
      * Overload the getName() method to make the test cases look more like AgileDox
      * (thanks to Joe Walnes for this tip!)
      */
+    @Override
     public String getName() {
         if (useAgileDoxNaming) {
             return super.getName().substring(4).replaceAll("([A-Z])", " $1").toLowerCase();

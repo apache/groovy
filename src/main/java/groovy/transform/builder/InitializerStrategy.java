@@ -136,6 +136,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
     private static final Expression DEFAULT_INITIAL_VALUE = null;
     private static final ClassNode TUPLECONS_TYPE = ClassHelper.make(TupleConstructor.class);
 
+    @Override
     public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {
         if (unsupportedAttribute(transform, anno, "forClass")) return;
         if (unsupportedAttribute(transform, anno, "allProperties")) return;

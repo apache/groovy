@@ -54,10 +54,12 @@ public class BinaryExpression extends Expression {
         return super.toString() + "[" + leftExpression + operation + rightExpression + "]";
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitBinaryExpression(this);
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new BinaryExpression(transformer.transform(leftExpression), operation, transformer.transform(rightExpression), safe);
         ret.setSourcePosition(this);
@@ -85,6 +87,7 @@ public class BinaryExpression extends Expression {
         return rightExpression;
     }
 
+    @Override
     public String getText() {
         if (operation.getType() == Types.LEFT_SQUARE_BRACKET) {
             return leftExpression.getText() + (safe ? "?" : "") + "[" + rightExpression.getText() + "]";

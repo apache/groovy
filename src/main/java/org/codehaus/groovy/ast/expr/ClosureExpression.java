@@ -42,10 +42,12 @@ public class ClosureExpression extends Expression {
         setType(ClassHelper.CLOSURE_TYPE.getPlainNodeReference());
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitClosureExpression(this);
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         return this;
     }

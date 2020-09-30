@@ -146,6 +146,7 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
         return result;
     }
 
+    @Override
     public void handleNotification(Notification note, Object handback) {
         //System.out.println("Received note!");
     }
@@ -192,6 +193,7 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
         private AttributeChangedListener() {
         }
 
+        @Override
         public void handleNotification(Notification notification, Object handback) {
             AttributeChangeNotification note = (AttributeChangeNotification) notification;
             Map event = (Map) handback;

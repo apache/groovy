@@ -50,6 +50,7 @@ public class CharBuf extends Writer implements CharSequence {
 
     public static CharBuf createExact(final int capacity) {
         return new CharBuf(capacity) {
+            @Override
             public CharBuf add(char[] chars) {
                 Chr._idx(buffer, location, chars);
                 location += chars.length;
@@ -75,6 +76,7 @@ public class CharBuf extends Writer implements CharSequence {
         init();
     }
 
+    @Override
     public void write(char[] cbuf, int off, int len) {
         if (off == 0 && cbuf.length == len) {
             this.add(cbuf);
@@ -84,9 +86,11 @@ public class CharBuf extends Writer implements CharSequence {
         }
     }
 
+    @Override
     public void flush() throws IOException {
     }
 
+    @Override
     public void close() throws IOException {
     }
 
@@ -589,14 +593,17 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 
+    @Override
     public int length() {
         return len();
     }
 
+    @Override
     public char charAt(int index) {
         return buffer[index];
     }
 
+    @Override
     public CharSequence subSequence(int start, int end) {
         return new String(buffer, start, end - start);
     }

@@ -97,6 +97,7 @@ public class DescriptiveErrorStrategy extends BailErrorStrategy {
         return "Unexpected input: " + getTokenErrorDisplay(e.getOffendingToken(recognizer));
     }
 
+    @Override
     protected void reportInputMismatch(Parser recognizer,
                                        InputMismatchException e) {
 
@@ -109,6 +110,7 @@ public class DescriptiveErrorStrategy extends BailErrorStrategy {
         return e.getMessage();
     }
 
+    @Override
     protected void reportFailedPredicate(Parser recognizer,
                                          FailedPredicateException e) {
         notifyErrorListeners(recognizer, this.createFailedPredicateErrorMessage(recognizer, e), e);

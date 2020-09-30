@@ -31,6 +31,7 @@ public class PogoMetaClassSite extends MetaClassSite {
         super(site, metaClass);
     }
 
+    @Override
     public final Object call(final Object receiver, final Object[] args) throws Throwable {
         if (checkCall(receiver)) {
             try {
@@ -54,6 +55,7 @@ public class PogoMetaClassSite extends MetaClassSite {
         }
     }
 
+    @Override
     public final Object callCurrent(final GroovyObject receiver, final Object[] args) throws Throwable {
         if (checkCall(receiver)) {
             try {

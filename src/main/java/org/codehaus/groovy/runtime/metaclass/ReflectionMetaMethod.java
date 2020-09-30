@@ -33,22 +33,27 @@ public class ReflectionMetaMethod extends MetaMethod {
         setParametersTypes(method.getParameterTypes());
     }
 
+    @Override
     public int getModifiers() {
         return method.getModifiers();
     }
 
+    @Override
     public String getName() {
         return method.getName();
     }
 
+    @Override
     public Class getReturnType() {
         return method.getReturnType();
     }
 
+    @Override
     public CachedClass getDeclaringClass() {
         return method.cachedClass;
     }
 
+    @Override
     public Object invoke(Object object, Object[] arguments) {
         try {
             return method.setAccessible().invoke(object, arguments);
@@ -63,6 +68,7 @@ public class ReflectionMetaMethod extends MetaMethod {
         return method.toString();
     }
 
+    @Override
     protected Class[] getPT() {
         return method.getNativeParameterTypes();
     }

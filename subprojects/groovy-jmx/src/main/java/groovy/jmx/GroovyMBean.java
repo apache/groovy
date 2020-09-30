@@ -90,6 +90,7 @@ public class GroovyMBean extends GroovyObjectSupport {
         return beanInfo;
     }
 
+    @Override
     public Object getProperty(String property) {
         try {
             return server.getAttribute(name, property);
@@ -104,6 +105,7 @@ public class GroovyMBean extends GroovyObjectSupport {
         return null;
     }
 
+    @Override
     public void setProperty(String property, Object value) {
         try {
             server.setAttribute(name, new Attribute(property, value));
@@ -116,6 +118,7 @@ public class GroovyMBean extends GroovyObjectSupport {
         }
     }
 
+    @Override
     public Object invokeMethod(String method, Object arguments) {
         Object[] argArray;
         if (arguments instanceof Object[]) {

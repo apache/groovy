@@ -38,6 +38,7 @@ public class ConstructorSite extends MetaClassSite {
         this.version = metaClass.getVersion();
     }
 
+    @Override
     public Object callConstructor(Object receiver, Object[] args) throws Throwable {
         if (checkCall(receiver, args)) {
             MetaClassHelper.unwrap(args);
@@ -78,6 +79,7 @@ public class ConstructorSite extends MetaClassSite {
             super(site, metaClass, constructor, params);
         }
 
+        @Override
         public final Object callConstructor(Object receiver, Object[] args) throws Throwable {
             if (checkCall(receiver, args)) {
                 try {
@@ -99,6 +101,7 @@ public class ConstructorSite extends MetaClassSite {
             super(site, metaClass, constructor, params);
         }
 
+        @Override
         public Object callConstructor(Object receiver, Object[] args) throws Throwable {
             if (checkCall(receiver, args)) {
                 try {
@@ -118,6 +121,7 @@ public class ConstructorSite extends MetaClassSite {
             super(site, metaClass, constructor, params);
         }
 
+        @Override
         public final Object callConstructor(Object receiver, Object[] args) throws Throwable {
             if (checkCall(receiver, args)) {
                 final Object bean = constructor.invoke(NO_ARGS);
@@ -137,6 +141,7 @@ public class ConstructorSite extends MetaClassSite {
             super(site, metaClass, constructor, params);
         }
 
+        @Override
         public final Object callConstructor(Object receiver, Object[] args) throws Throwable {
             if (checkCall(receiver, args)) {
                 final Object[] newArgs = new Object[] {args[0]};

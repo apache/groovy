@@ -372,14 +372,17 @@ public class XmlParser implements ContentHandler {
 
     // ContentHandler interface
     //-------------------------------------------------------------------------                    
+    @Override
     public void startDocument() throws SAXException {
         parent = null;
     }
 
+    @Override
     public void endDocument() throws SAXException {
         stack.clear();
     }
 
+    @Override
     public void startElement(String namespaceURI, String localName, String qName, Attributes list)
             throws SAXException {
         addTextToNode();
@@ -397,6 +400,7 @@ public class XmlParser implements ContentHandler {
         stack.add(parent);
     }
 
+    @Override
     public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
         addTextToNode();
 
@@ -408,20 +412,25 @@ public class XmlParser implements ContentHandler {
         }
     }
 
+    @Override
     public void characters(char[] buffer, int start, int length) throws SAXException {
         bodyText.append(buffer, start, length);
     }
 
+    @Override
     public void startPrefixMapping(String prefix, String namespaceURI) throws SAXException {
     }
 
+    @Override
     public void endPrefixMapping(String prefix) throws SAXException {
     }
 
+    @Override
     public void ignorableWhitespace(char[] buffer, int start, int len) throws SAXException {
         if (keepIgnorableWhitespace) characters(buffer, start, len);
     }
 
+    @Override
     public void processingInstruction(String target, String data) throws SAXException {
     }
 
@@ -429,10 +438,12 @@ public class XmlParser implements ContentHandler {
         return locator;
     }
 
+    @Override
     public void setDocumentLocator(Locator locator) {
         this.locator = locator;
     }
 
+    @Override
     public void skippedEntity(String name) throws SAXException {
     }
 

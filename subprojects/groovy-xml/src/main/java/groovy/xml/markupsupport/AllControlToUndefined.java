@@ -21,6 +21,7 @@ package groovy.xml.markupsupport;
 import java.util.Optional;
 
 public class AllControlToUndefined extends StandardControlToUndefined {
+    @Override
     public Optional<String> apply(Character ch) {
         if (Character.isISOControl(ch) || isNonCharacter(ch)) {
             return Optional.of("\uFFFD");

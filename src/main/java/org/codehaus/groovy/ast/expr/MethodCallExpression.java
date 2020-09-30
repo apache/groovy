@@ -72,10 +72,12 @@ public class MethodCallExpression extends Expression implements MethodCall {
         // (in bytecode after call: aconst_null, areturn)
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitMethodCallExpression(this);
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         MethodCallExpression answer =
             new MethodCallExpression(transformer.transform(objectExpression), transformer.transform(method), transformer.transform(arguments));
@@ -89,6 +91,7 @@ public class MethodCallExpression extends Expression implements MethodCall {
         return answer;
     }
 
+    @Override
     public Expression getArguments() {
         return arguments;
     }
@@ -114,6 +117,7 @@ public class MethodCallExpression extends Expression implements MethodCall {
      * This method returns the method name as String if it is no dynamic
      * calculated method name, but a constant.
      */
+    @Override
     public String getMethodAsString() {
         if (!(method instanceof ConstantExpression)) return null;
         ConstantExpression constant = (ConstantExpression) method;
@@ -128,10 +132,12 @@ public class MethodCallExpression extends Expression implements MethodCall {
       this.objectExpression = objectExpression;
     }
 
+    @Override
     public ASTNode getReceiver() {
         return getObjectExpression();
     }
 
+    @Override
     public String getText() {
         String object = objectExpression.getText();
         String meth = method.getText();

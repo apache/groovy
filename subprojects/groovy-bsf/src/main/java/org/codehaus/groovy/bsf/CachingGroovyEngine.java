@@ -52,6 +52,7 @@ public class CachingGroovyEngine extends GroovyEngine {
     /**
      * Evaluate an expression.
      */
+    @Override
     public Object eval(String source, int lineNo, int columnNo, Object script) throws BSFException {
         try {
             Class scriptClass = evalScripts.get(script);
@@ -73,6 +74,7 @@ public class CachingGroovyEngine extends GroovyEngine {
     /**
      * Execute a script.
      */
+    @Override
     public void exec(String source, int lineNo, int columnNo, Object script) throws BSFException {
         try {
             //          shell.run(script.toString(), source, EMPTY_ARGS);
@@ -94,6 +96,7 @@ public class CachingGroovyEngine extends GroovyEngine {
     /**
      * Initialize the engine.
      */
+    @Override
     public void initialize(final BSFManager mgr, String lang, Vector declaredBeans) throws BSFException {
         super.initialize(mgr, lang, declaredBeans);
         ClassLoader parent = mgr.getClassLoader();

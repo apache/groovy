@@ -30,6 +30,7 @@ public class DefaultAction extends AbstractAction {
 
     private Closure closure;
 
+    @Override
     public void actionPerformed(ActionEvent event) {
         if (closure == null) {
             throw new NullPointerException("No closure has been configured for this Action");

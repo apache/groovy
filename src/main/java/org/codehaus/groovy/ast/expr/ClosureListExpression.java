@@ -48,10 +48,12 @@ public class ClosureListExpression extends ListExpression {
         this(new ArrayList<Expression>(3));
     }
     
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitClosureListExpression(this);
     }
     
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new ClosureListExpression(transformExpressions(getExpressions(), transformer));
         ret.setSourcePosition(this);
@@ -67,6 +69,7 @@ public class ClosureListExpression extends ListExpression {
         return scope;
     }
     
+    @Override
     public String getText() {
         StringBuilder buffer = new StringBuilder("(");
         boolean first = true;

@@ -105,6 +105,7 @@ public class JsonFastParser extends JsonParserCharArray {
         return value;
     }
 
+    @Override
     protected Value decodeValue() {
         return decodeValueOverlay();
     }
@@ -321,6 +322,7 @@ public class JsonFastParser extends JsonParserCharArray {
         return value;
     }
 
+    @Override
     protected final Object decodeFromChars(char[] cs) {
         Value value = ((Value) super.decodeFromChars(cs));
         if (value.isContainer()) {

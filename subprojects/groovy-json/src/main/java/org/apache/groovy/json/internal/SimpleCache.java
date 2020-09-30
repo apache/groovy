@@ -36,16 +36,19 @@ public class SimpleCache<K, V> implements Cache<K, V> {
         this(limit, CacheType.LRU);
     }
 
+    @Override
     public void put(K key, V value) {
         cache.put(key, value);
     }
 
+    @Override
     public V get(K key) {
         return cache.get(key);
     }
 
     //For testing only
 
+    @Override
     public V getSilent(K key) {
         V value = cache.get(key);
         if (value != null) {
@@ -55,10 +58,12 @@ public class SimpleCache<K, V> implements Cache<K, V> {
         return value;
     }
 
+    @Override
     public void remove(K key) {
         cache.remove(key);
     }
 
+    @Override
     public int size() {
         return cache.size();
     }

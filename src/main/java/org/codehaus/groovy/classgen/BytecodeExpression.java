@@ -30,6 +30,7 @@ import org.objectweb.asm.MethodVisitor;
 public abstract class BytecodeExpression extends Expression {
 
     public static final BytecodeExpression NOP = new BytecodeExpression() {
+        @Override
         public void visit(final MethodVisitor visitor) {
             // do nothing
         }
@@ -44,10 +45,12 @@ public abstract class BytecodeExpression extends Expression {
 
     public abstract void visit(MethodVisitor visitor);
 
+    @Override
     public void visit(final GroovyCodeVisitor visitor) {
         visitor.visitBytecodeExpression(this);
     }
 
+    @Override
     public Expression transformExpression(final ExpressionTransformer transformer) {
         return this;
     }

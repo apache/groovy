@@ -32,6 +32,7 @@ import java.util.Comparator;
 public class NumberAwareComparator<T> implements Comparator<T>, Serializable {
     private static final long serialVersionUID = 9017657289076651660L;
 
+    @Override
     public int compare(T o1, T o2) {
         try {
             return DefaultTypeTransformation.compareTo(o1, o2);

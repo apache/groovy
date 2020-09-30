@@ -43,11 +43,13 @@ public class VerifierCodeVisitor extends CodeVisitorSupport {
         this.classNode = classNode;
     }
 
+    @Override
     public void visitForLoop(ForStatement expression) {
         assertValidIdentifier(expression.getVariable().getName(), "for loop variable name", expression);
         super.visitForLoop(expression);
     }
 
+    @Override
     public void visitFieldExpression(FieldExpression expression) {
         if (!expression.getField().isSynthetic()) {
             assertValidIdentifier(expression.getFieldName(), "field name", expression);
@@ -55,11 +57,13 @@ public class VerifierCodeVisitor extends CodeVisitorSupport {
         super.visitFieldExpression(expression);
     }
 
+    @Override
     public void visitVariableExpression(VariableExpression expression) {
         assertValidIdentifier(expression.getName(), "variable name", expression);
         super.visitVariableExpression(expression);
     }
 
+    @Override
     public void visitListExpression(ListExpression expression) {
         for (Expression element : expression.getExpressions()) {
             if (element instanceof MapEntryExpression) {
@@ -69,6 +73,7 @@ public class VerifierCodeVisitor extends CodeVisitorSupport {
         super.visitListExpression(expression);
     }
 
+    @Override
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         ClassNode callType = call.getType();
         if (callType.isEnum() && !callType.equals(classNode)) {

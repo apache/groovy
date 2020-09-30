@@ -32,6 +32,7 @@ import java.util.Map;
 public abstract class ReplacementNode implements Buildable, Writable {
     public abstract void build(GroovyObject builder, Map namespaceMap, Map<String, String> namespaceTagHints);
     
+    @Override
     public void build(final GroovyObject builder) {
         build(builder, null, null);
     }
@@ -40,6 +41,7 @@ public abstract class ReplacementNode implements Buildable, Writable {
      * NOP
      * @return the Writer that was passed
      */
+    @Override
     public Writer writeTo(final Writer out) throws IOException {
         return out;
     }

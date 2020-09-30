@@ -74,6 +74,7 @@ public class PermutationGenerator<E> implements Iterator<List<E>> {
         return total;
     }
 
+    @Override
     public boolean hasNext() {
         return numLeft.compareTo(BigInteger.ZERO) > 0;
     }
@@ -97,6 +98,7 @@ public class PermutationGenerator<E> implements Iterator<List<E>> {
      *
      * @return the items permuted
      */
+    @Override
     public List<E> next() {
         if (numLeft.equals(total)) {
             numLeft = numLeft.subtract(BigInteger.ONE);
@@ -143,6 +145,7 @@ public class PermutationGenerator<E> implements Iterator<List<E>> {
         return ans;
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException("remove() not allowed for PermutationGenerator");
     }

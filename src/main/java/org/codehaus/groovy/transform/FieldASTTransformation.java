@@ -84,6 +84,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
     private ClosureExpression currentClosure;
     private ConstructorCallExpression currentAIC;
 
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         sourceUnit = source;
         if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
@@ -286,6 +287,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
         super.visitExpressionStatement(es);
     }
 
+    @Override
     protected SourceUnit getSourceUnit() {
         return sourceUnit;
     }

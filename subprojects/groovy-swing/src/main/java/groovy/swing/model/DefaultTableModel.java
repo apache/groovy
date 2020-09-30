@@ -103,14 +103,17 @@ public class DefaultTableModel extends AbstractTableModel {
         columnModel.removeColumn(column);
     }
     
+    @Override
     public int getRowCount() {
         return getRows().size();
     }
 
+    @Override
     public int getColumnCount() {
         return columnModel.getColumnCount();
     }
     
+    @Override
     public String getColumnName(int columnIndex) {
         String answer = null;
         if (columnIndex < 0 || columnIndex >= columnModel.getColumnCount()) {
@@ -123,14 +126,17 @@ public class DefaultTableModel extends AbstractTableModel {
         return answer;
     }
 
+    @Override
     public Class getColumnClass(int columnIndex) {
         return getColumnModel(columnIndex).getType();
     }
 
+    @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
         return getColumnModel(columnIndex).isEditable();
     }
 
+    @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
         List rows = getRows();
         Object answer = null;
@@ -149,6 +155,7 @@ public class DefaultTableModel extends AbstractTableModel {
         return column.getValue(row, rowIndex, columnIndex);
     }
 
+    @Override
     public void setValueAt(Object value, int rowIndex, int columnIndex) {
         List rows = getRows();
         if (rowIndex < 0 || rowIndex >= rows.size()) {
@@ -184,11 +191,13 @@ public class DefaultTableModel extends AbstractTableModel {
             return tableColumns;
         }
 
+        @Override
         public void removeColumn(TableColumn column) {
             super.removeColumn(column);
             renumberTableColumns();
         }
 
+        @Override
         public void moveColumn(int columnIndex, int newIndex) {
             super.moveColumn(columnIndex, newIndex);
             renumberTableColumns();

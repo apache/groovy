@@ -35,6 +35,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
         this(GroovySystem.getMetaClassRegistry().getMetaClass(theClass));
     }
 
+    @Override
     public boolean isModified() {
         return this.delegate instanceof MutableMetaClass && ((MutableMetaClass) this.delegate).isModified();
     }
@@ -42,6 +43,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /* (non-Javadoc)
     * @see groovy.lang.MetaClass#addNewInstanceMethod(java.lang.reflect.Method)
     */
+    @Override
     public void addNewInstanceMethod(Method method) {
         if (delegate instanceof MutableMetaClass)
             ((MutableMetaClass) delegate).addNewInstanceMethod(method);
@@ -50,16 +52,19 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /* (non-Javadoc)
     * @see groovy.lang.MetaClass#addNewStaticMethod(java.lang.reflect.Method)
     */
+    @Override
     public void addNewStaticMethod(Method method) {
         if (delegate instanceof MutableMetaClass)
             ((MutableMetaClass) delegate).addNewStaticMethod(method);
     }
 
+    @Override
     public void addMetaMethod(MetaMethod metaMethod) {
         if (delegate instanceof MutableMetaClass)
             ((MutableMetaClass) delegate).addMetaMethod(metaMethod);
     }
 
+    @Override
     public void addMetaBeanProperty(MetaBeanProperty metaBeanProperty) {
         if (delegate instanceof MutableMetaClass)
             ((MutableMetaClass) delegate).addMetaBeanProperty(metaBeanProperty);
@@ -68,6 +73,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /* (non-Javadoc)
     * @see groovy.lang.MetaClass#initialize()
     */
+    @Override
     public void initialize() {
         delegate.initialize();
     }
@@ -75,6 +81,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#getAttribute(java.lang.Object, java.lang.String)
      */
+    @Override
     public Object getAttribute(Object object, String attribute) {
         return delegate.getAttribute(object, attribute);
     }
@@ -82,6 +89,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#getClassNode()
      */
+    @Override
     public ClassNode getClassNode() {
         return delegate.getClassNode();
     }
@@ -89,6 +97,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#getMetaMethods()
      */
+    @Override
     public List<MetaMethod> getMetaMethods() {
         return delegate.getMetaMethods();
     }
@@ -96,18 +105,22 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#getMethods()
      */
+    @Override
     public List<MetaMethod> getMethods() {
         return delegate.getMethods();
     }
 
+    @Override
     public List<MetaMethod> respondsTo(Object obj, String name, Object[] argTypes) {
         return delegate.respondsTo(obj, name, argTypes);
     }
 
+    @Override
     public List<MetaMethod> respondsTo(Object obj, String name) {
         return delegate.respondsTo(obj, name);
     }
 
+    @Override
     public MetaProperty hasProperty(Object obj, String name) {
         return delegate.hasProperty(obj, name);
     }
@@ -115,6 +128,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /* (non-Javadoc)
     * @see groovy.lang.MetaClass#getProperties()
     */
+    @Override
     public List<MetaProperty> getProperties() {
         return delegate.getProperties();
     }
@@ -122,6 +136,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#getProperty(java.lang.Object, java.lang.String)
      */
+    @Override
     public Object getProperty(Object object, String property) {
         return delegate.getProperty(object, property);
     }
@@ -129,6 +144,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#invokeConstructor(java.lang.Object[])
      */
+    @Override
     public Object invokeConstructor(Object[] arguments) {
         return delegate.invokeConstructor(arguments);
     }
@@ -136,6 +152,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#invokeMethod(java.lang.Object, java.lang.String, java.lang.Object)
      */
+    @Override
     public Object invokeMethod(Object object, String methodName, Object arguments) {
         return delegate.invokeMethod(object, methodName, arguments);
     }
@@ -143,6 +160,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#invokeMethod(java.lang.Object, java.lang.String, java.lang.Object[])
      */
+    @Override
     public Object invokeMethod(Object object, String methodName, Object[] arguments) {
         return delegate.invokeMethod(object, methodName, arguments);
     }
@@ -150,6 +168,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#invokeStaticMethod(java.lang.Object, java.lang.String, java.lang.Object[])
      */
+    @Override
     public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
         return delegate.invokeStaticMethod(object, methodName, arguments);
     }
@@ -157,6 +176,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#setAttribute(java.lang.Object, java.lang.String, java.lang.Object)
      */
+    @Override
     public void setAttribute(Object object, String attribute, Object newValue) {
         delegate.setAttribute(object, attribute, newValue);
     }
@@ -164,6 +184,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#setProperty(java.lang.Object, java.lang.String, java.lang.Object)
      */
+    @Override
     public void setProperty(Object object, String property, Object newValue) {
         delegate.setProperty(object, property, newValue);
     }
@@ -189,23 +210,28 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /**
      * @deprecated
      */
+    @Override
     @Deprecated
     public MetaMethod pickMethod(String methodName, Class[] arguments) {
         return delegate.pickMethod(methodName, arguments);
     }
 
+    @Override
     public Object getAttribute(Class sender, Object receiver, String messageName, boolean useSuper) {
         return this.delegate.getAttribute(sender, receiver, messageName, useSuper);
     }
 
+    @Override
     public Object getProperty(Class sender, Object receiver, String messageName, boolean useSuper, boolean fromInsideClass) {
         return this.delegate.getProperty(sender, receiver, messageName, useSuper, fromInsideClass);
     }
 
+    @Override
     public MetaProperty getMetaProperty(String name) {
         return this.delegate.getMetaProperty(name);
     }
 
+    @Override
     public MetaMethod getStaticMetaMethod(String name, Object[] args) {
         return this.delegate.getStaticMetaMethod(name, args);
     }
@@ -214,22 +240,27 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
         return this.delegate.getStaticMetaMethod(name, argTypes);
     }
 
+    @Override
     public MetaMethod getMetaMethod(String name, Object[] args) {
         return this.delegate.getMetaMethod(name, args);
     }
 
+    @Override
     public Class getTheClass() {
         return this.delegate.getTheClass();
     }
 
+    @Override
     public Object invokeMethod(Class sender, Object receiver, String methodName, Object[] arguments, boolean isCallToSuper, boolean fromInsideClass) {
         return this.delegate.invokeMethod(sender, receiver, methodName, arguments, isCallToSuper, fromInsideClass);
     }
 
+    @Override
     public Object invokeMissingMethod(Object instance, String methodName, Object[] arguments) {
         return this.delegate.invokeMissingMethod(instance, methodName, arguments);
     }
 
+    @Override
     public Object invokeMissingProperty(Object instance, String propertyName, Object optionalValue, boolean isGetter) {
         return this.delegate.invokeMissingProperty(instance, propertyName, optionalValue, isGetter);
     }
@@ -238,14 +269,17 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
         return GroovyObject.class.isAssignableFrom(this.delegate.getTheClass());
     }
 
+    @Override
     public void setAttribute(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper, boolean fromInsideClass) {
         this.delegate.setAttribute(sender, receiver, messageName, messageValue, useSuper, fromInsideClass);
     }
 
+    @Override
     public void setProperty(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper, boolean fromInsideClass) {
         this.delegate.setProperty(sender, receiver, messageName, messageValue, useSuper, fromInsideClass);
     }
 
+    @Override
     public int selectConstructorAndTransformArguments(int numberOfConstructors, Object[] arguments) {
         return this.delegate.selectConstructorAndTransformArguments(numberOfConstructors, arguments);
     }
@@ -258,6 +292,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
         return this.delegate;
     }
 
+    @Override
     public Object invokeMethod(String name, Object args) {
         try {
             return getMetaClass().invokeMethod(this, name, args);
@@ -270,6 +305,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
         }
     }
 
+    @Override
     public Object getProperty(String property) {
         try {
             return getMetaClass().getProperty(this, property);
@@ -282,6 +318,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
         }
     }
 
+    @Override
     public void setProperty(String property, Object newValue) {
         try {
             getMetaClass().setProperty(this, property, newValue);
@@ -294,10 +331,12 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
         }
     }
 
+    @Override
     public MetaClass getMetaClass() {
         return InvokerHelper.getMetaClass(getClass());
     }
 
+    @Override
     public void setMetaClass(MetaClass metaClass) {
         throw new UnsupportedOperationException();
     }

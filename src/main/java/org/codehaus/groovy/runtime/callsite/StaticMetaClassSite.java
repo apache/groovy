@@ -44,6 +44,7 @@ public class StaticMetaClassSite extends MetaClassSite {
             && version == classInfo.getVersion(); // metaClass still be valid
     }
 
+    @Override
     public final Object call(Object receiver, Object[] args) throws Throwable {
         if (checkCall(receiver)) {
             try {
@@ -56,6 +57,7 @@ public class StaticMetaClassSite extends MetaClassSite {
         }
     }
 
+    @Override
     public final Object callStatic(Class receiver, Object[] args) throws Throwable {
         if (checkCall(receiver)) {
             try {

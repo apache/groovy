@@ -34,6 +34,7 @@ public class EventTriggerBinding implements TriggerBinding {
         this.eventName = eventName;
     }
 
+    @Override
     public FullBinding createBinding(final SourceBinding sourceBinding, final TargetBinding targetBinding) {
         return new EventTriggerFullBinding(sourceBinding, targetBinding);
     }
@@ -62,6 +63,7 @@ public class EventTriggerBinding implements TriggerBinding {
             setSourceBinding(sourceBinding);
             setTargetBinding(targetBinding);
             handler = new Closure(triggerBean) {
+                @Override
                 public Object call(Object... params) {
                     if (sourceBinding instanceof ClosureSourceBinding) {
                         ((ClosureSourceBinding)sourceBinding).setClosureArguments(params);
@@ -72,14 +74,17 @@ public class EventTriggerBinding implements TriggerBinding {
             };
         }
 
+        @Override
         public void bind() {
             InvokerHelper.setProperty(triggerBean, eventName, handler);
         }
 
+        @Override
         public void unbind() {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public void rebind() {
             throw new UnsupportedOperationException();
         }

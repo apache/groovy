@@ -62,15 +62,18 @@ public class NodeChildren extends GPathResult {
         this(parent, "*", namespaceTagHints);
     }
 
+    @Override
     public Iterator childNodes() {
         return new Iterator() {
             private final Iterator iter = nodeIterator();
             private Iterator childIter = nextChildIter();
 
+            @Override
             public boolean hasNext() {
                 return childIter != null;
             }
 
+            @Override
             public Object next() {
                 while (childIter != null) {
                     try {
@@ -86,6 +89,7 @@ public class NodeChildren extends GPathResult {
                 return null;
             }
 
+            @Override
             public void remove() {
                 throw new UnsupportedOperationException();
             }
@@ -101,29 +105,35 @@ public class NodeChildren extends GPathResult {
         };
     }
 
+    @Override
     public Iterator iterator() {
         return new Iterator() {
             final Iterator iter = nodeIterator();
 
+            @Override
             public boolean hasNext() {
                 return iter.hasNext();
             }
 
+            @Override
             public Object next() {
                 return new NodeChild((Node) iter.next(), pop(), namespaceTagHints);
             }
 
+            @Override
             public void remove() {
                 throw new UnsupportedOperationException();
             }
         };
     }
 
+    @Override
     public Iterator nodeIterator() {
         if ("*".equals(name)) {
             return parent.childNodes();
         } else {
             return new NodeIterator(parent.childNodes()) {
+                @Override
                 protected Object getNextNode(Iterator iter) {
                     while (iter.hasNext()) {
                         final Node node = (Node) iter.next();
@@ -144,11 +154,13 @@ public class NodeChildren extends GPathResult {
     /**
      * Throws a <code>GroovyRuntimeException</code>, because it is not implemented yet.
      */
+    @Override
     public GPathResult parents() {
         // TODO Auto-generated method stub
         throw new GroovyRuntimeException("parents() not implemented yet");
     }
 
+    @Override
     public synchronized int size() {
         if (this.size == -1) {
             final Iterator iter = iterator();
@@ -161,6 +173,7 @@ public class NodeChildren extends GPathResult {
         return this.size;
     }
 
+    @Override
     public String text() {
         final StringBuilder buf = new StringBuilder();
         final Iterator iter = nodeIterator();
@@ -170,6 +183,7 @@ public class NodeChildren extends GPathResult {
         return buf.toString();
     }
 
+    @Override
     public GPathResult find(final Closure closure) {
         for (Object node : this) {
             if (DefaultTypeTransformation.castToBoolean(closure.call(new Object[]{node}))) {
@@ -179,10 +193,12 @@ public class NodeChildren extends GPathResult {
         return new NoChildren(this, this.name, namespaceTagHints);
     }
 
+    @Override
     public GPathResult findAll(final Closure closure) {
         return new FilteredNodeChildren(this, closure, namespaceTagHints);
     }
 
+    @Override
     public void build(final GroovyObject builder) {
         final Iterator iter = nodeIterator();
         while (iter.hasNext()) {
@@ -198,6 +214,7 @@ public class NodeChildren extends GPathResult {
     /* (non-Javadoc)
     * @see groovy.lang.Writable#writeTo(java.io.Writer)
     */
+    @Override
     public Writer writeTo(final Writer out) throws IOException {
         final Iterator iter = nodeIterator();
         while (iter.hasNext()) {
@@ -206,6 +223,7 @@ public class NodeChildren extends GPathResult {
         return out;
     }
 
+    @Override
     protected void replaceNode(final Closure newValue) {
         for (Object o : this) {
             final NodeChild result = (NodeChild) o;
@@ -213,6 +231,7 @@ public class NodeChildren extends GPathResult {
         }
     }
 
+    @Override
     protected void replaceBody(final Object newValue) {
         for (Object o : this) {
             final NodeChild result = (NodeChild) o;
@@ -220,6 +239,7 @@ public class NodeChildren extends GPathResult {
         }
     }
 
+    @Override
     protected void appendNode(final Object newValue) {
         for (Object o : this) {
             final NodeChild result = (NodeChild) o;

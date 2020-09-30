@@ -43,6 +43,7 @@ public class NewMetaMethod extends ReflectionMetaMethod {
         setParametersTypes(logicalParameterTypes);
     }
 
+    @Override
     public CachedClass getDeclaringClass() {
         return getBytecodeParameterTypes()[0];
     }

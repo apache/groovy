@@ -135,6 +135,7 @@ public class XmlTemplateEngine extends TemplateEngine {
             throw new RuntimeException("Unsupported 'gsp:' tag named \"" + tag + "\".");
         }
 
+        @Override
         protected void printSimpleItem(Object value) {
             this.printLineBegin();
             out.print(escapeSpecialChars(InvokerHelper.toString(value)));
@@ -182,11 +183,13 @@ public class XmlTemplateEngine extends TemplateEngine {
             }
         }
 
+        @Override
         protected void printLineBegin() {
             out.print("out.print(\"\"\"");
             out.printIndent();
         }
 
+        @Override
         protected void printLineEnd(String comment) {
             out.print("\\n\"\"\");");
             if (comment != null) {
@@ -196,6 +199,7 @@ public class XmlTemplateEngine extends TemplateEngine {
             out.print("\n");
         }
 
+        @Override
         protected boolean printSpecialNode(Node node) {
             Object name = node.name();
             if (name instanceof QName) {
@@ -222,10 +226,12 @@ public class XmlTemplateEngine extends TemplateEngine {
             this.script = script;
         }
 
+        @Override
         public Writable make() {
             return make(new HashMap());
         }
 
+        @Override
         public Writable make(Map map) {
             if (map == null) {
                 throw new IllegalArgumentException("map must not be null");
@@ -246,6 +252,7 @@ public class XmlTemplateEngine extends TemplateEngine {
             this.result = new WeakReference<>(null);
         }
 
+        @Override
         public Writer writeTo(Writer out) {
             Script scriptObject = InvokerHelper.createScript(script.getClass(), binding);
             PrintWriter pw = new PrintWriter(out);
@@ -292,6 +299,7 @@ public class XmlTemplateEngine extends TemplateEngine {
         setIndentation(DEFAULT_INDENTATION);
     }
 
+    @Override
     public Template createTemplate(Reader reader) throws CompilationFailedException, ClassNotFoundException, IOException {
         Node root ;
         try {

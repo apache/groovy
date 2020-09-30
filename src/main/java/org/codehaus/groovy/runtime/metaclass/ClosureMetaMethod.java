@@ -59,22 +59,27 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
     }
 
 
+    @Override
     public int getModifiers() {
         return Modifier.PUBLIC;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public Class getReturnType() {
         return Object.class;
     }
 
+    @Override
     public CachedClass getDeclaringClass() {
         return declaringClass;
     }
 
+    @Override
     public Object invoke(final Object object, Object[] arguments) {
         Closure cloned = (Closure) callable.clone();
         cloned.setDelegate(object);
@@ -88,6 +93,7 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
      *
      * @return The closure
      */
+    @Override
     public Closure getClosure() {
         return callable;
     }
@@ -148,6 +154,7 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
             super(name, declaringClass, closure, method);
         }
 
+        @Override
         public Object invoke(Object object, Object[] arguments) {
             return getDoCall().invoke(getClosure().getOwner(), arguments);
         }
@@ -165,22 +172,27 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
             this.declaringClass = declaringClass;
         }
 
+        @Override
         public int getModifiers() {
             return Modifier.PUBLIC;
         }
 
+        @Override
         public String getName() {
             return name;
         }
 
+        @Override
         public Class getReturnType() {
             return Object.class;
         }
 
+        @Override
         public CachedClass getDeclaringClass() {
             return ReflectionCache.getCachedClass(declaringClass);
         }
 
+        @Override
         public Object invoke(Object object, Object[] arguments) {
             Closure cloned = (Closure) closure.clone();
             cloned.setDelegate(object);

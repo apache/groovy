@@ -24,10 +24,12 @@ import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
 public final class NumberNumberDiv extends NumberNumberMetaMethod {
+    @Override
     public String getName() {
         return "div";
     }
 
+    @Override
     public Object invoke(Object object, Object[] arguments) {
         return NumberMath.divide((Number) object, (Number) arguments[0]);
     }
@@ -47,70 +49,87 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
     }
 
 
+    @Override
     public CallSite createIntegerInteger(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         return createNumberNumber(site, metaClass, metaMethod, params, receiver, args);
     }
 
+    @Override
     public CallSite createIntegerLong(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         return createNumberNumber(site, metaClass, metaMethod, params, receiver, args);
     }
 
+    @Override
     public CallSite createIntegerFloat(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         return new IntegerFloat(site, metaClass, metaMethod, params, receiver, args);
     }
 
+    @Override
     public CallSite createIntegerDouble(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         return new IntegerDouble(site, metaClass, metaMethod, params, receiver, args);
     }
 
+    @Override
     public CallSite createLongInteger(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         return createNumberNumber(site, metaClass, metaMethod, params, receiver, args);
     }
 
+    @Override
     public CallSite createLongLong(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         return createNumberNumber(site, metaClass, metaMethod, params, receiver, args);
     }
 
+    @Override
     public CallSite createLongFloat(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         return new LongFloat(site, metaClass, metaMethod, params, receiver, args);
     }
 
+    @Override
     public CallSite createLongDouble(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         return new LongDouble(site, metaClass, metaMethod, params, receiver, args);
     }
 
+    @Override
     public CallSite createFloatInteger(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         return new FloatInteger(site, metaClass, metaMethod, params, receiver, args);
     }
 
+    @Override
     public CallSite createFloatLong(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         return new FloatLong(site, metaClass, metaMethod, params, receiver, args);
     }
 
+    @Override
     public CallSite createFloatFloat(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         return new FloatFloat(site, metaClass, metaMethod, params, receiver, args);
     }
 
+    @Override
     public CallSite createFloatDouble(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         return new FloatDouble(site, metaClass, metaMethod, params, receiver, args);
     }
 
+    @Override
     public CallSite createDoubleInteger(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         return new DoubleInteger(site, metaClass, metaMethod, params, receiver, args);
     }
 
+    @Override
     public CallSite createDoubleLong(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         return new DoubleLong(site, metaClass, metaMethod, params, receiver, args);
     }
 
+    @Override
     public CallSite createDoubleFloat(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         return new DoubleFloat(site, metaClass, metaMethod, params, receiver, args);
     }
 
+    @Override
     public CallSite createDoubleDouble(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         return new DoubleDouble(site, metaClass, metaMethod, params, receiver, args);
     }
 
+    @Override
     public CallSite createNumberNumber(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         return new NumberNumber(site, metaClass, metaMethod, params, receiver, args);
     }
@@ -120,6 +139,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
+        @Override
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkCall(receiver, arg)) {
@@ -137,6 +157,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
+        @Override
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkCall(receiver, arg)) {
@@ -154,6 +175,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
+        @Override
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkCall(receiver, arg)) {
@@ -171,6 +193,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
+        @Override
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkCall(receiver, arg)) {
@@ -188,6 +211,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
+        @Override
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkCall(receiver, arg)) {
@@ -205,6 +229,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
+        @Override
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkCall(receiver, arg)) {
@@ -222,6 +247,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
+        @Override
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkCall(receiver, arg)) {
@@ -233,6 +259,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             return super.call(receiver, arg);
         }
 
+        @Override
         public final Object invoke(Object receiver, Object[] args) {
             return ((Float) receiver).doubleValue() / ((Float) args[0]).doubleValue();
         }
@@ -247,6 +274,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
+        @Override
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkCall(receiver, arg)) {
@@ -264,6 +292,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
+        @Override
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkCall(receiver, arg)) {
@@ -275,6 +304,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             return super.call(receiver, arg);
         }
 
+        @Override
         public final Object invoke(Object receiver, Object[] args) {
             return (Double) receiver / ((Integer) args[0]).doubleValue();
         }
@@ -289,6 +319,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
+        @Override
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkCall(receiver, arg)) {
@@ -306,6 +337,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
+        @Override
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkCall(receiver, arg)) {
@@ -323,6 +355,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
+        @Override
         public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkCall(receiver, arg)) {
@@ -340,6 +373,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
+        @Override
         public final Object invoke(Object receiver, Object[] args) {
             return math.divideImpl((Number)receiver,(Number)args[0]);
         }

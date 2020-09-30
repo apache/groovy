@@ -48,18 +48,22 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
         annotationRefs = new ArrayList<GroovyAnnotationRef>();
     }
 
+    @Override
     public boolean isPrimitive() {
         return externalClass.isPrimitive();
     }
 
+    @Override
     public GroovyAnnotationRef[] annotations() {
         return annotationRefs.toArray(EMPTY_GROOVYANNOTATIONREF_ARRAY);
     }
 
+    @Override
     public String qualifiedTypeName() {
         return externalClass.getName();
     }
 
+    @Override
     public GroovyClassDoc superclass() {
         Class aClass = externalClass.getSuperclass();
         if (aClass != null) return new ExternalGroovyClassDoc(aClass);
@@ -74,10 +78,12 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
         return externalClass.isInterface() ? "interface" : "class";
     }
 
+    @Override
     public String simpleTypeName() {
         return qualifiedTypeName(); // TODO fix
     }
 
+    @Override
     public String typeName() {
         return qualifiedTypeName(); // TODO fix
     }
@@ -97,226 +103,282 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
 
     // TODO implement below if/when needed
 
+    @Override
     public GroovyType superclassType() {
         return null;
     }
 
+    @Override
     public GroovyConstructorDoc[] constructors() {
         return EMPTY_GROOVYCONSTRUCTORDOC_ARRAY;
     }
 
+    @Override
     public GroovyConstructorDoc[] constructors(boolean filter) {
         return EMPTY_GROOVYCONSTRUCTORDOC_ARRAY;
     }
 
+    @Override
     public boolean definesSerializableFields() {
         return false;
     }
 
+    @Override
     public GroovyFieldDoc[] enumConstants() {
         return EMPTY_GROOVYFIELDDOC_ARRAY;
     }
 
+    @Override
     public GroovyFieldDoc[] fields() {
         return EMPTY_GROOVYFIELDDOC_ARRAY;
     }
 
+    @Override
     public GroovyFieldDoc[] properties() {
         return EMPTY_GROOVYFIELDDOC_ARRAY;
     }
 
+    @Override
     public GroovyFieldDoc[] fields(boolean filter) {
         return EMPTY_GROOVYFIELDDOC_ARRAY;
     }
 
+    @Override
     public GroovyClassDoc findClass(String className) {
         return null;
     }
 
+    @Override
     public GroovyClassDoc[] importedClasses() {
         return EMPTY_GROOVYCLASSDOC_ARRAY;
     }
 
+    @Override
     public GroovyPackageDoc[] importedPackages() {
         return EMPTY_GROOVYPACKAGEDOC_ARRAY;
     }
 
+    @Override
     public GroovyClassDoc[] innerClasses() {
         return EMPTY_GROOVYCLASSDOC_ARRAY;
     }
 
+    @Override
     public GroovyClassDoc[] innerClasses(boolean filter) {
         return EMPTY_GROOVYCLASSDOC_ARRAY;
     }
 
+    @Override
     public GroovyClassDoc[] interfaces() {
         return EMPTY_GROOVYCLASSDOC_ARRAY;
     }
 
+    @Override
     public GroovyType[] interfaceTypes() {
         return EMPTY_GROOVYTYPE_ARRAY;
     }
 
+    @Override
     public boolean isAbstract() {
         return false;
     }
 
+    @Override
     public boolean isExternalizable() {
         return false;
     }
 
+    @Override
     public boolean isSerializable() {
         return false;
     }
 
+    @Override
     public GroovyMethodDoc[] methods() {
         return EMPTY_GROOVYMETHODDOC_ARRAY;
     }
 
+    @Override
     public GroovyMethodDoc[] methods(boolean filter) {
         return EMPTY_GROOVYMETHODDOC_ARRAY;
     }
 
+    @Override
     public GroovyFieldDoc[] serializableFields() {
         return EMPTY_GROOVYFIELDDOC_ARRAY;
     }
 
+    @Override
     public GroovyMethodDoc[] serializationMethods() {
         return EMPTY_GROOVYMETHODDOC_ARRAY;
     }
 
+    @Override
     public boolean subclassOf(GroovyClassDoc gcd) {
         return false;
     }
 
+    @Override
     public String getFullPathName() {
         return null;
     }
 
+    @Override
     public String getRelativeRootPath() {
         return null;
     }
 
+    @Override
     public GroovyClassDoc containingClass() {
         return null;
     }
 
+    @Override
     public GroovyPackageDoc containingPackage() {
         return null;
     }
 
+    @Override
     public boolean isFinal() {
         return false;
     }
 
+    @Override
     public boolean isPackagePrivate() {
         return false;
     }
 
+    @Override
     public boolean isPrivate() {
         return false;
     }
 
+    @Override
     public boolean isProtected() {
         return false;
     }
 
+    @Override
     public boolean isPublic() {
         return false;
     }
 
+    @Override
     public boolean isStatic() {
         return false;
     }
 
+    @Override
     public String modifiers() {
         return null;
     }
 
+    @Override
     public int modifierSpecifier() {
         return 0;
     }
 
+    @Override
     public String qualifiedName() {
         return null;
     }
 
+    @Override
     public String commentText() {
         return null;
     }
 
+    @Override
     public String getRawCommentText() {
         return null;
     }
 
+    @Override
     public boolean isAnnotationType() {
         return false;
     }
 
+    @Override
     public boolean isAnnotationTypeElement() {
         return false;
     }
 
+    @Override
     public boolean isClass() {
         return false;
     }
 
+    @Override
     public boolean isConstructor() {
         return false;
     }
 
+    @Override
     public boolean isDeprecated() {
         return false;
     }
 
+    @Override
     public boolean isEnum() {
         return false;
     }
 
+    @Override
     public boolean isEnumConstant() {
         return false;
     }
 
+    @Override
     public boolean isError() {
         return false;
     }
 
+    @Override
     public boolean isException() {
         return false;
     }
 
+    @Override
     public boolean isField() {
         return false;
     }
 
+    @Override
     public boolean isIncluded() {
         return false;
     }
 
+    @Override
     public boolean isInterface() {
         return false;
     }
 
+    @Override
     public boolean isMethod() {
         return false;
     }
 
+    @Override
     public boolean isOrdinaryClass() {
         return false;
     }
 
+    @Override
     public String name() {
         return externalClass.getSimpleName();
     }
 
+    @Override
     public void setRawCommentText(String arg0) {
 
     }
 
+    @Override
     public String firstSentenceCommentText() {
         return null;
     }
 
+    @Override
     public int compareTo(Object o) {
         return 0;
     }

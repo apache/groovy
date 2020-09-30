@@ -69,6 +69,7 @@ public class Reduction extends CSTNode {
     /**
      * Returns true if the node is completely empty (no root, even).
      */
+    @Override
     public boolean isEmpty() {
         return size() == 0;
     }
@@ -76,6 +77,7 @@ public class Reduction extends CSTNode {
     /**
      * Returns the number of elements in the node.
      */
+    @Override
     public int size() {
         return elements.size();
     }
@@ -83,6 +85,7 @@ public class Reduction extends CSTNode {
     /**
      * Returns the specified element, or null.
      */
+    @Override
     public CSTNode get(int index) {
         CSTNode element = null;
 
@@ -98,6 +101,7 @@ public class Reduction extends CSTNode {
      * type.  Returns null if there is no root (usually only if the
      * node is a placeholder of some kind -- see isEmpty()).
      */
+    @Override
     public Token getRoot() {
         if (size() > 0) {
             return (Token) elements.get(0);
@@ -109,6 +113,7 @@ public class Reduction extends CSTNode {
     /**
      * Marks the node a complete expression.
      */
+    @Override
     public void markAsExpression() {
         marked = true;
     }
@@ -116,6 +121,7 @@ public class Reduction extends CSTNode {
     /**
      * Returns true if the node is a complete expression.
      */
+    @Override
     public boolean isAnExpression() {
         if (isA(Types.COMPLEX_EXPRESSION)) {
             return true;
@@ -130,6 +136,7 @@ public class Reduction extends CSTNode {
     /**
      * Adds an element to the node.
      */
+    @Override
     public CSTNode add(CSTNode element) {
         return set(size(), element);
     }
@@ -137,6 +144,7 @@ public class Reduction extends CSTNode {
     /**
      * Sets an element in at the specified index.
      */
+    @Override
     public CSTNode set(int index, CSTNode element) {
 
         if (elements == null) {
@@ -187,6 +195,7 @@ public class Reduction extends CSTNode {
      * Creates a <code>Reduction</code> from this node.  Returns self if the
      * node is already a <code>Reduction</code>.
      */
+    @Override
     public Reduction asReduction() {
         return this;
     }

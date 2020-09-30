@@ -27,6 +27,7 @@ public class ConstructorMetaClassSite extends MetaClassSite {
         super(site, metaClass);
     }
 
+    @Override
     public Object callConstructor(Object receiver, Object[] args) throws Throwable {
         if (receiver == metaClass.getTheClass()) {
             try {

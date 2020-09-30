@@ -28,10 +28,12 @@ public class BigDecimalCachedClass extends DoubleCachedClass {
         super(klazz, classInfo, true);
     }
 
+    @Override
     public boolean isDirectlyAssignable(Object argument) {
         return argument instanceof BigDecimal;
     }
 
+    @Override
     public Object coerceArgument(Object argument) {
         if (argument instanceof BigDecimal) {
             return argument;

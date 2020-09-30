@@ -48,6 +48,7 @@ public class MultipleCompilationErrorsException extends
         return collector;
     }
     
+    @Override
     public String getMessage() {
         Writer data = new StringBuilderWriter();
         PrintWriter writer = new PrintWriter(data);

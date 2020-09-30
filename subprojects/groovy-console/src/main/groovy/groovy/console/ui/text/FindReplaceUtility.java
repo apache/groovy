@@ -116,6 +116,7 @@ public final class FindReplaceUtility {
         /* KeyStroke keyStroke = */
         KeyStroke.getKeyStroke("enter");
         KeyAdapter keyAdapter = new KeyAdapter() {
+            @Override
             public void keyTyped(KeyEvent ke) {
                 if (ke.getKeyChar() == KeyEvent.VK_ENTER) {
                     FIND_BUTTON.doClick();
@@ -416,6 +417,7 @@ public final class FindReplaceUtility {
             putValue(Action.MNEMONIC_KEY, KeyEvent.VK_F);
         }
 
+        @Override
         public void actionPerformed(ActionEvent ae) {
             lastAction = FIND_ACTION_COMMAND;
             findReplaceCount = 0;
@@ -451,6 +453,7 @@ public final class FindReplaceUtility {
             putValue(Action.MNEMONIC_KEY, KeyEvent.VK_R);
         }
 
+        @Override
         public void actionPerformed(ActionEvent ae) {
             lastAction = ae.getActionCommand();
             findReplaceCount = 0;
@@ -498,6 +501,7 @@ public final class FindReplaceUtility {
             putValue(Action.MNEMONIC_KEY, KeyEvent.VK_A);
         }
 
+        @Override
         public void actionPerformed(ActionEvent ae) {
             lastAction = ae.getActionCommand();
             findReplaceCount = 0;
@@ -547,6 +551,7 @@ public final class FindReplaceUtility {
             putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke("ESCAPE"));
         }
 
+        @Override
         public void actionPerformed(ActionEvent ae) {
             FIND_REPLACE_DIALOG.dispose();
         }

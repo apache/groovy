@@ -30,21 +30,26 @@ public class NodeBuilder extends BuilderSupport {
         return new NodeBuilder();
     }
 
+    @Override
     protected void setParent(Object parent, Object child) {
     }
 
+    @Override
     protected Object createNode(Object name) {
         return new Node(getCurrentNode(), name);
     }
 
+    @Override
     protected Object createNode(Object name, Object value) {
         return new Node(getCurrentNode(), name, value);
     }
 
+    @Override
     protected Object createNode(Object name, Map attributes) {
         return new Node(getCurrentNode(), name, attributes);
     }
 
+    @Override
     protected Object createNode(Object name, Map attributes, Object value) {
         return new Node(getCurrentNode(), name, attributes, value);
     }

@@ -31,6 +31,7 @@ public class PerInstancePojoMetaClassSite extends AbstractCallSite{
         this.info = info;
     }
 
+    @Override
     public Object call(Object receiver, Object[] args) throws Throwable {
         if (receiver != null && info.hasPerInstanceMetaClasses()) {
             try {

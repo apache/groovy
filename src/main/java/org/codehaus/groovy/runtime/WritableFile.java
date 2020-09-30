@@ -41,6 +41,7 @@ public class WritableFile extends File implements Writable {
         this.encoding = encoding;
     }
 
+    @Override
     public Writer writeTo(final Writer out) throws IOException {
 
         try (Reader reader = (this.encoding == null)

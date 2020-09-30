@@ -127,6 +127,7 @@ public class AnnotationConstantsVisitor extends ClassCodeVisitorSupport {
         return result;
     }
 
+    @Override
     protected SourceUnit getSourceUnit() {
         return source;
     }

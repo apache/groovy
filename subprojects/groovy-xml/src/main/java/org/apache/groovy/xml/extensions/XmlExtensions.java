@@ -44,14 +44,17 @@ public class XmlExtensions {
         return new Iterator<Node>() {
             private int current /* = 0 */;
 
+            @Override
             public boolean hasNext() {
                 return current < nodeList.getLength();
             }
 
+            @Override
             public Node next() {
                 return nodeList.item(current++);
             }
 
+            @Override
             public void remove() {
                 throw new UnsupportedOperationException("Cannot remove() from a NodeList iterator");
             }

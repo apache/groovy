@@ -26,10 +26,12 @@ public class ObjectCachedClass extends CachedClass {
         super(Object.class,classInfo);
     }
 
+    @Override
     public synchronized CachedClass getCachedSuperClass() {
         return null;
     }
 
+    @Override
     public boolean isAssignableFrom(Class argument) {
         return true;
     }

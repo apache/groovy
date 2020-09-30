@@ -102,6 +102,7 @@ public class SqlExtensions {
             this.target = target;
         }
 
+        @Override
         public boolean hasNext() {
             try {
                 return index <= target.getColumnCount();
@@ -111,10 +112,12 @@ public class SqlExtensions {
             }
         }
 
+        @Override
         public ResultSetMetaDataWrapper next() {
             return new ResultSetMetaDataWrapper(target, index++);
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException("Cannot remove from ResultSetMetaData");
         }

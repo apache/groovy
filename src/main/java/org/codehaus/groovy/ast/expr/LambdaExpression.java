@@ -41,6 +41,7 @@ public class LambdaExpression extends ClosureExpression {
         super(parameters, code);
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitLambdaExpression(this);
     }

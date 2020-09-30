@@ -36,6 +36,7 @@ public abstract class AbstractSyntheticBinding extends AbstractFullBinding {
         setTargetBinding(target);
     }
 
+    @Override
     public void bind() {
         if (!bound) {
             try {
@@ -52,6 +53,7 @@ public abstract class AbstractSyntheticBinding extends AbstractFullBinding {
         }
     }
 
+    @Override
     public void unbind() {
         if (bound) {
             // fail dirty, no checks
@@ -63,6 +65,7 @@ public abstract class AbstractSyntheticBinding extends AbstractFullBinding {
     protected abstract void syntheticBind();
     protected abstract void syntheticUnbind();
 
+    @Override
     public void rebind() {
         if (bound) {
             unbind();
@@ -70,6 +73,7 @@ public abstract class AbstractSyntheticBinding extends AbstractFullBinding {
         }
     }
 
+    @Override
     public void setSourceBinding(SourceBinding source) {
         if (!(source instanceof PropertyBinding)) {
             throw new IllegalArgumentException("Only PropertySourceBindings are accepted");
@@ -85,6 +89,7 @@ public abstract class AbstractSyntheticBinding extends AbstractFullBinding {
         super.setSourceBinding(source);
     }
 
+    @Override
     public void setTargetBinding(TargetBinding target) {
         super.setTargetBinding(target);
     }

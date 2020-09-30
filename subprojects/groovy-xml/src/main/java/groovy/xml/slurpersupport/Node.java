@@ -110,6 +110,7 @@ public class Node implements Writable {
 
     public void replaceNode(final Closure replacementClosure, final GPathResult result) {
         this.replacementNodeStack.push(new ReplacementNode() {
+            @Override
             public void build(final GroovyObject builder, final Map namespaceMap, final Map<String, String> namespaceTagHints) {
                 final Closure c = (Closure) replacementClosure.clone();
                 Node.this.replacementNodeStack.pop(); // disable the replacement whilst the closure is being executed
@@ -132,6 +133,7 @@ public class Node implements Writable {
     protected void appendNode(final Object newValue, final GPathResult result) {
         if (newValue instanceof Closure) {
             this.children.add(new ReplacementNode() {
+                @Override
                 public void build(final GroovyObject builder, final Map namespaceMap, final Map<String, String> namespaceTagHints) {
                     final Closure c = (Closure) ((Closure) newValue).clone();
                     c.setDelegate(builder);
@@ -184,10 +186,12 @@ public class Node implements Writable {
             private final Iterator iter = Node.this.children.iterator();
             private Object nextElementNodes = getNextElementNodes();
 
+            @Override
             public boolean hasNext() {
                 return this.nextElementNodes != null;
             }
 
+            @Override
             public Object next() {
                 try {
                     return this.nextElementNodes;
@@ -196,6 +200,7 @@ public class Node implements Writable {
                 }
             }
 
+            @Override
             public void remove() {
                 throw new UnsupportedOperationException();
             }
@@ -212,6 +217,7 @@ public class Node implements Writable {
         };
     }
 
+    @Override
     public Writer writeTo(final Writer out) throws IOException {
         if (this.replacementNodeStack.empty()) {
             for (Object child : this.children) {

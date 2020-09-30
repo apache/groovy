@@ -97,6 +97,7 @@ public enum MacroBuilder {
     private static void performSubstitutions(final List<Closure<Expression>> context, final ASTNode astNode) {
         final Iterator<Closure<Expression>> iterator = context.iterator();
         ClassCodeExpressionTransformer trn = new ClassCodeExpressionTransformer() {
+            @Override
             public Expression transform(Expression expression) {
                 if (!(expression instanceof MethodCallExpression)) {
                     return super.transform(expression);

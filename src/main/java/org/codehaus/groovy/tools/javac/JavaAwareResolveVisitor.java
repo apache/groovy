@@ -42,10 +42,12 @@ public class JavaAwareResolveVisitor extends ResolveVisitor {
         cce.visit(this);
     }
 
+    @Override
     protected void visitClassCodeContainer(Statement code) {
         // do nothing here, leave it to the normal resolving
     }
 
+    @Override
     public void addError(String msg, ASTNode expr) {
         // do nothing here, leave it to the normal resolving
     }

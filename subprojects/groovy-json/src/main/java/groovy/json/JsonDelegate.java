@@ -43,6 +43,7 @@ public class JsonDelegate extends GroovyObjectSupport {
      * @param name the key name
      * @param args the value associated with the key
      */
+    @Override
     public Object invokeMethod(String name, Object args) {
         Object val = null;
         if (args != null && Object[].class.isAssignableFrom(args.getClass())) {

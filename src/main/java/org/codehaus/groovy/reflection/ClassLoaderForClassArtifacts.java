@@ -45,6 +45,7 @@ public class ClassLoaderForClassArtifacts extends ClassLoader {
         return cls;
     }
 
+    @Override
     public Class loadClass(String name) throws ClassNotFoundException {
         Class cls = findLoadedClass(name);
         if (cls != null)

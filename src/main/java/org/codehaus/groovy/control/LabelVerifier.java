@@ -46,6 +46,7 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
         source = src;
     }
 
+    @Override
     protected SourceUnit getSourceUnit() {
         return source;
     }
@@ -58,12 +59,14 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
         inSwitch = false;
     }
 
+    @Override
     protected void visitClassCodeContainer(Statement code) {
         init();
         super.visitClassCodeContainer(code);
         assertNoLabelsMissed();
     }
 
+    @Override
     public void visitStatement(Statement statement) {
         List<String> labels = statement.getStatementLabels();
 
@@ -84,6 +87,7 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
         super.visitStatement(statement);
     }
 
+    @Override
     public void visitForLoop(ForStatement forLoop) {
         boolean oldInLoop = inLoop;
         inLoop = true;
@@ -91,6 +95,7 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
         inLoop = oldInLoop;
     }
 
+    @Override
     public void visitDoWhileLoop(DoWhileStatement loop) {
         boolean oldInLoop = inLoop;
         inLoop = true;
@@ -98,6 +103,7 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
         inLoop = oldInLoop;
     }
 
+    @Override
     public void visitWhileLoop(WhileStatement loop) {
         boolean oldInLoop = inLoop;
         inLoop = true;
@@ -105,6 +111,7 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
         inLoop = oldInLoop;
     }
 
+    @Override
     public void visitBreakStatement(BreakStatement statement) {
         String label = statement.getLabel();
         boolean hasNamedLabel = label != null;
@@ -127,6 +134,7 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
         super.visitBreakStatement(statement);
     }
 
+    @Override
     public void visitContinueStatement(ContinueStatement statement) {
         String label = statement.getLabel();
         boolean hasNamedLabel = label != null;
@@ -157,6 +165,7 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
         }
     }
 
+    @Override
     public void visitSwitch(SwitchStatement statement) {
         boolean oldInSwitch = inSwitch;
         inSwitch = true;

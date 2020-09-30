@@ -40,6 +40,7 @@ public class ContinueStatement extends Statement {
         return label;
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitContinueStatement(this);
     }

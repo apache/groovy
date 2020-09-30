@@ -68,18 +68,21 @@ public class TracingInterceptor implements Interceptor {
         this.writer = writer;
     }
 
+    @Override
     public Object beforeInvoke(Object object, String methodName, Object[] arguments) {
         write(object, methodName, arguments, "before");
         indent++ ;
         return null;
     }
 
+    @Override
     public Object afterInvoke(Object object, String methodName, Object[] arguments, Object result) {
         indent--;
         write(object, methodName, arguments, "after ");
         return result;
     }
 
+    @Override
     public boolean doInvoke() {
         return true;
     }

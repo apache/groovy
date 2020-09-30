@@ -203,6 +203,7 @@ public class GroovyFilter extends StructuredSyntaxDocumentFilter {
         private final Segment segment = new Segment();
         private final StringBuilder buffer = new StringBuilder();
 
+        @Override
         public void actionPerformed(ActionEvent ae) {
             JTextComponent tComp = (JTextComponent) ae.getSource();
             if (tComp.getDocument() instanceof StyledDocument) {

@@ -274,6 +274,7 @@ public class MethodRankHelper{
             this.score = nameDist + argDist;
         }
 
+        @Override
         public int compareTo(Object o) {
             RankableMethod mo = (RankableMethod) o;
             return score.compareTo(mo.score);
@@ -332,6 +333,7 @@ public class MethodRankHelper{
             this.score = damerauLevenshteinDistance(argumentTypes,cArgs);
         }
 
+        @Override
         public int compareTo(Object o) {
             RankableConstructor co = (RankableConstructor) o;
             return score.compareTo(co.score);
@@ -352,6 +354,7 @@ public class MethodRankHelper{
             this.score = delDistance(name,mp.getName());
         }
 
+        @Override
         public int compareTo(Object o) {
             RankableField co = (RankableField) o;
             return score.compareTo(co.score);

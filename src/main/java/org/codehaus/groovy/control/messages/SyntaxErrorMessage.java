@@ -47,6 +47,7 @@ public class SyntaxErrorMessage extends Message {
     /**
      * Writes out a nicely formatted summary of the syntax error.
      */
+    @Override
     public void write(PrintWriter output, Janitor janitor) {
         String name = source.getName();
         int line = getCause().getStartLine();

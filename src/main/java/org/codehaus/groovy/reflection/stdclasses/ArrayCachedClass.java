@@ -28,6 +28,7 @@ public class ArrayCachedClass extends CachedClass {
         super(klazz, classInfo);
     }
 
+    @Override
     public Object coerceArgument(Object argument) {
         Class argumentClass = argument.getClass();
         if (argumentClass.getName().charAt(0) != '[') return argument;

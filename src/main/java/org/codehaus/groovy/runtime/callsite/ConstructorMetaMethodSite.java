@@ -47,6 +47,7 @@ public class ConstructorMetaMethodSite extends MetaMethodSite {
         }
     }
 
+    @Override
     public final Object callConstructor(Object receiver, Object[] args) throws Throwable {
         if (receiver == metaClass.getTheClass() // meta class match receiver
            && ((MetaClassImpl)metaClass).getVersion() == version // metaClass still be valid

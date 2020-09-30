@@ -51,6 +51,7 @@ public class CaseStatement extends Statement {
         expression=e;
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitCaseStatement(this);
     }

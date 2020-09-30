@@ -110,6 +110,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         inAnnotation = oldInAnnotation;
     }
 
+    @Override
     public Expression transform(Expression exp) {
         if (exp == null) return null;
         Class<? extends Expression> clazz = exp.getClass();

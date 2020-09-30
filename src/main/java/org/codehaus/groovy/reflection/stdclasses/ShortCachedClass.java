@@ -28,6 +28,7 @@ public class ShortCachedClass extends NumberCachedClass {
         this.allowNull = allowNull;
     }
 
+    @Override
     public Object coerceArgument(Object argument) {
         if (argument instanceof Short) {
             return argument;
@@ -39,10 +40,12 @@ public class ShortCachedClass extends NumberCachedClass {
         return argument;
     }
 
+    @Override
     public boolean isDirectlyAssignable(Object argument) {
         return (allowNull && argument == null) || argument instanceof Short;
     }
 
+    @Override
     public boolean isAssignableFrom(Class classToTransformFrom) {
         return (allowNull && classToTransformFrom == null)
                 || classToTransformFrom == Short.class

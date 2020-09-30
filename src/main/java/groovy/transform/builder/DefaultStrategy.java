@@ -167,6 +167,7 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
     private static final Expression DEFAULT_INITIAL_VALUE = null;
     private static final int PUBLIC_STATIC = ACC_PUBLIC | ACC_STATIC;
 
+    @Override
     public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {
         if (unsupportedAttribute(transform, anno, "forClass")) return;
         if (unsupportedAttribute(transform, anno, "force")) return;

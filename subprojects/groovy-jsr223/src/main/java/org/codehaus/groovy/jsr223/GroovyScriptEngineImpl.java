@@ -127,11 +127,13 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         this.factory = factory;
     }
 
+    @Override
     public Object eval(Reader reader, ScriptContext ctx)
             throws ScriptException {
         return eval(readFully(reader), ctx);
     }
 
+    @Override
     public Object eval(String script, ScriptContext ctx)
             throws ScriptException {
         try {
@@ -159,10 +161,12 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         }
     }
 
+    @Override
     public Bindings createBindings() {
         return new SimpleBindings();
     }
 
+    @Override
     public ScriptEngineFactory getFactory() {
         if (factory == null) {
             synchronized (this) {
@@ -175,6 +179,7 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
     }
 
     // javax.script.Compilable methods 
+    @Override
     public CompiledScript compile(String scriptSource) throws ScriptException {
         try {
             return new GroovyCompiledScript(this,
@@ -184,16 +189,19 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         }
     }
 
+    @Override
     public CompiledScript compile(Reader reader) throws ScriptException {
         return compile(readFully(reader));
     }
 
     // javax.script.Invokable methods.
+    @Override
     public Object invokeFunction(String name, Object... args)
             throws ScriptException, NoSuchMethodException {
         return invokeImpl(null, name, args);
     }
 
+    @Override
     public Object invokeMethod(Object thiz, String name, Object... args)
             throws ScriptException, NoSuchMethodException {
         if (thiz == null) {
@@ -202,10 +210,12 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         return invokeImpl(thiz, name, args);
     }
 
+    @Override
     public <T> T getInterface(Class<T> clazz) {
         return makeInterface(null, clazz);
     }
 
+    @Override
     public <T> T getInterface(Object thiz, Class<T> clazz) {
         if (thiz == null) {
             throw new IllegalArgumentException("script object is null");

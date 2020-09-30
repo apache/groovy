@@ -34,6 +34,7 @@ public class PropertyChangeProxyTargetBinding implements TargetBinding {
         this.listener = listener;
     }
 
+    @Override
     public void updateTargetValue(Object value) {
         listener.propertyChange(new PropertyChangeEvent(proxyObject, propertyName,
                 InvokerHelper.getProperty(proxyObject, propertyName), value));

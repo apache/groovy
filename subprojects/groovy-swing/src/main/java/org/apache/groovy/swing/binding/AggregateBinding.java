@@ -43,6 +43,7 @@ public class AggregateBinding implements BindingUpdatable {
         bindings.remove(binding);
     }
 
+    @Override
     public void bind() {
         if (!bound) {
             bound = true;
@@ -52,6 +53,7 @@ public class AggregateBinding implements BindingUpdatable {
         }
     }
 
+    @Override
     public void unbind() {
         if (bound) {
             for (BindingUpdatable binding : bindings) {
@@ -61,6 +63,7 @@ public class AggregateBinding implements BindingUpdatable {
         }
     }
 
+    @Override
     public void rebind() {
         if (bound) {
             unbind();
@@ -68,12 +71,14 @@ public class AggregateBinding implements BindingUpdatable {
         }
     }
 
+    @Override
     public void update() {
         for (BindingUpdatable binding : bindings) {
             binding.update();
         }
     }
 
+    @Override
     public void reverseUpdate() {
         for (BindingUpdatable binding : bindings) {
             binding.reverseUpdate();

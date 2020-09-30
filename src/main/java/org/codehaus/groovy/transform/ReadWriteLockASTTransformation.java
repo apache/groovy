@@ -62,6 +62,7 @@ public class ReadWriteLockASTTransformation extends AbstractASTTransformation {
     public static final String DEFAULT_STATIC_LOCKNAME = "$REENTRANTLOCK";
     public static final String DEFAULT_INSTANCE_LOCKNAME = "$reentrantlock";
 
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];

@@ -47,6 +47,7 @@ public class ClosureSourceBinding implements SourceBinding {
         this.closure = closure;
     }
 
+    @Override
     public Object getSourceValue() {
         return closure.call(arguments);
     }

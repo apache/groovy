@@ -51,6 +51,7 @@ public class RawJavaFileObject extends SimpleJavaFileObject {
         this.javaFilePath = Paths.get(uri);
     }
 
+    @Override
     public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
         return null != src ? src : (src = new String(Files.readAllBytes(javaFilePath), DEFAULT_CHARSET));
     }
@@ -59,6 +60,7 @@ public class RawJavaFileObject extends SimpleJavaFileObject {
      * delete the Java source file
      * @return <code>true</code> if deleted successfully
      */
+    @Override
     public boolean delete() {
         return new File(uri).delete();
     }

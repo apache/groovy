@@ -131,6 +131,7 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
     /* (non-Javadoc)
       * @see groovy.lang.MetaBeanProperty#getGetter()
       */
+    @Override
     public MetaMethod getGetter() {
         return this.getter;
     }
@@ -138,6 +139,7 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
     /* (non-Javadoc)
       * @see groovy.lang.MetaBeanProperty#getSetter()
       */
+    @Override
     public MetaMethod getSetter() {
         return this.setter;
     }
@@ -156,18 +158,22 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
         }
 
 
+        @Override
         public int getModifiers() {
             return Modifier.PUBLIC;
         }
 
+        @Override
         public String getName() {
             return name;
         }
 
+        @Override
         public Class getReturnType() {
             return type;
         }
 
+        @Override
         public CachedClass getDeclaringClass() {
             return ReflectionCache.getCachedClass(declaringClass);
         }
@@ -175,6 +181,7 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
         /* (non-Javadoc)
            * @see groovy.lang.MetaMethod#invoke(java.lang.Object, java.lang.Object[])
            */
+        @Override
         public Object invoke(Object object, Object[] arguments) {
             return instance2Prop.getOrPut(object, getInitialValue());
         }
@@ -192,6 +199,7 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
         }
 
 
+        @Override
         public int getModifiers() {
             return Modifier.PUBLIC;
         }
@@ -200,14 +208,17 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
          * @see groovy.lang.MetaMethod#getName()
          */
 
+        @Override
         public String getName() {
             return name;
         }
 
+        @Override
         public Class getReturnType() {
             return type;
         }
 
+        @Override
         public CachedClass getDeclaringClass() {
             return ReflectionCache.getCachedClass(declaringClass);
         }
@@ -215,6 +226,7 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
         /* (non-Javadoc)
            * @see groovy.lang.MetaMethod#invoke(java.lang.Object, java.lang.Object[])
            */
+        @Override
         public Object invoke(Object object, Object[] arguments) {
             instance2Prop.put(object, arguments[0]);
             return null;

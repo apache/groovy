@@ -77,10 +77,12 @@ public class Duration extends BaseDuration {
                                               this.getMillis() - rhs.getMillis());
     }
     
+    @Override
     public long toMilliseconds() {
         return ((((((long)(this.getDays() * 24 ) + this.getHours()) * 60 + this.getMinutes()) * 60) + this.getSeconds()) * 1000) + this.getMillis();
     }
     
+    @Override
     public Date getAgo() {
     final Calendar cal = Calendar.getInstance();
 
@@ -98,8 +100,10 @@ public class Duration extends BaseDuration {
         return new Date(cal.getTimeInMillis());
     }
      
+    @Override
     public From getFrom() {
         return new From() {
+            @Override
             public Date getNow() {
             final Calendar cal = Calendar.getInstance();
 

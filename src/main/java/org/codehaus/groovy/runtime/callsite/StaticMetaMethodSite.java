@@ -83,6 +83,7 @@ public class StaticMetaMethodSite extends MetaMethodSite {
            && MetaClassHelper.sameClasses(params, arg1, arg2, arg3, arg4);
     }
 
+    @Override
     public Object call(Object receiver, Object[] args) throws Throwable {
         if(checkCall(receiver, args)) {
             try {
@@ -95,6 +96,7 @@ public class StaticMetaMethodSite extends MetaMethodSite {
         }
     }
 
+    @Override
     public Object callStatic(Class receiver, Object[] args) throws Throwable {
         if(checkCall(receiver, args))
           return invoke(receiver, args);
@@ -126,6 +128,7 @@ public class StaticMetaMethodSite extends MetaMethodSite {
             super(site, metaClass, metaMethod, params);
         }
 
+        @Override
         public final Object invoke(Object receiver, Object[] args) throws Throwable {
             try {
                 return metaMethod.doMethodInvoke(receiver,  args);
@@ -144,6 +147,7 @@ public class StaticMetaMethodSite extends MetaMethodSite {
             super(site, metaClass, metaMethod, params);
         }
 
+        @Override
         public final Object invoke(Object receiver, Object[] args) throws Throwable {
             try {
                 return metaMethod.invoke(receiver,  args);

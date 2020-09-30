@@ -119,6 +119,7 @@ public class ConsoleTextEditor extends JScrollPane {
 
     private TextEditor textEditor = new TextEditor(true, true, true) {
 
+        @Override
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
 
@@ -164,14 +165,17 @@ public class ConsoleTextEditor extends JScrollPane {
         // add a document listener, to hint whether the line number gutter has to be repainted
         // when the number of lines changes
         doc.addDocumentListener(new DocumentListener() {
+            @Override
             public void insertUpdate(DocumentEvent documentEvent) {
                 documentChangedSinceLastRepaint = true;
             }
 
+            @Override
             public void removeUpdate(DocumentEvent documentEvent) {
                 documentChangedSinceLastRepaint = true;
             }
 
+            @Override
             public void changedUpdate(DocumentEvent documentEvent) {
                 documentChangedSinceLastRepaint = true;
                 int width = 3 * Preferences.userNodeForPackage(Console.class).getInt("fontSize", 12);
@@ -242,6 +246,7 @@ public class ConsoleTextEditor extends JScrollPane {
             setEnabled(true);
         }
 
+        @Override
         public void actionPerformed(ActionEvent ae) {
             PRINTER_JOB.setPageable(textEditor);
 
@@ -262,6 +267,7 @@ public class ConsoleTextEditor extends JScrollPane {
             setEnabled(false);
         }
 
+        @Override
         public void actionPerformed(ActionEvent ae) {
             undoManager.redo();
             setEnabled(undoManager.canRedo());
@@ -269,6 +275,7 @@ public class ConsoleTextEditor extends JScrollPane {
             super.actionPerformed(ae);
         }
 
+        @Override
         public void propertyChange(PropertyChangeEvent pce) {
             setEnabled(undoManager.canRedo());
         }
@@ -278,17 +285,21 @@ public class ConsoleTextEditor extends JScrollPane {
 
         protected int lastUpdate;
 
+        @Override
         public void changedUpdate(DocumentEvent de) {
         }
 
+        @Override
         public void insertUpdate(DocumentEvent de) {
             lastUpdate = de.getOffset() + de.getLength();
         }
 
+        @Override
         public void removeUpdate(DocumentEvent de) {
             lastUpdate = de.getOffset();
         }
 
+        @Override
         public void actionPerformed(ActionEvent ae) {
             textEditor.setCaretPosition(lastUpdate);
         }
@@ -300,6 +311,7 @@ public class ConsoleTextEditor extends JScrollPane {
             setEnabled(false);
         }
 
+        @Override
         public void actionPerformed(ActionEvent ae) {
             undoManager.undo();
             setEnabled(undoManager.canUndo());
@@ -307,6 +319,7 @@ public class ConsoleTextEditor extends JScrollPane {
             super.actionPerformed(ae);
         }
 
+        @Override
         public void propertyChange(PropertyChangeEvent pce) {
             setEnabled(undoManager.canUndo());
         }

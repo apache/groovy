@@ -99,6 +99,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
     private static final ClassNode OBJECTS_TYPE = make(Objects.class);
     private static final ClassNode OBJECT_TYPE = makeClassSafe(Object.class);
 
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];

@@ -40,6 +40,7 @@ public class BinaryFloatExpressionHelper extends BinaryExpressionWriter {
         super(controller, floatArraySet, floatArrayGet);
     }
     
+    @Override
     protected void doubleTwoOperands(MethodVisitor mv) {
         mv.visitInsn(DUP2);
     }
@@ -48,28 +49,34 @@ public class BinaryFloatExpressionHelper extends BinaryExpressionWriter {
         floatArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "fArrayGet"),
         floatArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "fArraySet");
 
+    @Override
     protected boolean writeBitwiseOp(int type, boolean simulate) {
         if (!simulate) throw new GroovyBugError("should not reach here");
         return false;   
     }    
     
+    @Override
     protected int getBitwiseOperationBytecode(int type) {
         return -1;
     }
     
+    @Override
     protected int getCompareCode() {
         return FCMPG;
     }
     
+    @Override
     protected ClassNode getNormalOpResultType() {
         return ClassHelper.float_TYPE;
     }
     
+    @Override
     protected boolean writeShiftOp(int type, boolean simulate) {
         if (!simulate) throw new GroovyBugError("should not reach here");
         return false;   
     }    
     
+    @Override
     protected int getShiftOperationBytecode(int type) {
         return -1;
     }
@@ -83,24 +90,29 @@ public class BinaryFloatExpressionHelper extends BinaryExpressionWriter {
         FREM,           //  MOD         203
     };    
     
+    @Override
     protected int getStandardOperationBytecode(int type) {
         return stdOperations[type];
     }
     
+    @Override
     protected void removeTwoOperands(MethodVisitor mv) {
         mv.visitInsn(POP2);
     }
     
+    @Override
     protected void writeMinusMinus(MethodVisitor mv) {
         mv.visitInsn(FCONST_1);
         mv.visitInsn(FSUB);
     }
     
+    @Override
     protected void writePlusPlus(MethodVisitor mv) {
         mv.visitInsn(FCONST_1);
         mv.visitInsn(FADD);
     }
 
+    @Override
     protected ClassNode getDevisionOpResultType() {
         return ClassHelper.BigDecimal_TYPE;
     }

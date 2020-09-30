@@ -65,6 +65,7 @@ public class ManagedLinkedList<T> {
             current = head;
         }
 
+        @Override
         public boolean hasNext() {
             if (current == null) return false;
             if (currentHandled) {
@@ -74,6 +75,7 @@ public class ManagedLinkedList<T> {
             }
         }
 
+        @Override
         public T next() {
             if (currentHandled) current = current.next;
             currentHandled = true;
@@ -81,6 +83,7 @@ public class ManagedLinkedList<T> {
             return current.get();
         }
 
+        @Override
         public void remove() {
             if (current != null) current.finalizeReference();
         }

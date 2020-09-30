@@ -68,6 +68,7 @@ public class OrderBy<T> implements Comparator<T>, Serializable {
         closures.add(closure);
     }
 
+    @Override
     public int compare(T object1, T object2) {
         for (Closure closure : closures) {
             Object value1 = closure.call(object1);

@@ -44,6 +44,7 @@ public class JmxEventEmitter extends NotificationBroadcasterSupport implements J
      *
      * @return - returns event type string thrown by this emitter
      */
+    @Override
     public String getEvent() {
         return event;
     }
@@ -53,6 +54,7 @@ public class JmxEventEmitter extends NotificationBroadcasterSupport implements J
      *
      * @param event - event type set for this emitter.
      */
+    @Override
     public void setEvent(String event) {
         this.event = event;
     }
@@ -82,6 +84,7 @@ public class JmxEventEmitter extends NotificationBroadcasterSupport implements J
      * @param data - a data object sent as part of the event parameter.
      * @return a sequence number associated with the emitted event.
      */
+    @Override
     public long send(Object data) {
         long seq = NumberSequencer.getNextSequence();
         Notification note = new Notification(

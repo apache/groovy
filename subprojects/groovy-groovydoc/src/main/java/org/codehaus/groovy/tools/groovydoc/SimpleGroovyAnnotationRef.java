@@ -37,6 +37,7 @@ public class SimpleGroovyAnnotationRef implements GroovyAnnotationRef {
         this.type = type;
     }
 
+    @Override
     public GroovyClassDoc type() {
         return type;
     }
@@ -45,6 +46,7 @@ public class SimpleGroovyAnnotationRef implements GroovyAnnotationRef {
         return !(type == null);
     }
 
+    @Override
     public String name() {
         return name;
     }
@@ -53,6 +55,7 @@ public class SimpleGroovyAnnotationRef implements GroovyAnnotationRef {
         this.name = name;
     }
 
+    @Override
     public String description() {
         return desc;
     }

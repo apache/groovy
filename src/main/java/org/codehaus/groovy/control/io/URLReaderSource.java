@@ -48,6 +48,7 @@ public class URLReaderSource extends AbstractReaderSource {
    /**
     *  Returns a new Reader on the underlying source object.  
     */
+    @Override
     public Reader getReader() throws IOException {
        return new InputStreamReader(URLStreams.openUncachedStream(url), configuration.getSourceEncoding() );
     }
@@ -57,6 +58,7 @@ public class URLReaderSource extends AbstractReaderSource {
      *
      * @return URI for the URL of this source.
      */
+    @Override
     public URI getURI() {
         try {
             return url.toURI();

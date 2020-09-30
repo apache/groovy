@@ -28,6 +28,7 @@ public final class NullCallSite extends AbstractCallSite {
         super(callSite);
     }
 
+    @Override
     public Object call(Object receiver, Object[] args) throws Throwable {
         if (receiver == null) {
             try{
@@ -40,6 +41,7 @@ public final class NullCallSite extends AbstractCallSite {
         }
     }
     
+    @Override
     public Object getProperty(Object receiver) throws Throwable {
         if (receiver == null) {
             try{

@@ -77,6 +77,7 @@ public final class GroovyResultSetProxy implements InvocationHandler {
      * @see ResultSet
      * @see java.lang.reflect.InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])
      */
+    @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         String name = method.getName();
         if (method.getDeclaringClass() == GroovyObject.class) {

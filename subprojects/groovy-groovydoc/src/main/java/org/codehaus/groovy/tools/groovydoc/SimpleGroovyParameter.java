@@ -39,6 +39,7 @@ public class SimpleGroovyParameter implements GroovyParameter {
         annotationRefs = new ArrayList<GroovyAnnotationRef>();
     }
 
+    @Override
     public String defaultValue() {
         return defaultValue;
     }
@@ -47,10 +48,12 @@ public class SimpleGroovyParameter implements GroovyParameter {
         this.defaultValue = defaultValue;
     }
 
+    @Override
     public String name() {
         return name;
     }
 
+    @Override
     public String typeName() {
         if (type == null) {
             return typeName;
@@ -62,6 +65,7 @@ public class SimpleGroovyParameter implements GroovyParameter {
         this.typeName = typeName;
     }
 
+    @Override
     public GroovyAnnotationRef[] annotations() {
         return annotationRefs.toArray(EMPTY_GROOVYANNOTATIONREF_ARRAY);
     }
@@ -70,6 +74,7 @@ public class SimpleGroovyParameter implements GroovyParameter {
         annotationRefs.add(ref);
     }
 
+    @Override
     public GroovyType type() {
         return type;
     }

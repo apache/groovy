@@ -51,6 +51,7 @@ public class Proxy extends GroovyObjectSupport {
         this.adaptee = adaptee;
     }
 
+    @Override
     public Object invokeMethod(String name, Object args) {
         try {
             return super.invokeMethod(name, args);

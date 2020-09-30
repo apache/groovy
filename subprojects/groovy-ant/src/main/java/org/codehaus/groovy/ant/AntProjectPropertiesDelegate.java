@@ -47,6 +47,7 @@ public class AntProjectPropertiesDelegate extends Hashtable<String, Object> {
         return project.getProperties().hashCode();
     }
 
+    @Override
     public synchronized int size() {
         return project.getProperties().size();
     }
@@ -54,27 +55,33 @@ public class AntProjectPropertiesDelegate extends Hashtable<String, Object> {
     /**
      * @throws UnsupportedOperationException is always thrown when this method is invoked. The Project properties are immutable.
      */
+    @Override
     public synchronized void clear() {
         throw new UnsupportedOperationException("Impossible to clear the project properties.");
     }
 
+    @Override
     public synchronized boolean isEmpty() {
         return project.getProperties().isEmpty();
     }
 
+    @Override
     @SuppressFBWarnings(value = "CN_IDIOM_NO_SUPER_CALL", justification = "Okay for our use case. The cloned delegate should have the correct type.")
     public synchronized Object clone() {
         return project.getProperties().clone();
     }
 
+    @Override
     public synchronized boolean contains(Object value) {
         return project.getProperties().contains(value);
     }
 
+    @Override
     public synchronized boolean containsKey(Object key) {
         return project.getProperties().containsKey(key);
     }
 
+    @Override
     public boolean containsValue(Object value) {
         return project.getProperties().containsValue(value);
     }
@@ -87,32 +94,39 @@ public class AntProjectPropertiesDelegate extends Hashtable<String, Object> {
         return project.getProperties().toString();
     }
 
+    @Override
     public Collection<Object> values() {
         return project.getProperties().values();
     }
 
+    @Override
     public synchronized Enumeration<Object> elements() {
         return project.getProperties().elements();
     }
 
+    @Override
     public synchronized Enumeration<String> keys() {
         return project.getProperties().keys();
     }
 
+    @Override
     public synchronized void putAll(Map<? extends String, ?> t) {
         for (Map.Entry<? extends String, ?> entry : t.entrySet()) {
             put(entry.getKey(), entry.getValue());
         }
     }
 
+    @Override
     public Set<Map.Entry<String, Object>> entrySet() {
         return project.getProperties().entrySet();
     }
 
+    @Override
     public Set<String> keySet() {
         return project.getProperties().keySet();
     }
 
+    @Override
     public synchronized Object get(Object key) {
         return project.getProperties().get(key);
     }
@@ -120,10 +134,12 @@ public class AntProjectPropertiesDelegate extends Hashtable<String, Object> {
     /**
      * @throws UnsupportedOperationException is always thrown when this method is invoked. The Project properties are immutable.
      */
+    @Override
     public synchronized Object remove(Object key) {
         throw new UnsupportedOperationException("Impossible to remove a property from the project properties.");
     }
 
+    @Override
     public synchronized Object put(String key, Object value) {
         Object oldValue = null;
         if (containsKey(key)) {

@@ -203,6 +203,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
     /**
      * Interface method for ResourceContainer. This is used by the GroovyScriptEngine.
      */
+    @Override
     public URLConnection getResourceConnection (String name) throws ResourceException {
         name = removeNamePrefix(name).replace('\\', '/');
 
@@ -347,6 +348,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
      * @throws ServletException if init() method defined in super class
      *                          javax.servlet.GenericServlet throws it
      */
+    @Override
     public void init(ServletConfig config) throws ServletException {
         /*
          * Never forget super.init()!

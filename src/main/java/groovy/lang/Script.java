@@ -50,6 +50,7 @@ public abstract class Script extends GroovyObjectSupport {
         this.binding = binding;
     }
 
+    @Override
     public Object getProperty(String property) {
         try {
             return binding.getVariable(property);
@@ -58,6 +59,7 @@ public abstract class Script extends GroovyObjectSupport {
         }
     }
 
+    @Override
     public void setProperty(String property, Object newValue) {
         if ("binding".equals(property)) {
             setBinding((Binding) newValue);
@@ -91,6 +93,7 @@ public abstract class Script extends GroovyObjectSupport {
      * @param args arguments to pass to the method
      * @return value
      */
+    @Override
     public Object invokeMethod(String name, Object args) {
         try {
             return super.invokeMethod(name, args);

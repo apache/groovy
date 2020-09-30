@@ -43,6 +43,7 @@ public class CallSiteClassLoader extends ClassLoaderForClassArtifacts {
         super(klazz);
     }
 
+    @Override
     protected synchronized Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
         if (KNOWN_CLASSES.contains(name))
           return getClass().getClassLoader().loadClass(name);

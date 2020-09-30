@@ -50,6 +50,7 @@ public class GroovyDocParser implements GroovyDocParserI {
         this.properties = properties;
     }
 
+    @Override
     public Map<String, GroovyClassDoc> getClassDocsFromSingleSource(String packagePath, String file, String src)
             throws RuntimeException {
         if (file.indexOf(".java") > 0) { // simple (for now) decision on java or groovy

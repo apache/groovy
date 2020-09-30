@@ -348,6 +348,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         this(theClass, register, allowChangesAfterInit, null);
     }
 
+    @Override
     public MetaMethod findMixinMethod(String methodName, Class[] arguments) {
         for (MixinInMetaClass mixin : mixinClasses) {
             final CachedClass mixinClass = mixin.getMixinClass();
@@ -390,26 +391,32 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return null;
     }
 
+    @Override
     protected void onInvokeMethodFoundInHierarchy(MetaMethod method) {
         this.invokeMethodMethod = method;
     }
 
+    @Override
     protected void onSuperMethodFoundInHierarchy(MetaMethod method) {
         addSuperMethodIfNotOverridden(method);
     }
 
+    @Override
     protected void onSuperPropertyFoundInHierarchy(MetaBeanProperty property) {
         addMetaBeanProperty(property);
     }
 
+    @Override
     protected void onSetPropertyFoundInHierarchy(MetaMethod method) {
         this.setPropertyMethod = method;
     }
 
+    @Override
     protected void onGetPropertyFoundInHierarchy(MetaMethod method) {
         this.getPropertyMethod = method;
     }
 
+    @Override
     public boolean isModified() {
         return this.modified;
     }
@@ -519,6 +526,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
     private void addSuperMethodIfNotOverridden(final MetaMethod metaMethodFromSuper) {
         performOperationOnMetaClass(new Callable() {
+            @Override
             public void call() {
 
                 MetaMethod existing = null;
@@ -652,6 +660,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
            * @see groovy.lang.GroovyObjectSupport#getProperty(java.lang.String)
            */
 
+        @Override
         public Object getProperty(String property) {
             this.propertyName = property;
             return this;
@@ -660,6 +669,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
            * @see groovy.lang.GroovyObjectSupport#setProperty(java.lang.String, java.lang.Object)
            */
 
+        @Override
         public void setProperty(String property, Object newValue) {
             this.propertyName = property;
             registerIfClosure(newValue, true);
@@ -670,6 +680,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
       * @see groovy.lang.MetaClassImpl#invokeConstructor(java.lang.Object[])
       */
 
+    @Override
     public Object invokeConstructor(Object[] arguments) {
 
         // TODO This is the only area where this MetaClass needs to do some interception because Groovy's current
@@ -709,6 +720,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
       * @see groovy.lang.GroovyObject#getMetaClass()
       */
 
+    @Override
     public MetaClass getMetaClass() {
         return myMetaClass;
     }
@@ -717,6 +729,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
       * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
       */
 
+    @Override
     public Object getProperty(String property) {
         if (isValidExpandoProperty(property)) {
             if (property.equals(STATIC_QUALIFIER)) {
@@ -742,6 +755,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
       * @see groovy.lang.GroovyObject#invokeMethod(java.lang.String, java.lang.Object)
       */
 
+    @Override
     public Object invokeMethod(String name, Object args) {
         final Object[] argsArr = args instanceof Object[] ? (Object[]) args : new Object[]{args};
         MetaMethod metaMethod = myMetaClass.getMetaMethod(name, argsArr);
@@ -774,6 +788,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
       * @see groovy.lang.GroovyObject#setMetaClass(groovy.lang.MetaClass)
       */
 
+    @Override
     public void setMetaClass(MetaClass metaClass) {
         this.myMetaClass = metaClass;
     }
@@ -782,6 +797,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
       * @see groovy.lang.GroovyObject#setProperty(java.lang.String, java.lang.Object)
       */
 
+    @Override
     public void setProperty(String property, Object newValue) {
         if (newValue instanceof Closure) {
             if (property.equals(CONSTRUCTOR)) {
@@ -831,6 +847,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         }
     }
     
+    @Override
     protected void checkInitalised() {
         try {
             readLock.lock();
@@ -917,6 +934,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * @return A list of MetaMethods
      * @see MetaObjectProtocol#getMethods()
      */
+    @Override
     public List<MetaMethod> getMethods() {
         List<MetaMethod> methodList = new ArrayList<MetaMethod>();
         methodList.addAll(this.expandoMethods.values());
@@ -924,6 +942,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return methodList;
     }
 
+    @Override
     public List<MetaProperty> getProperties() {
         List<MetaProperty> propertyList = new ArrayList<MetaProperty>(super.getProperties());
         return propertyList;
@@ -1040,6 +1059,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         });
     }
 
+    @Override
     protected Object getSubclassMetaMethods(String methodName) {
         if (!isModified())
             return null;
@@ -1112,6 +1132,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      *
      * @see groovy.lang.MetaClassImpl#invokeMethod(Class, Object, String, Object[], boolean, boolean)
      */
+    @Override
     public Object invokeMethod(Class sender, Object object, String methodName, Object[] originalArguments, boolean isCallToSuper, boolean fromInsideClass) {
         if (invokeMethodMethod != null) {
             MetaClassHelper.unwrap(originalArguments);
@@ -1125,6 +1146,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      *
      * @see MetaClassImpl#invokeStaticMethod(Object, String, Object[])
      */
+    @Override
     public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
         if (invokeStaticMethodMethod != null) {
             MetaClassHelper.unwrap(arguments);
@@ -1138,6 +1160,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      *
      * @see MetaClassImpl#getProperty(Class, Object, String, boolean, boolean)
      */
+    @Override
     public Object getProperty(Class sender, Object object, String name, boolean useSuper, boolean fromInsideClass) {
         if (hasOverrideGetProperty(name) && getJavaClass().isInstance(object)) {
             return getPropertyMethod.invoke(object, new Object[]{name});
@@ -1155,6 +1178,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      *
      * @see MetaClassImpl#getProperty(Object, String)
      */
+    @Override
     public Object getProperty(Object object, String name) {
         if (hasOverrideGetProperty(name) && getJavaClass().isInstance(object)) {
             return getPropertyMethod.invoke(object, new Object[]{name});
@@ -1172,6 +1196,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * @see MetaClassImpl#setProperty(Class, Object, String, Object, boolean, boolean)
      */
 
+    @Override
     public void setProperty(Class sender, Object object, String name, Object newValue, boolean useSuper, boolean fromInsideClass) {
         if (setPropertyMethod != null && !name.equals(META_CLASS_PROPERTY) && getJavaClass().isInstance(object)) {
             setPropertyMethod.invoke(object, new Object[]{name, newValue});
@@ -1186,6 +1211,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * @param name The name of the MetaProperty
      * @return The MetaProperty or null if it doesn't exist
      */
+    @Override
     public MetaProperty getMetaProperty(String name) {
         MetaProperty mp = this.expandoProperties.get(name);
         if (mp != null) return mp;
@@ -1291,6 +1317,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return false;
     }
 
+    @Override
     public CallSite createPojoCallSite(CallSite site, Object receiver, Object[] args) {
         if (invokeMethodMethod != null)
             return new PojoMetaClassSite(site, this);
@@ -1298,6 +1325,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return super.createPojoCallSite(site, receiver, args);
     }
 
+    @Override
     public CallSite createStaticSite(CallSite site, Object[] args) {
         if (invokeStaticMethodMethod != null)
             return new StaticMetaClassSite(site, this);
@@ -1305,8 +1333,10 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return super.createStaticSite(site, args);
     }
 
+    @Override
     public boolean hasCustomStaticInvokeMethod() {return invokeStaticMethodMethod!=null; }
 
+    @Override
     public CallSite createPogoCallSite(CallSite site, Object[] args) {
         if (invokeMethodMethod != null)
             return new PogoMetaClassSite(site, this);
@@ -1327,6 +1357,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return super.retrieveConstructor(args);
     }
 
+    @Override
     public CallSite createConstructorSite(CallSite site, Object[] args) {
         Class[] params = MetaClassHelper.convertToTypeArray(args);
         MetaMethod method = pickMethod(GROOVY_CONSTRUCTOR, params);
@@ -1346,6 +1377,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             this.klazz = klazz;
         }
 
+        @Override
         public Object invokeMethod(String name, Object obj) {
             if (obj instanceof Object[]) {
                 Object[] args = (Object[]) obj;
@@ -1381,6 +1413,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             closure.call((Object)null);
         }
 
+        @Override
         public Object invokeMethod(String name, Object obj) {
             try {
                 return getMetaClass().invokeMethod(this, name, obj);
@@ -1410,10 +1443,12 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             }
         }
 
+        @Override
         public void setProperty(String property, Object newValue) {
             ExpandoMetaClass.this.setProperty(property, newValue);
         }
 
+        @Override
         public Object getProperty(String property) {
             if (STATIC_QUALIFIER.equals(property))
                 return new StaticDefiningClosure();
@@ -1430,6 +1465,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             super(STATIC_QUALIFIER, true);
         }
 
+        @Override
         public Object invokeMethod(String name, Object obj) {
             if (obj instanceof Object[]) {
                 final Object[] args = (Object[]) obj;
@@ -1458,10 +1494,12 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                     {
                         final MetaClass ownMetaClass = InvokerHelper.getMetaClass(object.getClass());
                         setMetaClass(new OwnedMetaClass(ownMetaClass) {
+                            @Override
                             protected Object getOwner() {
                                 return object;
                             }
 
+                            @Override
                             protected MetaClass getOwnerMetaClass(Object owner) {
                                 return getAdaptee();
                             }

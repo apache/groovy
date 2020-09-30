@@ -28,6 +28,7 @@ public class MissingPropertyExceptionNoStack extends MissingPropertyException {
         super(propertyName, theClass);
     }
 
+    @Override
     public Throwable fillInStackTrace() {
         return this;
     }

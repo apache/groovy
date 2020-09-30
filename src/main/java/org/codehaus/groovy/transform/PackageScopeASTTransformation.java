@@ -61,6 +61,7 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
     private static final Class TARGET_CLASS = groovy.transform.PackageScopeTarget.class;
     private static final String TARGET_CLASS_NAME = ClassHelper.make(TARGET_CLASS).getNameWithoutPackage();
 
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];

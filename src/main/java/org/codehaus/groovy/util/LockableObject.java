@@ -27,6 +27,7 @@ public class LockableObject extends AbstractQueuedSynchronizer {
     private static final long serialVersionUID = 2284470475073785118L;
     transient Thread owner;
 
+    @Override
     protected final boolean isHeldExclusively() {
         return getState() != 0 && owner == Thread.currentThread();
     }
@@ -42,6 +43,7 @@ public class LockableObject extends AbstractQueuedSynchronizer {
         release(1);
     }
 
+    @Override
     protected final boolean tryAcquire(int acquires) {
         final Thread current = Thread.currentThread();
         int c = getState();
@@ -58,6 +60,7 @@ public class LockableObject extends AbstractQueuedSynchronizer {
         return false;
     }
 
+    @Override
     protected final boolean tryRelease(int releases) {
         int c = getState() - releases;
         if (Thread.currentThread() != owner)

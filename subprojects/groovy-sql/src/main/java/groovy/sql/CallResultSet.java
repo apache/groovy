@@ -37,6 +37,7 @@ class CallResultSet extends GroovyResultSetExtension {
         this.indx = indx;
     }
 
+    @Override
     protected ResultSet getResultSet() throws SQLException {
         if (firstCall) {
             resultSet = (ResultSet) call.getObject(indx + 1);

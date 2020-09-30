@@ -129,6 +129,7 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
         }
     }
 
+    @Override
     public Expression transform(Expression exp) {
         if (exp == null) return null;
         if (!currentClass.isInterface() && exp.getClass() == ConstantExpression.class) {
@@ -137,10 +138,12 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
         return exp.transformExpression(this);
     }
 
+    @Override
     protected SourceUnit getSourceUnit() {
         return source;
     }
 
+    @Override
     public void visitClosureExpression(ClosureExpression expression) {
         /*
          * GROOVY-3339 - do nothing - so that numbers don't get replaced by cached constants in closure classes

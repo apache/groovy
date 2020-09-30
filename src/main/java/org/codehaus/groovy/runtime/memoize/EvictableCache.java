@@ -35,6 +35,7 @@ public interface EvictableCache<K, V> extends MemoizeCache<K, V>, Map<K, V>/* */
      * @param key of the cached value
      * @return returns the removed value
      */
+    @Override
     V remove(Object key);
 
     /**
@@ -47,6 +48,7 @@ public interface EvictableCache<K, V> extends MemoizeCache<K, V>, Map<K, V>/* */
      * Clear the cache
      * @see #clearAll()
      */
+    @Override
     default void clear() {
         clearAll();
     }
@@ -55,6 +57,7 @@ public interface EvictableCache<K, V> extends MemoizeCache<K, V>, Map<K, V>/* */
      * Get all cached values
      * @return all cached values
      */
+    @Override
     Collection<V> values();
 
     /**
@@ -68,12 +71,14 @@ public interface EvictableCache<K, V> extends MemoizeCache<K, V>, Map<K, V>/* */
      * @param key key whose presence in this cache is to be tested.
      * @return true if the cache contains a mapping for the specified key
      */
+    @Override
     boolean containsKey(Object key);
 
     /**
      * Get the size of the cache
      * @return the size of the cache
      */
+    @Override
     int size();
 
     /**

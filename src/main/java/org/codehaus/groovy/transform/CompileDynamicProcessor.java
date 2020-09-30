@@ -36,6 +36,7 @@ public class CompileDynamicProcessor extends AnnotationCollectorTransform {
     private static final ClassNode COMPILESTATIC_NODE = ClassHelper.make(CompileStatic.class);
     private static final ClassNode TYPECHECKINGMODE_NODE = ClassHelper.make(TypeCheckingMode.class);
 
+    @Override
     public List<AnnotationNode> visit(AnnotationNode collector, AnnotationNode aliasAnnotationUsage, AnnotatedNode aliasAnnotated, SourceUnit source) {
         AnnotationNode node = new AnnotationNode(COMPILESTATIC_NODE);
         node.addMember("value", new PropertyExpression(new ClassExpression(TYPECHECKINGMODE_NODE), "SKIP"));

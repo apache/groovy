@@ -31,10 +31,12 @@ public class DoubleCachedClass extends NumberCachedClass { // Double, double
         this.allowNull = allowNull;
     }
 
+    @Override
     public boolean isDirectlyAssignable(Object argument) {
         return (allowNull && argument == null) || argument instanceof Double;
     }
 
+    @Override
     public Object coerceArgument(Object argument) {
         if (argument instanceof Double) {
             return argument;
@@ -50,6 +52,7 @@ public class DoubleCachedClass extends NumberCachedClass { // Double, double
         return argument;
     }
 
+    @Override
     public boolean isAssignableFrom(Class classToTransformFrom) {
         return (allowNull && classToTransformFrom == null)
                 || classToTransformFrom == Double.class

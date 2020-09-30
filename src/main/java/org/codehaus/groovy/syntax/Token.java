@@ -74,6 +74,7 @@ public class Token extends CSTNode {
      * Returns the meaning of this node.  If the node isEmpty(), returns
      * the type of Token.NULL.
      */
+    @Override
     public int getMeaning() {
         return meaning;
     }
@@ -83,6 +84,7 @@ public class Token extends CSTNode {
      * valid if the node isEmpty().  Returns this token, for
      * convenience.
      */
+    @Override
     public CSTNode setMeaning(int meaning) {
         this.meaning = meaning;
         return this;
@@ -92,6 +94,7 @@ public class Token extends CSTNode {
      * Returns the actual type of the node.  If the node isEmpty(), returns
      * the type of Token.NULL.
      */
+    @Override
     public int getType() {
         return type;
     }
@@ -102,6 +105,7 @@ public class Token extends CSTNode {
     /**
      * Returns the number of elements in the node (including root).
      */
+    @Override
     public int size() {
         return 1;
     }
@@ -109,6 +113,7 @@ public class Token extends CSTNode {
     /**
      * Returns the specified element, or null.
      */
+    @Override
     public CSTNode get(int index) {
         if (index > 0) {
             throw new GroovyBugError("attempt to access Token element other than root");
@@ -122,6 +127,7 @@ public class Token extends CSTNode {
      * a Token as the first element (or root), which indicates the type
      * of the node.  May return null if the node <code>isEmpty()</code>.
      */
+    @Override
     public Token getRoot() {
         return this;
     }
@@ -131,6 +137,7 @@ public class Token extends CSTNode {
      * to get the root, so you will only receive null in return if the
      * root token returns it.
      */
+    @Override
     public String getRootText() {
         return text;
     }
@@ -155,6 +162,7 @@ public class Token extends CSTNode {
      * Returns the starting line of the node.  Returns -1
      * if not known.
      */
+    @Override
     public int getStartLine() {
         return startLine;
     }
@@ -163,6 +171,7 @@ public class Token extends CSTNode {
      * Returns the starting column of the node.  Returns -1
      * if not known.
      */
+    @Override
     public int getStartColumn() {
         return startColumn;
     }
@@ -174,6 +183,7 @@ public class Token extends CSTNode {
      * Creates a <code>Reduction</code> from this token.  Returns self if the
      * node is already a <code>Reduction</code>.
      */
+    @Override
     public Reduction asReduction() {
         return new Reduction(this);
     }

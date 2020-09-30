@@ -59,6 +59,7 @@ public class PropertyNode extends AnnotatedNode implements Variable {
         return getterBlock;
     }
 
+    @Override
     public Expression getInitialExpression() {
         return field.getInitialExpression();
     }
@@ -114,10 +115,12 @@ public class PropertyNode extends AnnotatedNode implements Variable {
         this.setterName = setterName;
     }
 
+    @Override
     public int getModifiers() {
         return modifiers;
     }
 
+    @Override
     public String getName() {
         return field.getName();
     }
@@ -126,6 +129,7 @@ public class PropertyNode extends AnnotatedNode implements Variable {
         return setterBlock;
     }
 
+    @Override
     public ClassNode getType() {
         return field.getType();
     }
@@ -154,18 +158,22 @@ public class PropertyNode extends AnnotatedNode implements Variable {
         return (modifiers & ACC_STATIC) != 0;
     }
 
+    @Override
     public boolean hasInitialExpression() {
         return field.hasInitialExpression();
     }
 
+    @Override
     public boolean isInStaticContext() {
         return field.isInStaticContext();
     }
 
+    @Override
     public boolean isDynamicTyped() {
         return field.isDynamicTyped();
     }
 
+    @Override
     public boolean isClosureSharedVariable() {
         return false;
     }
@@ -173,11 +181,13 @@ public class PropertyNode extends AnnotatedNode implements Variable {
     /**
       * @deprecated not used anymore, has no effect
       */
+    @Override
     @Deprecated
     public void setClosureSharedVariable(boolean inClosure) {
         // unused
     }
 
+    @Override
     public ClassNode getOriginType() {
         return getType();
     }

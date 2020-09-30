@@ -45,6 +45,7 @@ public class AssertStatement extends Statement {
         this.messageExpression = messageExpression;
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitAssertStatement(this);
     }

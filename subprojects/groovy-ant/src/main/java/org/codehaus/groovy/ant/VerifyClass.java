@@ -53,6 +53,7 @@ public class VerifyClass extends MatchingTask {
     public VerifyClass() {
     }
 
+    @Override
     public void execute() throws BuildException {
         if (topDir == null) throw new BuildException("no dir attribute is set");
         File top = new File(topDir);

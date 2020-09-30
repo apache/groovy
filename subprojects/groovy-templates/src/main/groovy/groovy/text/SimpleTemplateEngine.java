@@ -113,6 +113,7 @@ public class SimpleTemplateEngine extends TemplateEngine {
         this.groovyShell = groovyShell;
     }
 
+    @Override
     public Template createTemplate(Reader reader) throws CompilationFailedException, IOException {
         SimpleTemplate template = new SimpleTemplate(escapeBackslash);
         String script = template.parse(reader);
@@ -154,10 +155,12 @@ public class SimpleTemplateEngine extends TemplateEngine {
         }
 
 
+        @Override
         public Writable make() {
             return make(null);
         }
 
+        @Override
         public Writable make(final Map map) {
             return new Writable() {
                 /**
@@ -165,6 +168,7 @@ public class SimpleTemplateEngine extends TemplateEngine {
                  *
                  * @see groovy.lang.Writable#writeTo(java.io.Writer)
                  */
+                @Override
                 public Writer writeTo(Writer writer) {
                     Binding binding;
                     if (map == null)

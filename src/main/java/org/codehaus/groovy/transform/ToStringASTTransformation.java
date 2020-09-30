@@ -83,6 +83,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
     private static final ClassNode INVOKER_TYPE = make(InvokerHelper.class);
     private static final ClassNode POJO_TYPE = make(POJO.class);
 
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];

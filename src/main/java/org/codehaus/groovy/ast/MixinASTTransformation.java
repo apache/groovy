@@ -45,6 +45,7 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 public class MixinASTTransformation extends AbstractASTTransformation {
     private static final ClassNode MY_TYPE = make(Mixin.class);
 
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
         AnnotationNode node = (AnnotationNode) nodes[0];

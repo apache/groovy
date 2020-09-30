@@ -35,10 +35,12 @@ public class ScriptReference extends Reference {
         this.variable = variable;
     }
 
+    @Override
     public Object get() {
         return script.getBinding().getVariable(variable);
     }
 
+    @Override
     public void set(Object value) {
         script.getBinding().setVariable(variable, value);
     }

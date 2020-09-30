@@ -1182,6 +1182,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     protected Statement createGetterBlock(final PropertyNode propertyNode, final FieldNode field) {
         return new BytecodeSequence(new BytecodeInstruction() {
+            @Override
             public void visit(final MethodVisitor mv) {
                 if (field.isStatic()) {
                     mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(classNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));

@@ -69,6 +69,7 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
 
     private static final String LANGUAGE_NAME = "Groovy";
 
+    @Override
     public String getEngineName() {
         return "Groovy Scripting Engine";
     }
@@ -79,6 +80,7 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
      * Whereas language version refers to the groovy implementation
      * (which is obtained from the runtime).
      */
+    @Override
     public String getEngineVersion() {
         return VERSION;
     }
@@ -87,26 +89,32 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
      * This is also different than scripting.dev.java.net which used an
      * initial lowercase.  But these are proper names and should be capitalized.
      */
+    @Override
     public String getLanguageName() {
         return LANGUAGE_NAME;
     }
 
+    @Override
     public String getLanguageVersion() {
         return GroovySystem.getVersion();
     }
 
+    @Override
     public List<String> getExtensions() {
         return EXTENSIONS;
     }
 
+    @Override
     public List<String> getMimeTypes() {
         return MIME_TYPES;
     }
 
+    @Override
     public List<String> getNames() {
         return NAMES;
     }
 
+    @Override
     public Object getParameter(String key) {
 
         if (ScriptEngine.NAME.equals(key)) {
@@ -127,10 +135,12 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
 
     }
 
+    @Override
     public ScriptEngine getScriptEngine() {
         return new GroovyScriptEngineImpl(this);
     }
 
+    @Override
     public String getMethodCallSyntax(String obj, String method,
                                       String... args) {
 
@@ -152,6 +162,7 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
         return ret.toString();
     }
 
+    @Override
     public String getOutputStatement(String toDisplay) {
         StringBuilder buf = new StringBuilder();
         buf.append("println(\"");
@@ -174,6 +185,7 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
         return buf.toString();
     }
 
+    @Override
     public String getProgram(String... statements) {
         StringBuilder ret = new StringBuilder();
         for (String statement : statements) {

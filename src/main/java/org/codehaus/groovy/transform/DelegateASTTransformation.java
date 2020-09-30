@@ -97,6 +97,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
     private static final String MEMBER_METHOD_ANNOTATIONS = "methodAnnotations";
     private static final String MEMBER_ALL_NAMES = "allNames";
 
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
 

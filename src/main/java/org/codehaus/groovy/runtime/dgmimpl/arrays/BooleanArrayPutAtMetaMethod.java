@@ -34,10 +34,12 @@ public class BooleanArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
         parameterTypes = PARAM_CLASS_ARR;
     }
 
+    @Override
     public final CachedClass getDeclaringClass() {
         return ARR_CLASS;
     }
 
+    @Override
     public Object invoke(Object object, Object[] args) {
         final boolean[] objects = (boolean[]) object;
         final int index = normaliseIndex((Integer) args[0], objects.length);
@@ -45,6 +47,7 @@ public class BooleanArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
         return null;
     }
 
+    @Override
     public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         if (!(args[0] instanceof Integer) || !(args[1] instanceof Boolean))
             return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
@@ -57,6 +60,7 @@ public class BooleanArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             super(site, metaClass, metaMethod, params);
         }
 
+        @Override
         public Object call(Object receiver, Object[] args) throws Throwable {
             if ((receiver instanceof boolean[] && args[0] instanceof Integer && args[1] instanceof Boolean)
                     && checkPojoMetaClass()) {
@@ -67,6 +71,7 @@ public class BooleanArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
                 return super.call(receiver, args);
         }
 
+        @Override
         public Object call(Object receiver, Object arg1, Object arg2) throws Throwable {
             if (checkPojoMetaClass()) {
                 try {

@@ -30,6 +30,7 @@ public class PogoGetPropertySite extends AbstractCallSite {
         this.aClass = aClass;
     }
 
+    @Override
     public CallSite acceptGetProperty(Object receiver) {
         if (receiver== null || receiver.getClass() != aClass)
             return createGetPropertySite(receiver);
@@ -37,6 +38,7 @@ public class PogoGetPropertySite extends AbstractCallSite {
           return this;
     }
 
+    @Override
     public CallSite acceptGroovyObjectGetProperty(Object receiver) {
         if (receiver == null || receiver.getClass() != aClass)
             return createGroovyObjectGetPropertySite(receiver);
@@ -44,6 +46,7 @@ public class PogoGetPropertySite extends AbstractCallSite {
           return this;
     }
 
+    @Override
     public Object getProperty(Object receiver) throws Throwable {
         try{
             return ((GroovyObject)receiver).getProperty(name);

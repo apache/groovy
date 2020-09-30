@@ -49,6 +49,7 @@ public class ReflectorLoader extends ClassLoader {
      * @return the class if found
      * @throws ClassNotFoundException if not found
      */
+    @Override
     protected Class findClass(String name) throws ClassNotFoundException {
         if (delegatationLoader==null) return super.findClass(name);
         return delegatationLoader.loadClass(name);
@@ -66,6 +67,7 @@ public class ReflectorLoader extends ClassLoader {
      * @see Reflector
      * @see ClassLoader#loadClass(String, boolean)
      */
+    @Override
     protected synchronized Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
         if (inDefine) {
             if (name.equals(REFLECTOR)) return Reflector.class;

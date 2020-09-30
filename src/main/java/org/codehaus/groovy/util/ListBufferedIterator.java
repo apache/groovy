@@ -40,14 +40,17 @@ public class ListBufferedIterator<T> implements BufferedIterator<T> {
         this.iter = list.listIterator();
     }
 
+    @Override
     public boolean hasNext() {
         return iter.hasNext();
     }
 
+    @Override
     public T next() {
         return iter.next();
     }
 
+    @Override
     public void remove() {
         iter.remove();
     }
@@ -55,6 +58,7 @@ public class ListBufferedIterator<T> implements BufferedIterator<T> {
     /**
      * Return the next element to be returned by next() without consuming it.
      */
+    @Override
     public T head() {
         int index = iter.nextIndex();
         if (index >= list.size()) {

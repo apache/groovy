@@ -153,14 +153,16 @@ public interface MetaClass extends MetaObjectProtocol {
      *
      * @return A list of MetaProperty instances
      */
-     List<MetaProperty> getProperties();
+    @Override
+    List<MetaProperty> getProperties();
 
     /**
      * Retrieves a list of MetaMethods held by the class. This list does not include MetaMethods added by groovy.lang.ExpandoMetaClass.
      *
      * @return A list of MetaMethods
      */
-     List<MetaMethod> getMethods();
+    @Override
+    List<MetaMethod> getMethods();
      
      /**
       * Obtains a reference to the original AST for the MetaClass if it is available at runtime

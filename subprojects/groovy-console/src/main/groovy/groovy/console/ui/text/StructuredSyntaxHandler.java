@@ -76,27 +76,33 @@ public class StructuredSyntaxHandler extends DefaultHandler {
         this.filter = filter;
     }
 
+    @Override
     public void characters(char[] ch, int start, int length) {
     }
 
+    @Override
     public void endDocument() throws SAXException {
         super.endDocument();
     }
 
+    @Override
     public void endElement(String uri,
                            String localName,
                            String qName) throws SAXException {
     }
 
+    @Override
     public void error(SAXParseException e) throws SAXException {
         throw new SAXException("Line: " + e.getLineNumber() + " message: " + e.getMessage());
     }
 
+    @Override
     public void startDocument() throws SAXException {
         super.startDocument();
         currentNode = filter.getRootNode();
     }
 
+    @Override
     public void startElement(String uri,
                              String localName,
                              String qName,

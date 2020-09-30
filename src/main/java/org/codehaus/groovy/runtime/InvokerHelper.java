@@ -447,6 +447,7 @@ public class InvokerHelper {
     static class NullScript extends Script {
         public NullScript() { this(new Binding()); }
         public NullScript(Binding context) { super(context); }
+        @Override
         public Object run() { return null; }
     }
 
@@ -464,6 +465,7 @@ public class InvokerHelper {
                     // it could just be a class, so let's wrap it in a Script
                     // wrapper; though the bindings will be ignored
                     script = new Script(context) {
+                        @Override
                         public Object run() {
                             Object argsToPass = EMPTY_MAIN_ARGS;
                             try {

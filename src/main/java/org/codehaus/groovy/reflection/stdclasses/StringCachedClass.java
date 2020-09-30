@@ -31,16 +31,19 @@ public class StringCachedClass extends CachedClass {
         super(STRING_CLASS, classInfo);
     }
 
+    @Override
     public boolean isDirectlyAssignable(Object argument) {
         return argument instanceof String;
     }
 
+    @Override
     public boolean isAssignableFrom(Class classToTransformFrom) {
         return  classToTransformFrom == null
               || classToTransformFrom == STRING_CLASS
               || ReflectionCache.isAssignableFrom(GSTRING_CLASS,classToTransformFrom);
     }
 
+    @Override
     public Object coerceArgument(Object argument) {
         return argument instanceof GString ? argument.toString() : argument;
     }

@@ -443,6 +443,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
 
+        @Override
         public void run() {
             doProcessWait();
             synchronized (this) {
@@ -475,6 +476,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
             this.app = app;
         }
 
+        @Override
         public void run() {
             InputStreamReader isr = new InputStreamReader(in);
             BufferedReader br = new BufferedReader(isr);
@@ -501,6 +503,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
             this.out = out;
         }
 
+        @Override
         public void run() {
             byte[] buf = new byte[8192];
             int next;

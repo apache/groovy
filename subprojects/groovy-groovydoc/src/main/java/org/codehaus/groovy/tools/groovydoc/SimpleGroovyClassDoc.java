@@ -124,6 +124,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     /**
      * returns a sorted array of constructors
      */
+    @Override
     public GroovyConstructorDoc[] constructors() {
         Collections.sort(constructors);
         return constructors.toArray(EMPTY_GROOVYCONSTRUCTORDOC_ARRAY);
@@ -153,6 +154,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     /**
      * returns a sorted array of nested classes and interfaces
      */
+    @Override
     public GroovyClassDoc[] innerClasses() {
         Collections.sort(nested);
         return nested.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
@@ -165,6 +167,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     /**
      * returns a sorted array of fields
      */
+    @Override
     public GroovyFieldDoc[] fields() {
         Collections.sort(fields);
         return fields.toArray(EMPTY_GROOVYFIELDDOC_ARRAY);
@@ -177,6 +180,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     /**
      * returns a sorted array of properties
      */
+    @Override
     public GroovyFieldDoc[] properties() {
         Collections.sort(properties);
         return properties.toArray(EMPTY_GROOVYFIELDDOC_ARRAY);
@@ -189,6 +193,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     /**
      * returns a sorted array of enum constants
      */
+    @Override
     public GroovyFieldDoc[] enumConstants() {
         Collections.sort(enumConstants);
         return enumConstants.toArray(EMPTY_GROOVYFIELDDOC_ARRAY);
@@ -201,6 +206,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     /**
      * returns a sorted array of methods
      */
+    @Override
     public GroovyMethodDoc[] methods() {
         Collections.sort(methods);
         return methods.toArray(EMPTY_GROOVYMETHODDOC_ARRAY);
@@ -218,6 +224,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         superClassName = className;
     }
 
+    @Override
     public GroovyClassDoc superclass() {
         return superClass;
     }
@@ -226,6 +233,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         superClass = doc;
     }
 
+    @Override
     public String getFullPathName() {
         return fullPathName;
     }
@@ -234,6 +242,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         this.fullPathName = fullPathName;
     }
 
+    @Override
     public String getRelativeRootPath() {
         StringTokenizer tokenizer = new StringTokenizer(fullPathName, "/"); // todo windows??
         StringBuilder sb = new StringBuilder();
@@ -748,67 +757,83 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
     // methods from GroovyClassDoc
 
+    @Override
     public GroovyConstructorDoc[] constructors(boolean filter) {/*todo*/
         return null;
     }
 
+    @Override
     public boolean definesSerializableFields() {/*todo*/
         return false;
     }
 
+    @Override
     public GroovyFieldDoc[] fields(boolean filter) {/*todo*/
         return null;
     }
 
+    @Override
     public GroovyClassDoc findClass(String className) {/*todo*/
         return null;
     }
 
+    @Override
     public GroovyClassDoc[] importedClasses() {/*todo*/
         return null;
     }
 
+    @Override
     public GroovyPackageDoc[] importedPackages() {/*todo*/
         return null;
     }
 
+    @Override
     public GroovyClassDoc[] innerClasses(boolean filter) {/*todo*/
         return null;
     }
 
+    @Override
     public GroovyClassDoc[] interfaces() {
         Collections.sort(interfaceClasses);
         return interfaceClasses.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
+    @Override
     public GroovyType[] interfaceTypes() {/*todo*/
         return null;
     }
 
+    @Override
     public boolean isExternalizable() {/*todo*/
         return false;
     }
 
+    @Override
     public boolean isSerializable() {/*todo*/
         return false;
     }
 
+    @Override
     public GroovyMethodDoc[] methods(boolean filter) {/*todo*/
         return null;
     }
 
+    @Override
     public GroovyFieldDoc[] serializableFields() {/*todo*/
         return null;
     }
 
+    @Override
     public GroovyMethodDoc[] serializationMethods() {/*todo*/
         return null;
     }
 
+    @Override
     public boolean subclassOf(GroovyClassDoc gcd) {/*todo*/
         return false;
     }
 
+    @Override
     public GroovyType superclassType() {/*todo*/
         return null;
     }
@@ -824,16 +849,19 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 //    public GroovyWildcardType asWildcardType() {/*todo*/return null;}
 //    public String dimension() {/*todo*/ return null; }
 
+    @Override
     public boolean isPrimitive() {/*todo*/
         return false;
     }
 
+    @Override
     public String qualifiedTypeName() {
         String qtnWithSlashes = fullPathName.startsWith("DefaultPackage/") ? fullPathName.substring("DefaultPackage/".length()) : fullPathName;
         return qtnWithSlashes.replace('/', '.');
     }
 
     // TODO remove dupe with SimpleGroovyType
+    @Override
     public String simpleTypeName() {
         String typeName = qualifiedTypeName();
         int lastDot = typeName.lastIndexOf('.');
@@ -841,6 +869,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         return typeName.substring(lastDot + 1);
     }
 
+    @Override
     public String typeName() {
         return qualifiedTypeName();
     }
@@ -849,12 +878,14 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         interfaceNames.add(className);
     }
 
+    @Override
     public String firstSentenceCommentText() {
         if (super.firstSentenceCommentText() == null)
             setFirstSentenceCommentText(replaceTags(calculateFirstSentence(getRawCommentText())));
         return super.firstSentenceCommentText();
     }
 
+    @Override
     public String commentText() {
         if (super.commentText() == null)
             setCommentText(replaceTags(getRawCommentText()));

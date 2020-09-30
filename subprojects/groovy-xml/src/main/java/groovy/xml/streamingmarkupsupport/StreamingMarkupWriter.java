@@ -47,6 +47,7 @@ public class StreamingMarkupWriter extends Writer {
         /* (non-Javadoc)
         * @see java.io.Writer#close()
         */
+        @Override
         public void close() throws IOException {
             StreamingMarkupWriter.this.close();
         }
@@ -54,6 +55,7 @@ public class StreamingMarkupWriter extends Writer {
         /* (non-Javadoc)
         * @see java.io.Writer#flush()
         */
+        @Override
         public void flush() throws IOException {
             StreamingMarkupWriter.this.flush();
         }
@@ -61,6 +63,7 @@ public class StreamingMarkupWriter extends Writer {
         /* (non-Javadoc)
         * @see java.io.Writer#write(int)
         */
+        @Override
         public void write(final int c) throws IOException {
             Optional<String> transformed = stdFilter.apply((char) c);
             if (transformed.isPresent()) {
@@ -73,6 +76,7 @@ public class StreamingMarkupWriter extends Writer {
         /* (non-Javadoc)
         * @see java.io.Writer#write(char[], int, int)
         */
+        @Override
         public void write(final char[] cbuf, int off, int len) throws IOException {
             while (len-- > 0) {
                 write(cbuf[off++]);
@@ -128,6 +132,7 @@ public class StreamingMarkupWriter extends Writer {
     /* (non-Javadoc)
     * @see java.io.Writer#close()
     */
+    @Override
     public void close() throws IOException {
         this.writer.close();
     }
@@ -135,6 +140,7 @@ public class StreamingMarkupWriter extends Writer {
     /* (non-Javadoc)
     * @see java.io.Writer#flush()
     */
+    @Override
     public void flush() throws IOException {
         this.writer.flush();
     }
@@ -142,6 +148,7 @@ public class StreamingMarkupWriter extends Writer {
     /* (non-Javadoc)
     * @see java.io.Writer#write(int)
     */
+    @Override
     public void write(final int c) throws IOException {
         if (c >= 0XDC00 && c <= 0XDFFF) {
             // Low surrogate
@@ -194,6 +201,7 @@ public class StreamingMarkupWriter extends Writer {
     /* (non-Javadoc)
     * @see java.io.Writer#write(char[], int, int)
     */
+    @Override
     public void write(final char[] cbuf, int off, int len) throws IOException {
         while (len-- > 0) {
             write(cbuf[off++]);

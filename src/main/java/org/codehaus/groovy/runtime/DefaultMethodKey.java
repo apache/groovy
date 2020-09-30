@@ -30,10 +30,12 @@ public class DefaultMethodKey extends MethodKey{
         this.parameterTypes = parameterTypes;
     }
 
+    @Override
     public int getParameterCount() {
         return parameterTypes.length;
     }
 
+    @Override
     public Class getParameterType(int index) {
         Class c = parameterTypes[index];
         if (c==null) return Object.class;

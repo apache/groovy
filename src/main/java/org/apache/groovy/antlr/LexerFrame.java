@@ -99,6 +99,7 @@ public class LexerFrame extends JFrame implements ActionListener {
                 popup.add(loadFileAction);
                 jbutton.setSize(30, 30);
                 jbutton.addMouseListener(new MouseAdapter() {
+                    @Override
                     public void mouseReleased(MouseEvent e) {
                         //if(e.isPopupTrigger())
                         popup.show(scriptPane, e.getX(), e.getY());
@@ -138,6 +139,7 @@ public class LexerFrame extends JFrame implements ActionListener {
         tokens.put(-1, "EOF");
     }
 
+    @Override
     public void actionPerformed(ActionEvent ae) {
         Token token = (Token) ((JComponent) ae.getSource()).getClientProperty("token");
         if (eof().equals(token.getType())) {
@@ -157,6 +159,7 @@ public class LexerFrame extends JFrame implements ActionListener {
     private final Action loadFileAction = new AbstractAction("Open File...") {
         private static final long serialVersionUID = 4541927184172762704L;
 
+        @Override
         public void actionPerformed(ActionEvent ae) {
             final JFileChooser jfc = new JFileChooser();
             final int response = jfc.showOpenDialog(LexerFrame.this);

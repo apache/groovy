@@ -42,6 +42,7 @@ public class JTextComponentProperties {
         Map<String, TriggerBinding> result = new HashMap<String, TriggerBinding>();
         result.put(JTextComponent.class.getName() + "#text",
             new TriggerBinding() {
+                @Override
                 public FullBinding createBinding(SourceBinding source, TargetBinding target) {
                     return new JTextComponentTextBinding((PropertyBinding) source, target);
                 }
@@ -59,32 +60,38 @@ class JTextComponentTextBinding extends AbstractSyntheticBinding implements Prop
         source.setNonChangeCheck(true);
     }
 
+    @Override
     public synchronized void syntheticBind() {
         boundTextComponent = (JTextComponent) ((PropertyBinding)sourceBinding).getBean();
         boundTextComponent.addPropertyChangeListener("document", this);
         boundTextComponent.getDocument().addDocumentListener(this);
     }
 
+    @Override
     public synchronized void syntheticUnbind() {
         boundTextComponent.removePropertyChangeListener("document", this);
         boundTextComponent.getDocument().removeDocumentListener(this);
         boundTextComponent = null;
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent event) {
         update();
         ((Document)event.getOldValue()).removeDocumentListener(this);
         ((Document)event.getNewValue()).addDocumentListener(this);
     }
 
+    @Override
     public void changedUpdate(DocumentEvent event) {
         update();
     }
 
+    @Override
     public void insertUpdate(DocumentEvent event) {
         update();
     }
 
+    @Override
     public void removeUpdate(DocumentEvent event) {
         update();
     }

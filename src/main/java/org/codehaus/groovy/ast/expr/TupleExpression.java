@@ -80,15 +80,18 @@ public class TupleExpression extends Expression implements Iterable<Expression> 
         // see also org.codehaus.groovy.ast.expr.MethodCallExpression.NO_ARGUMENTS
     }
 
+    @Override
     public Iterator<Expression> iterator() {
         // TODO: return getExpressions().iterator();
         return Collections.unmodifiableList(expressions).iterator();
     }
 
+    @Override
     public void visit(final GroovyCodeVisitor visitor) {
         visitor.visitTupleExpression(this);
     }
 
+    @Override
     public Expression transformExpression(final ExpressionTransformer transformer) {
         Expression ret = new TupleExpression(transformExpressions(getExpressions(), transformer));
         ret.setSourcePosition(this);
@@ -96,6 +99,7 @@ public class TupleExpression extends Expression implements Iterable<Expression> 
         return ret;
     }
 
+    @Override
     public String getText() {
         StringBuilder buffer = new StringBuilder("(");
         boolean first = true;

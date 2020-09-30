@@ -53,6 +53,7 @@ public class AutoFinalASTTransformation extends AbstractASTTransformation {
     private AnnotatedNode candidate;
 
 
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
         final ClassCodeVisitorSupport visitor = createVisitor();
@@ -94,6 +95,7 @@ public class AutoFinalASTTransformation extends AbstractASTTransformation {
                 }
             }
 
+            @Override
             protected SourceUnit getSourceUnit() {
                 return sourceUnit;
             }

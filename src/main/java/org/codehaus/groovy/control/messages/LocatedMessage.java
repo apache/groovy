@@ -46,6 +46,7 @@ public class LocatedMessage extends SimpleMessage {
         return context;
     }
 
+    @Override
     public void write(PrintWriter writer, Janitor janitor) {
         if (owner instanceof SourceUnit) {
             SourceUnit source = (SourceUnit) owner;

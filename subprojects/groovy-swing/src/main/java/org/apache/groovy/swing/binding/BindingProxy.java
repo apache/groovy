@@ -70,6 +70,7 @@ public class BindingProxy extends GroovyObjectSupport implements BindingUpdatabl
         }
     }
 
+    @Override
     public Object getProperty(String property) {
         PropertyBinding pb;
         final Object model = getModel();
@@ -88,10 +89,12 @@ public class BindingProxy extends GroovyObjectSupport implements BindingUpdatabl
         return fb;
     }
 
+    @Override
     public void setProperty(String property, Object value) {
         throw new ReadOnlyPropertyException(property, getModel().getClass());
     }
 
+    @Override
     public void bind() {
         synchronized (generatedBindings) {
             if (!bound) {
@@ -104,6 +107,7 @@ public class BindingProxy extends GroovyObjectSupport implements BindingUpdatabl
         }
     }
 
+    @Override
     public void unbind() {
         synchronized (generatedBindings) {
             if (bound) {
@@ -116,6 +120,7 @@ public class BindingProxy extends GroovyObjectSupport implements BindingUpdatabl
         }
     }
 
+    @Override
     public void rebind() {
         synchronized (generatedBindings) {
             if (bound) {
@@ -127,6 +132,7 @@ public class BindingProxy extends GroovyObjectSupport implements BindingUpdatabl
         }
     }
 
+    @Override
     public void update() {
         synchronized (generatedBindings) {
             for (FullBinding generatedBinding : generatedBindings) {
@@ -136,6 +142,7 @@ public class BindingProxy extends GroovyObjectSupport implements BindingUpdatabl
         }
     }
 
+    @Override
     public void reverseUpdate() {
         synchronized (generatedBindings) {
             for (FullBinding generatedBinding : generatedBindings) {
@@ -150,6 +157,7 @@ public class BindingProxy extends GroovyObjectSupport implements BindingUpdatabl
             super(bean, propertyName);
         }
 
+        @Override
         public FullBinding createBinding(SourceBinding source, TargetBinding target) {
             FullBinding fb = super.createBinding(source, target);
             generatedBindings.add(fb);

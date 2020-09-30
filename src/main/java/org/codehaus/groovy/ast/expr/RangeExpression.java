@@ -39,10 +39,12 @@ public class RangeExpression extends Expression {
         setType(ClassHelper.RANGE_TYPE);
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitRangeExpression(this);
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new RangeExpression(transformer.transform(from), transformer.transform(to), inclusive);
         ret.setSourcePosition(this);
@@ -62,6 +64,7 @@ public class RangeExpression extends Expression {
         return inclusive;
     }
 
+    @Override
     public String getText() {
         return "(" + from.getText() +
                (!isInclusive()? "..<" : ".." ) +

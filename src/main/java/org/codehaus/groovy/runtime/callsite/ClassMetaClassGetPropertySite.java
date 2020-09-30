@@ -37,6 +37,7 @@ class ClassMetaClassGetPropertySite extends AbstractCallSite {
         metaClass = classInfo.getMetaClass();
     }
 
+    @Override
     public final CallSite acceptGetProperty(Object receiver) {
         if (receiver != aClass
             || version != classInfo.getVersion()) // metaClass is invalid
@@ -45,6 +46,7 @@ class ClassMetaClassGetPropertySite extends AbstractCallSite {
           return this;
     }
 
+    @Override
     public final Object getProperty(Object receiver) throws Throwable{
         try {
             return metaClass.getProperty(aClass, name);

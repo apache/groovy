@@ -41,9 +41,11 @@ public class FilteredAttributes extends Attributes
         this.closure = closure;
     }
 
+    @Override
     public Iterator nodeIterator() {
         return new NodeIterator(this.parent.iterator())
         {
+            @Override
             protected Object getNextNode(final Iterator iter) {
                 while (iter.hasNext()) {
                     final Object node = iter.next();

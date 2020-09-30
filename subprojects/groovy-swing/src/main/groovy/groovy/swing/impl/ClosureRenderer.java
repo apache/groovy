@@ -55,6 +55,7 @@ public class ClosureRenderer implements ListCellRenderer, TableCellRenderer, Tre
     }
 
 
+    @Override
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         this.list = list;
         this.table = null;
@@ -70,6 +71,7 @@ public class ClosureRenderer implements ListCellRenderer, TableCellRenderer, Tre
         return render();
     }
 
+    @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         this.list = null;
         this.table = table;
@@ -85,6 +87,7 @@ public class ClosureRenderer implements ListCellRenderer, TableCellRenderer, Tre
         return render();
     }
 
+    @Override
     public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
         this.list = null;
         this.table = null;

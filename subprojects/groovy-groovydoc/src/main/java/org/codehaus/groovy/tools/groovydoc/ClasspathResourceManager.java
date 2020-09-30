@@ -38,6 +38,7 @@ public class ClasspathResourceManager implements ResourceManager {
         return classLoader.getResourceAsStream(resourceName);
     }
 
+    @Override
     public Reader getReader(String resourceName) throws IOException {
         return IOGroovyMethods.newReader(getInputStream(resourceName));
     }

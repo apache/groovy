@@ -224,6 +224,7 @@ public abstract class AbstractASTTransformation implements ASTTransformation, Er
         return list;
     }
 
+    @Override
     public void addError(String msg, ASTNode expr) {
         sourceUnit.getErrorCollector().addErrorAndContinue(msg + '\n', expr, sourceUnit);
     }

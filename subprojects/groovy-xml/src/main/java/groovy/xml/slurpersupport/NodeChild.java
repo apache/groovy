@@ -56,6 +56,7 @@ public class NodeChild extends GPathResult {
         this(node, parent, "*", namespaceTagHints);
     }
     
+    @Override
     public GPathResult parent() {
         if (node.parent() != null)
             return new NodeChild(node.parent(), this, namespaceTagHints);
@@ -63,10 +64,12 @@ public class NodeChild extends GPathResult {
             return this;
     }
 
+    @Override
     public int size() {
         return 1;
     }
 
+    @Override
     public String text() {
         return this.node.text();
     }
@@ -92,19 +95,23 @@ public class NodeChild extends GPathResult {
     /**
      * Throws a <code>GroovyRuntimeException</code>, because this method is not implemented yet.
      */
+    @Override
     public GPathResult parents() {
         // TODO Auto-generated method stub
         throw new GroovyRuntimeException("parents() not implemented yet");
     }
 
+    @Override
     public Iterator iterator() {
         return createIterator(this);
     }
 
+    @Override
     public Iterator nodeIterator() {
         return createIterator(this.node);
     }
 
+    @Override
     public Object getAt(final int index) {
         if (index == 0) {
             return node;
@@ -121,10 +128,12 @@ public class NodeChild extends GPathResult {
         return this.node.attributes();
     }
 
+    @Override
     public Iterator childNodes() {
         return this.node.childNodes();
     }
 
+    @Override
     public GPathResult find(final Closure closure) {
         if (DefaultTypeTransformation.castToBoolean(closure.call(new Object[]{this.node}))) {
             return this;
@@ -133,26 +142,32 @@ public class NodeChild extends GPathResult {
         }
     }
 
+    @Override
     public GPathResult findAll(final Closure closure) {
         return find(closure);
     }
 
+    @Override
     public void build(final GroovyObject builder) {
         this.node.build(builder, this.namespaceMap, this.namespaceTagHints);
     }
 
+    @Override
     public Writer writeTo(final Writer out) throws IOException {
         return this.node.writeTo(out);
     }
 
+    @Override
     protected void replaceNode(final Closure newValue) {
         this.node.replaceNode(newValue, this);
     }
 
+    @Override
     protected void replaceBody(final Object newValue) {
         this.node.replaceBody(newValue);
     }
 
+    @Override
     protected void appendNode(final Object newValue) {
         this.node.appendNode(newValue, this);
     }

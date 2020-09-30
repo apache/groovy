@@ -45,6 +45,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map<String, 
      * @param property is the name of the property to look at
      * @return the value of the property
      */
+    @Override
     public Object getProperty(String property) {
         try {
             Object key = lookupKeyIgnoringCase(property);
@@ -112,6 +113,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map<String, 
      * They are mostly delegating the request to the provided Map.
      */
      
+    @Override
     public void clear() {
         result.clear();
     }
@@ -122,14 +124,17 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map<String, 
      * @param key the property name to look for
      * @return true if the result contains this property name
      */
+    @Override
     public boolean containsKey(Object key) {
         return lookupKeyIgnoringCase(key) != null;
     }
 
+    @Override
     public boolean containsValue(Object value) {
         return result.containsValue(value);
     }
 
+    @Override
     public Set<Map.Entry<String, Object>> entrySet() {
         return result.entrySet();
     }
@@ -144,6 +149,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map<String, 
      * @param property the name of the property to get
      * @return the property value
      */
+    @Override
     public Object get(Object property) {
         if (property instanceof String)
             return getProperty((String)property);
@@ -154,10 +160,12 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map<String, 
         return result.hashCode();
     }
 
+    @Override
     public boolean isEmpty() {
         return result.isEmpty();
     }
 
+    @Override
     public Set<String> keySet() {
         return result.keySet();
     }
@@ -172,6 +180,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map<String, 
      *         (A <tt>null</tt> return can also indicate that the map
      *         previously associated <tt>null</tt> with <tt>key</tt>.)
      */
+    @Override
     public Object put(String key, Object value) {
         // avoid different case keys being added by explicit remove
         Object orig = remove(key);
@@ -187,6 +196,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map<String, 
      *
      * @param t the mappings to store in this result
      */
+    @Override
     public void putAll(Map<? extends String, ?> t) {
         // don't delegate to putAll since we want case handling from put
         for (Entry<? extends String, ?> next : t.entrySet()) {
@@ -194,14 +204,17 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map<String, 
         }
     }
 
+    @Override
     public Object remove(Object rawKey) {
         return result.remove(lookupKeyIgnoringCase(rawKey));
     }
 
+    @Override
     public int size() {
         return result.size();
     }
 
+    @Override
     public Collection<Object> values() {
         return result.values();
     }

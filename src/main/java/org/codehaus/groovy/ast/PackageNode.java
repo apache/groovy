@@ -35,10 +35,12 @@ public class PackageNode extends AnnotatedNode {
     /**
      * @return the text display of this package definition
      */
+    @Override
     public String getText() {
         return "package " + name;
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
     }
 }

@@ -40,6 +40,7 @@ public class JSpinnerProperties {
         Map<String, TriggerBinding> result = new HashMap<String, TriggerBinding>();
         result.put(JSpinner.class.getName() + "#value",
                 new TriggerBinding() {
+                    @Override
                     public FullBinding createBinding(SourceBinding source, TargetBinding target) {
                         return new JSpinnerValueBinding((PropertyBinding) source, target);
                     }
@@ -56,24 +57,28 @@ class JSpinnerValueBinding extends AbstractSyntheticBinding implements PropertyC
         super(source, target, JSpinner.class, "value");
     }
 
+    @Override
     public synchronized void syntheticBind() {
         boundSlider = (JSpinner) ((PropertyBinding)sourceBinding).getBean();
         boundSlider.addPropertyChangeListener("model", this);
         boundSlider.getModel().addChangeListener(this);
     }
 
+    @Override
     public synchronized void syntheticUnbind() {
         boundSlider.removePropertyChangeListener("model", this);
         boundSlider.getModel().removeChangeListener(this);
         boundSlider = null;
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent event) {
         update();
         ((SpinnerModel) event.getOldValue()).removeChangeListener(this);
         ((SpinnerModel) event.getNewValue()).addChangeListener(this);
     }
 
+    @Override
     public void stateChanged(ChangeEvent e) {
         update();
     }

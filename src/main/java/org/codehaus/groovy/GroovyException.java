@@ -43,10 +43,12 @@ public class GroovyException extends Exception implements GroovyExceptionInterfa
         this.fatal = fatal;
     }
 
+    @Override
     public boolean isFatal() {
         return fatal;
     }
 
+    @Override
     public void setFatal(boolean fatal) {
         this.fatal = fatal;
     }

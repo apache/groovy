@@ -159,6 +159,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
             + "]";
     }
 
+    @Override
     public Object clone() {
         try {
             return super.clone();

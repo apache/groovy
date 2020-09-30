@@ -37,6 +37,7 @@ public class MetaArrayLengthProperty extends MetaProperty {
      * @return the length of the array object
      * @throws IllegalArgumentException if object is not an array
      */
+    @Override
     public Object getProperty(Object object) {
         return java.lang.reflect.Array.getLength(object);
     }
@@ -48,6 +49,7 @@ public class MetaArrayLengthProperty extends MetaProperty {
      * @param newValue the new value of the property
      * @throws RuntimeException if the property could not be set
      */
+    @Override
     public void setProperty(Object object, Object newValue) {
         throw new ReadOnlyPropertyException("length", object.getClass());
     }

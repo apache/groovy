@@ -47,6 +47,7 @@ public class SynchronizedStatement extends Statement {
         return expression;
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitSynchronizedStatement(this);
     }

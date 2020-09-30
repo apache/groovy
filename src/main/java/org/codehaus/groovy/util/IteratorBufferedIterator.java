@@ -38,10 +38,12 @@ public class IteratorBufferedIterator<T> implements BufferedIterator<T> {
         this.hasBuffered = false;
     }
 
+    @Override
     public boolean hasNext() {
         return hasBuffered || iter.hasNext();
     }
 
+    @Override
     public T next() {
         if (hasBuffered) {
             T buffered = this.buffered;
@@ -53,6 +55,7 @@ public class IteratorBufferedIterator<T> implements BufferedIterator<T> {
         }
     }
 
+    @Override
     public void remove() {
         if (hasBuffered) {
             throw new IllegalStateException("Can't remove from " + this + " when an item is buffered.");
@@ -64,6 +67,7 @@ public class IteratorBufferedIterator<T> implements BufferedIterator<T> {
     /**
      * Return the next element to be returned by next() without consuming it.
      */
+    @Override
     public T head() {
         if (!hasBuffered) {
             buffered = iter.next();

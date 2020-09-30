@@ -47,6 +47,7 @@ public class StaticTypesTransformation implements ASTTransformation, Compilation
     protected CompilationUnit compilationUnit;
 
     //    @Override
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         AnnotationNode annotationInformation = (AnnotationNode) nodes[0];
         Map<String,Expression> members = annotationInformation.getMembers();
@@ -105,6 +106,7 @@ public class StaticTypesTransformation implements ASTTransformation, Compilation
         return new StaticTypeCheckingVisitor(unit, node);
     }
 
+    @Override
     public void setCompilationUnit(final CompilationUnit unit) {
         this.compilationUnit = unit;
     }

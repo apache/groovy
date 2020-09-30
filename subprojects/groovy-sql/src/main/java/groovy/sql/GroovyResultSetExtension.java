@@ -93,6 +93,7 @@ public class GroovyResultSetExtension extends GroovyObjectSupport {
         }
     }
 
+    @Override
     public Object invokeMethod(String name, Object args) {
         try {
             return InvokerHelper.invokeMethod(getResultSet(), name, args);
@@ -111,6 +112,7 @@ public class GroovyResultSetExtension extends GroovyObjectSupport {
      * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
      * @see ResultSet#getObject(java.lang.String)
      */
+    @Override
     public Object getProperty(String columnName) {
         try {
             return getResultSet().getObject(columnName);
@@ -129,6 +131,7 @@ public class GroovyResultSetExtension extends GroovyObjectSupport {
      * @see groovy.lang.GroovyObject#setProperty(java.lang.String, java.lang.Object)
      * @see ResultSet#updateObject(java.lang.String, java.lang.Object)
      */
+    @Override
     public void setProperty(String columnName, Object newValue) {
         try {
             getResultSet().updateObject(columnName, newValue);

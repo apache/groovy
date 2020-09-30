@@ -98,6 +98,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
     private static final String ARG0 = "arg0";
     private static final String ARG1 = "arg1";
 
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
         AnnotationNode annotation = (AnnotationNode) nodes[0];

@@ -29,10 +29,12 @@ public class CharacterCachedClass extends CachedClass {
         this.allowNull = allowNull;
     }
 
+    @Override
     public boolean isDirectlyAssignable(Object argument) {
         return (allowNull && argument == null) || argument instanceof Character;
     }
 
+    @Override
     public boolean isAssignableFrom(Class classToTransformFrom) {
         return (allowNull && classToTransformFrom == null)
                 || classToTransformFrom == Character.class

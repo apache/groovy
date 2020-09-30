@@ -73,6 +73,7 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
     private static final String METHOD_LABEL = "Priv";
     private static final ClassNode OVERRIDE_CLASSNODE = make(Override.class);
 
+    @Override
     public void visit(ASTNode[] nodes, final SourceUnit source) {
         init(nodes, source);
         AnnotationNode annotationNode = (AnnotationNode) nodes[0];

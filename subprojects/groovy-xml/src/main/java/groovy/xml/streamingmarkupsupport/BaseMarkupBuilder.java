@@ -31,6 +31,7 @@ public class BaseMarkupBuilder extends Builder {
         super(namespaceMethodMap);
     }
 
+    @Override
     public Object bind(final Closure root) {
         return new Document(root, this.namespaceMethodMap);
     }
@@ -48,26 +49,31 @@ public class BaseMarkupBuilder extends Builder {
             namespaces.put("mkp", "http://www.codehaus.org/Groovy/markup/keywords");   // pseudo namespace for markup keywords
 
             specialProperties.put("out", new OutputSink("out") {
+                @Override
                 public Object leftShift(final Object value) {
                     return leftShift("yield", value);
                 }
             });
             specialProperties.put("unescaped", new OutputSink("unescaped") {
+                @Override
                 public Object leftShift(final Object value) {
                     return leftShift("yieldUnescaped", value);
                 }
             });
             specialProperties.put("namespaces", new OutputSink("namespaces") {
+                @Override
                 public Object leftShift(final Object value) {
                     return leftShift("declareNamespace", value);
                 }
             });
             specialProperties.put("pi", new OutputSink("pi") {
+                @Override
                 public Object leftShift(final Object value) {
                     return leftShift("pi", value);
                 }
             });
             specialProperties.put("comment", new OutputSink("comment") {
+                @Override
                 public Object leftShift(final Object value) {
                     return leftShift("comment", value);
                 }
@@ -81,6 +87,7 @@ public class BaseMarkupBuilder extends Builder {
                 this.name = name;
             }
 
+            @Override
             public Object invokeMethod(final String name, final Object args) {
                 Document.this.prefix = this.name;
                 return Document.this.invokeMethod(name, args);
@@ -102,6 +109,7 @@ public class BaseMarkupBuilder extends Builder {
         /* (non-Javadoc)
            * @see groovy.lang.GroovyObject#invokeMethod(java.lang.String, java.lang.Object)
            */
+        @Override
         public Object invokeMethod(final String name, final Object args) {
             final Object[] arguments = (Object[]) args;
             Map attrs = Collections.EMPTY_MAP;
@@ -155,6 +163,7 @@ public class BaseMarkupBuilder extends Builder {
         /* (non-Javadoc)
          * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
          */
+        @Override
         public Object getProperty(final String property) {
             final Object special = this.specialProperties.get(property);
 
@@ -169,6 +178,7 @@ public class BaseMarkupBuilder extends Builder {
         /* (non-Javadoc)
          * @see groovy.lang.GroovyObject#setProperty(java.lang.String, java.lang.Object)
          */
+        @Override
         public void setProperty(String property, Object newValue) {
             if ("trigger".equals(property)) {
                 this.out = newValue;

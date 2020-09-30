@@ -99,6 +99,7 @@ public class SunClassLoader extends ClassLoader {
         knownClasses.put(name, defineClass(name, bytes, 0, bytes.length));
     }
 
+    @Override
     protected synchronized Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
         final Class aClass = knownClasses.get(name);
         if (aClass != null)

@@ -31,5 +31,6 @@ public final class NullProtectionStorage implements ProtectionStorage{
      * @param key   The key of the element to renew
      * @param value A value to newly associate with the key
      */
+    @Override
     public void touch(final Object key, final Object value) { }
 }

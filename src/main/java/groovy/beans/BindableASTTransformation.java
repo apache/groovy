@@ -97,6 +97,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
      * @param nodes   the ast nodes
      * @param source  the source unit for the nodes
      */
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         if (!(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
             throw new RuntimeException("Internal error: wrong types: $node.class / $parent.class");

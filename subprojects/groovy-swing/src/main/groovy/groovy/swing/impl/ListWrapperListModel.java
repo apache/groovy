@@ -38,10 +38,12 @@ public class ListWrapperListModel<E> extends AbstractListModel {
         return delegate;
     }
 
+    @Override
     public int getSize() {
         return delegate.size();
     }
 
+    @Override
     public Object getElementAt(int i) {
         return delegate.get(i);
     }

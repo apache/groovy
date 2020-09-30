@@ -28,19 +28,23 @@ import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 public class LongArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
     private static final CachedClass ARR_CLASS = ReflectionCache.getCachedClass(long[].class);
 
+    @Override
     public Class getReturnType() {
         return Long.class;
     }
 
+    @Override
     public final CachedClass getDeclaringClass() {
         return ARR_CLASS;
     }
 
+    @Override
     public Object invoke(Object object, Object[] args) {
         final long[] objects = (long[]) object;
         return objects[normaliseIndex((Integer) args[0], objects.length)];
     }
 
+    @Override
     public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         if (!(args[0] instanceof Integer))
             return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
@@ -53,6 +57,7 @@ public class LongArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
             super(site, metaClass, metaMethod, params);
         }
 
+        @Override
         public Object call(Object receiver, Object arg) throws Throwable {
             if ((receiver instanceof long[] && arg instanceof Integer)
                     && checkPojoMetaClass()) {

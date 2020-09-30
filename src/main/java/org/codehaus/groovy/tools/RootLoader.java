@@ -136,6 +136,7 @@ public class RootLoader extends URLClassLoader {
     /**
      * loads a class using the name of the class
      */
+    @Override
     protected synchronized Class loadClass(final String name, boolean resolve) throws ClassNotFoundException {
         Class c = this.findLoadedClass(name);
         if (c != null) return c;
@@ -157,6 +158,7 @@ public class RootLoader extends URLClassLoader {
     /**
      * returns the URL of a resource, or null if it is not found
      */
+    @Override
     public URL getResource(String name) {
         URL url = findResource(name);
         if (url == null) url = super.getResource(name);
@@ -166,6 +168,7 @@ public class RootLoader extends URLClassLoader {
     /**
      * adds an url to the classpath of this classloader
      */
+    @Override
     public void addURL(URL url) {
         super.addURL(url);
     }
@@ -174,6 +177,7 @@ public class RootLoader extends URLClassLoader {
         return super.findClass(name);
     }
 
+    @Override
     protected Class findClass(String name) throws ClassNotFoundException {
         throw new ClassNotFoundException(name);
     }

@@ -64,58 +64,72 @@ public final class ListWithDefault<T> implements List<T> {
         return new ListWithDefault<T>(new ArrayList<T>(items), lazyDefaultValues, (Closure) initClosure.clone());
     }
 
+    @Override
     public int size() {
         return delegate.size();
     }
 
+    @Override
     public boolean isEmpty() {
         return delegate.isEmpty();
     }
 
+    @Override
     public boolean contains(Object o) {
         return delegate.contains(o);
     }
 
+    @Override
     public Iterator<T> iterator() {
         return delegate.iterator();
     }
 
+    @Override
     public Object[] toArray() {
         return delegate.toArray();
     }
 
+    @Override
     public <T> T[] toArray(T[] ts) {
         return delegate.toArray(ts);
     }
 
+    @Override
     public boolean add(T t) {
         return delegate.add(t);
     }
 
+    @Override
     public boolean remove(Object o) {
         return delegate.remove(o);
     }
 
+    @Override
     public boolean containsAll(Collection<?> objects) {
         return delegate.containsAll(objects);
     }
 
+    @Override
     public boolean addAll(Collection<? extends T> ts) {
         return delegate.addAll(ts);
     }
 
+    @Override
     public boolean addAll(int i, Collection<? extends T> ts) {
         return delegate.addAll(i, ts);
     }
 
+    @Override
     public boolean removeAll(Collection<?> objects) {
         return delegate.removeAll(objects);
     }
 
+    @Override
     public boolean retainAll(Collection<?> objects) {
         return delegate.retainAll(objects);
     }
 
+    @Override
     public void clear() {
         delegate.clear();
     }
@@ -151,6 +165,7 @@ public final class ListWithDefault<T> implements List<T> {
      * @param index an index (might be greater or equal to {@code size()}, or smaller than 0)
      * @return the value at the given {@code index} or the default value
      */
+    @Override
     public T get(int index) {
 
         final int size = size();
@@ -204,30 +219,37 @@ public final class ListWithDefault<T> implements List<T> {
         return index;
     }
 
+    @Override
     public T set(int i, T t) {
         return delegate.set(i, t);
     }
 
+    @Override
     public void add(int i, T t) {
         delegate.add(i, t);
     }
 
+    @Override
     public T remove(int i) {
         return delegate.remove(i);
     }
 
+    @Override
     public int indexOf(Object o) {
         return delegate.indexOf(o);
     }
 
+    @Override
     public int lastIndexOf(Object o) {
         return delegate.lastIndexOf(o);
     }
 
+    @Override
     public ListIterator<T> listIterator() {
         return delegate.listIterator();
     }
 
+    @Override
     public ListIterator<T> listIterator(int i) {
         return delegate.listIterator(i);
     }
@@ -250,6 +272,7 @@ public final class ListWithDefault<T> implements List<T> {
      * @param toIndex   upper endpoint of the subList (exclusive)
      * @return a view of a specified range within this list, keeping all lazy list settings
      */
+    @Override
     public ListWithDefault<T> subList(int fromIndex, int toIndex) {
         return new ListWithDefault<T>(delegate.subList(fromIndex, toIndex), lazyDefaultValues, (Closure) initClosure.clone());
     }

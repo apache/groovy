@@ -25,6 +25,7 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
         super(segmentInfo);
     }
 
+    @Override
     public Segment segmentFor (int hash) {
         return (Segment) super.segmentFor(hash);
     }

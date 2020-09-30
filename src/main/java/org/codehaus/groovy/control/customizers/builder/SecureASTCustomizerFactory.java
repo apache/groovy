@@ -37,6 +37,7 @@ public class SecureASTCustomizerFactory extends AbstractFactory {
         return true;
     }
 
+    @Override
     public Object newInstance(final FactoryBuilderSupport builder, final Object name, final Object value, final Map attributes) throws InstantiationException, IllegalAccessException {
         return new SecureASTCustomizer();
     }

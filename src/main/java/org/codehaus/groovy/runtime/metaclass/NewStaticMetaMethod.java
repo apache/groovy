@@ -35,14 +35,17 @@ public class NewStaticMetaMethod extends NewMetaMethod {
         super(method);
     }
 
+    @Override
     public boolean isStatic() {
         return true;
     }
 
+    @Override
     public int getModifiers() {
         return Modifier.PUBLIC | Modifier.STATIC;
     }
 
+    @Override
     public Object invoke(Object object, Object[] arguments) {
         int size = arguments.length;
         Object[] newArguments = new Object[size + 1];

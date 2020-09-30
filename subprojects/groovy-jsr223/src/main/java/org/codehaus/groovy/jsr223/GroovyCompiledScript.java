@@ -67,10 +67,12 @@ public class GroovyCompiledScript extends CompiledScript {
         this.clasz = clazz;
     }
 
+    @Override
     public Object eval(ScriptContext context) throws ScriptException {
         return engine.eval(clasz, context);
     }
 
+    @Override
     public ScriptEngine getEngine() {
         return engine;
     }

@@ -35,6 +35,7 @@ public class SimpleGroovyExecutableMemberDoc extends SimpleGroovyMemberDoc imple
         parameters = new ArrayList();
     }
 
+    @Override
     public GroovyParameter[] parameters() {
         return (GroovyParameter[]) parameters.toArray(EMPTY_GROOVYPARAMETER_ARRAY);
     }
@@ -44,13 +45,20 @@ public class SimpleGroovyExecutableMemberDoc extends SimpleGroovyMemberDoc imple
     }
 
     
+    @Override
     public String flatSignature() {/*todo*/return null;}
+    @Override
     public boolean isNative() {/*todo*/return false;}
+    @Override
     public boolean isSynchronized() {/*todo*/return false;}
+    @Override
     public boolean isVarArgs() {/*todo*/return false;}
 //    public GroovyParamTag[] paramTags() {/*todo*/return null;}
+    @Override
     public String signature() {/*todo*/return null;}
+    @Override
     public GroovyClassDoc[] thrownExceptions() {/*todo*/return null;}
+    @Override
     public GroovyType[] thrownExceptionTypes() {/*todo*/return null;}
 //    public GroovyThrowsTag[] throwsTags() {/*todo*/return null;}
 //    public GroovyTypeVariable[] typeParameters() {/*todo*/return null;}

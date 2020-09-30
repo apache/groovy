@@ -161,30 +161,37 @@ public class ObservableSet<E> implements Set<E> {
         return pcs.hasListeners(propertyName);
     }
 
+    @Override
     public int size() {
         return delegate.size();
     }
 
+    @Override
     public boolean isEmpty() {
         return delegate.isEmpty();
     }
 
+    @Override
     public boolean contains(Object o) {
         return delegate.contains(o);
     }
 
+    @Override
     public Iterator<E> iterator() {
         return new ObservableIterator<E>(delegate.iterator());
     }
 
+    @Override
     public Object[] toArray() {
         return delegate.toArray();
     }
 
+    @Override
     public <T> T[] toArray(T[] ts) {
         return (T[]) delegate.toArray(ts);
     }
 
+    @Override
     public boolean add(E e) {
         int oldSize = size();
         boolean success = delegate.add(e);
@@ -203,6 +210,7 @@ public class ObservableSet<E> implements Set<E> {
         return success;
     }
 
+    @Override
     public boolean remove(Object o) {
         int oldSize = size();
         boolean success = delegate.remove(o);
@@ -213,10 +221,12 @@ public class ObservableSet<E> implements Set<E> {
         return success;
     }
 
+    @Override
     public boolean containsAll(Collection<?> objects) {
         return delegate.containsAll(objects);
     }
 
+    @Override
     public boolean addAll(Collection<? extends E> c) {
         Set<E> duplicates = new HashSet<E>();
         if (null != c) {
@@ -250,6 +260,7 @@ public class ObservableSet<E> implements Set<E> {
         return success;
     }
 
+    @Override
     public boolean retainAll(Collection<?> c) {
         if (c == null) {
             return false;
@@ -276,6 +287,7 @@ public class ObservableSet<E> implements Set<E> {
         return success;
     }
 
+    @Override
     public boolean removeAll(Collection<?> c) {
         if (c == null) {
             return false;
@@ -298,6 +310,7 @@ public class ObservableSet<E> implements Set<E> {
         return success;
     }
 
+    @Override
     public void clear() {
         int oldSize = size();
         List<E> values = new ArrayList<E>(delegate);
@@ -320,15 +333,18 @@ public class ObservableSet<E> implements Set<E> {
             return iterDelegate;
         }
 
+        @Override
         public boolean hasNext() {
             return iterDelegate.hasNext();
         }
 
+        @Override
         public E next() {
             stack.push(iterDelegate.next());
             return stack.peek();
         }
 
+        @Override
         public void remove() {
             int oldSize = ObservableSet.this.size();
             iterDelegate.remove();

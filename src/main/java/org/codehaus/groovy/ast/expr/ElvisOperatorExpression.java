@@ -55,10 +55,12 @@ public class ElvisOperatorExpression extends TernaryExpression {
        return be;
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitShortTernaryExpression(this);
     }
     
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new ElvisOperatorExpression(
                 transformer.transform(getTrueExpression()),

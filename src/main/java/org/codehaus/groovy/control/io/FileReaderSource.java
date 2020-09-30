@@ -55,6 +55,7 @@ public class FileReaderSource extends AbstractReaderSource {
     /**
     *  Returns a new Reader on the underlying source object.  
     */
+    @Override
     public Reader getReader() throws IOException {
        // we want to remove the BOM windows adds from a file if the encoding is UTF-8
        // in other cases we depend on the charsets 
@@ -83,6 +84,7 @@ public class FileReaderSource extends AbstractReaderSource {
      *
      * @return URI for the file of this source.
      */
+    @Override
     public URI getURI() {
         return file.toURI();
     }

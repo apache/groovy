@@ -77,6 +77,7 @@ public class LazyASTTransformation extends AbstractASTTransformation {
 
     private static final ClassNode SOFT_REF = makeWithoutCaching(SoftReference.class, false);
 
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];

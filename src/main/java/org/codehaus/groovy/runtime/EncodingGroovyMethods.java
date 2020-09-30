@@ -89,6 +89,7 @@ public class EncodingGroovyMethods {
 
     private static Writable encodeBase64(final byte[] data, final boolean chunked, final boolean urlSafe, final boolean pad) {
         return new Writable() {
+            @Override
             public Writer writeTo(final Writer writer) throws IOException {
                 int charCount = 0;
                 final int dLimit = (data.length / 3) * 3;
@@ -311,6 +312,7 @@ public class EncodingGroovyMethods {
      */
     public static Writable encodeHex(final byte[] data) {
         return new Writable() {
+            @Override
             public Writer writeTo(Writer out) throws IOException {
                 for (byte datum : data) {
                     // convert byte into unsigned hex string

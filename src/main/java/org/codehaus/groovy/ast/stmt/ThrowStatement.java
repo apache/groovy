@@ -37,6 +37,7 @@ public class ThrowStatement extends Statement {
         return expression;
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitThrowStatement(this);
     }

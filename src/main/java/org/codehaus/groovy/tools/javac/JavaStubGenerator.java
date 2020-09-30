@@ -232,16 +232,22 @@ public class JavaStubGenerator {
                     }
                 }
 
+                @Override
                 public void addCovariantMethods(ClassNode cn) {}
+                @Override
                 protected void addInitialization(ClassNode node) {}
+                @Override
                 protected void addPropertyMethod(MethodNode method) {
                     doAddMethod(method);
                 }
+                @Override
                 protected void addReturnIfNeeded(MethodNode node) {}
+                @Override
                 protected MethodNode addMethod(ClassNode node, boolean shouldBeSynthetic, String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
                     return doAddMethod(new MethodNode(name, modifiers, returnType, parameters, exceptions, code));
                 }
 
+                @Override
                 protected void addConstructor(Parameter[] newParams, ConstructorNode ctor, Statement code, ClassNode node) {
                     if (code instanceof ExpressionStatement) {//GROOVY-4508
                         Statement temp = code;
@@ -253,6 +259,7 @@ public class JavaStubGenerator {
                     constructors.add(ctrNode);
                 }
 
+                @Override
                 protected void addDefaultParameters(DefaultArgsAction action, MethodNode method) {
                     final Parameter[] parameters = method.getParameters();
                     final Expression[] saved = new Expression[parameters.length];

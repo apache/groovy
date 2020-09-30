@@ -66,18 +66,22 @@ public class VariableExpression extends Expression implements Variable {
         setModifiers(variable.getModifiers());
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitVariableExpression(this);
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         return this;
     }
 
+    @Override
     public String getText() {
         return variable;
     }
     
+    @Override
     public String getName() {
         return variable;
     }
@@ -86,14 +90,17 @@ public class VariableExpression extends Expression implements Variable {
         return super.toString() + "[variable: " + variable + (this.isDynamicTyped() ? "" : " type: " + getType()) + "]";
     }
 
+    @Override
     public Expression getInitialExpression() {
         return null;
     }
 
+    @Override
     public boolean hasInitialExpression() {
         return false;
     }
     
+    @Override
     public boolean isInStaticContext() {
         if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.isInStaticContext();
         return inStaticContext;
@@ -110,11 +117,13 @@ public class VariableExpression extends Expression implements Variable {
      * the {@link #getAccessedVariable() accessed variable}
      * @param cn the type to be set on this variable
      */
+    @Override
     public void setType(ClassNode cn){
         super.setType(cn);
         isDynamicTyped |= ClassHelper.DYNAMIC_TYPE==cn;
     }
     
+    @Override
     public boolean isDynamicTyped() {
         if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.isDynamicTyped();
         return isDynamicTyped;
@@ -129,6 +138,7 @@ public class VariableExpression extends Expression implements Variable {
      * The "str" variable is closure shared.
      * @return true if this variable is used in a closure
      */
+    @Override
     public boolean isClosureSharedVariable() {
         if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.isClosureSharedVariable();
         return closureShare;
@@ -143,10 +153,12 @@ public class VariableExpression extends Expression implements Variable {
      * accessed variable "str" which must have the closure shared flag set.
      * @param inClosure tells if this variable is later referenced in a closure
      */
+    @Override
     public void setClosureSharedVariable(boolean inClosure) {
         closureShare = inClosure;        
     }
 
+    @Override
     public int getModifiers() {
         return modifiers;
     }
@@ -168,6 +180,7 @@ public class VariableExpression extends Expression implements Variable {
         return useRef;
     }
     
+    @Override
     public ClassNode getType() {
         if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.getType();
         return super.getType();
@@ -178,6 +191,7 @@ public class VariableExpression extends Expression implements Variable {
      * {@link #getType()} may return a boxed type while this method would return the primitive type.
      * @return the type which was used to define this variable expression
      */
+    @Override
     public ClassNode getOriginType() {
         if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.getOriginType();
         return originType;

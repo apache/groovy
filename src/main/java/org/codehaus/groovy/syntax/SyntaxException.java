@@ -117,6 +117,7 @@ public class SyntaxException extends GroovyException {
         return super.getMessage();
     }
 
+    @Override
     public String getMessage() {
         return super.getMessage() + " @ line " + startLine + ", column " + startColumn + ".";
     }

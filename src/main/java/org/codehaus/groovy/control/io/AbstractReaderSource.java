@@ -40,6 +40,7 @@ public abstract class AbstractReaderSource implements ReaderSource {
      * Returns true if the source can be restarted (ie. if getReader()
      * will return non-null on subsequent calls.
      */
+    @Override
     public boolean canReopenSource() {
         return true;
     }
@@ -52,6 +53,7 @@ public abstract class AbstractReaderSource implements ReaderSource {
      * Returns a line from the source, or null, if unavailable.  If
      * you supply a Janitor, resources will be cached.
      */
+    @Override
     public String getLine(int lineNumber, Janitor janitor) {
         // If the source is already open and is passed the line we
         // want, close it.
@@ -96,6 +98,7 @@ public abstract class AbstractReaderSource implements ReaderSource {
     /**
      * Cleans up any cached resources used by getLine().
      */
+    @Override
     public void cleanup() {
         if (lineSource != null) {
             try {

@@ -30,10 +30,12 @@ public class SqlOrderByVisitor extends CodeVisitorSupport {
         return buffer.toString();
     }
 
+    @Override
     public void visitReturnStatement(ReturnStatement statement) {
         statement.getExpression().visit(this);
     }
 
+    @Override
     public void visitPropertyExpression(PropertyExpression expression) {
         buffer.append(expression.getPropertyAsString());
     }

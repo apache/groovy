@@ -33,10 +33,12 @@ public class MapEntryExpression extends Expression {
         this.valueExpression = valueExpression;
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitMapEntryExpression(this);
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new MapEntryExpression(transformer.transform(keyExpression), transformer.transform(valueExpression));
         ret.setSourcePosition(this);

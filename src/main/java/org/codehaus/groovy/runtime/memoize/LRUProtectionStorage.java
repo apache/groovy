@@ -50,6 +50,7 @@ final class LRUProtectionStorage extends LinkedHashMap<Object, Object> implement
      * @param key   The key of the element to renew
      * @param value A value to newly associate with the key
      */
+    @Override
     public synchronized void touch(final Object key, final Object value) {
         remove(key);
         put(key, value);

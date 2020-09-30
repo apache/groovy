@@ -376,6 +376,7 @@ public class XmlSlurper extends DefaultHandler {
     /* (non-Javadoc)
     * @see org.xml.sax.ContentHandler#startDocument()
     */
+    @Override
     public void startDocument() throws SAXException {
         currentNode = null;
         charBuffer.setLength(0);
@@ -384,6 +385,7 @@ public class XmlSlurper extends DefaultHandler {
     /* (non-Javadoc)
     * @see org.xml.sax.helpers.DefaultHandler#startPrefixMapping(java.lang.String, java.lang.String)
     */
+    @Override
     public void startPrefixMapping(final String tag, final String uri) throws SAXException {
         if (namespaceAware) namespaceTagHints.put(tag, uri);
     }
@@ -391,6 +393,7 @@ public class XmlSlurper extends DefaultHandler {
     /* (non-Javadoc)
     * @see org.xml.sax.ContentHandler#startElement(java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
     */
+    @Override
     public void startElement(final String namespaceURI, final String localName, final String qName, final Attributes atts) throws SAXException {
         addCdata();
 
@@ -423,6 +426,7 @@ public class XmlSlurper extends DefaultHandler {
         currentNode = newElement;
     }
 
+    @Override
     public void ignorableWhitespace(char[] buffer, int start, int len) throws SAXException {
         if (keepIgnorableWhitespace) characters(buffer, start, len);
     }
@@ -430,6 +434,7 @@ public class XmlSlurper extends DefaultHandler {
     /* (non-Javadoc)
     * @see org.xml.sax.ContentHandler#characters(char[], int, int)
     */
+    @Override
     public void characters(final char[] ch, final int start, final int length) throws SAXException {
         charBuffer.append(ch, start, length);
     }
@@ -437,6 +442,7 @@ public class XmlSlurper extends DefaultHandler {
     /* (non-Javadoc)
     * @see org.xml.sax.ContentHandler#endElement(java.lang.String, java.lang.String, java.lang.String)
     */
+    @Override
     public void endElement(final String namespaceURI, final String localName, final String qName) throws SAXException {
         addCdata();
         Node oldCurrentNode = stack.pop();
@@ -448,6 +454,7 @@ public class XmlSlurper extends DefaultHandler {
     /* (non-Javadoc)
     * @see org.xml.sax.ContentHandler#endDocument()
     */
+    @Override
     public void endDocument() throws SAXException {
     }
 

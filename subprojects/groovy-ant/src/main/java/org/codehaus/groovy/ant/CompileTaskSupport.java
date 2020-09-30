@@ -165,6 +165,7 @@ public abstract class CompileTaskSupport
         }
     }
 
+    @Override
     public void execute() throws BuildException {
         validate();
 

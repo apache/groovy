@@ -136,6 +136,7 @@ public class MethodClosure extends Closure {
         throw new UnsupportedOperationException();
     }
     
+    @Override
     public Object getProperty(String property) {
         if ("method".equals(property)) {
             return getMethod();

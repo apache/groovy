@@ -46,6 +46,7 @@ public class ConfigurationException extends RuntimeException implements GroovyEx
     /**
      * Returns the causing exception, if available.
      */
+    @Override
     public Throwable getCause() {
         return cause;
     }
@@ -53,6 +54,7 @@ public class ConfigurationException extends RuntimeException implements GroovyEx
     /**
      * Its always fatal.
      */
+    @Override
     public boolean isFatal() {
         return true;
     }
@@ -60,6 +62,7 @@ public class ConfigurationException extends RuntimeException implements GroovyEx
     /**
      * Set fatal is just ignored.
      */
+    @Override
     public void setFatal(boolean fatal) {
     }
 

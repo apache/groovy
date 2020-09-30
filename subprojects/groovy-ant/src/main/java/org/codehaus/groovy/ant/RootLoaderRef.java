@@ -68,6 +68,7 @@ public class RootLoaderRef extends MatchingTask {
         name = n;
     }
 
+    @Override
     public void execute() throws BuildException {
         if (taskClasspath == null || taskClasspath.size() == 0) {
             throw new BuildException("no classpath given");

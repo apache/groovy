@@ -179,10 +179,12 @@ public class MetaMethodIndex {
                 index = i;
             }
 
+            @Override
             public boolean hasNext() {
                 return next != null;
             }
 
+            @Override
             public Entry next() {
                 return nextEntry();
             }

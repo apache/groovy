@@ -66,6 +66,7 @@ public final class LRUCache<K, V> implements MemoizeCache<K, V> {
     /**
      * Remove all entries holding SoftReferences to gc-evicted objects.
      */
+    @Override
     public void cleanUpNullReferences() {
         synchronized (map) {
             final Iterator<Map.Entry<K, V>> iterator = map.entrySet().iterator();

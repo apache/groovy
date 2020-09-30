@@ -79,22 +79,27 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return methods[i];
     }
 
+    @Override
     public Class[] getPT() {
         return cachedMethod.getParameterTypes();
     }
 
+    @Override
     public String getName() {
         return cachedMethod.getName();
     }
 
+    @Override
     public String getDescriptor() {
         return BytecodeHelper.getMethodDescriptor(getReturnType(), getNativeParameterTypes());
     }
 
+    @Override
     public CachedClass getDeclaringClass() {
         return cachedClass;
     }
 
+    @Override
     public final Object invoke(Object object, Object[] arguments) {
         makeAccessibleIfNecessary();
 
@@ -118,6 +123,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return null;
     }
 
+    @Override
     public Class getReturnType() {
         return cachedMethod.getReturnType();
     }
@@ -126,11 +132,13 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return getParameterTypes().length;
     }
 
+    @Override
     public int getModifiers() {
         return cachedMethod.getModifiers();
     }
 
 
+    @Override
     public String getSignature() {
         return getName() + getDescriptor();
     }
@@ -146,6 +154,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return cachedMethod;
     }
 
+    @Override
     public boolean isStatic() {
         return MethodHelper.isStatic(cachedMethod);
     }
@@ -158,6 +167,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
         this.transformedMethod = transformedMethod;
     }
 
+    @Override
     public int compareTo(Object o) {
       if (o instanceof CachedMethod)
         return compareToCachedMethod((CachedMethod)o);
@@ -337,6 +347,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
     private static class MyComparator implements Comparator, Serializable {
         private static final long serialVersionUID = 8909277090690131302L;
 
+        @Override
         public int compare(Object o1, Object o2) {
             if (o1 instanceof CachedMethod)
                 return ((CachedMethod)o1).compareTo(o2);

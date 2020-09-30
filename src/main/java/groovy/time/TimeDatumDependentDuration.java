@@ -30,6 +30,7 @@ public class TimeDatumDependentDuration extends DatumDependentDuration {
         super(years, months, days, hours, minutes, seconds, millis);
     }
     
+    @Override
     public DatumDependentDuration plus(final Duration rhs) {
         return new TimeDatumDependentDuration(this.getYears(), this.getMonths(),
                                               this.getDays() + rhs.getDays(), this.getHours() + rhs.getHours(),
@@ -37,6 +38,7 @@ public class TimeDatumDependentDuration extends DatumDependentDuration {
                                               this.getMillis() + rhs.getMillis());
     }
     
+    @Override
     public DatumDependentDuration plus(final DatumDependentDuration rhs) {
         return new TimeDatumDependentDuration(this.getYears() + rhs.getYears(), this.getMonths() + rhs.getMonths(),
                                               this.getDays() + rhs.getDays(), this.getHours() + rhs.getHours(),
@@ -44,6 +46,7 @@ public class TimeDatumDependentDuration extends DatumDependentDuration {
                                               this.getMillis() + rhs.getMillis());
     }
     
+    @Override
     public DatumDependentDuration minus(final Duration rhs) {
         return new TimeDatumDependentDuration(this.getYears(), this.getMonths(),
                                               this.getDays() - rhs.getDays(), this.getHours() - rhs.getHours(),
@@ -51,6 +54,7 @@ public class TimeDatumDependentDuration extends DatumDependentDuration {
                                               this.getMillis() - rhs.getMillis());
     }
     
+    @Override
     public DatumDependentDuration minus(final DatumDependentDuration rhs) {
         return new TimeDatumDependentDuration(this.getYears() - rhs.getYears(), this.getMonths() - rhs.getMonths(),
                                               this.getDays() - rhs.getDays(), this.getHours() - rhs.getHours(),
@@ -58,8 +62,10 @@ public class TimeDatumDependentDuration extends DatumDependentDuration {
                                               this.getMillis() - rhs.getMillis());
     }
     
+    @Override
     public From getFrom() {
         return new From() {
+            @Override
             public Date getNow() {
             final Calendar cal = Calendar.getInstance();
 

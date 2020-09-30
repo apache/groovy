@@ -49,6 +49,7 @@ public class MetaBeanProperty extends MetaProperty {
      * @return the property of the given object
      * @throws RuntimeException if the property could not be evaluated
      */
+    @Override
     public Object getProperty(Object object) {
         MetaMethod getter = getGetter();
         if (getter == null) {
@@ -66,6 +67,7 @@ public class MetaBeanProperty extends MetaProperty {
      * @param newValue the new value of the property
      * @throws RuntimeException if the property could not be set
      */
+    @Override
     public void setProperty(Object object, Object newValue) {
         MetaMethod setter = getSetter();
         if (setter == null) {
@@ -120,6 +122,7 @@ public class MetaBeanProperty extends MetaProperty {
      *
      * @return the visibility modifier of the getter, the setter, or both depending on which exist
      */
+    @Override
     public int getModifiers() {
         MetaMethod getter = getGetter();
         MetaMethod setter = getSetter();

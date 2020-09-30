@@ -49,14 +49,17 @@ public class MutualPropertyBinding implements FullBinding {
         rebuildBindings();
     }
 
+    @Override
     public SourceBinding getSourceBinding() {
         return sourceBinding;
     }
 
+    @Override
     public TargetBinding getTargetBinding() {
         return targetBinding;
     }
 
+    @Override
     public void setSourceBinding(SourceBinding sourceBinding) {
         try {
             if (sourceBinding == null) {
@@ -71,6 +74,7 @@ public class MutualPropertyBinding implements FullBinding {
         rebuildBindings();
     }
 
+    @Override
     public void setTargetBinding(TargetBinding targetBinding) {
         try {
             if (targetBinding == null) {
@@ -85,29 +89,35 @@ public class MutualPropertyBinding implements FullBinding {
         rebuildBindings();
     }
 
+    @Override
     public void setValidator(Closure validator) {
         this.validator = validator;
         rebuildBindings();
     }
 
+    @Override
     public Closure getValidator() {
         return validator;
     }
 
+    @Override
     public void setConverter(Closure converter) {
         this.converter = converter;
         rebuildBindings();
     }
 
+    @Override
     public Closure getConverter() {
         return converter;
     }
 
+    @Override
     public void setReverseConverter(Closure reverseConverter) {
        this.reverseConverter = reverseConverter;
         rebuildBindings();
     }
 
+    @Override
     public Closure getReverseConverter() {
         return reverseConverter;
     }
@@ -149,6 +159,7 @@ public class MutualPropertyBinding implements FullBinding {
 
     }
 
+    @Override
     public void bind() {
         if (!bound) {
             bound = true;
@@ -171,6 +182,7 @@ public class MutualPropertyBinding implements FullBinding {
         }
     }
 
+    @Override
     public void unbind() {
         if (bound) {
             forwardBinding.unbind();
@@ -179,6 +191,7 @@ public class MutualPropertyBinding implements FullBinding {
         }
     }
 
+    @Override
     public void rebind() {
         if (bound) {
             unbind();
@@ -186,10 +199,12 @@ public class MutualPropertyBinding implements FullBinding {
         }
     }
 
+    @Override
     public void update() {
         forwardBinding.update();
     }
 
+    @Override
     public void reverseUpdate() {
         reverseBinding.update();
     }

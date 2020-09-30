@@ -121,6 +121,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
             doCall1 = m1;
         }
 
+        @Override
         public Object chooseMethod(Class[] arguments, boolean coerce) {
             if (arguments.length == 0) return doCall0;
             if (arguments.length == 1) return doCall1;
@@ -137,6 +138,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
             this.methods = methods;
         }
 
+        @Override
         public Object chooseMethod(Class[] arguments, boolean coerce) {
             if (arguments.length == 0) {
                 return MetaClassHelper.chooseEmptyMethodParams(methods);
@@ -174,6 +176,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         super(registry, theClass);
     }
 
+    @Override
     public MetaProperty getMetaProperty(String name) {
         return CLOSURE_METACLASS.getMetaProperty(name);
     }
@@ -562,6 +565,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         this.initialized = initialized;
     }
 
+    @Override
     public MetaMethod getStaticMetaMethod(String name, Object[] args) {
         return CLOSURE_METACLASS.getStaticMetaMethod(name, args);
     }
@@ -570,6 +574,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         return CLOSURE_METACLASS.getStaticMetaMethod(name, argTypes);
     }
 
+    @Override
     public Object getProperty(Class sender, Object object, String name, boolean useSuper, boolean fromInsideClass) {
         if (object instanceof Class) {
             return getStaticMetaClass().getProperty(sender, object, name, useSuper, fromInsideClass);
@@ -609,10 +614,12 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
     }
 
+    @Override
     public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
         return getStaticMetaClass().invokeMethod(Class.class, object, methodName, arguments, false, false);
     }
 
+    @Override
     public void setProperty(Class sender, Object object, String name, Object newValue, boolean useSuper, boolean fromInsideClass) {
         if (object instanceof Class) {
             getStaticMetaClass().setProperty(sender, object, name, newValue, useSuper, fromInsideClass);
@@ -625,47 +632,58 @@ public final class ClosureMetaClass extends MetaClassImpl {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setProperties(Object bean, Map map) {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void addMetaBeanProperty(MetaBeanProperty mp) {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void addMetaMethod(MetaMethod method) {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void addNewInstanceMethod(Method method) {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void addNewStaticMethod(Method method) {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Constructor retrieveConstructor(Class[] arguments) {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public CallSite createPojoCallSite(CallSite site, Object receiver, Object[] args) {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public CallSite createPogoCallSite(CallSite site, Object[] args) {
         return new PogoMetaClassSite(site, this);
     }
 
+    @Override
     public CallSite createPogoCallCurrentSite(CallSite site, Class sender, Object[] args) {
         return new PogoMetaClassSite(site, this);
     }
 
+    @Override
     public List respondsTo(Object obj, String name, Object[] argTypes) {
         loadMetaInfo();
         return super.respondsTo(obj, name, argTypes);
     }
 
+    @Override
     public List respondsTo(final Object obj, final String name) {
         loadMetaInfo();
         return super.respondsTo(obj, name);
@@ -679,6 +697,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
     }
 
+    @Override
     protected void applyPropertyDescriptors(PropertyDescriptor[] propertyDescriptors) {
         // do nothing
     }

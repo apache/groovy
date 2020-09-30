@@ -69,6 +69,7 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
         return invokeMethod(methodName, null);
     }
 
+    @Override
     public Object invokeMethod(final String methodName, final Object args) {
         Object name = getName(methodName);
         return doInvokeMethod(methodName, name, args);

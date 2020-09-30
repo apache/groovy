@@ -43,6 +43,7 @@ public class ManagedReference<T> implements Finalizable {
         manager.removeStallEntries();
     }
     
+    @Override
     public void finalizeReference(){
         ref.clear();
     }

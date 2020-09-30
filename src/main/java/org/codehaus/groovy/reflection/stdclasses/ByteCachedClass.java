@@ -27,6 +27,7 @@ public class ByteCachedClass extends NumberCachedClass {
         this.allowNull = allowNull;
     }
 
+    @Override
     public Object coerceArgument(Object argument) {
         if (argument instanceof Byte) {
             return argument;
@@ -38,10 +39,12 @@ public class ByteCachedClass extends NumberCachedClass {
         return argument;
     }
 
+    @Override
     public boolean isDirectlyAssignable(Object argument) {
         return (allowNull && argument == null) || argument instanceof Byte;
     }
 
+    @Override
     public boolean isAssignableFrom(Class classToTransformFrom) {
         return (allowNull && classToTransformFrom == null)
             || classToTransformFrom == Byte.class

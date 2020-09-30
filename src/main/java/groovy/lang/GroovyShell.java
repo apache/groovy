@@ -128,6 +128,7 @@ public class GroovyShell extends GroovyObjectSupport {
         return loader;
     }
 
+    @Override
     public Object getProperty(String property) {
         Object answer = getVariable(property);
         if (answer == null) {
@@ -136,6 +137,7 @@ public class GroovyShell extends GroovyObjectSupport {
         return answer;
     }
 
+    @Override
     public void setProperty(String property, Object newValue) {
         setVariable(property, newValue);
         try {
@@ -192,6 +194,7 @@ public class GroovyShell extends GroovyObjectSupport {
                 classLoader = loader;
             }
 
+            @Override
             public Object run() {
                 thread.setContextClassLoader(classLoader);
                 return null;

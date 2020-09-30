@@ -544,14 +544,17 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             length = delegate.length();
         }
 
+        @Override
         public boolean hasNext() {
             return index < length;
         }
 
+        @Override
         public Character next() {
             return delegate.charAt(index++);
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException("Remove not supported for CharSequence iterators");
         }
@@ -567,14 +570,17 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             length = delegate.length();
         }
 
+        @Override
         public boolean hasNext() {
             return index < length;
         }
 
+        @Override
         public String next() {
             return Character.toString(delegate.charAt(index++));
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException("Remove not supported for CharSequence iterators");
         }
@@ -1734,6 +1740,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         return new Iterator() {
             private boolean done, found;
 
+            @Override
             public boolean hasNext() {
                 if (done) {
                     return false;
@@ -1747,6 +1754,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
                 return found;
             }
 
+            @Override
             public Object next() {
                 if (!found) {
                     if (!hasNext()) {
@@ -1770,6 +1778,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
                 }
             }
 
+            @Override
             public void remove() {
                 throw new UnsupportedOperationException();
             }

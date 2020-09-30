@@ -58,6 +58,7 @@ public class MethodMetaProperty extends MetaProperty {
             super(name, theMethod);
         }
 
+        @Override
         public Object getProperty(Object object) {
             return getMetaMethod().doMethodInvoke(object, new Object[]{name});
         }
@@ -72,6 +73,7 @@ public class MethodMetaProperty extends MetaProperty {
             super(name, theMethod);
         }
 
+        @Override
         public Object getProperty(Object object) {
             return getMetaMethod().doMethodInvoke(object, MetaClassImpl.EMPTY_ARGUMENTS);
         }

@@ -64,6 +64,7 @@ public class GroovySunClassLoader extends SunClassLoader {
             ClassReader reader = new ClassReader(asStream);
             final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
             final ClassVisitor cv = new ClassVisitor(CompilerConfiguration.ASM_API_VERSION, cw) {
+                @Override
                 public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
                     super.visit(version, access, name, signature, "sun/reflect/GroovyMagic", interfaces);
                 }

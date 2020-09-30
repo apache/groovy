@@ -41,6 +41,7 @@ public class CachedConstructor extends ParameterTypes {
         this(ReflectionCache.getCachedClass(c.getDeclaringClass()), c);
     }
 
+    @Override
     protected Class[] getPT() {
         return cachedConstructor.getParameterTypes();
     }

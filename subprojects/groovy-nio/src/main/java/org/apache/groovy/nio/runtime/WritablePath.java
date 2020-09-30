@@ -53,6 +53,7 @@ public class WritablePath implements Path, Writable {
         this.delegate = delegate;
     }
 
+    @Override
     public Writer writeTo(final Writer out) throws IOException {
 
         try (Reader reader = (this.encoding == null)

@@ -91,6 +91,7 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
      * @see #invokeCustom(Object, Method, Object[])
      * @see InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])
      */
+    @Override
     public Object invoke(final Object proxy, Method method, Object[] args) throws Throwable {
         if (isDefaultMethod(method) && !defaultOverridden(method)) {
             final VMPlugin plugin = VMPluginFactory.getPlugin();

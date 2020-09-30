@@ -30,22 +30,27 @@ public class SimpleGroovyFieldDoc extends SimpleGroovyMemberDoc implements Groov
         super(name, belongsToClass);
     }
 
+    @Override
     public Object constantValue() {/*todo*/return null;}
 
     public void setConstantValueExpression(String constantValueExpression) {
         this.constantValueExpression = constantValueExpression;
     }
 
+    @Override
     public String constantValueExpression() {
         return constantValueExpression;
     }
 
+    @Override
     public boolean isTransient() {/*todo*/return false;}
 
+    @Override
     public boolean isVolatile() {/*todo*/return false;}
 
     //    public GroovySerialFieldTag[] serialFieldTags() {/*todo*/return null;}
 
+    @Override
     public GroovyType type() {
         return type;
     }

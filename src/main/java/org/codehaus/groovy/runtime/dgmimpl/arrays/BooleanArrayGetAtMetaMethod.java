@@ -28,19 +28,23 @@ import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 public class BooleanArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
     private static final CachedClass ARR_CLASS = ReflectionCache.getCachedClass(boolean[].class);
 
+    @Override
     public Class getReturnType() {
         return Boolean.class;
     }
 
+    @Override
     public final CachedClass getDeclaringClass() {
         return ARR_CLASS;
     }
 
+    @Override
     public Object invoke(Object object, Object[] args) {
         final boolean[] objects = (boolean[]) object;
         return objects[normaliseIndex((Integer) args[0], objects.length)];
     }
 
+    @Override
     public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         if (!(args[0] instanceof Integer))
             return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
@@ -53,6 +57,7 @@ public class BooleanArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
             super(site, metaClass, metaMethod, params);
         }
 
+        @Override
         public Object call(Object receiver, Object arg) throws Throwable {
             if ((receiver instanceof boolean[] && arg instanceof Integer)
                     && checkPojoMetaClass()) {

@@ -126,6 +126,7 @@ public abstract class BaseDuration implements Comparable<BaseDuration> {
 
     public abstract From getFrom();
 
+    @Override
     public int compareTo(BaseDuration otherDuration) {
         return Long.signum(toMilliseconds() - otherDuration.toMilliseconds());
     }

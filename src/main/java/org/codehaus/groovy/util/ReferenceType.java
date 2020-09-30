@@ -57,6 +57,7 @@ public enum ReferenceType {
             super(referent, q);
             this.handler = handler;
         }
+        @Override
         public V getHandler() {
             return handler;
         }        
@@ -68,6 +69,7 @@ public enum ReferenceType {
             super(referent, q);
             this.handler = handler;
         }
+        @Override
         public V getHandler() {
             return handler;
         }            
@@ -79,6 +81,7 @@ public enum ReferenceType {
             super(referent, q);
             this.handler = handler;
         }
+        @Override
         public V getHandler() {
             return handler;
         }            
@@ -91,12 +94,15 @@ public enum ReferenceType {
             this.ref = referent;
             this.handler = handler;
         }
+        @Override
         public V getHandler() {
             return handler;
         }
+        @Override
         public TT get() {
             return ref;
         }
+        @Override
         public void clear() {
             ref = null;
         }        

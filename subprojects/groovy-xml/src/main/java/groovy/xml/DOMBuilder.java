@@ -148,6 +148,7 @@ public class DOMBuilder extends BuilderSupport {
         this.documentBuilder = documentBuilder;
     }
 
+    @Override
     protected void setParent(Object parent, Object child) {
         Node current = (Node) parent;
         Node node = (Node) child;
@@ -155,6 +156,7 @@ public class DOMBuilder extends BuilderSupport {
         current.appendChild(node);
     }
 
+    @Override
     protected Object createNode(Object name) {
         if (document == null) {
             document = createDocument();
@@ -175,18 +177,21 @@ public class DOMBuilder extends BuilderSupport {
         }
     }
 
+    @Override
     protected Object createNode(Object name, Object value) {
         Element element = (Element) createNode(name);
         element.appendChild(document.createTextNode(value.toString()));
         return element;
     }
 
+    @Override
     protected Object createNode(Object name, Map attributes, Object value) {
         Element element = (Element) createNode(name, attributes);
         element.appendChild(document.createTextNode(value.toString()));
         return element;
     }
 
+    @Override
     protected Object createNode(Object name, Map attributes) {
         Element element = (Element) createNode(name);
         for (Object o : attributes.entrySet()) {

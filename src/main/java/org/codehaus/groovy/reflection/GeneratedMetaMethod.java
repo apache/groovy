@@ -48,18 +48,22 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
         nativeParamTypes = parameters;
     }
 
+    @Override
     public int getModifiers() {
         return Modifier.PUBLIC;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public Class getReturnType() {
         return returnType;
     }
 
+    @Override
     public CachedClass getDeclaringClass() {
         return declaringClass;
     }
@@ -83,6 +87,7 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
             return proxy().doMethodInvoke(object, argumentArray);
         }
 
+        @Override
         public Object invoke(Object object, Object[] arguments) {
             return proxy().invoke(object, arguments);
         }

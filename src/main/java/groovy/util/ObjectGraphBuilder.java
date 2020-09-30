@@ -291,6 +291,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
                 : new DefaultRelationNameResolver();
     }
 
+    @Override
     protected void postInstantiate(Object name, Map attributes, Object node) {
         super.postInstantiate(name, attributes, node);
         Map context = getContext();
@@ -300,6 +301,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         }
     }
 
+    @Override
     protected void preInstantiate(Object name, Map attributes, Object value) {
         super.preInstantiate(name, attributes, value);
         Map context = getContext();
@@ -307,6 +309,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
                 attributes.remove(identifierResolver.getIdentifierFor((String) name)));
     }
 
+    @Override
     protected Factory resolveFactory(Object name, Map attributes, Object value) {
         // let custom factories be resolved first
         Factory factory = super.resolveFactory(name, attributes, value);
@@ -352,6 +355,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
      * collection.
      */
     public static class DefaultChildPropertySetter implements ChildPropertySetter {
+        @Override
         public void setChild(Object parent, Object child, String parentName, String propertyName) {
             try {
                 Object property = InvokerHelper.getProperty(parent, propertyName);
@@ -370,6 +374,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
      * Default impl that capitalizes the classname.
      */
     public static class DefaultClassNameResolver implements ClassNameResolver {
+        @Override
         public String resolveClassname(String classname) {
             if (classname.length() == 1) {
                 return classname.toUpperCase();
@@ -392,6 +397,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
             this.root = root;
         }
 
+        @Override
         public String resolveClassname(String classname) {
             Object currentNode = getContext().get(CURRENT_NODE);
 
@@ -433,6 +439,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
      * Default impl, always returns 'id'
      */
     public static class DefaultIdentifierResolver implements IdentifierResolver {
+        @Override
         public String getIdentifierFor(String nodeName) {
             return "id";
         }
@@ -442,6 +449,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
      * Default impl that calls Class.newInstance()
      */
     public static class DefaultNewInstanceResolver implements NewInstanceResolver {
+        @Override
         public Object newInstance(Class klass, Map attributes) throws InstantiationException,
                 IllegalAccessException {
             return klass.newInstance();
@@ -452,6 +460,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
      * Default impl, always returns 'refId'
      */
     public static class DefaultReferenceResolver implements ReferenceResolver {
+        @Override
         public String getReferenceFor(String nodeName) {
             return "refId";
         }
@@ -471,6 +480,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
          *
          * @see <a href="http://en.wikipedia.org/wiki/English_plural">English_plural</a>
          */
+        @Override
         public String resolveChildRelationName(String parentName, Object parent, String childName,
                                                Object child) {
             boolean matchesIESRule = PLURAL_IES_PATTERN.matcher(childName).matches();
@@ -486,6 +496,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
          * Follow the most conventional pattern, returns the parentName
          * unchanged.
          */
+        @Override
         public String resolveParentRelationName(String parentName, Object parent,
                                                 String childName, Object child) {
             return parentName;
@@ -595,6 +606,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     }
 
     private static class ObjectFactory extends AbstractFactory {
+        @Override
         public Object newInstance(FactoryBuilderSupport builder, Object name, Object value,
                                   Map properties) throws InstantiationException, IllegalAccessException {
             ObjectGraphBuilder ogbuilder = (ObjectGraphBuilder) builder;
@@ -644,6 +656,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
             return ogbuilder.newInstanceResolver.newInstance(klass, properties);
         }
 
+        @Override
         public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
             if (child == null) return;
 
@@ -668,6 +681,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
             }
         }
 
+        @Override
         public void setParent(FactoryBuilderSupport builder, Object parent, Object child) {
             if (child == null) return;
 
@@ -701,6 +715,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     }
 
     private static class ObjectBeanFactory extends ObjectFactory {
+        @Override
         public Object newInstance(FactoryBuilderSupport builder, Object name, Object value,
                                   Map properties) throws InstantiationException, IllegalAccessException {
             if(value == null) return super.newInstance(builder, name, value, properties);
@@ -736,10 +751,12 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     }
 
     private static class ObjectRefFactory extends ObjectFactory {
+        @Override
         public boolean isLeaf() {
             return true;
         }
 
+        @Override
         public Object newInstance(FactoryBuilderSupport builder, Object name, Object value,
                                   Map properties) throws InstantiationException, IllegalAccessException {
             ObjectGraphBuilder ogbuilder = (ObjectGraphBuilder) builder;
@@ -798,11 +815,13 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
             return object;
         }
 
+        @Override
         public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
             Boolean lazy = (Boolean) builder.getContext().get(ObjectGraphBuilder.LAZY_REF);
             if (!lazy) super.setChild(builder, parent, child);
         }
 
+        @Override
         public void setParent(FactoryBuilderSupport builder, Object parent, Object child) {
             Boolean lazy = (Boolean) builder.getContext().get(ObjectGraphBuilder.LAZY_REF);
             if (!lazy) super.setParent(builder, parent, child);

@@ -49,6 +49,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         this.source = source;
     }
 
+    @Override
     protected SourceUnit getSourceUnit() {
         return source;
     }

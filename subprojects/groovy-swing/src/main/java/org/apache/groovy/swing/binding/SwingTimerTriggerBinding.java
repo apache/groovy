@@ -26,6 +26,7 @@ import java.awt.event.ActionListener;
  * @since Groovy 1.1
  */
 public class SwingTimerTriggerBinding implements TriggerBinding {
+    @Override
     public FullBinding createBinding(SourceBinding source, TargetBinding target) {
         return new SwingTimerFullBinding((ClosureSourceBinding) source, target);
     }
@@ -65,6 +66,7 @@ class SwingTimerFullBinding extends AbstractFullBinding implements ActionListene
         timer.start();
     }
 
+    @Override
     public void bind() {
         if (!bound) {
             resetTimer();
@@ -72,6 +74,7 @@ class SwingTimerFullBinding extends AbstractFullBinding implements ActionListene
         }
     }
 
+    @Override
     public void unbind() {
         if (bound) {
             timer.stop();
@@ -79,12 +82,14 @@ class SwingTimerFullBinding extends AbstractFullBinding implements ActionListene
         }
     }
 
+    @Override
     public void rebind() {
         if (bound) {
             resetTimer();
         }
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
         long currentTime = System.currentTimeMillis();
         long elapsed = currentTime - startTime;

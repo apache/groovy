@@ -53,6 +53,7 @@ public class JmxEventListener implements NotificationListener {
      * @param notification the notification object passed to closure used to handle JmxBuilder events.
      * @param handback     - In this case, the handback is the closure to execute when the event is handled.
      */
+    @Override
     public void handleNotification(Notification notification, Object handback) {
         Map event = (Map) handback;
         if (event != null) {

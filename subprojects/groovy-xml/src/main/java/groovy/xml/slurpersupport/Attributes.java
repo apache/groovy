@@ -56,6 +56,7 @@ public class Attributes extends NodeChildren {
         this(parent, name, "*", namespaceTagHints);
     }
 
+    @Override
     public String name() {
         // this name contains @name we need to return name
         return this.name.substring(1);
@@ -64,12 +65,15 @@ public class Attributes extends NodeChildren {
     /**
      * Throws a <code>GroovyRuntimeException</code>, because attributes can have no children.
      */
+    @Override
     public Iterator childNodes() {
         throw new GroovyRuntimeException("Can't get the child nodes on a GPath expression selecting attributes: ...." + this.parent.name() + "." + name() + ".childNodes()");
     }
 
+    @Override
     public Iterator iterator() {
         return new NodeIterator(nodeIterator()) {
+            @Override
             protected Object getNextNode(final Iterator iter) {
                 while (iter.hasNext()) {
                     final Object next = iter.next();
@@ -97,14 +101,17 @@ public class Attributes extends NodeChildren {
         };
     }
 
+    @Override
     public Iterator nodeIterator() {
         return this.parent.nodeIterator();
     }
 
+    @Override
     public GPathResult parents() {
         return super.parents();
     }
 
+    @Override
     public String text() {
         final StringBuilder sb = new StringBuilder();
         for (Object o : this) {
@@ -113,6 +120,7 @@ public class Attributes extends NodeChildren {
         return sb.toString();
     }
 
+    @Override
     public List list() {
         final Iterator iter = iterator();
         final List result = new ArrayList();
@@ -122,15 +130,18 @@ public class Attributes extends NodeChildren {
         return result;
     }
 
+    @Override
     public GPathResult findAll(final Closure closure) {
         return new FilteredAttributes(this, closure, this.namespaceTagHints);
     }
 
+    @Override
     public Writer writeTo(final Writer out) throws IOException {
         out.write(text());
         return out;
     }
 
+    @Override
     public void build(final GroovyObject builder) {
         builder.getProperty("mkp");
         builder.invokeMethod("yield", new Object[]{text()});

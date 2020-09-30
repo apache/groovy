@@ -461,6 +461,7 @@ public abstract class BaseTemplate implements Writable {
      * @return a writer instance
      * @throws IOException
      */
+    @Override
     public Writer writeTo(final Writer out) throws IOException {
         if (this.out!=null) {
             // StackOverflow prevention

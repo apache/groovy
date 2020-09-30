@@ -863,6 +863,7 @@ public class Groovyc extends MatchingTask {
      *
      * @throws BuildException if an error occurs
      */
+    @Override
     public void execute() throws BuildException {
         checkParameters();
         resetFileLists();

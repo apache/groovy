@@ -37,6 +37,7 @@ public class MetaExpandoProperty extends MetaProperty {
      * @return the property of the given object
      * @throws Exception if the property could not be evaluated
      */
+    @Override
     public Object getProperty(Object object) {
         return value;
     }
@@ -47,6 +48,7 @@ public class MetaExpandoProperty extends MetaProperty {
      * @param object   on which to set the property
      * @param newValue the new value of the property
      */
+    @Override
     public void setProperty(Object object, Object newValue) {
         value = newValue;
     }

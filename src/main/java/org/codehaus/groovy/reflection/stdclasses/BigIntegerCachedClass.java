@@ -27,10 +27,12 @@ public class BigIntegerCachedClass extends NumberCachedClass {
         super(klazz, classInfo);
     }
 
+    @Override
     public boolean isDirectlyAssignable(Object argument) {
         return argument instanceof BigInteger;
     }
 
+    @Override
     public boolean isAssignableFrom(Class classToTransformFrom) {
         return classToTransformFrom == null
             || classToTransformFrom == Integer.class

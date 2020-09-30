@@ -39,6 +39,7 @@ public class PogoInterceptableSite extends AbstractCallSite {
       }
     }
 
+    @Override
     public final Object call(Object receiver, Object[] args) throws Throwable {
         if(receiver instanceof GroovyObject) {
             try {
@@ -51,6 +52,7 @@ public class PogoInterceptableSite extends AbstractCallSite {
         }
     }
 
+    @Override
     public Object callCurrent (GroovyObject receiver, Object [] args) throws Throwable {
         return call(receiver, args);
     }

@@ -36,10 +36,12 @@ public class ShortArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
         parameterTypes = PARAM_CLASS_ARR;
     }
 
+    @Override
     public final CachedClass getDeclaringClass() {
         return ARR_CLASS;
     }
 
+    @Override
     public Object invoke(Object object, Object[] args) {
         final short[] objects = (short[]) object;
         final int index = normaliseIndex((Integer) args[0], objects.length);
@@ -56,6 +58,7 @@ public class ShortArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
         return null;
     }
 
+    @Override
     public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         if (!(args[0] instanceof Integer) || !(args[1] instanceof Short))
             return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
@@ -68,6 +71,7 @@ public class ShortArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             super(site, metaClass, metaMethod, params);
         }
 
+        @Override
         public Object call(Object receiver, Object[] args) throws Throwable {
             if ((receiver instanceof short[] && args[0] instanceof Integer && args[1] instanceof Short)
                     && checkPojoMetaClass()) {
@@ -78,6 +82,7 @@ public class ShortArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
                 return super.call(receiver, args);
         }
 
+        @Override
         public Object call(Object receiver, Object arg1, Object arg2) throws Throwable {
             if (checkPojoMetaClass()) {
                 try {

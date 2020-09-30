@@ -49,6 +49,7 @@ public class SwitchStatement extends Statement {
         this.defaultStatement = defaultStatement;
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitSwitch(this);
     }

@@ -48,6 +48,7 @@ public class NoChildren extends GPathResult {
      * Returns <code>0</code>.
      * @return <code>0</code>
      */
+    @Override
     public int size() {
         return 0;
     }
@@ -56,6 +57,7 @@ public class NoChildren extends GPathResult {
      * Returns an empty <code>String</code>.
      * @return an empty <code>String</code>
      */
+    @Override
     public String text() {
         return "";
     }
@@ -63,6 +65,7 @@ public class NoChildren extends GPathResult {
     /**
      * Throws a <code>GroovyRuntimeException</code>, because it is not implemented yet.
      */
+    @Override
     public GPathResult parents() {
         // TODO Auto-generated method stub
         throw new GroovyRuntimeException("parents() not implemented yet");
@@ -72,6 +75,7 @@ public class NoChildren extends GPathResult {
      * Returns an empty <code>Iterator</code>.
      * @return an empty <code>Iterator</code>
      */
+    @Override
     public Iterator childNodes() {
         return iterator();
     }
@@ -80,16 +84,20 @@ public class NoChildren extends GPathResult {
      * Returns an empty <code>Iterator</code>.
      * @return an empty <code>Iterator</code>
      */
+    @Override
     public Iterator iterator() {
         return new Iterator() {
+            @Override
             public boolean hasNext() {
                 return false;
             }
 
+            @Override
             public Object next() {
                 return null;
             }
 
+            @Override
             public void remove() {
                 throw new UnsupportedOperationException();
             }
@@ -100,6 +108,7 @@ public class NoChildren extends GPathResult {
      * Returns <code>this</code>.
      * @return <code>this</code>
      */
+    @Override
     public GPathResult find(final Closure closure) {
         return this;
     }
@@ -108,6 +117,7 @@ public class NoChildren extends GPathResult {
      * Returns <code>this</code>.
      * @return <code>this</code>
      */
+    @Override
     public GPathResult findAll(final Closure closure) {
         return this;
     }
@@ -116,6 +126,7 @@ public class NoChildren extends GPathResult {
      * Returns an empty iterator.
      * @return an empty iterator
      */
+    @Override
     public Iterator nodeIterator() {
         return iterator();
     }
@@ -125,6 +136,7 @@ public class NoChildren extends GPathResult {
      *
      * @return the <code>Writer</code> which was passed in
      */
+    @Override
     public Writer writeTo(final Writer out) throws IOException {
         return out;
     }
@@ -132,12 +144,14 @@ public class NoChildren extends GPathResult {
     /**
      * NOP
      */
+    @Override
     public void build(final GroovyObject builder) {
     }
 
     /**
      * NOP
      */
+    @Override
     protected void replaceNode(final Closure newValue) {
         // No elements match GPath expression - do nothing
     }
@@ -145,6 +159,7 @@ public class NoChildren extends GPathResult {
     /**
      * NOP
      */
+    @Override
     protected void replaceBody(final Object newValue) {
         // No elements match GPath expression - do nothing
     }
@@ -152,6 +167,7 @@ public class NoChildren extends GPathResult {
     /**
      * NOP
      */
+    @Override
     protected void appendNode(final Object newValue) {
         // TODO consider creating an element for this
     }

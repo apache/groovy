@@ -135,6 +135,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
         }
     }
 
+    @Override
     public Template createTemplate(final Reader reader) throws CompilationFailedException, ClassNotFoundException, IOException {
         return new MarkupTemplateMaker(reader, null, null);
     }
@@ -228,10 +229,12 @@ public class MarkupTemplateEngine extends TemplateEngine {
             this.modeltypes = modelTypes;
         }
 
+        @Override
         public Writable make() {
             return make(Collections.emptyMap());
         }
 
+        @Override
         public Writable make(final Map binding) {
             return DefaultGroovyMethods.newInstance(templateClass, new Object[]{MarkupTemplateEngine.this, binding, modeltypes, templateConfiguration});
         }
@@ -297,11 +300,13 @@ public class MarkupTemplateEngine extends TemplateEngine {
         public DefaultTemplateResolver() {
         }
 
+        @Override
         public void configure(final ClassLoader templateClassLoader, final TemplateConfiguration configuration) {
             this.templateClassLoader = templateClassLoader;
             this.templateConfiguration = configuration;
         }
 
+        @Override
         public URL resolveTemplate(final String templatePath) throws IOException {
             MarkupTemplateEngine.TemplateResource templateResource = MarkupTemplateEngine.TemplateResource.parse(templatePath);
             String configurationLocale = templateConfiguration.getLocale().toString().replace("-", "_");

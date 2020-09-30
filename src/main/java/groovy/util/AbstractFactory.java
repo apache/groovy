@@ -23,36 +23,44 @@ import groovy.lang.Closure;
 import java.util.Map;
 
 public abstract class AbstractFactory implements Factory {
+    @Override
     public boolean isLeaf() {
         return false;
     }
 
+    @Override
     public boolean isHandlesNodeChildren() {
         return false;
     }
 
+    @Override
     public void onFactoryRegistration(FactoryBuilderSupport builder, String registeredName, String group) {
         // do nothing
     }
 
-    public boolean onHandleNodeAttributes( FactoryBuilderSupport builder, Object node,
-            Map attributes ) {
+    @Override
+    public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node,
+                                          Map attributes ) {
         return true;
     }
 
-    public boolean onNodeChildren( FactoryBuilderSupport builder, Object node, Closure childContent) {
+    @Override
+    public boolean onNodeChildren(FactoryBuilderSupport builder, Object node, Closure childContent) {
         return true;
     }
 
-    public void onNodeCompleted( FactoryBuilderSupport builder, Object parent, Object node ) {
+    @Override
+    public void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node ) {
         // do nothing
     }
 
-    public void setParent( FactoryBuilderSupport builder, Object parent, Object child ) {
+    @Override
+    public void setParent(FactoryBuilderSupport builder, Object parent, Object child ) {
         // do nothing
     }
 
-    public void setChild( FactoryBuilderSupport builder, Object parent, Object child ) {
+    @Override
+    public void setChild(FactoryBuilderSupport builder, Object parent, Object child ) {
         // do nothing
     }
 

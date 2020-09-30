@@ -55,6 +55,7 @@ public class NotYetImplementedASTTransformation extends AbstractASTTransformatio
     private static final ClassNode CATCH_TYPE = ClassHelper.make(Throwable.class);
     private static final ClassNode DEFAULT_THROW_TYPE = ClassHelper.make(AssertionError.class);
 
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
         AnnotationNode anno = (AnnotationNode) nodes[0];

@@ -27,18 +27,22 @@ public class SimpleGroovyType implements GroovyType {
         this.typeName = typeName;
     }
 
+    @Override
     public String typeName() {
         return typeName;
     }
 
+    @Override
     public boolean isPrimitive() {
         return false; // TODO
     }
 
+    @Override
     public String qualifiedTypeName() {
         return typeName.startsWith("DefaultPackage.") ? typeName.substring("DefaultPackage.".length()) : typeName;
     }
 
+    @Override
     public String simpleTypeName() {
         int lastDot = typeName.lastIndexOf('.');
         if (lastDot < 0) return typeName;

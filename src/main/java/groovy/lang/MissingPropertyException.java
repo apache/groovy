@@ -57,6 +57,7 @@ public class MissingPropertyException extends GroovyRuntimeException {
         this.type = type;
     }
 
+    @Override
     public String getMessageWithoutLocationText() {
         if (property == null || type == null) {
             return super.getMessageWithoutLocationText();

@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class FileOutputTool implements OutputTool {
+    @Override
     public void makeOutputArea(String filename) {
         Path path = Paths.get(filename);
         if (Files.exists(path)) {
@@ -39,6 +40,7 @@ public class FileOutputTool implements OutputTool {
         }
     }
 
+    @Override
     public void writeToOutput(String fileName, String text, String charset) throws Exception {
         File file = new File(fileName);
         Path path = file.getParentFile().toPath();

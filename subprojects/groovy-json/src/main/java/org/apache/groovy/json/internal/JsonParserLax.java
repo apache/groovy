@@ -210,6 +210,7 @@ public class JsonParserLax extends JsonParserCharArray {
         return new CharSequenceValue(chop, Type.STRING, startIndexOfKey, endIndex + 1, this.charArray, encoded, checkDate);
     }
 
+    @Override
     protected final Object decodeValue() {
         return this.decodeValueInternal();
     }
@@ -663,6 +664,7 @@ public class JsonParserLax extends JsonParserCharArray {
         return value;
     }
 
+    @Override
     protected final Object decodeFromChars(char[] cs) {
         Value value = ((Value) super.decodeFromChars(cs));
         if (value.isContainer()) {

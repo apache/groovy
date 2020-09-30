@@ -43,18 +43,21 @@ public class JComboBoxProperties {
 
         // to match property name
         result.put(JComboBox.class.getName() + "#selectedItem", new TriggerBinding() {
+            @Override
             public FullBinding createBinding(SourceBinding source, TargetBinding target) {
                 return new JComboBoxSelectedElementBinding((PropertyBinding) source, target, "selectedItem");
             }
         });
         // to match JSR-295
         result.put(JComboBox.class.getName() + "#selectedElement", new TriggerBinding() {
+            @Override
             public FullBinding createBinding(SourceBinding source, TargetBinding target) {
                 return new JComboBoxSelectedElementBinding((PropertyBinding) source, target, "selectedElement");
             }
         });
 
         result.put(JComboBox.class.getName() + "#selectedIndex", new TriggerBinding() {
+            @Override
             public FullBinding createBinding(SourceBinding source, TargetBinding target) {
                 return new JComboBoxSelectedIndexBinding((PropertyBinding) source, target);
             }
@@ -63,6 +66,7 @@ public class JComboBoxProperties {
 
         // to match JSR-295
         result.put(JComboBox.class.getName() + "#elements", new TriggerBinding() {
+            @Override
             public FullBinding createBinding(SourceBinding source, TargetBinding target) {
                 return new JComboBoxElementsBinding((PropertyBinding) source, target);
             }
@@ -80,26 +84,31 @@ class JComboBoxSelectedElementBinding extends AbstractSyntheticBinding implement
         super(source, target, JComboBox.class, propertyName);
     }
 
+    @Override
     public synchronized void syntheticBind() {
         boundComboBox = (JComboBox) ((PropertyBinding)sourceBinding).getBean();
         boundComboBox.addPropertyChangeListener("model", this);
         boundComboBox.addItemListener(this);
     }
 
+    @Override
     public synchronized void syntheticUnbind() {
         boundComboBox.removePropertyChangeListener("model", this);
         boundComboBox.removeItemListener(this);
         boundComboBox = null;
     }
 
+    @Override
     public void setTargetBinding(TargetBinding target) {
         super.setTargetBinding(target);
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent event) {
         update();
     }
 
+    @Override
     public void itemStateChanged(ItemEvent e) {
         update();
     }
@@ -113,26 +122,31 @@ class JComboBoxSelectedIndexBinding extends AbstractSyntheticBinding implements 
         super(source, target, JComboBox.class, "selectedIndex");
     }
 
+    @Override
     public synchronized void syntheticBind() {
         boundComboBox = (JComboBox) ((PropertyBinding)sourceBinding).getBean();
         boundComboBox.addPropertyChangeListener("model", this);
         boundComboBox.addItemListener(this);
     }
 
+    @Override
     public synchronized void syntheticUnbind() {
         boundComboBox.removePropertyChangeListener("model", this);
         boundComboBox.removeItemListener(this);
         boundComboBox = null;
     }
 
+    @Override
     public void setTargetBinding(TargetBinding target) {
         super.setTargetBinding(target);
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent event) {
         update();
     }
 
+    @Override
     public void itemStateChanged(ItemEvent e) {
         update();
     }
@@ -146,31 +160,37 @@ class JComboBoxElementsBinding extends AbstractSyntheticBinding implements ListD
         super(propertyBinding, target, JComboBox.class, "elements");
     }
 
+    @Override
     protected void syntheticBind() {
         boundComboBox = (JComboBox) ((PropertyBinding)sourceBinding).getBean();
         boundComboBox.addPropertyChangeListener("model", this);
         boundComboBox.getModel().addListDataListener(this);
     }
 
+    @Override
     protected void syntheticUnbind() {
         boundComboBox.removePropertyChangeListener("model", this);
         boundComboBox.getModel().removeListDataListener(this);
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent event) {
         update();
         ((ComboBoxModel) event.getOldValue()).removeListDataListener(this);
         ((ComboBoxModel) event.getNewValue()).addListDataListener(this);
     }
 
+    @Override
     public void intervalAdded(ListDataEvent e) {
         update();
     }
 
+    @Override
     public void intervalRemoved(ListDataEvent e) {
         update();
     }
 
+    @Override
     public void contentsChanged(ListDataEvent e) {
         update();
     }

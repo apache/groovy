@@ -39,6 +39,7 @@ public abstract class ArrayMetaMethod extends CallSiteAwareMetaMethod {
         return i;
     }
 
+    @Override
     public int getModifiers() {
         return Modifier.PUBLIC;
     }

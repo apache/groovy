@@ -69,6 +69,7 @@ public class GroovyEngine extends BSFEngineImpl {
     /**
      * Allow an anonymous function to be declared and invoked
      */
+    @Override
     public Object apply(String source, int lineNo, int columnNo, Object funcBody, Vector paramNames,
                         Vector arguments) throws BSFException {
         Object object = eval(source, lineNo, columnNo, funcBody);
@@ -83,6 +84,7 @@ public class GroovyEngine extends BSFEngineImpl {
     /**
      * Call the named method of the given object.
      */
+    @Override
     public Object call(Object object, String method, Object[] args) throws BSFException {
         return InvokerHelper.invokeMethod(object, method, args);
     }
@@ -90,6 +92,7 @@ public class GroovyEngine extends BSFEngineImpl {
     /**
      * Evaluate an expression.
      */
+    @Override
     public Object eval(String source, int lineNo, int columnNo, Object script) throws BSFException {
         try {
             source = convertToValidJavaClassname(source);
@@ -102,6 +105,7 @@ public class GroovyEngine extends BSFEngineImpl {
     /**
      * Execute a script.
      */
+    @Override
     public void exec(String source, int lineNo, int columnNo, Object script) throws BSFException {
         try {
             // use evaluate to pass in the BSF variables
@@ -115,6 +119,7 @@ public class GroovyEngine extends BSFEngineImpl {
     /**
      * Initialize the engine.
      */
+    @Override
     public void initialize(BSFManager mgr, String lang, Vector declaredBeans) throws BSFException {
         super.initialize(mgr, lang, declaredBeans);
 
@@ -133,6 +138,7 @@ public class GroovyEngine extends BSFEngineImpl {
     /**
      * Declare a bean
      */
+    @Override
     public void declareBean(BSFDeclaredBean bean) throws BSFException {
         shell.setVariable(bean.name, bean.bean);
     }
@@ -140,6 +146,7 @@ public class GroovyEngine extends BSFEngineImpl {
     /**
      * Undeclare a previously declared bean.
      */
+    @Override
     public void undeclareBean(BSFDeclaredBean bean) throws BSFException {
         shell.setVariable(bean.name, null);
     }

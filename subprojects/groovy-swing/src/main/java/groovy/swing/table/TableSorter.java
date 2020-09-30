@@ -59,6 +59,7 @@ public class TableSorter extends TableMap {
         setModel(model);
     }
 
+    @Override
     public void setModel(TableModel model) {
         super.setModel(model);
         reallocateIndexes();
@@ -191,6 +192,7 @@ public class TableSorter extends TableMap {
             indexes[row] = row;
     }
 
+    @Override
     public void tableChanged(TableModelEvent e) {
         reallocateIndexes();
 
@@ -276,11 +278,13 @@ public class TableSorter extends TableMap {
     // The mapping only affects the contents of the data rows.
     // Pass all requests to these rows through the mapping array: "indexes".
 
+    @Override
     public Object getValueAt(int aRow, int aColumn) {
         checkModel();
         return model.getValueAt(indexes[aRow], aColumn);
     }
 
+    @Override
     public void setValueAt(Object aValue, int aRow, int aColumn) {
         checkModel();
         model.setValueAt(aValue, indexes[aRow], aColumn);
@@ -306,6 +310,7 @@ public class TableSorter extends TableMap {
         final JTable tableView = table;
         tableView.setColumnSelectionAllowed(false);
         MouseAdapter listMouseListener = new MouseAdapter() {
+            @Override
             public void mouseClicked(MouseEvent e) {
                 TableColumnModel columnModel = tableView.getColumnModel();
                 int viewColumn = columnModel.getColumnIndexAtX(e.getX());

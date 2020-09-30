@@ -36,6 +36,7 @@ public class ClosureComparator<T> implements Comparator<T>, Serializable {
         this.closure = closure;
     }
 
+    @Override
     public int compare(T object1, T object2) {
         Object value = closure.call(object1, object2);
         return DefaultTypeTransformation.intUnbox(value);

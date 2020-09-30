@@ -40,14 +40,17 @@ public class SAXBuilder extends BuilderSupport {
         this.handler = handler;
     }
 
+    @Override
     protected void setParent(Object parent, Object child) {
     }
 
+    @Override
     protected Object createNode(Object name) {
         doStartElement(name, emptyAttributes);
         return name;
     }
 
+    @Override
     protected Object createNode(Object name, Object value) {
         doStartElement(name, emptyAttributes);
         doText(value);
@@ -63,6 +66,7 @@ public class SAXBuilder extends BuilderSupport {
         }
     }
 
+    @Override
     protected Object createNode(Object name, Map attributeMap, Object text) {
         AttributesImpl attributes = new AttributesImpl();
         for (Object o : attributeMap.entrySet()) {
@@ -98,6 +102,7 @@ public class SAXBuilder extends BuilderSupport {
         }
     }
 
+    @Override
     protected void nodeCompleted(Object parent, Object name) {
         Tuple3<String, String, String> nameInfo = getNameInfo(name);
         String uri = nameInfo.getV1();
@@ -118,6 +123,7 @@ public class SAXBuilder extends BuilderSupport {
     /* (non-Javadoc)
      * @see groovy.util.BuilderSupport#createNode(java.lang.Object, java.util.Map, java.lang.Object)
      */
+    @Override
     protected Object createNode(Object name, Map attributes) {
         return createNode(name, attributes, null);
     }

@@ -69,10 +69,12 @@ public class GroovyPrintWriter extends PrintWriter {
         super(filename, csn);
     }
 
+    @Override
     public void print(Object x) {
         write(InvokerHelper.toString(x));
     }
 
+    @Override
     public void println(Object x) {
         // JDK 1.6 has changed the implementation to do a
         // String.valueOf(x) rather than call print(x).

@@ -57,7 +57,8 @@ public interface ReaderSource extends HasCleanup {
    /**
     *  Cleans up any cached resources used by getLine().
     */
-    void cleanup();
+   @Override
+   void cleanup();
 
     /**
      * Returns a URI for this source.

@@ -46,6 +46,7 @@ public class StringReaderSource extends AbstractReaderSource {
    /**
     *  Returns a new Reader on the underlying source object.  
     */
+   @Override
    public Reader getReader() throws IOException {
        return new StringReader( string );
    }
@@ -55,6 +56,7 @@ public class StringReaderSource extends AbstractReaderSource {
      *
      * @return Data URI containing the literal value of this source string.
      */
+    @Override
     public URI getURI() {
         try {
             return new URI("data", "," + string, null);

@@ -38,6 +38,7 @@ public class PojoMetaClassSite extends MetaClassSite{
         version = classInfo.getVersion();
     }
 
+    @Override
     public Object call(Object receiver, Object[] args) throws Throwable {
         if(checkCall(receiver)) {
           try{

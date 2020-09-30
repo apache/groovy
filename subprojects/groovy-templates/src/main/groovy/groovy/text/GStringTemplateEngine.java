@@ -110,6 +110,7 @@ public class GStringTemplateEngine extends TemplateEngine {
     /* (non-Javadoc)
     * @see groovy.text.TemplateEngine#createTemplate(java.io.Reader)
     */
+    @Override
     public Template createTemplate(final Reader reader) throws CompilationFailedException, ClassNotFoundException, IOException {
         return new GStringTemplate(reader, parentLoader);
     }
@@ -298,10 +299,12 @@ public class GStringTemplateEngine extends TemplateEngine {
             templateExpressions.append('}');
         }
 
+        @Override
         public Writable make() {
             return make(null);
         }
 
+        @Override
         public Writable make(final Map map) {
             final Closure template = ((Closure) this.template.clone()).asWritable();
             Binding binding = new Binding(map);

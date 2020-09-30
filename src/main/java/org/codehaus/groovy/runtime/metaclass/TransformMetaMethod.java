@@ -34,22 +34,27 @@ public class TransformMetaMethod extends MetaMethod {
         nativeParamTypes = metaMethod.getNativeParameterTypes();
     }
 
+    @Override
     public int getModifiers() {
         return metaMethod.getModifiers();
     }
 
+    @Override
     public String getName() {
         return metaMethod.getName();
     }
 
+    @Override
     public Class getReturnType() {
         return metaMethod.getReturnType();
     }
 
+    @Override
     public CachedClass getDeclaringClass() {
         return metaMethod.getDeclaringClass();
     }
 
+    @Override
     public Object invoke(Object object, Object[] arguments) {
         return metaMethod.invoke(object, arguments);
     }

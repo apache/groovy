@@ -66,10 +66,12 @@ public class ValueHolder implements ValueModel {
     }
     
 
+    @Override
     public Object getValue() {
         return value;
     }
 
+    @Override
     public void setValue(Object value) {
         Object oldValue = this.value;
         this.value = value;
@@ -78,10 +80,12 @@ public class ValueHolder implements ValueModel {
         }
     }
 
+    @Override
     public Class getType() {
         return type;
     }
 
+    @Override
     public boolean isEditable() {
         return editable;
     }

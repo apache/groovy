@@ -30,28 +30,34 @@ public class SimpleGroovyMethodDoc extends SimpleGroovyExecutableMemberDoc imple
         super(name, belongsToClass);
     }
 
+    @Override
     public GroovyType returnType() {
         return returnType;
     }
 
     // TODO need returnType.qualifiedTypeName() here
 
+    @Override
     public void setReturnType(GroovyType returnType) {
         this.returnType = returnType;
     }
 
+    @Override
     public GroovyClassDoc overriddenClass() {/*todo*/
         return null;
     }
 
+    @Override
     public GroovyMethodDoc overriddenMethod() {/*todo*/
         return null;
     }
 
+    @Override
     public GroovyType overriddenType() {/*todo*/
         return null;
     }
 
+    @Override
     public boolean overrides(GroovyMethodDoc arg0) {/*todo*/
         return false;
     }

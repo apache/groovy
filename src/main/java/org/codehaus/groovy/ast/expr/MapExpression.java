@@ -49,6 +49,7 @@ public class MapExpression extends Expression {
         return mapEntryExpressions;
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitMapExpression(this);
     }
@@ -57,6 +58,7 @@ public class MapExpression extends Expression {
         return false;
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new MapExpression(transformExpressions(getMapEntryExpressions(), transformer, MapEntryExpression.class));
         ret.setSourcePosition(this);
@@ -68,6 +70,7 @@ public class MapExpression extends Expression {
         return super.toString() + mapEntryExpressions;
     }
 
+    @Override
     public String getText() {
         StringBuilder sb = new StringBuilder(32);
         sb.append("[");

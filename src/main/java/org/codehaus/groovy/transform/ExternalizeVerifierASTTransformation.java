@@ -47,6 +47,7 @@ public class ExternalizeVerifierASTTransformation extends org.codehaus.groovy.tr
     private static final ClassNode EXTERNALIZABLE_TYPE = make(Externalizable.class);
     private static final ClassNode SERIALIZABLE_TYPE = make(Serializable.class);
 
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];

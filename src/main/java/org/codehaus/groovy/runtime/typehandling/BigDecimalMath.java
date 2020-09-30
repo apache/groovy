@@ -40,22 +40,27 @@ public final class BigDecimalMath extends NumberMath {
 
     private BigDecimalMath() {}
 
+    @Override
     protected Number absImpl(Number number) {
         return toBigDecimal(number).abs();
     }
 
+    @Override
     public Number addImpl(Number left, Number right) {
         return toBigDecimal(left).add(toBigDecimal(right));
     }
 
+    @Override
     public Number subtractImpl(Number left, Number right) {
         return toBigDecimal(left).subtract(toBigDecimal(right));
     }
 
+    @Override
     public Number multiplyImpl(Number left, Number right) {
         return toBigDecimal(left).multiply(toBigDecimal(right));
     }
 
+    @Override
     public Number divideImpl(Number left, Number right) {
         BigDecimal bigLeft = toBigDecimal(left);
         BigDecimal bigRight = toBigDecimal(right);
@@ -71,14 +76,17 @@ public final class BigDecimalMath extends NumberMath {
         }
     }
 
+    @Override
     public int compareToImpl(Number left, Number right) {
         return toBigDecimal(left).compareTo(toBigDecimal(right));
     }
 
+    @Override
     protected Number unaryMinusImpl(Number left) {
         return toBigDecimal(left).negate();
     }
 
+    @Override
     protected Number unaryPlusImpl(Number left) {
         return toBigDecimal(left);
     }

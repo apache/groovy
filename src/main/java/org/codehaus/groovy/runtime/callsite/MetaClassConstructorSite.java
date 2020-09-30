@@ -39,6 +39,7 @@ public class MetaClassConstructorSite extends MetaClassSite {
         version = classInfo.getVersion();
     }
 
+    @Override
     public Object callConstructor(Object receiver, Object[] args) throws Throwable {
         try {
             if (receiver == metaClass.getTheClass()

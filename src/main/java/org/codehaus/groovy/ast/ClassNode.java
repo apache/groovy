@@ -1462,6 +1462,7 @@ public class ClassNode extends AnnotatedNode {
         return isInterface() && (getModifiers() & ACC_ANNOTATION) != 0;
     }
 
+    @Override
     public List<AnnotationNode> getAnnotations() {
         if (redirect != null)
             return redirect.getAnnotations();
@@ -1469,6 +1470,7 @@ public class ClassNode extends AnnotatedNode {
         return super.getAnnotations();
     }
 
+    @Override
     public List<AnnotationNode> getAnnotations(ClassNode type) {
         if (redirect != null)
             return redirect.getAnnotations(type);

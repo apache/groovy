@@ -94,10 +94,12 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
             return Thread.currentThread().getContextClassLoader().getResources(path);
         } catch (IOException e) {
             return new Enumeration<URL>() {
+                @Override
                 public boolean hasMoreElements() {
                     return false;
                 }
 
+                @Override
                 public URL nextElement() {
                     return null;
                 }
@@ -178,8 +180,10 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
         return UpdateStrategy.SAME;
     }
 
+    @Override
     public void updateTargetValue(final Object newValue) {
         Runnable runnable = new Runnable() {
+            @Override
             public void run() {
                 Object sourceValue = getSourceValue();
                 // if (isNonChangeCheck()) {
@@ -257,10 +261,12 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
         }
     }
 
+    @Override
     public Object getSourceValue() {
         return propertyAccessor().read(bean, propertyName);
     }
 
+    @Override
     public FullBinding createBinding(SourceBinding source, TargetBinding target) {
         return new PropertyFullBinding(source, target);
     }
@@ -277,12 +283,14 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
             setTargetBinding(target);
         }
 
+        @Override
         public void propertyChange(PropertyChangeEvent event) {
             if (boundToProperty || event.getPropertyName().equals(boundProperty)) {
                 update();
             }
         }
 
+        @Override
         public void bind() {
             if (!bound) {
                 bound = true;
@@ -302,6 +310,7 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
             }
         }
 
+        @Override
         public void unbind() {
             if (bound) {
                 if (boundToProperty) {
@@ -323,6 +332,7 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
             }
         }
 
+        @Override
         public void rebind() {
             if (bound) {
                 unbind();

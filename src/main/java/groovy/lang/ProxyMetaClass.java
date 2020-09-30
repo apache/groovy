@@ -172,6 +172,7 @@ public class ProxyMetaClass extends MetaClassImpl implements AdaptingMetaClass {
      * @param property the property name
      * @return the value of the property
      */
+    @Override
     public Object getProperty(final Class aClass, final Object object, final String property, final boolean useSuper, final boolean fromInsideClass) {
         if (null == interceptor) {
             return super.getProperty(aClass, object, property, useSuper, fromInsideClass);
@@ -196,6 +197,7 @@ public class ProxyMetaClass extends MetaClassImpl implements AdaptingMetaClass {
      * @param property The property name to set
      * @param newValue The new value of the property
      */
+    @Override
     public void setProperty(final Class aClass, final Object object, final String property, final Object newValue, final boolean useSuper, final boolean fromInsideClass) {
         if (null == interceptor) {
             super.setProperty(aClass, object, property, newValue, useSuper, fromInsideClass);

@@ -61,6 +61,7 @@ public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
         return bp;
     }
 
+    @Override
     public FullBinding createBinding(SourceBinding source, TargetBinding target) {
         if (source != this) {
             throw new RuntimeException("Source binding must the Trigger Binding as well");
@@ -72,6 +73,7 @@ public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
 
             // do in privileged block since we may be looking at private stuff
             Closure closureLocalCopy = java.security.AccessController.doPrivileged(new PrivilegedAction<Closure>() {
+                @Override
                 public Closure run() {
                     // assume closures have only 1 constructor, of the form (Object, Reference*)
                     Constructor constructor = closureClass.getConstructors()[0];
@@ -135,6 +137,7 @@ public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
         return accessibleObject.isAccessible();
     }
 
+    @Override
     public Object getSourceValue() {
         return closure.call();
     }
@@ -158,6 +161,7 @@ class BindPathSnooper extends GroovyObjectSupport {
 
     Map<String, BindPathSnooper> fields = new LinkedHashMap<String, BindPathSnooper>();
 
+    @Override
     public Object getProperty(String property) {
         if (fields.containsKey(property)) {
             return fields.get(property);
@@ -168,6 +172,7 @@ class BindPathSnooper extends GroovyObjectSupport {
         }
     }
 
+    @Override
     public Object invokeMethod(String name, Object args) {
         return DEAD_END;
     }

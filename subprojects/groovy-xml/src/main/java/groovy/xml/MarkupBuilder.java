@@ -246,6 +246,7 @@ public class MarkupBuilder extends BuilderSupport {
         return this.out;
     }
 
+    @Override
     protected void setParent(Object parent, Object child) {
     }
 
@@ -295,6 +296,7 @@ public class MarkupBuilder extends BuilderSupport {
         }
     }
 
+    @Override
     protected Object createNode(Object name) {
         Object theName = getName(name);
         toState(1, theName);
@@ -302,6 +304,7 @@ public class MarkupBuilder extends BuilderSupport {
         return theName;
     }
 
+    @Override
     protected Object createNode(Object name, Object value) {
         Object theName = getName(name);
         if (value == null) {
@@ -315,6 +318,7 @@ public class MarkupBuilder extends BuilderSupport {
         }
     }
 
+    @Override
     protected Object createNode(Object name, Map attributes, Object value) {
         Object theName = getName(name);
         toState(1, theName);
@@ -344,10 +348,12 @@ public class MarkupBuilder extends BuilderSupport {
         return theName;
     }
 
+    @Override
     protected Object createNode(Object name, Map attributes) {
         return createNode(name, attributes, null);
     }
 
+    @Override
     protected void nodeCompleted(Object parent, Object node) {
         toState(3, node);
         out.flush();
@@ -357,6 +363,7 @@ public class MarkupBuilder extends BuilderSupport {
         out.print(node == null ? "null" : node.toString());
     }
 
+    @Override
     protected Object getName(String methodName) {
         return super.getName(methodName);
     }
@@ -432,6 +439,7 @@ public class MarkupBuilder extends BuilderSupport {
             this.quoteFilter = useDoubleQuotes ? new DoubleQuoteFilter() : new SingleQuoteFilter();
         }
 
+        @Override
         public Optional<String> apply(Character ch) {
             return orOptional(stdFilter.apply(ch),
                     () -> {

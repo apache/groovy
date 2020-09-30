@@ -47,10 +47,12 @@ public class ClosureModel implements ValueModel, NestedValueModel {
         this.type = type;
     }
 
+    @Override
     public ValueModel getSourceModel() {
         return sourceModel;
     }
 
+    @Override
     public Object getValue() {
         Object source = sourceModel.getValue();
         if (source != null) {
@@ -59,6 +61,7 @@ public class ClosureModel implements ValueModel, NestedValueModel {
         return null;
     }
 
+    @Override
     public void setValue(Object value) {
         if (writeClosure != null) {
             Object source = sourceModel.getValue();
@@ -68,10 +71,12 @@ public class ClosureModel implements ValueModel, NestedValueModel {
         }
     }
 
+    @Override
     public Class getType() {
         return type;
     }
 
+    @Override
     public boolean isEditable() {
         return writeClosure != null;
     }

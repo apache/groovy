@@ -52,6 +52,7 @@ public class ReadException extends GroovyException {
         return message;
     }
 
+    @Override
     public String getMessage() {
         return toString();
     }

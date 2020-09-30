@@ -44,6 +44,7 @@ public class BinaryBooleanExpressionHelper extends BinaryIntExpressionHelper {
         return ClassHelper.boolean_TYPE;
     }
     
+    @Override
     public boolean writePostOrPrefixMethod(int operation, boolean simulate) {
         if (simulate) return false;
         throw new GroovyBugError("should not reach here");
@@ -57,36 +58,45 @@ public class BinaryBooleanExpressionHelper extends BinaryIntExpressionHelper {
         throw new GroovyBugError("should not reach here");
     }
     
+    @Override
     protected boolean writeDivision(boolean simulate) {
         if (simulate) return false;
         throw new GroovyBugError("should not reach here");
     }
 
+    @Override
     protected ClassNode getNormalOpResultType() {
         return ClassHelper.boolean_TYPE;
     }
     
+    @Override
     protected ClassNode getDevisionOpResultType() {
         return ClassHelper.boolean_TYPE;
     }
     
+    @Override
     protected int getShiftOperationBytecode(int type) {
         return -1;
     }
     
+    @Override
     protected int getStandardOperationBytecode(int type) {
         return -1;
     }
     
+    @Override
     protected void removeTwoOperands(MethodVisitor mv) {
         throw new GroovyBugError("should not reach here");
     }
+    @Override
     protected void writePlusPlus(MethodVisitor mv) {
         throw new GroovyBugError("should not reach here");
     }
+    @Override
     protected void writeMinusMinus(MethodVisitor mv) {
         throw new GroovyBugError("should not reach here");
     }
+    @Override
     protected void doubleTwoOperands(MethodVisitor mv) {
         throw new GroovyBugError("should not reach here");
     }

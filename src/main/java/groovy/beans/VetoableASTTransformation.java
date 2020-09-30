@@ -97,6 +97,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
      * @param nodes   the AST nodes
      * @param source  the source unit for the nodes
      */
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         if (!(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
             throw new RuntimeException("Internal error: wrong types: $node.class / $parent.class");
@@ -297,6 +298,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
      * @param setterName     the name of the setter
      * @param setterBlock    the statement representing the setter block
      */
+    @Override
     protected void createSetterMethod(ClassNode declaringClass, PropertyNode propertyNode, String setterName, Statement setterBlock) {
         ClassNode[] exceptions = {ClassHelper.make(PropertyVetoException.class)};
         MethodNode setter = new MethodNode(

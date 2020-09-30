@@ -189,14 +189,17 @@ public class SwingExtensions {
         return new Iterator<Object>() {
             private int index = 0;
 
+            @Override
             public boolean hasNext() {
                 return index < self.getSize();
             }
 
+            @Override
             public Object next() {
                 return self.getElementAt(index++);
             }
 
+            @Override
             public void remove() {
                 throw new UnsupportedOperationException("ListModel is immutable.");
             }
@@ -253,14 +256,17 @@ public class SwingExtensions {
         return new Iterator<Object>() {
             private int index = 0;
 
+            @Override
             public boolean hasNext() {
                 return index > -1 && index < self.getSize();
             }
 
+            @Override
             public Object next() {
                 return self.getElementAt(index++);
             }
 
+            @Override
             public void remove() {
                 if (hasNext()) self.removeElementAt(index--);
             }
@@ -365,14 +371,17 @@ public class SwingExtensions {
         return new Iterator<Object>() {
             private int index = 0;
 
+            @Override
             public boolean hasNext() {
                 return index > -1 && index < self.getSize();
             }
 
+            @Override
             public Object next() {
                 return self.getElementAt(index++);
             }
 
+            @Override
             public void remove() {
                 if (hasNext()) self.removeElementAt(index--);
             }
@@ -428,10 +437,12 @@ public class SwingExtensions {
         return new Iterator<Object>() {
             private int row = 0;
 
+            @Override
             public boolean hasNext() {
                 return row < self.getRowCount();
             }
 
+            @Override
             public Object next() {
                 int cols = self.getColumnCount();
                 Object[] rowData = new Object[cols];
@@ -442,6 +453,7 @@ public class SwingExtensions {
                 return rowData;
             }
 
+            @Override
             public void remove() {
                 throw new UnsupportedOperationException("TableModel is immutable.");
             }
@@ -514,10 +526,12 @@ public class SwingExtensions {
         return new Iterator<Object>() {
             private int row = 0;
 
+            @Override
             public boolean hasNext() {
                 return row > -1 && row < self.getRowCount();
             }
 
+            @Override
             public Object next() {
                 int cols = self.getColumnCount();
                 Object[] rowData = new Object[cols];
@@ -528,6 +542,7 @@ public class SwingExtensions {
                 return rowData;
             }
 
+            @Override
             public void remove() {
                 if (hasNext()) self.removeRow(row--);
             }
@@ -568,14 +583,17 @@ public class SwingExtensions {
         return new Iterator<TableColumn>() {
             private int index = 0;
 
+            @Override
             public boolean hasNext() {
                 return index > -1 && index < self.getColumnCount();
             }
 
+            @Override
             public TableColumn next() {
                 return self.getColumn(index++);
             }
 
+            @Override
             public void remove() {
                 if (hasNext()) self.removeColumn(self.getColumn(index--));
             }
@@ -1010,14 +1028,17 @@ public class SwingExtensions {
         return new Iterator<Component>() {
             private int index = 0;
 
+            @Override
             public boolean hasNext() {
                 return index > -1 && index < self.getTabCount();
             }
 
+            @Override
             public Component next() {
                 return self.getComponentAt(index++);
             }
 
+            @Override
             public void remove() {
                 if (hasNext()) self.removeTabAt(index--);
             }

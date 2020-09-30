@@ -428,6 +428,7 @@ public class Groovydoc extends Task {
         }
     }
 
+    @Override
     public void execute() throws BuildException {
         List<String> packagesToDoc = new ArrayList<>();
         Path sourceDirs = new Path(getProject());

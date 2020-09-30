@@ -40,6 +40,7 @@ public class StringBufferWriter extends Writer {
     /**
      * Write a single character.
      */
+    @Override
     public void write(int c) {
         buffer.append((char) c);
     }
@@ -51,6 +52,7 @@ public class StringBufferWriter extends Writer {
      * @param offset Offset from which to start writing characters
      * @param length Number of characters to write
      */
+    @Override
     public void write(char[] text, int offset, int length) {
         if ((offset < 0) || (offset > text.length) || (length < 0) || ((offset + length) > text.length) || ((offset + length) < 0)) {
             throw new IndexOutOfBoundsException();
@@ -64,6 +66,7 @@ public class StringBufferWriter extends Writer {
     /**
      * Write a string.
      */
+    @Override
     public void write(String text) {
         buffer.append(text);
     }
@@ -75,6 +78,7 @@ public class StringBufferWriter extends Writer {
      * @param offset offset from which to start writing characters
      * @param length Number of characters to write
      */
+    @Override
     public void write(String text, int offset, int length) {
         buffer.append(text, offset, offset + length);
     }
@@ -89,6 +93,7 @@ public class StringBufferWriter extends Writer {
     /**
      * Flush the stream.
      */
+    @Override
     public void flush() {
     }
 
@@ -97,6 +102,7 @@ public class StringBufferWriter extends Writer {
      * class can be called after the stream has been closed without generating
      * an <tt>IOException</tt>.
      */
+    @Override
     public void close() throws IOException {
     }
 }

@@ -58,10 +58,12 @@ public class ListExpression extends Expression {
         return wrapped;
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitListExpression(this);
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new ListExpression(transformExpressions(getExpressions(), transformer));
         ret.setSourcePosition(this);
@@ -73,6 +75,7 @@ public class ListExpression extends Expression {
         return expressions.get(i);
     }
 
+    @Override
     public String getText() {
         StringBuilder buffer = new StringBuilder("[");
         boolean first = true;

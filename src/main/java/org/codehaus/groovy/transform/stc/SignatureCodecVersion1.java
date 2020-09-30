@@ -118,6 +118,7 @@ public class SignatureCodecVersion1 implements SignatureCodec {
         }
     }
 
+    @Override
     public String encode(final ClassNode node) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(128);
         DataOutputStream dos = new DataOutputStream(baos);
@@ -217,6 +218,7 @@ public class SignatureCodecVersion1 implements SignatureCodec {
         return result;
     }
 
+    @Override
     public ClassNode decode(final String signature) {
         DataInputStream dis = new DataInputStream(
                 new ByteArrayInputStream(EncodingGroovyMethods.decodeBase64(signature)));

@@ -27,6 +27,7 @@ public class ManagedConcurrentMap<K,V> extends AbstractConcurrentMap<K,V> {
         if (bundle==null) throw new IllegalArgumentException("bundle must not be null");
     }
 
+    @Override
     protected Segment<K,V> createSegment(Object segmentInfo, int cap) {
         ReferenceBundle bundle = (ReferenceBundle) segmentInfo;
         if (bundle==null) throw new IllegalArgumentException("bundle must not be null");
@@ -43,6 +44,7 @@ public class ManagedConcurrentMap<K,V> extends AbstractConcurrentMap<K,V> {
 
         }
 
+        @Override
         protected AbstractConcurrentMap.Entry<K,V> createEntry(K key, int hash, V value) {
             if (bundle==null) throw new IllegalArgumentException("bundle must not be null");
             return new EntryWithValue<K,V>(bundle, this, key, hash, value);
@@ -59,21 +61,26 @@ public class ManagedConcurrentMap<K,V> extends AbstractConcurrentMap<K,V> {
             this.hash = hash;
         }
 
+        @Override
         public boolean isValid() {
             return get() != null;
         }
 
+        @Override
         public boolean isEqual(K key, int hash) {
             return this.hash == hash && get() == key;
         }
 
+        @Override
         public V getValue() {
             return (V)this;
         }
 
+        @Override
         public void setValue(V value) {
         }
 
+        @Override
         public int getHash() {
             return hash;
         }

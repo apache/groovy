@@ -68,28 +68,34 @@ public final class ComposedClosure<V> extends Closure<V> {
         maximumNumberOfParameters = first.getMaximumNumberOfParameters();
     }
 
+    @Override
     public void setDelegate(Object delegate) {
         ((Closure) getOwner()).setDelegate(delegate);
         second.setDelegate(delegate);
     }
 
+    @Override
     public Object getDelegate() {
         return ((Closure) getOwner()).getDelegate();
     }
 
+    @Override
     public void setResolveStrategy(int resolveStrategy) {
         ((Closure) getOwner()).setResolveStrategy(resolveStrategy);
         second.setResolveStrategy(resolveStrategy);
     }
 
+    @Override
     public int getResolveStrategy() {
         return ((Closure) getOwner()).getResolveStrategy();
     }
 
+    @Override
     public Object clone() {
         return new ComposedClosure<V>(first, second);
     }
 
+    @Override
     public Class[] getParameterTypes() {
         return first.getParameterTypes();
     }

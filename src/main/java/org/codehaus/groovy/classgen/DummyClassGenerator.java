@@ -67,6 +67,7 @@ public class DummyClassGenerator extends ClassGenerator {
 
     // GroovyClassVisitor interface
     //-------------------------------------------------------------------------
+    @Override
     public void visitClass(ClassNode classNode) {
         try {
             this.classNode = classNode;
@@ -110,6 +111,7 @@ public class DummyClassGenerator extends ClassGenerator {
         }
     }
 
+    @Override
     public void visitConstructor(ConstructorNode node) {
 
         visitParameters(node, node.getParameters());
@@ -124,6 +126,7 @@ public class DummyClassGenerator extends ClassGenerator {
         mv.visitMaxs(0, 0);
     }
 
+    @Override
     public void visitMethod(MethodNode node) {
 
         visitParameters(node, node.getParameters());
@@ -140,6 +143,7 @@ public class DummyClassGenerator extends ClassGenerator {
         mv.visitMaxs(0, 0);
     }
 
+    @Override
     public void visitField(FieldNode fieldNode) {
 
         cv.visitField(
@@ -153,6 +157,7 @@ public class DummyClassGenerator extends ClassGenerator {
     /**
      * Creates a getter, setter and field
      */
+    @Override
     public void visitProperty(PropertyNode statement) {
     }
 
@@ -174,6 +179,7 @@ public class DummyClassGenerator extends ClassGenerator {
     }
 
 
+    @Override
     public void visitAnnotations(AnnotatedNode node) {
     }
 }

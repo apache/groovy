@@ -43,6 +43,7 @@ public class ForStatement extends Statement implements LoopingStatement {
         this.loopBlock = loopBlock;
     }
     
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitForLoop(this);
     }
@@ -51,6 +52,7 @@ public class ForStatement extends Statement implements LoopingStatement {
         return collectionExpression;
     }
 
+    @Override
     public Statement getLoopBlock() {
         return loopBlock;
     }
@@ -75,6 +77,7 @@ public class ForStatement extends Statement implements LoopingStatement {
         return scope;
     }
 
+    @Override
     public void setLoopBlock(Statement loopBlock) {
         this.loopBlock = loopBlock;
     }

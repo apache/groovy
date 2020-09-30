@@ -66,6 +66,7 @@ public class ClosureExpressionEvaluationASTTransformation extends BaseASTTransfo
     /**
      * {@link org.codehaus.groovy.transform.ASTTransformation#visit(org.codehaus.groovy.ast.ASTNode[], org.codehaus.groovy.control.SourceUnit)}
      */
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit unit) {
         final ModuleNode moduleNode = unit.getAST();
 

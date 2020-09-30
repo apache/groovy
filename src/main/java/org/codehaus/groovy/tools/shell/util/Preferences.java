@@ -54,6 +54,7 @@ public class Preferences
         }
 
         addChangeListener(new PreferenceChangeListener() {
+            @Override
             public void preferenceChange(final PreferenceChangeEvent event) {
                 if (event.getKey().equals(VERBOSITY_KEY)) {
                     String name = event.getNewValue();

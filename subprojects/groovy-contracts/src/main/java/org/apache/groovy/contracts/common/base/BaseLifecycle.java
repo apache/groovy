@@ -32,21 +32,27 @@ import org.codehaus.groovy.ast.MethodNode;
  */
 public abstract class BaseLifecycle implements Lifecycle {
 
+    @Override
     public void beforeProcessingClassNode(ProcessingContextInformation processingContextInformation, ClassNode classNode) {
     }
 
+    @Override
     public void afterProcessingClassNode(ProcessingContextInformation processingContextInformation, ClassNode classNode) {
     }
 
+    @Override
     public void beforeProcessingMethodNode(ProcessingContextInformation processingContextInformation, ClassNode classNode, MethodNode methodNode) {
     }
 
+    @Override
     public void afterProcessingMethodNode(ProcessingContextInformation processingContextInformation, ClassNode classNode, MethodNode methodNode) {
     }
 
+    @Override
     public void beforeProcessingConstructorNode(ProcessingContextInformation processingContextInformation, ClassNode classNode, MethodNode constructorNode) {
     }
 
+    @Override
     public void afterProcessingConstructorNode(ProcessingContextInformation processingContextInformation, ClassNode classNode, MethodNode constructorNode) {
     }
 }

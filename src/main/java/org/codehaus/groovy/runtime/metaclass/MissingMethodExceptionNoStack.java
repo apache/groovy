@@ -32,6 +32,7 @@ public class MissingMethodExceptionNoStack extends MissingMethodException {
         super (method, type, arguments, isStatic);
     }
 
+    @Override
     public Throwable fillInStackTrace() {
         return this;
     }

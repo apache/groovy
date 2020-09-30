@@ -42,10 +42,12 @@ public class SqlWhereVisitor extends CodeVisitorSupport {
         return buffer.toString();
     }
 
+    @Override
     public void visitReturnStatement(ReturnStatement statement) {
         statement.getExpression().visit(this);
     }
 
+    @Override
     public void visitBinaryExpression(BinaryExpression expression) {
         Expression left = expression.getLeftExpression();
         Expression right = expression.getRightExpression();
@@ -63,15 +65,18 @@ public class SqlWhereVisitor extends CodeVisitorSupport {
         if (!leaf) buffer.append(")");
     }
 
+    @Override
     public void visitBooleanExpression(BooleanExpression expression) {
         expression.getExpression().visit(this);
     }
 
+    @Override
     public void visitConstantExpression(ConstantExpression expression) {
         getParameters().add(expression.getValue());
         buffer.append("?");
     }
 
+    @Override
     public void visitPropertyExpression(PropertyExpression expression) {
         buffer.append(expression.getPropertyAsString());
     }

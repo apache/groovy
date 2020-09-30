@@ -39,10 +39,12 @@ public class SpreadMapExpression extends Expression {
         return expression;
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitSpreadMapExpression(this);
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new SpreadMapExpression(transformer.transform(expression));
         ret.setSourcePosition(this);
@@ -50,10 +52,12 @@ public class SpreadMapExpression extends Expression {
         return ret;
     }
 
+    @Override
     public String getText() {
         return "*:" + expression.getText();
     }
 
+    @Override
     public ClassNode getType() {
         return expression.getType();
     }

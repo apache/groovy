@@ -38,10 +38,12 @@ public class TemporaryMethodKey extends MethodKey {
         this.parameterValues = parameterValues;
     }
 
+    @Override
     public int getParameterCount() {
         return parameterValues.length;
     }
 
+    @Override
     public Class getParameterType(int index) {
         Object value = parameterValues[index];
 

@@ -84,6 +84,7 @@ public class GroovyServlet extends AbstractHttpServlet {
      * @throws ServletException
      *  if this method encountered difficulties
      */
+    @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
 
@@ -96,6 +97,7 @@ public class GroovyServlet extends AbstractHttpServlet {
     /**
      * Handle web requests to the GroovyServlet
      */
+    @Override
     public void service(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         // Get the script path from the request - include aware (GROOVY-815)
@@ -111,6 +113,7 @@ public class GroovyServlet extends AbstractHttpServlet {
         // Run the script
         try {
             Closure<?> closure = new Closure<Object>(gse) {
+                @Override
                 public Object call() {
                     try {
                         return ((GroovyScriptEngine) getDelegate()).run(scriptUri, binding);

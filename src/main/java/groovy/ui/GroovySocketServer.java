@@ -149,6 +149,7 @@ public class GroovySocketServer implements Runnable {
     * Runs this server. There is typically no need to call this method, as the object's constructor
     * creates a new thread and runs this object automatically. 
     */
+    @Override
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(url.getPort())) {
             while (true) {
@@ -182,6 +183,7 @@ public class GroovySocketServer implements Runnable {
             writer = new PrintWriter(socket.getOutputStream());
             new Thread(this, "Groovy client connection - " + socket.getInetAddress().getHostAddress()).start();
         }
+        @Override
         public void run() {
             try {
                 String line = null;

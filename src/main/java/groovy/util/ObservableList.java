@@ -134,12 +134,14 @@ public class ObservableList implements List {
         pcs.firePropertyChange(new PropertyChangeEvent(this, SIZE_PROPERTY, oldValue, newValue));
     }
 
+    @Override
     public void add(int index, Object element) {
         int oldSize = size();
         delegate.add(index, element);
         fireAddWithTest(element, index, oldSize);
     }
 
+    @Override
     public boolean add(Object o) {
         int oldSize = size();
         boolean success = delegate.add(o);
@@ -162,10 +164,12 @@ public class ObservableList implements List {
         }
     }
 
+    @Override
     public boolean addAll(Collection c) {
         return addAll(size(), c);
     }
 
+    @Override
     public boolean addAll(int index, Collection c) {
         int oldSize = size();
         boolean success = delegate.addAll(index, c);
@@ -191,6 +195,7 @@ public class ObservableList implements List {
         return success;
     }
 
+    @Override
     public void clear() {
         int oldSize = size();
         List values = new ArrayList(delegate);
@@ -201,10 +206,12 @@ public class ObservableList implements List {
         fireSizeChangedEvent(oldSize, size());
     }
 
+    @Override
     public boolean contains(Object o) {
         return delegate.contains(o);
     }
 
+    @Override
     public boolean containsAll(Collection c) {
         return delegate.containsAll(c);
     }
@@ -213,6 +220,7 @@ public class ObservableList implements List {
         return delegate.equals(o);
     }
 
+    @Override
     public Object get(int index) {
         return delegate.get(index);
     }
@@ -221,30 +229,37 @@ public class ObservableList implements List {
         return delegate.hashCode();
     }
 
+    @Override
     public int indexOf(Object o) {
         return delegate.indexOf(o);
     }
 
+    @Override
     public boolean isEmpty() {
         return delegate.isEmpty();
     }
 
+    @Override
     public Iterator iterator() {
         return new ObservableIterator(delegate.iterator());
     }
 
+    @Override
     public int lastIndexOf(Object o) {
         return delegate.lastIndexOf(o);
     }
 
+    @Override
     public ListIterator listIterator() {
         return new ObservableListIterator(delegate.listIterator(), 0);
     }
 
+    @Override
     public ListIterator listIterator(int index) {
         return new ObservableListIterator(delegate.listIterator(index), index);
     }
 
+    @Override
     public Object remove(int index) {
         int oldSize = size();
         Object element = delegate.remove(index);
@@ -253,6 +268,7 @@ public class ObservableList implements List {
         return element;
     }
 
+    @Override
     public boolean remove(Object o) {
         int oldSize = size();
         int index = delegate.indexOf(o);
@@ -264,6 +280,7 @@ public class ObservableList implements List {
         return success;
     }
 
+    @Override
     public boolean removeAll(Collection c) {
         if (c == null) {
             return false;
@@ -291,6 +308,7 @@ public class ObservableList implements List {
         return success;
     }
 
+    @Override
     public boolean retainAll(Collection c) {
         if (c == null) {
             return false;
@@ -317,6 +335,7 @@ public class ObservableList implements List {
         return success;
     }
 
+    @Override
     public Object set(int index, Object element) {
         Object oldValue = delegate.set(index, element);
         if (test != null) {
@@ -330,6 +349,7 @@ public class ObservableList implements List {
         return oldValue;
     }
 
+    @Override
     public int size() {
         return delegate.size();
     }
@@ -338,14 +358,17 @@ public class ObservableList implements List {
         return size();
     }
 
+    @Override
     public List subList(int fromIndex, int toIndex) {
         return delegate.subList(fromIndex, toIndex);
     }
 
+    @Override
     public Object[] toArray() {
         return delegate.toArray();
     }
 
+    @Override
     public Object[] toArray(Object[] a) {
         return delegate.toArray(a);
     }
@@ -362,15 +385,18 @@ public class ObservableList implements List {
             return iterDelegate;
         }
 
+        @Override
         public boolean hasNext() {
             return iterDelegate.hasNext();
         }
 
+        @Override
         public Object next() {
             cursor++;
             return iterDelegate.next();
         }
 
+        @Override
         public void remove() {
             int oldSize = ObservableList.this.size();
             Object element = ObservableList.this.get(cursor);
@@ -391,27 +417,33 @@ public class ObservableList implements List {
             return (ListIterator) getDelegate();
         }
 
+        @Override
         public void add(Object o) {
             ObservableList.this.add(o);
             cursor++;
         }
 
+        @Override
         public boolean hasPrevious() {
             return getListIterator().hasPrevious();
         }
 
+        @Override
         public int nextIndex() {
             return getListIterator().nextIndex();
         }
 
+        @Override
         public Object previous() {
             return getListIterator().previous();
         }
 
+        @Override
         public int previousIndex() {
             return getListIterator().previousIndex();
         }
 
+        @Override
         public void set(Object o) {
             ObservableList.this.set(cursor, o);
         }

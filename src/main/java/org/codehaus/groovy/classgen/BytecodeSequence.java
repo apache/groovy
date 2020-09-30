@@ -74,6 +74,7 @@ public class BytecodeSequence extends Statement {
      *
      * @see ClassGenerator
      */
+    @Override
     public void visit(final GroovyCodeVisitor visitor) {
         if (visitor instanceof ClassGenerator) {
             ((ClassGenerator) visitor).visitBytecodeSequence(this);

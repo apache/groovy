@@ -203,6 +203,7 @@ public class AntBuilder extends BuilderSupport {
         return project;
     }
 
+    @Override
     protected void setParent(Object parent, Object child) {
     }
 
@@ -212,6 +213,7 @@ public class AntBuilder extends BuilderSupport {
      *
      * @see groovy.util.BuilderSupport#doInvokeMethod(java.lang.String, java.lang.Object, java.lang.Object)
      */
+    @Override
     protected Object doInvokeMethod(String methodName, Object name, Object args) {
         super.doInvokeMethod(methodName, name, args);
 
@@ -230,6 +232,7 @@ public class AntBuilder extends BuilderSupport {
      * @param parent note: null when node is root
      * @param node   the node that now has all its children applied
      */
+    @Override
     @SuppressFBWarnings(value = "DLS_DEAD_LOCAL_STORE", justification = "False positive: bytecode needlessly but harmlessly assigns local to JVM register")
     protected void nodeCompleted(final Object parent, final Object node) {
         if (parent == null) insideTask = false;
@@ -370,16 +373,19 @@ public class AntBuilder extends BuilderSupport {
         }
     }
 
+    @Override
     protected Object createNode(Object tagName) {
         return createNode(tagName, Collections.EMPTY_MAP);
     }
 
+    @Override
     protected Object createNode(Object name, Object value) {
         Object task = createNode(name);
         setText(task, value.toString());
         return task;
     }
 
+    @Override
     protected Object createNode(Object name, Map attributes, Object value) {
         Object task = createNode(name, attributes);
         setText(task, value.toString());
@@ -403,6 +409,7 @@ public class AntBuilder extends BuilderSupport {
         return attr;
     }
 
+    @Override
     protected Object createNode(final Object name, final Map attributes) {
 
         final Attributes attrs = buildAttributes(attributes);
@@ -488,18 +495,22 @@ public class AntBuilder extends BuilderSupport {
  * In a first time, without info
  */
 class AntBuilderLocator implements Locator {
+    @Override
     public int getColumnNumber() {
         return 0;
     }
 
+    @Override
     public int getLineNumber() {
         return 0;
     }
 
+    @Override
     public String getPublicId() {
         return "";
     }
 
+    @Override
     public String getSystemId() {
         return "";
     }

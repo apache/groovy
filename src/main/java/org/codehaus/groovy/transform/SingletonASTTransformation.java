@@ -61,6 +61,7 @@ import static org.objectweb.asm.Opcodes.ACC_VOLATILE;
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class SingletonASTTransformation extends AbstractASTTransformation {
 
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];

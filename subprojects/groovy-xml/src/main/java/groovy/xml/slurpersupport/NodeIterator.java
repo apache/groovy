@@ -37,11 +37,13 @@ public abstract class NodeIterator implements Iterator {
         if (nextNode==DELAYED_INIT) nextNode = getNextNode(iter);
     }
 
+    @Override
     public boolean hasNext() {
         initNextNode();
         return this.nextNode != null;
     }
 
+    @Override
     public Object next() {
         initNextNode();
         try {
@@ -51,6 +53,7 @@ public abstract class NodeIterator implements Iterator {
         }
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }

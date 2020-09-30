@@ -32,6 +32,7 @@ public class Janitor implements HasCleanup {
         pending.add(object);
     }
 
+    @Override
     public void cleanup() {
         for (Object o : pending) {
             HasCleanup object = (HasCleanup) o;

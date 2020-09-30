@@ -278,6 +278,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static ObjectInputStream newObjectInputStream(InputStream inputStream, final ClassLoader classLoader) throws IOException {
         return new ObjectInputStream(inputStream) {
+            @Override
             protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
                 return Class.forName(desc.getName(), true, classLoader);
 
@@ -945,6 +946,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
             boolean nextMustRead = true;
             boolean hasNext = true;
 
+            @Override
             public boolean hasNext() {
                 if (nextMustRead && hasNext) {
                     try {
@@ -957,6 +959,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
                 return hasNext;
             }
 
+            @Override
             public String next() {
                 String retval = null;
                 if (nextMustRead) {
@@ -978,6 +981,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
                 return nv;
             }
 
+            @Override
             public void remove() {
                 throw new UnsupportedOperationException("Cannot remove() from a Reader Iterator");
             }
@@ -1010,6 +1014,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
             boolean nextMustRead = true;
             boolean hasNext = true;
 
+            @Override
             public boolean hasNext() {
                 if (nextMustRead && hasNext) {
                     try {
@@ -1022,6 +1027,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
                 return hasNext;
             }
 
+            @Override
             public Byte next() {
                 Byte retval = null;
                 if (nextMustRead) {
@@ -1036,6 +1042,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
                 return retval;
             }
 
+            @Override
             public void remove() {
                 throw new UnsupportedOperationException("Cannot remove() from a DataInputStream Iterator");
             }
@@ -1491,6 +1498,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Writable filterLine(Reader reader, @ClosureParams(value=SimpleType.class, options="java.lang.String") final Closure closure) {
         final BufferedReader br = new BufferedReader(reader);
         return new Writable() {
+            @Override
             public Writer writeTo(Writer out) throws IOException {
                 BufferedWriter bw = new BufferedWriter(out);
                 String line;

@@ -59,6 +59,7 @@ public class GroovyRuntimeException extends RuntimeException {
         return module;
     }
 
+    @Override
     public String getMessage() {
         String messageWithoutLocationText = getMessageWithoutLocationText();
         String locationText = getLocationText();

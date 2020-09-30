@@ -105,45 +105,53 @@ public class Sequence extends ArrayList implements GroovyObject {
         return type;
     }
 
+    @Override
     public void add(int index, Object element) {
         checkType(element);
         hashCode = 0;
         super.add(index, element);
     }
 
+    @Override
     public boolean add(Object element) {
         checkType(element);
         hashCode = 0;
         return super.add(element);
     }
 
+    @Override
     public boolean addAll(Collection c) {
         checkCollectionType(c);
         hashCode = 0;
         return super.addAll(c);
     }
 
+    @Override
     public boolean addAll(int index, Collection c) {
         checkCollectionType(c);
         hashCode = 0;
         return super.addAll(index, c);
     }
 
+    @Override
     public void clear() {
         hashCode = 0;
         super.clear();
     }
 
+    @Override
     public Object remove(int index) {
         hashCode = 0;
         return super.remove(index);
     }
 
+    @Override
     protected void removeRange(int fromIndex, int toIndex) {
         hashCode = 0;
         super.removeRange(fromIndex, toIndex);
     }
 
+    @Override
     public Object set(int index, Object element) {
         hashCode = 0;
         return super.set(index, element);
@@ -151,6 +159,7 @@ public class Sequence extends ArrayList implements GroovyObject {
 
     // GroovyObject interface
     //-------------------------------------------------------------------------
+    @Override
     public Object invokeMethod(String name, Object args) {
         try {
             return getMetaClass().invokeMethod(this, name, args);
@@ -165,18 +174,22 @@ public class Sequence extends ArrayList implements GroovyObject {
         }
     }
 
+    @Override
     public Object getProperty(String property) {
         return getMetaClass().getProperty(this, property);
     }
 
+    @Override
     public void setProperty(String property, Object newValue) {
         getMetaClass().setProperty(this, property, newValue);
     }
 
+    @Override
     public MetaClass getMetaClass() {
         return metaClass;
     }
 
+    @Override
     public void setMetaClass(MetaClass metaClass) {
         this.metaClass = metaClass;
     }

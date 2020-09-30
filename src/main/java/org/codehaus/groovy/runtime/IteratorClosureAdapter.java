@@ -38,10 +38,12 @@ public class IteratorClosureAdapter<T> extends Closure {
         super(delegate);
     }
 
+    @Override
     public MetaClass getMetaClass() {
         return metaClass;
     }
 
+    @Override
     public void setMetaClass(MetaClass metaClass) {
         this.metaClass = metaClass;
     }

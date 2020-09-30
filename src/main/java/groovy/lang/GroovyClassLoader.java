@@ -109,6 +109,7 @@ public class GroovyClassLoader extends URLClassLoader {
     private static int scriptNameCounter = 1000000;
 
     private GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
+        @Override
         public URL loadGroovySource(final String filename) throws MalformedURLException {
             return AccessController.doPrivileged((PrivilegedAction<URL>) () -> {
                 for (String extension : config.getScriptExtensions()) {
@@ -413,6 +414,7 @@ public class GroovyClassLoader extends URLClassLoader {
         return ret;
     }
 
+    @Override
     protected PermissionCollection getPermissions(CodeSource codeSource) {
         PermissionCollection perms;
         try {
@@ -424,6 +426,7 @@ public class GroovyClassLoader extends URLClassLoader {
             }
 
             ProtectionDomain myDomain = AccessController.doPrivileged(new PrivilegedAction<ProtectionDomain>() {
+                @Override
                 public ProtectionDomain run() {
                     return getClass().getProtectionDomain();
                 }
@@ -689,6 +692,7 @@ public class GroovyClassLoader extends URLClassLoader {
             return createClass(code, classNode);
         }
 
+        @Override
         public void call(ClassVisitor classWriter, ClassNode classNode) {
             onClassNode((ClassWriter) classWriter, classNode);
         }
@@ -761,6 +765,7 @@ public class GroovyClassLoader extends URLClassLoader {
      *
      * @param url the new classpath element
      */
+    @Override
     public void addURL(URL url) {
         super.addURL(url);
     }
@@ -947,6 +952,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @throws ClassNotFoundException     if the class was not found
      * @see java.lang.ClassLoader#loadClass(java.lang.String, boolean)
      */
+    @Override
     protected Class loadClass(final String name, boolean resolve) throws ClassNotFoundException {
         return loadClass(name, true, true, resolve);
     }

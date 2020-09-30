@@ -36,6 +36,7 @@ public abstract class ClassGenerator extends ClassCodeVisitorSupport {
         return innerClasses;
     }
 
+    @Override
     protected SourceUnit getSourceUnit() {
         return null;
     }

@@ -353,6 +353,7 @@ public class TemplateServlet extends AbstractHttpServlet {
      * @throws ServletException if this method encountered difficulties
      * @see TemplateServlet#initTemplateEngine(ServletConfig)
      */
+    @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         this.engine = initTemplateEngine(config);
@@ -408,6 +409,7 @@ public class TemplateServlet extends AbstractHttpServlet {
      * @throws IOException      if an input or output error occurs while the servlet is handling the HTTP request
      * @throws ServletException if the HTTP request cannot be handled
      */
+    @Override
     public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         if (verbose) {
             log("Creating/getting cached template...");

@@ -32,10 +32,12 @@ public class MockOutputTool implements OutputTool {
         output = new LinkedHashMap();
     }
     
+    @Override
     public void makeOutputArea(String filename) {
         outputAreas.add(filename);
     }
 
+    @Override
     public void writeToOutput(String fileName, String text, String charset) throws Exception {
         output.put(fileName, text);
     }

@@ -51,10 +51,12 @@ public class MethodPointerExpression extends Expression {
         return methodName;
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitMethodPointerExpression(this);
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret;
         Expression mname = transformer.transform(methodName);
@@ -68,6 +70,7 @@ public class MethodPointerExpression extends Expression {
         return ret;
     }
 
+    @Override
     public String getText() {
         if (expression == null) {
             return "&" + methodName;

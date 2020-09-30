@@ -1764,10 +1764,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             advance();
         }
 
+        @Override
         public boolean hasNext() {
             return !exhausted;
         }
 
+        @Override
         public E next() {
             if (exhausted) throw new NoSuchElementException();
             E result = next;
@@ -1775,6 +1777,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return result;
         }
 
+        @Override
         public void remove() {
             if (exhausted) throw new NoSuchElementException();
             delegate.remove();
@@ -8695,15 +8698,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.index = offset;
         }
 
+        @Override
         public boolean hasNext() {
             return delegate.hasNext();
         }
 
+        @Override
         public Tuple2<E, Integer> next() {
             if (!hasNext()) throw new NoSuchElementException();
             return new Tuple2<>(delegate.next(), index++);
         }
 
+        @Override
         public void remove() {
             delegate.remove();
         }
@@ -8718,15 +8724,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.index = offset;
         }
 
+        @Override
         public boolean hasNext() {
             return delegate.hasNext();
         }
 
+        @Override
         public Tuple2<Integer, E> next() {
             if (!hasNext()) throw new NoSuchElementException();
             return new Tuple2<>(index++, delegate.next());
         }
 
+        @Override
         public void remove() {
             delegate.remove();
         }
@@ -9968,10 +9977,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             advance();
         }
 
+        @Override
         public boolean hasNext() {
             return !exhausted;
         }
 
+        @Override
         public E next() {
             if (exhausted) throw new NoSuchElementException();
             E result = next;
@@ -9979,6 +9990,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return result;
         }
 
+        @Override
         public void remove() {
             if (exhausted) throw new NoSuchElementException();
             advance();
@@ -10209,16 +10221,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.num = num;
         }
 
+        @Override
         public boolean hasNext() {
             return num > 0 && delegate.hasNext();
         }
 
+        @Override
         public E next() {
             if (num <= 0) throw new NoSuchElementException();
             num--;
             return delegate.next();
         }
 
+        @Override
         public void remove() {
             delegate.remove();
         }
@@ -10617,10 +10632,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             advance();
         }
 
+        @Override
         public boolean hasNext() {
             return !exhausted;
         }
 
+        @Override
         public E next() {
             if (exhausted) throw new NoSuchElementException();
             E result = discards.removeFirst();
@@ -10628,6 +10645,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return result;
         }
 
+        @Override
         public void remove() {
             if (exhausted) throw new NoSuchElementException();
             delegate.remove();
@@ -10854,10 +10872,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             advance();
         }
 
+        @Override
         public boolean hasNext() {
             return !exhausted;
         }
 
+        @Override
         public E next() {
             if (exhausted) throw new NoSuchElementException();
             E result = next;
@@ -10865,6 +10885,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return result;
         }
 
+        @Override
         public void remove() {
             if (exhausted) throw new NoSuchElementException();
             delegate.remove();
@@ -11062,10 +11083,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             prepare();
         }
 
+        @Override
         public boolean hasNext() {
             return buffering || delegate.hasNext();
         }
 
+        @Override
         public E next() {
             if (buffering) {
                 E result = buffer;
@@ -11077,6 +11100,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
 
+        @Override
         public void remove() {
             if (buffering) {
                 buffering = false;
@@ -16569,6 +16593,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static TimerTask runAfter(Timer timer, int delay, final Closure closure) {
         TimerTask timerTask = new TimerTask() {
+            @Override
             public void run() {
                 closure.call();
             }
@@ -17410,14 +17435,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Iterator<T> iterator(final Enumeration<T> enumeration) {
         return new Iterator<T>() {
+            @Override
             public boolean hasNext() {
                 return enumeration.hasMoreElements();
             }
 
+            @Override
             public T next() {
                 return enumeration.nextElement();
             }
 
+            @Override
             public void remove() {
                 throw new UnsupportedOperationException("Cannot remove() from an Enumeration");
             }

@@ -80,6 +80,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
      *
      * @see groovy.lang.Writable#writeTo(java.io.Writer)
      */
+    @Override
     public Writer writeTo(Writer outArg) throws IOException {
         BufferedWriter out = new BufferedWriter(outArg);
         try {
@@ -96,6 +97,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
      * Overrides the default getProperty implementation to create nested ConfigObject instances on demand
      * for non-existent keys
      */
+    @Override
     public Object getProperty(String name) {
         if ("configFile".equals(name))
             return this.configFile;
@@ -309,50 +311,62 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
         }
     }
 
+    @Override
     public int size() {
         return delegateMap.size();
     }
 
+    @Override
     public boolean isEmpty() {
         return delegateMap.isEmpty();
     }
 
+    @Override
     public boolean containsKey(Object key) {
         return delegateMap.containsKey(key);
     }
 
+    @Override
     public boolean containsValue(Object value) {
         return delegateMap.containsValue(value);
     }
 
+    @Override
     public Object get(Object key) {
         return delegateMap.get(key);
     }
 
+    @Override
     public Object put(Object key, Object value) {
         return delegateMap.put(key, value);
     }
 
+    @Override
     public Object remove(Object key) {
         return delegateMap.remove(key);
     }
 
+    @Override
     public void putAll(Map m) {
         delegateMap.putAll(m);
     }
 
+    @Override
     public void clear() {
         delegateMap.clear();
     }
 
+    @Override
     public Set keySet() {
         return delegateMap.keySet();
     }
 
+    @Override
     public Collection values() {
         return delegateMap.values();
     }
 
+    @Override
     public Set entrySet() {
         return delegateMap.entrySet();
     }
@@ -361,6 +375,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
      * Returns a shallow copy of this ConfigObject, keys and configuration entries are not cloned.
      * @return a shallow copy of this ConfigObject
      */
+    @Override
     public ConfigObject clone() {
         try {
             ConfigObject clone = (ConfigObject) super.clone();

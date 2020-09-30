@@ -128,6 +128,7 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
             this.loader = loader;
         }
 
+        @Override
         public boolean hasNext() {
             if (nextName != null) {
                 return true;
@@ -153,6 +154,7 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
             return true;
         }
 
+        @Override
         public S next() {
             if (!hasNext()) {
                 throw new NoSuchElementException();
@@ -171,29 +173,34 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
             throw new Error();          // This cannot happen
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
 
     }
 
+    @Override
     public Iterator<S> iterator() {
         return new Iterator<S>() {
 
             Iterator<Map.Entry<String, S>> knownProviders = providers.entrySet().iterator();
 
+            @Override
             public boolean hasNext() {
                 if (knownProviders.hasNext())
                     return true;
                 return lookupIterator.hasNext();
             }
 
+            @Override
             public S next() {
                 if (knownProviders.hasNext())
                     return knownProviders.next().getValue();
                 return lookupIterator.next();
             }
 
+            @Override
             public void remove() {
                 throw new UnsupportedOperationException();
             }

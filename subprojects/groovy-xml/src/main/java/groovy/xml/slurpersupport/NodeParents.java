@@ -34,11 +34,13 @@ public class NodeParents extends NodeChildren {
         super(parent, parent.parent.name, namespaceTagHints);
     }
 
+    @Override
     public Iterator nodeIterator() {
         return new NodeIterator(this.parent.nodeIterator()) {
             
             private Node prev = null;
             
+            @Override
             protected Object getNextNode(final Iterator iter) {
                 while (iter.hasNext()) {
                     final Node node = ((Node)iter.next()).parent();

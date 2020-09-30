@@ -219,6 +219,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @param name the name of the variable to lookup
      * @return the variable value
      */
+    @Override
     public Object getVariable(String name) {
         try {
             return getProxyBuilder().doGetVariable(name);
@@ -240,6 +241,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @param name  the name of the variable to set
      * @param value the new value for the given variable
      */
+    @Override
     public void setVariable(String name, Object value) {
         getProxyBuilder().doSetVariable(name, value);
     }
@@ -248,6 +250,7 @@ public abstract class FactoryBuilderSupport extends Binding {
         super.setVariable(name, value);
     }
 
+    @Override
     public Map getVariables() {
         return getProxyBuilder().doGetVariables();
     }
@@ -259,6 +262,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     /**
      * Overloaded to make variables appear as bean properties or via the subscript operator
      */
+    @Override
     public Object getProperty(String property) {
         try {
             return getProxyBuilder().doGetProperty(property);
@@ -295,6 +299,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     /**
      * Overloaded to make variables appear as bean properties or via the subscript operator
      */
+    @Override
     public void setProperty(String property, Object newValue) {
         getProxyBuilder().doSetProperty(property, newValue);
     }
@@ -489,6 +494,7 @@ public abstract class FactoryBuilderSupport extends Binding {
         return getProxyBuilder().invokeMethod(methodName, null);
     }
 
+    @Override
     public Object invokeMethod(String methodName, Object args) {
         Object name = getProxyBuilder().getName(methodName);
         Object result;
@@ -647,6 +653,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      */
     public void registerBeanFactory(String theName, String groupName, final Class beanClass) {
         getProxyBuilder().registerFactory(theName, new AbstractFactory() {
+            @Override
             public Object newInstance(FactoryBuilderSupport builder, Object name, Object value,
                                       Map properties) throws InstantiationException, IllegalAccessException {
                 if (checkValueIsTypeNotString(value, name, beanClass)) {
@@ -1297,6 +1304,7 @@ class FactoryInterceptorMetaClass extends DelegatingMetaClass {
         this.builder = builder;
     }
 
+    @Override
     public Object invokeMethod(Object object, String methodName, Object arguments) {
         try {
             return delegate.invokeMethod(object, methodName, arguments);
@@ -1322,6 +1330,7 @@ class FactoryInterceptorMetaClass extends DelegatingMetaClass {
         }
     }
 
+    @Override
     public Object invokeMethod(Object object, String methodName, Object[] arguments) {
         try {
             return delegate.invokeMethod(object, methodName, arguments);

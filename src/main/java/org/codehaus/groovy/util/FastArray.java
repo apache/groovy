@@ -120,10 +120,12 @@ public class FastArray implements Cloneable, Serializable {
         }
         return new AbstractList() {
 
+            @Override
             public Object get(int index) {
                 return FastArray.this.get(index);
             }
 
+            @Override
             public int size() {
                 return size;
             }

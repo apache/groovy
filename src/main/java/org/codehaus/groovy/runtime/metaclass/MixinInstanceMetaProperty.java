@@ -42,22 +42,27 @@ public class MixinInstanceMetaProperty extends MetaBeanProperty {
               setParametersTypes (new CachedClass [] {ReflectionCache.getCachedClass(property.getType())} );
           }
 
+          @Override
           public int getModifiers() {
               return Modifier.PUBLIC;
           }
 
+          @Override
           public String getName() {
               return name;
           }
 
+          @Override
           public Class getReturnType() {
               return property.getType();
           }
 
+          @Override
           public CachedClass getDeclaringClass() {
               return mixinInMetaClass.getInstanceClass();
           }
 
+          @Override
           public Object invoke(Object object, Object[] arguments) {
               property.setProperty(mixinInMetaClass.getMixinInstance(object), arguments[0]);
               return null;
@@ -72,22 +77,27 @@ public class MixinInstanceMetaProperty extends MetaBeanProperty {
                 setParametersTypes (CachedClass.EMPTY_ARRAY);
             }
 
+            @Override
             public int getModifiers() {
                 return Modifier.PUBLIC;
             }
 
+            @Override
             public String getName() {
                 return name;
             }
 
+            @Override
             public Class getReturnType() {
                 return property.getType();
             }
 
+            @Override
             public CachedClass getDeclaringClass() {
                 return mixinInMetaClass.getInstanceClass();
             }
 
+            @Override
             public Object invoke(Object object, Object[] arguments) {
                 return property.getProperty(mixinInMetaClass.getMixinInstance(object));
             }

@@ -57,6 +57,7 @@ public class JavacJavaCompiler implements JavaCompiler {
         this.charset = Charset.forName(config.getSourceEncoding());
     }
 
+    @Override
     public void compile(List<String> files, CompilationUnit cu) {
         List<String> javacParameters = makeParameters(cu.getClassLoader());
         StringBuilderWriter javacOutput = new StringBuilderWriter();

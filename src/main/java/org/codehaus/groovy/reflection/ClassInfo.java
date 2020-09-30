@@ -433,6 +433,7 @@ public class ClassInfo implements Finalizable {
             this.info = info;
         }
 
+        @Override
         public CachedClass initValue() {
             return createCachedClass(info.classRef.get(), info);
         }
@@ -447,6 +448,7 @@ public class ClassInfo implements Finalizable {
             this.info = info;
         }
 
+        @Override
         public ClassLoaderForClassArtifacts initValue() {
             return AccessController.doPrivileged((PrivilegedAction<ClassLoaderForClassArtifacts>) () -> new ClassLoaderForClassArtifacts(info.classRef.get()));
         }

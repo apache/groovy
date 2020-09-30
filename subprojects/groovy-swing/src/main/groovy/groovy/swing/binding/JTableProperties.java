@@ -40,18 +40,21 @@ public class JTableProperties {
         Map<String, TriggerBinding> result = new HashMap<String, TriggerBinding>();
         result.put(JTable.class.getName() + "#elements",
                 new TriggerBinding() {
+                    @Override
                     public FullBinding createBinding(SourceBinding source, TargetBinding target) {
                         return new JTableElementsBinding((PropertyBinding) source, target);
                     }
                 });
         result.put(JTable.class.getName() + "#selectedElement",
                 new TriggerBinding() {
+                    @Override
                     public FullBinding createBinding(SourceBinding source, TargetBinding target) {
                         return new JTableSelectedElementBinding((PropertyBinding) source, target, "selectedElement");
                     }
                 });
         result.put(JTable.class.getName() + "#selectedElements",
                 new TriggerBinding() {
+                    @Override
                     public FullBinding createBinding(SourceBinding source, TargetBinding target) {
                         return new JTableSelectedElementBinding((PropertyBinding) source, target, "selectedElements");
                     }
@@ -67,21 +70,25 @@ class JTableElementsBinding extends AbstractSyntheticBinding implements TableMod
         super(propertyBinding, target, JTable.class, "elements");
     }
 
+    @Override
     protected void syntheticBind() {
         boundTable = (JTable) ((PropertyBinding)sourceBinding).getBean();
         boundTable.addPropertyChangeListener("model", this);
         boundTable.getModel().addTableModelListener(this);
     }
 
+    @Override
     protected void syntheticUnbind() {
         boundTable.removePropertyChangeListener("model", this);
         boundTable.getModel().removeTableModelListener(this);
     }
 
+    @Override
     public void tableChanged(TableModelEvent e) {
         update();
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent event) {
         update();
         ((TableModel) event.getOldValue()).removeTableModelListener(this);
@@ -96,24 +103,28 @@ class JTableSelectedElementBinding extends AbstractSyntheticBinding implements P
         super(source, target, JTable.class, propertyName);
     }
 
+    @Override
     public synchronized void syntheticBind() {
         boundTable = (JTable) ((PropertyBinding)sourceBinding).getBean();
         boundTable.addPropertyChangeListener("selectionModel", this);
         boundTable.getSelectionModel().addListSelectionListener(this);
     }
 
+    @Override
     public synchronized void syntheticUnbind() {
         boundTable.removePropertyChangeListener("selectionModel", this);
         boundTable.getSelectionModel().removeListSelectionListener(this);
         boundTable = null;
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent event) {
         update();
         ((ListSelectionModel) event.getOldValue()).removeListSelectionListener(this);
         ((ListSelectionModel) event.getNewValue()).addListSelectionListener(this);
     }
 
+    @Override
     public void valueChanged(ListSelectionEvent e) {
         update();
     }

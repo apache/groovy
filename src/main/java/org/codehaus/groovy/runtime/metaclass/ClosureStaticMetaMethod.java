@@ -55,24 +55,29 @@ public class ClosureStaticMetaMethod extends MetaMethod implements ClosureInvoki
         this.name = name;
     }
     
+    @Override
     public Object invoke(Object object, Object[] arguments) {
         Closure cloned = (Closure) callable.clone();
         cloned.setDelegate(object);
         return cloned.call(arguments);
     }
 
+    @Override
     public int getModifiers() {
         return Modifier.PUBLIC | Modifier.STATIC;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public Class getReturnType() {
         return Object.class;
     }
 
+    @Override
     public CachedClass getDeclaringClass() {
         return this.declaringClass;
     }
@@ -82,6 +87,7 @@ public class ClosureStaticMetaMethod extends MetaMethod implements ClosureInvoki
      *
      * @return The closure
      */
+    @Override
     public Closure getClosure() {
         return this.callable;
     }

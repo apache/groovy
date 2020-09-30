@@ -64,6 +64,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         return MY_TYPE_NAME;
     }
 
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];

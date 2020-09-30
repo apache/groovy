@@ -133,6 +133,7 @@ public class MessageSource
     /**
      * @see #getMessage(String)
      */
+    @Override
     public Object getProperty(final String name) {
         return getMessage(name);
     }

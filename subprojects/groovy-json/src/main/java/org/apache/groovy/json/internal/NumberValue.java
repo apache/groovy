@@ -85,10 +85,12 @@ public class NumberValue extends java.lang.Number implements Value {
         }
     }
 
+    @Override
     public final Object toValue() {
         return value != null ? value : (value = doToValue());
     }
 
+    @Override
     public <T extends Enum> T toEnum(Class<T> cls) {
         return toEnum(cls, intValue());
     }
@@ -104,6 +106,7 @@ public class NumberValue extends java.lang.Number implements Value {
         return null;
     }
 
+    @Override
     public boolean isContainer() {
         return false;
     }
@@ -146,6 +149,7 @@ public class NumberValue extends java.lang.Number implements Value {
         return result;
     }
 
+    @Override
     public BigDecimal bigDecimalValue() {
         try {
             return new BigDecimal(buffer, startIndex, endIndex - startIndex);
@@ -154,26 +158,32 @@ public class NumberValue extends java.lang.Number implements Value {
         }
     }
 
+    @Override
     public BigInteger bigIntegerValue() {
         return new BigInteger(toString());
     }
 
+    @Override
     public String stringValue() {
         return toString();
     }
 
+    @Override
     public String stringValueEncoded() {
         return toString();
     }
 
+    @Override
     public Date dateValue() {
         return new Date(Dates.utc(longValue()));
     }
 
+    @Override
     public int intValue() {
         return parseIntFromTo(buffer, startIndex, endIndex);
     }
 
+    @Override
     public long longValue() {
         if (isInteger(buffer, startIndex, endIndex - startIndex)) {
             return parseIntFromTo(buffer, startIndex, endIndex);
@@ -182,26 +192,32 @@ public class NumberValue extends java.lang.Number implements Value {
         }
     }
 
+    @Override
     public byte byteValue() {
         return (byte) intValue();
     }
 
+    @Override
     public short shortValue() {
         return (short) intValue();
     }
 
+    @Override
     public double doubleValue() {
         return parseDouble(this.buffer, startIndex, endIndex);
     }
 
+    @Override
     public boolean booleanValue() {
         return parseBoolean(toString());
     }
 
+    @Override
     public float floatValue() {
         return parseFloat(this.buffer, startIndex, endIndex);
     }
 
+    @Override
     public final void chop() {
         if (!chopped) {
             this.chopped = true;
@@ -211,6 +227,7 @@ public class NumberValue extends java.lang.Number implements Value {
         }
     }
 
+    @Override
     public char charValue() {
         return buffer[startIndex];
     }

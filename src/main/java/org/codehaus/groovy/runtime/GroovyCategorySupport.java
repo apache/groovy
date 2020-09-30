@@ -63,6 +63,7 @@ public class GroovyCategorySupport {
             }
         }
 
+        @Override
         public boolean add(CategoryMethod o) {
             usage.incrementAndGet();
             return super.add(o);
@@ -223,6 +224,7 @@ public class GroovyCategorySupport {
             this.metaClass = metaClass;
         }
 
+        @Override
         public boolean isCacheable() { return false; }
 
         /**
@@ -230,6 +232,7 @@ public class GroovyCategorySupport {
          *
          * @param o the object to compare against
          */
+        @Override
         public int compareTo(Object o) {
             CategoryMethod thatMethod = (CategoryMethod) o;
             Class thisClass = metaClass;

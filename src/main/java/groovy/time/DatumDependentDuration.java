@@ -35,10 +35,12 @@ public class DatumDependentDuration extends BaseDuration {
         super(years, months, days, hours, minutes, seconds, millis);
     }
 
+    @Override
     public int getMonths() {
         return this.months;
     }
 
+    @Override
     public int getYears() {
         return this.years;
     }
@@ -90,11 +92,13 @@ public class DatumDependentDuration extends BaseDuration {
      * things like timezone and time of year will affect how this conversion 
      * occurs.
      */
+    @Override
     public long toMilliseconds() {
         final Date now = new Date();
         return TimeCategory.minus(plus(now), now).toMilliseconds();
     }
 
+    @Override
     public Date getAgo() {
         final Calendar cal = Calendar.getInstance();
 
@@ -114,8 +118,10 @@ public class DatumDependentDuration extends BaseDuration {
         return new Date(cal.getTimeInMillis());
     }
 
+    @Override
     public From getFrom() {
         return new From() {
+            @Override
             public Date getNow() {
                 final Calendar cal = Calendar.getInstance();
 

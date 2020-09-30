@@ -46,6 +46,7 @@ public class InputStreamReaderSource extends AbstractReaderSource {
     /**
      * Returns a new Reader on the underlying source object.
      */
+    @Override
     public Reader getReader() throws IOException {
         if (stream != null) {
             Reader reader = new InputStreamReader(stream, configuration.getSourceEncoding());
@@ -59,6 +60,7 @@ public class InputStreamReaderSource extends AbstractReaderSource {
      * Returns true if the source can be restarted (ie. if getReader()
      * will return non-null on subsequent calls.
      */
+    @Override
     public boolean canReopenSource() {
         return false;
     }
@@ -68,6 +70,7 @@ public class InputStreamReaderSource extends AbstractReaderSource {
      *
      * @return null
      */
+    @Override
     public URI getURI() {
         return null;
     }

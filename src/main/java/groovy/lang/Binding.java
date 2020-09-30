@@ -107,6 +107,7 @@ public class Binding extends GroovyObjectSupport {
     /**
      * Overloaded to make variables appear as bean properties or via the subscript operator
      */
+    @Override
     public Object getProperty(String property) {
         /** @todo we should check if we have the property with the metaClass instead of try/catch  */
         try {
@@ -120,6 +121,7 @@ public class Binding extends GroovyObjectSupport {
     /**
      * Overloaded to make variables appear as bean properties or via the subscript operator
      */
+    @Override
     public void setProperty(String property, Object newValue) {
         /** @todo we should check if we have the property with the metaClass instead of try/catch  */
         try {

@@ -34,14 +34,17 @@ public class SimpleGroovyTag implements GroovyTag {
         this.text = text;
     }
 
+    @Override
     public String name() {
         return name;
     }
 
+    @Override
     public String param() {
         return param;
     }
 
+    @Override
     public String text() {
         return text;
     }

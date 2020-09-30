@@ -54,6 +54,7 @@ public class MapEntry implements Map.Entry {
         return "" + key + ":" + value;
     }
 
+    @Override
     public Object getKey() {
         return key;
     }
@@ -62,10 +63,12 @@ public class MapEntry implements Map.Entry {
         this.key = key;
     }
 
+    @Override
     public Object getValue() {
         return value;
     }
 
+    @Override
     public Object setValue(Object value) {
         this.value = value;
         return value;

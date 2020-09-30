@@ -99,6 +99,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
     private static final ClassNode OIS_TYPE = make(ObjectInputStream.class);
     private static final ClassNode INVOKER_TYPE = make(InvokerHelper.class);
 
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];

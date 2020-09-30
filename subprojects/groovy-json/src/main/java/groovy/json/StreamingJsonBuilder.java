@@ -452,6 +452,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
      * @param name the single key
      * @param args the value associated with the key
      */
+    @Override
     public Object invokeMethod(String name, Object args) {
         boolean notExpectedArgs = false;
         if (args != null && Object[].class.isAssignableFrom(args.getClass())) {
@@ -540,6 +541,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             return writer;
         }
 
+        @Override
         public Object invokeMethod(String name, Object args) {
             if (args != null && Object[].class.isAssignableFrom(args.getClass())) {
                 try {

@@ -42,6 +42,7 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
         annotationRefs = new ArrayList<GroovyAnnotationRef>();
     }
 
+    @Override
     public GroovyPackageDoc containingPackage() {
         return packageDoc;
     }
@@ -54,6 +55,7 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
         staticElement = b;
     }
 
+    @Override
     public boolean isStatic() {
         return staticElement;
     }
@@ -62,6 +64,7 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
         this.finalElement = b;
     }
 
+    @Override
     public boolean isFinal() {
         return finalElement;
     }
@@ -70,6 +73,7 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
         publicScope = b;
     }
 
+    @Override
     public boolean isPublic() {
         return publicScope;
     }
@@ -78,6 +82,7 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
         protectedScope = b;
     }
 
+    @Override
     public boolean isProtected() {
         return protectedScope;
     }
@@ -86,6 +91,7 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
         packagePrivateScope = b;
     }
 
+    @Override
     public boolean isPackagePrivate() {
         return packagePrivateScope;
     }
@@ -94,10 +100,12 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
         privateScope = b;
     }
 
+    @Override
     public boolean isPrivate() {
         return privateScope;
     }
 
+    @Override
     public GroovyAnnotationRef[] annotations() {
         return annotationRefs.toArray(EMPTY_GROOVYANNOTATIONREF_ARRAY);
     }
@@ -106,11 +114,15 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
         annotationRefs.add(ref);
     }
 
+    @Override
     public GroovyClassDoc containingClass() {/*todo*/return null;}
 
+    @Override
     public String modifiers() {/*todo*/return null;}
 
+    @Override
     public int modifierSpecifier() {/*todo*/return 0;}
 
+    @Override
     public String qualifiedName() {/*todo*/return null;}
 }

@@ -748,36 +748,66 @@ public class Sql implements AutoCloseable {
         }
     }
 
-    public static final OutParameter ARRAY         = new OutParameter(){ public int getType() { return Types.ARRAY; }};
-    public static final OutParameter BIGINT        = new OutParameter(){ public int getType() { return Types.BIGINT; }};
-    public static final OutParameter BINARY        = new OutParameter(){ public int getType() { return Types.BINARY; }};
-    public static final OutParameter BIT           = new OutParameter(){ public int getType() { return Types.BIT; }};
-    public static final OutParameter BLOB          = new OutParameter(){ public int getType() { return Types.BLOB; }};
-    public static final OutParameter BOOLEAN       = new OutParameter(){ public int getType() { return Types.BOOLEAN; }};
-    public static final OutParameter CHAR          = new OutParameter(){ public int getType() { return Types.CHAR; }};
-    public static final OutParameter CLOB          = new OutParameter(){ public int getType() { return Types.CLOB; }};
-    public static final OutParameter DATALINK      = new OutParameter(){ public int getType() { return Types.DATALINK; }};
-    public static final OutParameter DATE          = new OutParameter(){ public int getType() { return Types.DATE; }};
-    public static final OutParameter DECIMAL       = new OutParameter(){ public int getType() { return Types.DECIMAL; }};
-    public static final OutParameter DISTINCT      = new OutParameter(){ public int getType() { return Types.DISTINCT; }};
-    public static final OutParameter DOUBLE        = new OutParameter(){ public int getType() { return Types.DOUBLE; }};
-    public static final OutParameter FLOAT         = new OutParameter(){ public int getType() { return Types.FLOAT; }};
-    public static final OutParameter INTEGER       = new OutParameter(){ public int getType() { return Types.INTEGER; }};
-    public static final OutParameter JAVA_OBJECT   = new OutParameter(){ public int getType() { return Types.JAVA_OBJECT; }};
-    public static final OutParameter LONGVARBINARY = new OutParameter(){ public int getType() { return Types.LONGVARBINARY; }};
-    public static final OutParameter LONGVARCHAR   = new OutParameter(){ public int getType() { return Types.LONGVARCHAR; }};
-    public static final OutParameter NULL          = new OutParameter(){ public int getType() { return Types.NULL; }};
-    public static final OutParameter NUMERIC       = new OutParameter(){ public int getType() { return Types.NUMERIC; }};
-    public static final OutParameter OTHER         = new OutParameter(){ public int getType() { return Types.OTHER; }};
-    public static final OutParameter REAL          = new OutParameter(){ public int getType() { return Types.REAL; }};
-    public static final OutParameter REF           = new OutParameter(){ public int getType() { return Types.REF; }};
-    public static final OutParameter SMALLINT      = new OutParameter(){ public int getType() { return Types.SMALLINT; }};
-    public static final OutParameter STRUCT        = new OutParameter(){ public int getType() { return Types.STRUCT; }};
-    public static final OutParameter TIME          = new OutParameter(){ public int getType() { return Types.TIME; }};
-    public static final OutParameter TIMESTAMP     = new OutParameter(){ public int getType() { return Types.TIMESTAMP; }};
-    public static final OutParameter TINYINT       = new OutParameter(){ public int getType() { return Types.TINYINT; }};
-    public static final OutParameter VARBINARY     = new OutParameter(){ public int getType() { return Types.VARBINARY; }};
-    public static final OutParameter VARCHAR       = new OutParameter(){ public int getType() { return Types.VARCHAR; }};
+    public static final OutParameter ARRAY         = new OutParameter(){ @Override
+    public int getType() { return Types.ARRAY; }};
+    public static final OutParameter BIGINT        = new OutParameter(){ @Override
+    public int getType() { return Types.BIGINT; }};
+    public static final OutParameter BINARY        = new OutParameter(){ @Override
+    public int getType() { return Types.BINARY; }};
+    public static final OutParameter BIT           = new OutParameter(){ @Override
+    public int getType() { return Types.BIT; }};
+    public static final OutParameter BLOB          = new OutParameter(){ @Override
+    public int getType() { return Types.BLOB; }};
+    public static final OutParameter BOOLEAN       = new OutParameter(){ @Override
+    public int getType() { return Types.BOOLEAN; }};
+    public static final OutParameter CHAR          = new OutParameter(){ @Override
+    public int getType() { return Types.CHAR; }};
+    public static final OutParameter CLOB          = new OutParameter(){ @Override
+    public int getType() { return Types.CLOB; }};
+    public static final OutParameter DATALINK      = new OutParameter(){ @Override
+    public int getType() { return Types.DATALINK; }};
+    public static final OutParameter DATE          = new OutParameter(){ @Override
+    public int getType() { return Types.DATE; }};
+    public static final OutParameter DECIMAL       = new OutParameter(){ @Override
+    public int getType() { return Types.DECIMAL; }};
+    public static final OutParameter DISTINCT      = new OutParameter(){ @Override
+    public int getType() { return Types.DISTINCT; }};
+    public static final OutParameter DOUBLE        = new OutParameter(){ @Override
+    public int getType() { return Types.DOUBLE; }};
+    public static final OutParameter FLOAT         = new OutParameter(){ @Override
+    public int getType() { return Types.FLOAT; }};
+    public static final OutParameter INTEGER       = new OutParameter(){ @Override
+    public int getType() { return Types.INTEGER; }};
+    public static final OutParameter JAVA_OBJECT   = new OutParameter(){ @Override
+    public int getType() { return Types.JAVA_OBJECT; }};
+    public static final OutParameter LONGVARBINARY = new OutParameter(){ @Override
+    public int getType() { return Types.LONGVARBINARY; }};
+    public static final OutParameter LONGVARCHAR   = new OutParameter(){ @Override
+    public int getType() { return Types.LONGVARCHAR; }};
+    public static final OutParameter NULL          = new OutParameter(){ @Override
+    public int getType() { return Types.NULL; }};
+    public static final OutParameter NUMERIC       = new OutParameter(){ @Override
+    public int getType() { return Types.NUMERIC; }};
+    public static final OutParameter OTHER         = new OutParameter(){ @Override
+    public int getType() { return Types.OTHER; }};
+    public static final OutParameter REAL          = new OutParameter(){ @Override
+    public int getType() { return Types.REAL; }};
+    public static final OutParameter REF           = new OutParameter(){ @Override
+    public int getType() { return Types.REF; }};
+    public static final OutParameter SMALLINT      = new OutParameter(){ @Override
+    public int getType() { return Types.SMALLINT; }};
+    public static final OutParameter STRUCT        = new OutParameter(){ @Override
+    public int getType() { return Types.STRUCT; }};
+    public static final OutParameter TIME          = new OutParameter(){ @Override
+    public int getType() { return Types.TIME; }};
+    public static final OutParameter TIMESTAMP     = new OutParameter(){ @Override
+    public int getType() { return Types.TIMESTAMP; }};
+    public static final OutParameter TINYINT       = new OutParameter(){ @Override
+    public int getType() { return Types.TINYINT; }};
+    public static final OutParameter VARBINARY     = new OutParameter(){ @Override
+    public int getType() { return Types.VARBINARY; }};
+    public static final OutParameter VARCHAR       = new OutParameter(){ @Override
+    public int getType() { return Types.VARCHAR; }};
 
     public static InParameter ARRAY(Object value) { return in(Types.ARRAY, value); }
     public static InParameter BIGINT(Object value) { return in(Types.BIGINT, value); }
@@ -823,10 +853,12 @@ public class Sql implements AutoCloseable {
      */
     public static InParameter in(final int type, final Object value) {
         return new InParameter() {
+            @Override
             public int getType() {
                 return type;
             }
 
+            @Override
             public Object getValue() {
                 return value;
             }
@@ -841,6 +873,7 @@ public class Sql implements AutoCloseable {
      */
     public static OutParameter out(final int type) {
         return new OutParameter() {
+            @Override
             public int getType() {
                 return type;
             }
@@ -855,10 +888,12 @@ public class Sql implements AutoCloseable {
      */
     public static InOutParameter inout(final InParameter in) {
         return new InOutParameter() {
+            @Override
             public int getType() {
                 return in.getType();
             }
 
+            @Override
             public Object getValue() {
                 return in.getValue();
             }
@@ -873,6 +908,7 @@ public class Sql implements AutoCloseable {
      */
     public static ResultSetOutParameter resultSet(final int type) {
         return new ResultSetOutParameter() {
+            @Override
             public int getType() {
                 return type;
             }
@@ -901,6 +937,7 @@ public class Sql implements AutoCloseable {
      */
     public static ExpandedVariable expand(final Object object) {
         return new ExpandedVariable() {
+            @Override
             public Object getObject() {
                 return object;
             }
@@ -4239,6 +4276,7 @@ public class Sql implements AutoCloseable {
             Connection con;
             try {
                 con = AccessController.doPrivileged(new PrivilegedExceptionAction<Connection>() {
+                    @Override
                     public Connection run() throws SQLException {
                         return dataSource.getConnection();
                     }

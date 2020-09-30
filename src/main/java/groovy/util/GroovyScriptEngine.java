@@ -358,6 +358,7 @@ public class GroovyScriptEngine implements ResourceConnector {
      * @return a URLConnection to the resource
      * @throws ResourceException
      */
+    @Override
     public URLConnection getResourceConnection(String resourceName) throws ResourceException {
         // Get the URLConnection
         URLConnection groovyScriptConn = null;

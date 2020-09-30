@@ -34,10 +34,12 @@ public class ScriptTestAdapter implements Test {
         this.arguments = arguments;
     }
 
+    @Override
     public int countTestCases() {
         return 1;
     }
 
+    @Override
     public void run(TestResult result) {
         try {
             result.startTest(this);

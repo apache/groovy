@@ -23,6 +23,7 @@ import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 
 public class StaticTypesWriterControllerFactoryImpl implements WriterControllerFactory {
 
+    @Override
     public WriterController makeController(WriterController normalController) {
         return new StaticTypesWriterController(normalController);
     }

@@ -40,6 +40,7 @@ public class GroovycTask
         this.force = flag;
     }
 
+    @Override
     protected void compile() {
         Path path = getClasspath();
         if (path != null) {

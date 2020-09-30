@@ -200,6 +200,7 @@ public class Java8 implements VMPlugin {
         return params;
     }
 
+    @Override
     public void setAdditionalClassInformation(ClassNode cn) {
         setGenericsTypes(cn);
     }
@@ -297,6 +298,7 @@ public class Java8 implements VMPlugin {
         return gts;
     }
 
+    @Override
     public Class<?>[] getPluginStaticGroovyMethods() {
         return EMPTY_CLASS_ARRAY;
     }
@@ -309,6 +311,7 @@ public class Java8 implements VMPlugin {
         }
     }
 
+    @Override
     public void configureAnnotationNodeFromDefinition(AnnotationNode definition, AnnotationNode root) {
         ClassNode type = definition.getClassNode();
         final String typeName = type.getName();
@@ -335,6 +338,7 @@ public class Java8 implements VMPlugin {
         }
     }
 
+    @Override
     public void configureAnnotation(AnnotationNode node) {
         ClassNode type = node.getClassNode();
         VMPlugin plugin = VMPluginFactory.getPlugin();
@@ -403,6 +407,7 @@ public class Java8 implements VMPlugin {
         return null;
     }
 
+    @Override
     public void configureClassNode(CompileUnit compileUnit, ClassNode classNode) {
         try {
             Class<?> clazz = classNode.getTypeClass();

@@ -62,14 +62,17 @@ public class ValueContainer implements CharSequence, Value {
         this.container = true;
     }
 
+    @Override
     public int intValue() {
         return die(int.class, sputs("intValue not supported for type ", type));
     }
 
+    @Override
     public long longValue() {
         return die(int.class, sputs("intValue not supported for type ", type));
     }
 
+    @Override
     public boolean booleanValue() {
         switch (type) {
             case FALSE:
@@ -81,6 +84,7 @@ public class ValueContainer implements CharSequence, Value {
         return false;
     }
 
+    @Override
     public String stringValue() {
         if (type == Type.NULL) {
             return null;
@@ -89,6 +93,7 @@ public class ValueContainer implements CharSequence, Value {
         }
     }
 
+    @Override
     public String stringValueEncoded() {
         return toString();
     }
@@ -97,6 +102,7 @@ public class ValueContainer implements CharSequence, Value {
         return type.toString();
     }
 
+    @Override
     public Object toValue() {
         if (value != null) {
             return value;
@@ -114,58 +120,72 @@ public class ValueContainer implements CharSequence, Value {
         return null;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public <T extends Enum> T toEnum(Class<T> cls) {
         return (T) value;
     }
 
+    @Override
     public boolean isContainer() {
         return container;
     }
 
+    @Override
     public void chop() {
     }
 
+    @Override
     public char charValue() {
         return 0;
     }
 
+    @Override
     public int length() {
         return 0;
     }
 
+    @Override
     public char charAt(int index) {
         return '0';
     }
 
+    @Override
     public CharSequence subSequence(int start, int end) {
         return "";
     }
 
+    @Override
     public Date dateValue() {
         return null;
     }
 
+    @Override
     public byte byteValue() {
         return 0;
     }
 
+    @Override
     public short shortValue() {
         return 0;
     }
 
+    @Override
     public BigDecimal bigDecimalValue() {
         return null;
     }
 
+    @Override
     public BigInteger bigIntegerValue() {
         return null;
     }
 
+    @Override
     public double doubleValue() {
         return 0;
     }
 
+    @Override
     public float floatValue() {
         return 0;
     }

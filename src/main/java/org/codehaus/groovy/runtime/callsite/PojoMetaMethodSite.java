@@ -51,6 +51,7 @@ public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
         return metaMethod.doMethodInvoke(receiver,  args);
     }
 
+    @Override
     public Object call(Object receiver, Object[] args) throws Throwable {
         if(checkCall(receiver, args))
           return invoke(receiver,args);
@@ -185,6 +186,7 @@ public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
             reflect = ((CachedMethod) super.metaMethod).setAccessible();
         }
 
+        @Override
         public Object invoke(Object receiver, Object[] args) throws Throwable {
             MetaClassHelper.unwrap(args);
             args = metaMethod.coerceArgumentsToClasses(args);
@@ -198,6 +200,7 @@ public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
             super(site, metaClass, metaMethod, params);
         }
 
+        @Override
         public final Object invoke(Object receiver, Object[] args) throws Throwable {
             args = metaMethod.coerceArgumentsToClasses(args);
             return doInvoke(receiver, args, reflect);
@@ -210,6 +213,7 @@ public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
             super(site, metaClass, metaMethod, params);
         }
 
+        @Override
         public final Object invoke(Object receiver, Object[] args) throws Throwable {
             return doInvoke(receiver, args, reflect);
         }
@@ -224,6 +228,7 @@ public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
             super(site, metaClass, metaMethod, params);
         }
 
+        @Override
         public final Object invoke(Object receiver, Object[] args) throws Throwable {
             try {
                 return metaMethod.doMethodInvoke(receiver,  args);
@@ -242,6 +247,7 @@ public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
             super(site, metaClass, metaMethod, params);
         }
 
+        @Override
         public final Object invoke(Object receiver, Object[] args) throws Throwable {
             try {
                 return metaMethod.invoke(receiver,  args);

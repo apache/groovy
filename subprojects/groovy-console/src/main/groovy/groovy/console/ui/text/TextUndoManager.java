@@ -51,12 +51,14 @@ public class TextUndoManager extends UndoManager {
         propChangeSupport.addPropertyChangeListener(pcl);
     }
 
+    @Override
     public void die() {
         boolean undoable = canUndo();
         super.die();
         firePropertyChangeEvent(UndoManager.UndoName, undoable, canUndo());
     }
 
+    @Override
     public void discardAllEdits() {
         boolean undoable = canUndo();
         boolean redoable = canRedo();
@@ -79,6 +81,7 @@ public class TextUndoManager extends UndoManager {
         return modificationMarker != editToBeUndone();
     }
 
+    @Override
     public void redo() throws javax.swing.undo.CannotRedoException {
         compoundEdit.end();
 
@@ -94,6 +97,7 @@ public class TextUndoManager extends UndoManager {
         firePropertyChangeEvent(UndoManager.UndoName, undoable, canUndo());
     }
 
+    @Override
     protected void redoTo(UndoableEdit edit) {
         compoundEdit.end();
 
@@ -121,6 +125,7 @@ public class TextUndoManager extends UndoManager {
         }
     }
 
+    @Override
     protected void trimEdits(int from, int to) {
         boolean undoable = canUndo();
         boolean redoable = canRedo();
@@ -132,6 +137,7 @@ public class TextUndoManager extends UndoManager {
         firePropertyChangeEvent(UndoManager.RedoName, redoable, canRedo());
     }
 
+    @Override
     public void undo() throws javax.swing.undo.CannotUndoException {
         compoundEdit.end();
 
@@ -149,6 +155,7 @@ public class TextUndoManager extends UndoManager {
         firePropertyChangeEvent(UndoManager.RedoName, redoable, canRedo());
     }
 
+    @Override
     public void undoableEditHappened(UndoableEditEvent uee) {
         UndoableEdit edit = uee.getEdit();
         boolean undoable = canUndo();
@@ -177,6 +184,7 @@ public class TextUndoManager extends UndoManager {
 
         private long editedTime;
 
+        @Override
         public boolean addEdit(UndoableEdit edit) {
             boolean result = super.addEdit(edit);
             if (result && editedTime == 0) {
@@ -185,6 +193,7 @@ public class TextUndoManager extends UndoManager {
             return result;
         }
 
+        @Override
         public boolean canUndo() {
             return !edits.isEmpty();
         }
@@ -193,6 +202,7 @@ public class TextUndoManager extends UndoManager {
             return editedTime;
         }
 
+        @Override
         public boolean isInProgress() {
             return false;
         }

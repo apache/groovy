@@ -33,10 +33,12 @@ public class BitwiseNegationExpression extends Expression {
         return expression;
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitBitwiseNegationExpression(this);
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new BitwiseNegationExpression(transformer.transform(expression));
         ret.setSourcePosition(this);
@@ -44,10 +46,12 @@ public class BitwiseNegationExpression extends Expression {
         return ret;
     }
 
+    @Override
     public String getText() {
         return expression.getText();
     }
 
+    @Override
     public ClassNode getType() {
         return expression.getType();
     }

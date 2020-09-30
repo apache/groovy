@@ -284,11 +284,13 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
         return list;
     }
 
+    @Override
     public Object parse(Reader reader) {
         characterSource = new ReaderCharacterSource(reader);
         return this.decodeValue();
     }
 
+    @Override
     public Object parse(char[] chars) {
         return parse(new StringReader(new String(chars)));
     }

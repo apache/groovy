@@ -264,6 +264,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         }
     }
 
+    @Override
     public final MetaClass getMetaClass(Class theClass) {
         return ClassInfo.getClassInfo(theClass).getMetaClass();
     }
@@ -293,6 +294,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         }
     }
 
+    @Override
     public void removeMetaClass(Class theClass) {
         setMetaClass(theClass, null, null);
     }
@@ -303,6 +305,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * @param theClass
      * @param theMetaClass
      */
+    @Override
     public void setMetaClass(Class theClass, MetaClass theMetaClass) {
         setMetaClass(theClass,null,theMetaClass);
     }
@@ -336,6 +339,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * WARNING: experimental code, likely to change soon
      * @return the handle
      */
+    @Override
     public MetaClassCreationHandle getMetaClassCreationHandler() {
         return metaClassCreationHandle;
     }
@@ -348,6 +352,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * WARNING: experimental code, likely to change soon
      * @param handle the handle
      */
+    @Override
     public void setMetaClassCreationHandle(MetaClassCreationHandle handle) {
         if(handle == null) throw new IllegalArgumentException("Cannot set MetaClassCreationHandle to null value!");
         ClassInfo.clearModifiedExpandos();
@@ -359,6 +364,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * Adds a listener for constant meta classes.
      * @param listener the listener
      */
+    @Override
     public void addMetaClassRegistryChangeEventListener(MetaClassRegistryChangeEventListener listener) {
         synchronized (changeListenerList) {
             changeListenerList.add(listener);
@@ -370,6 +376,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * Adds a listener for constant meta classes. This listener cannot be removed!
      * @param listener the listener
      */
+    @Override
     public void addNonRemovableMetaClassRegistryChangeEventListener(MetaClassRegistryChangeEventListener listener) {
         synchronized (changeListenerList) {
             nonRemoveableChangeListenerList.add(listener);
@@ -380,6 +387,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * Removes a constant meta class listener.
      * @param listener the listener
      */
+    @Override
     public void removeMetaClassRegistryChangeEventListener(MetaClassRegistryChangeEventListener listener) {
         synchronized (changeListenerList) {
             changeListenerList.remove(listener);
@@ -407,6 +415,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     /**
      * Gets an array of of all registered ConstantMetaClassListener instances.
      */
+    @Override
     public MetaClassRegistryChangeEventListener[] getMetaClassRegistryChangeEventListeners() {
         synchronized (changeListenerList) {
             ArrayList<MetaClassRegistryChangeEventListener> ret =
@@ -456,6 +465,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      *
      * @return the iterator.
      */
+    @Override
     public Iterator iterator() {
         final MetaClass[] refs = metaClassInfo.toArray(EMPTY_METACLASS_ARRAY);
 
@@ -469,6 +479,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             // the cached hasNext call value
             private boolean hasNext = false;
 
+            @Override
             public boolean hasNext() {
                 if (hasNextCalled) return hasNext;
                 hasNextCalled = true;
@@ -489,11 +500,13 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                 hasNextCalled = false;
             }
 
+            @Override
             public Object next() {
                 ensureNext();
                 return currentMeta;
             }
 
+            @Override
             public void remove() {
                 ensureNext();
                 setMetaClass(currentMeta.getTheClass(), currentMeta, null);
@@ -509,6 +522,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             this.map = map;
         }
 
+        @Override
         public void onModule(final ExtensionModule module) {
             if (moduleRegistry.hasModule(module.getName())) {
                 ExtensionModule loadedModule = moduleRegistry.getModule(module.getName());

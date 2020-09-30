@@ -29,6 +29,7 @@ public class NumberCachedClass extends CachedClass {
         super(klazz, classInfo);
     }
 
+    @Override
     public Object coerceArgument(Object argument) {
         if (argument instanceof Number) {
             return coerceNumber(argument);
@@ -37,6 +38,7 @@ public class NumberCachedClass extends CachedClass {
 
     }
 
+    @Override
     public boolean isAssignableFrom(Class classToTransformFrom) {
         return classToTransformFrom == null
             || Number.class.isAssignableFrom(classToTransformFrom)

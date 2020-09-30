@@ -54,6 +54,7 @@ public class InnerClassNode extends ClassNode {
         outerClass.innerClasses.add(this);
     }
 
+    @Override
     public ClassNode getOuterClass() {
         return outerClass;
     }
@@ -69,6 +70,7 @@ public class InnerClassNode extends ClassNode {
     /**
      * @return the field node on the outer class or null if this is not an inner class
      */
+    @Override
     public FieldNode getOuterField(String name) {
         return outerClass.getDeclaredField(name);
     }

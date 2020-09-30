@@ -63,6 +63,7 @@ public class AssertionMap<T extends Assertion<T>> implements Iterable<Map.Entry<
         return internalMap.containsKey(methodNode);
     }
 
+    @Override
     public Iterator<Map.Entry<MethodNode, T>> iterator() {
         return internalMap.entrySet().iterator();
     }

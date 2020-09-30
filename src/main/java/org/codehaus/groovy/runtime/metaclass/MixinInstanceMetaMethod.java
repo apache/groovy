@@ -34,28 +34,34 @@ public class MixinInstanceMetaMethod extends MetaMethod{
         this.mixinInMetaClass = mixinInMetaClass;
     }
 
+    @Override
     public int getModifiers() {
         return method.getModifiers();
     }
 
+    @Override
     public String getName() {
         return method.getName();
     }
 
+    @Override
     public Class getReturnType() {
         return method.getReturnType();
     }
 
+    @Override
     public CachedClass getDeclaringClass() {
         return mixinInMetaClass.getInstanceClass();
     }
 
+    @Override
     public Object invoke(Object object, Object[] arguments) {
         // make sure parameterTypes gets set
         method.getParameterTypes();
         return method.invoke(mixinInMetaClass.getMixinInstance(object), method.correctArguments(arguments));
     }
 
+    @Override
     protected Class[] getPT() {
         return method.getNativeParameterTypes();
     }

@@ -81,6 +81,7 @@ public class WarningMessage extends LocatedMessage {
         this.importance = importance;
     }
 
+    @Override
     public void write(PrintWriter writer, Janitor janitor) {
         writer.print("warning: ");
         super.write(writer, janitor);

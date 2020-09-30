@@ -51,16 +51,19 @@ public class SpreadMap extends HashMap {
         this(list.toArray());
     }
 
+    @Override
     public Object put(Object key, Object value) {
         throw new RuntimeException("SpreadMap: " + this + " is an immutable map, and so ("
                                    + key + ": " + value + ") cannot be added.");
     }
 
+    @Override
     public Object remove(Object key) {
         throw new RuntimeException("SpreadMap: " + this + " is an immutable map, and so the key ("
                                    + key + ") cannot be deleted.");
     }
 
+    @Override
     public void putAll(Map t) {
         throw new RuntimeException("SpreadMap: " + this + " is an immutable map, and so the map ("
                                    + t + ") cannot be put in this spreadMap.");

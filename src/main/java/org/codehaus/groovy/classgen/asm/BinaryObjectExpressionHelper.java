@@ -33,48 +33,61 @@ public class BinaryObjectExpressionHelper extends BinaryExpressionWriter {
     }
     
     // dummy methods
+    @Override
     public boolean writePostOrPrefixMethod(int operation, boolean simulate) {
         if (simulate) return false;
         throw new GroovyBugError("should not reach here");
     }
     
+    @Override
     public boolean write(int operation, boolean simulate) {
         if (simulate) return false;
         throw new GroovyBugError("should not reach here");
     }
     
+    @Override
     protected boolean writeDivision(boolean simulate) {
         if (simulate) return false;
         throw new GroovyBugError("should not reach here");
     }
 
+    @Override
     protected int getBitwiseOperationBytecode(int type) {
         return -1;
     }
     
+    @Override
     protected int getCompareCode() {
         return -1;
     }
     
+    @Override
     protected ClassNode getNormalOpResultType() {
         return null;
     }
     
+    @Override
     protected ClassNode getDevisionOpResultType() {
         return null;
     }
     
+    @Override
     protected int getShiftOperationBytecode(int type) {
         return -1;
     }
     
+    @Override
     protected int getStandardOperationBytecode(int type) {
         return -1;
     }
     
+    @Override
     protected void removeTwoOperands(MethodVisitor mv) {}
+    @Override
     protected void writePlusPlus(MethodVisitor mv) {}
+    @Override
     protected void writeMinusMinus(MethodVisitor mv) {}
+    @Override
     protected void doubleTwoOperands(MethodVisitor mv) {}
     
     @Override

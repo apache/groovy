@@ -127,28 +127,34 @@ public final class CurriedClosure<V> extends Closure<V> {
         return newCurriedParams;
     }
 
+    @Override
     public void setDelegate(Object delegate) {
         ((Closure) getOwner()).setDelegate(delegate);
     }
 
+    @Override
     public Object getDelegate() {
         return ((Closure) getOwner()).getDelegate();
     }
 
+    @Override
     public void setResolveStrategy(int resolveStrategy) {
         ((Closure) getOwner()).setResolveStrategy(resolveStrategy);
     }
 
+    @Override
     public int getResolveStrategy() {
         return ((Closure) getOwner()).getResolveStrategy();
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public Object clone() {
         Closure<V> uncurriedClosure = (Closure<V>) ((Closure) getOwner()).clone();
         return new CurriedClosure<V>(index, uncurriedClosure, curriedParams);
     }
 
+    @Override
     public Class[] getParameterTypes() {
         Class[] oldParams = ((Closure) getOwner()).getParameterTypes();
         int extraParams = 0;

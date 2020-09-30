@@ -45,6 +45,7 @@ public class StaticCompilationMopWriter extends MopWriter {
     }
 
 
+    @Override
     public void createMopMethods() {
         ClassNode classNode = controller.getClassNode();
         LinkedList<MethodNode> requiredMopMethods = classNode.getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED);

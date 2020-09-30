@@ -43,6 +43,7 @@ public class TryCatchStatement extends Statement {
         this.finallyStatement = finallyStatement;
     }
     
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitTryCatchFinally(this);
     }

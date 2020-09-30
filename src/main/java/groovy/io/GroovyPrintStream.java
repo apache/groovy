@@ -109,6 +109,7 @@ public class GroovyPrintStream extends PrintStream {
      *
      * @param obj The <code>Object</code> to be printed
      */
+    @Override
     public void print(Object obj) {
         print(InvokerHelper.toString(obj));
     }
@@ -118,6 +119,7 @@ public class GroovyPrintStream extends PrintStream {
      *
      * @param obj The <code>Object</code> to be printed
      */
+    @Override
     public void println(Object obj) {
         println(InvokerHelper.toString(obj));
     }

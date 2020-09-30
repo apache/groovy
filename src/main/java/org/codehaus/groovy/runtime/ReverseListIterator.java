@@ -43,6 +43,7 @@ public class ReverseListIterator<T> implements Iterator<T> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean hasNext() {
         return delegate.hasPrevious();
     }
@@ -50,6 +51,7 @@ public class ReverseListIterator<T> implements Iterator<T> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public T next() {
         return delegate.previous();
     }
@@ -57,6 +59,7 @@ public class ReverseListIterator<T> implements Iterator<T> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void remove() {
         delegate.remove();
     }

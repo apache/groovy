@@ -76,10 +76,12 @@ public class ConstantExpression extends Expression {
         return super.toString() + "[" + value + "]";
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitConstantExpression(this);
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         return this;
     }
@@ -91,6 +93,7 @@ public class ConstantExpression extends Expression {
         return value;
     }
 
+    @Override
     public String getText() {
         return (value == null ? "null" : value.toString());
     }

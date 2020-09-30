@@ -29,10 +29,12 @@ public class SimpleGroovyMemberDoc extends SimpleGroovyAbstractableElementDoc im
         this.belongsToClass = belongsToClass;
     }
 
+    @Override
     public boolean isSynthetic() {/*todo*/
         return false;
     }
 
+    @Override
     public String firstSentenceCommentText() {
         if (super.firstSentenceCommentText() == null) {
             SimpleGroovyClassDoc classDoc = (SimpleGroovyClassDoc) belongsToClass;
@@ -41,6 +43,7 @@ public class SimpleGroovyMemberDoc extends SimpleGroovyAbstractableElementDoc im
         return super.firstSentenceCommentText();
     }
 
+    @Override
     public String commentText() {
         if (super.commentText() == null) {
             SimpleGroovyClassDoc classDoc = (SimpleGroovyClassDoc) belongsToClass;

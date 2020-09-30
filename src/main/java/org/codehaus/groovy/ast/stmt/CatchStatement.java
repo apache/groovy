@@ -37,6 +37,7 @@ public class CatchStatement extends Statement {
         this.code = code;
     }
     
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitCatchStatement(this);
     }

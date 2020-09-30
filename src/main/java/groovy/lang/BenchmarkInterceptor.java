@@ -72,6 +72,7 @@ public class BenchmarkInterceptor implements Interceptor {
      * @return null
      * relays this result.
      */
+    @Override
     public Object beforeInvoke(Object object, String methodName, Object[] arguments) {
         if (!calls.containsKey(methodName)) calls.put(methodName, new LinkedList());
         ((List) calls.get(methodName)).add(System.currentTimeMillis());
@@ -86,6 +87,7 @@ public class BenchmarkInterceptor implements Interceptor {
      * @param result        result of the executed method call or result of beforeInvoke if method was not called
      * @return result
      */
+    @Override
     public Object afterInvoke(Object object, String methodName, Object[] arguments, Object result) {
         ((List) calls.get(methodName)).add(System.currentTimeMillis());
         return result;
@@ -95,6 +97,7 @@ public class BenchmarkInterceptor implements Interceptor {
      * The call should be invoked separately
      * @return true
      */
+    @Override
     public boolean doInvoke() {
         return true;
     }

@@ -35,6 +35,7 @@ public class DoWhileStatement extends Statement implements LoopingStatement {
         this.loopBlock = loopBlock;
     }
     
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitDoWhileLoop(this);
     }
@@ -43,6 +44,7 @@ public class DoWhileStatement extends Statement implements LoopingStatement {
         return booleanExpression;
     }
 
+    @Override
     public Statement getLoopBlock() {
         return loopBlock;
     }
@@ -50,6 +52,7 @@ public class DoWhileStatement extends Statement implements LoopingStatement {
         this.booleanExpression = booleanExpression;
     }
 
+    @Override
     public void setLoopBlock(Statement loopBlock) {
         this.loopBlock = loopBlock;
     }

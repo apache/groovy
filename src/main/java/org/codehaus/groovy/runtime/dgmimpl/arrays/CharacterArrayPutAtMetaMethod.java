@@ -35,10 +35,12 @@ public class CharacterArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
         parameterTypes = PARAM_CLASS_ARR;
     }
 
+    @Override
     public final CachedClass getDeclaringClass() {
         return ARR_CLASS;
     }
 
+    @Override
     public Object invoke(Object object, Object[] args) {
         final char[] objects = (char[]) object;
         final int index = normaliseIndex((Integer) args[0], objects.length);
@@ -46,6 +48,7 @@ public class CharacterArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
         return null;
     }
 
+    @Override
     public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         if (!(args[0] instanceof Integer) || !(args[1] instanceof Character))
             return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
@@ -58,6 +61,7 @@ public class CharacterArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             super(site, metaClass, metaMethod, params);
         }
 
+        @Override
         public Object call(Object receiver, Object[] args) throws Throwable {
             if ((receiver instanceof char[] && args[0] instanceof Integer && args[1] instanceof Character)
                     && checkPojoMetaClass()) {
@@ -68,6 +72,7 @@ public class CharacterArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
                 return super.call(receiver, args);
         }
 
+        @Override
         public Object call(Object receiver, Object arg1, Object arg2) throws Throwable {
             if (checkPojoMetaClass()) {
                 try {

@@ -43,28 +43,34 @@ public class BinaryDoubleExpressionHelper extends BinaryLongExpressionHelper {
         doubleArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "dArrayGet"),
         doubleArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "dArraySet");
 
+    @Override
     protected boolean writeBitwiseOp(int op, boolean simulate) {
         if (!simulate) throw new GroovyBugError("should not reach here");
         return false;   
     }
     
+    @Override
     protected int getBitwiseOperationBytecode(int op) {
         return -1;
     }
 
+    @Override
     protected int getCompareCode() {
         return DCMPG;
     }
 
+    @Override
     protected ClassNode getNormalOpResultType() {
         return ClassHelper.double_TYPE;
     }
 
+    @Override
     protected boolean writeShiftOp(int type, boolean simulate) {
         if (!simulate) throw new GroovyBugError("should not reach here");
         return false;   
     }
     
+    @Override
     protected int getShiftOperationBytecode(int type) {
         return -1;
     }
@@ -78,20 +84,24 @@ public class BinaryDoubleExpressionHelper extends BinaryLongExpressionHelper {
         DREM,           //  MOD         203
     };
     
+    @Override
     protected int getStandardOperationBytecode(int type) {
         return stdOperations[type];
     }
     
+    @Override
     protected void writeMinusMinus(MethodVisitor mv) {
         mv.visitInsn(DCONST_1);
         mv.visitInsn(DSUB);
     }
     
+    @Override
     protected void writePlusPlus(MethodVisitor mv) {
         mv.visitInsn(DCONST_1);
         mv.visitInsn(DADD);
     }
     
+    @Override
     protected ClassNode getDevisionOpResultType() {
         return ClassHelper.double_TYPE;
     }

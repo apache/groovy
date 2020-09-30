@@ -64,6 +64,7 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
     private static final ClassNode OBJECTOUTPUT_TYPE = make(ObjectOutput.class);
     private static final ClassNode OBJECTINPUT_TYPE = make(ObjectInput.class);
 
+    @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];

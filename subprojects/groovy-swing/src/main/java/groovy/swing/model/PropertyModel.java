@@ -50,10 +50,12 @@ public class PropertyModel implements ValueModel, NestedValueModel {
         return property;
     }
 
+    @Override
     public ValueModel getSourceModel() {
         return sourceModel;
     }
 
+    @Override
     public Object getValue() {
         Object source = sourceModel.getValue();
         if (source != null) {
@@ -62,6 +64,7 @@ public class PropertyModel implements ValueModel, NestedValueModel {
         return null;
     }
 
+    @Override
     public void setValue(Object value) {
         Object source = sourceModel.getValue();
         if (source != null) {
@@ -69,10 +72,12 @@ public class PropertyModel implements ValueModel, NestedValueModel {
         }
     }
     
+    @Override
     public Class getType() {
         return type;
     }
 
+    @Override
     public boolean isEditable() {
         return editable;
     }

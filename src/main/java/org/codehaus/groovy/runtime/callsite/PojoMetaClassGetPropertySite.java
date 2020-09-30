@@ -27,10 +27,12 @@ public class PojoMetaClassGetPropertySite extends AbstractCallSite {
         super(parent);
     }
 
+    @Override
     public final CallSite acceptGetProperty(Object receiver) {
           return this;
     }
 
+    @Override
     public final Object getProperty(Object receiver) throws Throwable {
         try {
             return InvokerHelper.getProperty(receiver, name);
@@ -39,6 +41,7 @@ public class PojoMetaClassGetPropertySite extends AbstractCallSite {
         }
     }
 
+    @Override
     public Object callGetProperty(Object receiver) throws Throwable {
         try {
             return InvokerHelper.getProperty(receiver, name);

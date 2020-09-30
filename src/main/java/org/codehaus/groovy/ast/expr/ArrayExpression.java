@@ -98,6 +98,7 @@ public class ArrayExpression extends Expression {
         return initExpressions;
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitArrayExpression(this);
     }
@@ -106,6 +107,7 @@ public class ArrayExpression extends Expression {
         return false;
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         List<Expression> exprList = transformExpressions(initExpressions, transformer);
         List<Expression> sizes = null;
@@ -129,6 +131,7 @@ public class ArrayExpression extends Expression {
         return elementType;
     }
 
+    @Override
     public String getText() {
         return "[" + formatInitExpressions() + "]";
     }

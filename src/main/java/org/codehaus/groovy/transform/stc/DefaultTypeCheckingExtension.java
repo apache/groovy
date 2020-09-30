@@ -61,6 +61,7 @@ public class DefaultTypeCheckingExtension extends TypeCheckingExtension {
         handlers.remove(handler);
     }
 
+    @Override
     public boolean handleUnresolvedVariableExpression(VariableExpression vexp) {
         for (TypeCheckingExtension handler : handlers) {
             if (handler.handleUnresolvedVariableExpression(vexp)) return true;
@@ -68,6 +69,7 @@ public class DefaultTypeCheckingExtension extends TypeCheckingExtension {
         return false;
     }
 
+    @Override
     public boolean handleUnresolvedProperty(final PropertyExpression pexp) {
         for (TypeCheckingExtension handler : handlers) {
             if (handler.handleUnresolvedProperty(pexp)) return true;
@@ -75,6 +77,7 @@ public class DefaultTypeCheckingExtension extends TypeCheckingExtension {
         return false;
     }
 
+    @Override
     public boolean handleUnresolvedAttribute(final AttributeExpression aexp) {
         for (TypeCheckingExtension handler : handlers) {
             if (handler.handleUnresolvedAttribute(aexp)) return true;
@@ -108,6 +111,7 @@ public class DefaultTypeCheckingExtension extends TypeCheckingExtension {
         return result;
     }
 
+    @Override
     public List<MethodNode> handleMissingMethod(final ClassNode receiver, final String name, final ArgumentListExpression argumentList, final ClassNode[] argumentTypes, final MethodCall call) {
         List<MethodNode> result = new LinkedList<MethodNode>();
         for (TypeCheckingExtension handler : handlers) {

@@ -36,15 +36,18 @@ public class NewInstanceMetaMethod extends NewMetaMethod {
         super(method);
     }
 
+    @Override
     public boolean isStatic() {
         return false;
     }
 
+    @Override
     public int getModifiers() {
         // lets clear the static bit
         return Modifier.PUBLIC;
     }
 
+    @Override
     public Object invoke(Object object, Object[] arguments)  {
         // we need to cheat using the type
         int size = arguments.length;

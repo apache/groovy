@@ -71,6 +71,7 @@ public class Exceptions {
             super("Wrapped Exception", cause);
         }
 
+        @Override
         public void printStackTrace(PrintStream s) {
             s.println(this.getMessage());
             if (getCause() != null) {
@@ -82,6 +83,7 @@ public class Exceptions {
             }
         }
 
+        @Override
         public String getMessage() {
             return super.getMessage() + (getCause() == null ? "" :
                     getCauseMessage());
@@ -92,10 +94,12 @@ public class Exceptions {
                     getCause().getMessage();
         }
 
+        @Override
         public String getLocalizedMessage() {
             return this.getMessage();
         }
 
+        @Override
         public StackTraceElement[] getStackTrace() {
             if (getCause() != null) {
                 return getCause().getStackTrace();
@@ -104,10 +108,12 @@ public class Exceptions {
             }
         }
 
+        @Override
         public Throwable getCause() {
             return super.getCause();
         }
 
+        @Override
         public void printStackTrace(PrintWriter s) {
             s.println(this.getMessage());
 
@@ -120,6 +126,7 @@ public class Exceptions {
             }
         }
 
+        @Override
         public void printStackTrace() {
             System.err.println(this.getMessage());
 

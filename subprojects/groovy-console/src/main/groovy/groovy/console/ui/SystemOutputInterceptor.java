@@ -95,6 +95,7 @@ public class SystemOutputInterceptor extends FilterOutputStream {
     /**
      * Intercepts output - more common case of byte[]
      */
+    @Override
     public void write(byte[] b, int off, int len) throws IOException {
         Boolean result = (Boolean) callback.call(consoleId.get(), new String(b, off, len));
         if (result) {
@@ -105,6 +106,7 @@ public class SystemOutputInterceptor extends FilterOutputStream {
     /**
      * Intercepts output - single characters
      */
+    @Override
     public void write(int b) throws IOException {
         Boolean result = (Boolean) callback.call(consoleId.get(), String.valueOf((char) b));
         if (result) {

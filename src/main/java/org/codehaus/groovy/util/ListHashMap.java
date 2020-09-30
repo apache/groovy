@@ -53,6 +53,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
         maxListFill = listSize;
     }
 
+    @Override
     public void clear() {
         innerMap = null;
         clearArrays();
@@ -66,6 +67,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
         }
     }
 
+    @Override
     public boolean containsKey(Object key) {
         if (size == 0) {
             return false;
@@ -80,6 +82,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
         }
     }
 
+    @Override
     public boolean containsValue(Object value) {
         if (size == 0) {
             return false;
@@ -102,12 +105,14 @@ public class ListHashMap<K,V> implements Map<K,V> {
         return m;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public Set<java.util.Map.Entry<K, V>> entrySet() {
         Map m = innerMap!=null?innerMap:makeMap();
         return m.entrySet();
     }
 
+    @Override
     public V get(Object key) {
         if(size==0) return null;
         if (innerMap==null) {
@@ -120,15 +125,18 @@ public class ListHashMap<K,V> implements Map<K,V> {
         }
     }
 
+    @Override
     public boolean isEmpty() {
         return size == 0;
     }
 
+    @Override
     public Set<K> keySet() {
         Map m = innerMap!=null?innerMap:makeMap();
         return m.keySet();
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public V put(K key, V value) {
         if (innerMap==null) {
@@ -155,12 +163,14 @@ public class ListHashMap<K,V> implements Map<K,V> {
         return val;
     }
 
+    @Override
     public void putAll(Map<? extends K, ? extends V> m) {
         for (Entry<? extends K, ? extends V> entry : m.entrySet()) {
             put(entry.getKey(), entry.getValue());
         }
     }
 
+    @Override
     public V remove(Object key) {
         if (innerMap==null) {
             for (int i=0; i<size; i++) {
@@ -199,10 +209,12 @@ public class ListHashMap<K,V> implements Map<K,V> {
         innerMap = null;
     }
 
+    @Override
     public int size() {
         return size;
     }
 
+    @Override
     public Collection<V> values() {
         if (innerMap == null) {
             List<V> list = new ArrayList<V>(size);

@@ -36,6 +36,7 @@ public class FileSystemResourceManager implements ResourceManager {
         this.basedir = basedir + FS;
     }
 
+    @Override
     public Reader getReader(String resourceName) throws IOException {
         return ResourceGroovyMethods.newReader(new File(basedir + resourceName));
     }

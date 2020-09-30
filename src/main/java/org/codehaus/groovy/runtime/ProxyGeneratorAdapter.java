@@ -877,10 +877,12 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
             }
         }
 
+        @Override
         public Class defineClass(String name, byte[] data) {
             return super.defineClass(name, data, 0, data.length);
         }
 
+        @Override
         public Class<?> loadClass(String name) throws ClassNotFoundException {
             // First check whether it's already been loaded, if so use it
             Class loadedClass = findLoadedClass(name);

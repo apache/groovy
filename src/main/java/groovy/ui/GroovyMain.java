@@ -520,6 +520,7 @@ public class GroovyMain {
                 classLoader = loader;
             }
 
+            @Override
             public Object run() {
                 current.setContextClassLoader(classLoader);
                 return null;

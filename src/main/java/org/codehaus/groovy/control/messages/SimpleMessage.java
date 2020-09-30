@@ -42,6 +42,7 @@ public class SimpleMessage extends Message {
         this.owner = source;
     }
 
+    @Override
     public void write(PrintWriter writer, Janitor janitor) {
         if (owner instanceof SourceUnit) {
             String name = ((SourceUnit) owner).getName();

@@ -40,6 +40,7 @@ public class NonEmptySequence extends Sequence {
         super(type, content);
     }
 
+    @Override
     public int minimumSize() {
         return 1;
     }

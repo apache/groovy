@@ -33,10 +33,12 @@ public class DefaultCachedMethodKey extends MethodKey{
         this.parameterTypes = parameterTypes;
     }
 
+    @Override
     public int getParameterCount() {
         return parameterTypes.length;
     }
 
+    @Override
     public Class getParameterType(int index) {
         CachedClass c = parameterTypes[index];
         if (c==null) return Object.class;

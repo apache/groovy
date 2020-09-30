@@ -36,10 +36,12 @@ public class BooleanExpression extends Expression {
         return expression;
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitBooleanExpression(this);
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new BooleanExpression(transformer.transform(expression));
         ret.setSourcePosition(this);
@@ -47,6 +49,7 @@ public class BooleanExpression extends Expression {
         return ret;
     }
     
+    @Override
     public String getText() {
         return expression.getText();
     }
