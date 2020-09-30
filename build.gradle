@@ -352,8 +352,11 @@ def testExtensionModuleJar = tasks.register("testExtensionModuleJar", Jar) {
 }
 
 dependencies {
-    testImplementation files(testExtensionModuleJar)
     testRuntimeOnly files(extModuleRepoDir)
+}
+
+tasks.named('test') {
+    dependsOn testExtensionModuleJar
 }
 
 if (!JavaVersion.current().java9Compatible) {
