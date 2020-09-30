@@ -2,6 +2,7 @@ plugins {
     id 'maven-publish'
     id 'signing'
     id 'org.apache.groovy-publish-validation'
+    id 'org.apache.groovy-artifactory'
 }
 
 def componentName
@@ -867,6 +868,9 @@ signing {
 }
 
 gradle.taskGraph.whenReady { taskGraph ->
+    if (taskGraph.hasTask(":artifactoryPublish") && gradle.startParameter.parallelProjectExecutionEnabled) {
+            throw new GradleException("In order to publish to artifactory you must use `--no-parallel`")
+    }
     if (project.sharedConfiguration.isReleaseVersion.get() &&
             (taskGraph.hasTask(':artifactoryPublish') || project.hasProperty('forceSign'))) {
         // Use Java 6's console or Swing to read input (not suitable for CI)

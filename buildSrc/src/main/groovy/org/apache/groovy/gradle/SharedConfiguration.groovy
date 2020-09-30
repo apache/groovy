@@ -18,10 +18,13 @@
  */
 package org.apache.groovy.gradle
 
+
 import groovy.transform.CompileStatic
+import org.gradle.api.file.ProjectLayout
+import org.gradle.api.logging.Logger
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
-import org.gradle.api.logging.Logger
+import org.gradle.api.tasks.Nested
 
 @CompileStatic
 class SharedConfiguration {
@@ -35,7 +38,10 @@ class SharedConfiguration {
     final Provider<String> installationDirectory
     final boolean isRunningOnCI
 
-    SharedConfiguration(ProviderFactory providers, File rootProjectDirectory, Logger logger) {
+    @Nested
+    final Artifactory artifactory
+
+    SharedConfiguration(ProjectLayout layout, ProviderFactory providers, File rootProjectDirectory, Logger logger) {
         groovyVersion = providers.gradleProperty("groovyVersion").forUseAtConfigurationTime()
         groovyBundleVersion = providers.gradleProperty("groovyBundleVersion").forUseAtConfigurationTime()
         javacMaxMemory = providers.gradleProperty("javacMain_mx").forUseAtConfigurationTime()
@@ -44,13 +50,40 @@ class SharedConfiguration {
         isReleaseVersion = groovyVersion.map { !it.toLowerCase().contains("snapshot") }
         buildDate = isReleaseVersion.map { it ? new Date() : new Date(0) }
         installationDirectory = providers.gradleProperty("groovy_installPath")
-            .orElse(providers.systemProperty("installDirectory"))
+                .orElse(providers.systemProperty("installDirectory"))
         isRunningOnCI = detectCi(rootProjectDirectory, logger)
+        artifactory = new Artifactory(layout, providers, logger)
     }
 
     private static boolean detectCi(File file, Logger logger) {
         def isCi = file.absolutePath =~ /teamcity|jenkins|hudson|travis/
         logger.lifecycle "Detected ${isCi ? 'Continuous Integration environment' : 'development environment'}"
         isCi
+    }
+
+    static class Artifactory {
+        final Provider<String> username
+        final Provider<String> password
+        final Provider<String> context
+        final Provider<String> repoKey
+
+        Artifactory(ProjectLayout layout, ProviderFactory providers, Logger logger) {
+            def artifactoryProperties = providers.fileContents(layout.projectDirectory.file("artifactory.properties")).asText.forUseAtConfigurationTime().map {
+                def props = new Properties()
+                props.load(new StringReader(it))
+                props
+            }
+            username = provider(providers, artifactoryProperties, "artifactoryUser", "artifactoryUser", "ARTIFACTORY_USER")
+            password = provider(providers, artifactoryProperties, "artifactoryPassword", "artifactoryPassword", "ARTIFACTORY_PASSWORD")
+            context = provider(providers, artifactoryProperties, "artifactoryContext", "artifactoryContext", "ARTIFACTORY_CONTEXT")
+            repoKey = provider(providers, artifactoryProperties, "artifactoryRepoKey", "artifactoryRepoKey", "ARTIFACTORY_REPO_KEY")
+            logger.lifecycle "ArtifactoryUser user: ${username.getOrElse("not defined")}"
+        }
+
+        private Provider<String> provider(ProviderFactory providers, Provider<Properties> properties, String propertyName, String gradlePropertyName, String envVarName) {
+            return providers.gradleProperty(gradlePropertyName).forUseAtConfigurationTime()
+                    .orElse(providers.environmentVariable(envVarName).forUseAtConfigurationTime())
+                    .orElse(properties.map { it.getProperty(propertyName) })
+        }
     }
 }
