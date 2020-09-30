@@ -21,7 +21,7 @@ package org.apache.groovy.gradle
 import groovy.transform.CompileStatic
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
-import org.gradle.api.file.FileCollection
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.java.archives.Manifest
 import org.gradle.api.tasks.CacheableTask
@@ -48,11 +48,11 @@ class JarJarTask extends DefaultTask {
 
     @InputFiles
     @Classpath
-    FileCollection repackagedLibraries
+    final ConfigurableFileCollection repackagedLibraries = project.objects.fileCollection()
 
     @InputFiles
     @Classpath
-    FileCollection jarjarToolClasspath
+    final ConfigurableFileCollection jarjarToolClasspath = project.objects.fileCollection()
 
     @InputFiles
     @Classpath

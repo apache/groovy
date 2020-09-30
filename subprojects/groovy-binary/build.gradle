@@ -71,16 +71,15 @@ distribution {
                 }
             }
         }
-//    if (!rootProject.hasProperty('skipGrooid')) {
-//        into('grooid') {
-//            from { new File(jar.archivePath.parent, "${jar.baseName}-${jar.version}-grooid.jar") }
-//            from {
-//                modules()*.jar.collect { j ->
-//                    new File(j.archivePath.parent, "${j.baseName}-${j.version}-grooid.jar")
-//                }
-//            }
-//        }
-//    }
+        rootProject.allprojects {
+            pluginManager.withPlugin('org.apache.groovy-base') {
+                if (groovyLibrary.hasGrooid()) {
+                    into('grooid') {
+                        from tasks.named('grooidJar')
+                    }
+                }
+            }
+        }
         into('conf') {
             from rootProject.file('src/conf')
         }

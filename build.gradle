@@ -16,6 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+import org.apache.groovy.gradle.JarJarTask
+
 buildscript {
     repositories {
         if (rootProject.hasProperty('buildInChina')) {
@@ -138,6 +140,23 @@ groovyLibrary {
             'antlr', 'antlr-runtime', 'antlr4', 'antlr4-runtime', 'antlr4-annotations',
             'asm', 'asm-commons', 'asm-tree', 'asm-util', 'picocli'
     ]
+
+    withGrooid(
+            "org.apache.groovy:groovy-grooid:${sharedConfiguration.groovyVersion.get()}",
+            ['openbeans'] as Set,
+            [
+                    'com.googlecode.openbeans.**': 'groovyjarjaropenbeans.@1',
+                    'org.apache.harmony.beans.**': 'groovyjarjarharmonybeans.@1',
+                    'java.beans.**': 'groovyjarjaropenbeans.@1'
+            ],
+            [
+                    '*': ['META-INF/NOTICE']
+            ],
+            ['META-INF/NOTICE', 'META-INF/INDEX.LIST'],
+            [
+                    (rootProject.file('notices/NOTICE-GROOIDJARJAR').absolutePath): 'META-INF/NOTICE'
+            ]
+    )
 }
 
 dependencies {
@@ -214,6 +233,12 @@ configurations {
 tasks.withType(GroovyCompile).configureEach {
     groovyClasspath = files(bootstrapJar, groovyClasspath)
     classpath = files(classpath, groovyClasspath)
+}
+
+allprojects {
+    tasks.withType(JarJarTask) {
+        jarjarToolClasspath.from(rootProject.configurations.tools)
+    }
 }
 
 ext.generatedDirectory = "${buildDir}/generated/sources"
