@@ -382,7 +382,6 @@ if (!JavaVersion.current().java9Compatible) {
 // More info: https://discuss.gradle.org/t/buildscript-dependencies-in-external-script/23243
 project.extensions.extraProperties.set('SpotBugsTask', com.github.spotbugs.snom.SpotBugsTask)
 
-apply from: 'gradle/groovydoc.gradle'
 apply from: 'gradle/docs.gradle'
 apply from: 'gradle/licenses.gradle'
 apply from: 'gradle/idea.gradle'
