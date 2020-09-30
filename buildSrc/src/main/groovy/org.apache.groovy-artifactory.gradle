@@ -16,16 +16,23 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 plugins {
-    id 'groovy-gradle-plugin'
+    id "com.jfrog.artifactory"
 }
 
-repositories {
-    gradlePluginPortal()
-}
-
-dependencies {
-    implementation 'org.asciidoctor:asciidoctor-gradle-jvm:3.2.0'
-    implementation 'org.jfrog.buildinfo:build-info-extractor-gradle:4.17.2'
+artifactory {
+    contextUrl = sharedConfiguration.artifactory.context.getOrElse('https://oss.jfrog.org')
+    publish {
+        repository {
+            repoKey = sharedConfiguration.artifactory.repoKey.getOrElse('oss-snapshot-local')
+            //The Artifactory repository key to publish to
+            //when using oss.jfrog.org the credentials are from Bintray. For local build we expect them to be found in
+            //~/.gradle/gradle.properties, otherwise to be set in the build server
+            username = sharedConfiguration.artifactory.username.get()
+            password = sharedConfiguration.artifactory.password.get()
+        }
+        defaults {
+            publications 'maven'
+        }
+    }
 }
