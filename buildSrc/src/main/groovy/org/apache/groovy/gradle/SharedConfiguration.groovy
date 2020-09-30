@@ -20,8 +20,11 @@ package org.apache.groovy.gradle
 
 
 import groovy.transform.CompileStatic
+import org.gradle.api.execution.TaskExecutionGraph
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.logging.Logger
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Nested
@@ -41,7 +44,10 @@ class SharedConfiguration {
     @Nested
     final Artifactory artifactory
 
-    SharedConfiguration(ProjectLayout layout, ProviderFactory providers, File rootProjectDirectory, Logger logger) {
+    @Nested
+    final Signing signing
+
+    SharedConfiguration(ObjectFactory objects, ProjectLayout layout, ProviderFactory providers, File rootProjectDirectory, Logger logger) {
         groovyVersion = providers.gradleProperty("groovyVersion").forUseAtConfigurationTime()
         groovyBundleVersion = providers.gradleProperty("groovyBundleVersion").forUseAtConfigurationTime()
         javacMaxMemory = providers.gradleProperty("javacMain_mx").forUseAtConfigurationTime()
@@ -53,6 +59,7 @@ class SharedConfiguration {
                 .orElse(providers.systemProperty("installDirectory"))
         isRunningOnCI = detectCi(rootProjectDirectory, logger)
         artifactory = new Artifactory(layout, providers, logger)
+        signing = new Signing(this, objects, providers)
     }
 
     private static boolean detectCi(File file, Logger logger) {
@@ -84,6 +91,45 @@ class SharedConfiguration {
             return providers.gradleProperty(gradlePropertyName).forUseAtConfigurationTime()
                     .orElse(providers.environmentVariable(envVarName).forUseAtConfigurationTime())
                     .orElse(properties.map { it.getProperty(propertyName) })
+        }
+    }
+
+    static class Signing {
+        private final SharedConfiguration config
+        final Property<String> keyId
+        final Property<String> secretKeyRingFile
+        final Property<String> password
+        final Provider<Boolean> useGpgCmd
+        final Provider<Boolean> forceSign
+        final Provider<Boolean> trySign
+
+        Signing(SharedConfiguration config, ObjectFactory objects, ProviderFactory providers) {
+            keyId = objects.property(String).convention(
+                    providers.gradleProperty("signing.keyId")
+            )
+            secretKeyRingFile = objects.property(String).convention(
+                    providers.gradleProperty("signing.secretKeyRingFile")
+            )
+            password = objects.property(String).convention(
+                    providers.gradleProperty("signing.password")
+            )
+            useGpgCmd = providers.gradleProperty("usegpg")
+                    .forUseAtConfigurationTime().map { Boolean.valueOf(it) }.orElse(false)
+            forceSign = providers.gradleProperty("forceSign")
+                    .forUseAtConfigurationTime().map { Boolean.valueOf(it) }.orElse(false)
+            trySign = providers.gradleProperty("trySign")
+                    .forUseAtConfigurationTime().map { Boolean.valueOf(it) }.orElse(false)
+            this.config = config
+        }
+
+        boolean shouldSign(TaskExecutionGraph taskGraph) {
+            trySign.get() || (config.isReleaseVersion.get() &&
+                    (taskGraph.hasTask(':artifactoryPublish') || forceSign.get()))
+        }
+
+        boolean hasAllKeyDetails() {
+            return useGpgCmd.get() ||
+                    keyId.present && secretKeyRingFile.present && password.present
         }
     }
 }
