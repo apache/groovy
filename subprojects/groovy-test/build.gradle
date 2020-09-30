@@ -35,6 +35,21 @@ dependencies {
     testRuntimeOnly "org.apache.ant:ant-launcher:$antVersion"
 }
 
+groovyLibrary {
+    withGrooid(
+            "org.apache.groovy:groovy-test-grooid:${sharedConfiguration.groovyVersion.get()}",
+            [] as Set,
+            [:],
+            [
+                    '*': ['META-INF/NOTICE']
+            ],
+            ['META-INF/NOTICE', 'META-INF/INDEX.LIST'],
+            [
+                    (rootProject.file('notices/NOTICE-GROOIDJARJAR').absolutePath): 'META-INF/NOTICE'
+            ]
+    )
+}
+
 eclipse.classpath.file.whenMerged {
     entries.removeAll { entry -> entry.path == '/groovy-ant' }
 }

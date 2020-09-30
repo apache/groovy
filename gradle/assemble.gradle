@@ -17,46 +17,6 @@
  *  under the License.
  */
 
-/*
-
-allprojects {
-    boolean isRoot = project == rootProject
-
-    if (project.name in ['groovy', 'groovy-test']) {
-        task grooidjar(type: JarJarTask) {
-            dependsOn jarjar
-            from = file(jarjar.outputFile)
-            if (isRoot) {
-                repackagedLibraries = files(configurations.runtimeClasspath.incoming.artifactView {
-                    componentFilter { component ->
-                        if (component instanceof ModuleComponentIdentifier) {
-                            return component.module in ['openbeans']
-                        }
-                        return false
-                    }
-                }.files)
-            } else {
-                repackagedLibraries = files()
-            }
-            jarjarToolClasspath = rootProject.configurations.tools
-            patterns = [
-                    'com.googlecode.openbeans.**': 'groovyjarjaropenbeans.@1',
-                    'org.apache.harmony.beans.**': 'groovyjarjarharmonybeans.@1',
-                    'java.beans.**': 'groovyjarjaropenbeans.@1'
-            ]
-            excludesPerLibrary = [
-                    '*': ['META-INF/NOTICE']
-            ]
-            excludes = ['META-INF/NOTICE', 'META-INF/INDEX.LIST']
-            createManifest = false
-            includedResources = [
-                    ("$rootProject.projectDir/notices/${isRoot ? 'NOTICE-GROOIDJARJAR' : 'NOTICE-GROOID'}".toString()): 'META-INF/NOTICE'
-            ]
-            outputFile = file("$buildDir/libs/${jar.archiveBaseName.get()}-${jar.archiveVersion.get()}-grooid.jar")
-        }
-    }
-}
-
 task updateLicenses {
     description = 'Updates the various LICENSE files'
     ext.licensesDir = "${projectDir}/licenses"
@@ -164,4 +124,3 @@ task updateNotices {
         }
     }
 }
-*/

@@ -183,15 +183,14 @@ tasks.withType(Jar) {
 
 tasks.register("jarjar", JarJarTask) {
     from = jar.archiveFile
-    repackagedLibraries = files(configurations.runtimeClasspath.incoming.artifactView {
+    repackagedLibraries.from configurations.runtimeClasspath.incoming.artifactView {
         componentFilter { component ->
             if (component instanceof ModuleComponentIdentifier) {
                 return component.module in groovyLibrary.repackagedDependencies.get()
             }
             return false
         }
-    }.files)
-    jarjarToolClasspath = rootProject.configurations.tools
+    }.files
     untouchedFiles = [
             'groovy/cli/picocli/CliBuilder*.class',
             'groovy/cli/picocli/OptionAccessor*.class'
@@ -256,9 +255,14 @@ interface Services {
 def factory = objects.newInstance(Services).softwareComponentFactory
 def component = factory.adhoc('groovyLibrary')
 components.add(component)
+
+// By declaring a codehaus capability we can tell Gradle that the user has to
+// choose between "old" groovy and "new" groovy
+String capability = "org.codehaus.groovy:${archivesBaseName}:${sharedConfiguration.groovyVersion.get()}"
+
 // First we create the "API" and "runtime" variants of Groovy for publication
-def shadowApi = createConsumableConfiguration(objects, tasks, configurations, 'groovyApiElements', Usage.JAVA_API, 'jarjar')
-def shadowRuntime = createConsumableConfiguration(objects, tasks, configurations, 'groovyRuntimeElements', Usage.JAVA_RUNTIME, 'jarjar')
+def shadowApi = createConsumableConfiguration(objects, tasks, configurations, 'groovyApiElements', Usage.JAVA_API, 'jarjar', capability)
+def shadowRuntime = createConsumableConfiguration(objects, tasks, configurations, 'groovyRuntimeElements', Usage.JAVA_RUNTIME, 'jarjar', capability)
 dependencies {
     constraints {
         // All Groovy modules depend on the "Groovy-all" platform in order to get alignement
@@ -284,7 +288,13 @@ afterEvaluate {
 }
 
 @CompileStatic
-Configuration createConsumableConfiguration(ObjectFactory objects, TaskContainer tasks, ConfigurationContainer container, String name, String usage, String artifactTask) {
+Configuration createConsumableConfiguration(ObjectFactory objects,
+                                            TaskContainer tasks,
+                                            ConfigurationContainer container,
+                                            String name,
+                                            String usage,
+                                            String artifactTask,
+                                            String capability) {
     container.create(name) { Configuration cnf ->
         cnf.canBeConsumed = true
         cnf.canBeResolved = false
@@ -298,6 +308,9 @@ Configuration createConsumableConfiguration(ObjectFactory objects, TaskContainer
         }
         cnf.outgoing {
             it.artifact tasks.named(artifactTask)
+            if (capability) {
+                it.capability(capability)
+            }
         }
     }
 }
