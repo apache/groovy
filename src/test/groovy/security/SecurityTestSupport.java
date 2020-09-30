@@ -53,9 +53,11 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
             securityDisabled = true;
         } else {
             securityDisabled = false;
-            if (new File(POLICY_FILE).exists()) {
+            File file = new File(POLICY_FILE);
+            if (file.exists()) {
+                System.out.println("Using policy file = " + file.getAbsolutePath());
                 securityAvailable = true;
-                resetSecurityPolicy("=" + POLICY_FILE);
+                resetSecurityPolicy("=" + file);
             } else {
                 securityAvailable = false;
             }
@@ -131,6 +133,12 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
         }
         currentClassLoader = Thread.currentThread().getContextClassLoader();
         AccessController.doPrivileged((PrivilegedAction) () -> {
+            Thread.currentThread().setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+                @Override
+                public void uncaughtException(Thread t, Throwable e) {
+                    e.printStackTrace();
+                }
+            });
             Thread.currentThread().setContextClassLoader(loader);
             return null;
         });

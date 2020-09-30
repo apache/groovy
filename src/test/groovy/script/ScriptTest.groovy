@@ -20,7 +20,7 @@ package groovy.script
 
 import groovy.test.GroovyTestCase
 
-final class ScriptTes extends GroovyTestCase {
+final class ScriptTest extends GroovyTestCase {
 
     void testScripts() {
         new File('src/test/groovy/script').eachFile {
