@@ -515,7 +515,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         controller.getCompileStack().clear();
 
-        if (checkIfLastStatementIsReturn(code)) return;
+        if (checkIfLastStatementIsReturnOrThrow(code)) return;
 
         if (node.isVoidMethod()) {
             mv.visitInsn(RETURN);
@@ -534,18 +534,19 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private boolean checkIfLastStatementIsReturn(Statement code) {
+    private boolean checkIfLastStatementIsReturnOrThrow(Statement code) {
         if (code instanceof BlockStatement) {
             BlockStatement blockStatement = (BlockStatement) code;
             List<Statement> statementList = blockStatement.getStatements();
             int statementCnt = statementList.size();
             if (statementCnt > 0) {
                 Statement lastStatement = statementList.get(statementCnt - 1);
-                if (lastStatement instanceof ReturnStatement) {
+                if (lastStatement instanceof ReturnStatement || lastStatement instanceof ThrowStatement) {
                     return true;
                 }
             }
         }
+
         return false;
     }
 
