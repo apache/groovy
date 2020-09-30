@@ -20,19 +20,21 @@ plugins {
     id "com.jfrog.artifactory"
 }
 
-artifactory {
-    contextUrl = sharedConfiguration.artifactory.context.getOrElse('https://oss.jfrog.org')
-    publish {
-        repository {
-            repoKey = sharedConfiguration.artifactory.repoKey.getOrElse('oss-snapshot-local')
-            //The Artifactory repository key to publish to
-            //when using oss.jfrog.org the credentials are from Bintray. For local build we expect them to be found in
-            //~/.gradle/gradle.properties, otherwise to be set in the build server
-            username = sharedConfiguration.artifactory.username.get()
-            password = sharedConfiguration.artifactory.password.get()
-        }
-        defaults {
-            publications 'maven'
+if (sharedConfiguration.artifactory.username.present) {
+    artifactory {
+        contextUrl = sharedConfiguration.artifactory.context.getOrElse('https://oss.jfrog.org')
+        publish {
+            repository {
+                repoKey = sharedConfiguration.artifactory.repoKey.getOrElse('oss-snapshot-local')
+                //The Artifactory repository key to publish to
+                //when using oss.jfrog.org the credentials are from Bintray. For local build we expect them to be found in
+                //~/.gradle/gradle.properties, otherwise to be set in the build server
+                username = sharedConfiguration.artifactory.username.get()
+                password = sharedConfiguration.artifactory.password.get()
+            }
+            defaults {
+                publications 'maven'
+            }
         }
     }
 }
