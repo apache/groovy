@@ -99,9 +99,9 @@ public class StaticTypesStatementWriter extends StatementWriter {
         if (collectionType.isArray() && loopVariable.getOriginType().equals(collectionType.getComponentType())) {
             writeOptimizedForEachLoop(compileStack, operandStack, mv, loop, collectionExpression, collectionType, loopVariable);
         } else if (ENUMERATION_CLASSNODE.equals(collectionType)) {
-            writeEnumerationBasedForEachLoop(compileStack, operandStack, mv, loop, collectionExpression, collectionType, loopVariable);
+            writeEnumerationBasedForEachLoop(loop, collectionExpression, collectionType);
         } else {
-            writeIteratorBasedForEachLoop(compileStack, operandStack, mv, loop, collectionExpression, collectionType, loopVariable);
+            writeIteratorBasedForEachLoop(loop, collectionExpression, collectionType);
         }
         operandStack.popDownTo(size);
         compileStack.pop();
@@ -206,15 +206,9 @@ public class StaticTypesStatementWriter extends StatementWriter {
     }
 
     private void writeIteratorBasedForEachLoop(
-            CompileStack compileStack,
-            OperandStack operandStack,
-            MethodVisitor mv,
             ForStatement loop,
             Expression collectionExpression,
-            ClassNode collectionType,
-            Parameter loopVariable) {
-        // Declare the loop counter.
-        BytecodeVariable variable = compileStack.defineVariable(loopVariable, false);
+            ClassNode collectionType) {
 
         if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(collectionType, ITERABLE_CLASSNODE)) {
             MethodCallExpression iterator = new MethodCallExpression(collectionExpression, "iterator", new ArgumentListExpression());
@@ -223,46 +217,24 @@ public class StaticTypesStatementWriter extends StatementWriter {
             iterator.visit(controller.getAcg());
         } else {
             collectionExpression.visit(controller.getAcg());
-            mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", "iterator", "(Ljava/lang/Object;)Ljava/util/Iterator;", false);
-            operandStack.replace(ClassHelper.Iterator_TYPE);
+            controller.getMethodVisitor().visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", "iterator", "(Ljava/lang/Object;)Ljava/util/Iterator;", false);
+            controller.getOperandStack().replace(ClassHelper.Iterator_TYPE);
         }
 
-        // Then get the iterator and generate the loop control
-
-        int iteratorIdx = compileStack.defineTemporaryVariable("iterator", ClassHelper.Iterator_TYPE, true);
-
-        Label continueLabel = compileStack.getContinueLabel();
-        Label breakLabel = compileStack.getBreakLabel();
-
-        mv.visitLabel(continueLabel);
-        mv.visitVarInsn(ALOAD, iteratorIdx);
-        writeIteratorHasNext(mv);
-        // note: ifeq tests for ==0, a boolean is 0 if it is false
-        mv.visitJumpInsn(IFEQ, breakLabel);
-
-        mv.visitVarInsn(ALOAD, iteratorIdx);
-        writeIteratorNext(mv);
-        operandStack.push(ClassHelper.OBJECT_TYPE);
-        operandStack.storeVar(variable);
-
-        // Generate the loop body
-        loop.getLoopBlock().visit(controller.getAcg());
-
-        mv.visitJumpInsn(GOTO, continueLabel);
-        mv.visitLabel(breakLabel);
-        compileStack.removeVar(iteratorIdx);
+        writeForInLoopControlAndBlock(loop);
     }
 
     private void writeEnumerationBasedForEachLoop(
-            CompileStack compileStack,
-            OperandStack operandStack,
-            MethodVisitor mv,
             ForStatement loop,
             Expression collectionExpression,
-            ClassNode collectionType,
-            Parameter loopVariable) {
+            ClassNode collectionType) {
+
+        CompileStack compileStack = controller.getCompileStack();
+        MethodVisitor mv = controller.getMethodVisitor();
+        OperandStack operandStack = controller.getOperandStack();
+
         // Declare the loop counter.
-        BytecodeVariable variable = compileStack.defineVariable(loopVariable, false);
+        BytecodeVariable variable = compileStack.defineVariable(loop.getVariable(), false);
 
         collectionExpression.visit(controller.getAcg());
 
