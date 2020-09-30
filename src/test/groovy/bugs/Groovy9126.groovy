@@ -90,8 +90,6 @@ final class Groovy9126 extends AbstractBytecodeTestCase {
             }
         ''')
 
-        println bytecode
-
         assert bytecode.hasStrictSequence(
                 ['public nonVoidMethod()Ljava/lang/Object;',
                  'L0',
