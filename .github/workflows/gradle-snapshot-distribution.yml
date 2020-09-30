@@ -35,13 +35,13 @@ jobs:
         run: ./gradlew clean dist --no-build-cache --no-scan
         timeout-minutes: 60
       - name: Move binary distribution
-        run:  mkdir build/distributions/binary/ && mv build/distributions/apache-groovy-binary-*.zip build/distributions/binary/
+        run:  mkdir -p build/distributions/binary/ && mv subprojects/groovy-binary/build/distributions/apache-groovy-binary-*.zip build/distributions/binary/
       - name: Move src distribution
-        run:  mkdir build/distributions/src/ && mv build/distributions/apache-groovy-src-*.zip build/distributions/src/
+        run:  mkdir -p build/distributions/src/ && mv subprojects/groovy-binary/build/distributions/apache-groovy-src-*.zip build/distributions/src/
       - name: Move docs distribution
-        run:  mkdir build/distributions/docs/ && mv build/distributions/apache-groovy-docs-*.zip build/distributions/docs/
+        run:  mkdir -p build/distributions/docs/ && mv subprojects/groovy-binary/build/distributions/apache-groovy-docs-*.zip build/distributions/docs/
       - name: Move sdk distribution
-        run:  mkdir build/distributions/sdk/ && mv build/distributions/apache-groovy-sdk-*.zip build/distributions/sdk/
+        run:  mkdir -p build/distributions/sdk/ && mv subprojects/groovy-binary/build/distributions/apache-groovy-sdk-*.zip build/distributions/sdk/
       - name: Upload binary distribution
         uses: actions/upload-artifact@v1
         with:

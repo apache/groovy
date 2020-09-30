@@ -111,6 +111,7 @@ def docGDK = tasks.register('docGDK', DocGDK) {
 tasks.register('distBin', Zip) {
     duplicatesStrategy = DuplicatesStrategy.FAIL
     archiveBaseName = 'apache-groovy'
+    archiveAppendix = 'binary'
     into("groovy-${project.version}") {
         with distributionExtension.distSpec
     }
@@ -210,37 +211,4 @@ component.addVariantsFromConfiguration(bin) {
     mapToOptional()
 }
 
-def doc = configurations.create("distributionDocs") {
-    canBeConsumed = true
-    canBeResolved = false
-    attributes {
-        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
-        attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, DocsType.USER_MANUAL))
-    }
-    outgoing {
-        artifacts {
-            artifact tasks.named('distDoc')
-        }
-    }
-}
-component.addVariantsFromConfiguration(doc) {
-    mapToOptional()
-}
-
-def src = configurations.create("distributionSources") {
-    canBeConsumed = true
-    canBeResolved = false
-    attributes {
-        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
-        attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, DocsType.SOURCES))
-    }
-    outgoing {
-        artifacts {
-            artifact tasks.named('distSrc')
-        }
-    }
-}
-component.addVariantsFromConfiguration(src) {
-    mapToOptional()
-}
 
