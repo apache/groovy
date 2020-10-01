@@ -2603,7 +2603,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     break;
                 }
             }
-            if (mn.isEmpty()) {
+            if (mn == null || mn.isEmpty()) {
                 mn = extension.handleMissingMethod(receiver, name, argumentList, args, call);
             }
             boolean callArgsVisited = false;
