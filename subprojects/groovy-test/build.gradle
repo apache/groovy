@@ -51,5 +51,3 @@ plugins.withId('eclipse') {
         entries.removeAll { entry -> entry.path == '/groovy-ant' }
     }
 }
-
-apply from: "${rootProject.projectDir}/gradle/jacoco/jacocofix.gradle"

@@ -34,7 +34,7 @@ plugins {
 }
 
 if (project == rootProject) {
-    def sharedConfiguration = project.extensions.create('sharedConfiguration', SharedConfiguration, project.objects, rootProject.layout, project.providers, rootProject.buildDir, rootProject.logger)
+    def sharedConfiguration = project.extensions.create('sharedConfiguration', SharedConfiguration, project.objects, rootProject.layout, project.providers, rootProject.buildDir, rootProject.logger, gradle.startParameter)
     project.extensions.create('versions', Versions, sharedConfiguration, project.providers, project.layout)
 }
 

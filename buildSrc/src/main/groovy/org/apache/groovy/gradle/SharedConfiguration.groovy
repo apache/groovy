@@ -20,6 +20,7 @@ package org.apache.groovy.gradle
 
 
 import groovy.transform.CompileStatic
+import org.gradle.StartParameter
 import org.gradle.api.execution.TaskExecutionGraph
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.logging.Logger
@@ -53,7 +54,9 @@ class SharedConfiguration {
                         ProjectLayout layout,
                         ProviderFactory providers,
                         File rootProjectDirectory,
-                        Logger logger) {
+                        Logger logger,
+                        StartParameter startParameter
+    ) {
         groovyVersion = providers.gradleProperty("groovyVersion").forUseAtConfigurationTime()
         groovyBundleVersion = providers.gradleProperty("groovyBundleVersion").forUseAtConfigurationTime()
         javacMaxMemory = providers.gradleProperty("javacMain_mx").forUseAtConfigurationTime()
@@ -68,8 +71,11 @@ class SharedConfiguration {
         signing = new Signing(this, objects, providers)
         binaryCompatibilityBaselineVersion = providers.gradleProperty("binaryCompatibilityBaseline").forUseAtConfigurationTime()
         hasCodeCoverage = providers.gradleProperty("coverage").forUseAtConfigurationTime()
-            .map {Boolean.valueOf(it) }
-            .orElse(false)
+                .map { Boolean.valueOf(it) }
+                .orElse(
+                        providers.provider { startParameter.taskNames.any { it =~ /jacoco/ } }
+                )
+                .orElse(false)
     }
 
     private static boolean detectCi(File file, Logger logger) {
