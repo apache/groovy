@@ -229,7 +229,8 @@ tasks.register("checkstyle") {
     dependsOn tasks.withType(Checkstyle)
 }
 
-tasks.withType(Checkstyle).configureEach {
+// cannot use configureEach because of the nested register
+tasks.withType(Checkstyle) {
     showViolations = false
     ignoreFailures = true
     configFile = rootProject.file("config/checkstyle/checkstyle.xml")
