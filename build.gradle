@@ -63,12 +63,14 @@ apply plugin: "com.github.jk1.dependency-license-report"
 File javaHome = new File(System.getProperty('java.home'))
 logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.version')})"
 
-task(copyTestResources, type: Copy)
-        .from('src/test')
-        .into("$buildDir/classes/test")
-        .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html', '**/*.gif', '**/*.ico', '**/*.css')
-test.dependsOn(copyTestResources)
-
+def copyTestResources = tasks.register("copyTestResources", Copy) {
+    from 'src/test'
+    into "$buildDir/classes/test"
+    include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html', '**/*.gif', '**/*.ico', '**/*.css')
+}
+tasks.named('test') {
+    dependsOn(copyTestResources)
+}
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
     maven { url 'https://repository.jboss.org/nexus/content/groups/m2-release-proxy' } // tools
@@ -194,7 +196,7 @@ tasks.withType(GroovyCompile).configureEach {
 }
 
 allprojects {
-    tasks.withType(JarJarTask) {
+    tasks.withType(JarJarTask).configureEach {
         jarjarToolClasspath.from(rootProject.configurations.tools)
     }
 }

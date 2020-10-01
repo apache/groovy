@@ -27,10 +27,12 @@ dependencies {
     implementation "com.thoughtworks.qdox:qdox:${versions.qdox}"
 }
 
-eclipse.classpath.file.whenMerged {
-    entries.removeAll { entry -> entry.path == '/groovy-xml' }
+plugins.withId('eclipse') {
+    eclipse.classpath.file.whenMerged {
+        entries.removeAll { entry -> entry.path == '/groovy-xml' }
+    }
 }
 
-rat {
+tasks.named('rat') {
     excludes << '**/stylesheet.css'  // MIT license as per NOTICE/LICENSE files
 }

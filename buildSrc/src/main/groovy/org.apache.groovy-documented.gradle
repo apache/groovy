@@ -86,7 +86,7 @@ tasks.withType(Groovydoc).configureEach {
 }
 
 pluginManager.withPlugin('org.asciidoctor.jvm.pdf') {
-    asciidoctorPdf {
+    tasks.named('asciidoctorPdf') {
         baseDirFollowsSourceFile()
         logDocuments = true
         sourceDir = project.file('src/spec/doc')

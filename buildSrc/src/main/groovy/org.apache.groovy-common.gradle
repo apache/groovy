@@ -62,7 +62,7 @@ repositories {
     }
 }
 
-rat {
+tasks.named('rat') {
     inputDir = projectDir
     excludes = ['subprojects/**', // covered above
                 'benchmark/**', // benchmarking files excluded from src zip

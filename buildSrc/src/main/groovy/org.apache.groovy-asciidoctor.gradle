@@ -37,7 +37,7 @@ configurations {
     }
 }
 
-tasks.withType(AbstractAsciidoctorTask) {
+tasks.withType(AbstractAsciidoctorTask).configureEach {
     outputs.cacheIf { true }
 }
 

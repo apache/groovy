@@ -38,7 +38,7 @@ dependencies {
     }
 }
 
-tasks.withType(Test) {
+tasks.withType(Test).configureEach {
     excludes = ['**/*TestCase.class', '**/*$*.class']
 // required for DataSet tests
     classpath = classpath + files('src/test/groovy') + files('src/spec/test')

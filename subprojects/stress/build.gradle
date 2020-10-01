@@ -26,7 +26,7 @@ dependencies {
     testImplementation project(':groovy-test')
 }
 
-test {
+tasks.named('test') {
     minHeapSize = '512m'
     maxHeapSize = '512m'
 

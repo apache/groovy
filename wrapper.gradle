@@ -16,6 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-tasks.withType(Wrapper) {
+tasks.withType(Wrapper).configureEach {
     gradleVersion = gradle_version
 }
