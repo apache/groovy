@@ -36,7 +36,6 @@ buildscript {
 
     dependencies {
         //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
-        classpath "org.nosphere.apache:creadur-rat-gradle:0.7.0"
         classpath "gradle.plugin.com.github.jk1:gradle-license-report:1.3"
     }
 }
@@ -44,7 +43,6 @@ buildscript {
 plugins {
     id 'org.asciidoctor.jvm.pdf' version '3.2.0'
     id 'me.champeau.buildscan-recipes' version '0.2.3'
-    id 'com.github.spotbugs' version '4.5.0'
     id 'com.github.ben-manes.versions' version '0.33.0'
     id 'com.github.blindpirate.osgi' version '0.0.3'
     id 'org.sonarqube' version '3.0'
@@ -86,38 +84,6 @@ configurations {
     spec
 }
 
-ext {
-    antVersion = '1.10.8'
-    asmVersion = '9.0'
-    antlr4Version = '4.7.4'
-    bridgerVersion = '1.5.Final'
-    coberturaVersion = '1.9.4.1'
-    commonsCliVersion = '1.4'
-    gparsVersion = '1.2.1'
-    ivyVersion = '2.5.0'
-    jansiVersion = '1.18'
-    jarjarVersion = '1.7.2'
-    javaParserVersion = '3.16.1'
-    jlineVersion = '2.14.6'
-    jmockVersion = '1.2.0'
-    logbackVersion = '1.1.7'
-    log4jVersion = '1.2.17'
-    log4j2Version = '2.13.3'
-    openbeansVersion = '1.0'
-    picocliVersion = '4.5.1'
-    qdoxVersion = '1.12.1'
-    slf4jVersion = '1.7.25'
-    xmlunitVersion = '1.6'
-    xstreamVersion = '1.4.13'
-    spockVersion = '2.0-M3-groovy-3.0' // running with Groovy 4 can be allowed with '-Dspock.iKnowWhatImDoing.disableGroovyVersionCheck=true'
-    spotbugsVersion = '4.1.2'
-    spotbugsAnnotationsVersion = '4.1.2'
-    checkstyleVersion = '8.36.1'
-    junit5Version = '5.7.0'
-    junit5PlatformVersion = '1.7.0'
-    jcipAnnotationsVersion = '1.0'
-}
-
 groovyLibrary {
     registerOptionalFeature 'gpars'
     registerOptionalFeature 'grapes'
@@ -149,61 +115,61 @@ groovyLibrary {
 
 dependencies {
     // for internal CLI usage
-    api "info.picocli:picocli:$picocliVersion" // marked as api but manually excluded later in assemble.gradle - modules will use shaded version
+    api "info.picocli:picocli:${versions.picocli}" // marked as api but manually excluded later in assemble.gradle - modules will use shaded version
     // for internal usage of things like Opcode
-    api "org.ow2.asm:asm:$asmVersion" // marked as api but manually excluded later in assemble.gradle - modules will use shaded version
+    api "org.ow2.asm:asm:${versions.asm}" // marked as api but manually excluded later in assemble.gradle - modules will use shaded version
     // for internal usage by the parser but manually excluded later in assemble.gradle - modules will use shaded version
-    implementation "org.ow2.asm:asm-analysis:$asmVersion"
-    implementation "org.ow2.asm:asm-commons:$asmVersion"
-    implementation "org.ow2.asm:asm-tree:$asmVersion"
-    implementation "org.ow2.asm:asm-util:$asmVersion"
-    implementation "com.googlecode:openbeans:$openbeansVersion"
+    implementation "org.ow2.asm:asm-analysis:${versions.asm}"
+    implementation "org.ow2.asm:asm-commons:${versions.asm}"
+    implementation "org.ow2.asm:asm-tree:${versions.asm}"
+    implementation "org.ow2.asm:asm-util:${versions.asm}"
+    implementation "com.googlecode:openbeans:${versions.openbeans}"
 
-    loggingImplementation "org.fusesource.jansi:jansi:$jansiVersion"
+    loggingImplementation "org.fusesource.jansi:jansi:${versions.jansi}"
 
-    xstreamAstImplementation("com.thoughtworks.xstream:xstream:$xstreamVersion") {
+    xstreamAstImplementation("com.thoughtworks.xstream:xstream:${versions.xstream}") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
         exclude(group: 'xmlpull', module: 'xmlpull')
     }
-    grapesImplementation("org.apache.ivy:ivy:$ivyVersion") {
+    grapesImplementation("org.apache.ivy:ivy:${versions.ivy}") {
         transitive = false
     }
 
-    gparsImplementation("org.codehaus.gpars:gpars:$gparsVersion") {
+    gparsImplementation("org.codehaus.gpars:gpars:${versions.gpars}") {
         exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
     }
 
-    testImplementation "jmock:jmock:$jmockVersion"
-    testImplementation "jmock:jmock-cglib:$jmockVersion"
-    testImplementation "ch.qos.logback:logback-classic:$logbackVersion"
-    testImplementation "log4j:log4j:$log4jVersion"
-    testImplementation "org.apache.logging.log4j:log4j-core:$log4j2Version"
-    testImplementation "org.slf4j:jcl-over-slf4j:$slf4jVersion"
-    testImplementation "com.thoughtworks.qdox:qdox:$qdoxVersion"
+    testImplementation "jmock:jmock:${versions.jmock}"
+    testImplementation "jmock:jmock-cglib:${versions.jmock}"
+    testImplementation "ch.qos.logback:logback-classic:${versions.logback}"
+    testImplementation "log4j:log4j:${versions.log4j}"
+    testImplementation "org.apache.logging.log4j:log4j-core:${versions.log4j2}"
+    testImplementation "org.slf4j:jcl-over-slf4j:${versions.slf4j}"
+    testImplementation "com.thoughtworks.qdox:qdox:${versions.qdox}"
 
-    tools "org.pantsbuild:jarjar:$jarjarVersion"
-    tools "org.jboss.bridger:bridger:$bridgerVersion"
+    tools "org.pantsbuild:jarjar:${versions.jarjar}"
+    tools "org.jboss.bridger:bridger:${versions.bridger}"
 
-    tools("net.sourceforge.cobertura:cobertura:$coberturaVersion") {
+    tools("net.sourceforge.cobertura:cobertura:${versions.cobertura}") {
         exclude(module: 'asm')
         exclude(module: 'asm')
         exclude(module: 'ant')
     }
-    tools "org.ow2.asm:asm:$asmVersion"
-    tools "com.thoughtworks.qdox:qdox:$qdoxVersion"
+    tools "org.ow2.asm:asm:${versions.asm}"
+    tools "com.thoughtworks.qdox:qdox:${versions.qdox}"
 
     testImplementation project(':groovy-ant')
     testImplementation project(':groovy-xml')
     testImplementation project(':groovy-dateutil')
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-macro')
-    testFixturesImplementation "xmlunit:xmlunit:$xmlunitVersion"
+    testFixturesImplementation "xmlunit:xmlunit:${versions.xmlunit}"
     testFixturesImplementation project(':groovy-test')
     testFixturesImplementation project(':groovy-xml')
     spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.10.1'
-    testImplementation "net.jcip:jcip-annotations:$jcipAnnotationsVersion"
+    testImplementation "net.jcip:jcip-annotations:${versions.jcipAnnotations}"
 
     testRuntimeOnly(project(":")) {
         capabilities {
@@ -378,8 +344,7 @@ apply from: 'gradle/licenses.gradle'
 // works pretty nice, but it's up to the Groovy devs to decide
 apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
-
-apply from: 'gradle/quality.gradle'
+apply from: 'gradle/jacoco/jacoco.gradle'
 apply from: 'gradle/parallel-build-fixes.gradle'
 
 // If a local configuration file for tweaking the build is present, apply it
@@ -393,6 +358,18 @@ licenseReport {
             'org.multiverse'  // we never include this optional dependency of an optional dependency
     ]
 }
+
+sonarqube {
+    properties {
+        property "sonar.projectName", "Apache Groovy"
+        property "sonar.projectKey", "apache_groovy"
+        property "sonar.organization", "apache"
+        property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.cpd.exclusions", "**/*"
+//        property "sonar.coverage.jacoco.xmlReportPaths", "${rootProject.buildDir}/reports/jacoco/jacocoAllReport/jacocoAllReport.xml"
+    }
+}
+
 
 // UNCOMMENT THE FOLLOWING TASKS IF YOU WANT TO RUN LICENSE CHECKING
 //task licenseFormatCustom(type:nl.javadude.gradle.plugins.license.License) {

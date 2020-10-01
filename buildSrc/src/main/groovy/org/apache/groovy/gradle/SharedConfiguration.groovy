@@ -40,6 +40,7 @@ class SharedConfiguration {
     final Provider<String> javadocMaxMemory
     final Provider<String> installationDirectory
     final Provider<String> binaryCompatibilityBaselineVersion
+    final Provider<Boolean> hasCodeCoverage
     final boolean isRunningOnCI
 
     @Nested
@@ -48,7 +49,11 @@ class SharedConfiguration {
     @Nested
     final Signing signing
 
-    SharedConfiguration(ObjectFactory objects, ProjectLayout layout, ProviderFactory providers, File rootProjectDirectory, Logger logger) {
+    SharedConfiguration(ObjectFactory objects,
+                        ProjectLayout layout,
+                        ProviderFactory providers,
+                        File rootProjectDirectory,
+                        Logger logger) {
         groovyVersion = providers.gradleProperty("groovyVersion").forUseAtConfigurationTime()
         groovyBundleVersion = providers.gradleProperty("groovyBundleVersion").forUseAtConfigurationTime()
         javacMaxMemory = providers.gradleProperty("javacMain_mx").forUseAtConfigurationTime()
@@ -62,6 +67,9 @@ class SharedConfiguration {
         artifactory = new Artifactory(layout, providers, logger)
         signing = new Signing(this, objects, providers)
         binaryCompatibilityBaselineVersion = providers.gradleProperty("binaryCompatibilityBaseline").forUseAtConfigurationTime()
+        hasCodeCoverage = providers.gradleProperty("coverage").forUseAtConfigurationTime()
+            .map {Boolean.valueOf(it) }
+            .orElse(false)
     }
 
     private static boolean detectCi(File file, Logger logger) {

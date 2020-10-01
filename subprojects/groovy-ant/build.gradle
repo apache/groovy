@@ -22,20 +22,20 @@ plugins {
 
 dependencies {
     api rootProject  // FileNameFinder implements IFileNameFinder...
-    api("org.apache.ant:ant:$antVersion") {  // AntBuilder has Project constructor...
+    api("org.apache.ant:ant:${versions.ant}") {  // AntBuilder has Project constructor...
         transitive = false
     }
-    implementation("org.apache.ant:ant-junit:$antVersion") {
+    implementation("org.apache.ant:ant-junit:${versions.ant}") {
         exclude(group: 'junit', module: 'junit')
     }
-    implementation "org.apache.ant:ant-launcher:$antVersion"
-    implementation "org.apache.ant:ant-antlr:$antVersion"
+    implementation "org.apache.ant:ant-launcher:${versions.ant}"
+    implementation "org.apache.ant:ant-antlr:${versions.ant}"
     // for groovydoc ant command
     implementation project(':groovy-groovydoc'), {
         transitive = false
     }
-    compileOnly "org.ow2.asm:asm-tree:$asmVersion" // VerifyClass
-    compileOnly "org.ow2.asm:asm-util:$asmVersion" // VerifyClass
+    compileOnly "org.ow2.asm:asm-tree:${versions.asm}" // VerifyClass
+    compileOnly "org.ow2.asm:asm-util:${versions.asm}" // VerifyClass
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-xml')
 }

@@ -24,11 +24,11 @@ dependencies {
     api rootProject // ASTMatcher use ASTNode...
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-templates')
-    testImplementation ("org.spockframework:spock-core:$spockVersion") {
+    testImplementation ("org.spockframework:spock-core:${versions.spock}") {
         exclude group: 'org.codehaus.groovy'
     }
-    testImplementation ("org.spockframework:spock-junit4:$spockVersion")
-    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:$junit5Version")
+    testImplementation ("org.spockframework:spock-junit4:${versions.spock}")
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:${versions.junit5}")
 }
 
 test {

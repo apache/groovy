@@ -23,7 +23,7 @@ plugins {
 dependencies {
     api rootProject // JmxBuilder extends FactoryBuilderSupport...
     testImplementation project(':groovy-test')
-    testRuntimeOnly("org.apache.ivy:ivy:$ivyVersion") {
+    testRuntimeOnly("org.apache.ivy:ivy:${versions.ivy}") {
         transitive = false
     }
     testRuntimeOnly project(":groovy-swing")

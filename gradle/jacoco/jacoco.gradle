@@ -17,20 +17,23 @@
  *  under the License.
  */
 
-if (rootProject.hasProperty('coverage') && Boolean.valueOf(rootProject.getProperty('coverage'))) {
+if (sharedConfiguration.hasCodeCoverage.get()) {
     // we only apply the jacoco configuration if a system property is set, in order to avoid instrumentation if we
     // are not specifically asking for code coverage
 
-    allprojects {
-        if (!['performance', 'binary-compatibility'].contains(it.name)) {
-            apply plugin: 'jacoco'
-        }
+    def affectedProjects = allprojects.findAll { it.pluginManager.hasPlugin('org.gradle.groovy-base') }
+    affectedProjects.each {
+        it.with {
+            pluginManager.withPlugin('org.gradle.groovy-base') {
+                apply plugin: 'jacoco'
 
-        project.afterEvaluate {
-            tasks.withType(JacocoReport) {
-                if (name != 'jacocoAllReport') {
-                    sourceDirectories.from = sourceDirectories.from + files(project.sourceSets.main.allGroovy.srcDirs)
+                project.afterEvaluate {
+                    tasks.withType(JacocoReport) {
+                        if (name != 'jacocoAllReport') {
+                            sourceDirectories.from = sourceDirectories.from + files(project.sourceSets.main.allGroovy.srcDirs)
 //                    classDirectories += files(project.sourceSets.main.output)
+                        }
+                    }
                 }
             }
         }
@@ -39,15 +42,13 @@ if (rootProject.hasProperty('coverage') && Boolean.valueOf(rootProject.getProper
     // To avoid "Can't add different class with same name" fatal error
     // No need to include Java class directories since Groovy one includes those classes
 
-    task jacocoMerge(type: JacocoMerge) {
-        destinationFile = file("$buildDir/jacoco/jacoco-all.exec")
+    def jacocoMerge = tasks.register("jacocoMerge", JacocoMerge) {
+        destinationFile = layout.buildDirectory.file("jacoco/jacoco-all.exec").map { it.asFile }
 
-        allprojects {
-            project.plugins.withType(JavaPlugin) {
-                project.tasks.withType(Test) { task ->
-                    if (sourceSets.test.allSource.srcDirs.any { it.exists() }) {
-                        executionData(task)
-                    }
+        affectedProjects.each { project ->
+            project.tasks.withType(Test).each { task ->
+                if (project.sourceSets.test.allSource.srcDirs.any { it.exists() }) {
+                    executionData(task)
                 }
             }
         }
@@ -55,8 +56,9 @@ if (rootProject.hasProperty('coverage') && Boolean.valueOf(rootProject.getProper
         executionData = files(executionData).filter { f -> f.exists() }
     }
 
-    task jacocoAllReport(type: JacocoReport, dependsOn: 'jacocoMerge') {
-        executionData jacocoMerge.destinationFile
+    def jacocoAllReport = tasks.register("jacocoAllReport", JacocoReport) {
+        dependsOn jacocoMerge
+        executionData jacocoMerge.map { it.destinationFile }.get()
         reports {
             xml {
                 enabled true
@@ -66,16 +68,18 @@ if (rootProject.hasProperty('coverage') && Boolean.valueOf(rootProject.getProper
             }
         }
 
-        allprojects {
-            project.plugins.withType(JavaPlugin) {
-                def sd = sourceDirectories.from ?: files()
-                def cd = classDirectories.from ?: files()
-                sourceDirectories.from = sd + files(project.sourceSets.main.allGroovy.srcDirs, project.sourceSets.main.allJava.srcDirs)
-                classDirectories.from = cd + files(compileGroovy.destinationDir)
-            }
+        affectedProjects.each { project ->
+            def sd = sourceDirectories.from ?: files()
+            def cd = classDirectories.from ?: files()
+            sourceDirectories.from = sd + files(project.sourceSets.main.allGroovy.srcDirs, project.sourceSets.main.allJava.srcDirs)
+            classDirectories.from = cd + files(project.compileGroovy.destinationDir)
         }
     }
 
-    check.dependsOn jacocoAllReport
-    tasks.sonarqube.dependsOn jacocoAllReport
+    tasks.named('check') {
+        dependsOn jacocoAllReport
+    }
+    tasks.named('sonarqube') {
+        dependsOn jacocoAllReport
+    }
 }

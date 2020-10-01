@@ -20,17 +20,13 @@ plugins {
     id 'org.apache.groovy-library'
 }
 
-ext {
-    jacksonVersion = '2.11.2'
-}
-
 dependencies {
     api rootProject  // YamlBuilder extends GroovyObjectSupport...
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
-    implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${versions.jackson}"
+    implementation "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
     implementation project(':groovy-json')
     testImplementation project(':groovy-test')
-    testRuntimeOnly "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
+    testRuntimeOnly "com.fasterxml.jackson.core:jackson-annotations:${versions.jackson}"
     testRuntimeOnly project(':groovy-ant') // for JavadocAssertionTests
 }
 

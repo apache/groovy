@@ -36,7 +36,7 @@ dependencies {
     testImplementation('javax.servlet:jsp-api:2.0') { dep ->
         exclude(group: 'javax.servlet', module: 'servlet-api')
     }
-    testImplementation "jmock:jmock:$jmockVersion"
+    testImplementation "jmock:jmock:${versions.jmock}"
     testImplementation project(':groovy-json')
     testImplementation project(':groovy-test')
 }

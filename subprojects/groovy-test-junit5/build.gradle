@@ -22,19 +22,19 @@ plugins {
 
 dependencies {
     api rootProject // JUnit5Runner implements GroovyRunner...
-    api("org.junit.jupiter:junit-jupiter-api:$junit5Version") {
+    api("org.junit.jupiter:junit-jupiter-api:${versions.junit5}") {
         exclude(group: 'org.apiguardian', module: 'apiguardian-api')
         exclude(group: 'org.junit.platform', module: 'junit-platform-commons')
     }
-    implementation("org.junit.platform:junit-platform-launcher:$junit5PlatformVersion") {
+    implementation("org.junit.platform:junit-platform-launcher:${versions.junit5Platform}") {
         exclude(group: 'org.apiguardian', module: 'apiguardian-api')
     }
-    implementation("org.junit.jupiter:junit-jupiter-engine:$junit5Version") {
+    implementation("org.junit.jupiter:junit-jupiter-engine:${versions.junit5}") {
         exclude(group: 'org.apiguardian', module: 'apiguardian-api')
     }
-    testImplementation "org.junit.jupiter:junit-jupiter-params:$junit5Version"
-    testRuntimeOnly "org.junit.platform:junit-platform-engine:$junit5PlatformVersion"
-    testRuntimeOnly "org.junit.platform:junit-platform-runner:$junit5PlatformVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter-params:${versions.junit5}"
+    testRuntimeOnly "org.junit.platform:junit-platform-engine:${versions.junit5Platform}"
+    testRuntimeOnly "org.junit.platform:junit-platform-runner:${versions.junit5Platform}"
     testImplementation project(':groovy-test')
 }
 

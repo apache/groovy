@@ -22,7 +22,7 @@ plugins {
 
 dependencies {
     api rootProject   // CliBuilder uses Option...
-    implementation "info.picocli:picocli:$picocliVersion"
+    implementation "info.picocli:picocli:${versions.picocli}"
     testImplementation rootProject.sourceSets.test.output
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-dateutil')

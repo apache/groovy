@@ -57,8 +57,8 @@ generateGrammarSource {
 }
 
 dependencies {
-    antlr "com.tunnelvisionlabs:antlr4:$antlr4Version"
-    implementation "com.tunnelvisionlabs:antlr4-runtime:$antlr4Version"
+    antlr "com.tunnelvisionlabs:antlr4:${versions.antlr4}"
+    implementation "com.tunnelvisionlabs:antlr4-runtime:${versions.antlr4}"
     testImplementation project(':groovy-test')
 }
 
