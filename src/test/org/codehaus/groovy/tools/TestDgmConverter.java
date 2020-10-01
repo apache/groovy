@@ -28,11 +28,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
-import java.util.Comparator;
 
 public class TestDgmConverter extends TestCase {
 
-    private static final String REFERENCE_CLASS = "/org/codehaus/groovy/runtime/DefaultGroovyMethods.class";
+    private static final String REFERENCE_CLASS = "/org/codehaus/groovy/runtime/dgm$0.class";
 
     public void testConverter () throws URISyntaxException {
         File dgmClassDirectory = new File(TestDgmConverter.class.getResource(REFERENCE_CLASS).toURI()).getParentFile();
