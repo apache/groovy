@@ -21,46 +21,48 @@ def appendNode(node, text) {
     node.append(new XmlParser().parseText(text))
 }
 
-allprojects {
-    apply plugin: 'idea'
+if (gradle.startParameter.taskNames.any { it =~ /idea'/ }) {
 
-    idea {
-        module.iml.withXml { provider ->
-            def node = provider.asNode()
+    allprojects {
+        apply plugin: 'idea'
 
-            // remove target classes from libraries
-            def moduleRoot = node.component.find { it.'@name' == 'NewModuleRootManager' }
-            def entries = moduleRoot.orderEntry.findAll { oe ->
-                oe.library.CLASSES.root.'@url' =~ /build/
-            }
-            if (entries) {
-                entries.each { moduleRoot.remove(it) }
+        idea {
+            module.iml.withXml { provider ->
+                def node = provider.asNode()
+
+                // remove target classes from libraries
+                def moduleRoot = node.component.find { it.'@name' == 'NewModuleRootManager' }
+                def entries = moduleRoot.orderEntry.findAll { oe ->
+                    oe.library.CLASSES.root.'@url' =~ /build/
+                }
+                if (entries) {
+                    entries.each { moduleRoot.remove(it) }
+                }
             }
         }
     }
-}
 
-idea {
-    project {
-        ipr {
-            withXml { provider ->
-                def node = provider.asNode()
+    idea {
+        project {
+            ipr {
+                withXml { provider ->
+                    def node = provider.asNode()
 
-                // jdk, language level fix
-                def pRoot = node.component.find { it.'@name' == 'ProjectRootManager' }
-                pRoot.'@languageLevel' = 'JDK_1_8'
-                pRoot.'@project-jdk-name' = '1.8'
+                    // jdk, language level fix
+                    def pRoot = node.component.find { it.'@name' == 'ProjectRootManager' }
+                    pRoot.'@languageLevel' = 'JDK_1_8'
+                    pRoot.'@project-jdk-name' = '1.8'
 
-                // Use git
-                def vcsConfig = node.component.find { it.'@name' == 'VcsDirectoryMappings' }
-                vcsConfig.mapping[0].'@vcs' = 'Git'
+                    // Use git
+                    def vcsConfig = node.component.find { it.'@name' == 'VcsDirectoryMappings' }
+                    vcsConfig.mapping[0].'@vcs' = 'Git'
 
-                // license header
-                def copyrightManager = node.component.find { it.'@name' == 'CopyrightManager' }
-                copyrightManager.@default = 'ASL2'
-                def aslCopyright = copyrightManager.copyright.find { it.option.find { it.@name == 'myName' }?.@value == 'ASL2' }
-                if (aslCopyright == null) {
-                    appendNode(copyrightManager, '''
+                    // license header
+                    def copyrightManager = node.component.find { it.'@name' == 'CopyrightManager' }
+                    copyrightManager.@default = 'ASL2'
+                    def aslCopyright = copyrightManager.copyright.find { it.option.find { it.@name == 'myName' }?.@value == 'ASL2' }
+                    if (aslCopyright == null) {
+                        appendNode(copyrightManager, '''
                       <copyright>
                           <option name="notice" value=" Licensed to the Apache Software Foundation (ASF) under one&#10; or more contributor license agreements.  See the NOTICE file&#10; distributed with this work for additional information&#10; regarding copyright ownership.  The ASF licenses this file&#10; to you under the Apache License, Version 2.0 (the&#10; &quot;License&quot;); you may not use this file except in compliance&#10; with the License.  You may obtain a copy of the License at&#10;&#10;   http://www.apache.org/licenses/LICENSE-2.0&#10;&#10; Unless required by applicable law or agreed to in writing,&#10; software distributed under the License is distributed on an&#10; &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY&#10; KIND, either express or implied.  See the License for the&#10; specific language governing permissions and limitations&#10; under the License." />
                           <option name="keyword" value="Copyright" />
@@ -69,59 +71,59 @@ idea {
                           <option name="myLocal" value="true" />
                       </copyright>
                     ''')
-                    appendNode(copyrightManager, '''
+                        appendNode(copyrightManager, '''
                         <LanguageOptions name="__TEMPLATE__">
                             <option name="addBlankAfter" value="false" />
                         </LanguageOptions>
                     ''')
-                }
+                    }
 
-                def compilerConfig = node.component.find { it.@name == 'CompilerConfiguration' }
-                ['/**/org.codehaus.groovy.runtime.ExtensionModule',
-                '*.jar',
-                'test-resources:/**/*.groovy','test-resources:/**/*.java',
-                '!?*.groovy',
-                '/groovy/inspect/swingui/AstBrowserProperties.groovy',
-                '/groovy/inspect/swingui/AstBrowserProperties.groovy',
-                '/**/org.codehaus.groovy.runtime.ExtensionModule;*.jar',
-                '/groovy/inspect/swingui/AstBrowserProperties.groovy',
-                '/**/org.codehaus.groovy.runtime.ExtensionModule',
-                '*.jar'].each {
-                    appendNode(compilerConfig.wildcardResourcePatterns[0], "<entry name=\"$it\" />")
-                }
-                appendNode(compilerConfig,'''<excludeFromCompile>
+                    def compilerConfig = node.component.find { it.@name == 'CompilerConfiguration' }
+                    ['/**/org.codehaus.groovy.runtime.ExtensionModule',
+                     '*.jar',
+                     'test-resources:/**/*.groovy', 'test-resources:/**/*.java',
+                     '!?*.groovy',
+                     '/groovy/inspect/swingui/AstBrowserProperties.groovy',
+                     '/groovy/inspect/swingui/AstBrowserProperties.groovy',
+                     '/**/org.codehaus.groovy.runtime.ExtensionModule;*.jar',
+                     '/groovy/inspect/swingui/AstBrowserProperties.groovy',
+                     '/**/org.codehaus.groovy.runtime.ExtensionModule',
+                     '*.jar'].each {
+                        appendNode(compilerConfig.wildcardResourcePatterns[0], "<entry name=\"$it\" />")
+                    }
+                    appendNode(compilerConfig, '''<excludeFromCompile>
       <directory url="file://$PROJECT_DIR$/src/test-resources" includeSubdirectories="true" />
     </excludeFromCompile>''')
+                }
             }
         }
-    }
 
-    workspace {
-        iws {
-            withXml { provider ->
-                def node = provider.asNode()
+        workspace {
+            iws {
+                withXml { provider ->
+                    def node = provider.asNode()
 
-                // exclude some files from stub generation
-                def groovyCompilerConfig = node.component.find { it.'@name' == 'GroovyCompilerConfiguration' }
-                if (!groovyCompilerConfig) {
-                    node.append(new XmlParser().parseText('''
+                    // exclude some files from stub generation
+                    def groovyCompilerConfig = node.component.find { it.'@name' == 'GroovyCompilerConfiguration' }
+                    if (!groovyCompilerConfig) {
+                        node.append(new XmlParser().parseText('''
                    <component name='GroovyCompilerConfiguration'>
                       <excludes></excludes>
                    </component>'''))
-                    groovyCompilerConfig = node.component.find { it.'@name' == 'GroovyCompilerConfiguration' }
-                }
-                def excludeNode = groovyCompilerConfig.excludes[0]
-                ['/src/test/org/codehaus/groovy/transform/DelegateTransformTest.groovy',
-                '/src/test/groovy/bugs/Groovy593_Bug.groovy'].each { excludedFile ->
-                    def url = "file://\$PROJECT_DIR\$$excludedFile"
-                    if (!excludeNode.file.any { it.'@url' == url }) {
-                        excludeNode.append(new XmlParser().parseText("<file url=\"$url\" />"))
+                        groovyCompilerConfig = node.component.find { it.'@name' == 'GroovyCompilerConfiguration' }
                     }
-                }
+                    def excludeNode = groovyCompilerConfig.excludes[0]
+                    ['/src/test/org/codehaus/groovy/transform/DelegateTransformTest.groovy',
+                     '/src/test/groovy/bugs/Groovy593_Bug.groovy'].each { excludedFile ->
+                        def url = "file://\$PROJECT_DIR\$$excludedFile"
+                        if (!excludeNode.file.any { it.'@url' == url }) {
+                            excludeNode.append(new XmlParser().parseText("<file url=\"$url\" />"))
+                        }
+                    }
 
-                // add sample configurations
-                def runmanager = node.component.find { it.'@name' == 'RunManager' }
-                appendNode(runmanager, '''<configuration default="false" name="Console" type="Application" factoryName="Application">
+                    // add sample configurations
+                    def runmanager = node.component.find { it.'@name' == 'RunManager' }
+                    appendNode(runmanager, '''<configuration default="false" name="Console" type="Application" factoryName="Application">
       <extension name="coverage" enabled="false" merge="false" runner="idea">
         <pattern>
           <option name="PATTERN" value="groovy.ui.*" />
@@ -153,7 +155,7 @@ idea {
       <method />
     </configuration>
 ''')
-                appendNode(runmanager,'''<configuration default="false" name="groovy.transform.stc in groovy" type="JUnit" factoryName="JUnit">
+                    appendNode(runmanager, '''<configuration default="false" name="groovy.transform.stc in groovy" type="JUnit" factoryName="JUnit">
       <extension name="coverage" enabled="false" merge="false" runner="idea">
         <pattern>
           <option name="PATTERN" value="groovy.transform.stc.*" />
@@ -191,24 +193,24 @@ idea {
       <method />
     </configuration>
 ''')
+                }
             }
         }
-    }
 
-    module.iml.withXml { provider ->
-        def node = provider.asNode()
+        module.iml.withXml { provider ->
+            def node = provider.asNode()
 
-        // remove compiler classes from libraries
-        def moduleRoot = node.component.find { it.'@name' == 'NewModuleRootManager' }
-        def entry = moduleRoot.orderEntry.find { oe ->
-            oe.library.CLASSES.root.'@url' =~ /classes\/compiler/
-        }
-        if (entry) {
-            moduleRoot.remove(entry)
-        }
+            // remove compiler classes from libraries
+            def moduleRoot = node.component.find { it.'@name' == 'NewModuleRootManager' }
+            def entry = moduleRoot.orderEntry.find { oe ->
+                oe.library.CLASSES.root.'@url' =~ /classes\/compiler/
+            }
+            if (entry) {
+                moduleRoot.remove(entry)
+            }
 
-        // add an entry for groovy jar
-        appendNode(moduleRoot, """
+            // add an entry for groovy jar
+            appendNode(moduleRoot, """
             <orderEntry type="module-library" exported="">
               <library>
                 <CLASSES>
@@ -217,9 +219,10 @@ idea {
               </library>
             </orderEntry>
         """)
-    }
+        }
 
-    tasks.withType(GenerateIdeaProject).all {
-        it.dependsOn(jar)
+        tasks.withType(GenerateIdeaProject).configureEach {
+            dependsOn(jar)
+        }
     }
 }

@@ -30,7 +30,7 @@ sourceSets {
     }
 }
 
-tasks.withType(Test) {
+tasks.withType(Test).configureEach {
     def grapeDirectory = new File(temporaryDir, "grape")
     def jdk8 = ['-XX:+UseConcMarkSweepGC']
     def jdk9 = ['-Djava.locale.providers=COMPAT,SPI']

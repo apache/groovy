@@ -116,7 +116,7 @@ distribution {
             from configurations.allAsciidoc
         }
         into('html/groovy-jdk') {
-            from docGDK
+            from tasks.named('docGDK')
         }
         into('licenses') {
             from rootProject.file('licenses')

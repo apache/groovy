@@ -32,12 +32,12 @@ dependencies {
     }
 }
 
-test {
+tasks.named('test') {
     useJUnitPlatform()
     systemProperty "spock.iKnowWhatImDoing.disableGroovyVersionCheck", "true"
 }
 
-rat {
+tasks.named('rat') {
     excludes += [
             // test files
             'src/spec/test-resources/*.txt',

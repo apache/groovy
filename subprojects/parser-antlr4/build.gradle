@@ -69,6 +69,6 @@ sourceSets.test.java.srcDirs += file("$srcTest/java")
 sourceSets.test.groovy.srcDirs += file("$srcTest/groovy")
 sourceSets.test.resources.srcDirs += file("$srcTest/resources")
 
-tasks.withType(Test) {
+tasks.withType(Test).configureEach {
     jvmArgs /*"-Dgroovy.attach.groovydoc=true", "-Dgroovy.attach.runtime.groovydoc=true",*/ "-Dgroovy.antlr4.cache.threshold=100"
 }

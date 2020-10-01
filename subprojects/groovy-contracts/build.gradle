@@ -31,7 +31,7 @@ dependencies {
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:${versions.junit5}")
 }
 
-test {
+tasks.named('test') {
     useJUnitPlatform()
     systemProperty "spock.iKnowWhatImDoing.disableGroovyVersionCheck", "true"
 }

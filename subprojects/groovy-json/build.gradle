@@ -34,6 +34,8 @@ dependencies {
     }
 }
 
-eclipse.classpath.file.whenMerged {
-    entries.removeAll { entry -> entry.path in ['/groovy-ant', '/groovy-groovydoc'] }
+plugins.withId('eclipse') {
+    eclipse.classpath.file.whenMerged {
+        entries.removeAll { entry -> entry.path in ['/groovy-ant', '/groovy-groovydoc'] }
+    }
 }

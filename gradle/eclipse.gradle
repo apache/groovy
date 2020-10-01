@@ -16,79 +16,80 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-allprojects {
-    apply plugin: 'eclipse'
+if (gradle.startParameter.taskNames.any { it =~ /eclipse'/ }) {
+    allprojects {
+        apply plugin: 'eclipse'
 
-    eclipse.classpath.file.whenMerged {
-        entries.removeAll { entry -> entry.path =~ '/build/' } // affects: cli-commons, cli-picocli, console, groovydoc, macro, servlet, swing, templates, xml
-        entries.unique(true) { entry -> entry.path } // affects: console, groovydoc, macro, servlet, swing, templates, xml
-        entries.sort(true) { entry ->
-            if (entry.class.simpleName != 'SourceFolder') {
-                "${entry.kind}:${entry.path.split('/')[-1].toLowerCase()}"
-            } else {
-                "${entry.kind}:${entry.path}"
+        eclipse.classpath.file.whenMerged {
+            entries.removeAll { entry -> entry.path =~ '/build/' } // affects: cli-commons, cli-picocli, console, groovydoc, macro, servlet, swing, templates, xml
+            entries.unique(true) { entry -> entry.path } // affects: console, groovydoc, macro, servlet, swing, templates, xml
+            entries.sort(true) { entry ->
+                if (entry.class.simpleName != 'SourceFolder') {
+                    "${entry.kind}:${entry.path.split('/')[-1].toLowerCase()}"
+                } else {
+                    "${entry.kind}:${entry.path}"
+                }
+            }
+
+            // set "test" attribute based on gradle scopes
+            entries.findAll { entry ->
+                entry.class.name in [
+                        'org.gradle.plugins.ide.eclipse.model.Library',
+                        'org.gradle.plugins.ide.eclipse.model.SourceFolder'
+                ]
+            }.each { entry ->
+                if (entry.entryAttributes['gradle_used_by_scope'] == 'test') {
+                    entry.entryAttributes['test'] = 'true'
+                }
+            }
+            // set "test" attribute based on configuration
+            entries.findAll { entry ->
+                entry.class.name in [
+                        'org.gradle.plugins.ide.eclipse.model.ProjectDependency'
+                ]
+            }.each { entry ->
+                if (entry.path.substring(1) in project.configurations.testImplementation.dependencies*.name) {
+                    entry.entryAttributes['test'] = 'true'
+                }
             }
         }
 
-        // set "test" attribute based on gradle scopes
-        entries.findAll { entry ->
-            entry.class.name in [
-                'org.gradle.plugins.ide.eclipse.model.Library',
-                'org.gradle.plugins.ide.eclipse.model.SourceFolder'
-            ]
-        }.each { entry ->
-            if (entry.entryAttributes['gradle_used_by_scope'] == 'test') {
-                entry.entryAttributes['test'] = 'true'
-            }
-        }
-        // set "test" attribute based on configuration
-        entries.findAll { entry ->
-            entry.class.name in [
-                'org.gradle.plugins.ide.eclipse.model.ProjectDependency'
-            ]
-        }.each { entry ->
-            if (entry.path.substring(1) in project.configurations.testImplementation.dependencies*.name) {
-                entry.entryAttributes['test'] = 'true'
-            }
-        }
-    }
-
-    project.tasks.eclipse.doLast {
-        file("${project.projectDir}/.settings/org.eclipse.jdt.groovy.core.prefs").with { prefs ->
-            if (!prefs.exists()) {
-                append('''\
+        project.tasks.eclipse.doLast {
+            file("${project.projectDir}/.settings/org.eclipse.jdt.groovy.core.prefs").with { prefs ->
+                if (!prefs.exists()) {
+                    append('''\
                     eclipse.preferences.version=1
                     groovy.compiler.level=30
                     groovy.script.filters=**/*.gradle,n,**/script*.groovy,y,**/*resources/**/*.groovy,y,**/benchmarks/**/*.groovy,y
                     org.codehaus.groovy.eclipse.preferences.compiler.project=true
                     '''.stripIndent()
-                )
+                    )
+                }
             }
-        }
 
-        file("${project.projectDir}/.settings/org.eclipse.core.resources.prefs").with { prefs ->
-            if (!prefs.exists()) {
-                append('''\
+            file("${project.projectDir}/.settings/org.eclipse.core.resources.prefs").with { prefs ->
+                if (!prefs.exists()) {
+                    append('''\
                     eclipse.preferences.version=1
                     encoding/<project>=UTF-8
                     '''.stripIndent()
-                )
+                    )
+                }
             }
-        }
 
-        file("${project.projectDir}/.settings/org.eclipse.core.runtime.prefs").with { prefs ->
-            if (!prefs.exists()) {
-                append('''\
+            file("${project.projectDir}/.settings/org.eclipse.core.runtime.prefs").with { prefs ->
+                if (!prefs.exists()) {
+                    append('''\
                     eclipse.preferences.version=1
                     line.separator=\\n
                     '''.stripIndent()
-                )
+                    )
+                }
             }
-        }
 
-        file("${project.projectDir}/.settings/org.eclipse.jdt.ui.prefs").with { prefs ->
-            if (!prefs.exists()) {
-                append('''\
+            file("${project.projectDir}/.settings/org.eclipse.jdt.ui.prefs").with { prefs ->
+                if (!prefs.exists()) {
+                    append('''\
                     eclipse.preferences.version=1
                     editor_save_participant_org.eclipse.jdt.ui.postsavelistener.cleanup=true
                     org.eclipse.jdt.ui.ignorelowercasenames=true
@@ -102,35 +103,36 @@ allprojects {
                     sp_cleanup.remove_trailing_whitespaces_ignore_empty=false
                     sp_cleanup.update_copyright_notice=true
                     '''.stripIndent()
-                )
+                    )
+                }
             }
+        }
+
+        // tasks for cleaning the .settings files created above
+
+        task cleanEclipseGdt(type: Delete) {
+            delete "${project.projectDir}/.settings/org.eclipse.jdt.groovy.core.prefs"
+        }
+        cleanEclipse.dependsOn(cleanEclipseGdt)
+
+        task cleanEclipseJdtUI(type: Delete) {
+            delete "${project.projectDir}/.settings/org.eclipse.jdt.ui.prefs"
+        }
+        cleanEclipse.dependsOn(cleanEclipseJdtUI)
+
+        project.tasks.cleanEclipse.doLast {
+            file("${project.projectDir}/.settings/org.eclipse.core.resources.prefs").delete()
+            file("${project.projectDir}/.settings/org.eclipse.core.runtime.prefs").delete()
+            file("${project.projectDir}/.settings/").with { if (!listFiles()) delete() }
         }
     }
 
-    // tasks for cleaning the .settings files created above
+    eclipse.classpath.file.whenMerged {
+        entries.removeAll { entry -> entry.path == '/groovy-groovydoc' }
 
-    task cleanEclipseGdt(type: Delete) {
-        delete "${project.projectDir}/.settings/org.eclipse.jdt.groovy.core.prefs"
-    }
-    cleanEclipse.dependsOn(cleanEclipseGdt)
-
-    task cleanEclipseJdtUI(type: Delete) {
-        delete "${project.projectDir}/.settings/org.eclipse.jdt.ui.prefs"
-    }
-    cleanEclipse.dependsOn(cleanEclipseJdtUI)
-
-    project.tasks.cleanEclipse.doLast {
-        file("${project.projectDir}/.settings/org.eclipse.core.resources.prefs").delete()
-        file("${project.projectDir}/.settings/org.eclipse.core.runtime.prefs").delete()
-        file("${project.projectDir}/.settings/").with { if (!listFiles()) delete() }
-    }
-}
-
-eclipse.classpath.file.whenMerged {
-    entries.removeAll { entry -> entry.path == '/groovy-groovydoc' }
-
-    entries.findAll { entry -> entry.path =~ '^build/generated/sources/antlr' }.each { entry ->
-        entry.entryAttributes['ignore_optional_problems'] = 'true'
-        entry.entryAttributes['optional'] = 'true'
+        entries.findAll { entry -> entry.path =~ '^build/generated/sources/antlr' }.each { entry ->
+            entry.entryAttributes['ignore_optional_problems'] = 'true'
+            entry.entryAttributes['optional'] = 'true'
+        }
     }
 }

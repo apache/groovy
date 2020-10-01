@@ -28,7 +28,7 @@ if (sharedConfiguration.hasCodeCoverage.get()) {
                 apply plugin: 'jacoco'
 
                 project.afterEvaluate {
-                    tasks.withType(JacocoReport) {
+                    tasks.withType(JacocoReport).configureEach {
                         if (name != 'jacocoAllReport') {
                             sourceDirectories.from = sourceDirectories.from + files(project.sourceSets.main.allGroovy.srcDirs)
 //                    classDirectories += files(project.sourceSets.main.output)
@@ -46,7 +46,7 @@ if (sharedConfiguration.hasCodeCoverage.get()) {
         destinationFile = layout.buildDirectory.file("jacoco/jacoco-all.exec").map { it.asFile }
 
         affectedProjects.each { project ->
-            project.tasks.withType(Test).each { task ->
+            project.tasks.withType(Test).configureEach { task ->
                 if (project.sourceSets.test.allSource.srcDirs.any { it.exists() }) {
                     executionData(task)
                 }

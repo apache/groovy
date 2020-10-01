@@ -142,7 +142,7 @@ tasks.named('jar') {
     groovyLibrary.configureManifest(manifest, excludedFromManifest)
 }
 
-tasks.withType(Jar) {
+tasks.withType(Jar).configureEach {
     metaInf {
         if (file("${projectDir}/LICENSE").exists()) {
             from "${projectDir}/LICENSE"
@@ -206,12 +206,12 @@ tasks.named("compileTestGroovy") {
     options.forkOptions.jvmArgs += ["-Dspock.iKnowWhatImDoing.disableGroovyVersionCheck=true"]
 }
 
-tasks.withType(CodeNarc) {
+tasks.withType(CodeNarc).configureEach {
     ignoreFailures = true
     configFile = rootProject.file("config/codenarc/codenarc.groovy")
 }
 
-tasks.withType(SpotBugsTask) {
+tasks.withType(SpotBugsTask).configureEach {
     excludeFilter = rootProject.file("config/spotbugs/exclude.xml")
     ignoreFailures = true
     effort = 'max'
@@ -229,7 +229,7 @@ tasks.register("checkstyle") {
     dependsOn tasks.withType(Checkstyle)
 }
 
-tasks.withType(Checkstyle) {
+tasks.withType(Checkstyle).configureEach {
     showViolations = false
     ignoreFailures = true
     configFile = rootProject.file("config/checkstyle/checkstyle.xml")
