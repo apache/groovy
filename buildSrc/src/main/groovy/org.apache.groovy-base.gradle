@@ -44,6 +44,9 @@ plugins {
  * This script defines a conventional plugin for all Groovy modules, be it
  * Groovy core or any of its libraries.
  */
+if (sharedConfiguration.hasCodeCoverage.get()) {
+    pluginManager.apply(JacocoPlugin)
+}
 
 def groovyLibrary = project.extensions.create("groovyLibrary", GroovyLibraryExtension, project.objects, sharedConfiguration, project.convention.plugins.java, java, components, configurations)
 

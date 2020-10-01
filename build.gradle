@@ -46,6 +46,7 @@ plugins {
     id 'org.sonarqube' version '3.0'
     id 'org.apache.groovy-core'
     id 'java-test-fixtures'
+    id 'org.apache.groovy-jacoco-aggregation'
 }
 
 buildScanRecipes {
@@ -245,7 +246,6 @@ apply from: 'gradle/licenses.gradle'
 // works pretty nice, but it's up to the Groovy devs to decide
 apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
-apply from: 'gradle/jacoco/jacoco.gradle'
 apply from: 'gradle/parallel-build-fixes.gradle'
 apply from: 'wrapper.gradle'
 

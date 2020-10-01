@@ -34,5 +34,3 @@ groovyLibrary {
         extensionClasses = 'org.apache.groovy.swing.extensions.SwingExtensions'
     }
 }
-
-apply from: "${rootProject.projectDir}/gradle/jacoco/jacocofix.gradle"
