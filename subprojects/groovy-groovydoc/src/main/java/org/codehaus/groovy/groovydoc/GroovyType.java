@@ -46,5 +46,6 @@ public interface GroovyType {
      * "<code>java.lang.String[][]</code>", and the parameterized type
      * <code>List&lt;Integer&gt;</code> returns "<code>java.util.List&lt;java.lang.Integer&gt;</code>".
      */
+    @Override
     String toString();
 }

@@ -119,6 +119,7 @@ public class HandleMetaClass extends DelegatingMetaClass {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean equals(Object obj) {
         return super.equals(obj) || getAdaptee().equals(obj) || (obj instanceof HandleMetaClass && equals(((HandleMetaClass)obj).getAdaptee()));
     }

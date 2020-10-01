@@ -563,6 +563,7 @@ public class DOMCategory {
             return null;
         }
 
+        @Override
         public String toString() {
             return DOMCategory.toString(this);
         }

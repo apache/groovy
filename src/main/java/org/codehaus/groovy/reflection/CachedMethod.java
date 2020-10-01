@@ -235,11 +235,13 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return 0;
     }
 
+    @Override
     public boolean equals(Object o) {
         return (o instanceof CachedMethod && cachedMethod.equals(((CachedMethod)o).cachedMethod))
                 || (o instanceof Method && cachedMethod.equals(o));
     }
 
+    @Override
     public int hashCode() {
         if (hashCode == 0) {
            hashCode = cachedMethod.hashCode();
@@ -249,6 +251,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return hashCode;
     }
 
+    @Override
     public String toString() {
         return cachedMethod.toString();
     }

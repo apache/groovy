@@ -155,6 +155,7 @@ public class TemplateServlet extends AbstractHttpServlet {
             return true;
         }
 
+        @Override
         public String toString() {
             if (date == null) {
                 return "Hit #" + hit;

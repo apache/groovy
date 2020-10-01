@@ -772,6 +772,7 @@ public class Node implements Serializable, Cloneable {
         return answer;
     }
 
+    @Override
     public String toString() {
         return name + "[attributes=" + attributes + "; value=" + value + "]";
     }

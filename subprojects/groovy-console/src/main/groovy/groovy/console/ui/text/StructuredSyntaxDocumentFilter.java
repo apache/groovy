@@ -551,6 +551,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
             return start.getOffset();
         }
         
+        @Override
         public String toString() {
             return start.toString() + " " + end.toString();
         }

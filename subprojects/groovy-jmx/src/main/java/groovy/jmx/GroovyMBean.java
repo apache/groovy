@@ -359,6 +359,7 @@ public class GroovyMBean extends GroovyObjectSupport {
      *
      * @return the user readable description
      */
+    @Override
     public String toString() {
         StringBuilder buf = new StringBuilder();
         buf.append("MBean Name:")

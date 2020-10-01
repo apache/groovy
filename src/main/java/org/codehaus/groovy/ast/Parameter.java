@@ -51,6 +51,7 @@ public class Parameter extends AnnotatedNode implements Variable {
         this.hasDefaultValue = defaultValue != null;
     }
 
+    @Override
     public String toString() {
         return super.toString() + "[name:" + name + ((type == null) ? "" : " type: " + type.getName()) + ", hasDefaultValue: " + this.hasInitialExpression() + "]";
     }

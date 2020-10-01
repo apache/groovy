@@ -284,6 +284,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
             return new TemplateResource(baseName, locale, extension);
         }
 
+        @Override
         public String toString() {
             return baseName + (locale != null ? "_" + locale : "") + "." + extension;
         }

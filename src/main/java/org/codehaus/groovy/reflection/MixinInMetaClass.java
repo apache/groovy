@@ -192,6 +192,7 @@ public class MixinInMetaClass {
         }
     }
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof MixinInMetaClass)) return false;
@@ -204,6 +205,7 @@ public class MixinInMetaClass {
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (emc != null ? emc.hashCode() : 0);

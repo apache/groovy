@@ -136,6 +136,7 @@ public class FastArray implements Cloneable, Serializable {
         return data;
     }
 
+    @Override
     public String toString() {
         if (size() == 0) return "[]";
         return toList().toString();

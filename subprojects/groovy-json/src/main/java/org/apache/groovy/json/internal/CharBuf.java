@@ -608,6 +608,7 @@ public class CharBuf extends Writer implements CharSequence {
         return new String(buffer, start, end - start);
     }
 
+    @Override
     public String toString() {
         return new String(buffer, 0, location);
     }

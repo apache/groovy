@@ -514,6 +514,7 @@ public abstract class BaseTemplate implements Writable {
         }
     }
 
+    @Override
     public String toString() {
         Writer wrt = new StringBuilderWriter(512);
         try {

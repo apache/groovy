@@ -60,6 +60,7 @@ public class Sequence extends ArrayList implements GroovyObject {
         addAll(collection);
     }
 
+    @Override
     public boolean equals(Object that) {
         if (that instanceof Sequence) {
             return equals((Sequence) that);
@@ -79,6 +80,7 @@ public class Sequence extends ArrayList implements GroovyObject {
         return false;
     }
 
+    @Override
     public int hashCode() {
         if (hashCode == 0) {
             for (int i = 0; i < size(); i++) {

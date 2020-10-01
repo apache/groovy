@@ -76,6 +76,7 @@ public class StaticMethodCallExpression extends Expression implements MethodCall
         return getOwnerType().getName() + "." + method + arguments.getText();
     }
 
+    @Override
     public String toString() {
         return super.toString() + "[" + getOwnerType().getName() + "#" + method + " arguments: " + arguments + "]";
     }

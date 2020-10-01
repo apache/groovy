@@ -1513,6 +1513,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
                 return out;
             }
 
+            @Override
             public String toString() {
                 Writer buffer = new StringBuilderWriter();
                 try {

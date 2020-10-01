@@ -52,6 +52,7 @@ public abstract class MethodKey {
         return new DefaultMethodKey(sender, name, paramTypes, isCallToSuper);
     }
 
+    @Override
     public boolean equals(Object that) {
         if (this == that) {
             return true;
@@ -77,6 +78,7 @@ public abstract class MethodKey {
       return true;
     }
 
+    @Override
     public int hashCode() {
         if (hash == 0) {
             hash = createHashCode();
@@ -87,6 +89,7 @@ public abstract class MethodKey {
         return hash;
     }
 
+    @Override
     public String toString() {
         return super.toString() + "[name:" + name + "; params:" + getParamterTypes();
     }

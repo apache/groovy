@@ -216,6 +216,7 @@ public class ObservableList implements List {
         return delegate.containsAll(c);
     }
 
+    @Override
     public boolean equals(Object o) {
         return delegate.equals(o);
     }
@@ -225,6 +226,7 @@ public class ObservableList implements List {
         return delegate.get(index);
     }
 
+    @Override
     public int hashCode() {
         return delegate.hashCode();
     }

@@ -59,6 +59,7 @@ public class SimpleGroovyDoc implements GroovyDoc/*, GroovyTokenTypes*/ {
         return name;
     }
 
+    @Override
     public String toString() {
         return "" + getClass() + "(" + name + ")";
     }

@@ -378,6 +378,7 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
      *
      * @return a JSON output
      */
+    @Override
     public String toString() {
         return generator.toJson(content);
     }

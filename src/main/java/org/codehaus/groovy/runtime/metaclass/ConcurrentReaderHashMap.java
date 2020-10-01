@@ -1115,6 +1115,7 @@ public class ConcurrentReaderHashMap
       return oldValue;
     }
 
+    @Override
     public boolean equals(Object o) {
       if (!(o instanceof Map.Entry))
         return false;
@@ -1122,10 +1123,12 @@ public class ConcurrentReaderHashMap
       return (key.equals(e.getKey()) && value.equals(e.getValue()));
     }
     
+    @Override
     public int hashCode() {
       return  key.hashCode() ^ value.hashCode();
     }
     
+    @Override
     public String toString() {
       return key + "=" + value;
     }

@@ -77,6 +77,7 @@ public class NumberValue extends java.lang.Number implements Value {
 
     }
 
+    @Override
     public String toString() {
         if (startIndex == 0 && endIndex == buffer.length) {
             return FastStringUtils.noCopyStringFromChars(buffer);
@@ -126,6 +127,7 @@ public class NumberValue extends java.lang.Number implements Value {
         return null;
     }
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Value)) return false;
@@ -140,6 +142,7 @@ public class NumberValue extends java.lang.Number implements Value {
 
     }
 
+    @Override
     public int hashCode() {
         int result = type != null ? type.hashCode() : 0;
         result = 31 * result + (buffer != null ? Arrays.hashCode(buffer) : 0);

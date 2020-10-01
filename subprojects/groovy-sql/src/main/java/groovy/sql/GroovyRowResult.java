@@ -104,6 +104,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map<String, 
         }
     }
 
+    @Override
     public String toString() {
         return result.toString();
     }
@@ -139,6 +140,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map<String, 
         return result.entrySet();
     }
 
+    @Override
     public boolean equals(Object o) {
         return result.equals(o);
     }
@@ -156,6 +158,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map<String, 
         return null;
     }
 
+    @Override
     public int hashCode() {
         return result.hashCode();
     }

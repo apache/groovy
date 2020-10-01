@@ -97,6 +97,7 @@ public class JsonToken {
         }
     }
 
+    @Override
     public String toString() {
         return text + " (" + type + ") [" + startLine + ":" + startColumn + "-" + endLine + ":" + endColumn + "]";
     }

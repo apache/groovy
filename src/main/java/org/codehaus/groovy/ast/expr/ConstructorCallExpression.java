@@ -102,6 +102,7 @@ public class ConstructorCallExpression extends Expression implements MethodCall 
         this.usesAnonymousInnerClass = usage;
     }
 
+    @Override
     public String toString() {
         return super.toString() + "[type: " + getType() + " arguments: " + arguments + "]";
     }

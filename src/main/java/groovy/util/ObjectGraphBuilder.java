@@ -841,6 +841,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
             this.refId = refId;
         }
 
+        @Override
         public String toString() {
             return "[parentName=" + parentName +
                     ", childName=" + childName +

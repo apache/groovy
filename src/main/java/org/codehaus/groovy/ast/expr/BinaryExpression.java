@@ -50,6 +50,7 @@ public class BinaryExpression extends Expression {
         this.safe = safe;
     }
 
+    @Override
     public String toString() {
         return super.toString() + "[" + leftExpression + operation + rightExpression + "]";
     }

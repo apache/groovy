@@ -98,6 +98,7 @@ public class BytecodeVariable {
         this.endLabel = endLabel;
     }
 
+    @Override
     public String toString() {
         return name + "(index=" + index + ",type=" + type + ",holder="+holder+")";
     }

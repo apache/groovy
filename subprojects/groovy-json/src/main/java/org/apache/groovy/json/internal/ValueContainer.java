@@ -98,6 +98,7 @@ public class ValueContainer implements CharSequence, Value {
         return toString();
     }
 
+    @Override
     public String toString() {
         return type.toString();
     }

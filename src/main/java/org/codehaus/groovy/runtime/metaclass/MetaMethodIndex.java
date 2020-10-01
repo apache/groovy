@@ -70,6 +70,7 @@ public class MetaMethodIndex {
 
         public CacheEntry cachedMethod, cachedMethodForSuper, cachedStaticMethod;
 
+        @Override
         public String toString () {
             return "[" + name + ", " + cls.getName() + "]";
         }

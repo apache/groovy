@@ -41,6 +41,7 @@ public class DefaultTableColumn extends TableColumn {
         setIdentifier(identifier);
     }
 
+    @Override
     public String toString() {
         return super.toString() + "[header:" + getHeaderValue() + " valueModel:" + valueModel + "]";
     }

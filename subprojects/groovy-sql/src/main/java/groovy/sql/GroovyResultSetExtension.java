@@ -67,6 +67,7 @@ public class GroovyResultSetExtension extends GroovyObjectSupport {
         resultSet = set;
     }
 
+    @Override
     public String toString() {
         try {
             StringBuilder sb = new StringBuilder("[");

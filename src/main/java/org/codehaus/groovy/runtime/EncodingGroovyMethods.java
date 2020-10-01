@@ -133,6 +133,7 @@ public class EncodingGroovyMethods {
                 return writer;
             }
 
+            @Override
             public String toString() {
                 Writer buffer = new StringBuilderWriter();
 
@@ -329,6 +330,7 @@ public class EncodingGroovyMethods {
                 return out;
             }
 
+            @Override
             public String toString() {
                 Writer buffer = new StringBuilderWriter();
 

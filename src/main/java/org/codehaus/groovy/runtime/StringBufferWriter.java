@@ -86,6 +86,7 @@ public class StringBufferWriter extends Writer {
     /**
      * Return the buffer's current value as a string.
      */
+    @Override
     public String toString() {
         return buffer.toString();
     }

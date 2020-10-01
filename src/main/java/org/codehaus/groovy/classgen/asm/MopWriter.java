@@ -62,10 +62,12 @@ public class MopWriter {
             hash = name.hashCode() << 2 + params.length;
         }
 
+        @Override
         public int hashCode() {
             return hash;
         }
 
+        @Override
         public boolean equals(Object obj) {
             if (!(obj instanceof MopKey)) {
                 return false;

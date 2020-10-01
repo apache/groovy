@@ -43,6 +43,7 @@ public class AntProjectPropertiesDelegate extends Hashtable<String, Object> {
         project = null;
     }
 
+    @Override
     public synchronized int hashCode() {
         return project.getProperties().hashCode();
     }
@@ -86,10 +87,12 @@ public class AntProjectPropertiesDelegate extends Hashtable<String, Object> {
         return project.getProperties().containsValue(value);
     }
 
+    @Override
     public synchronized boolean equals(Object o) {
         return project.getProperties().equals(o);
     }
 
+    @Override
     public synchronized String toString() {
         return project.getProperties().toString();
     }

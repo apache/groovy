@@ -1041,6 +1041,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         /* (non-Javadoc)
          * @see java.lang.Object#hashCode()
          */
+        @Override
         public int hashCode() {
             return Closure.this.hashCode();
         }
@@ -1048,6 +1049,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         /* (non-Javadoc)
          * @see java.lang.Object#equals(java.lang.Object)
          */
+        @Override
         public boolean equals(Object arg0) {
             return Closure.this.equals(arg0);
         }
@@ -1055,6 +1057,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         /* (non-Javadoc)
          * @see java.lang.Object#toString()
          */
+        @Override
         public String toString() {
             final Writer writer = new StringBuilderWriter();
 

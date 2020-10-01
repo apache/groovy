@@ -65,6 +65,7 @@ public abstract class LazyReference<T> extends LockableObject {
 
     public abstract T initValue();
 
+    @Override
     public String toString() {
         T res = reference.get();
         if (res == null)

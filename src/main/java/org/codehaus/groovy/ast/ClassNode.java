@@ -685,6 +685,7 @@ public class ClassNode extends AnnotatedNode {
         }
     }
 
+    @Override
     public boolean equals(Object that) {
         if (that == this) return true;
         if (!(that instanceof ClassNode)) return false;
@@ -692,6 +693,7 @@ public class ClassNode extends AnnotatedNode {
         return (((ClassNode) that).getText().equals(getText()));
     }
 
+    @Override
     public int hashCode() {
         return (redirect != null ? redirect.hashCode() : getText().hashCode());
     }
@@ -1201,6 +1203,7 @@ public class ClassNode extends AnnotatedNode {
         redirect().script = script;
     }
 
+    @Override
     public String toString() {
         return toString(true);
     }

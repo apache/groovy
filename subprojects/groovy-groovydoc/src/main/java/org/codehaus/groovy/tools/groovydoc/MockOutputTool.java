@@ -50,6 +50,7 @@ public class MockOutputTool implements OutputTool {
         return (String) output.get(fileName);
     }
     
+    @Override
     public String toString() {
         return "dirs:" + outputAreas + ", files:" + output.keySet();
     }

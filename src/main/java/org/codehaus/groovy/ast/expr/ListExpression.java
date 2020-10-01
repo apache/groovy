@@ -92,6 +92,7 @@ public class ListExpression extends Expression {
         return buffer.toString();
     }
 
+    @Override
     public String toString() {
         return super.toString() + expressions;
     }

@@ -52,6 +52,7 @@ public class ScriptTestAdapter implements Test {
         }
     }
 
+    @Override
     public String toString() {
         return "TestCase for script: " + scriptClass.getName();
     }

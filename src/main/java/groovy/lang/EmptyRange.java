@@ -91,6 +91,7 @@ public class EmptyRange<T extends Comparable> extends AbstractList<T> implements
     /**
      * {@inheritDoc}
      */
+    @Override
     public String toString() {
         return (null == at)
                 ? "null..<null"

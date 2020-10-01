@@ -86,6 +86,7 @@ public class VariableExpression extends Expression implements Variable {
         return variable;
     }
 
+    @Override
     public String toString() {
         return super.toString() + "[variable: " + variable + (this.isDynamicTyped() ? "" : " type: " + getType()) + "]";
     }

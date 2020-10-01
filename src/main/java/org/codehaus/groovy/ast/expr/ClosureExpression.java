@@ -52,6 +52,7 @@ public class ClosureExpression extends Expression {
         return this;
     }
 
+    @Override
     public String toString() {
         return super.toString() + InvokerHelper.toString(parameters) + "{ " + code + " }";
     }

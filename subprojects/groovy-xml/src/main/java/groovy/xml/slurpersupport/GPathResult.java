@@ -271,6 +271,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
      *
      * @return the GPathResult, converted to a <code>String</code>
      */
+    @Override
     public String toString() {
         return text();
     }

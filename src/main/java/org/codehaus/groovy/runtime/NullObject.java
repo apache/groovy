@@ -101,6 +101,7 @@ public class NullObject extends GroovyObjectSupport {
      * @param to - the reference object with which to compare
      * @return - true if this object is the same as the to argument
      */
+    @Override
     public boolean equals(Object to) {
         return to == null;
     }
@@ -170,10 +171,12 @@ public class NullObject extends GroovyObjectSupport {
         return false;
     }
 
+    @Override
     public String toString() {
         return "null";
     }
 
+    @Override
     public int hashCode() {
         throw new NullPointerException("Cannot invoke method hashCode() on null object");
     }

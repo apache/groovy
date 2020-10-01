@@ -68,6 +68,7 @@ public class SimpleCache<K, V> implements Cache<K, V> {
         return cache.size();
     }
 
+    @Override
     public String toString() {
         return cache.toString();
     }

@@ -72,6 +72,7 @@ public class ConstantExpression extends Expression {
         }
     }
 
+    @Override
     public String toString() {
         return super.toString() + "[" + value + "]";
     }

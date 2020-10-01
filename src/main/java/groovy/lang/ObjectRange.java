@@ -202,6 +202,7 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
         }
     }
 
+    @Override
     public boolean equals(Object that) {
         return (that instanceof ObjectRange) ? equals((ObjectRange) that) : super.equals(that);
     }
@@ -363,6 +364,7 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
         return new ObjectRange(fromValue, toValue, reverse);
     }
 
+    @Override
     public String toString() {
         return reverse ? "" + to + ".." + from : "" + from + ".." + to;
     }

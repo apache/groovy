@@ -3089,6 +3089,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     /**
      * Returns a string representation of this metaclass
      */
+    @Override
     public String toString() {
         return super.toString() + "[" + theClass + "]";
     }

@@ -638,6 +638,7 @@ public class OperandStack {
         push(ClassHelper.boolean_TYPE);
     }
     
+    @Override
     public String toString() {
         return "OperandStack(size="+stack.size()+":"+stack.toString()+")";
     }

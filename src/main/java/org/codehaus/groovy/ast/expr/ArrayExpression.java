@@ -158,6 +158,7 @@ public class ArrayExpression extends Expression {
         return sizeExpressions;
     }
 
+    @Override
     public String toString() {
         if (hasInitializer()) {
             return super.toString() + "[elementType: " + getElementType() + ", init: {" + formatInitExpressions() + "}]";

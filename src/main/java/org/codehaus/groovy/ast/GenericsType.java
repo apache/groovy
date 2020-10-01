@@ -61,6 +61,7 @@ public class GenericsType extends ASTNode {
         this.type = Objects.requireNonNull(type); // TODO: ensure type is not primitive
     }
 
+    @Override
     public String toString() {
         return toString(this, new HashSet<>());
     }

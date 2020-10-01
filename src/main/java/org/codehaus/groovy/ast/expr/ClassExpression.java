@@ -46,6 +46,7 @@ public class ClassExpression extends Expression {
         return getType().getName();
     }
 
+    @Override
     public String toString() {
        return super.toString() + "[type: " + getType().getName() + "]";
     }

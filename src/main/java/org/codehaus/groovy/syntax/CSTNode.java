@@ -326,6 +326,7 @@ public abstract class CSTNode {
     /**
      * Formats the node as a <code>String</code> and returns it.
      */
+    @Override
     public String toString() {
         Writer string = new StringBuilderWriter();
         write(new PrintWriter(string));

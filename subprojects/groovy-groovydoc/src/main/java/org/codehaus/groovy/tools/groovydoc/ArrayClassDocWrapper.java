@@ -188,6 +188,7 @@ public class ArrayClassDocWrapper implements GroovyClassDoc {
         return delegate.typeName();
     }
 
+    @Override
     public String toString() {
         return delegate.toString();
     }

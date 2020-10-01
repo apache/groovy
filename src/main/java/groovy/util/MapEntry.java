@@ -35,6 +35,7 @@ public class MapEntry implements Map.Entry {
         this.value = value;
     }
 
+    @Override
     public boolean equals(Object that) {
         if (that instanceof MapEntry) {
             return equals((MapEntry) that);
@@ -46,10 +47,12 @@ public class MapEntry implements Map.Entry {
         return DefaultTypeTransformation.compareEqual(this.key, that.key) && DefaultTypeTransformation.compareEqual(this.value, that.value);
     }
 
+    @Override
     public int hashCode() {
         return hash(key) ^ hash(value);
     }
 
+    @Override
     public String toString() {
         return "" + key + ":" + value;
     }

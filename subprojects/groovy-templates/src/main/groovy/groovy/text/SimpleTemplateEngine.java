@@ -188,6 +188,7 @@ public class SimpleTemplateEngine extends TemplateEngine {
                  *
                  * @see java.lang.Object#toString()
                  */
+                @Override
                 public String toString() {
                     Writer sw = new StringBuilderWriter();
                     writeTo(sw);

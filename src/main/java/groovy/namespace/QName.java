@@ -130,6 +130,7 @@ public class QName implements Serializable {
      *
      * @return  a string representation of the QName
      */
+    @Override
     public String toString() {
         return ((namespaceURI.equals(EMPTY_STRING))
                 ? localPart
@@ -167,6 +168,7 @@ public class QName implements Serializable {
      * @return <code>true</code> if the given object is identical to this
      *      QName: <code>false</code> otherwise.
      */
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null) return false;
@@ -278,6 +280,7 @@ public class QName implements Serializable {
      *
      * @return a hash code value for this Qname object
      */
+    @Override
     public int hashCode() {
         int result;
         result = namespaceURI.hashCode();

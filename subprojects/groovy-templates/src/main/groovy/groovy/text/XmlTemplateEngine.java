@@ -262,6 +262,7 @@ public class XmlTemplateEngine extends TemplateEngine {
             return out;
         }
 
+        @Override
         public String toString() {
             Object o = result.get();
             if (o != null) {
@@ -336,6 +337,7 @@ public class XmlTemplateEngine extends TemplateEngine {
         this.indentation = indentation;
     }
 
+    @Override
     public String toString() {
         return "XmlTemplateEngine";
     }

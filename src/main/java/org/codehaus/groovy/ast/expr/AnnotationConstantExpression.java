@@ -43,6 +43,7 @@ public class AnnotationConstantExpression extends ConstantExpression {
         super.visit(visitor);
     }
 
+    @Override
     public String toString() {
         return super.toString() + "[" + getValue() + "]";
     }

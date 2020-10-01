@@ -115,6 +115,7 @@ public class TupleExpression extends Expression implements Iterable<Expression> 
         return buffer.toString();
     }
 
+    @Override
     public String toString() {
         return super.toString() + getExpressions();
     }

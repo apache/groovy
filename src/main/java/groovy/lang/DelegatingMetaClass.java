@@ -192,6 +192,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
      */
+    @Override
     public boolean equals(Object obj) {
         return delegate.equals(obj);
     }
@@ -199,10 +200,12 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
+    @Override
     public int hashCode() {
         return delegate.hashCode();
     }
 
+    @Override
     public String toString() {
         return super.toString() + "[" + delegate.toString() + "]";
     }
