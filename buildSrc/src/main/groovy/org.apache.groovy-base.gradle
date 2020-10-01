@@ -35,6 +35,7 @@ plugins {
     id 'codenarc'
     id 'com.github.spotbugs'
     id 'org.apache.groovy-common'
+    id 'org.apache.groovy-internal'
     id 'org.apache.groovy-tested'
     id 'org.apache.groovy-asciidoctor'
 }
@@ -60,25 +61,7 @@ def groovydocJar = tasks.register("groovydocJar", Jar) {
     archiveClassifier = 'groovydoc'
 }
 
-def internalPublication = Attribute.of("org.apache.groovy.internal", Boolean)
-
-def makeInternal = { Configuration cnf ->
-    cnf.attributes {
-        it.attribute(internalPublication, true)
-    }
-}
-
 configurations {
-    makeInternal(apiElements)
-    makeInternal(runtimeElements)
-    makeInternal(compileClasspath)
-    makeInternal(runtimeClasspath)
-    makeInternal(testCompileClasspath)
-    makeInternal(testRuntimeClasspath)
-    pluginManager.withPlugin('java-test-fixtures') {
-        makeInternal(testFixturesCompileClasspath)
-        makeInternal(testFixturesRuntimeClasspath)
-    }
     groovydocElements {
         canBeConsumed = true
         canBeResolved = false
@@ -124,17 +107,6 @@ configurations {
             artifact tasks.named('jar')
         }
     }
-    groovyCompilerClasspath {
-        canBeConsumed = false
-        canBeResolved = true
-        attributes {
-            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
-            attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, LibraryElements.JAR))
-            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
-            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
-            attribute(internalPublication, true)
-        }
-    }
     codenarc {
         resolutionStrategy.dependencySubstitution {
             substitute module("org.codehaus.groovy:groovy") with project(":")
@@ -149,9 +121,6 @@ configurations {
 }
 
 dependencies {
-    if (project != rootProject) {
-        groovyCompilerClasspath project(":")
-    }
     compileOnly providers.provider { "com.github.spotbugs:spotbugs-annotations:${versions.spotbugsAnnotations}" }
 
     codenarc "org.codenarc:CodeNarc:${versions.codenarc}"
@@ -231,18 +200,6 @@ components.java {
     addVariantsFromConfiguration(configurations.groovydocElements) {
         mapToOptional()
     }
-}
-
-tasks.withType(AbstractCompile).configureEach {
-    options.encoding = 'UTF-8'
-}
-
-tasks.withType(GroovyCompile).configureEach {
-    groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4.cache.threshold=100"]
-    groovyOptions.fork(memoryMaximumSize: sharedConfiguration.groovycMaxMemory.get())
-    groovyClasspath = configurations.groovyCompilerClasspath
-
-    options.incremental = true
 }
 
 tasks.named("compileTestGroovy") {

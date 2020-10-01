@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class CompilerPerformanceTest {
@@ -36,11 +37,17 @@ public class CompilerPerformanceTest {
         List<File> sources = new ArrayList<>();
         List<URL> classpath = new ArrayList<>();
         boolean isCp = false;
-        for (String arg : args) {
+        List<String> argsLeft = new ArrayList<>();
+        Collections.addAll(argsLeft, args);
+        String outputFile = argsLeft.remove(0);
+        for (String arg : argsLeft) {
             if ("-cp".equals(arg)) {
                 isCp = true;
             } else if (isCp) {
-                classpath.add(new File(arg).toURI().toURL());
+                for (String s : arg.split(":")) {
+                    classpath.add(new File(s).toURI().toURL());
+                }
+                isCp = false;
             } else {
                 sources.add(new File(arg));
             }
@@ -54,10 +61,12 @@ public class CompilerPerformanceTest {
         DescriptiveStatistics stats = new DescriptiveStatistics();
 
         for (int i=0;i<WARMUP+REPEAT;i++) {
-            if (i<WARMUP) {
-                System.out.println("Warmup #" + (i+1));
-            } else {
-                System.out.println("Round #" + (i-WARMUP));
+            if (i%10 == 0) {
+                if (i < WARMUP) {
+                    System.out.println("Warmup #" + (i + 1));
+                } else {
+                    System.out.println("Round #" + (i - WARMUP));
+                }
             }
             long dur = executer.execute();
             System.gc();
@@ -68,7 +77,7 @@ public class CompilerPerformanceTest {
         }
 
         System.out.println("Compilation took " + stats.getMean() + "ms ± " + stats.getStandardDeviation() + "ms");
-        FileWriter wrt = new FileWriter(new File("build/compilation-stats.csv"), true);
+        FileWriter wrt = new FileWriter(new File(outputFile), false);
         wrt.append(String.format("%s;%s;%s\n", GROOVY_VERSION, stats.getMean(), stats.getStandardDeviation()));
         wrt.close();
     }
