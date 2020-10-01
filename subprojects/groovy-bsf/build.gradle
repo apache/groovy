@@ -30,5 +30,5 @@ dependencies {
 }
 
 groovyLibrary {
-    includeInGroovyAll = false
+    optionalModule()
 }

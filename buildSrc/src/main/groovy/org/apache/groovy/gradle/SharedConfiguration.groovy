@@ -39,6 +39,7 @@ class SharedConfiguration {
     final Provider<String> groovycMaxMemory
     final Provider<String> javadocMaxMemory
     final Provider<String> installationDirectory
+    final Provider<String> binaryCompatibilityBaselineVersion
     final boolean isRunningOnCI
 
     @Nested
@@ -60,6 +61,7 @@ class SharedConfiguration {
         isRunningOnCI = detectCi(rootProjectDirectory, logger)
         artifactory = new Artifactory(layout, providers, logger)
         signing = new Signing(this, objects, providers)
+        binaryCompatibilityBaselineVersion = providers.gradleProperty("binaryCompatibilityBaseline").forUseAtConfigurationTime()
     }
 
     private static boolean detectCi(File file, Logger logger) {

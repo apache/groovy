@@ -21,7 +21,7 @@ plugins {
 }
 
 groovyLibrary {
-    includeInGroovyAll = false
+    optionalModule()
 
     moduleDescriptor {
         extensionClasses = 'org.apache.groovy.jaxb.extensions.JaxbExtensions'

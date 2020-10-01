@@ -26,5 +26,6 @@ dependencies {
 }
 
 groovyLibrary {
-    includeInGroovyAll = false
+    withoutBinaryCompatibilityChecks()
+    optionalModule()
 }

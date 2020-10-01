@@ -7,7 +7,7 @@ rootProject.allprojects {
     // We need to hardcode the list of aggregating projects, which isn't nice
     // because we can't figure out if it's actually an aggregating one before
     // it's been evaluated!
-    if (!(project.name in ['groovy-all', 'groovy-binary', 'groovy-bom'])) {
+    if (!(project.name in ['groovy-all', 'groovy-binary', 'groovy-bom', 'binary-compatibility'])) {
         thisProject.evaluationDependsOn(project.path)
     }
 }

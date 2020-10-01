@@ -27,7 +27,8 @@ dependencies {
 }
 
 groovyLibrary {
-    includeInGroovyAll = false
+    optionalModule()
+    withoutBinaryCompatibilityChecks()
     moduleDescriptor {
         extensionClasses = 'org.apache.groovy.macrolib.MacroLibGroovyMethods'
     }
