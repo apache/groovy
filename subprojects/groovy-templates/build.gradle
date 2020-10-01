@@ -24,10 +24,10 @@ dependencies {
     api rootProject // Template uses Writable...
     implementation project(':groovy-xml')
     testImplementation project(':groovy-test')
-    testImplementation ("org.spockframework:spock-core:$spockVersion") {
+    testImplementation ("org.spockframework:spock-core:${versions.spock}") {
         exclude group: 'org.codehaus.groovy'
     }
-    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:$junit5Version") {
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:${versions.junit5}") {
         because 'for JUnit 3/4 tests as well as JUnit 5'
     }
 }
@@ -37,9 +37,11 @@ test {
     systemProperty "spock.iKnowWhatImDoing.disableGroovyVersionCheck", "true"
 }
 
-task backportJar(type:Jar) {
-    appendix = 'markup-backport'
-    dependsOn classes
-    from sourceSets.main.output
-    include 'groovy/text/markup/**'
+rat {
+    excludes += [
+            // test files
+            'src/spec/test-resources/*.txt',
+            'src/test/resources/includes/hello-escaped.txt',
+            'src/test/resources/includes/hello.html'
+    ]
 }

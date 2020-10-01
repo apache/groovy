@@ -20,19 +20,15 @@ plugins {
     id 'org.apache.groovy-library'
 }
 
-ext {
-    junitVersion = '4.13'
-}
-
 dependencies {
     api rootProject   // GroovyTestCase uses Closure...
-    api "junit:junit:$junitVersion" // GroovyTestCase extends TestCase...
+    api "junit:junit:${versions.junit}" // GroovyTestCase extends TestCase...
     // groovy-ant needed for FileNameFinder used in AllTestSuite and JavadocAssertionTestSuite
     testRuntimeOnly(project(':groovy-ant')) {
         transitive = false // bring in just what we need below
     }
-    testRuntimeOnly "org.apache.ant:ant:$antVersion"
-    testRuntimeOnly "org.apache.ant:ant-launcher:$antVersion"
+    testRuntimeOnly "org.apache.ant:ant:${versions.ant}"
+    testRuntimeOnly "org.apache.ant:ant-launcher:${versions.ant}"
 }
 
 groovyLibrary {

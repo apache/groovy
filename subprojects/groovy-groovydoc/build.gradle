@@ -22,12 +22,12 @@ plugins {
 
 dependencies {
     api rootProject // GroovydocVisitor extends ClassCodeVisitorSupport...
-    api "com.github.javaparser:javaparser-core:$javaParserVersion" // GroovydocJavaVisitor extends VoidVisitorAdapter...
+    api "com.github.javaparser:javaparser-core:${versions.javaParser}" // GroovydocJavaVisitor extends VoidVisitorAdapter...
     implementation project(':groovy-templates')
     implementation project(':groovy-docgenerator')
     testImplementation project(':groovy-ant')
     testImplementation project(':groovy-test')
-    testImplementation "org.apache.ant:ant-testutil:$antVersion"
+    testImplementation "org.apache.ant:ant-testutil:${versions.ant}"
 }
 
 compileJava {
@@ -38,4 +38,8 @@ compileJava {
 
 eclipse.classpath.file.whenMerged {
     entries.removeAll { entry -> entry.path == '/groovy-xml' }
+}
+
+rat {
+    excludes << '**/stylesheet.css'  // MIT license as per NOTICE/LICENSE files
 }

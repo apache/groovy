@@ -24,7 +24,7 @@ dependencies {
     api rootProject  // JsonBuilder extends GroovyObjectSupport...
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-dateutil')
-    testRuntimeOnly "org.slf4j:slf4j-api:$slf4jVersion"
+    testRuntimeOnly "org.slf4j:slf4j-api:${versions.slf4j}"
     testRuntimeOnly project(':groovy-ant') // for JavadocAssertionTests
     testRuntimeOnly(project(':')) {
         because "Tests are using Grapes"

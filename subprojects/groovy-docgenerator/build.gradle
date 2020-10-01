@@ -24,9 +24,13 @@ dependencies {
     implementation rootProject
     implementation project(':groovy-templates')
     testImplementation project(':groovy-test')
-    implementation "com.thoughtworks.qdox:qdox:$qdoxVersion"
+    implementation "com.thoughtworks.qdox:qdox:${versions.qdox}"
 }
 
 eclipse.classpath.file.whenMerged {
     entries.removeAll { entry -> entry.path == '/groovy-xml' }
+}
+
+rat {
+    excludes << '**/stylesheet.css'  // MIT license as per NOTICE/LICENSE files
 }

@@ -22,9 +22,9 @@ plugins {
 
 dependencies {
     api rootProject  // MarkupBuilder extends BuilderSupport...
-    testImplementation "xmlunit:xmlunit:$xmlunitVersion"
+    testImplementation "xmlunit:xmlunit:${versions.xmlunit}"
     testImplementation project(':groovy-test')
-    testImplementation ("org.spockframework:spock-core:$spockVersion") {
+    testImplementation ("org.spockframework:spock-core:${versions.spock}") {
         exclude group: 'org.codehaus.groovy'
     }
 }

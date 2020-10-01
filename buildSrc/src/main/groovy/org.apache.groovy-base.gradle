@@ -25,10 +25,15 @@ import org.apache.groovy.gradle.ReleaseInfoGenerator
 import org.gradle.api.attributes.java.TargetJvmVersion
 
 import javax.inject.Inject
+import com.github.spotbugs.snom.SpotBugsTask
+import org.apache.groovy.gradle.CheckstyleHtmlReport
 
 plugins {
     id 'java-library'
     id 'groovy'
+    id 'checkstyle'
+    id 'codenarc'
+    id 'com.github.spotbugs'
     id 'org.apache.groovy-common'
     id 'org.apache.groovy-tested'
     id 'org.apache.groovy-asciidoctor'
@@ -130,13 +135,30 @@ configurations {
             attribute(internalPublication, true)
         }
     }
+    codenarc {
+        resolutionStrategy.dependencySubstitution {
+            substitute module("org.codehaus.groovy:groovy") with project(":")
+            substitute module("org.codehaus.groovy:groovy-ant") with project(":groovy-ant")
+            substitute module("org.codehaus.groovy:groovy-templates") with project(":groovy-templates")
+            substitute module("org.codehaus.groovy:groovy-xml") with project(":groovy-xml")
+            substitute module("org.codehaus.groovy:groovy-groovydoc") with project(":groovy-groovydoc")
+        }
+
+        exclude module: 'groovy-all'
+    }
 }
 
 dependencies {
     if (project != rootProject) {
         groovyCompilerClasspath project(":")
     }
-    compileOnly providers.provider { "com.github.spotbugs:spotbugs-annotations:${rootProject.ext.spotbugsAnnotationsVersion}" }
+    compileOnly providers.provider { "com.github.spotbugs:spotbugs-annotations:${versions.spotbugsAnnotations}" }
+
+    codenarc "org.codenarc:CodeNarc:${versions.codenarc}"
+    codenarc project(":groovy-templates")
+
+    checkstyle "com.puppycrawl.tools:checkstyle:${versions.checkstyle}"
+    spotbugs "com.github.spotbugs:spotbugs:${versions.spotbugs}"
 }
 
 def excludedFromManifest = [
@@ -227,6 +249,50 @@ tasks.named("compileTestGroovy") {
     options.forkOptions.jvmArgs += ["-Dspock.iKnowWhatImDoing.disableGroovyVersionCheck=true"]
 }
 
+tasks.withType(CodeNarc) {
+    ignoreFailures = true
+    configFile = rootProject.file("config/codenarc/codenarc.groovy")
+}
+
+tasks.withType(SpotBugsTask) {
+    excludeFilter = rootProject.file("config/spotbugs/exclude.xml")
+    ignoreFailures = true
+    effort = 'max'
+    maxHeapSize = '2g'
+    reports {
+        xml.enabled = false
+        html {
+            enabled = true
+            stylesheet = 'fancy.xsl'
+        }
+    }
+}
+
+tasks.register("checkstyle") {
+    dependsOn tasks.withType(Checkstyle)
+}
+
+tasks.withType(Checkstyle) {
+    showViolations = false
+    ignoreFailures = true
+    configFile = rootProject.file("config/checkstyle/checkstyle.xml")
+    configProperties = ['rootProject.projectDir': rootProject.projectDir]
+    def reportFile = layout.buildDirectory.file("reports/checkstyle/${name}.xml")
+    reports {
+        include ( '**/*.java')
+        xml {
+            destination reportFile.get().asFile
+        }
+    }
+    def chk = it
+    finalizedBy tasks.register("${name}Report", CheckstyleHtmlReport) {
+        dependsOn chk
+        source.from(chk.source)
+        configFile = rootProject.file("config/checkstyle/checkstyle-report.groovy")
+        checkstyleReportFile = reportFile
+        outputFile = layout.buildDirectory.file("reports/checkstyle/${chk.name}.html")
+    }
+}
 
 interface Services {
     @Inject

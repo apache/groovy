@@ -26,7 +26,7 @@ dependencies {
     implementation project(':groovy-templates')
     implementation project(':groovy-xml')
     testImplementation project(':groovy-test')
-    implementation("jline:jline:$jlineVersion") {
+    implementation("jline:jline:${versions.jline}") {
         exclude(group: 'junit', module: 'junit')
     }
 }
