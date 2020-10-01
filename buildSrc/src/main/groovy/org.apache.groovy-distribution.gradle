@@ -126,7 +126,7 @@ def docGDK = tasks.register('docGDK', DocGDK) {
     classes.set(distributionExtension.docgeneratorClasses)
 }
 
-tasks.register('distBin', Zip) {
+def distBin = tasks.register('distBin', Zip) {
     duplicatesStrategy = DuplicatesStrategy.FAIL
     archiveBaseName = 'apache-groovy'
     archiveAppendix = 'binary'
@@ -140,12 +140,12 @@ tasks.register('distBin', Zip) {
     }
 }
 
-tasks.register("dist", Zip) {
+def distSdk = tasks.register("distSdk", Zip) {
     def groovyBundleVersion = sharedConfiguration.groovyBundleVersion.get()
     description = 'Generates the binary, sources, documentation and full distributions'
     archiveBaseName = 'apache-groovy'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    archiveClassifier = 'sdk'
+    archiveAppendix = 'sdk'
     into "groovy-${project.version}"
     from rootProject.file("licenses/LICENSE-SDK")
     from rootProject.file("notices/NOTICE-SDK")
@@ -166,20 +166,24 @@ tasks.register("dist", Zip) {
     }
 }
 
-tasks.register('distDoc', Zip) {
+def distDoc = tasks.register('distDoc', Zip) {
     //dependsOn: doc
     archiveBaseName = 'apache-groovy'
-    archiveClassifier = 'docs'
+    archiveAppendix = 'docs'
     into("groovy-${project.version}") {
         with distributionExtension.docSpec
     }
 }
 
-tasks.register('distSrc', Zip) {
+def distSrc = tasks.register('distSrc', Zip) {
     archiveBaseName = 'apache-groovy'
-    archiveClassifier = 'src'
+    archiveAppendix = 'src'
     into("groovy-${project.version}")
     with distributionExtension.srcSpec
+}
+
+tasks.register('dist') {
+    dependsOn distSrc, distSdk, distDoc, distBin
 }
 
 tasks.register("installGroovy", Sync) {

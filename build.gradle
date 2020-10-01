@@ -58,10 +58,6 @@ buildScanRecipes {
 
 archivesBaseName = 'groovy'
 
-ext.modules = {
-    subprojects.findAll { it.pluginManager.hasPlugin('org.apache.groovy-base') }
-}
-
 apply plugin: "com.github.jk1.dependency-license-report"
 
 File javaHome = new File(System.getProperty('java.home'))
