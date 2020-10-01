@@ -16,22 +16,48 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
+import org.apache.groovy.gradle.PerformanceTestsExtension
+import org.apache.groovy.gradle.PerformanceTestSummary
+
 plugins {
     id 'groovy'
     id 'org.apache.groovy-common'
     id 'org.apache.groovy-internal'
+    id 'me.champeau.gradle.jmh'
+}
+
+project.extensions.create("performanceTests", PerformanceTestsExtension, objects, tasks, configurations, dependencies, sourceSets)
+
+configurations {
+    stats
+    testImplementation.extendsFrom(stats)
 }
 
 dependencies {
-    testImplementation project(':groovy-test')
+    jmh project(":")
+    testImplementation project(":")
+    stats "org.apache.commons:commons-math3:${versions.commonsMath3}"
 }
 
-test {
-    minHeapSize = '512m'
-    maxHeapSize = '512m'
-
-    outputs.upToDateWhen { false }
+jmh {
+    jmhVersion = versions.jmh
+    if (project.hasProperty('benchInclude')) {
+        include = ['.*' + project.benchInclude + '.*']
+    }
+    includeTests = true
+    duplicateClassesStrategy = 'WARN'
 }
+
+tasks.named('jmhClasses') {
+    dependsOn tasks.named('clean')
+}
+
+tasks.named('compileJmhGroovy') {
+    classpath += compileJmhJava.classpath
+}
+
+tasks.register("performanceTests", PerformanceTestSummary)
 
 sonarqube {
     skipProject = true

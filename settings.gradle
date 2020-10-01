@@ -64,7 +64,8 @@ def subprojects = [
         'groovy-yaml',
         'performance',
         'tests-preview',
-        'binary-compatibility'
+        'binary-compatibility',
+        'stress'
 ]
 
 if (hasProperty('stressTests')) {

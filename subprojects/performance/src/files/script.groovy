@@ -16,19 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-plugins {
-    id 'org.apache.groovy-performance'
-}
 
-performanceTests {
-    versions '1.8.9',
-            '2.0.8',
-            '2.1.9',
-            '2.2.2',
-            '2.3.10',
-            '2.3.11',
-            '2.4.7',
-            'current'
+// This is a Groovy script which must be compilable from Groovy 1.8
 
-    testFiles project.files("src/files")
-}
+println("Hello")
