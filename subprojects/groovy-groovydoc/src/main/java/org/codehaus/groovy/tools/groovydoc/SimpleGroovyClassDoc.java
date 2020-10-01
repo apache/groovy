@@ -518,7 +518,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         }
 
         if (!type.contains(".") && classDoc != null) {
-            String[] pieces = type.split("#");
+            String[] pieces = type.split("#", -1);
             String candidate = pieces[0];
             Class c = classDoc.resolveExternalClassFromImport(candidate);
             if (c != null) type = c.getName();
@@ -528,7 +528,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
         final String[] target = type.split("#");
         String shortClassName = target[0].replaceAll(".*\\.", "");
-        shortClassName += (target.length > 1 ? "#" + target[1].split("\\(")[0] : "");
+        shortClassName += (target.length > 1 ? "#" + target[1].split("\\(", -1)[0] : "");
         String name = (full ? target[0] : shortClassName).replace('#', '.').replace('$', '.');
 
         // last chance lookup for classes within the current codebase
