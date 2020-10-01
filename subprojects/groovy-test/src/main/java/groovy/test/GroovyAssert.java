@@ -22,8 +22,8 @@ import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
-import org.junit.Test;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
@@ -33,30 +33,41 @@ import java.util.logging.Logger;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.isAtLeast;
 
 /**
- * <p>{@code GroovyAssert} contains a set of static assertion and test helper methods and is supposed to be a Groovy
- * extension of JUnit 4's {@link org.junit.Assert} class. In case JUnit 3 is the choice, the {@link groovy.test.GroovyTestCase}
- * is meant to be used for writing tests based on {@link junit.framework.TestCase}.
+ * <p>{@code GroovyAssert} contains a set of static assertion and test helper methods for JUnit 4+.
+ * They augment the kind of helper methods found in JUnit 4's {@link org.junit.Assert} class.
+ * JUnit 3 users typically don't use these methods but instead,
+ * the equivalent methods in {@link groovy.test.GroovyTestCase}.
  * </p>
  *
  * <p>
- * {@code GroovyAssert} methods can either be used by fully qualifying the static method like
+ * {@code GroovyAssert} methods can either be used by fully qualifying the static method like:
  *
  * <pre>
  *     groovy.test.GroovyAssert.shouldFail { ... }
  * </pre>
  *
- * or by importing the static methods with one ore more static imports
+ * or by importing the static methods with one ore more static imports:
  *
  * <pre>
  *     import static groovy.test.GroovyAssert.shouldFail
- *     import static groovy.test.GroovyAssert.assertNotNull
  * </pre>
  * </p>
+ * <em>Backwards compatibility note:</em>
+ * Prior to Groovy 4, {@code GroovyAssert} extended JUnit 4's {@link org.junit.Assert} class.
+ * This meant that you could statically import static methods from that class via {@code GroovyAssert}, e.g.:
+ * <pre>
+ *     import static groovy.test.GroovyAssert.assertNotNull
+ * </pre>
+ * This is generally regarded as a code smell since inheritance is primarily to do with instance methods.
+ * From Groovy 4, you should import such methods directly, e.g.:
+ * <pre>
+ *     import static org.junit.Assert.assertNotNull
+ * </pre>
  *
  * @see groovy.test.GroovyTestCase
  * @since 2.3
  */
-public class GroovyAssert extends org.junit.Assert {
+public class GroovyAssert {
 
     private static final Logger log = Logger.getLogger(GroovyAssert.class.getName());
 
@@ -111,6 +122,19 @@ public class GroovyAssert extends org.junit.Assert {
         }
         assertTrue("Closure " + code + " should have failed", failed);
         return th;
+    }
+
+    private static void assertTrue(String message, boolean condition) {
+        if (!condition) {
+            fail(message);
+        }
+    }
+
+    public static void fail(String message) {
+        if (message == null) {
+            throw new AssertionError();
+        }
+        throw new AssertionError(message);
     }
 
     /**
@@ -285,7 +309,7 @@ public class GroovyAssert extends org.junit.Assert {
                         return m;
                     }
                 }
-                catch (final Exception e) {
+                catch (final Exception ignore) {
                     // can't access, ignore it
                 }
             }
@@ -305,9 +329,18 @@ public class GroovyAssert extends org.junit.Assert {
         final Class returnType = method.getReturnType();
 
         return parameters.length == 0
-                && (name.startsWith("test") || method.getAnnotation(Test.class) != null)
+                && (name.startsWith("test") || hasTestAnnotation(method))
                 && returnType.equals(Void.TYPE)
                 && Modifier.isPublic(method.getModifiers());
+    }
+
+    private static boolean hasTestAnnotation(Method method) {
+        for (Annotation annotation : method.getAnnotations()) {
+            if ("org.junit.Test".equals(annotation.annotationType().getName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
