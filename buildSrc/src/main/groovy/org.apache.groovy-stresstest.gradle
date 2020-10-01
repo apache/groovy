@@ -17,13 +17,31 @@
  *  under the License.
  */
 plugins {
-    id 'org.apache.groovy-stresstest'
+    id 'groovy'
+    id 'org.apache.groovy-common'
+    id 'org.apache.groovy-internal'
 }
 
-dependencies {
-    stressTestImplementation project(':groovy-test')
+sourceSets {
+    stressTest {
+        groovy {
+            if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_14)) {
+                exclude '**/vm14/*'
+            }
+        }
+    }
 }
 
-sonarqube {
-    skipProject = true
+
+def stressTest = tasks.register("stressTest", Test) {
+    description = "Runs the stress tests."
+    group = "verification"
+    minHeapSize = '512m'
+    maxHeapSize = '512m'
+    testClassesDirs = sourceSets.stressTest.output.classesDirs
+    classpath = sourceSets.stressTest.runtimeClasspath
+}
+
+tasks.named('check') {
+    dependsOn stressTest
 }
