@@ -73,6 +73,7 @@ public class AntProjectPropertiesDelegate extends Hashtable<String, Object> {
     }
 
     @Override
+    @SuppressWarnings("HashtableContains")
     public synchronized boolean contains(Object value) {
         return project.getProperties().contains(value);
     }
