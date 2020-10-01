@@ -870,9 +870,6 @@ signing {
 }
 
 gradle.taskGraph.whenReady { taskGraph ->
-    if (taskGraph.hasTask(":artifactoryPublish") && gradle.startParameter.parallelProjectExecutionEnabled) {
-            throw new GradleException("In order to publish to artifactory you must use `--no-parallel`")
-    }
     if (sharedConfiguration.signing.shouldSign(gradle.taskGraph)) {
         // Use Java 6's console or Swing to read input (not suitable for CI)
         if (!sharedConfiguration.signing.hasAllKeyDetails()) {
