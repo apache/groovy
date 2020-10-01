@@ -387,7 +387,7 @@ public class TemplateServlet extends AbstractHttpServlet {
             return new SimpleTemplateEngine();
         }
         try {
-            return (TemplateEngine) Class.forName(name).getDeclaredConstructor().newInstance();
+            return Class.forName(name).asSubclass(TemplateEngine.class).getDeclaredConstructor().newInstance();
         } catch (InstantiationException | InvocationTargetException e) {
             log("Could not instantiate template engine: " + name, e);
         } catch (IllegalAccessException e) {
