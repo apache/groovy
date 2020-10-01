@@ -26,7 +26,7 @@ dependencies {
 }
 
 groovyLibrary {
-    includeInGroovyAll = false
+    optionalModule()
     moduleDescriptor {
         extensionClasses = 'org.apache.groovy.dateutil.extensions.DateUtilExtensions'
         staticExtensionClasses = 'org.apache.groovy.dateutil.extensions.DateUtilStaticExtensions'

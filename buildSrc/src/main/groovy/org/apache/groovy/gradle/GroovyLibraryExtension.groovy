@@ -54,6 +54,7 @@ class GroovyLibraryExtension {
     final Property<Boolean> includeInGroovyAll
     final ListProperty<String> repackagedDependencies
     private final Property<Boolean> grooid
+    final Property<Boolean> checkBinaryCompatibility
 
     final ObjectFactory objects
     final JavaPluginConvention javaPluginConvention
@@ -76,6 +77,7 @@ class GroovyLibraryExtension {
         this.sharedConfiguration = sharedConfiguration
         this.includeInGroovyAll = factory.property(Boolean).convention(true)
         this.grooid = factory.property(Boolean).convention(false)
+        this.checkBinaryCompatibility = factory.property(Boolean).convention(true)
         this.repackagedDependencies = factory.listProperty(String).convention([])
         this.javaPluginConvention = javaPluginConvention
         this.javaPluginExtension = javaPluginExtension
@@ -83,6 +85,14 @@ class GroovyLibraryExtension {
         this.configurations = configurations
         this.tasks = tasks
         this.layout = layout
+    }
+
+    void optionalModule() {
+        includeInGroovyAll.set(false)
+    }
+
+    void withoutBinaryCompatibilityChecks() {
+        checkBinaryCompatibility.set(false)
     }
 
     boolean hasGrooid() {

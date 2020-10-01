@@ -1,3 +1,5 @@
+import me.champeau.gradle.japicmp.JapicmpTask
+
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -16,24 +18,11 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-import me.champeau.gradle.japicmp.JapicmpTask
-
-//plugins {
-//    id "me.champeau.gradle.japicmp" version "0.2.8"
-//}
-buildscript {
-    repositories {
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
-    }
-
-    dependencies {
-        classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.2.9'
-        classpath 'com.google.guava:guava:28.2-jre'
-    }
+plugins {
+    id "me.champeau.gradle.japicmp" version "0.2.8"
+    id 'org.apache.groovy-aggregating-project'
+    id 'org.apache.groovy-common'
 }
-apply plugin: 'me.champeau.gradle.japicmp'
 
 def checkBinaryCompatibility = tasks.register("checkBinaryCompatibility") {
     description = "Generates binary compatibility reports"
@@ -43,38 +32,33 @@ tasks.register("check") {
     dependsOn checkBinaryCompatibility
 }
 
-// for comparing between versions with different modules, set excludeModules to differing modules, e.g.
-Set excludeModules = [
-        "performance", "binary-compatibility", "tests-preview",
-        "groovy-contracts", "groovy-macro-library", "groovy-typecheckers",
-        "groovy-all", "groovy-bom"
-]
-
-def compatibilityBaselineVersion = "3.0.5"
-
 def thisProject = project
 
 rootProject.allprojects {
-    if (!(name in excludeModules)) {
-        def taskName = "japicmp${project.name.split('-').collect{ it.capitalize() }.join()}"
-        def baselineCoords = "org.codehaus.groovy:${project.name}:${compatibilityBaselineVersion}@jar"
-        def baseline = thisProject.configurations.create("${taskName}Baseline") {
-            dependencies.add(thisProject.dependencies.create(baselineCoords))
+    pluginManager.withPlugin('org.apache.groovy-base') {
+        if (groovyLibrary.checkBinaryCompatibility.get()) {
+            def taskName = "japicmp${project.name.split('-').collect{ it.capitalize() }.join()}"
+            def baselineCoords = "org.codehaus.groovy:${project.name}:${sharedConfiguration.binaryCompatibilityBaselineVersion.get()}@jar"
+            def baseline = thisProject.configurations.create("${taskName}Baseline") {
+                dependencies.add(thisProject.dependencies.create(baselineCoords))
+            }
+            def singleProjectCheck = thisProject.tasks.register(taskName, JapicmpTask) {
+                oldArchives = baseline
+                newArchives = files(tasks.named("jarjar"))
+                oldClasspath = files()
+                newClasspath = files()
+                accessModifier = "protected"
+                onlyModified = true
+                failOnModification = false
+                ignoreMissingClasses = true
+                classExcludes = ["**_closure**", "org.codehaus.groovy.runtime.dgm\$**"]
+                packageExcludes = ["**internal**", "groovyjarjar**"]
+                htmlOutputFile = file("${thisProject.buildDir}/reports/${taskName}.html")
+            }
+            checkBinaryCompatibility.configure {
+                dependsOn(singleProjectCheck)
+            }
         }
-        def singleProjectCheck = thisProject.tasks.register(taskName, JapicmpTask) {
-            oldArchives = baseline
-            newArchives = files(tasks.named("jarjar"))
-            oldClasspath = files()
-            newClasspath = files()
-            accessModifier = "protected"
-            onlyModified = true
-            failOnModification = false
-            ignoreMissingClasses = true
-            classExcludes = ["**_closure**", "org.codehaus.groovy.runtime.dgm\$**"]
-            packageExcludes = ["**internal**", "groovyjarjar**"]
-            htmlOutputFile = file("${thisProject.buildDir}/reports/${taskName}.html")
-        }
-        thisProject.tasks.checkBinaryCompatibility.dependsOn(singleProjectCheck)
     }
 }
 
