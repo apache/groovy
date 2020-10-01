@@ -38,7 +38,6 @@ dependencies {
     }
 }
 
-// TODO move to parent build.gradle subprojects
 tasks.withType(Test) {
     excludes = ['**/*TestCase.class', '**/*$*.class']
 // required for DataSet tests

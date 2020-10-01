@@ -31,7 +31,7 @@ def srcBase = "subprojects/parser-antlr4/src"
 def srcMain = "$srcBase/main"
 def srcTest = "$srcBase/test"
 
-generateGrammarSource {
+tasks.named("generateGrammarSource") {
     maxHeapSize = '1g'
     outputs.cacheIf { true }
     outputDirectory = file("$generatedDirectory/antlr4")
