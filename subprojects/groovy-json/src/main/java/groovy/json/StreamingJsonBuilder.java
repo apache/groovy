@@ -578,6 +578,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
                                     return null;
                                 }
                             }
+                            // fall through
                         default:
                             final List<Object> list = Arrays.asList(arr);
                             call(name, list);
