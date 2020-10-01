@@ -352,7 +352,7 @@ public class JsonParserLax extends JsonParserCharArray {
                             }
                         }
                     }
-
+                    // fall through
                 case '/':
                     for (; __index < charArray.length; __index++) {
                         __currentChar = charArray[__index];
