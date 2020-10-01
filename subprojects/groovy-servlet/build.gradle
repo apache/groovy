@@ -22,7 +22,7 @@ plugins {
 
 dependencies {
     compileOnlyApi('javax.servlet:javax.servlet-api:3.0.1')
-    compileOnlyApi('javax.servlet:jsp-api:2.0') { dep ->
+    compileOnlyApi('javax.servlet:jsp-api:2.0') {
         exclude(group: 'javax.servlet', module: 'servlet-api')
     }
 
@@ -33,7 +33,7 @@ dependencies {
     implementation project(':groovy-templates')
 
     testImplementation('javax.servlet:javax.servlet-api:3.0.1')
-    testImplementation('javax.servlet:jsp-api:2.0') { dep ->
+    testImplementation('javax.servlet:jsp-api:2.0') {
         exclude(group: 'javax.servlet', module: 'servlet-api')
     }
     testImplementation "jmock:jmock:${versions.jmock}"

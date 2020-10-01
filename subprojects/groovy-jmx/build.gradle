@@ -23,10 +23,9 @@ plugins {
 dependencies {
     api rootProject // JmxBuilder extends FactoryBuilderSupport...
     testImplementation project(':groovy-test')
+    testImplementation testFixtures(project(":"))
     testRuntimeOnly("org.apache.ivy:ivy:${versions.ivy}") {
         transitive = false
     }
     testRuntimeOnly project(":groovy-swing")
 }
-
-compileTestGroovy.classpath += rootProject.sourceSets.test.output

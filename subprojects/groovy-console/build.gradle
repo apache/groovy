@@ -39,7 +39,7 @@ dependencies {
     }
 }
 
-task console(type: JavaExec, dependsOn:classes) {
+tasks.register("console", JavaExec) {
     jvmArgs += ["-Dgroovy.attach.groovydoc=true"]
 
     main = 'groovy.console.ui.Console'
