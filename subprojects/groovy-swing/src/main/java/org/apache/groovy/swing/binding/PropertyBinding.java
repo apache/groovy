@@ -71,7 +71,7 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
         for (String line : lines) {
             line = line.trim();
             if (line.startsWith("#")) return;
-            String[] parts = line.split("=");
+            String[] parts = line.split("=", -1);
             if (parts.length == 2) {
                 try {
                     ACCESSORS.put(cl.loadClass(parts[0].trim()), getaAccessorClass(cl, parts[1]));

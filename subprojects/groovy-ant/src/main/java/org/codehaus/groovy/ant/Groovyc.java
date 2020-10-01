@@ -1413,7 +1413,7 @@ public class Groovyc extends MatchingTask {
         ClassLoader loader = getClass().getClassLoader();
         if (loader instanceof AntClassLoader) {
             AntClassLoader antLoader = (AntClassLoader) loader;
-            String[] pathElm = antLoader.getClasspath().split(File.pathSeparator);
+            String[] pathElm = antLoader.getClasspath().split(File.pathSeparator, -1);
             List<String> classpath = configuration.getClasspath();
             /*
              * Iterate over the classpath provided to groovyc, and add any missing path

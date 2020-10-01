@@ -100,7 +100,7 @@ public class SimpleGroovyDoc implements GroovyDoc/*, GroovyTokenTypes*/ {
         String trimmed = RAW_COMMENT_PATTERN.matcher(rawCommentText).replaceFirst("@");
         if (trimmed.equals(rawCommentText)) return;
         String cleaned = TRIMMED_COMMENT_PATTERN.matcher(trimmed).replaceAll("$1").trim();
-        String[] split = cleaned.split("(?m)^@");
+        String[] split = cleaned.split("(?m)^@", -1);
         List<GroovyTag> result = new ArrayList<GroovyTag>();
         for (String s : split) {
             String tagname = null;
