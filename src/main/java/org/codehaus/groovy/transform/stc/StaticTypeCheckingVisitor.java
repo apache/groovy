@@ -2592,7 +2592,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // in that order
             List<Receiver<String>> receivers = new LinkedList<>();
             addReceivers(receivers, makeOwnerList(new ClassExpression(receiver)), false);
-            List<MethodNode> mn = null;
+            List<MethodNode> mn = Collections.emptyList();
             Receiver<String> chosenReceiver = null;
             for (Receiver<String> currentReceiver : receivers) {
                 mn = findMethod(currentReceiver.getType(), name, args);
