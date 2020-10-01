@@ -19,6 +19,7 @@
 
 import org.apache.groovy.gradle.DgmConverter
 import org.apache.groovy.gradle.JarJarTask
+import org.apache.groovy.gradle.CoreExtension
 
 plugins {
     id 'org.apache.groovy-common'
@@ -27,9 +28,58 @@ plugins {
     id 'org.apache.groovy-documented'
 }
 
+project.extensions.create('groovyCore', CoreExtension, objects, sourceSets)
+
+configurations {
+    compilerCompile
+    tools
+    spec
+}
+
+sourceSets {
+    main {
+        java {
+            if (!JavaVersion.current().isJava9Compatible()) {
+                exclude '**/v9/*'
+                exclude '**/vm9/*'
+                exclude '**/PlatformLog.java'
+            }
+        }
+        groovy {
+            if (!JavaVersion.current().isJava9Compatible()) {
+                exclude '**/v9/*'
+                exclude '**/vm9/*'
+            }
+        }
+        resources {
+            srcDirs = ['src/resources']
+        }
+    }
+    test {
+        groovy {
+            srcDirs = ['src/test']
+            if (!JavaVersion.current().isJava9Compatible()) {
+                exclude '**/v9/*'
+                exclude '**/vm9/*'
+            }
+        }
+        resources {
+            srcDirs = ['src/test-resources']
+        }
+    }
+    tools {
+        compileClasspath = sourceSets.main.runtimeClasspath + configurations.tools
+        runtimeClasspath = output + compileClasspath
+    }
+}
+
 def dgmConverter = tasks.register("dgmConverter", DgmConverter) {
     classpath.from files(compileJava, configurations.compileClasspath)
     sources.from('src/main').include('**/*GroovyMethods.java')
+}
+
+dependencies {
+    testRuntimeOnly files(dgmConverter)
 }
 
 tasks.named('jar') {
@@ -49,10 +99,55 @@ tasks.named('jarjar') { JarJarTask it ->
 // Gradle classloading magic with Groovy will only work if it finds a *jar*
 // on classpath. This "bootstrap jar" contains the minimal compiler, without .groovy compiled files
 
-tasks.register("bootstrapJar", Jar) {
+def bootstrapJar = tasks.register("bootstrapJar", Jar) {
     from compileJava
     from dgmConverter
 
     destinationDirectory = layout.buildDirectory.dir("bootstrap")
     archiveClassifier = 'bootstrap'
+}
+
+// The main Groovy compile tasks has a special setup because
+// it uses the "bootstrap compiler"
+tasks.withType(GroovyCompile).configureEach {
+    groovyClasspath = files(bootstrapJar, groovyClasspath)
+    if (it.name == 'compileGroovy') {
+        classpath = files(bootstrapJar, classpath)
+    }
+}
+
+allprojects {
+    tasks.withType(JarJarTask).configureEach {
+        jarjarToolClasspath.from(rootProject.configurations.tools)
+    }
+}
+
+tasks.named('compileJava') {
+    options.fork(memoryMaximumSize: sharedConfiguration.javacMaxMemory.get())
+    inputs.files(configurations.tools)
+
+    doLast {
+        ant.java(classname: 'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
+            groovyCore.classesToBridge.asList().each {
+                arg(value: it.absolutePath)
+            }
+        }
+        ant.echo('Bridger (groovy): ' + ant.properties.stdout)
+    }
+}
+
+tasks.named('compileTestGroovy') {
+    groovyOptions.fork(memoryMaximumSize: groovycTest_mx)
+}
+
+tasks.register('checkCompatibility') {
+    doLast {
+        assert JavaVersion.current().java9Compatible
+    }
+}
+
+tasks.named('javadoc') {
+    groovyCore.excludedFromJavadocs.each {
+        exclude it
+    }
 }

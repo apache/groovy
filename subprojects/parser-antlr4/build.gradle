@@ -34,7 +34,7 @@ def srcTest = "$srcBase/test"
 tasks.named("generateGrammarSource") {
     maxHeapSize = '1g'
     outputs.cacheIf { true }
-    outputDirectory = file("$generatedDirectory/antlr4")
+    outputDirectory = file("${buildDir}/generated/sources/antlr4")
     sourceSets.main.java.srcDirs += outputDirectory
 
     final PARSER_PACKAGE_NAME = 'org.apache.groovy.parser.antlr4'

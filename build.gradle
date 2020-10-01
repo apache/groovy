@@ -16,8 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-import org.apache.groovy.gradle.JarJarTask
-
 buildscript {
     repositories {
         if (rootProject.hasProperty('buildInChina')) {
@@ -60,26 +58,9 @@ archivesBaseName = 'groovy'
 
 apply plugin: "com.github.jk1.dependency-license-report"
 
-File javaHome = new File(System.getProperty('java.home'))
-logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.version')})"
-
-def copyTestResources = tasks.register("copyTestResources", Copy) {
-    from 'src/test'
-    into "$buildDir/classes/test"
-    include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html', '**/*.gif', '**/*.ico', '**/*.css')
-}
-tasks.named('test') {
-    dependsOn(copyTestResources)
-}
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
     maven { url 'https://repository.jboss.org/nexus/content/groups/m2-release-proxy' } // tools
-}
-
-configurations {
-    compilerCompile
-    tools
-    spec
 }
 
 groovyLibrary {
@@ -109,6 +90,15 @@ groovyLibrary {
                     (rootProject.file('notices/NOTICE-GROOIDJARJAR').absolutePath): 'META-INF/NOTICE'
             ]
     )
+}
+
+groovyCore {
+    bridgedClasses 'org.codehaus.groovy.runtime.DefaultGroovyMethods',
+            'org.codehaus.groovy.runtime.StringGroovyMethods',
+            'org.codehaus.groovy.classgen.Verifier',
+            'org.codehaus.groovy.ast.tools.GeneralUtils'
+
+    excludeFromJavadoc '**/GroovyRecognizer.java' // generated file
 }
 
 dependencies {
@@ -188,91 +178,8 @@ configurations {
     }
 }
 
-// The main Groovy compile tasks has a special setup because
-// it uses the "bootstrap compiler"
-tasks.withType(GroovyCompile).configureEach {
-    groovyClasspath = files(bootstrapJar, groovyClasspath)
-    classpath = files(classpath, groovyClasspath)
-}
-
-allprojects {
-    tasks.withType(JarJarTask).configureEach {
-        jarjarToolClasspath.from(rootProject.configurations.tools)
-    }
-}
-
-ext.generatedDirectory = "${buildDir}/generated/sources"
-
-sourceSets {
-    main {
-        java {
-            if (!JavaVersion.current().isJava9Compatible()) {
-                exclude '**/v9/*'
-                exclude '**/vm9/*'
-                exclude '**/PlatformLog.java'
-            }
-        }
-        groovy {
-            if (!JavaVersion.current().isJava9Compatible()) {
-                exclude '**/v9/*'
-                exclude '**/vm9/*'
-            }
-        }
-        resources {
-            srcDirs = ['src/resources']
-        }
-    }
-    test {
-        groovy {
-            srcDirs = ['src/test']
-            if (!JavaVersion.current().isJava9Compatible()) {
-                exclude '**/v9/*'
-                exclude '**/vm9/*'
-            }
-        }
-        resources {
-            srcDirs = ['src/test-resources']
-        }
-    }
-    tools {
-        compileClasspath = sourceSets.main.runtimeClasspath + configurations.tools
-        runtimeClasspath = output + compileClasspath
-    }
-}
-
 // TODO: This should probably be a different source set in the main groovy project
 apply from: 'subprojects/parser-antlr4/build.gradle'
-
-tasks.named('compileJava') {
-    options.fork(memoryMaximumSize: sharedConfiguration.javacMaxMemory.get())
-    inputs.files(rootProject.configurations.tools)
-
-    doLast {
-        ant.java(classname: 'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
-            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/DefaultGroovyMethods.class")
-            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/StringGroovyMethods.class")
-            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/classgen/Verifier.class")
-            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/ast/tools/GeneralUtils.class")
-        }
-        ant.echo('Bridger (groovy): ' + ant.properties.stdout)
-    }
-}
-
-apply from: 'wrapper.gradle'
-
-tasks.named('compileTestGroovy') {
-    groovyOptions.fork(memoryMaximumSize: groovycTest_mx)
-}
-
-tasks.register('checkCompatibility') {
-    doLast {
-        assert JavaVersion.current().java9Compatible
-    }
-}
-
-tasks.named('javadoc') {
-    exclude '**/GroovyRecognizer.java' // generated file
-}
 
 tasks.named('jar') {
     metaInf {
@@ -332,10 +239,6 @@ if (!JavaVersion.current().java9Compatible) {
 '''
 }
 
-// Workaround to be able to access SpotBugsTask from external gradle script.
-// More info: https://discuss.gradle.org/t/buildscript-dependencies-in-external-script/23243
-project.extensions.extraProperties.set('SpotBugsTask', com.github.spotbugs.snom.SpotBugsTask)
-
 apply from: 'gradle/licenses.gradle'
 
 // CC: This can probably be removed as the native IDEA import
@@ -344,6 +247,7 @@ apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
 apply from: 'gradle/jacoco/jacoco.gradle'
 apply from: 'gradle/parallel-build-fixes.gradle'
+apply from: 'wrapper.gradle'
 
 // If a local configuration file for tweaking the build is present, apply it
 if (file('user.gradle').exists()) {
@@ -382,4 +286,6 @@ sonarqube {
 //licenseFormat.dependsOn licenseFormatGradle
 //
 
+File javaHome = new File(System.getProperty('java.home'))
+logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.version')})"
 logger.lifecycle "user.dir: ${System.getProperty('user.dir')}"
