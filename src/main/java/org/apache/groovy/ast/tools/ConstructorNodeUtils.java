@@ -53,8 +53,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  * Utility class for working with ConstructorNodes
  */
 public class ConstructorNodeUtils {
-    private static final ClassNode IMMUTABLE_TYPE = make(ImmutableASTTransformation.class);
     private static final ClassNode EXCEPTION = make(IllegalArgumentException.class);
+    private static final ClassNode IMMUTABLE_TYPE = make(ImmutableASTTransformation.class);
 
     private ConstructorNodeUtils() { }
 
@@ -64,7 +64,7 @@ public class ConstructorNodeUtils {
      * @param code the code to check
      * @return the first statement if a special call or null
      */
-    public static ConstructorCallExpression getFirstIfSpecialConstructorCall(Statement code) {
+    public static ConstructorCallExpression getFirstIfSpecialConstructorCall(final Statement code) {
         if (code == null) return null;
 
         if (code instanceof BlockStatement) {
@@ -84,7 +84,7 @@ public class ConstructorNodeUtils {
         return null;
     }
 
-    public static Statement checkPropNamesS(VariableExpression namedArgs, boolean pojo, List<PropertyNode> props) {
+    public static Statement checkPropNamesS(final VariableExpression namedArgs, final boolean pojo, final List<PropertyNode> props) {
         if (!pojo) {
             return stmt(callX(IMMUTABLE_TYPE, "checkPropNames", args(varX("this"), namedArgs)));
         }

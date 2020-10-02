@@ -59,8 +59,7 @@ public final class ExpressionUtils {
         Arrays.sort(HANDLED_TYPES);
     }
 
-    private ExpressionUtils() {
-    }
+    private ExpressionUtils() { }
 
     /**
      * Turns expressions of the form ConstantExpression(40) + ConstantExpression(2)
@@ -340,6 +339,10 @@ public final class ExpressionUtils {
         return null;
     }
 
+    public static boolean isNullConstant(final Expression expression) {
+        return expression instanceof ConstantExpression && ((ConstantExpression) expression).isNullExpression();
+    }
+
     public static boolean isThisExpression(final Expression expression) {
         return expression instanceof VariableExpression && ((VariableExpression) expression).isThisExpression();
     }
@@ -351,9 +354,4 @@ public final class ExpressionUtils {
     public static boolean isThisOrSuper(final Expression expression) {
         return isThisExpression(expression) || isSuperExpression(expression);
     }
-
-    public static boolean isNullConstant(final Expression expr) {
-        return expr instanceof ConstantExpression && ((ConstantExpression) expr).isNullExpression();
-    }
-
 }

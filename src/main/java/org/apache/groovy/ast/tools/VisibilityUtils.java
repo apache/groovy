@@ -41,8 +41,7 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 public class VisibilityUtils {
     private static final ClassNode VISIBILITY_OPTIONS_TYPE = makeWithoutCaching(VisibilityOptions.class, false);
 
-    private VisibilityUtils() {
-    }
+    private VisibilityUtils() { }
 
     /**
      * Determine the correct modifiers by looking for a potential @VisibilityOptions annotation.
@@ -53,7 +52,7 @@ public class VisibilityUtils {
      * @param originalModifiers The modifier value to adjust or return if no applicable @VisibilityOptions is found
      * @return the updated modifiers
      */
-    public static int getVisibility(AnnotationNode anno, AnnotatedNode node, Class<? extends AnnotatedNode> clazz, int originalModifiers) {
+    public static int getVisibility(final AnnotationNode anno, final AnnotatedNode node, final Class<? extends AnnotatedNode> clazz, final int originalModifiers) {
         List<AnnotationNode> annotations = node.getAnnotations(VISIBILITY_OPTIONS_TYPE);
         if (annotations.isEmpty() || anno == null) return originalModifiers;
 
@@ -74,7 +73,7 @@ public class VisibilityUtils {
         return result | vis.getModifier();
     }
 
-    private static Visibility getVisForAnnotation(Class<? extends AnnotatedNode> clazz, AnnotationNode visAnno, String visId) {
+    private static Visibility getVisForAnnotation(final Class<? extends AnnotatedNode> clazz, final AnnotationNode visAnno, final String visId) {
         Map<String, Expression> visMembers = visAnno.getMembers();
         if (visMembers == null) return Visibility.UNDEFINED;
         String id = getMemberStringValue(visAnno, "id", null);
@@ -94,7 +93,7 @@ public class VisibilityUtils {
         return vis;
     }
 
-    private static Visibility getVisibility(Expression e) {
+    private static Visibility getVisibility(final Expression e) {
         if (e instanceof PropertyExpression) {
             PropertyExpression pe = (PropertyExpression) e;
             if (pe.getObjectExpression() instanceof ClassExpression && pe.getObjectExpression().getText().equals("groovy.transform.options.Visibility")) {

@@ -58,16 +58,16 @@ public class ImmutablePropertyUtils {
     private static final String MEMBER_KNOWN_IMMUTABLE_CLASSES = "knownImmutableClasses";
     private static final String MEMBER_KNOWN_IMMUTABLES = "knownImmutables";
     /*
-              Currently leaving BigInteger and BigDecimal in list but see:
-              http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6348370
-
-              Also, Color is not final so while not normally used with child
-              classes, it isn't strictly immutable. Use at your own risk.
-
-              This list can by extended by providing "known immutable" classes
-              via Immutable.knownImmutableClasses
-             */
-    private static final Set<String> BUILTIN_IMMUTABLES = new HashSet<String>(Arrays.asList(
+     * Currently leaving BigInteger and BigDecimal in list but see:
+     * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6348370
+     *
+     * Also, Color is not final so while not normally used with child
+     * classes, it isn't strictly immutable. Use at your own risk.
+     *
+     * This list can by extended by providing "known immutable" classes
+     * via Immutable.knownImmutableClasses
+     */
+    private static final Set<String> BUILTIN_IMMUTABLES = new HashSet<>(Arrays.asList(
             "boolean",
             "byte",
             "char",
@@ -125,16 +125,16 @@ public class ImmutablePropertyUtils {
             "java.io.File"
     ));
 
-    private static final Set<String> BUILTIN_IMMUTABLE_ANNOTATIONS = new HashSet<String>(Arrays.asList(
+    private static final Set<String> BUILTIN_IMMUTABLE_ANNOTATIONS = new HashSet<>(Arrays.asList(
             "groovy.transform.Immutable",
             "groovy.transform.KnownImmutable",
-//            "javax.annotation.concurrent.Immutable", // its RetentionPolicy is CLASS, can not be got via reflection
+          //"javax.annotation.concurrent.Immutable", // its RetentionPolicy is CLASS, can not be got via reflection
             "net.jcip.annotations.Immutable" // supported by Findbugs and IntelliJ IDEA
     ));
 
     private ImmutablePropertyUtils() { }
 
-    public static Expression cloneArrayOrCloneableExpr(Expression fieldExpr, ClassNode type) {
+    public static Expression cloneArrayOrCloneableExpr(final Expression fieldExpr, final ClassNode type) {
         Expression smce = callX(
                 REFLECTION_INVOKER_TYPE,
                 "invoke",
@@ -147,19 +147,19 @@ public class ImmutablePropertyUtils {
         return castX(type, smce);
     }
 
-    public static boolean implementsCloneable(ClassNode fieldType) {
+    public static boolean implementsCloneable(final ClassNode fieldType) {
         return isOrImplements(fieldType, CLONEABLE_TYPE);
     }
 
-    public static Expression cloneDateExpr(Expression origDate) {
+    public static Expression cloneDateExpr(final Expression origDate) {
         return ctorX(DATE_TYPE, callX(origDate, "getTime"));
     }
 
-    public static boolean derivesFromDate(ClassNode fieldType) {
+    public static boolean derivesFromDate(final ClassNode fieldType) {
         return fieldType.isDerivedFrom(DATE_TYPE);
     }
 
-    public static String createErrorMessage(String className, String fieldName, String typeName, String mode) {
+    public static String createErrorMessage(final String className, final String fieldName, final String typeName, final String mode) {
         return "Unsupported type (" + prettyTypeName(typeName) + ") found for field '" + fieldName + "' while " + mode + " immutable class " + className + ".\n" +
                 "Immutable classes only support properties with effectively immutable types including:\n" +
                 "- Strings, primitive types, wrapper types, Class, BigInteger and BigDecimal, enums\n" +
@@ -169,11 +169,11 @@ public class ImmutablePropertyUtils {
                 "Other restrictions apply, please see the groovydoc for " + IMMUTABLE_OPTIONS_TYPE.getNameWithoutPackage() + " for further details";
     }
 
-    private static String prettyTypeName(String name) {
+    private static String prettyTypeName(final String name) {
         return name.equals("java.lang.Object") ? name + " or def" : name;
     }
 
-    public static boolean isKnownImmutableType(ClassNode fieldType, List<String> knownImmutableClasses) {
+    public static boolean isKnownImmutableType(final ClassNode fieldType, final List<String> knownImmutableClasses) {
         if (builtinOrDeemedType(fieldType, knownImmutableClasses))
             return true;
         if (!fieldType.isResolved())
@@ -191,11 +191,11 @@ public class ImmutablePropertyUtils {
                 hasImmutableAnnotation(fieldType);
     }
 
-    private static boolean builtinOrDeemedType(ClassNode fieldType, List<String> knownImmutableClasses) {
+    private static boolean builtinOrDeemedType(final ClassNode fieldType, final List<String> knownImmutableClasses) {
         return isBuiltinImmutable(fieldType.getName()) || knownImmutableClasses.contains(fieldType.getName()) || hasImmutableAnnotation(fieldType);
     }
 
-    private static boolean hasImmutableAnnotation(ClassNode type) {
+    private static boolean hasImmutableAnnotation(final ClassNode type) {
         List<AnnotationNode> annotations = type.getAnnotations();
         for (AnnotationNode next : annotations) {
             String name = next.getClassNode().getName();
@@ -204,15 +204,15 @@ public class ImmutablePropertyUtils {
         return false;
     }
 
-    private static boolean matchingImmutableMarkerName(String name) {
+    private static boolean matchingImmutableMarkerName(final String name) {
         return BUILTIN_IMMUTABLE_ANNOTATIONS.contains(name);
     }
 
-    public static boolean isBuiltinImmutable(String typeName) {
+    public static boolean isBuiltinImmutable(final String typeName) {
         return BUILTIN_IMMUTABLES.contains(typeName);
     }
 
-    private static boolean hasImmutableAnnotation(Class clazz) {
+    private static boolean hasImmutableAnnotation(final Class<?> clazz) {
         Annotation[] annotations = clazz.getAnnotations();
         for (Annotation next : annotations) {
             String name = next.annotationType().getName();
@@ -221,11 +221,11 @@ public class ImmutablePropertyUtils {
         return false;
     }
 
-    public static boolean builtinOrMarkedImmutableClass(Class<?> clazz) {
+    public static boolean builtinOrMarkedImmutableClass(final Class<?> clazz) {
         return isBuiltinImmutable(clazz.getName()) || hasImmutableAnnotation(clazz);
     }
 
-    public static List<String> getKnownImmutables(AbstractASTTransformation xform, ClassNode cNode) {
+    public static List<String> getKnownImmutables(final AbstractASTTransformation xform, final ClassNode cNode) {
         List<AnnotationNode> annotations = cNode.getAnnotations(ImmutablePropertyUtils.IMMUTABLE_OPTIONS_TYPE);
         AnnotationNode anno = annotations.isEmpty() ? null : annotations.get(0);
         final List<String> immutables = new ArrayList<String>();
@@ -250,7 +250,7 @@ public class ImmutablePropertyUtils {
         return immutables;
     }
 
-    public static List<String> getKnownImmutableClasses(AbstractASTTransformation xform, ClassNode cNode) {
+    public static List<String> getKnownImmutableClasses(final AbstractASTTransformation xform, final ClassNode cNode) {
         List<AnnotationNode> annotations = cNode.getAnnotations(ImmutablePropertyUtils.IMMUTABLE_OPTIONS_TYPE);
         AnnotationNode anno = annotations.isEmpty() ? null : annotations.get(0);
         final List<String> immutableClasses = new ArrayList<String>();

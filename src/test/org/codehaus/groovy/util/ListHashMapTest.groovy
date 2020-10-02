@@ -21,33 +21,28 @@ package org.codehaus.groovy.util
 import groovy.test.GroovyTestCase
 
 class ListHashMapTest extends GroovyTestCase {
-    ListHashMap list
 
+    private final ListHashMap list = new ListHashMap(2)
 
-    public void setUp() throws Exception {
-        super.setUp();
-        list = new ListHashMap(2)
-    }
-
-    public void testEmptyWhenCreated() {
+    void testEmptyWhenCreated() {
         assert list.isEmpty()
         assert list.@maxListFill == 2
     }
 
-    public void testInsertElement() {
+    void testInsertElement() {
         list.put("a", "a")
         assert list.size() == 1
         assert list.@innerMap == null
     }
 
-    public void testInsertTwoElements() {
+    void testInsertTwoElements() {
         list.put("a", "a")
         list.put("b", "b")
         assert list.size() == 2
         assert list.@innerMap == null
     }
 
-    public void testInsertWithSameKey() {
+    void testInsertWithSameKey() {
         list.put("a", "a")
         list.put("a", "b")
         assert list.size() == 1
@@ -55,7 +50,7 @@ class ListHashMapTest extends GroovyTestCase {
         assert list.get("a") == "b"
     }
 
-    public void testSwitchToInnerMap() {
+    void testSwitchToInnerMap() {
         list.put("a", "a")
         list.put("b", "b")
         list.put("c", "c")
@@ -64,7 +59,7 @@ class ListHashMapTest extends GroovyTestCase {
         assert list.@innerMap.size() == 3
     }
 
-    public void testSwitchToInnerMapThenFallbackToList() {
+    void testSwitchToInnerMapThenFallbackToList() {
         list.put("a", "a")
         list.put("b", "b")
         list.put("c", "c")
@@ -77,22 +72,21 @@ class ListHashMapTest extends GroovyTestCase {
         assert list.keySet() == ['a','b'] as Set
     }
 
-    public void testPutNullValue() {
+    void testPutNullValue() {
         list.put("a", null)
         assert list.size() == 1
         assert list.a == null
     }
 
-    public void testRemoveNullValue() {
+    void testRemoveNullValue() {
         list.put("a", null)
         assert list.size() == 1
         assert list.a == null
         list.remove("a")
         assert list.size() == 0
-        assert list.a == null
     }
 
-    public void testPutAll() {
+    void testPutAll() {
         list.putAll([a: '1', b: '2', c: '3'])
         assert list.size() == 3
         assert list.@innerMap != null
@@ -101,7 +95,7 @@ class ListHashMapTest extends GroovyTestCase {
         assert list.values()  as Set == ['1','2','3'] as Set
     }
 
-    public void testPutAllTwice() {
+    void testPutAllTwice() {
         list.putAll([a: '1', b: '2', c: '3'])
         list.putAll([a: '1', b: '2', c: '3'])
         assert list.size() == 3
@@ -111,7 +105,7 @@ class ListHashMapTest extends GroovyTestCase {
         assert list.values() as Set  == ['1','2','3'] as Set
     }
 
-    public void testRemoveAll() {
+    void testRemoveAll() {
         list.putAll([a: '1', b: '2', c: '3'])
         assert list.size() == 3
         assert list.@innerMap != null
@@ -125,7 +119,7 @@ class ListHashMapTest extends GroovyTestCase {
         assert list.@innerMap == null
     }
 
-    public void testRemoveFirstShiftsKeyValuesAndClearsArraySlot() {
+    void testRemoveFirstShiftsKeyValuesAndClearsArraySlot() {
         list.putAll([a: '1', b: '2'])
         assert list.size() == 2
         assert list.@innerMap == null
@@ -144,7 +138,7 @@ class ListHashMapTest extends GroovyTestCase {
         assert list.@listValues[1] == '3'
     }
 
-    public void testRemoveLastClearsLastArraySlot() {
+    void testRemoveLastClearsLastArraySlot() {
         list.putAll([a: '1', b: '2'])
         assert list.size() == 2
         assert list.@innerMap == null
@@ -163,7 +157,7 @@ class ListHashMapTest extends GroovyTestCase {
         assert list.@listValues[1] == '3'
     }
 
-    public void testSwitchToInnerMapClearsArrays() {
+    void testSwitchToInnerMapClearsArrays() {
         list.putAll([a: '1', b: '2'])
         assert list.size() == 2
         assert list.@innerMap == null
@@ -179,12 +173,12 @@ class ListHashMapTest extends GroovyTestCase {
         assert list.@listValues[1] == null
     }
 
-    public void testContainsKey() {
+    void testContainsKey() {
         list.putAll([a: '1', b: '2'])
         assert list.containsKey('b')
     }
 
-    public void testContainsValue() {
+    void testContainsValue() {
         list.putAll([a: '1', b: '2'])
         assert list.containsValue('2')
     }

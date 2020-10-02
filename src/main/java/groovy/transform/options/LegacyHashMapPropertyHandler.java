@@ -60,7 +60,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 public class LegacyHashMapPropertyHandler extends ImmutablePropertyHandler {
     private static final ClassNode HMAP_TYPE = makeWithoutCaching(HashMap.class, false);
 
-    private Statement createLegacyConstructorStatementMapSpecial(FieldNode fNode) {
+    private Statement createLegacyConstructorStatementMapSpecial(final FieldNode fNode) {
         final Expression fieldExpr = varX(fNode);
         final ClassNode fieldType = fieldExpr.getType();
         final Expression initExpr = fNode.getInitialValueExpression();
@@ -87,12 +87,12 @@ public class LegacyHashMapPropertyHandler extends ImmutablePropertyHandler {
     }
 
     @Override
-    public boolean validateAttributes(AbstractASTTransformation xform, AnnotationNode anno) {
+    public boolean validateAttributes(final AbstractASTTransformation xform, final AnnotationNode anno) {
         return !(xform instanceof TupleConstructorASTTransformation) && super.validateAttributes(xform, anno);
     }
 
     @Override
-    public boolean validateProperties(AbstractASTTransformation xform, BlockStatement body, ClassNode cNode, List<PropertyNode> props) {
+    public boolean validateProperties(final AbstractASTTransformation xform, final BlockStatement body, final ClassNode cNode, final List<PropertyNode> props) {
         if (!(props.size() == 1 && props.get(0).getType().equals(HMAP_TYPE))) {
             xform.addError("Error during " + xform.getAnnotationName() + " processing. Property handler " + getClass().getName() + " only accepts a single HashMap property", props.size() == 1 ? props.get(0) : cNode);
             return false;
@@ -101,7 +101,7 @@ public class LegacyHashMapPropertyHandler extends ImmutablePropertyHandler {
     }
 
     @Override
-    public Statement createPropInit(AbstractASTTransformation xform, AnnotationNode anno, ClassNode cNode, PropertyNode pNode, Parameter namedArgsMap) {
+    public Statement createPropInit(final AbstractASTTransformation xform, final AnnotationNode anno, final ClassNode cNode, final PropertyNode pNode, final Parameter namedArgsMap) {
         FieldNode fNode = pNode.getField();
         if (fNode.isFinal() && fNode.isStatic()) return null;
         if (fNode.isFinal() && fNode.getInitialExpression() != null) {

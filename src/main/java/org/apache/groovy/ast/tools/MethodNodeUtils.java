@@ -31,8 +31,7 @@ import static org.apache.groovy.util.BeanUtils.decapitalize;
  */
 public class MethodNodeUtils {
 
-    private MethodNodeUtils() {
-    }
+    private MethodNodeUtils() { }
 
     /**
      * Return the method node's descriptor including its

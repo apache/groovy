@@ -44,9 +44,10 @@ import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 public abstract class PropertyHandler {
     private static final Class<? extends Annotation> PROPERTY_OPTIONS_CLASS = PropertyOptions.class;
     public static final ClassNode PROPERTY_OPTIONS_TYPE = makeWithoutCaching(PROPERTY_OPTIONS_CLASS, false);
+
     public abstract boolean validateAttributes(AbstractASTTransformation xform, AnnotationNode anno);
 
-    public boolean validateProperties(AbstractASTTransformation xform, BlockStatement body, ClassNode cNode, List<PropertyNode> props) {
+    public boolean validateProperties(final AbstractASTTransformation xform, final BlockStatement body, final ClassNode cNode, final List<PropertyNode> props) {
         return true;
     }
 
@@ -66,7 +67,7 @@ public abstract class PropertyHandler {
      *
      *  @param pNode the property node
      */
-    public Statement createPropGetter(PropertyNode pNode) {
+    public Statement createPropGetter(final PropertyNode pNode) {
         return pNode.getGetterBlock();
     }
 
@@ -75,11 +76,11 @@ public abstract class PropertyHandler {
      *
      *  @param pNode the property node
      */
-    public Statement createPropSetter(PropertyNode pNode) {
+    public Statement createPropSetter(final PropertyNode pNode) {
         return pNode.getSetterBlock();
     }
 
-    protected boolean isValidAttribute(AbstractASTTransformation xform, AnnotationNode anno, String memberName) {
+    protected boolean isValidAttribute(final AbstractASTTransformation xform, final AnnotationNode anno, final String memberName) {
         if (xform.getMemberValue(anno, memberName) != null) {
             xform.addError("Error during " + xform.getAnnotationName() + " processing: Annotation attribute '" + memberName +
                     "' not supported for property handler " + getClass().getSimpleName(), anno);
@@ -88,13 +89,12 @@ public abstract class PropertyHandler {
         return true;
     }
 
-    public static PropertyHandler createPropertyHandler(AbstractASTTransformation xform, GroovyClassLoader loader, ClassNode cNode) {
+    public static PropertyHandler createPropertyHandler(final AbstractASTTransformation xform, final GroovyClassLoader loader, final ClassNode cNode) {
         List<AnnotationNode> annotations = cNode.getAnnotations(PROPERTY_OPTIONS_TYPE);
         AnnotationNode anno = annotations.isEmpty() ? null : annotations.get(0);
-        if (anno == null) return new groovy.transform.options.DefaultPropertyHandler();
+        if (anno == null) return new DefaultPropertyHandler();
 
-        ClassNode handlerClass = xform.getMemberClassValue(anno, "propertyHandler", ClassHelper.make(groovy.transform.options.DefaultPropertyHandler.class));
-
+        ClassNode handlerClass = xform.getMemberClassValue(anno, "propertyHandler", ClassHelper.make(DefaultPropertyHandler.class));
         if (handlerClass == null) {
             xform.addError("Couldn't determine propertyHandler class", anno);
             return null;
@@ -107,7 +107,6 @@ public abstract class PropertyHandler {
                 xform.addError("The propertyHandler class '" + handlerClass.getName() + "' on " + xform.getAnnotationName() + " is not a propertyHandler", anno);
                 return null;
             }
-
             return (PropertyHandler) instance;
         } catch (Exception e) {
             xform.addError("Can't load propertyHandler '" + className + "' " + e, anno);

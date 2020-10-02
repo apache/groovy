@@ -32,14 +32,13 @@ import java.util.List;
 public class AnnotatedNodeUtils {
     private static final ClassNode GENERATED_TYPE = ClassHelper.make(Generated.class);
 
-    private AnnotatedNodeUtils() {
-    }
+    private AnnotatedNodeUtils() { }
 
-    public static <T extends AnnotatedNode> T markAsGenerated(ClassNode containingClass, T nodeToMark) {
+    public static <T extends AnnotatedNode> T markAsGenerated(final ClassNode containingClass, final T nodeToMark) {
         return markAsGenerated(containingClass, nodeToMark, false);
     }
 
-    public static <T extends AnnotatedNode> T markAsGenerated(ClassNode containingClass, T nodeToMark, boolean skipChecks) {
+    public static <T extends AnnotatedNode> T markAsGenerated(final ClassNode containingClass, final T nodeToMark, final boolean skipChecks) {
         boolean shouldAnnotate = skipChecks || (containingClass.getModule() != null && containingClass.getModule().getContext() != null);
         if (shouldAnnotate && !isGenerated(nodeToMark)) {
             nodeToMark.addAnnotation(new AnnotationNode(GENERATED_TYPE));
@@ -47,12 +46,12 @@ public class AnnotatedNodeUtils {
         return nodeToMark;
     }
 
-    public static boolean hasAnnotation(AnnotatedNode node, ClassNode annotation) {
+    public static boolean hasAnnotation(final AnnotatedNode node, final ClassNode annotation) {
         List<?> annots = node.getAnnotations(annotation);
         return (annots != null && !annots.isEmpty());
     }
 
-    public static boolean isGenerated(AnnotatedNode node) {
+    public static boolean isGenerated(final AnnotatedNode node) {
         List<?> annots = node.getAnnotations(GENERATED_TYPE);
         return (annots != null && !annots.isEmpty());
     }

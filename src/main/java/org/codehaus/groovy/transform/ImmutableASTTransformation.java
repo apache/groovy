@@ -90,16 +90,13 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class ImmutableASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
-    private CompilationUnit compilationUnit;
 
+    private static final ClassNode HMAP_TYPE = makeWithoutCaching(HashMap.class, false);
     private static final Class<? extends Annotation> MY_CLASS = ImmutableBase.class;
     public static final ClassNode MY_TYPE = makeWithoutCaching(MY_CLASS, false);
     private static final String MY_TYPE_NAME = MY_TYPE.getNameWithoutPackage();
 
-    private static final String MEMBER_ADD_COPY_WITH = "copyWith";
-    private static final String COPY_WITH_METHOD = "copyWith";
-
-    private static final ClassNode HMAP_TYPE = makeWithoutCaching(HashMap.class, false);
+    private CompilationUnit compilationUnit;
 
     @Override
     public String getAnnotationName() {
@@ -107,7 +104,12 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
     }
 
     @Override
-    public void visit(ASTNode[] nodes, SourceUnit source) {
+    public void setCompilationUnit(final CompilationUnit unit) {
+        this.compilationUnit = unit;
+    }
+
+    @Override
+    public void visit(final ASTNode[] nodes, final SourceUnit source) {
         init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         AnnotationNode anno = (AnnotationNode) nodes[0];
@@ -116,14 +118,13 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
         if (parent instanceof ClassNode) {
             final GroovyClassLoader classLoader = compilationUnit != null ? compilationUnit.getTransformLoader() : source.getClassLoader();
             final PropertyHandler handler = PropertyHandler.createPropertyHandler(this, classLoader, (ClassNode) parent);
-            if (handler == null) return;
-            if (!handler.validateAttributes(this, anno)) return;
+            if (handler == null || !handler.validateAttributes(this, anno)) return;
             doMakeImmutable((ClassNode) parent, anno, handler);
         }
     }
 
-    private void doMakeImmutable(ClassNode cNode, AnnotationNode node, PropertyHandler handler) {
-        List<PropertyNode> newProperties = new ArrayList<PropertyNode>();
+    private void doMakeImmutable(final ClassNode cNode, final AnnotationNode node, final PropertyHandler handler) {
+        List<PropertyNode> newProperties = new ArrayList<>();
 
         String cName = cNode.getName();
         if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
@@ -142,7 +143,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
             ensureNotPublic(this, cName, fNode);
         }
         if (hasAnnotation(cNode, TupleConstructorASTTransformation.MY_TYPE)) {
-            // TODO make this a method to be called from TupleConstructor xform, add check for 'defaults'?
+            // TODO: Make this a method to be called from TupleConstructor xform, add check for 'defaults'?
             AnnotationNode tupleCons = cNode.getAnnotations(TupleConstructorASTTransformation.MY_TYPE).get(0);
             if (unsupportedTupleAttribute(tupleCons, "excludes")) return;
             if (unsupportedTupleAttribute(tupleCons, "includes")) return;
@@ -150,17 +151,16 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
             if (unsupportedTupleAttribute(tupleCons, "includeProperties")) return;
             if (unsupportedTupleAttribute(tupleCons, "includeSuperFields")) return;
             if (unsupportedTupleAttribute(tupleCons, "callSuper")) return;
-//            if (unsupportedTupleAttribute(tupleCons, "useSetters")) return;
+          //if (unsupportedTupleAttribute(tupleCons, "useSetters")) return;
             if (unsupportedTupleAttribute(tupleCons, "force")) return;
         }
         if (hasExplicitConstructor(this, cNode)) return;
-        if (memberHasValue(node, MEMBER_ADD_COPY_WITH, true) && !pList.isEmpty() &&
-                !hasDeclaredMethod(cNode, COPY_WITH_METHOD, 1)) {
+        if (!pList.isEmpty() && memberHasValue(node, "copyWith", Boolean.TRUE) && !hasDeclaredMethod(cNode, "copyWith", 1)) {
             createCopyWith(cNode, pList);
         }
     }
 
-    private boolean unsupportedTupleAttribute(AnnotationNode anno, String memberName) {
+    private boolean unsupportedTupleAttribute(final AnnotationNode anno, final String memberName) {
         if (getMemberValue(anno, memberName) != null) {
             String tname = TupleConstructorASTTransformation.MY_TYPE_NAME;
             addError("Error during " + MY_TYPE_NAME + " processing: Annotation attribute '" + memberName +
@@ -170,7 +170,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
         return false;
     }
 
-    private static void makeClassFinal(AbstractASTTransformation xform, ClassNode cNode) {
+    private static void makeClassFinal(final AbstractASTTransformation xform, final ClassNode cNode) {
         int modifiers = cNode.getModifiers();
         if ((modifiers & ACC_FINAL) == 0) {
             if ((modifiers & (ACC_ABSTRACT | ACC_SYNTHETIC)) == (ACC_ABSTRACT | ACC_SYNTHETIC)) {
@@ -181,7 +181,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
         }
     }
 
-    static boolean isSpecialNamedArgCase(List<PropertyNode> list, boolean checkSize) {
+    static boolean isSpecialNamedArgCase(final List<PropertyNode> list, final boolean checkSize) {
         if (checkSize && list.size() != 1) return false;
         if (list.size() == 0) return false;
         ClassNode firstParamType = list.get(0).getField().getType();
@@ -198,15 +198,15 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
         return false;
     }
 
-    private static void ensureNotPublic(AbstractASTTransformation xform, String cNode, FieldNode fNode) {
+    private static void ensureNotPublic(final AbstractASTTransformation xform, final String cNode, final FieldNode fNode) {
         String fName = fNode.getName();
-        // TODO: do we need to lock down things like: $ownClass
+        // TODO: Do we need to lock down things like: $ownClass?
         if (fNode.isPublic() && !fName.contains("$") && !(fNode.isStatic() && fNode.isFinal())) {
             xform.addError("Public field '" + fName + "' not allowed for " + MY_TYPE_NAME + " class '" + cNode + "'.", fNode);
         }
     }
 
-    private static void addProperty(ClassNode cNode, PropertyNode pNode) {
+    private static void addProperty(final ClassNode cNode, final PropertyNode pNode) {
         final FieldNode fn = pNode.getField();
         cNode.getFields().remove(fn);
         cNode.addProperty(pNode.getName(), pNode.getModifiers() | ACC_FINAL, pNode.getType(),
@@ -216,13 +216,13 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
         cNode.addField(fn);
     }
 
-    static boolean makeImmutable(ClassNode cNode) {
+    static boolean makeImmutable(final ClassNode cNode) {
         List<AnnotationNode> annotations = cNode.getAnnotations(ImmutablePropertyUtils.IMMUTABLE_OPTIONS_TYPE);
         AnnotationNode annoImmutable = annotations.isEmpty() ? null : annotations.get(0);
         return annoImmutable != null;
     }
 
-    private static void adjustPropertyForImmutability(PropertyNode pNode, List<PropertyNode> newNodes, PropertyHandler handler) {
+    private static void adjustPropertyForImmutability(final PropertyNode pNode, final List<PropertyNode> newNodes, final PropertyHandler handler) {
         final FieldNode fNode = pNode.getField();
         fNode.setModifiers((pNode.getModifiers() & (~ACC_PUBLIC)) | ACC_FINAL | ACC_PRIVATE);
         pNode.setSetterBlock(null);
@@ -265,10 +265,12 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
                                                 new VariableScope(),
                                                 assignS(
                                                         varX("oldValue", ClassHelper.OBJECT_TYPE),
-                                                        varX("newValue", ClassHelper.OBJECT_TYPE)),
+                                                        varX("newValue", ClassHelper.OBJECT_TYPE)
+                                                ),
                                                 assignS(
                                                         varX("dirty", ClassHelper.boolean_TYPE),
-                                                        ConstantExpression.TRUE)
+                                                        ConstantExpression.TRUE
+                                                )
                                         )
                                 ),
                                 stmt(callX(
@@ -307,8 +309,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
         body.addStatement(declS(localVarX("dirty", ClassHelper.boolean_TYPE), ConstantExpression.PRIM_FALSE));
         body.addStatement(declS(localVarX("construct", HMAP_TYPE), ctorX(HMAP_TYPE)));
 
-        // Check for each property
-        for (final PropertyNode pNode : pList) {
+        for (PropertyNode pNode : pList) {
             body.addStatement(createCheckForProperty(pNode));
         }
 
@@ -320,7 +321,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
 
         final ClassNode clonedNode = cNode.getPlainNodeReference();
 
-        addGeneratedMethod(cNode, COPY_WITH_METHOD,
+        addGeneratedMethod(cNode, "copyWith",
                 ACC_PUBLIC | ACC_FINAL,
                 clonedNode,
                 params(new Parameter(new ClassNode(Map.class), "map")),
@@ -331,17 +332,16 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
     /**
      * This method exists to be binary compatible with 1.7 - 1.8.6 compiled code.
      */
-    @SuppressWarnings("Unchecked")
-    public static Object checkImmutable(String className, String fieldName, Object field) {
+    public static Object checkImmutable(final String className, final String fieldName, final Object field) {
         if (field == null || field instanceof Enum || ImmutablePropertyUtils.isBuiltinImmutable(field.getClass().getName())) return field;
-        if (field instanceof Collection) return DefaultGroovyMethods.asImmutable((Collection) field);
+        if (field instanceof Collection) return DefaultGroovyMethods.asImmutable((Collection<?>) field);
         if (getAnnotationByName(field, "groovy.transform.Immutable") != null) return field;
 
         final String typeName = field.getClass().getName();
         throw new RuntimeException(createErrorMessage(className, fieldName, typeName, "constructing"));
     }
 
-    private static Annotation getAnnotationByName(Object field, String name) {
+    private static Annotation getAnnotationByName(final Object field, final String name) {
         // find longhand since the annotation from earlier versions is now a meta annotation
         for (Annotation an : field.getClass().getAnnotations()) {
             if (an.getClass().getName().equals(name)) {
@@ -354,8 +354,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
     /**
      * For compatibility with pre 2.5 compiled classes
      */
-    @SuppressWarnings("Unchecked")
-    public static Object checkImmutable(Class<?> clazz, String fieldName, Object field) {
+    public static Object checkImmutable(final Class<?> clazz, final String fieldName, final Object field) {
         if (field == null || field instanceof Enum || builtinOrMarkedImmutableClass(field.getClass())) {
             return field;
         }
@@ -375,13 +374,13 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
                 declaredField = clazz.getDeclaredField(fieldName);
                 Class<?> fieldType = declaredField.getType();
                 if (Collection.class.isAssignableFrom(fieldType)) {
-                    return DefaultGroovyMethods.asImmutable((Collection) field);
+                    return DefaultGroovyMethods.asImmutable((Collection<?>) field);
                 }
                 // potentially allow Collection coercion for a constructor
                 if (builtinOrMarkedImmutableClass(fieldType)) {
                     return field;
                 }
-            } catch (NoSuchFieldException ignore) {
+            } catch (NoSuchFieldException e) {
                 // ignore
             }
         }
@@ -389,8 +388,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
         throw new RuntimeException(createErrorMessage(clazz.getName(), fieldName, typeName, "constructing"));
     }
 
-    @SuppressWarnings("Unchecked")
-    public static Object checkImmutable(Class<?> clazz, String fieldName, Object field, List<String> knownImmutableFieldNames, List<Class> knownImmutableClasses) {
+    public static Object checkImmutable(final Class<?> clazz, final String fieldName, final Object field, final List<String> knownImmutableFieldNames, final List<Class> knownImmutableClasses) {
         if (field == null || field instanceof Enum || builtinOrMarkedImmutableClass(field.getClass()) || knownImmutableFieldNames.contains(fieldName) || knownImmutableClasses.contains(field.getClass())) {
             return field;
         }
@@ -410,13 +408,13 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
                 declaredField = clazz.getDeclaredField(fieldName);
                 Class<?> fieldType = declaredField.getType();
                 if (Collection.class.isAssignableFrom(fieldType)) {
-                    return DefaultGroovyMethods.asImmutable((Collection) field);
+                    return DefaultGroovyMethods.asImmutable((Collection<?>) field);
                 }
                 // potentially allow Collection coercion for a constructor
                 if (builtinOrMarkedImmutableClass(fieldType) || knownImmutableClasses.contains(fieldType)) {
                     return field;
                 }
-            } catch (NoSuchFieldException ignore) {
+            } catch (NoSuchFieldException e) {
                 // ignore
             }
         }
@@ -424,16 +422,12 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
         throw new RuntimeException(createErrorMessage(clazz.getName(), fieldName, typeName, "constructing"));
     }
 
-    public static void checkPropNames(Object instance, Map<String, Object> args) {
+    public static void checkPropNames(final Object instance, final Map<String, Object> args) {
         final MetaClass metaClass = InvokerHelper.getMetaClass(instance);
-        for (String k : args.keySet()) {
-            if (metaClass.hasProperty(instance, k) == null)
-                throw new MissingPropertyException(k, instance.getClass());
+        for (String name : args.keySet()) {
+            if (metaClass.hasProperty(instance, name) == null) {
+                throw new MissingPropertyException(name, instance.getClass());
+            }
         }
-    }
-
-    @Override
-    public void setCompilationUnit(CompilationUnit unit) {
-        this.compilationUnit = unit;
     }
 }

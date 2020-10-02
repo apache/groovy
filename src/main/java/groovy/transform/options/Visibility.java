@@ -34,7 +34,7 @@ public enum Visibility {
 
     private final int modifier;
 
-    Visibility(int modifier) {
+    Visibility(final int modifier) {
         this.modifier = modifier;
     }
 
