@@ -20,7 +20,6 @@ package org.apache.groovy.gradle
 
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
-import org.gradle.api.AntBuilder
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.ConfigurableFileTree
@@ -32,10 +31,16 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecOperations
+
+import javax.inject.Inject
 
 @CompileStatic
 @CacheableTask
 class DgmConverter extends DefaultTask {
+
+    private final ExecOperations execOperations
+
 
     @OutputDirectory
     final DirectoryProperty outputDirectory
@@ -48,8 +53,10 @@ class DgmConverter extends DefaultTask {
     @Classpath
     final ConfigurableFileCollection classpath
 
-    DgmConverter() {
+    @Inject
+    DgmConverter(ExecOperations execOperations) {
         description = 'Generates DGM info file required for faster startup.'
+        this.execOperations = execOperations
         classpath = project.objects.fileCollection()
         sources = project.objects.fileTree()
         outputDirectory = project.objects.directoryProperty().convention(
@@ -61,13 +68,10 @@ class DgmConverter extends DefaultTask {
     @CompileDynamic
     void generateDgmInfo() {
         outputDirectory.dir("META-INF").get().asFile.mkdirs()
-        // we use ant.java because Gradle is a bit "too smart" with JavaExec
-        // as it will invalidate the task if classpath changes, which will
-        // happen once Groovy files are compiled
-        project.ant.lifecycleLogLevel = AntBuilder.AntMessagePriority.INFO
-        project.ant.java(classname: 'org.codehaus.groovy.tools.DgmConverter', classpath: classpath.asPath) {
-            arg(value: '--info')
-            arg(value: "${outputDirectory.get().asFile.absolutePath}")
+        execOperations.javaexec {
+            it.mainClass.set('org.codehaus.groovy.tools.DgmConverter')
+            it.classpath = this.classpath
+            it.args('--info', outputDirectory.asFile.get().absolutePath)
         }
     }
 }
