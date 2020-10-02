@@ -38,11 +38,6 @@ dependencies {
     testImplementation project(':groovy-test')
 }
 
-tasks.withType(JavaCompile).configureEach {
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
-}
-
 tasks.named('test') {
     useJUnitPlatform()
 }

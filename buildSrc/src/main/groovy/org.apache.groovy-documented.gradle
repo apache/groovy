@@ -56,7 +56,7 @@ tasks.withType(Javadoc).configureEach {
         version = true
         overview = rootProject.file('src/main/java/overviewj.html')
         footer = 'Copyright &copy; 2003-2020 The Apache Software Foundation. All rights reserved.'
-        source = '1.8'
+        source = sharedConfiguration.targetJavaVersion.get()
         links('https://docs.oracle.com/javase/8/docs/api/',
                 'https://docs.oracle.com/javaee/7/api/',
                 'https://commons.apache.org/proper/commons-cli/javadocs/api-release/',
