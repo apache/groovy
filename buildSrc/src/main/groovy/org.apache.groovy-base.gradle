@@ -282,12 +282,10 @@ int targetJvmVersion = Integer.valueOf(sharedConfiguration.targetJavaVersion.get
 def shadowApi = createConsumableConfiguration(objects, tasks, configurations, 'groovyApiElements', Usage.JAVA_API, 'jarjar', capability, targetJvmVersion)
 def shadowRuntime = createConsumableConfiguration(objects, tasks, configurations, 'groovyRuntimeElements', Usage.JAVA_RUNTIME, 'jarjar', capability, targetJvmVersion)
 dependencies {
-    constraints {
-        // All Groovy modules depend on the "Groovy-all" platform in order to get alignement
-        // However because groovy-all doesn't reference all modules this is partial alignement
-        groovyApiElements platform(project(":groovy-all"))
-        groovyRuntimeElements platform(project(":groovy-all"))
-    }
+    // All Groovy modules depend on the Groovy BOM which itself has constraints on all
+    // Groovy modules, which brings nice alignement features!
+    groovyApiElements platform(project(":groovy-bom"))
+    groovyRuntimeElements platform(project(":groovy-bom"))
 }
 component.addVariantsFromConfiguration(shadowApi) {
 
