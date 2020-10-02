@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+import org.apache.groovy.gradle.ConcurrentExecutionControlBuildService
 
 // Instead of adding to the test sources, this should
 // be a separate source set so that we can run spec tests in isolation
@@ -35,12 +36,12 @@ tasks.withType(Test).configureEach {
     def jdk8 = ['-XX:+UseConcMarkSweepGC']
     def jdk9 = ['-Djava.locale.providers=COMPAT,SPI']
 //        def jdk9 = ['-Djava.locale.providers=COMPAT,SPI', '--illegal-access=debug']
-    def common = ['-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", "-Duser.language=en" ]
+    def common = ['-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", "-Duser.language=en"]
     if (JavaVersion.current().isJava9Compatible()) {
-        jvmArgs (*common, *jdk9)
+        jvmArgs(*common, *jdk9)
         systemProperty "groovy.force.illegal.access", findProperty("groovy.force.illegal.access")
     } else {
-        jvmArgs (*common, *jdk8)
+        jvmArgs(*common, *jdk8)
     }
     def headless = System.properties['java.awt.headless']
     if (headless == 'true') {
@@ -48,7 +49,7 @@ tasks.withType(Test).configureEach {
     }
     systemProperties 'apple.awt.UIElement': 'true',
             'javadocAssertion.src.dir': './src/main',
-            'grape.root' : grapeDirectory.absolutePath,
+            'grape.root': grapeDirectory.absolutePath,
             'gradle.home': gradle.gradleHomeDir, // this is needed by the security.policy
             'user.home': temporaryDir.absolutePath // make sure tests are isolated from real user home or tests using Grape may fail
 
@@ -69,6 +70,7 @@ tasks.withType(Test).configureEach {
     classpath = files('src/test') + classpath
     exclude buildExcludeFilter(it.name == 'test')
     ext.resultText = ''
+    usesService(ConcurrentExecutionControlBuildService.restrict(Test, gradle, 2))
     doFirst {
         grapeDirectory.deleteDir() // delete if it exists already to be in a clean state
     }
