@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.java.archives.Manifest
 import org.gradle.api.tasks.CacheableTask
@@ -33,6 +34,8 @@ import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
+import javax.inject.Inject
+
 @CacheableTask
 class JarJarTask extends DefaultTask {
     private final static String JARJAR_CLASS_NAME = 'org.pantsbuild.jarjar.JarJarTask'
@@ -41,6 +44,8 @@ class JarJarTask extends DefaultTask {
     String description = "Repackages dependencies into a shaded jar"
 
     private List<Action<? super Manifest>> manifestTweaks = []
+
+    private final FileSystemOperations fs
 
     @InputFile
     @Classpath
@@ -84,6 +89,11 @@ class JarJarTask extends DefaultTask {
     @Input
     boolean createManifest = true
 
+    @Inject
+    JarJarTask(FileSystemOperations fileSystemOperations) {
+        this.fs = fileSystemOperations
+    }
+
     void withManifest(Action<? super Manifest> action) {
         manifestTweaks << action
     }
@@ -107,7 +117,7 @@ class JarJarTask extends DefaultTask {
                 jarjar(jarfile: tmpJar, filesonly: true) {
                     zipfileset(
                             src: originalJar,
-                            excludes: (untouchedFiles+excludes).join(','))
+                            excludes: (untouchedFiles + excludes).join(','))
                     includedResources.each { String resource, String path ->
                         String dir = resource.substring(0, resource.lastIndexOf('/') + 1)
                         String filename = resource.substring(resource.lastIndexOf('/') + 1)
@@ -151,12 +161,16 @@ class JarJarTask extends DefaultTask {
             }
 
             // so that we can put it into the final jar
-            project.ant.copy(file: tmpJar, tofile: outputFile)
+            fs.copy {
+                it.from(tmpJar)
+                it.into(outputFile.parentFile)
+                it.rename { outputFile.name }
+            }
             project.ant.jar(destfile: outputFile, update: true, index: true, manifest: manifestFile) {
                 manifest {
                     // because we don't want to use JDK 1.8.0_91, we don't care and it will
                     // introduce cache misses
-                    attribute(name:'Created-By', value:'Gradle')
+                    attribute(name: 'Created-By', value: 'Gradle')
                 }
                 if (untouchedFiles) {
                     zipfileset(
@@ -165,8 +179,10 @@ class JarJarTask extends DefaultTask {
                 }
             }
         } finally {
-            manifestFile.delete()
-            project.ant.delete(file: tmpJar, quiet: true, deleteonexit: true)
+            fs.delete {
+                it.delete(manifestFile)
+                it.delete(tmpJar)
+            }
         }
     }
 

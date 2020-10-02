@@ -83,10 +83,6 @@ tasks.withType(Test).configureEach {
         fs.delete {
             delete(files(".").filter { it.name.endsWith '.class' })
         }
-        ant.lifecycleLogLevel = 'DEBUG'
-        ant.delete {
-            fileset(dir: '.', includes: '*.class')
-        }
     }
 }
 
