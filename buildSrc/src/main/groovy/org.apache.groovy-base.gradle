@@ -53,8 +53,6 @@ def groovyLibrary = project.extensions.create("groovyLibrary", GroovyLibraryExte
 java {
     withSourcesJar()
     withJavadocJar()
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 def generateReleaseInfo = tasks.register("generateReleaseInfo", ReleaseInfoGenerator)
@@ -199,6 +197,15 @@ tasks.register("jarjar", JarJarTask) {
     }
 }
 
+tasks.withType(AbstractCompile).configureEach {
+    sourceCompatibility(sharedConfiguration.targetJavaVersion.get())
+    targetCompatibility(sharedConfiguration.targetJavaVersion.get())
+}
+
+tasks.withType(Javadoc).configureEach {
+    options.source = sharedConfiguration.targetJavaVersion.get()
+}
+
 components.java {
     addVariantsFromConfiguration(configurations.groovydocElements) {
         mapToOptional()
@@ -270,10 +277,10 @@ components.add(component)
 // By declaring a codehaus capability we can tell Gradle that the user has to
 // choose between "old" groovy and "new" groovy
 String capability = "org.codehaus.groovy:${archivesBaseName}:${sharedConfiguration.groovyVersion.get()}"
-
+int targetJvmVersion = Integer.valueOf(sharedConfiguration.targetJavaVersion.get())
 // First we create the "API" and "runtime" variants of Groovy for publication
-def shadowApi = createConsumableConfiguration(objects, tasks, configurations, 'groovyApiElements', Usage.JAVA_API, 'jarjar', capability)
-def shadowRuntime = createConsumableConfiguration(objects, tasks, configurations, 'groovyRuntimeElements', Usage.JAVA_RUNTIME, 'jarjar', capability)
+def shadowApi = createConsumableConfiguration(objects, tasks, configurations, 'groovyApiElements', Usage.JAVA_API, 'jarjar', capability, targetJvmVersion)
+def shadowRuntime = createConsumableConfiguration(objects, tasks, configurations, 'groovyRuntimeElements', Usage.JAVA_RUNTIME, 'jarjar', capability, targetJvmVersion)
 dependencies {
     constraints {
         // All Groovy modules depend on the "Groovy-all" platform in order to get alignement
@@ -305,7 +312,8 @@ Configuration createConsumableConfiguration(ObjectFactory objects,
                                             String name,
                                             String usage,
                                             String artifactTask,
-                                            String capability) {
+                                            String capability,
+                                            int targetJvmVersion) {
     container.create(name) { Configuration cnf ->
         cnf.canBeConsumed = true
         cnf.canBeResolved = false
@@ -315,7 +323,7 @@ Configuration createConsumableConfiguration(ObjectFactory objects,
             it.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, usage))
             // We use external because only Groovy core actually repackages dependencies
             it.attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
-            it.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 8)
+            it.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, targetJvmVersion)
         }
         cnf.outgoing {
             it.artifact tasks.named(artifactTask)

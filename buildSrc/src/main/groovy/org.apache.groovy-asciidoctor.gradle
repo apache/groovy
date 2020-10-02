@@ -77,9 +77,9 @@ asciidoctor {
 }
 
 asciidoctorj {
-    jrubyVersion = '1.5.8'
-    version = '2.4.0'
-    def vers = groovyVersion
+    jrubyVersion = versions.jruby
+    version = versions.asciidoctorj
+    def vers = versions.groovy
     docExtensions {
         def baseUrls = [
                 jdk: 'https://docs.oracle.com/en/java/javase/11/docs/api/index.html',
@@ -98,8 +98,8 @@ asciidoctorj {
         }
     }
     modules {
-        diagram.version('2.0.2')
-        pdf.version('1.5.3')
+        diagram.version(versions.asciidoctorDiagram)
+        pdf.version(versions.asciidoctorPdf)
     }
 }
 

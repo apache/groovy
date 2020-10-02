@@ -42,6 +42,7 @@ class SharedConfiguration {
     final Provider<String> installationDirectory
     final Provider<String> binaryCompatibilityBaselineVersion
     final Provider<Boolean> hasCodeCoverage
+    final Provider<String> targetJavaVersion
     final boolean isRunningOnCI
 
     @Nested
@@ -76,6 +77,7 @@ class SharedConfiguration {
                         providers.provider { startParameter.taskNames.any { it =~ /jacoco/ } }
                 )
                 .orElse(false)
+        targetJavaVersion = objects.property(String).convention("8")
     }
 
     private static boolean detectCi(File file, Logger logger) {
