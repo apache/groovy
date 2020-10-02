@@ -17,6 +17,7 @@
  *  under the License.
  */
 import org.apache.groovy.gradle.ConcurrentExecutionControlBuildService
+import javax.inject.Inject
 
 // Instead of adding to the test sources, this should
 // be a separate source set so that we can run spec tests in isolation
@@ -32,6 +33,7 @@ sourceSets {
 }
 
 tasks.withType(Test).configureEach {
+    def fs = objects.newInstance(TestServices).fileSystemOperations
     def grapeDirectory = new File(temporaryDir, "grape")
     def jdk8 = ['-XX:+UseConcMarkSweepGC']
     def jdk9 = ['-Djava.locale.providers=COMPAT,SPI']
@@ -72,9 +74,16 @@ tasks.withType(Test).configureEach {
     ext.resultText = ''
     usesService(ConcurrentExecutionControlBuildService.restrict(Test, gradle, 2))
     doFirst {
-        grapeDirectory.deleteDir() // delete if it exists already to be in a clean state
+        fs.delete {
+            // delete if it exists already to be in a clean state
+            delete(grapeDirectory)
+        }
     }
     doLast {
+        fs.delete {
+            delete(files(".").filter { it.name.endsWith '.class' })
+        }
+        ant.lifecycleLogLevel = 'DEBUG'
         ant.delete {
             fileset(dir: '.', includes: '*.class')
         }
@@ -100,4 +109,9 @@ Closure buildExcludeFilter(boolean legacyTestSuite) {
     return { f ->
         excludes.any { f.file =~ it }
     }
+}
+
+interface TestServices {
+    @Inject
+    FileSystemOperations getFileSystemOperations()
 }

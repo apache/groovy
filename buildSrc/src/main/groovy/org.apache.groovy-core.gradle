@@ -20,6 +20,7 @@
 import org.apache.groovy.gradle.DgmConverter
 import org.apache.groovy.gradle.JarJarTask
 import org.apache.groovy.gradle.CoreExtension
+import javax.inject.Inject
 
 plugins {
     id 'org.apache.groovy-common'
@@ -122,17 +123,23 @@ allprojects {
     }
 }
 
+interface CoreServices {
+    @Inject
+    ExecOperations getExecOperations()
+}
+
+def execOperations = objects.newInstance(CoreServices).execOperations
+
 tasks.named('compileJava') {
     options.fork(memoryMaximumSize: sharedConfiguration.javacMaxMemory.get())
     inputs.files(configurations.tools)
 
     doLast {
-        ant.java(classname: 'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
-            groovyCore.classesToBridge.asList().each {
-                arg(value: it.absolutePath)
-            }
+        execOperations.javaexec { spec ->
+            spec.classpath(rootProject.configurations.tools)
+            spec.main('org.jboss.bridger.Bridger')
+            spec.args(groovyCore.classesToBridge.asList().collect { it.absolutePath })
         }
-        ant.echo('Bridger (groovy): ' + ant.properties.stdout)
     }
 }
 
