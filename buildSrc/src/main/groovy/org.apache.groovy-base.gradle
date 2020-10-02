@@ -239,8 +239,7 @@ tasks.register("checkstyle") {
     dependsOn tasks.withType(Checkstyle)
 }
 
-// cannot use configureEach because of the nested register
-tasks.withType(Checkstyle) {
+tasks.withType(Checkstyle).configureEach {
     showViolations = false
     ignoreFailures = true
     configFile = rootProject.file("config/checkstyle/checkstyle.xml")
@@ -253,12 +252,15 @@ tasks.withType(Checkstyle) {
         }
     }
     def chk = it
-    finalizedBy tasks.register("${name}Report", CheckstyleHtmlReport) {
-        dependsOn chk
-        source.from(chk.source)
-        configFile = rootProject.file("config/checkstyle/checkstyle-report.groovy")
-        checkstyleReportFile = reportFile
-        outputFile = layout.buildDirectory.file("reports/checkstyle/${chk.name}.html")
+    finalizedBy {
+        // we use a closure here as a workaround, to preserve task configuration laziness
+        tasks.create("${name}Report", CheckstyleHtmlReport) {
+            dependsOn chk
+            source.from(chk.source)
+            configFile = rootProject.file("config/checkstyle/checkstyle-report.groovy")
+            checkstyleReportFile = reportFile
+            outputFile = layout.buildDirectory.file("reports/checkstyle/${chk.name}.html")
+        }
     }
 }
 

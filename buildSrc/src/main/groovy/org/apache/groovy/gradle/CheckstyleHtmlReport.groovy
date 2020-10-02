@@ -26,6 +26,7 @@ import groovy.util.slurpersupport.GPathResult
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
@@ -35,6 +36,7 @@ import org.gradle.api.tasks.SkipWhenEmpty
 import org.gradle.api.tasks.TaskAction
 
 @CompileStatic
+@CacheableTask
 class CheckstyleHtmlReport extends DefaultTask {
     @InputFiles
     @SkipWhenEmpty
@@ -42,9 +44,11 @@ class CheckstyleHtmlReport extends DefaultTask {
     final ConfigurableFileCollection source = project.objects.fileCollection()
 
     @InputFile
+    @PathSensitive(PathSensitivity.RELATIVE)
     final RegularFileProperty configFile = project.objects.fileProperty()
 
     @InputFile
+    @PathSensitive(PathSensitivity.RELATIVE)
     final RegularFileProperty checkstyleReportFile = project.objects.fileProperty()
 
     @OutputFile
