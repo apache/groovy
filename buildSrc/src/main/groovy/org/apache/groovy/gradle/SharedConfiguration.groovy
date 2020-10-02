@@ -78,6 +78,11 @@ class SharedConfiguration {
                 )
                 .orElse(false)
         targetJavaVersion = objects.property(String).convention("8")
+        File javaHome = new File(providers.systemProperty('java.home').forUseAtConfigurationTime().get())
+        String javaVersion = providers.systemProperty('java.version').forUseAtConfigurationTime().get()
+        String userdir = providers.systemProperty('user.dir').forUseAtConfigurationTime().get()
+        logger.lifecycle "Using Java from $javaHome (version ${javaVersion})"
+        logger.lifecycle "user.dir: ${userdir}"
     }
 
     private static boolean detectCi(File file, Logger logger) {
