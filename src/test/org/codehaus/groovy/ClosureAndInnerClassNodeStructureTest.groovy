@@ -18,12 +18,14 @@
  */
 package org.codehaus.groovy
 
-import groovy.test.GroovyTestCase
-import org.codehaus.groovy.control.CompilationUnit
-import org.codehaus.groovy.classgen.GeneratorContext
-import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.classgen.GeneratorContext
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.Phases
+import org.codehaus.groovy.control.SourceUnit
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
 
 /**
  * Before Groovy 1.8, the structure of closure's inner classes
@@ -32,11 +34,12 @@ import org.codehaus.groovy.ast.ClassNode
  * This test checks that closure inner classes are direct child of their enclosing class,
  * instead of being child of the outermost class.
  */
-class ClosureAndInnerClassNodeStructureTest extends GroovyTestCase {
+final class ClosureAndInnerClassNodeStructureTest {
 
+    @Test
     void testStructure() {
         def cu = new CompilationUnit()
-        cu.addSource("t.groovy", '''
+        cu.addSource('t.groovy', '''
             exec {                               // t$_run_closure1
                 def d = {                        // t$_run_closure1$_closure3
                     def o = new Object() {       // t$1
@@ -52,19 +55,14 @@ class ClosureAndInnerClassNodeStructureTest extends GroovyTestCase {
 
         def classNodes = [:]
 
-        cu.addPhaseOperation(new CompilationUnit.IPrimaryClassNodeOperation() {
-            @Override
-            void call(SourceUnit source, GeneratorContext context, ClassNode cn) {
-                def recurse = { ClassNode node ->
-                    classNodes[node.name] = node
-                    for (icn in node.innerClasses) {
-                        classNodes[icn.name] == icn
-                        call(icn)
-                    }
+        cu.addPhaseOperation({ SourceUnit source, GeneratorContext context, ClassNode cn ->
+            { ClassNode node ->
+                classNodes[node.name] = node
+                for (icn in node.innerClasses) {
+                    call(icn)
                 }
-                recurse(cn)
-            }
-        }, Phases.CLASS_GENERATION)
+            }.call(cn)
+        } as CompilationUnit.IPrimaryClassNodeOperation, Phases.CLASS_GENERATION)
 
         cu.compile(Phases.CLASS_GENERATION)
 
@@ -82,7 +80,7 @@ class ClosureAndInnerClassNodeStructureTest extends GroovyTestCase {
         assertParentOf 't$_run_closure1$_closure3$_closure4' isClass 't$_run_closure1$_closure3'
     }
 
-    // GROOVY-5351
+    @Test // GROOVY-5351
     void testGetSimpleName() {
         assertScript '''
             class X {
@@ -99,7 +97,7 @@ class ClosureAndInnerClassNodeStructureTest extends GroovyTestCase {
         '''
     }
 
-    //GROOVY-7119 && GROOVY-7120
+    @Test //GROOVY-7119, GROOVY-7120
     void testIrregularMethodName() {
         assertScript '''
             class X {

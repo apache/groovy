@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.ClassNode
  * Specification tests for the traits feature
  */
 class TraitsSpecificationTest extends GroovyTestCase {
+
     void testTraitDeclaration() {
         assertScript '''// tag::flying_simple[]
 trait FlyingAbility {                           // <1>
@@ -245,11 +246,11 @@ trait DynamicObject {                               // <1>
     def methodMissing(String name, args) {
         name.toUpperCase()
     }
-    def propertyMissing(String prop) {
-        props[prop]
+    def propertyMissing(String name) {
+        props.get(name)
     }
-    void setProperty(String prop, Object value) {
-        props[prop] = value
+    void setProperty(String name, Object value) {
+        props.put(name, value)
     }
 }
 
@@ -441,7 +442,6 @@ t.setup()
 assert !t.config.compilationCustomizers.empty
 '''
     }
-
 
     void testRuntimeOverride() {
         assertScript '''// tag::runtime_forceoverride[]
