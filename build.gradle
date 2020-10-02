@@ -246,7 +246,6 @@ apply from: 'gradle/licenses.gradle'
 // works pretty nice, but it's up to the Groovy devs to decide
 apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
-apply from: 'gradle/parallel-build-fixes.gradle'
 apply from: 'wrapper.gradle'
 
 // If a local configuration file for tweaking the build is present, apply it

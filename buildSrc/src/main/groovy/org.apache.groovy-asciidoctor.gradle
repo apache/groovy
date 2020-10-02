@@ -18,6 +18,7 @@
  */
 
 import org.asciidoctor.gradle.jvm.AbstractAsciidoctorTask
+import org.apache.groovy.gradle.ConcurrentExecutionControlBuildService
 
 plugins {
     id 'org.asciidoctor.jvm.convert'
@@ -39,6 +40,7 @@ configurations {
 
 tasks.withType(AbstractAsciidoctorTask).configureEach {
     outputs.cacheIf { true }
+    usesService(ConcurrentExecutionControlBuildService.restrict(AbstractAsciidoctorTask, gradle))
 }
 
 asciidoctor {
@@ -52,7 +54,7 @@ asciidoctor {
     }
     outputDir = "$buildDir/asciidoc/html5"
     resources {
-        from( "${rootProject.projectDir}/src/spec/doc/assets" ) {
+        from("${rootProject.projectDir}/src/spec/doc/assets") {
             include 'css/style.css'
         }
         into 'assets'
@@ -85,7 +87,7 @@ asciidoctorj {
                 jdk: 'https://docs.oracle.com/en/java/javase/11/docs/api/index.html',
                 gjdk: "https://docs.groovy-lang.org/${vers}/html/groovy-jdk/index.html",
                 gapi: "https://docs.groovy-lang.org/${vers}/html/gapi/index.html",
-                gapid:  "https://docs.groovy-lang.org/${vers}/html/gapi/",
+                gapid: "https://docs.groovy-lang.org/${vers}/html/gapi/",
         ]
         baseUrls.each { macroName, baseURL ->
             inline_macro(name: macroName) {
@@ -93,7 +95,7 @@ asciidoctorj {
                     def (className, anchor) = target.split('#') as List
                     def base = className == 'index' ?
                             baseURL : baseURL + '?' + className.replace('.', '/') + '.html' + (anchor ? '#' + anchor : '')
-                    createPhraseNode(parent, 'anchor', attributes.text?:target, attributes, [type: ':link', target: base])
+                    createPhraseNode(parent, 'anchor', attributes.text ?: target, attributes, [type: ':link', target: base])
             }
         }
     }
@@ -114,7 +116,7 @@ asciidoctor.dependsOn asciidoctorAssets
 
 def adocSanityCheck = { file, text, errors ->
     Set localErrors = []
-    text.eachLine(1) { line,i ->
+    text.eachLine(1) { line, i ->
         if (line =~ /tag:[a-zA-Z0-9]/) {
             localErrors << "line $i misses semicolon. Should be tag::\n $line"
         }
@@ -130,7 +132,7 @@ def adocSanityCheck = { file, text, errors ->
 
 def htmlOutputSanityCheck = { file, text, errors ->
     Set localErrors = []
-    text.eachLine(1) { line,i ->
+    text.eachLine(1) { line, i ->
         if (line =~ /^={1,5} /) {
             localErrors << "line $i starting with asciidoctor raw markup:\n$line"
         }
