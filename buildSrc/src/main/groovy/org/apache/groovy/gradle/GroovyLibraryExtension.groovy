@@ -45,6 +45,8 @@ import org.gradle.api.tasks.TaskContainer
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Jar
 
+import javax.inject.Inject
+
 /**
  * Provides information about Groovy libraries
  */
@@ -64,16 +66,18 @@ class GroovyLibraryExtension {
     final TaskContainer tasks
     final ProjectLayout layout
 
+    @Inject
     GroovyLibraryExtension(ObjectFactory factory,
+                           ProjectLayout layout,
                            SharedConfiguration sharedConfiguration,
                            JavaPluginConvention javaPluginConvention,
                            JavaPluginExtension javaPluginExtension,
                            SoftwareComponentContainer components,
                            ConfigurationContainer configurations,
-                           TaskContainer tasks,
-                           ProjectLayout layout
+                           TaskContainer tasks
     ) {
         this.objects = factory
+        this.layout = layout
         this.sharedConfiguration = sharedConfiguration
         this.includeInGroovyAll = factory.property(Boolean).convention(true)
         this.grooid = factory.property(Boolean).convention(false)
@@ -84,7 +88,6 @@ class GroovyLibraryExtension {
         this.components = components
         this.configurations = configurations
         this.tasks = tasks
-        this.layout = layout
     }
 
     void optionalModule() {

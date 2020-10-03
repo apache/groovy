@@ -29,7 +29,7 @@ plugins {
     id 'org.apache.groovy-documented'
 }
 
-project.extensions.create('groovyCore', CoreExtension, objects, sourceSets)
+project.extensions.create('groovyCore', CoreExtension, sourceSets)
 
 configurations {
     compilerCompile
