@@ -16,17 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
-class Groovy7333Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
-    void testIncorrectInstanceOfInference() {
+final class Groovy7333Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
+    // GROOVY-7333
+    void testIncorrectInstanceOfInference1() {
         assertScript '''
             int len(byte[] arr) { arr.length }
             def foo(arg) {
@@ -35,6 +33,39 @@ class Groovy7333Bug extends StaticTypeCheckingTestCase implements StaticCompilat
                }
             }
             assert foo(new byte[3]) == 3
+        '''
+    }
+
+    // GROOVY-9769
+    void testIncorrectInstanceOfInference2() {
+        assertScript '''
+            interface A {
+                def foo()
+            }
+            interface B extends A {
+                def bar()
+            }
+            @groovy.transform.CompileStatic
+            void test(A a) {
+                if (a instanceof B) {
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        def type = node.rightExpression.getNodeMetaData(INFERRED_RETURN_TYPE)
+                        assert type.text == 'B' // not '<UnionType:A+B>'
+                    })
+                    def x = a
+                    a.foo()
+                    a.bar()
+                }
+            }
+
+            def result = ''
+
+            test([
+                foo: { -> result += 'foo' },
+                bar: { -> result += 'bar' }
+            ] as B)
+
+            assert result == 'foobar'
         '''
     }
 }
