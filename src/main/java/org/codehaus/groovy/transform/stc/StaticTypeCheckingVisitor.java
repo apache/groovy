@@ -2265,26 +2265,27 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ).toArray(ClassNode[]::new);
     }
 
-    private ClassNode getInferredTypeFromTempInfo(final Expression exp, ClassNode result) {
-        if (exp instanceof VariableExpression && !typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
-            List<ClassNode> classNodes = getTemporaryTypesForExpression(exp);
-            if (classNodes != null && !classNodes.isEmpty()) {
-                List<ClassNode> types = new ArrayList<>(classNodes.size() + 1);
-                if (result != null && !classNodes.contains(result)) types.add(result);
-                types.addAll(classNodes);
-                // GROOVY-7333: filter out Object
-                types.removeIf(OBJECT_TYPE::equals);
+    private ClassNode getInferredTypeFromTempInfo(final Expression expression, final ClassNode expressionType) {
+        if (expression instanceof VariableExpression && !typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
+            List<ClassNode> tempTypes = getTemporaryTypesForExpression(expression);
+            if (tempTypes != null && !tempTypes.isEmpty()) {
+                List<ClassNode> types = new ArrayList<>(tempTypes.size() + 1);
+                if (expressionType != null && !expressionType.equals(ClassHelper.OBJECT_TYPE) // GROOVY-7333
+                        && tempTypes.stream().noneMatch(t -> implementsInterfaceOrIsSubclassOf(t, expressionType))) { // GROOVY-9769
+                    types.add(expressionType);
+                }
+                types.addAll(tempTypes);
 
                 if (types.isEmpty()) {
-                    result = OBJECT_TYPE.getPlainNodeReference();
+                    return OBJECT_TYPE;
                 } else if (types.size() == 1) {
-                    result = types.get(0);
+                    return types.get(0);
                 } else {
-                    result = new UnionTypeClassNode(types.toArray(ClassNode.EMPTY_ARRAY));
+                    return new UnionTypeClassNode(types.toArray(ClassNode.EMPTY_ARRAY));
                 }
             }
         }
-        return result;
+        return expressionType;
     }
 
     @Override
