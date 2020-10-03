@@ -2603,7 +2603,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     break;
                 }
             }
-            if (mn == null || mn.isEmpty()) {
+            if (mn == null) {
+                throw new GroovyBugError("Invalid state finding valid method: receivers should never be empty and findMethod should never return null");
+            }
+            if (mn.isEmpty()) {
                 mn = extension.handleMissingMethod(receiver, name, argumentList, args, call);
             }
             boolean callArgsVisited = false;
