@@ -21,6 +21,10 @@
    <configuration>
       <verify-metadata>false</verify-metadata>
       <verify-signatures>true</verify-signatures>
+      <trusted-artifacts>
+         <!-- Ignore sources/javadocs for IDE sync -->
+         <trust file=".+-(sources|javadoc).jar" regex="true"/>
+      </trusted-artifacts>
       <ignored-keys>
          <ignored-key id="74dafdfd6dae2441" reason="Key couldn't be downloaded from any key server"/>
       </ignored-keys>
