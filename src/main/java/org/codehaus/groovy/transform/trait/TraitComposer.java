@@ -146,9 +146,7 @@ public abstract class TraitComposer {
                 Map<String,ClassNode> methodGenericsSpec = new LinkedHashMap<String, ClassNode>(genericsSpec);
                 MethodNode originalMethod = trait.getMethod(name, params);
                 // Original method may be null for the case of private or static methods
-                if (originalMethod!=null) {
-                    methodGenericsSpec = GenericsUtils.addMethodGenerics(originalMethod, methodGenericsSpec);
-                }
+                methodGenericsSpec = GenericsUtils.addMethodGenerics(originalMethod != null ? originalMethod : methodNode, methodGenericsSpec);
                 for (int i = 1; i < helperMethodParams.length; i++) {
                     Parameter parameter = helperMethodParams[i];
                     ClassNode originType = parameter.getOriginType();
@@ -333,8 +331,6 @@ public abstract class TraitComposer {
                 helperMethodArgList
         );
         mce.setImplicitThis(false);
-
-        genericsSpec = GenericsUtils.addMethodGenerics(helperMethod,genericsSpec);
 
         ClassNode[] exceptionNodes = correctToGenericsSpecRecurse(genericsSpec, copyExceptions(helperMethod.getExceptions()));
         ClassNode fixedReturnType = correctToGenericsSpecRecurse(genericsSpec, helperMethod.getReturnType());

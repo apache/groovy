@@ -2504,16 +2504,36 @@ assert c.b() == 2
 
     //GROOVY-7297
     void testMethodlevelGenericsFromPrecompiledClass() {
-        //SomeTrait needs to be outside the script
+        // TODO: T needs to be outside the script
         assertScript '''
-            trait SomeTrait {
+            trait T {
                 String title
-                public <T> List<T> someMethod(T data) {}
+                public <U> List<U> m(U data) {
+                }
             }
-            class Foo implements SomeTrait {}
+            class C implements T {
+            }
+            def c = new C(title: 'some title')
+            assert c.title == 'some title'
+            // TODO: assert c.m(...) == ?
+        '''
+    }
 
-            def sc = new Foo(title: 'some title')
-            assert 'some title' == sc.title
+    // GROOVY-9763
+    void testTraitWithStaticMethodGenericsSC() {
+        assertScript '''
+            trait T {
+                static <U> U m(Closure<U> callable) {
+                    callable.call()
+                }
+            }
+            class C implements T {
+            }
+            @groovy.transform.CompileStatic
+            def test() {
+                C.m({ -> 'works' })
+            }
+            assert test() == 'works'
         '''
     }
 
