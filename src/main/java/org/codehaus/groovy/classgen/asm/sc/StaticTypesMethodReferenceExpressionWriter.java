@@ -89,7 +89,8 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         ClassNode classNode = controller.getClassNode();
         Expression typeOrTargetRef = methodReferenceExpression.getExpression();
         boolean isClassExpression = (typeOrTargetRef instanceof ClassExpression);
-        ClassNode typeOrTargetRefType = typeOrTargetRef.getType(); // TODO: GROOVY-9762
+        ClassNode typeOrTargetRefType = isClassExpression ? typeOrTargetRef.getType()
+                : controller.getTypeChooser().resolveType(typeOrTargetRef, classNode);
 
         ClassNode[] methodReferenceParamTypes = methodReferenceExpression.getNodeMetaData(CLOSURE_ARGUMENTS);
         Parameter[] parametersWithExactType = createParametersWithExactType(abstractMethodNode, methodReferenceParamTypes);
@@ -241,8 +242,8 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         List<Parameter> methodReferenceSharedVariableList = new ArrayList<>();
 
         if (!(methodRef instanceof ClassExpression)) {
-            ClassNode methodRefTargetType = methodRef.getType();
-            prependParameter(methodReferenceSharedVariableList, METHODREF_EXPR_INSTANCE, methodRefTargetType);
+            prependParameter(methodReferenceSharedVariableList, METHODREF_EXPR_INSTANCE,
+                controller.getTypeChooser().resolveType(methodRef, controller.getClassNode()));
         }
 
         return BytecodeHelper.getMethodDescriptor(functionalInterfaceType.redirect(), methodReferenceSharedVariableList.toArray(Parameter.EMPTY_ARRAY));
