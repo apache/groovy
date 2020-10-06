@@ -141,9 +141,11 @@ public abstract class TraitComposer {
                 Parameter[] origParams = new Parameter[nParams - 1];
                 Parameter[] params = new Parameter[nParams - 1];
                 System.arraycopy(methodNode.getParameters(), 1, params, 0, params.length);
+
                 MethodNode originalMethod = trait.getMethod(name, params);
-                Map<String, ClassNode> methodGenericsSpec = Optional.ofNullable(originalMethod)
-                    .map(m -> GenericsUtils.addMethodGenerics(m, genericsSpec)).orElse(genericsSpec);
+                Map<String, ClassNode> methodGenericsSpec = GenericsUtils.addMethodGenerics(
+                        Optional.ofNullable(originalMethod).orElse(methodNode), genericsSpec);
+
                 for (int i = 1; i < nParams; i += 1) {
                     Parameter parameter = helperMethodParams[i];
                     ClassNode originType = parameter.getOriginType();
@@ -328,8 +330,6 @@ public abstract class TraitComposer {
                 helperMethodArgList
         );
         mce.setImplicitThis(false);
-
-        genericsSpec = GenericsUtils.addMethodGenerics(helperMethod, genericsSpec);
 
         ClassNode[] exceptionNodes = correctToGenericsSpecRecurse(genericsSpec, copyExceptions(helperMethod.getExceptions()));
         ClassNode fixedReturnType = correctToGenericsSpecRecurse(genericsSpec, helperMethod.getReturnType());
