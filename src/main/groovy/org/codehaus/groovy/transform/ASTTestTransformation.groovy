@@ -71,10 +71,10 @@ class ASTTestTransformation implements ASTTransformation, CompilationUnitAware {
 
         member = annotationNode.getMember('value')
         if (member && !(member instanceof ClosureExpression)) {
-            throw new SyntaxException('ASTTest value must be a closure', member.lineNumber, member.columnNumber)
+            throw new SyntaxException('ASTTest value must be a closure', member)
         }
         if (!member && !annotationNode.getNodeMetaData(ASTTestTransformation)) {
-            throw new SyntaxException('Missing test expression', annotationNode.lineNumber, annotationNode.columnNumber)
+            throw new SyntaxException('Missing test expression', annotationNode)
         }
 
         // convert value into node metadata so that the expression doesn't mix up with other AST xforms like STC
