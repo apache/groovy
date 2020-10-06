@@ -116,7 +116,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         }
 
         ClassNode enclosingClass = controller.getClassNode();
-        int modifiers = ACC_FINAL | ACC_PUBLIC | ACC_SYNTHETIC;
+        int modifiers = ACC_FINAL | ACC_PUBLIC;
         if (enclosingClass.isInterface()) modifiers |= ACC_STATIC;
         ClassNode lambdaClass = getOrAddLambdaClass(expression, modifiers, abstractMethod);
         MethodNode lambdaMethod = lambdaClass.getMethods("doCall").get(0);
