@@ -98,12 +98,14 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         boolean isInterface = classNode.isInterface();
 
         Expression typeOrTargetRef = methodReferenceExpression.getExpression();
-        ClassNode typeOrTargetRefType = typeOrTargetRef.getType();
-        String methodRefName = methodReferenceExpression.getMethodName().getText();
+        boolean isClassExpression = (typeOrTargetRef instanceof ClassExpression);
+        ClassNode typeOrTargetRefType = isClassExpression ? typeOrTargetRef.getType()
+                : controller.getTypeChooser().resolveType(typeOrTargetRef, classNode);
 
         ClassNode[] methodReferenceParamTypes = methodReferenceExpression.getNodeMetaData(CLOSURE_ARGUMENTS);
         Parameter[] parametersWithExactType = createParametersWithExactType(abstractMethodNode, methodReferenceParamTypes);
 
+        String methodRefName = methodReferenceExpression.getMethodName().getText();
         boolean isConstructorReference = isConstructorReference(methodRefName);
 
         MethodNode methodRefMethod;
@@ -263,9 +265,9 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     private String createAbstractMethodDesc(ClassNode functionalInterfaceType, Expression methodRef) {
         List<Parameter> methodReferenceSharedVariableList = new LinkedList<>();
 
-        if (!(isClassExpr(methodRef))) {
-            ClassNode methodRefTargetType = methodRef.getType();
-            prependParameter(methodReferenceSharedVariableList, METHODREF_EXPR_INSTANCE, methodRefTargetType);
+        if (!(methodRef instanceof ClassExpression)) {
+            prependParameter(methodReferenceSharedVariableList, METHODREF_EXPR_INSTANCE,
+                controller.getTypeChooser().resolveType(methodRef, controller.getClassNode()));
         }
 
         return BytecodeHelper.getMethodDescriptor(functionalInterfaceType.redirect(), methodReferenceSharedVariableList.toArray(Parameter.EMPTY_ARRAY));

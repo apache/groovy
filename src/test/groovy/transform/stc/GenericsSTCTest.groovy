@@ -626,6 +626,23 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9762
+    void testShouldUseMethodGenericType7() {
+        for (toList in ['{ list(it) }', 'o -> list(o)', 'this.&list', 'this::list']) {
+            assertScript """
+                def <T> List<T> list(T item) {
+                    return [item]
+                }
+                def test() {
+                    Optional<Integer> opt = Optional.ofNullable(1)
+                    List<Integer> ret = opt.map($toList).get()
+                    return ret
+                }
+                assert test() == [1]
+            """
+        }
+    }
+
     // GROOVY-5516
     void testAddAllWithCollectionShouldBeAllowed() {
         assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
