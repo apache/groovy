@@ -44,6 +44,7 @@ import org.codehaus.groovy.classgen.asm.VariableSlotLoader;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
+import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
@@ -401,6 +402,8 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
             if (rhsValueLoader instanceof VariableSlotLoader && enclosing instanceof BinaryExpression) {
                 rhsValueLoader.putNodeMetaData(INFERRED_TYPE, controller.getTypeChooser().resolveType(enclosing, controller.getClassNode()));
             }
+            // GROOVY-9771
+            receiver.visit(new StaticCompilationVisitor(controller.getSourceUnit(), controller.getClassNode()));
 
             // replace assignment to a subscript operator with a method call
             // e.g. x[5] = 10 -> methodCall(x, "putAt", [5, 10])
