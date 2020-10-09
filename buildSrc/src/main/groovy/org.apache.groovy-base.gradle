@@ -159,9 +159,9 @@ tasks.withType(Jar).configureEach {
                 rename 'NOTICE-BASE', 'NOTICE'
             }
         }
+        from generateReleaseInfo
     }
     exclude '**/package-info.class'
-    from generateReleaseInfo
 }
 
 tasks.register("jarjar", JarJarTask) {
