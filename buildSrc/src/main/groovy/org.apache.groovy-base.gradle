@@ -246,7 +246,7 @@ tasks.withType(Checkstyle).configureEach {
     configProperties = ['rootProject.projectDir': rootProject.projectDir]
     def reportFile = layout.buildDirectory.file("reports/checkstyle/${name}.xml")
     reports {
-        include ( '**/*.java')
+        include('**/*.java')
         xml {
             destination reportFile.get().asFile
         }
@@ -278,11 +278,14 @@ components.add(component)
 
 // By declaring a codehaus capability we can tell Gradle that the user has to
 // choose between "old" groovy and "new" groovy
-String capability = "org.codehaus.groovy:${archivesBaseName}:${sharedConfiguration.groovyVersion.get()}"
+List<String> capabilities = [
+        "org.codehaus.groovy:${archivesBaseName}:${sharedConfiguration.groovyVersion.get()}",
+        "org.apache.groovy:${archivesBaseName}:${sharedConfiguration.groovyVersion.get()}"
+]
 int targetJvmVersion = Integer.valueOf(sharedConfiguration.targetJavaVersion.get())
 // First we create the "API" and "runtime" variants of Groovy for publication
-def shadowApi = createConsumableConfiguration(objects, tasks, configurations, 'groovyApiElements', Usage.JAVA_API, 'jarjar', capability, targetJvmVersion)
-def shadowRuntime = createConsumableConfiguration(objects, tasks, configurations, 'groovyRuntimeElements', Usage.JAVA_RUNTIME, 'jarjar', capability, targetJvmVersion)
+def shadowApi = createConsumableConfiguration(objects, tasks, configurations, 'groovyApiElements', Usage.JAVA_API, 'jarjar', capabilities, targetJvmVersion)
+def shadowRuntime = createConsumableConfiguration(objects, tasks, configurations, 'groovyRuntimeElements', Usage.JAVA_RUNTIME, 'jarjar', capabilities, targetJvmVersion)
 dependencies {
     // All Groovy modules depend on the Groovy BOM which itself has constraints on all
     // Groovy modules, which brings nice alignement features!
@@ -312,7 +315,7 @@ Configuration createConsumableConfiguration(ObjectFactory objects,
                                             String name,
                                             String usage,
                                             String artifactTask,
-                                            String capability,
+                                            List<String> capabilities,
                                             int targetJvmVersion) {
     container.create(name) { Configuration cnf ->
         cnf.canBeConsumed = true
@@ -327,7 +330,7 @@ Configuration createConsumableConfiguration(ObjectFactory objects,
         }
         cnf.outgoing {
             it.artifact tasks.named(artifactTask)
-            if (capability) {
+            capabilities.each { capability ->
                 it.capability(capability)
             }
         }
