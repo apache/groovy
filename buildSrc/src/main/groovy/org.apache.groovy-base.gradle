@@ -148,12 +148,16 @@ tasks.withType(Jar).configureEach {
         if (file("${projectDir}/LICENSE").exists()) {
             from "${projectDir}/LICENSE"
         } else {
-            from "${rootProject.projectDir}/licenses/LICENSE-BASE"
+            from("${rootProject.projectDir}/licenses/LICENSE-BASE") {
+                rename 'LICENSE-BASE', 'LICENSE'
+            }
         }
         if (file("${projectDir}/NOTICE").exists()) {
             from "${projectDir}/NOTICE"
         } else {
-            from "${rootProject.projectDir}/notices/NOTICE-BASE"
+            from("${rootProject.projectDir}/notices/NOTICE-BASE") {
+                rename 'NOTICE-BASE', 'NOTICE'
+            }
         }
     }
     exclude '**/package-info.class'
