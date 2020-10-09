@@ -191,7 +191,6 @@ tasks.named('jar') {
             include('antlr4-license.txt')
         }
         from("$projectDir/notices/NOTICE-JARJAR")
-        from(generateReleaseInfo)
         rename '^([A-Z]+)-([^.]*)', '$1'
     }
 }
