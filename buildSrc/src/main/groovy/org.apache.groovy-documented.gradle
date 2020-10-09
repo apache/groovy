@@ -49,8 +49,8 @@ tasks.withType(Javadoc).configureEach {
             addBooleanOption('html5', true)
         }
         addStringOption('Xdoclint:none', '-quiet')
-        windowTitle = "Groovy ${version}"
-        docTitle = "Groovy ${version}"
+        windowTitle = "Groovy ${versions.groovy}"
+        docTitle = "Groovy ${versions.groovy}"
         locale = 'en_US'
         encoding = 'UTF-8'
         version = true
