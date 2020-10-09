@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+import org.apache.tools.ant.filters.ReplaceTokens
 
 plugins {
     id 'org.apache.groovy-distribution'
@@ -85,7 +86,7 @@ distribution {
         }
         into('bin') {
             from(rootProject.file('src/bin')) {
-                //filter(ReplaceTokens, tokens: [GROOVYJAR: jarjar.archiveName])
+                filter(ReplaceTokens, tokens: [GROOVYJAR: "groovy-${versions.groovy}.jar".toString()])
                 fileMode = 0755
                 exclude 'groovy.icns'
             }
