@@ -108,6 +108,7 @@ class JarJarTask extends DefaultTask {
         def originalJar = from.get()
         def outputFile = this.outputFile.get().asFile
         def tmpJar = new File(temporaryDir, "${outputFile.name}.${Integer.toHexString(UUID.randomUUID().hashCode())}.tmp")
+        tmpJar.deleteOnExit()
         def manifestFile = new File(temporaryDir, 'MANIFEST.MF')
         // First step is to create a repackaged jar
         outputFile.parentFile.mkdirs()
