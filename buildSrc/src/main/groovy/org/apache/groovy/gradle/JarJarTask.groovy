@@ -181,7 +181,6 @@ class JarJarTask extends DefaultTask {
         } finally {
             fs.delete {
                 it.delete(manifestFile)
-                it.delete(tmpJar)
             }
         }
     }
