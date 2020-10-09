@@ -146,15 +146,20 @@ distribution {
                 }
             }
         }
+        into('subprojects/parser-antlr4') {
+            from(file("${project.projectDir}/subprojects/parser-antlr4"))
+        }
         ['xdocs',
          'config',
          'buildSrc',
          'licenses',
          'notices',
          'security',
+         'gradle',
          'src',
          'build.gradle',
          'settings.gradle',
+         'gradle.properties',
          'LICENSE',
          'NOTICE',
          'README.adoc',
@@ -166,12 +171,14 @@ distribution {
                 }
                 exclude 'build',
                         'target',
-                        '**/*.iml',         // used by Intellij IDEA
-                        '**/*.ipr',         // used by Intellij IDEA
-                        '**/*.iws',         // used by Intellij IDEA
-                        '.settings',        // used by Eclipse
-                        '.classpath',        // used by Eclipse
-                        '.gradle'        // used by Gradle
+                        'wrapper',        // used by Gradle
+                        '**/*.iml',       // used by Intellij IDEA
+                        '**/*.ipr',       // used by Intellij IDEA
+                        '**/*.iws',       // used by Intellij IDEA
+                        '.settings',      // used by Eclipse
+                        '.classpath',     // used by Eclipse
+                        '.gradle'         // used by Gradle
+                        '*/*.gpg'         // used by Gradle
             }
         }
     }
