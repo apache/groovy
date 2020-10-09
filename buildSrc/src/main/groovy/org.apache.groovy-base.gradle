@@ -157,6 +157,7 @@ tasks.withType(Jar).configureEach {
         }
     }
     exclude '**/package-info.class'
+    from generateReleaseInfo
 }
 
 tasks.register("jarjar", JarJarTask) {
