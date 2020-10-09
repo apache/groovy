@@ -68,12 +68,8 @@ def subprojects = [
         'stress'
 ]
 
-if (hasProperty('stressTests')) {
-    subprojects << 'stress'
-}
-
 include(subprojects as String[])
-        
+
 rootProject.children.each { prj ->
     prj.projectDir = new File("$rootDir/subprojects/$prj.name")
 }
