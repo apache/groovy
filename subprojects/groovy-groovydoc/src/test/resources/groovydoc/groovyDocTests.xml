@@ -20,7 +20,6 @@
 -->
 <project name="CustomGroovyDocTestProject" basedir="../../../..">
     <property name="test" location="src/test/groovy"/>
-    <property name="target" location="target"/>
     <property name="tmpdir" value="${java.io.tmpdir}/${user.name}/${ant.project.name}"/>
 
     <path id="classpath">
