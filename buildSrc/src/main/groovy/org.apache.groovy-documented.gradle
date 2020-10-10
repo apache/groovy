@@ -69,9 +69,9 @@ tasks.withType(Groovydoc).configureEach {
     source = sourceSets.main.allSource
     groovyClasspath = configurations.groovydocClasspath
     use = true
-    ext.windowtitle = "Groovy ${version}"
-    ext.doctitle = "Groovy ${version}"
-    header = "Groovy ${version}"
+    windowTitle = "Groovy ${versions.groovy}"
+    docTitle = "Groovy ${versions.groovy}"
+    header = "Groovy ${versions.groovy}"
     footer = 'Copyright &copy; 2003-2020 The Apache Software Foundation. All rights reserved.'
     overviewText = rootProject.resources.text.fromFile('src/main/java/overview.html')
     includePrivate = false
