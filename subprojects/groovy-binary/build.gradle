@@ -147,9 +147,6 @@ distribution {
                 }
             }
         }
-        into('subprojects/parser-antlr4') {
-            from(file("${project.projectDir}/subprojects/parser-antlr4"))
-        }
         ['xdocs',
          'config',
          'buildSrc',

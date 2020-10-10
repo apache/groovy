@@ -113,6 +113,9 @@ dependencies {
     implementation "org.ow2.asm:asm-tree:${versions.asm}"
     implementation "org.ow2.asm:asm-util:${versions.asm}"
     implementation "com.googlecode:openbeans:${versions.openbeans}"
+    implementation "com.tunnelvisionlabs:antlr4-runtime:${versions.antlr4}"
+
+    antlr "com.tunnelvisionlabs:antlr4:${versions.antlr4}"
 
     loggingImplementation "org.fusesource.jansi:jansi:${versions.jansi}"
 
@@ -178,9 +181,6 @@ configurations {
         extendsFrom(implementation, compileOnly, grapesImplementation, loggingImplementation, xstreamAstImplementation, runtimeOnly)
     }
 }
-
-// TODO: This should probably be a different source set in the main groovy project
-apply from: 'subprojects/parser-antlr4/build.gradle'
 
 tasks.named('jar') {
     metaInf {

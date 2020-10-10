@@ -57,7 +57,7 @@ final class TestUtils {
 
     public static final List<Class> COMMON_IGNORE_CLASS_LIST = [AssertStatement, BreakStatement, ConstructorNode, ContinueStatement, ExpressionStatement, FieldNode, ForStatement, GenericsType, IfStatement, MethodNode, PackageNode, Parameter, PropertyNode, ReturnStatement, ThrowStatement, Token, WhileStatement].asUnmodifiable()
 
-    public static final String RESOURCES_PATH = Optional.of('subprojects/parser-antlr4/src/test/resources').filter(path -> new File(path).exists()).orElse('src/test/resources')
+    public static final String RESOURCES_PATH = Optional.of('src/test-resources').filter(path -> new File(path).exists()).orElse('src/test/resources')
 
     static doTest(String path, Collection<Class> ignoreSourcePosition) {
         doTest(path, addIgnore(ignoreSourcePosition, ASTComparatorCategory.LOCATION_IGNORE_LIST))
