@@ -41,7 +41,7 @@ final class GrapeIvyTest {
             [groupId:'com.jidesoft', artifactId:'jide-oss', version:'2.2.12'],
             [groupId:'commons-lang', artifactId:'commons-lang', version:'2.6'],
             [groupId:'org.neo4j', artifactId:'neo4j-kernel', version:'2.0.0-RC1'],
-            [groupId:'commons-digester', artifactId:'commons-digester', version:'2.1'],
+            [groupId:'org.apache.commons', artifactId:'commons-digester3', version:'3.2'],
             [groupId:'net.sf.json-lib', artifactId:'json-lib', version:'2.2.3', classifier:'jdk15'],
             [groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0', conf:['default', 'optional']]
         ].each { spec ->
@@ -366,10 +366,10 @@ final class GrapeIvyTest {
     @Test // BeanUtils is a transitive dependency for Digester
     void testTransitiveShorthandControl() {
         assertScript '''
-            @Grab('commons-digester:commons-digester:2.1')
-            import org.apache.commons.digester.Digester
+            @Grab('org.apache.commons:commons-digester3:3.2')
+            import org.apache.commons.digester3.Digester
 
-            assert Digester.name.size() == 36
+            assert Digester.name.size() == 37
             assert org.apache.commons.beanutils.BeanUtils.name.size() == 38
         '''
     }
@@ -377,39 +377,45 @@ final class GrapeIvyTest {
     @Test
     void testTransitiveShorthandExpectFailure() {
         shouldFail MissingPropertyException, '''
-            @Grab('commons-digester:commons-digester:2.1;transitive=false')
-            import org.apache.commons.digester.Digester
+            @Grab('org.apache.commons:commons-digester3:3.2;transitive=false')
+            import org.apache.commons.digester3.Digester
 
-            assert Digester.name.size() == 36
+            assert Digester.name.size() == 37
             assert org.apache.commons.beanutils.BeanUtils.name.size() == 38
         '''
     }
 
     @Test
-    void testAutoDownloadGrapeConfig() {
+    void testAutoDownloadGrapeConfigDefault() {
         assertScript '''
-            @Grab('commons-digester:commons-digester:2.1;transitive=false')
-            import org.apache.commons.digester.Digester
+            @Grab('org.apache.commons:commons-digester3:3.2;transitive=false')
+            import org.apache.commons.digester3.Digester
 
-            assert Digester.name.size() == 36
+            assert Digester.name.size() == 37
         '''
         assert Grape.instance.ivyInstance.settings.defaultResolver.name == 'downloadGrapes'
+    }
 
+    @Test
+    void testAutoDownloadGrapeConfigFalse() {
         assertScript '''
-            @Grab('commons-digester:commons-digester:2.1;transitive=false')
+            @Grab('org.apache.commons:commons-digester3:3.2;transitive=false')
             @GrabConfig(autoDownload=false)
-            import org.apache.commons.digester.Digester
+            import org.apache.commons.digester3.Digester
 
-            assert Digester.name.size() == 36
+            assert Digester.name.size() == 37
         '''
         assert Grape.instance.ivyInstance.settings.defaultResolver.name == 'cachedGrapes'
+    }
 
+    @Test
+    void testAutoDownloadGrapeConfigTrue() {
         assertScript '''
-            @Grab('commons-digester:commons-digester:2.1;transitive=false')
+            @Grab('org.apache.commons:commons-digester3:3.2;transitive=false')
             @GrabConfig(autoDownload=true)
-            import org.apache.commons.digester.Digester
+            import org.apache.commons.digester3.Digester
 
-            assert Digester.name.size() == 36
+            assert Digester.name.size() == 37
         '''
         assert Grape.instance.ivyInstance.settings.defaultResolver.name == 'downloadGrapes'
     }
