@@ -115,6 +115,8 @@ distribution {
         }
         into('html/documentation') {
             from configurations.allAsciidoc
+            from rootProject.tasks.named('asciidoctorPdf')
+            exclude '.asciidoctor'
         }
         into('html/groovy-jdk') {
             from tasks.named('docGDK')
