@@ -18,263 +18,291 @@
  */
 package groovy.grape
 
-import groovy.test.GroovyTestCase
+import org.junit.BeforeClass
+import org.junit.Test
 
-class GrapeClassLoaderTest extends GroovyTestCase {
+class GrapeClassLoaderTest {
 
-    public GrapeClassLoaderTest() {
-        // insure files are installed locally
+    @BeforeClass
+    static void downloadToCache() {
+        // ensure files are installed locally
         Grape.resolve([autoDownload:true, classLoader:new GroovyClassLoader()],
             [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'],
             [groupId:'org.testng', artifactId:'testng', version:'5.8', classifier:'jdk15'])
     }
 
-    public void testGrapes() {
+    @Test
+    void testGrapes() {
         GroovyClassLoader loader = new GroovyClassLoader()
-        Class testClass = loader.parseClass("""
-import com.jidesoft.swing.JideSplitButton
+        Class testClass = loader.parseClass('''
+            import com.jidesoft.swing.JideSplitButton
 
-@Grapes([@Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')])
-public class TestConstructorAnnotation {
+            @Grapes([@Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')])
+            class TestConstructorAnnotation {
 
-    String field
+                String field
 
-    public TestConstructorAnnotation() {
-        field = JideSplitButton.class.name
+                TestConstructorAnnotation() {
+                    field = JideSplitButton.class.name
+                }
+            }
+        ''')
+        assert testClass.getConstructor().newInstance().field  == 'com.jidesoft.swing.JideSplitButton'
     }
-}""")
-        assert testClass.newInstance().field  == 'com.jidesoft.swing.JideSplitButton'
-    }
 
-    public void testConstructorAnnotation() {
+    @Test
+    void testConstructorAnnotation() {
         GroovyClassLoader loader = new GroovyClassLoader()
-        Class testClass = loader.parseClass("""
-import com.jidesoft.swing.JideSplitButton
+        Class testClass = loader.parseClass('''
+            import com.jidesoft.swing.JideSplitButton
 
-public class TestConstructorAnnotation {
+            class TestConstructorAnnotation {
 
-    String field
+                String field
 
-    @Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
-    public TestConstructorAnnotation() {
-        field = JideSplitButton.class.name
+                @Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
+                TestConstructorAnnotation() {
+                    field = JideSplitButton.class.name
+                }
+            }
+            ''')
+        assert testClass.getConstructor().newInstance().field  == 'com.jidesoft.swing.JideSplitButton'
     }
-}""")
-        assert testClass.newInstance().field  == 'com.jidesoft.swing.JideSplitButton'
-    }
 
-    public void testClassFieldAnnotation() {
+    @Test
+    void testClassFieldAnnotation() {
         GroovyClassLoader loader = new GroovyClassLoader()
-        Class testClass = loader.parseClass("""
-import com.jidesoft.swing.JideSplitButton
+        Class testClass = loader.parseClass('''
+            import com.jidesoft.swing.JideSplitButton
 
-public class TestClassFieldAnnotation {
+            class TestClassFieldAnnotation {
 
-    @Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
-    private String field
+                @Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
+                private String field
 
-    public TestClassFieldAnnotation() {
-        field = JideSplitButton.class.name
+                TestClassFieldAnnotation() {
+                    field = JideSplitButton.class.name
+                }
+
+                String testMethod() {
+                    field
+                }
+            }
+        ''')
+        assert testClass.getConstructor().newInstance().testMethod() == 'com.jidesoft.swing.JideSplitButton'
     }
 
-    public String testMethod() {
-        return field
-    }
-}""")
-        assert testClass.newInstance().testMethod() == 'com.jidesoft.swing.JideSplitButton'
-    }
-
-    public void testClassPropertyAnnotation() {
+    @Test
+    void testClassPropertyAnnotation() {
         GroovyClassLoader loader = new GroovyClassLoader()
-        Class testClass = loader.parseClass("""
-import com.jidesoft.swing.JideSplitButton
+        Class testClass = loader.parseClass('''
+            import com.jidesoft.swing.JideSplitButton
 
-public class TestClassPropertyAnnotation {
+            class TestClassPropertyAnnotation {
 
-    @Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
-    String field
+                @Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
+                String field
 
-    public TestClassPropertyAnnotation() {
-        field = JideSplitButton.class.name
-    }
+                TestClassPropertyAnnotation() {
+                    field = JideSplitButton.class.name
+                }
 
-    public String testMethod() {
-        return field
-    }
-}""")
-        assert testClass.newInstance().testMethod() == 'com.jidesoft.swing.JideSplitButton'
+                String testMethod() {
+                    field
+                }
+            }
+        ''')
+        assert testClass.getConstructor().newInstance().testMethod() == 'com.jidesoft.swing.JideSplitButton'
     }
 
 //  annotations are discarded on local vars currently
-//    public void testClassLocalVariableAnnotation() {
+//    @Test
+//    void testClassLocalVariableAnnotation() {
 //        GroovyClassLoader loader = new GroovyClassLoader()
-//        Class testClass = loader.parseClass("""
-//import com.jidesoft.swing.JideSplitButton
+//        Class testClass = loader.parseClass('''
+//            import com.jidesoft.swing.JideSplitButton
 //
-//    public class TestClassLocalVariableAnnotation {
+//            class TestClassLocalVariableAnnotation {
+//                String testMethod() {
+//                    @Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
+//                    String localVar = JideSplitButton.class.name
+//                    localVar
+//                }
+//            }
+//        ''')
+//        assert testClass.getConstructor().newInstance().testMethod() == 'com.jidesoft.swing.JideSplitButton'
+//    }
+
+//  annotations are discarded on local vars currently
+//    @Test
+//    void testScriptLocalVariableAnnotation() {
+//        GroovyClassLoader loader = new GroovyClassLoader()
+//        Class testClass = loader.parseClass('''
+//            import com.jidesoft.swing.JideSplitButton
 //
-//        public String testMethod() {
 //            @Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
-//            String field = JideSplitButton.class.name
-//            return field
-//        }
-//}""")
-//        assert testClass.newInstance().testMethod() == 'com.jidesoft.swing.JideSplitButton'
-//    }
-//
-//  annotations are discarded on local vars currently
-//    public void testScriptLocalVariableAnnotation() {
-//        GroovyClassLoader loader = new GroovyClassLoader()
-//        Class testClass = loader.parseClass("""
-//import com.jidesoft.swing.JideSplitButton
-//
-//@Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
-//String field = JideSplitButton.class.name
-//
-//
-//String testMethod() {
-//    return field
-//}""")
-//        assert testClass.newInstance().testMethod() == 'com.jidesoft.swing.JideSplitButton'
+//            String localVar = JideSplitButton.class.name
+//            localVar
+//        ''')
+//        assert testClass.main() == 'com.jidesoft.swing.JideSplitButton'
 //    }
 
-    public void testClassStaticMethodAnnotation() {
+    @Test
+    void testClassStaticMethodAnnotation() {
         GroovyClassLoader loader = new GroovyClassLoader()
-        Class testClass = loader.parseClass("""
-import com.jidesoft.swing.JideSplitButton
+        Class testClass = loader.parseClass('''
+            import com.jidesoft.swing.JideSplitButton
 
-public class TestClassStaticMethodAnnotation {
-    @groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
-    public static String testMethod () {
-        return JideSplitButton.class.name
-    }
-}""")
+            class TestClassStaticMethodAnnotation {
+                @groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
+                static String testMethod () {
+                    JideSplitButton.class.name
+                }
+            }
+        ''')
         assert testClass.testMethod() == 'com.jidesoft.swing.JideSplitButton'
     }
 
-    public void testClassMethodAnnotation() {
+    @Test
+    void testClassMethodAnnotation() {
         GroovyClassLoader loader = new GroovyClassLoader()
-        Class testClass = loader.parseClass("""
-import com.jidesoft.swing.JideSplitButton
+        Class testClass = loader.parseClass('''
+            import com.jidesoft.swing.JideSplitButton
 
-public class TestClassMethodAnnotation {
-    @groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
-    public String testMethod () {
-        return JideSplitButton.class.name
-    }
-}""")
-        assert testClass.newInstance().testMethod() == 'com.jidesoft.swing.JideSplitButton'
+            class TestClassMethodAnnotation {
+                @groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
+                String testMethod () {
+                    JideSplitButton.class.name
+                }
+            }
+        ''')
+        assert testClass.getConstructor().newInstance().testMethod() == 'com.jidesoft.swing.JideSplitButton'
     }
 
-    public void testScriptStaticMethodAnnotation() {
+    @Test
+    void testScriptStaticMethodAnnotation() {
         GroovyClassLoader loader = new GroovyClassLoader()
-        Class testClass = loader.parseClass("""
-import com.jidesoft.swing.JideSplitButton
+        Class testClass = loader.parseClass('''
+            import com.jidesoft.swing.JideSplitButton
 
-@groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
-public static String testMethod () {
-    return JideSplitButton.class.name
-}""")
+            @groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
+            static String testMethod () {
+                JideSplitButton.class.name
+            }
+        ''')
         assert testClass.testMethod() == 'com.jidesoft.swing.JideSplitButton'
     }
 
-    public void testScriptMethodAnnotation() {
+    @Test
+    void testScriptMethodAnnotation() {
         GroovyClassLoader loader = new GroovyClassLoader()
-        Class testClass = loader.parseClass("""
-import com.jidesoft.swing.JideSplitButton
+        Class testClass = loader.parseClass('''
+            import com.jidesoft.swing.JideSplitButton
 
-@groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
-public String testMethod () {
-    return JideSplitButton.class.name
-}""")
-        assert testClass.newInstance().testMethod() == 'com.jidesoft.swing.JideSplitButton'
+            @groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
+            String testMethod () {
+                return JideSplitButton.class.name
+            }
+        ''')
+        assert testClass.getConstructor().newInstance().testMethod() == 'com.jidesoft.swing.JideSplitButton'
     }
 
-    public void testClassParameterAnnotation() {
+    @Test
+    void testClassMethodParameterAnnotation() {
         GroovyClassLoader loader = new GroovyClassLoader()
-        Class testClass = loader.parseClass("""
-import com.jidesoft.swing.JideSplitButton
+        Class testClass = loader.parseClass('''
+            import com.jidesoft.swing.JideSplitButton
 
-public class TestClassStaticMethodAnnotation {
-    public String testMethod (
-@groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
-String bogus
-) {
-        return JideSplitButton.class.name
-    }
-}""")
-        assert testClass.newInstance().testMethod('x') == 'com.jidesoft.swing.JideSplitButton'
+            class TestClassStaticMethodAnnotation {
+                String testMethod (
+                    @groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
+                    String bogus
+                ) {
+                    JideSplitButton.class.name
+                }
+            }
+        ''')
+        assert testClass.getConstructor().newInstance().testMethod('x') == 'com.jidesoft.swing.JideSplitButton'
     }
 
-    public void testScriptParameterAnnotation() {
+    @Test
+    void testScriptMethodParameterAnnotation() {
         GroovyClassLoader loader = new GroovyClassLoader()
-        Class testClass = loader.parseClass("""
-import com.jidesoft.swing.JideSplitButton
+        Class testClass = loader.parseClass('''
+            import com.jidesoft.swing.JideSplitButton
 
-public String testMethod (
-@groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
-String bogus
-) {
-    println "Foo"
-    return JideSplitButton.class.name
-}""")
-        assert testClass.newInstance().testMethod('x') == 'com.jidesoft.swing.JideSplitButton'
+            String testMethod (
+                @groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
+                String bogus
+            ) {
+                JideSplitButton.class.name
+            }
+        ''')
+        assert testClass.getConstructor().newInstance().testMethod('x') == 'com.jidesoft.swing.JideSplitButton'
     }
 
-    public void testTypeAnnotation() {
+    @Test
+    void testTypeAnnotation() {
         GroovyClassLoader loader = new GroovyClassLoader()
-        Class testClass = loader.parseClass("""
-import com.jidesoft.swing.JideSplitButton
+        Class testClass = loader.parseClass('''
+            import com.jidesoft.swing.JideSplitButton
 
-@Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
-public class TestTypeAnnotation {
-    public static String testMethod () {
-        return JideSplitButton.class.name
-    }
-}""")
+            @Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
+            class TestTypeAnnotation {
+                static String testMethod () {
+                    JideSplitButton.class.name
+                }
+            }
+        ''')
         assert testClass.testMethod() == 'com.jidesoft.swing.JideSplitButton'
     }
 
-    public void testFQNAnnotation() {
+    @Test
+    void testFQNAnnotation() {
         GroovyClassLoader loader = new GroovyClassLoader()
-        Class testClass = loader.parseClass("""
-import com.jidesoft.swing.JideSplitButton
+        Class testClass = loader.parseClass('''
+            import com.jidesoft.swing.JideSplitButton
 
-@groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
-public class TestFQNAnnotation {
-    public static String testMethod () {
-        return JideSplitButton.class.name
-    }
-}""")
+            @groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
+            class TestFQNAnnotation {
+                static String testMethod () {
+                    JideSplitButton.class.name
+                }
+            }
+        ''')
         assert testClass.testMethod() == 'com.jidesoft.swing.JideSplitButton'
     }
 
-    public void testAliasedAnnotation() {
+    @Test
+    void testAliasedAnnotation() {
         GroovyClassLoader loader = new GroovyClassLoader()
-        Class testClass = loader.parseClass("""
-import com.jidesoft.swing.JideSplitButton
-import groovy.lang.Grab as require_gem
+        Class testClass = loader.parseClass('''
+            import com.jidesoft.swing.JideSplitButton
+            import groovy.lang.Grab as require_gem
 
-@require_gem(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
-public class TestAliasedAnnotation {
-    public static String testMethod () {
-        return JideSplitButton.class.name
-    }
-}""")
+            @require_gem(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
+            class TestAliasedAnnotation {
+                static String testMethod () {
+                    JideSplitButton.class.name
+                }
+            }
+        ''')
         assert testClass.testMethod() == 'com.jidesoft.swing.JideSplitButton'
     }
 
+    @Test
     void testClassifier() {
         GroovyClassLoader loader = new GroovyClassLoader()
-        Class testClass = loader.parseClass("""
-import org.testng.TestNG
+        Class testClass = loader.parseClass('''
+            import org.testng.TestNG
 
-@Grab(group = 'org.testng', module = 'testng', version = '5.8', classifier = 'jdk15')
-class TestTypeAnnotation {
-    static String testMethod() {
-        TestNG.name
-    }
-}""")
+            @Grab(group = 'org.testng', module = 'testng', version = '5.8', classifier = 'jdk15')
+            class TestTypeAnnotation {
+                static String testMethod() {
+                    TestNG.name
+                }
+            }
+        ''')
         assert testClass.testMethod() == 'org.testng.TestNG'
     }
 
