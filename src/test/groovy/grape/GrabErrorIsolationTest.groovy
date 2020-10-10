@@ -18,14 +18,14 @@
  */
 package groovy.grape
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
 /**
- * Test for GROOVY-3853. Kept with other grab tests and not normally
- * run unless -Djunit.network=true is set on command line.
+ * Test for GROOVY-3853.
  */
-class GrabErrorIsolationTest extends GroovyTestCase {
+class GrabErrorIsolationTest {
 
+    @Test
     void testConsecutiveGrabCallsWithASharedLoaderWhereFirstGrabFails() {
         def classLoader = new GroovyClassLoader()
 

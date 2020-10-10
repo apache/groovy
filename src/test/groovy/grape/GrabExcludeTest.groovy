@@ -18,61 +18,72 @@
  */
 package groovy.grape
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.junit.BeforeClass
+import org.junit.Test
 
-class GrabExcludeTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
 
-    public GrabClassLoaderTest() {
-        // insure files are installed locally
+class GrabExcludeTest {
+
+    @BeforeClass
+    static void populateCache() {
+        // ensure files are installed locally
         Grape.resolve([autoDownload:true, classLoader:new GroovyClassLoader()],
         [groupId:'org.mortbay.jetty', artifactId:'jetty', version:'6.0.0'])
     }
 
+    @Test
     void testExcludeByGroupAndModule() {
-        assertCompilationFailsWithMessageContainingString("""
+        shouldFailCompilationWithMessage('''
                 @Grab('org.mortbay.jetty:jetty:6.0.0')
                 @GrabExclude(group='org.mortbay.jetty', module='jetty-util')
                 static testMethod() {
                     // access class from excluded module to provoke an error
                     org.mortbay.util.IO.name
-                }""",
+                }
+                ''',
                 "Apparent variable 'org' was found")
     }
 
+    @Test
     void testExcludeByValue() {
-       assertCompilationFailsWithMessageContainingString("""
+       shouldFailCompilationWithMessage('''
                 @Grab('org.mortbay.jetty:jetty:6.0.0')
                 @GrabExclude('org.mortbay.jetty:jetty-util')
                 static testMethod() {
                     // access class from excluded module to provoke an error
                     org.mortbay.util.IO.name
-                }""",
+                }
+                ''',
                 "Apparent variable 'org' was found")
     }
 
+    @Test
     void testExcludeByGroupAndModule_requiresGroup() {
-       assertCompilationFailsWithMessageContainingString("""
+       shouldFailCompilationWithMessage('''
                 @Grab('org.mortbay.jetty:jetty:6.0.0')
                 @GrabExclude(module='jetty-util')
-                class AnnotatedClass { }""",
+                class AnnotatedClass { }
+                ''',
                 'The missing attribute "group" is required in @GrabExclude annotations')
     }
 
+    @Test
     void testExcludeByGroupAndModule_requiresModule() {
-        assertCompilationFailsWithMessageContainingString("""
+        shouldFailCompilationWithMessage('''
                 @Grab('org.mortbay.jetty:jetty:6.0.0')
                 @GrabExclude(group='org.mortbay.jetty')
-                class AnnotatedClass { }""",
+                class AnnotatedClass { }
+                ''',
                 'The missing attribute "module" is required in @GrabExclude annotations')
     }
 
-    private assertCompilationFailsWithMessageContainingString(String code, String expectedString) {
+    private static shouldFailCompilationWithMessage(String code, String expectedString) {
         GroovyClassLoader loader = new GroovyClassLoader()
         String exceptionMessage = shouldFail(MultipleCompilationErrorsException) {
-            Class testClass = loader.parseClass(code)
+            loader.parseClass(code)
         }
-        
         assert exceptionMessage.contains(expectedString)
     }
 }
