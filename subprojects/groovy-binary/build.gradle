@@ -137,12 +137,13 @@ distribution {
                 from(project.projectDir) {
                     exclude 'build',
                             'target',
-                            '**/*.iml',         // used by Intellij IDEA
-                            '**/*.ipr',         // used by Intellij IDEA
-                            '**/*.iws',         // used by Intellij IDEA
-                            '.settings',        // used by Eclipse
-                            '.classpath',        // used by Eclipse
-                            '.gradle'        // used by Gradle
+                            'out',             // used by Intellij IDEA
+                            '**/*.iml',        // used by Intellij IDEA
+                            '**/*.ipr',        // used by Intellij IDEA
+                            '**/*.iws',        // used by Intellij IDEA
+                            '.settings',       // used by Eclipse
+                            '.classpath',      // used by Eclipse
+                            '.gradle'          // used by Gradle
                 }
             }
         }

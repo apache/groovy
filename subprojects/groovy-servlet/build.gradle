@@ -27,10 +27,8 @@ dependencies {
     }
 
     api rootProject  // ServletBinding extends Binding...
-    // needed for MarkupBuilder
-    implementation project(':groovy-xml')
-    // needed by TemplateServlet
-    implementation project(':groovy-templates')
+    implementation project(':groovy-xml') // needed for MarkupBuilder
+    implementation project(':groovy-templates') // needed by TemplateServlet
 
     testImplementation('javax.servlet:javax.servlet-api:3.0.1')
     testImplementation('javax.servlet:jsp-api:2.0') {
