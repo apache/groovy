@@ -25,6 +25,7 @@ plugins {
     id 'jvm-ecosystem'
     id 'org.apache.groovy-common'
     id 'org.apache.groovy-aggregating-project'
+    id 'org.asciidoctor.jvm.pdf'
 }
 
 def distributionExtension = project.extensions.create('distribution', DistributionExtension, project)
@@ -207,6 +208,16 @@ tasks.register("doc") {
 tasks.register("asciidocAll", Copy) {
     from configurations.allAsciidoc
     into layout.buildDirectory.dir("asciidocAll/html5")
+}
+
+tasks.named('asciidoctorPdf') {
+    baseDirFollowsSourceFile()
+    logDocuments = true
+    sourceDir = rootProject.file('src/spec/doc')
+    sources {
+        include 'index.adoc'
+    }
+    outputDir = "$buildDir/asciidocAll/pdf"
 }
 
 interface Services {
