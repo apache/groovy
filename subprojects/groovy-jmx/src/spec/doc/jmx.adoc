@@ -18,8 +18,8 @@
   under the License.
 
 //////////////////////////////////////////
-ifndef::reldir[]
-:reldir: .
+ifndef::reldir_jmx[]
+:reldir_jmx: .
 endif::[]
 
 = Working with JMX
@@ -204,7 +204,7 @@ Catalina:j2eeType=WebModule,name=//localhost/host-manager,J2EEApplication=none,J
 
 The output will look like this:
 
-image:{reldir}/assets/img/catalina.png[]
+image:{reldir_jmx}/assets/img/catalina.png[]
 
 Note: if you get errors running this script, see the **Troubleshooting** section below.
 
@@ -303,7 +303,7 @@ chart.draw(swing.canvas.graphics, swing.canvas.bounds)
 
 Which looks like:
 
-image:{reldir}/assets/img/oc4jpie.png[]
+image:{reldir_jmx}/assets/img/oc4jpie.png[]
 
 == WebLogic Example
 
@@ -414,7 +414,7 @@ Operations:
 
 You can even attach to the process while it is running with https://docs.oracle.com/en/java/javase/14/management/using-jconsole.html[jconsole]. It will look something like:
 
-image:{reldir}/assets/img/jconsole.png[]
+image:{reldir_jmx}/assets/img/jconsole.png[]
 
 We started the Groovy application with the `-Dcom.sun.management.jmxremote` JVM argument.
 
@@ -624,7 +624,7 @@ Remember, **JmxBuilder.export() returns an array of GroovyMBean[] objects** for 
 
 ====== JConsole view of Exported Bean
 
-image:{reldir}/assets/img/jconsole-implicit-export.png[]
+image:{reldir_jmx}/assets/img/jconsole-implicit-export.png[]
 
 ==== JmxBuilder.bean() Syntax
 

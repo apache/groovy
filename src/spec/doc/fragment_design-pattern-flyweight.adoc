@@ -18,6 +18,9 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::reldir_root[]
+:reldir_root: .
+endif::[]
 
 = Flyweight Pattern
 
@@ -35,14 +38,14 @@ First we are going to model some complex aircraft (the first being a hoax compet
 include::../test/DesignPatternsTest.groovy[tags=flyweight_boeing797,indent=0]
 ----
 
-image::assets/img/b797-hoax.jpg[]
+image::{reldir_root}/assets/img/b797-hoax.jpg[]
 
 [source,groovy]
 ----
 include::../test/DesignPatternsTest.groovy[tags=flyweight_airbus380,indent=0]
 ----
 
-image::assets/img/a380.jpg[]
+image::{reldir_root}/assets/img/a380.jpg[]
 
 If we want to model our fleet, our first attempt might involve using many instances of these heavy-weight objects. It turns out though that only a few small pieces of state (our extrinsic state) change for each aircraft, so we will have singletons for the heavy-weight objects and capture the extrinsic state (bought date and asset number in the code below) separately.
 

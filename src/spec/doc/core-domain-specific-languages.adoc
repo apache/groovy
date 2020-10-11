@@ -18,6 +18,9 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::reldir_root[]
+:reldir_root: .
+endif::[]
 
 = Domain-Specific Languages
 
@@ -1079,8 +1082,7 @@ include::../../../subprojects/groovy-json/src/spec/doc/fragment_json-builder.ado
 
 include::../../../subprojects/groovy-json/src/spec/doc/fragment_streaming-jason-builder.adoc[leveloffset=+3]
 
-:reldir: ../../../subprojects/groovy-swing/src/spec/doc
-include::{reldir}/fragment_swing-builder.adoc[leveloffset=+3]
+include::../../../subprojects/groovy-swing/src/spec/doc/fragment_swing-builder.adoc[leveloffset=+3]
 
 include::../../../subprojects/groovy-ant/src/spec/doc/fragment_ant-builder.adoc[leveloffset=+3]
 
@@ -1599,7 +1601,7 @@ include::../../../subprojects/groovy-cli-picocli/src/spec/test/builder/CliBuilde
 ----
 Gives this output:
 
-image:assets/img/usageMessageSpec.png[]
+image:{reldir_root}/assets/img/usageMessageSpec.png[]
 
 *Property: parser*
 

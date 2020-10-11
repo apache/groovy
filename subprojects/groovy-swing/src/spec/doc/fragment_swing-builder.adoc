@@ -18,8 +18,8 @@
   under the License.
 
 //////////////////////////////////////////
-ifndef::reldir[]
-:reldir: .
+ifndef::reldir_swing[]
+:reldir_swing: .
 endif::[]
 
 [[swingbuilder]]
@@ -38,7 +38,7 @@ include::../test/SwingBuilderTest.groovy[tags=simple_example,indent=0]
 
 Here is what it will look like:
 
-image:{reldir}/assets/img/SwingBuilder001.png[]
+image:{reldir_swing}/assets/img/SwingBuilder001.png[]
 
 This hierarchy of components would normally be created through a series of repetitive instantiations, setters, and finally attaching this child to its respective parent.
 Using `SwingBuilder`, however, allows you to define this hierarchy in its native form, which makes the interface design understandable simply by reading the code.

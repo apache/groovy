@@ -1,0 +1,114 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Groovy Language Documentation
+:doctype: book
+
+:reldir_root: ../../../../../src/spec/doc
+include::{reldir_root}/core-introduction.adoc[]
+
+== Groovy Language Specification
+
+include::{reldir_root}/core-syntax.adoc[leveloffset=+2]
+
+include::{reldir_root}/core-operators.adoc[leveloffset=+2]
+
+include::{reldir_root}/core-program-structure.adoc[leveloffset=+2]
+
+include::{reldir_root}/core-object-orientation.adoc[leveloffset=+2]
+
+include::{reldir_root}/core-closures.adoc[leveloffset=+2]
+
+include::{reldir_root}/core-semantics.adoc[leveloffset=+2]
+
+== Tools
+
+include::{reldir_root}/tools-groovy.adoc[leveloffset=+2]
+
+include::{reldir_root}/tools-groovyc.adoc[leveloffset=+2]
+
+include::../../../../../subprojects/groovy-groovysh/src/spec/doc/groovysh.adoc[leveloffset=+2]
+
+:reldir_console: ../../../../../subprojects/groovy-console/src/spec/doc
+include::{reldir_console}/groovy-console.adoc[leveloffset=+2]
+
+include::../../../../../subprojects/groovy-groovydoc/src/spec/doc/groovydoc.adoc[leveloffset=+2]
+
+include::{reldir_root}/tools-ide.adoc[leveloffset=+2]
+
+== User Guides
+
+include::{reldir_root}/core-getting-started.adoc[leveloffset=+2]
+
+include::{reldir_root}/core-differences-java.adoc[leveloffset=+2]
+
+include::{reldir_root}/core-gdk.adoc[leveloffset=+2]
+
+include::{reldir_root}/core-metaprogramming.adoc[leveloffset=+2]
+
+include::{reldir_root}/grape.adoc[leveloffset=+2]
+
+include::{reldir_root}/core-testing-guide.adoc[leveloffset=+2]
+
+include::../../../../../subprojects/groovy-json/src/spec/doc/json-userguide.adoc[leveloffset=+2]
+
+include::../../../../../subprojects/groovy-sql/src/spec/doc/sql-userguide.adoc[leveloffset=+2]
+
+include::../../../../../subprojects/groovy-xml/src/spec/doc/xml-userguide.adoc[leveloffset=+2]
+
+include::../../../../../subprojects/groovy-yaml/src/spec/doc/yaml-userguide.adoc[leveloffset=+2]
+
+include::../../../../../subprojects/groovy-contracts/src/spec/doc/contracts-userguide.adoc[leveloffset=+2]
+
+=== Scripting Ant tasks
+
+Groovy integrates very well with http://ant.apache.org[Apache Ant] thanks to <<antbuilder,AntBuilder>>.
+
+include::../../../../../subprojects/groovy-ant/src/spec/doc/groovy-ant-task.adoc[leveloffset=+2]
+
+include::../../../../../subprojects/groovy-templates/src/spec/doc/template-engines.adoc[leveloffset=+2]
+
+include::../../../../../subprojects/groovy-servlet/src/spec/doc/servlet-userguide.adoc[leveloffset=+2]
+
+include::{reldir_root}/guide-integrating.adoc[leveloffset=+2]
+
+:reldir_swing: ../../../../../subprojects/groovy-swing/src/spec/doc
+include::{reldir_root}/core-domain-specific-languages.adoc[leveloffset=+2]
+
+:reldir_jmx: ../../../../../subprojects/groovy-jmx/src/spec/doc
+include::{reldir_jmx}/jmx.adoc[leveloffset=+2]
+
+=== Creating Swing UIs
+
+Creating Swing UIs is made easy thanks to the use of <<swingbuilder,SwingBuilder>>.
+
+=== Security
+
+(TBD)
+
+include::{reldir_root}/design-patterns-in-groovy.adoc[leveloffset=+2]
+
+== Acknowledgements
+
+include::{reldir_root}/contributors.adoc[leveloffset=+2]
+
+include::{reldir_root}/license.adoc[leveloffset=+2]
+
