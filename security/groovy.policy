@@ -33,7 +33,7 @@
  * This keystore contains the public key of the pair used to sign GroovyTestJar.jar
  * See SecurityTest.testReadSignedJar()
  */
-// NOT CURRENTLY LONGER USED!
+// NOT CURRENTLY USED!
 //keystore "file:${user.dir}/security/groovykeys";
 
 /*
