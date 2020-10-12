@@ -76,7 +76,7 @@ class DocGDK extends DefaultTask {
                     ['-title',
                      'Groovy JDK enhancements',
                      '-link',
-                     'groovy,org.codehaus.groovy=https://docs.groovy-lang.org/latest/html/gapi/',
+                     'groovy,org.codehaus.groovy,org.apache.groovy=https://docs.groovy-lang.org/latest/html/gapi/',
                      '-link',
                      'java,org.xml,javax,org.w3c=https://docs.oracle.com/javase/8/docs/api/'] + classes.get()
             )

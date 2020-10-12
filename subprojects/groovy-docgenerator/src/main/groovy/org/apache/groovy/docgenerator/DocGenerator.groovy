@@ -534,10 +534,10 @@ class DocGenerator {
 
         static File sourceFileOf(String pathOrClassName) {
             // TODO don't hardcode like this
-            if (pathOrClassName.contains("/")) {
+            if (pathOrClassName.contains(File.separator) || pathOrClassName.contains('/')) {
                 return new File(pathOrClassName)
             }
-            new File("src/main/java/" + pathOrClassName.replace('.', '/') + ".java")
+            new File('../../src/main/java/' + pathOrClassName.replace('.', '/') + '.java')
         }
     }
 }
