@@ -18,6 +18,7 @@
 #
 
 // This file is used to test the extension module framework
+// TODO remove dup with src/spec/test-resources/META-INF/groovy/org.codehaus.groovy.runtime.ExtensionModule
 moduleName=Test module
 moduleVersion=1.0-test
 extensionClasses=support.MaxRetriesExtension,org.codehaus.groovy.runtime.m12n.TestStringExtension,org.codehaus.groovy.runtime.m12n.Groovy6496Extension,org.codehaus.groovy.runtime.m12n.TestPrimitiveWrapperExtension
