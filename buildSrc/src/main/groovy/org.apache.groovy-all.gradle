@@ -26,18 +26,25 @@
     It also aggregates docs and sources but does NOT provide an "uber" jar.
  */
 import org.apache.groovy.gradle.GroovyLibraryExtension
-import org.apache.groovy.gradle.GroovyAllExtension
 
 plugins {
     id 'org.apache.groovy-common'
     id 'org.apache.groovy-platform'
     id 'org.apache.groovy-documented'
+    id 'org.apache.groovy-doc-aggregator'
 }
-
-extensions.create("groovyAll", GroovyAllExtension)
 
 javaPlatform {
     allowDependencies()
+}
+
+configurations {
+    allSources {
+        extendsFrom runtime
+    }
+    allSourcesRuntimeClasspath {
+        extendsFrom runtime
+    }
 }
 
 def projectsIncludedInGroovyAll = rootProject.allprojects.findAll {
@@ -47,70 +54,10 @@ def projectsIncludedInGroovyAll = rootProject.allprojects.findAll {
     return false
 }
 
-configurations {
-    allSources {
-        canBeConsumed = false
-        canBeResolved = true
-        transitive = false
-        extendsFrom runtime
-        attributes {
-            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
-            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
-            attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, DocsType.SOURCES))
-            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, "aggregation"))
-        }
-    }
-    allSourcesRuntimeClasspath {
-        canBeConsumed = false
-        canBeResolved = true
-        extendsFrom runtime
-        attributes {
-            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
-            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
-            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, "javadocClasspath"))
-        }
-    }
-}
-
 dependencies {
     projectsIncludedInGroovyAll.each {
         api(it)
     }
-    attributesSchema {
-        attribute(Usage.USAGE_ATTRIBUTE) {
-            compatibilityRules.add(JavadocClasspathCompatibilityRule)
-        }
-    }
-}
-
-def sourcesAllJar = tasks.register("sourcesAllJar", Jar) {
-    from configurations.allSources
-    archiveClassifier = 'sources'
-}
-
-def javadocAll = tasks.register("javadocAll", Javadoc) {
-    destinationDir = file("$buildDir/alljavadoc")
-    source configurations.allSources
-    classpath = configurations.allSourcesRuntimeClasspath
-    groovyAll.excludedFromJavadocs.each {
-        exclude it
-    }
-}
-
-def javadocAllJar = tasks.register("javadocAllJar", Jar) {
-    from javadocAll
-    archiveClassifier = 'javadoc'
-}
-
-def groovydocAll = tasks.register("groovydocAll", Groovydoc) {
-    destinationDir = file("${buildDir}/allgroovydoc")
-    source = configurations.allSources
-    classpath = configurations.allSourcesRuntimeClasspath
-}
-
-def groovydocAllJar = tasks.register("groovydocAllJar", Jar) {
-    from groovydocAll
-    archiveClassifier = 'groovydoc'
 }
 
 def createDocumentationPublication = { String name, TaskProvider artifact ->
@@ -134,9 +81,9 @@ def createDocumentationPublication = { String name, TaskProvider artifact ->
     }
 }
 
-createDocumentationPublication('sources', sourcesAllJar)
-createDocumentationPublication('javadoc', javadocAllJar)
-createDocumentationPublication('groovydoc', groovydocAllJar)
+createDocumentationPublication('sources', tasks.named('sourcesAllJar'))
+createDocumentationPublication('javadoc', tasks.named('javadocAllJar'))
+createDocumentationPublication('groovydoc', tasks.named('groovydocAllJar'))
 
 configurations {
     allJavadoc {
@@ -148,7 +95,7 @@ configurations {
         }
         outgoing {
             artifacts {
-                artifact javadocAll
+                artifact tasks.named('javadocAll')
             }
         }
     }
@@ -161,17 +108,8 @@ configurations {
         }
         outgoing {
             artifacts {
-                artifact groovydocAll
+                artifact tasks.named('groovydocAll')
             }
-        }
-    }
-}
-
-class JavadocClasspathCompatibilityRule implements AttributeCompatibilityRule<Usage> {
-    @Override
-    void execute(CompatibilityCheckDetails<Usage> details) {
-        if (details.consumerValue.name == 'javadocClasspath' && details.producerValue.name == Usage.JAVA_RUNTIME) {
-            details.compatible()
         }
     }
 }

@@ -24,6 +24,12 @@ plugins {
     id 'org.apache.groovy-asciidoctor'
 }
 
+docAggregation {
+    excludeFromJavadoc '**/*.html',
+            '**/*.groovy',
+            '**/GroovyRecognizer.java' // generated file
+}
+
 distribution {
     docs ':', 'org.codehaus.groovy.runtime.DefaultGroovyMethods',
             'org.codehaus.groovy.runtime.DefaultGroovyStaticMethods',
@@ -109,10 +115,10 @@ distribution {
 
     docSpec = copySpec {
         into('html/api') {
-            from configurations.allJavadoc
+            from tasks.named('javadocAll')
         }
         into('html/gapi') {
-            from configurations.allGroovydoc
+            from tasks.named('groovydocAll')
         }
         into('html/documentation') {
             from configurations.allAsciidoc

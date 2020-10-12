@@ -21,7 +21,7 @@ package org.apache.groovy.gradle
 import groovy.transform.CompileStatic
 
 @CompileStatic
-class GroovyAllExtension {
+class DocAggregationExtension {
     final List<String> excludedFromJavadocs = []
 
     void excludeFromJavadoc(String... items) {
