@@ -132,10 +132,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     protected static final String PROPERTY_MISSING = "propertyMissing";
     protected static final String INVOKE_METHOD_METHOD = "invokeMethod";
 
-    private static final String CLOSURE_CALL_METHOD = "call";
-    private static final String CLOSURE_DO_CALL_METHOD = "doCall";
+    private static final String CALL_METHOD = "call";
+    private static final String DO_CALL_METHOD = "doCall";
     private static final String GET_PROPERTY_METHOD = "getProperty";
     private static final String SET_PROPERTY_METHOD = "setProperty";
+
     private static final Class[] METHOD_MISSING_ARGS = new Class[]{String.class, Object.class};
     private static final Class[] GETTER_MISSING_ARGS = new Class[]{String.class};
     private static final Class[] SETTER_MISSING_ARGS = METHOD_MISSING_ARGS;
@@ -1137,7 +1138,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             final Closure closure = (Closure) object;
             final Object owner = closure.getOwner();
 
-            if (CLOSURE_CALL_METHOD.equals(methodName) || CLOSURE_DO_CALL_METHOD.equals(methodName)) {
+            if (CALL_METHOD.equals(methodName) || DO_CALL_METHOD.equals(methodName)) {
                 final Class objectClass = object.getClass();
                 if (objectClass == MethodClosure.class) {
                     return this.invokeMethodClosure(object, arguments);
@@ -1274,8 +1275,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private MetaMethod getMetaMethod(Class sender, Object object, String methodName, boolean isCallToSuper, Object... arguments) {
         MetaMethod method = null;
-        if (CLOSURE_CALL_METHOD.equals(methodName) && object instanceof GeneratedClosure) {
-            method = getMethodWithCaching(sender, "doCall", arguments, isCallToSuper);
+        if (CALL_METHOD.equals(methodName) && object instanceof GeneratedClosure) {
+            method = getMethodWithCaching(sender, DO_CALL_METHOD, arguments, isCallToSuper);
         }
         if (method == null) {
             method = getMethodWithCaching(sender, methodName, arguments, isCallToSuper);
@@ -1312,30 +1313,36 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         };
     }
 
-    private Object invokePropertyOrMissing(Object object, String methodName, Object[] originalArguments, boolean fromInsideClass, boolean isCallToSuper) {
-        // if no method was found, try to find a closure defined as a field of the class and run it
+    /**
+     * Tries to find a callable property and make the call.
+     */
+    private Object invokePropertyOrMissing(final Object object, final String methodName, final Object[] originalArguments, final boolean fromInsideClass, final boolean isCallToSuper) {
+        MetaProperty metaProperty = this.getMetaProperty(methodName, false);
+
         Object value = null;
-        final MetaProperty metaProperty = this.getMetaProperty(methodName, false);
         if (metaProperty != null) {
             value = metaProperty.getProperty(object);
-        } else {
-            if (object instanceof Map)
-                value = ((Map) object).get(methodName);
+        } else if (object instanceof Map) {
+            value = ((Map<?, ?>) object).get(methodName);
+        } else if (object instanceof Script) {
+            value = ((Script) object).getBinding().getVariables().get(methodName);
         }
 
-        if (value instanceof Closure) {  // This test ensures that value != this If you ever change this ensure that value != this
-            Closure closure = (Closure) value;
-            MetaClass delegateMetaClass = closure.getMetaClass();
-            return delegateMetaClass.invokeMethod(closure.getClass(), closure, CLOSURE_DO_CALL_METHOD, originalArguments, false, fromInsideClass);
+        if (value instanceof Closure) {
+            Closure<?> closure = (Closure<?>) value;
+            MetaClass metaClass = closure.getMetaClass();
+            return metaClass.invokeMethod(closure.getClass(), closure, DO_CALL_METHOD, originalArguments, false, fromInsideClass);
         }
 
-        if (object instanceof Script) {
-            Object bindingVar = ((Script) object).getBinding().getVariables().get(methodName);
-            if (bindingVar != null) {
-                MetaClass bindingVarMC = ((MetaClassRegistryImpl) registry).getMetaClass(bindingVar);
-                return bindingVarMC.invokeMethod(bindingVar, CLOSURE_CALL_METHOD, originalArguments);
+        if (value != null && !(value instanceof Map)) {
+            try {
+                MetaClass metaClass = ((MetaClassRegistryImpl) registry).getMetaClass(value);
+                return metaClass.invokeMethod(value, CALL_METHOD, originalArguments); // delegate to call method of property value
+            } catch (MissingMethodException mme) {
+                // ignore
             }
         }
+
         return invokeMissingMethod(object, methodName, originalArguments, null, isCallToSuper);
     }
 
@@ -1557,7 +1564,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         if (prop != null) {
             MetaClass propMC = registry.getMetaClass(prop.getClass());
-            return propMC.invokeMethod(prop, CLOSURE_CALL_METHOD, arguments);
+            return propMC.invokeMethod(prop, CALL_METHOD, arguments);
         }
 
         return invokeStaticMissingMethod(sender, methodName, arguments);
@@ -1566,7 +1573,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static Object invokeStaticClosureProperty(Object[] originalArguments, Object prop) {
         Closure closure = (Closure) prop;
         MetaClass delegateMetaClass = closure.getMetaClass();
-        return delegateMetaClass.invokeMethod(closure.getClass(), closure, CLOSURE_DO_CALL_METHOD, originalArguments, false, false);
+        return delegateMetaClass.invokeMethod(closure.getClass(), closure, DO_CALL_METHOD, originalArguments, false, false);
     }
 
     private Object invokeStaticMissingMethod(Class sender, String methodName, Object[] arguments) {
@@ -3574,13 +3581,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (!GroovyCategorySupport.hasCategoryInCurrentThread() && !(this instanceof AdaptingMetaClass)) {
             Class[] params = MetaClassHelper.convertToTypeArray(args);
             CallSite tempSite = site;
-            if (site.getName().equals("call") && GeneratedClosure.class.isAssignableFrom(theClass)) {
+            if (site.getName().equals(CALL_METHOD) && GeneratedClosure.class.isAssignableFrom(theClass)) {
                 // here, we want to point to a method named "doCall" instead of "call"
                 // but we don't want to replace the original call site name, otherwise
                 // we loose the fact that the original method name was "call" so instead
                 // we will point to a metamethod called "doCall"
                 // see GROOVY-5806 for details
-                tempSite = new AbstractCallSite(site.getArray(), site.getIndex(), "doCall");
+                tempSite = new AbstractCallSite(site.getArray(), site.getIndex(), DO_CALL_METHOD);
             }
             MetaMethod metaMethod = getMethodWithCachingInternal(theClass, tempSite, params);
             if (metaMethod != null)
