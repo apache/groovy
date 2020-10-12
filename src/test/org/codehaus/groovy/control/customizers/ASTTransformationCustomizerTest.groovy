@@ -23,8 +23,6 @@ import groovy.transform.TimedInterrupt
 import groovy.util.logging.Log
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassHelper
-import org.codehaus.groovy.ast.expr.ClassExpression
-import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.SourceUnit
@@ -34,6 +32,9 @@ import org.codehaus.groovy.transform.GroovyASTTransformation
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Logger
+
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
 
 /**
  * Tests the {@link ASTTransformationCustomizer}.
@@ -121,21 +122,23 @@ class ASTTransformationCustomizerTest extends GroovyTestCase {
     }
 
     void testAnyExpressionAsParameterValue() {
-        customizer = new ASTTransformationCustomizer(value:100, unit: new PropertyExpression(new ClassExpression(ClassHelper.make(TimeUnit)),'MILLISECONDS'), TimedInterrupt)
+        customizer = new ASTTransformationCustomizer(value:200, unit: propX(classX(ClassHelper.make(TimeUnit)),'MILLISECONDS'), TimedInterrupt)
         configuration.addCompilationCustomizers(customizer)
         def shell = new GroovyShell(configuration)
-        def result = shell.evaluate '''import java.util.concurrent.TimeoutException
+        def result = shell.evaluate '''
+            import java.util.concurrent.TimeoutException
 
-boolean interrupted = false
-try {
-    200.times {
-        Thread.sleep(100)
-    }
-} catch (TimeoutException e) {
-    interrupted = true
-}
+            boolean interrupted = false
+            try {
+                10.times {
+                    sleep 100
+                }
+            } catch (TimeoutException ignore) {
+                interrupted = true
+            }
 
-interrupted'''
+            interrupted
+        '''
         assert result
     }
 
