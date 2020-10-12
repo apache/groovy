@@ -25,6 +25,7 @@ plugins {
     id 'jvm-ecosystem'
     id 'org.apache.groovy-common'
     id 'org.apache.groovy-aggregating-project'
+    id 'org.apache.groovy-doc-aggregator'
     id 'org.asciidoctor.jvm.pdf'
 }
 
@@ -53,24 +54,6 @@ configurations {
         }
     }
     doc
-    allJavadoc {
-        extendsFrom doc
-        canBeConsumed = false
-        canBeResolved = true
-        attributes {
-            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
-            attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, DocsType.JAVADOC))
-        }
-    }
-    allGroovydoc {
-        extendsFrom doc
-        canBeConsumed = false
-        canBeResolved = true
-        attributes {
-            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
-            attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, "groovydoc"))
-        }
-    }
     allAsciidoc {
         extendsFrom baseProjects
         canBeConsumed = false
@@ -89,6 +72,12 @@ configurations {
             attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, LibraryElements.JAR))
             attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
         }
+    }
+    allSources {
+        extendsFrom baseProjects
+    }
+    allSourcesRuntimeClasspath {
+        extendsFrom baseProjects
     }
 }
 

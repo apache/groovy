@@ -66,7 +66,9 @@ tasks.withType(Javadoc).configureEach {
 }
 
 tasks.withType(Groovydoc).configureEach {
-    source = sourceSets.main.allSource
+    if (sourceSets.findByName('main')) {
+        source = sourceSets.main.allSource
+    }
     groovyClasspath = configurations.groovydocClasspath
     use = true
     windowTitle = "Groovy ${versions.groovy}"

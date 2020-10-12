@@ -1,0 +1,104 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+import org.apache.groovy.gradle.DocAggregationExtension
+
+/*
+    This plugin declares a component type corresponding to the "groovy-all" component.
+    Groovy all is basically a platform which aggregates _some_ of the Groovy modules,
+    but not all. In that sense it's different from the Groovy BOM, which is a platform
+    which references all Groovy modules.
+
+    It also aggregates docs and sources but does NOT provide an "uber" jar.
+ */
+plugins {
+    id 'org.apache.groovy-common'
+    id 'org.apache.groovy-documented'
+}
+
+def docAggregation = extensions.create('docAggregation', DocAggregationExtension)
+
+configurations {
+    allSources {
+        canBeConsumed = false
+        canBeResolved = true
+        transitive = false
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
+            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
+            attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, DocsType.SOURCES))
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, "aggregation"))
+        }
+    }
+    allSourcesRuntimeClasspath {
+        canBeConsumed = false
+        canBeResolved = true
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, "javadocClasspath"))
+        }
+    }
+}
+
+dependencies {
+    attributesSchema {
+        attribute(Usage.USAGE_ATTRIBUTE) {
+            compatibilityRules.add(JavadocClasspathCompatibilityRule)
+        }
+    }
+}
+
+def sourcesAllJar = tasks.register("sourcesAllJar", Jar) {
+    from configurations.allSources
+    archiveClassifier = 'sources'
+}
+
+def javadocAll = tasks.register("javadocAll", Javadoc) {
+    destinationDir = file("$buildDir/alljavadoc")
+    source configurations.allSources
+    classpath = configurations.allSourcesRuntimeClasspath
+    docAggregation.excludedFromJavadocs.each {
+        exclude it
+    }
+}
+
+def javadocAllJar = tasks.register("javadocAllJar", Jar) {
+    from javadocAll
+    archiveClassifier = 'javadoc'
+}
+
+def groovydocAll = tasks.register("groovydocAll", Groovydoc) {
+    destinationDir = file("${buildDir}/allgroovydoc")
+    source = configurations.allSources
+    classpath = configurations.allSourcesRuntimeClasspath
+}
+
+def groovydocAllJar = tasks.register("groovydocAllJar", Jar) {
+    from groovydocAll
+    archiveClassifier = 'groovydoc'
+}
+
+class JavadocClasspathCompatibilityRule implements AttributeCompatibilityRule<Usage> {
+    @Override
+    void execute(CompatibilityCheckDetails<Usage> details) {
+        if (details.consumerValue.name == 'javadocClasspath' && details.producerValue.name == Usage.JAVA_RUNTIME) {
+            details.compatible()
+        }
+    }
+}
