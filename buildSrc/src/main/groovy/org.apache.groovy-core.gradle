@@ -62,14 +62,14 @@ sourceSets {
     }
     test {
         groovy {
-            srcDirs = ['src/test']
+            srcDirs += ['src/test']
             if (!JavaVersion.current().isJava9Compatible()) {
                 exclude '**/v9/*'
                 exclude '**/vm9/*'
             }
         }
         resources {
-            srcDirs = ['src/test-resources']
+            srcDirs += ['src/test-resources']
         }
     }
     tools {

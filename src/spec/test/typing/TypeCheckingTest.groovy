@@ -19,7 +19,7 @@
 
 package typing
 
-import StaticTypeCheckingTestCase
+import groovy.transform.stc.StaticTypeCheckingTestCase
 
 /**
  * This unit test contains both assertScript and new GroovyShell().evaluate

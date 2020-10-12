@@ -20,5 +20,5 @@
 // This file is used to test the extension module framework
 moduleName=Test module
 moduleVersion=1.0-test
-extensionClasses=org.codehaus.groovy.runtime.m12n.TestStringExtension,org.codehaus.groovy.runtime.m12n.Groovy6496Extension,org.codehaus.groovy.runtime.m12n.TestPrimitiveWrapperExtension
-staticExtensionClasses=org.codehaus.groovy.runtime.m12n.TestStaticStringExtension
+extensionClasses=support.MaxRetriesExtension,org.codehaus.groovy.runtime.m12n.TestStringExtension,org.codehaus.groovy.runtime.m12n.Groovy6496Extension,org.codehaus.groovy.runtime.m12n.TestPrimitiveWrapperExtension
+staticExtensionClasses=support.StaticStringExtension,org.codehaus.groovy.runtime.m12n.TestStaticStringExtension

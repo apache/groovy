@@ -16,12 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
-
 package typing
 
-import StaticTypeCheckingTestCase
+import groovy.transform.stc.StaticTypeCheckingTestCase
 
 /**
  * This unit test contains both assertScript and new GroovyShell().evaluate
