@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-if (gradle.startParameter.taskNames.any { it =~ /eclipse'/ }) {
+if (gradle.startParameter.taskNames.any { it =~ /(?i)eclipse/ }) {
     allprojects {
         apply plugin: 'eclipse'
 
@@ -30,39 +30,17 @@ if (gradle.startParameter.taskNames.any { it =~ /eclipse'/ }) {
                     "${entry.kind}:${entry.path}"
                 }
             }
-
-            // set "test" attribute based on gradle scopes
-            entries.findAll { entry ->
-                entry.class.name in [
-                        'org.gradle.plugins.ide.eclipse.model.Library',
-                        'org.gradle.plugins.ide.eclipse.model.SourceFolder'
-                ]
-            }.each { entry ->
-                if (entry.entryAttributes['gradle_used_by_scope'] == 'test') {
-                    entry.entryAttributes['test'] = 'true'
-                }
-            }
-            // set "test" attribute based on configuration
-            entries.findAll { entry ->
-                entry.class.name in [
-                        'org.gradle.plugins.ide.eclipse.model.ProjectDependency'
-                ]
-            }.each { entry ->
-                if (entry.path.substring(1) in project.configurations.testImplementation.dependencies*.name) {
-                    entry.entryAttributes['test'] = 'true'
-                }
-            }
         }
 
         project.tasks.eclipse.doLast {
             file("${project.projectDir}/.settings/org.eclipse.jdt.groovy.core.prefs").with { prefs ->
                 if (!prefs.exists()) {
                     append('''\
-                    eclipse.preferences.version=1
-                    groovy.compiler.level=30
-                    groovy.script.filters=**/*.gradle,n,**/script*.groovy,y,**/*resources/**/*.groovy,y,**/benchmarks/**/*.groovy,y
-                    org.codehaus.groovy.eclipse.preferences.compiler.project=true
-                    '''.stripIndent()
+                        eclipse.preferences.version=1
+                        groovy.compiler.level=30
+                        groovy.script.filters=**/*.gradle,n,**/script*.groovy,y,**/*resources/**/*.groovy,y,**/benchmarks/**/*.groovy,y
+                        org.codehaus.groovy.eclipse.preferences.compiler.project=true
+                        '''.stripIndent()
                     )
                 }
             }
@@ -70,9 +48,9 @@ if (gradle.startParameter.taskNames.any { it =~ /eclipse'/ }) {
             file("${project.projectDir}/.settings/org.eclipse.core.resources.prefs").with { prefs ->
                 if (!prefs.exists()) {
                     append('''\
-                    eclipse.preferences.version=1
-                    encoding/<project>=UTF-8
-                    '''.stripIndent()
+                        eclipse.preferences.version=1
+                        encoding/<project>=UTF-8
+                        '''.stripIndent()
                     )
                 }
             }
@@ -80,9 +58,9 @@ if (gradle.startParameter.taskNames.any { it =~ /eclipse'/ }) {
             file("${project.projectDir}/.settings/org.eclipse.core.runtime.prefs").with { prefs ->
                 if (!prefs.exists()) {
                     append('''\
-                    eclipse.preferences.version=1
-                    line.separator=\\n
-                    '''.stripIndent()
+                        eclipse.preferences.version=1
+                        line.separator=\\n
+                        '''.stripIndent()
                     )
                 }
             }
@@ -90,19 +68,19 @@ if (gradle.startParameter.taskNames.any { it =~ /eclipse'/ }) {
             file("${project.projectDir}/.settings/org.eclipse.jdt.ui.prefs").with { prefs ->
                 if (!prefs.exists()) {
                     append('''\
-                    eclipse.preferences.version=1
-                    editor_save_participant_org.eclipse.jdt.ui.postsavelistener.cleanup=true
-                    org.eclipse.jdt.ui.ignorelowercasenames=true
-                    org.eclipse.jdt.ui.importorder=;javax;java;\\#;
-                    org.eclipse.jdt.ui.ondemandthreshold=99
-                    org.eclipse.jdt.ui.staticondemandthreshold=99
-                    sp_cleanup.on_save_use_additional_actions=true
-                    sp_cleanup.organize_imports=true
-                    sp_cleanup.remove_trailing_whitespaces=true
-                    sp_cleanup.remove_trailing_whitespaces_all=true
-                    sp_cleanup.remove_trailing_whitespaces_ignore_empty=false
-                    sp_cleanup.update_copyright_notice=true
-                    '''.stripIndent()
+                        eclipse.preferences.version=1
+                        editor_save_participant_org.eclipse.jdt.ui.postsavelistener.cleanup=true
+                        org.eclipse.jdt.ui.ignorelowercasenames=true
+                        org.eclipse.jdt.ui.importorder=;javax;java;\\#;
+                        org.eclipse.jdt.ui.ondemandthreshold=99
+                        org.eclipse.jdt.ui.staticondemandthreshold=99
+                        sp_cleanup.on_save_use_additional_actions=true
+                        sp_cleanup.organize_imports=true
+                        sp_cleanup.remove_trailing_whitespaces=true
+                        sp_cleanup.remove_trailing_whitespaces_all=true
+                        sp_cleanup.remove_trailing_whitespaces_ignore_empty=false
+                        sp_cleanup.update_copyright_notice=true
+                        '''.stripIndent()
                     )
                 }
             }
@@ -128,11 +106,13 @@ if (gradle.startParameter.taskNames.any { it =~ /eclipse'/ }) {
     }
 
     eclipse.classpath.file.whenMerged {
-        entries.removeAll { entry -> entry.path == '/groovy-groovydoc' }
+        entries.removeAll { entry -> entry.path in ['src/test/groovy', 'src/test-resources'] }
 
         entries.findAll { entry -> entry.path =~ '^build/generated/sources/antlr' }.each { entry ->
             entry.entryAttributes['ignore_optional_problems'] = 'true'
             entry.entryAttributes['optional'] = 'true'
         }
     }
+
+    sourceSets.main.java.srcDirs += "${buildDir}/generated/sources/antlr4"
 }

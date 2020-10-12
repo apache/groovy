@@ -38,7 +38,7 @@ compileJava {
 
 plugins.withId('eclipse') {
     eclipse.classpath.file.whenMerged {
-        entries.removeAll { entry -> entry.path == '/groovy-xml' }
+        entries.removeAll { entry -> entry.path in ['/groovy-ant', '/groovy-xml'] }
     }
 }
 
