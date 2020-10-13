@@ -18,6 +18,9 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::xml-userguide[]
+:xml-userguide: xml-userguide.adoc
+endif::[]
 
 = DOMBuilder
 
@@ -37,7 +40,7 @@ Can be parsed into a DOM tree with a `DOMBuilder` like this:
 include::../test/DOMBuilderTest.groovy[tags=dom_builder_parse,indent=0]
 ----
 
-And then processed further e.g. by using <<xml-userguide.adoc#_domcategory,DOMCategory>>:
+And then processed further e.g. by using <<{xml-userguide}#_domcategory,DOMCategory>>:
 
 [source,groovy]
 ----

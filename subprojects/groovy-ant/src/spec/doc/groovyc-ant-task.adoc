@@ -18,18 +18,21 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::tools-groovyc[]
+:tools-groovyc: tools-groovyc.adoc
+endif::[]
 
 = The <groovyc> Ant Task
 
-[[ThegroovycAntTask-groovyc]]
+[[groovyc-ant-task-using]]
 == `<groovyc>`
 
-[[ThegroovycAntTask-Description]]
+[[groovyc-ant-task-description]]
 === Description
 
 Compiles Groovy source files and, if joint compilation option is used, Java source files from http://ant.apache.org/[Apache Ant].
 
-[[ThegroovycAntTask-Requiredtaskdef]]
+[[groovyc-ant-task-taskdef]]
 === Required taskdef
 
 Assuming the groovy jars are in _groovy.libs_, you will need to declare this task
@@ -46,7 +49,7 @@ Consider also adding any additional Groovy module jars, libraries and potentiall
 </taskdef>
 -----------------------------------------------------------------------
 
-[[ThegroovycAntTask-groovycAttributes]]
+[[groovyc-ant-task-attributes]]
 === <groovyc> Attributes
 
 [cols="<,<,<",options="header,footer"]
@@ -159,7 +162,7 @@ the compilation fails. |No
 -----------------------------------------------------------------------
 
 
-[[ThegroovycAntTask-groovycNestedElements]]
+[[groovyc-ant-task-nested-elements]]
 === <groovyc> Nested Elements
 
 [cols="<,<,<,<",options="header,footer"]
@@ -184,7 +187,7 @@ you should not attempt to overwrite the destination. Other attributes and nested
 elements are unaffected, for example `fork`, `memoryMaximumSize`, etc. may be
 used freely.
 
-[[ThegroovycAntTask-JointCompilation]]
+[[groovyc-ant-task-joint-compilation]]
 === Joint Compilation
 
 Joint compilation is enabled by using an embedded `javac` element, as shown in the following example:
@@ -201,4 +204,4 @@ Joint compilation is enabled by using an embedded `javac` element, as shown in t
 </groovyc>
 -----------------------------------------------------------------------
 
-More details about joint compilation can be found in the <<tools-groovyc.adoc#section-jointcompilation,joint compilation>> section.
+More details about joint compilation can be found in the <<{tools-groovyc}#section-jointcompilation,joint compilation>> section.

@@ -18,6 +18,18 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::core-domain-specific-languages[]
+:core-domain-specific-languages: core-domain-specific-languages.adoc
+endif::[]
+ifndef::core-semantics[]
+:core-semantics: core-semantics.adoc
+endif::[]
+ifndef::core-testing-guide[]
+:core-testing-guide: core-testing-guide.adoc
+endif::[]
+ifndef::grape[]
+:grape: grape.adoc
+endif::[]
 
 = Metaprogramming
 
@@ -527,7 +539,7 @@ assert f2.class.toString() == "class Foo"
 Groovy comes with a special `MetaClass` the so-called `ExpandoMetaClass`. It is special in that it allows for dynamically
 adding or changing methods, constructors, properties and even static methods by using a neat closure syntax.
 
-Applying those modifications can be especially useful in mocking or stubbing scenarios as shown in the <<core-testing-guide.adoc#testing_guide_emc,Testing Guide>>.
+Applying those modifications can be especially useful in mocking or stubbing scenarios as shown in the <<{core-testing-guide}#testing_guide_emc,Testing Guide>>.
 
 Every `java.lang.Class` is supplied by Groovy with a special `metaClass` property that will give you a reference to an
 `ExpandoMetaClass` instance. This instance can then be used to add methods or change the behaviour of already existing
@@ -1787,7 +1799,7 @@ singleton, ...) by using a declarative style.
 
 `@BaseScript` is used within scripts to indicate that the script should
 extend fron a custom script base class rather than `groovy.lang.Script`.
-See the documentation for <<core-domain-specific-languages.adoc#dsl-basescript,domain specific languages>> for further details.
+See the documentation for <<{core-domain-specific-languages}#dsl-basescript,domain specific languages>> for further details.
 
 [[xform-Delegate]]
 ===== `@groovy.lang.Delegate`
@@ -2712,30 +2724,30 @@ Here, the `add` method will have final parameters but the `mult` method will rem
 [[xform-TypeChecked]]
 ===== `@groovy.transform.TypeChecked`
 
-`@TypeChecked` activates compile-time type checking on your Groovy code. See <<core-semantics#static-type-checking,section on type checking>> for details.
+`@TypeChecked` activates compile-time type checking on your Groovy code. See <<{core-semantics}#static-type-checking,section on type checking>> for details.
 
 [[xform-CompileStatic]]
 ===== `@groovy.transform.CompileStatic`
 
-`@CompileStatic` activates static compilation on your Groovy code. See <<core-semantics#static-type-checking,section on type checking>> for details.
+`@CompileStatic` activates static compilation on your Groovy code. See <<{core-semantics}#static-type-checking,section on type checking>> for details.
 
 [[xform-CompileDynamic]]
 ===== `@groovy.transform.CompileDynamic`
 
-`@CompileDynamic` disables static compilation on parts of your Groovy code. See <<core-semantics#static-type-checking,section on type checking>> for details.
+`@CompileDynamic` disables static compilation on parts of your Groovy code. See <<{core-semantics}#static-type-checking,section on type checking>> for details.
 
 [[xform-DelegatesTo]]
 ===== `@groovy.lang.DelegatesTo`
 
 `@DelegatesTo` is not, technically speaking, an AST transformation. It is aimed at documenting code and helping the compiler in case you are
 using <<xform-TypeChecked,type checking>> or <<xform-CompileStatic, static compilation>>. The annotation is described thoroughly in the
-<<core-domain-specific-languages.adoc#section-delegatesto,DSL section>> of this guide.
+<<{core-domain-specific-languages}#section-delegatesto,DSL section>> of this guide.
 
 [[xform-SelfType]]
 ===== `@groovy.transform.SelfType`
 
 `@SelfType` is not an AST transformation but rather a marker interface used
-with traits. See the <<core-object-orientation.adoc#traits-selftype,traits documentation>> for further details.
+with traits. See the <<{core-domain-specific-languages}#traits-selftype,traits documentation>> for further details.
 
 ==== Swing patterns
 
@@ -2931,7 +2943,7 @@ include::../test/TestingASTTransformsTest.groovy[tags=memorize_in_binding,indent
 ===== `@groovy.lang.Grapes`
 
 `Grape` is a dependency management engine embedded into Groovy, relying on several annotations which are described
-thoroughly in this <<grape#section-grape,section of the guide>>.
+thoroughly in this <<{grape}#section-grape,section of the guide>>.
 
 [[developing-ast-xforms]]
 === Developing AST transformations

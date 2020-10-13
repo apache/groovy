@@ -18,6 +18,9 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::groovyc-ant-task[]
+:groovyc-ant-task: groovyc-ant-task.adoc
+endif::[]
 
 = Compiling Groovy
 
@@ -60,7 +63,7 @@ a number of command line switches:
 
 == Ant task
 
-See the <<groovyc-ant-task.adoc#ThegroovycAntTask-groovyc,groovyc Ant task>> documentation.
+See the <<{groovyc-ant-task}#groovyc-ant-task-using,groovyc Ant task>> documentation.
 It allows the Groovy compiler to be invoked from http://ant.apache.org/[Apache Ant].
 
 [[Gant]]

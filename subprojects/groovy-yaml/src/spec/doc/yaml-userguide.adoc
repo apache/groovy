@@ -18,6 +18,9 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::core-semantics[]
+:core-semantics: core-semantics.adoc
+endif::[]
 
 = Processing YAML
 
@@ -49,7 +52,7 @@ is transparent. In fact, `YamlSlurper` results conform to GPath expressions. GPa
 that is supported by multiple slurpers for different data formats (`XmlSlurper` for XML being one example).
 
 [NOTE]
-For more details please have a look at the section on <<core-semantics.adoc#gpath_expressions,GPath expressions>>.
+For more details please have a look at the section on <<{core-semantics}#gpath_expressions,GPath expressions>>.
 
 The following table gives an overview of the YAML types and the corresponding Groovy data types:
 

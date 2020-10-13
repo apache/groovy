@@ -1011,7 +1011,7 @@ include::../test/SyntaxTest.groovy[tags=variable_store_boolean_value,indent=0]
 `true` and `false` are the only two primitive boolean values.
 But more complex boolean expressions can be represented using <<{core-operators}#_logical_operators,logical operators>>.
 
-In addition, Groovy has <<{core-semantics}#Groovy-Truth,special rules>> (often referred to as _Groovy Truth_)
+In addition, Groovy has <<{core-semantics}#the-groovy-truth,special rules>> (often referred to as _Groovy Truth_)
 for coercing non-boolean objects to a boolean value.
 
 == Lists

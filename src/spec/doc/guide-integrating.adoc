@@ -18,6 +18,9 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::core-domain-specific-languages[]
+:core-domain-specific-languages: core-domain-specific-languages.adoc
+endif::[]
 
 = Integrating Groovy in a Java application
 
@@ -162,7 +165,7 @@ include::../test/IntegrationTest.groovy[tags=custom_script_usage,indent=0]
 <4> the script now has access to the new method `greet`
 
 NOTE: You are not limited to the sole _scriptBaseClass_ configuration. You can use any of the compiler configuration
-tweaks, including the <<core-domain-specific-languages.adoc#compilation-customizers,compilation customizers>>.
+tweaks, including the <<{core-domain-specific-languages}#compilation-customizers,compilation customizers>>.
 
 [[groovyclassloader]]
 === GroovyClassLoader

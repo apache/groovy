@@ -27,17 +27,28 @@ include::{reldir_root}/core-introduction.adoc[]
 
 == Groovy Language Specification
 
-:core-semantics:
+:core-domain-specific-languages:
+:core-metaprogramming:
+:core-object-orientation:
 :core-operators:
+:core-semantics:
+:core-syntax:
+:core-testing-guide:
+:grape:
+:groovy-ant-task:
+:groovy-console:
+:groovyc-ant-task:
+:guide-integrating:
+:jmx:
+:tools-groovyc:
+:xml-userguide:
+
 include::{reldir_root}/core-syntax.adoc[leveloffset=+2]
 
 include::{reldir_root}/core-operators.adoc[leveloffset=+2]
 
 include::{reldir_root}/core-program-structure.adoc[leveloffset=+2]
 
-:core-object-orientation:
-:core-syntax:
-:xml-userguide:
 include::{reldir_root}/core-object-orientation.adoc[leveloffset=+2]
 
 include::{reldir_root}/core-closures.adoc[leveloffset=+2]

@@ -18,6 +18,9 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::core-operators[]
+:core-operators: core-operators.adoc
+endif::[]
 
 = Working with Date/Time types
 
@@ -208,7 +211,7 @@ include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=property_notation,
 
 === Ranges, `upto`, and `downto`
 
-The JSR 310 types can be used with the <<core-operators.adoc#_range_operator,range operator>>.
+The JSR 310 types can be used with the <<{core-operators}#_range_operator,range operator>>.
 The following example iterates between today and the `LocalDate` six days from now,
 printing out the day of the week for each iteration. As both range bounds are inclusive,
 this prints all seven days of the week.

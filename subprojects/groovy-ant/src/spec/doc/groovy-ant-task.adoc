@@ -18,10 +18,13 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::core-domain-specific-languages[]
+:core-domain-specific-languages: core-domain-specific-languages.adoc
+endif::[]
 
 = The <groovy> Ant Task
 
-[[ThegroovyAntTask-groovyc]]
+[[groovy-ant-task-using]]
 == `<groovy>`
 
 [NOTE]
@@ -30,7 +33,7 @@ from within an Ant build file.
 You may also be interested in
 Ant's built-in https://ant.apache.org/manual/Tasks/script.html[`script`] task
 which supports Groovy and other languages, or
-<<ant-builder.adoc#antbuilder,`AntBuilder`>> which lets you write Ant build scripts
+<<{core-domain-specific-languages}#antbuilder,`AntBuilder`>> which lets you write Ant build scripts
 in Groovy rather than XML.
 
 Executes a series of Groovy statements from https://ant.apache.org/[Apache Ant].

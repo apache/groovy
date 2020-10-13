@@ -184,7 +184,7 @@ Switch supports the following kinds of comparisons:
 * Class case values match if the switch value is an instance of the class
 * Regular expression case values match if the `toString()` representation of the switch value matches the regex
 * Collection case values match if the switch value is contained in the collection. This also includes ranges (since they are Lists)
-* Closure case values match if the calling the closure returns a result which is true according to the <<Groovy-Truth,Groovy truth>>
+* Closure case values match if the calling the closure returns a result which is true according to the <<the-groovy-truth,Groovy truth>>
 * If none of the above are used then the case value matches if the case value equals the switch value
 
 NOTE: When using a closure case value, the default `it` parameter is actually the switch value (in our example, variable `x`).
@@ -475,7 +475,7 @@ As an example, you can specify a path to an object or element of interest:
 
 In both cases, the GPath expression can be viewed as a query on an object graph.  For POJOs, the object graph is most often built by the
 program being written through object instantiation and composition; for XML processing, the object graph is the result of `parsing`
-the XML text, most often with classes like XmlParser or XmlSlurper. See <<{xml-userguide}#Processing XML,Processing XML>>
+the XML text, most often with classes like XmlParser or XmlSlurper. See <<{xml-userguide}#processing-xml,Processing XML>>
 for more in-depth details on consuming XML in Groovy.
 
 [TIP]
@@ -894,7 +894,7 @@ is identical to this class:
 include::../test/semantics/OptionalityTest.groovy[tags=omitted_public,indent=0]
 ----
 
-[[Groovy-Truth]]
+[[the-groovy-truth]]
 == The Groovy Truth
 
 Groovy decides whether a expression is true or false by applying the rules given below.

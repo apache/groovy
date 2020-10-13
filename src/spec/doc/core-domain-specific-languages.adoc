@@ -21,6 +21,15 @@
 ifndef::reldir_root[]
 :reldir_root: .
 endif::[]
+ifndef::core-semantics[]
+:core-semantics: core-semantics.adoc
+endif::[]
+ifndef::xml-userguide[]
+:xml-userguide: xml-userguide.adoc
+endif::[]
+ifndef::jmx[]
+:jmx: jmx.adoc
+endif::[]
 
 = Domain-Specific Languages
 
@@ -1049,11 +1058,11 @@ link:type-checking-extensions.html[type checking extensions].
 
 ==== MarkupBuilder
 
-See <<xml-userguide.adoc#_markupbuilder,Creating Xml - MarkupBuilder>>.
+See <<{xml-userguide}#_markupbuilder,Creating Xml - MarkupBuilder>>.
 
 ==== StreamingMarkupBuilder
 
-See <<xml-userguide.adoc#_streamingmarkupbuilder,Creating Xml - StreamingMarkupBuilder>>.
+See <<{xml-userguide}#_streamingmarkupbuilder,Creating Xml - StreamingMarkupBuilder>>.
 
 include::../../../subprojects/groovy-xml/src/spec/doc/fragment_sax-builder.adoc[leveloffset=+3]
 
@@ -1071,7 +1080,7 @@ To create a simple user list you use a `NodeBuilder` like this:
 include::../test/builder/NodeBuilderTest.groovy[tags=node_builder_example,indent=0]
 ----
 
-Now you can process the data further, e.g. by using <<core-semantics.adoc#gpath_expressions,GPath expressions>>:
+Now you can process the data further, e.g. by using <<{core-semantics}#gpath_expressions,GPath expressions>>:
 
 [source,groovy]
 ----
@@ -1749,7 +1758,7 @@ referenced bean.
 
 ==== JmxBuilder
 
-See <<jmx.adoc#jmx_jmxbuilder,Working with JMX - JmxBuilder>> for details.
+See <<{jmx}#jmx_jmxbuilder,Working with JMX - JmxBuilder>> for details.
 
 ==== FileTreeBuilder
 

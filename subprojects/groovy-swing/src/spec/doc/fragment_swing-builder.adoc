@@ -21,6 +21,9 @@
 ifndef::reldir_swing[]
 :reldir_swing: .
 endif::[]
+ifndef::core-metaprogramming[]
+:core-metaprogramming: core-metaprogramming.adoc
+endif::[]
 
 [[swingbuilder]]
 = SwingBuilder
@@ -60,4 +63,4 @@ Here's another variation that relies on observable beans and binding:
 include::../test/SwingBuilderTest.groovy[tags=observable_binding_example,indent=0]
 ----
 
-<<core-metaprogramming.adoc#xform-Bindable,@Bindable>> is one of the core AST Transformations. It generates all the required boilerplate code to turn a simple bean into an observable one. The `bind()` node creates appropriate `PropertyChangeListeners` that will update the interested parties whenever a `PropertyChangeEvent` is fired.
+<<{core-metaprogramming}#xform-Bindable,@Bindable>> is one of the core AST Transformations. It generates all the required boilerplate code to turn a simple bean into an observable one. The `bind()` node creates appropriate `PropertyChangeListeners` that will update the interested parties whenever a `PropertyChangeEvent` is fired.

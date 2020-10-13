@@ -18,12 +18,15 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::xml-userguide[]
+:xml-userguide: xml-userguide.adoc
+endif::[]
 
 = Template engines
 
 == Introduction
 
-Groovy supports multiple ways to generate text dynamically including `GStrings`, `printf` and <<xml-userguide.adoc#_markupbuilder, MarkupBuilder>> just to name a few.
+Groovy supports multiple ways to generate text dynamically including `GStrings`, `printf` and <<{xml-userguide}#_markupbuilder, MarkupBuilder>> just to name a few.
 In addition to these, there is a dedicated template framework which is well-suited to applications where the text to be generated follows the form of a static template.
 
 == Template framework

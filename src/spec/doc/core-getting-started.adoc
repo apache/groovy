@@ -18,6 +18,9 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::groovy-console[]
+:groovy-console: groovy-console.adoc
+endif::[]
 
 = Getting started
 
@@ -177,7 +180,7 @@ You should now have Groovy installed properly. You can test this by typing the f
 groovysh
 ----
 
-Which should create an interactive groovy shell where you can type Groovy statements. Or to run the <<groovy-console.adoc#title-heading,Swing interactive console>> type:
+Which should create an interactive groovy shell where you can type Groovy statements. Or to run the <<{groovy-console}#title-heading,Swing interactive console>> type:
 
 [source,shell]
 ----

@@ -18,6 +18,9 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::groovy-ant-task[]
+:groovy-ant-task: groovy-ant-task.adoc
+endif::[]
 
 [[antbuilder]]
 = AntBuilder
@@ -25,7 +28,7 @@
 [NOTE]
 Here we describe `AntBuilder` which lets you write Ant build scripts
 in Groovy rather than XML. You may also be interested in using Groovy
-from Ant using the <<groovy-ant-task.adoc#ThegroovyAntTask-groovyc,Groovy Ant task>>.
+from Ant using the <<{groovy-ant-task}#groovy-ant-task-using,Groovy Ant task>>.
 
 Despite being primarily a build tool, https://ant.apache.org/[Apache Ant] is
 a very practical tool for manipulating files including zip files, copy, resource processing, and more.

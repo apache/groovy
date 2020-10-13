@@ -19,6 +19,10 @@
 
 //////////////////////////////////////////
 
+ifndef::core-semantics[]
+:core-semantics: core-semantics.adoc
+endif::[]
+
 = Differences with Java
 
 Groovy tries to be as natural as possible for Java developers. We’ve
@@ -344,7 +348,7 @@ Groovy expands greatly on this.
 explicitly cast, 'T` indicates a conversion Groovy can make but data is truncated, 'B' indicates a boxing/unboxing
 operation, 'N' indicates a conversion Groovy can't make.
 
-The truncation uses <<core-semantics.adoc#Groovy-Truth,Groovy Truth>> when converting to `boolean`/`Boolean`. Converting
+The truncation uses <<{core-semantics}#the-groovy-truth,Groovy Truth>> when converting to `boolean`/`Boolean`. Converting
 from a number to a character casts the `Number.intvalue()` to `char`. Groovy constructs `BigInteger` and `BigDecimal`
 using `Number.doubleValue()` when converting from a `Float` or `Double`, otherwise it constructs using `toString()`.
 Other conversions have their behavior defined by `java.lang.Number`.

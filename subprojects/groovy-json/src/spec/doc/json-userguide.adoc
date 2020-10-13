@@ -18,6 +18,12 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::core-semantics[]
+:core-semantics: core-semantics.adoc
+endif::[]
+ifndef::core-domain-specific-languages[]
+:core-domain-specific-languages: core-domain-specific-languages.adoc
+endif::[]
 
 = Processing JSON
 
@@ -64,7 +70,7 @@ is transparent. In fact, `JsonSlurper` results conform to GPath expressions. GPa
 that is supported by multiple slurpers for different data formats (`XmlSlurper` for XML being one example).
 
 [NOTE]
-For more details please have a look at the section on <<core-semantics.adoc#gpath_expressions,GPath expressions>>.
+For more details please have a look at the section on <<{core-semantics}#gpath_expressions,GPath expressions>>.
 
 The following table gives an overview of the JSON types and the corresponding Groovy data types:
 
@@ -156,7 +162,7 @@ include::../test/json/JsonTest.groovy[tags=set_type,indent=0]
 == JsonOutput
 
 `JsonOutput` is responsible for serialising Groovy objects into JSON strings. It can be seen as companion object to
-<<json-userguide.adoc#json_jsonslurper,JsonSlurper>>, being a JSON parser.
+<<#json_jsonslurper,JsonSlurper>>, being a JSON parser.
 
 `JsonOutput` comes with overloaded, static `toJson` methods. Each `toJson` implementation takes a different parameter type.
 The static methods can either be used directly or by importing the methods with a static import statement.
@@ -217,5 +223,5 @@ Another way to create JSON from Groovy is to use `JsonBuilder` or `StreamingJson
 DSL which allows to formulate an object graph which is then converted to JSON.
 
 [NOTE]
-For more details on builders, have a look at the builders chapter which covers both <<core-domain-specific-languages.adoc#_jsonbuilder,JsonBuilder>>
-and <<core-domain-specific-languages.adoc#_streamingjsonbuilder,StreamingJsonBuilder>>.
+For more details on builders, have a look at the builders chapter which covers both <<{core-domain-specific-languages}#_jsonbuilder,JsonBuilder>>
+and <<{core-domain-specific-languages}#_streamingjsonbuilder,StreamingJsonBuilder>>.

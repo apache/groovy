@@ -18,10 +18,15 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::core-semantics[]
+:core-semantics: core-semantics.adoc
+endif::[]
+ifndef::core-syntax[]
+:core-syntax: core-syntax.adoc
+endif::[]
 
 [[groovy-operators]]
 = Operators
-
 
 This chapter covers the operators of the Groovy programming language.
 
@@ -54,7 +59,7 @@ The following binary arithmetic operators are available in Groovy:
 
 | `/`
 | division
-| Use `intdiv()` for integer division, and see the section about <<core-syntax.adoc#integer_division,integer division>> for more information on the return type of the division.
+| Use `intdiv()` for integer division, and see the section about <<{core-syntax}#integer_division,integer division>> for more information on the return type of the division.
 
 | `%`
 | remainder
@@ -62,7 +67,7 @@ The following binary arithmetic operators are available in Groovy:
 
 | `**`
 | power
-| See the section about <<core-syntax.adoc#power_operator,the power operation>> for more information on the return type of the operation.
+| See the section about <<{core-syntax}#power_operator,the power operation>> for more information on the return type of the operation.
 |====
 
 Here are a few examples of usage of those operators:
@@ -295,7 +300,7 @@ In Groovy, bit shift operators are <<Operator-Overloading,overloadable>>, meanin
 === Not operator
 
 The "not" operator is represented with an exclamation mark (`!`) and inverts the result of the underlying boolean expression. In
-particular, it is possible to combine the `not` operator with the <<core-semantics.adoc#Groovy-Truth,Groovy truth>>:
+particular, it is possible to combine the `not` operator with the <<{core-semantics}#the-groovy-truth,Groovy truth>>:
 
 [source,groovy]
 ----
@@ -321,7 +326,7 @@ You can write:
 include::../test/OperatorsTest.groovy[tags=conditional_op_ternary_ternary,indent=0]
 ----
 
-The ternary operator is also compatible with the <<core-semantics.adoc#Groovy-Truth,Groovy truth>>, so you can make it even simpler:
+The ternary operator is also compatible with the <<{core-semantics}#the-groovy-truth,Groovy truth>>, so you can make it even simpler:
 
 [source,groovy]
 ----
@@ -332,7 +337,7 @@ include::../test/OperatorsTest.groovy[tags=conditional_op_ternary_groovytruth,in
 
 The "Elvis operator" is a shortening of the ternary operator. One instance of where this is handy is for returning
 a 'sensible default' value if an expression resolves to `false`-ish (as in
-<<core-semantics.adoc#Groovy-Truth,Groovy truth>>). A simple example might look like this:
+<<{core-semantics}#the-groovy-truth,Groovy truth>>). A simple example might look like this:
 
 [source,groovy]
 ----

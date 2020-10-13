@@ -18,6 +18,12 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::core-metaprogramming[]
+:core-metaprogramming: core-metaprogramming.adoc
+endif::[]
+ifndef::guide-integrating[]
+:guide-integrating: guide-integrating.adoc
+endif::[]
 
 = Program structure
 
@@ -261,10 +267,10 @@ a variable will *not* be visible in other methods of the script
 * if the variable is undeclared, it goes into the gapi:groovy.lang.Script#getBinding()[script binding]. The binding is
 visible from the methods, and is especially important if you use a script to interact with an application and need to
 share data between the script and the application. Readers might refer to the 
-<<guide-integrating.adoc#_integrating_groovy_in_a_java_application,integration guide>> for more information.
+<<{guide-integrating}#_integrating_groovy_in_a_java_application,integration guide>> for more information.
 
 TIP: Another approach to making a variable visible to all methods, is to use the
-<<core-metaprogramming.adoc#xform-Field,@Field annotation>>.
+<<{core-metaprogramming}#xform-Field,@Field annotation>>.
 A variable annotated this way will become a field of the generated script class and,
 as for local variables, access won't involve the script `Binding`.
 While not recommended, if you have a local variable or script field with the same name as a binding variable,
