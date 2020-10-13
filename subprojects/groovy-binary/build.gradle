@@ -30,6 +30,13 @@ docAggregation {
             '**/GroovyRecognizer.java' // generated file
 }
 
+tasks.named('asciidoctor') {
+    attributes reldir_root: '.',
+            reldir_jmx: '.',
+            reldir_swing: '.',
+            reldir_console: '.'
+}
+
 distribution {
     docs ':', 'org.codehaus.groovy.runtime.DefaultGroovyMethods',
             'org.codehaus.groovy.runtime.DefaultGroovyStaticMethods',

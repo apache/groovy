@@ -23,8 +23,20 @@
 :doctype: book
 ifdef::backend-pdf[:source-highlighter: rouge]
 
+ifndef::reldir_root[]
 :reldir_root: ../../../../../src/spec/doc
-include::{reldir_root}/core-introduction.adoc[]
+endif::[]
+ifndef::reldir_console[]
+:reldir_console: ../../../../../subprojects/groovy-console/src/spec/doc
+endif::[]
+ifndef::reldir_swing[]
+:reldir_swing: ../../../../../subprojects/groovy-swing/src/spec/doc
+endif::[]
+ifndef::reldir_jmx[]
+:reldir_jmx: ../../../../../subprojects/groovy-jmx/src/spec/doc
+endif::[]
+
+include::../../../../../src/spec/doc/core-introduction.adoc[]
 
 == Groovy Language Specification
 
@@ -44,46 +56,45 @@ include::{reldir_root}/core-introduction.adoc[]
 :tools-groovyc:
 :xml-userguide:
 
-include::{reldir_root}/core-syntax.adoc[leveloffset=+2]
+include::../../../../../src/spec/doc/core-syntax.adoc[leveloffset=+2]
 
-include::{reldir_root}/core-operators.adoc[leveloffset=+2]
+include::../../../../../src/spec/doc/core-operators.adoc[leveloffset=+2]
 
-include::{reldir_root}/core-program-structure.adoc[leveloffset=+2]
+include::../../../../../src/spec/doc/core-program-structure.adoc[leveloffset=+2]
 
-include::{reldir_root}/core-object-orientation.adoc[leveloffset=+2]
+include::../../../../../src/spec/doc/core-object-orientation.adoc[leveloffset=+2]
 
-include::{reldir_root}/core-closures.adoc[leveloffset=+2]
+include::../../../../../src/spec/doc/core-closures.adoc[leveloffset=+2]
 
-include::{reldir_root}/core-semantics.adoc[leveloffset=+2]
+include::../../../../../src/spec/doc/core-semantics.adoc[leveloffset=+2]
 
 == Tools
 
-include::{reldir_root}/tools-groovy.adoc[leveloffset=+2]
+include::../../../../../src/spec/doc/tools-groovy.adoc[leveloffset=+2]
 
-include::{reldir_root}/tools-groovyc.adoc[leveloffset=+2]
+include::../../../../../src/spec/doc/tools-groovyc.adoc[leveloffset=+2]
 
 include::../../../../../subprojects/groovy-groovysh/src/spec/doc/groovysh.adoc[leveloffset=+2]
 
-:reldir_console: ../../../../../subprojects/groovy-console/src/spec/doc
-include::{reldir_console}/groovy-console.adoc[leveloffset=+2]
+include::../../../../../subprojects/groovy-console/src/spec/doc/groovy-console.adoc[leveloffset=+2]
 
 include::../../../../../subprojects/groovy-groovydoc/src/spec/doc/groovydoc.adoc[leveloffset=+2]
 
-include::{reldir_root}/tools-ide.adoc[leveloffset=+2]
+include::../../../../../src/spec/doc/tools-ide.adoc[leveloffset=+2]
 
 == User Guides
 
-include::{reldir_root}/core-getting-started.adoc[leveloffset=+2]
+include::../../../../../src/spec/doc/core-getting-started.adoc[leveloffset=+2]
 
-include::{reldir_root}/core-differences-java.adoc[leveloffset=+2]
+include::../../../../../src/spec/doc/core-differences-java.adoc[leveloffset=+2]
 
-include::{reldir_root}/core-gdk.adoc[leveloffset=+2]
+include::../../../../../src/spec/doc/core-gdk.adoc[leveloffset=+2]
 
-include::{reldir_root}/core-metaprogramming.adoc[leveloffset=+2]
+include::../../../../../src/spec/doc/core-metaprogramming.adoc[leveloffset=+2]
 
-include::{reldir_root}/grape.adoc[leveloffset=+2]
+include::../../../../../src/spec/doc/grape.adoc[leveloffset=+2]
 
-include::{reldir_root}/core-testing-guide.adoc[leveloffset=+2]
+include::../../../../../src/spec/doc/core-testing-guide.adoc[leveloffset=+2]
 
 include::../../../../../subprojects/groovy-json/src/spec/doc/json-userguide.adoc[leveloffset=+2]
 
@@ -105,13 +116,11 @@ include::../../../../../subprojects/groovy-templates/src/spec/doc/template-engin
 
 include::../../../../../subprojects/groovy-servlet/src/spec/doc/servlet-userguide.adoc[leveloffset=+2]
 
-include::{reldir_root}/guide-integrating.adoc[leveloffset=+2]
+include::../../../../../src/spec/doc/guide-integrating.adoc[leveloffset=+2]
 
-:reldir_swing: ../../../../../subprojects/groovy-swing/src/spec/doc
-include::{reldir_root}/core-domain-specific-languages.adoc[leveloffset=+2]
+include::../../../../../src/spec/doc/core-domain-specific-languages.adoc[leveloffset=+2]
 
-:reldir_jmx: ../../../../../subprojects/groovy-jmx/src/spec/doc
-include::{reldir_jmx}/jmx.adoc[leveloffset=+2]
+include::../../../../../subprojects/groovy-jmx/src/spec/doc/jmx.adoc[leveloffset=+2]
 
 === Creating Swing UIs
 
@@ -121,11 +130,10 @@ Creating Swing UIs is made easy thanks to the use of <<swingbuilder,SwingBuilder
 
 (TBD)
 
-include::{reldir_root}/design-patterns-in-groovy.adoc[leveloffset=+2]
+include::../../../../../src/spec/doc/design-patterns-in-groovy.adoc[leveloffset=+2]
 
 == Acknowledgements
 
-include::{reldir_root}/contributors.adoc[leveloffset=+2]
+include::../../../../../src/spec/doc/contributors.adoc[leveloffset=+2]
 
-include::{reldir_root}/license.adoc[leveloffset=+2]
-
+include::../../../../../src/spec/doc/license.adoc[leveloffset=+2]
