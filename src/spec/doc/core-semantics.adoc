@@ -18,6 +18,18 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::core-object-orientation[]
+:core-object-orientation: core-object-orientation.adoc
+endif::[]
+ifndef::core-operators[]
+:core-operators: core-operators.adoc
+endif::[]
+ifndef::xml-userguide[]
+:xml-userguide: xml-userguide.adoc
+endif::[]
+ifndef::core-syntax[]
+:core-syntax: core-syntax.adoc
+endif::[]
 
 = Semantics
 
@@ -49,7 +61,7 @@ in which case it's like having a declaration and assignment (which we cover next
 
 [NOTE]
 Variable definition types can be refined by using generics, like in `List<String> names`.
-To learn more about the generics support, please read the <<core-object-orientation.adoc#generics,generics section>>.
+To learn more about the generics support, please read the <<{core-object-orientation}#generics,generics section>>.
 
 === Variable assignment
 
@@ -109,7 +121,7 @@ include::../test/SemanticsTest.groovy[tags=multiple_assignment_underflow,indent=
 ==== Object destructuring with multiple assignment
 
 In the section describing Groovy's operators,
-the case of the <<core-operators.adoc#subscript-operator,subscript operator>> has been covered,
+the case of the <<{core-operators}#subscript-operator,subscript operator>> has been covered,
 explaining how you can override the `getAt()`/`putAt()` method.
 
 With this technique, we can combine multiple assignments and the subscript operator methods to implement _object destructuring_.
@@ -463,7 +475,7 @@ As an example, you can specify a path to an object or element of interest:
 
 In both cases, the GPath expression can be viewed as a query on an object graph.  For POJOs, the object graph is most often built by the
 program being written through object instantiation and composition; for XML processing, the object graph is the result of `parsing`
-the XML text, most often with classes like XmlParser or XmlSlurper. See <<xml-userguide.adoc#Processing XML,Processing XML>>
+the XML text, most often with classes like XmlParser or XmlSlurper. See <<{xml-userguide}#Processing XML,Processing XML>>
 for more in-depth details on consuming XML in Groovy.
 
 [TIP]
@@ -557,7 +569,7 @@ include::../test/semantics/GPathTest.groovy[tags=gpath_on_xml_1,indent=0]
 
 === Number promotion
 
-The rules of number promotion are specified in the section on <<core-syntax.adoc#_math_operations,math operations>>.
+The rules of number promotion are specified in the section on <<{core-syntax}#_math_operations,math operations>>.
 
 
 [[closure-coercion]]

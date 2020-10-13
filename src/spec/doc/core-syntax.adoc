@@ -18,6 +18,12 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::core-operators[]
+:core-operators: core-operators.adoc
+endif::[]
+ifndef::core-semantics[]
+:core-semantics: core-semantics.adoc
+endif::[]
 
 = Syntax
 
@@ -812,7 +818,7 @@ include::../test/SyntaxTest.groovy[tags=number_type_suffixes_example,indent=0]
 
 === Math operations
 
-Although <<core-operators.adoc#groovy-operators,operators>> are covered in more detail elsewhere, it's important to discuss the behavior of math operations
+Although <<{core-operators}#groovy-operators,operators>> are covered in more detail elsewhere, it's important to discuss the behavior of math operations
 and what their resulting types are.
 
 Division and power binary operations aside (covered below),
@@ -993,7 +999,7 @@ include::../test/SyntaxTest.groovy[tags=number_power,indent=0]
 == Booleans
 
 Boolean is a special data type that is used to represent truth values: `true` and `false`.
-Use this data type for simple flags that track true/false <<core-operators.adoc#_conditional_operators,conditions>>.
+Use this data type for simple flags that track true/false <<{core-operators}#_conditional_operators,conditions>>.
 
 Boolean values can be stored in variables, assigned into fields, just like any other data type:
 
@@ -1003,9 +1009,9 @@ include::../test/SyntaxTest.groovy[tags=variable_store_boolean_value,indent=0]
 ----
 
 `true` and `false` are the only two primitive boolean values.
-But more complex boolean expressions can be represented using <<core-operators.adoc#_logical_operators,logical operators>>.
+But more complex boolean expressions can be represented using <<{core-operators}#_logical_operators,logical operators>>.
 
-In addition, Groovy has <<core-semantics.adoc#Groovy-Truth,special rules>> (often referred to as _Groovy Truth_)
+In addition, Groovy has <<{core-semantics}#Groovy-Truth,special rules>> (often referred to as _Groovy Truth_)
 for coercing non-boolean objects to a boolean value.
 
 == Lists
