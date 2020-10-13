@@ -75,7 +75,8 @@ asciidoctor {
             encoding: 'utf-8',
             toclevels: 10,
             numbered: '',
-            sectanchors: ''
+            sectanchors: true,
+            sectlinks: true
 }
 
 asciidoctorj {
