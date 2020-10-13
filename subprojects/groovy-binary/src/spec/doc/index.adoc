@@ -21,6 +21,7 @@
 
 = Groovy Language Documentation
 :doctype: book
+ifdef::backend-pdf[:source-highlighter: rouge]
 
 :reldir_root: ../../../../../src/spec/doc
 include::{reldir_root}/core-introduction.adoc[]
