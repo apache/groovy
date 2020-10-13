@@ -122,6 +122,7 @@ distribution {
         }
         into('html/documentation') {
             from configurations.allAsciidoc
+            from tasks.named('asciidoctor')
             from tasks.named('asciidoctorPdf')
             exclude '.asciidoctor'
         }
