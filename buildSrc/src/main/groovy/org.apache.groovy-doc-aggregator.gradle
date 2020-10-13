@@ -72,7 +72,7 @@ def sourcesAllJar = tasks.register("sourcesAllJar", Jar) {
 def javadocAll = tasks.register("javadocAll", Javadoc) {
     destinationDir = file("$buildDir/alljavadoc")
     source configurations.allSources
-    classpath = configurations.allSourcesRuntimeClasspath
+    classpath = configurations.allSourcesRuntimeClasspath + configurations.allSources
     docAggregation.excludedFromJavadocs.each {
         exclude it
     }

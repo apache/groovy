@@ -51,6 +51,7 @@ tasks.withType(Javadoc).configureEach {
         addStringOption('Xdoclint:none', '-quiet')
         windowTitle = "Groovy ${versions.groovy}"
         docTitle = "Groovy ${versions.groovy}"
+        classpath += project.file('src/main/java') // to pick up package.html
         locale = 'en_US'
         encoding = 'UTF-8'
         version = true
