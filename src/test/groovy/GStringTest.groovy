@@ -591,4 +591,12 @@ class GStringTest extends GroovyTestCase {
         gstring.strings[1] = ' and '
         assert gstring.toString() == 'Green eggs and ham'
     }
+
+    // GROOVY-7494
+    void testGStringCoercionForArrayPutAt() {
+        String[] fubar = new String[1]
+        fubar[0] = "x${'y'}"
+        assert fubar.toString() == '[xy]'
+    }
+
 }

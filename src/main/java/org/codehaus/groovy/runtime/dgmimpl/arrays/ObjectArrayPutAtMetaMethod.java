@@ -56,6 +56,8 @@ public class ObjectArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             }
         } else if (Character.class.isAssignableFrom(arrayComponentClass)) {
             adjustedNewVal = DefaultTypeTransformation.getCharFromSizeOneString(newValue);
+        } else if (String.class.equals(arrayComponentClass) && newValue instanceof GString) {
+            adjustedNewVal = DefaultTypeTransformation.castToType(newValue, arrayComponentClass);
         } else if (Number.class.isAssignableFrom(arrayComponentClass)) {
             if (newValue instanceof Character || newValue instanceof String || newValue instanceof GString) {
                 Character ch = DefaultTypeTransformation.getCharFromSizeOneString(newValue);
