@@ -96,7 +96,9 @@ class Interpreter implements Evaluator
         }
         finally {
             // Remove the script class generated
-            classLoader.removeClassCacheEntry(type?.name)
+            if (type?.name) {
+                classLoader.removeClassCacheEntry(type?.name)
+            }
 
             // Remove the inline closures from the cache as well
             classLoader.removeClassCacheEntry('$_run_closure')
