@@ -1064,11 +1064,11 @@ See <<{xml-userguide}#_markupbuilder,Creating Xml - MarkupBuilder>>.
 
 See <<{xml-userguide}#_streamingmarkupbuilder,Creating Xml - StreamingMarkupBuilder>>.
 
-include::../../../subprojects/groovy-xml/src/spec/doc/fragment_sax-builder.adoc[leveloffset=+3]
+include::../../../subprojects/groovy-xml/src/spec/doc/_sax-builder.adoc[leveloffset=+3]
 
-include::../../../subprojects/groovy-xml/src/spec/doc/fragment_stax-builder.adoc[leveloffset=+3]
+include::../../../subprojects/groovy-xml/src/spec/doc/_stax-builder.adoc[leveloffset=+3]
 
-include::../../../subprojects/groovy-xml/src/spec/doc/fragment_dom-builder.adoc[leveloffset=+3]
+include::../../../subprojects/groovy-xml/src/spec/doc/_dom-builder.adoc[leveloffset=+3]
 
 ==== NodeBuilder
 
@@ -1087,13 +1087,13 @@ Now you can process the data further, e.g. by using <<{core-semantics}#gpath_exp
 include::../test/builder/NodeBuilderTest.groovy[tags=node_builder_gpath_assert,indent=0]
 ----
 
-include::../../../subprojects/groovy-json/src/spec/doc/fragment_json-builder.adoc[leveloffset=+3]
+include::../../../subprojects/groovy-json/src/spec/doc/_json-builder.adoc[leveloffset=+3]
 
-include::../../../subprojects/groovy-json/src/spec/doc/fragment_streaming-jason-builder.adoc[leveloffset=+3]
+include::../../../subprojects/groovy-json/src/spec/doc/_streaming-jason-builder.adoc[leveloffset=+3]
 
-include::../../../subprojects/groovy-swing/src/spec/doc/fragment_swing-builder.adoc[leveloffset=+3]
+include::../../../subprojects/groovy-swing/src/spec/doc/_swing-builder.adoc[leveloffset=+3]
 
-include::../../../subprojects/groovy-ant/src/spec/doc/fragment_ant-builder.adoc[leveloffset=+3]
+include::../../../subprojects/groovy-ant/src/spec/doc/_ant-builder.adoc[leveloffset=+3]
 
 ==== CliBuilder
 

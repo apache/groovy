@@ -1141,5 +1141,5 @@ single one corresponding to `@CompileStatic(TypeCheckingMode.SKIP)`.
 (TBD)
 
 
-include::fragment_traits.adoc[leveloffset=+1]
+include::_traits.adoc[leveloffset=+1]
 

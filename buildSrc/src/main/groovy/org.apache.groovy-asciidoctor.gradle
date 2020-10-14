@@ -50,7 +50,6 @@ asciidoctor {
     sourceDir = project.file('src/spec/doc')
     sources {
         include '*.adoc'
-        exclude 'fragment_*.adoc'
     }
     outputDir = "$buildDir/asciidoc/html5"
     resources {

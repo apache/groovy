@@ -22,13 +22,13 @@
 = Groovy Development Kit
 
 
-include::fragment_working-with-io.adoc[leveloffset=+1]
+include::_working-with-io.adoc[leveloffset=+1]
 
-include::fragment_working-with-collections.adoc[leveloffset=+1]
+include::_working-with-collections.adoc[leveloffset=+1]
 
-include::../../../subprojects/groovy-dateutil/src/spec/doc/fragment_working-with-dateutil-types.adoc[leveloffset=+1]
+include::../../../subprojects/groovy-dateutil/src/spec/doc/_working-with-dateutil-types.adoc[leveloffset=+1]
 
-include::../../../subprojects/groovy-datetime/src/spec/doc/fragment_working-with-datetime-types.adoc[leveloffset=+1]
+include::../../../subprojects/groovy-datetime/src/spec/doc/_working-with-datetime-types.adoc[leveloffset=+1]
 
 == Handy utilities
 

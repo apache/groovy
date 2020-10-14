@@ -492,7 +492,7 @@ exception:
 include::../test/testingguide/JUnit4ExampleTests.groovy[tags=should_fail_return,indent=0]
 ----
 
-include::../../../subprojects/groovy-test-junit5/src/spec/doc/fragment_testing-with-junit5.adoc[leveloffset=+1]
+include::../../../subprojects/groovy-test-junit5/src/spec/doc/_testing-with-junit5.adoc[leveloffset=+1]
 
 == Testing with Spock
 

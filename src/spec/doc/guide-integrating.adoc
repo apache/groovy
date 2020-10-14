@@ -323,8 +323,8 @@ stub generation is done, for the joint compiler.
 
 However, overriding `CompilationUnit` is not recommended and should only be done if no other standard solution works.
 
-include::../../../subprojects/groovy-bsf/src/spec/doc/fragment_integrating-bsf.adoc[leveloffset=+1]
+include::../../../subprojects/groovy-bsf/src/spec/doc/_integrating-bsf.adoc[leveloffset=+1]
 
-include::../../../subprojects/groovy-jsr223/src/spec/doc/fragment_integrating-jsr223.adoc[leveloffset=+1]
+include::../../../subprojects/groovy-jsr223/src/spec/doc/_integrating-jsr223.adoc[leveloffset=+1]
 
 

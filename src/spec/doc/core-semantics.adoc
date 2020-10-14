@@ -2197,5 +2197,5 @@ There is only one way to determine which version you should choose: measuring. T
 *and* the JVM that you use, the performance can be significantly different. In particular, the _invokedynamic_ version of
 Groovy is very sensitive to the JVM version in use.
 
-include::fragment_type-checking-extensions.adoc[leveloffset=+1]
+include::_type-checking-extensions.adoc[leveloffset=+1]
 
