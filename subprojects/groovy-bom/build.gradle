@@ -22,10 +22,14 @@ plugins {
 
 dependencies {
     constraints {
-        api(platform(project(":groovy-all")))
         rootProject.allprojects { p ->
             p.pluginManager.withPlugin('org.apache.groovy-base') {
+                // add a dependency on all components of Groovy
                 api(p)
+                // and each component references back the BOM
+                p.dependencies {
+                    api(platform(project((":groovy-bom"))))
+                }
             }
         }
     }
