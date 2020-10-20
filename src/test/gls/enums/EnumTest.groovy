@@ -275,7 +275,7 @@ class EnumTest extends CompilableTestSupport {
 
     void testStaticFieldInitValuesInAStaticBlock() {
         // GROOVY-3693 - trigger enum class load to test it - asserts are present in the enum 
-        GrooyColors3693.r
+        GroovyColors3693.r
     }
     
     void testCustomMethodOnEnum() {
@@ -702,7 +702,7 @@ enum Foo3284 {
     final Closure call
 }
 
-enum GrooyColors3693 {
+enum GroovyColors3693 {
     r, g, b
     static List list = [1, 2]
     static init() {

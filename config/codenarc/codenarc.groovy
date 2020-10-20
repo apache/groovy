@@ -63,7 +63,7 @@ ruleset {
                 'groovy.bugs.Two,org.codehaus.groovy.runtime.FileAppendTest,org.codehaus.groovy.runtime.WriterAppendTest,' +
                 'org.codehaus.groovy.runtime.FileAppendTest,org.codehaus.groovy.runtime.WriterAppendTest,groovy.sql.PersonDTO,' +
                 'groovy.bugs.Groovy3135Bug,Sphere,groovy.sql.PersonDTO,groovy.bugs.Groovy3135Bug,' +
-                'gls.enums.GrooyColors3693,groovy.sql.PersonDTO,groovy.bugs.HasStaticFieldSomeClass,groovy.PrintTest,' +
+                'gls.enums.GroovyColors3693,groovy.sql.PersonDTO,groovy.bugs.HasStaticFieldSomeClass,groovy.PrintTest,' +
                 'groovy.bugs.StaticClosurePropertyBug,groovy.bugs.Groovy3311Bug,groovy.StaticImportParent,' +
                 'org.codehaus.groovy.transform.TestTransform,org.codehaus.groovy.classgen.asm.InstructionSequenceHelperClassTest,' +
                 'groovy.bugs.Groovy3511Bug,groovy.bugs.Groovy3135Bug,groovy.bugs.Groovy2556Bug,' +
