@@ -19,6 +19,7 @@
 plugins {
     id 'groovy'
     id 'org.apache.groovy-common'
+    id 'org.apache.groovy-internal'
 }
 
 dependencies {
