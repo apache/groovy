@@ -42,8 +42,8 @@ matrix:
     - env: BC='indy'
       jdk: oraclejdk8
 
-    - env: BC='sonar'
-      jdk: openjdk11
+#    - env: BC='sonar'
+#      jdk: openjdk11
 
 before_script:
   - unset _JAVA_OPTIONS
