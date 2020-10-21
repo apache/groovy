@@ -268,18 +268,3 @@ sonarqube {
 //        property "sonar.coverage.jacoco.xmlReportPaths", "${rootProject.buildDir}/reports/jacoco/jacocoAllReport/jacocoAllReport.xml"
     }
 }
-
-
-// UNCOMMENT THE FOLLOWING TASKS IF YOU WANT TO RUN LICENSE CHECKING
-//task licenseFormatCustom(type:nl.javadude.gradle.plugins.license.License) {
-//    source = fileTree(dir:"src").include ("**/*.java",'**/*.groovy','**/*.html','**/*.css','**/*.xml','**/*.properties','**/*.properties')
-//}
-//
-//task licenseFormatGradle(type:nl.javadude.gradle.plugins.license.License) {
-//    source = files(fileTree(dir:projectDir).include('**/*.gradle'),fileTree('buildSrc').include('**/*.groovy'))
-//}
-//
-//licenseFormat.dependsOn licenseFormatCustom
-//licenseFormat.dependsOn licenseFormatGradle
-//
-
