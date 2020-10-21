@@ -1334,7 +1334,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return metaClass.invokeMethod(closure.getClass(), closure, DO_CALL_METHOD, originalArguments, false, fromInsideClass);
         }
 
-        if (value != null && !(value instanceof Map)) {
+        if (value != null && !(value instanceof Map) && !methodName.equals(CALL_METHOD)) {
             try {
                 MetaClass metaClass = ((MetaClassRegistryImpl) registry).getMetaClass(value);
                 return metaClass.invokeMethod(value, CALL_METHOD, originalArguments); // delegate to call method of property value
