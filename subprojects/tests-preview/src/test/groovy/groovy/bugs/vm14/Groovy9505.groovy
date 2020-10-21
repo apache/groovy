@@ -22,12 +22,12 @@ import groovy.test.GroovyTestCase
 
 class Groovy9505 extends GroovyTestCase {
     void testUsingRecord() {
-        assertScript '''
+        assertScript """
         import org.apache.groovy.util.JavaShell
-        def opts = ['--enable-preview', '--release', '14']
+        def opts = ['--enable-preview', '--release', '${System.getProperty('java.specification.version')}']
         def src = 'record Coord(int x, int y) {}'
         Class coordClass = new JavaShell().compile('Coord', opts, src)
         assert coordClass.newInstance(5, 10).toString() == 'Coord[x=5, y=10]'
-        '''
+        """
     }
 }
