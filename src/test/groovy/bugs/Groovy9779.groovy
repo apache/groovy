@@ -22,22 +22,97 @@ import groovy.transform.CompileStatic
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 @CompileStatic
 final class Groovy9779 {
     @Test
-    void testCallOperatorOnDynamicProperties() {
+    void testCallOperatorOnDynamicProperties1() {
         assertScript '''
-            class C {
+            class A {
                 def call() { return 42 }
             }
-            class D {
-                static final x = new C()
-                       final y = new C()
+            class C {
+                static final x = new A()
+                       final y = new A()
             }
-            assert D.x() == 42
-            assert new D().x() == 42
-            assert new D().y() == 42
+            assert C.x() == 42
+            assert new C().x() == 42
+            assert new C().y() == 42
+        '''
+    }
+
+    @Test
+    void testCallOperatorOnDynamicProperties2() {
+        assertScript '''
+            class A {
+                def call = { -> return 42 }
+            }
+            class C {
+                static final x = new A()
+                       final y = new A()
+            }
+            assert C.x() == 42
+            assert new C().x() == 42
+            assert new C().y() == 42
+        '''
+    }
+
+    @Test // don't chain call properties together
+    void testCallOperatorOnDynamicProperties3() {
+        def err = shouldFail '''
+            class A {
+                def call = { -> return 42 }
+            }
+            class B {
+                def call = new A()
+            }
+            class C {
+                static final x = new B()
+                       final y = new B()
+            }
+            C.x()
+        '''
+        assert err.message.contains('No signature of method: B.call() is applicable')
+    }
+
+    @Test // don't chain call properties together
+    void testCallOperatorOnDynamicProperties4() {
+        def err = shouldFail '''
+            class A {
+                def call(x) { assert x == 1; return 42 }
+            }
+            class B {
+                def call = new A()
+            }
+            class C {
+                def plus = new B()
+            }
+            assert new C() + 1 == 42
+        '''
+        assert err.message.contains('No signature of method: C.plus() is applicable')
+    }
+
+    @Test
+    void testOperatorOverloadViaCallable() {
+        assertScript '''
+            class A {
+                def call(x) { return x + 1 }
+            }
+            class C {
+                def plus = new A()
+            }
+            assert new C() + 1 == 2
+        '''
+    }
+
+    @Test
+    void testOperatorOverloadViaClosure() {
+        assertScript '''
+            class C {
+                def plus = { x -> x + 1 }
+            }
+            assert new C() + 1 == 2
         '''
     }
 }
