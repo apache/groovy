@@ -549,16 +549,50 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
 
     void testIfWithCommonInterface() {
         assertScript '''
-            interface Foo { void foo() }
-            class A implements Foo { void foo() { println 'A' } }
-            class B implements Foo { void foo() { println 'B' } }
+            interface I {
+                def foo()
+            }
+            class A implements I {
+                def foo() { 'A' }
+            }
+            class B implements I {
+                def foo() { 'B' }
+            }
+
             def x = new A()
-            def y = 'foo'
+            def y = true
             if (y) {
                 x = new B()
             }
-            x.foo()
+            assert x.foo() == 'B'
         '''
+    }
+
+    // GROOVY-9786
+    void testIfElseIfWithCommonInterface() {
+        ['I', 'def', 'var', 'Object'].each {
+            assertScript """
+                interface I {
+                    def foo()
+                }
+                class A implements I {
+                    def foo() { 'A' }
+                }
+                class B implements I {
+                    def foo() { 'B' }
+                }
+
+                $it x
+                def y = false
+                def z = true
+                if (y) {
+                    x = new A()
+                } else if (z) {
+                    x = new B()
+                }
+                assert x.foo() == 'B'
+            """
+        }
     }
 
     void testForLoopWithNewAssignment() {
