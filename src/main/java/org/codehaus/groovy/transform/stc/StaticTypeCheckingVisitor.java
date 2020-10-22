@@ -896,28 +896,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     resultType = originType;
                 }
 
-                // if we are in an if/else branch, keep track of assignment
-                if (typeCheckingContext.ifElseForWhileAssignmentTracker != null && leftExpression instanceof VariableExpression
-                        && !isNullConstant(rightExpression)) {
+                // track conditional assignment
+                if (!isNullConstant(rightExpression)
+                        && leftExpression instanceof VariableExpression
+                        && typeCheckingContext.ifElseForWhileAssignmentTracker != null) {
                     Variable accessedVariable = ((VariableExpression) leftExpression).getAccessedVariable();
                     if (accessedVariable instanceof Parameter) {
                         accessedVariable = new ParameterVariableExpression((Parameter) accessedVariable);
                     }
                     if (accessedVariable instanceof VariableExpression) {
-                        VariableExpression var = (VariableExpression) accessedVariable;
-                        List<ClassNode> types = typeCheckingContext.ifElseForWhileAssignmentTracker.get(var);
-                        if (types == null) {
-                            types = new LinkedList<ClassNode>();
-                            ClassNode type = var.getNodeMetaData(INFERRED_TYPE);
-                            types.add(type);
-                            typeCheckingContext.ifElseForWhileAssignmentTracker.put(var, types);
-                        }
-                        types.add(resultType);
+                        recordAssignment((VariableExpression) accessedVariable, resultType);
                     }
                 }
+
                 storeType(leftExpression, resultType);
 
-                // if right expression is a ClosureExpression, store parameter type information
+                // propagate closure parameter type information
                 if (leftExpression instanceof VariableExpression) {
                     if (rightExpression instanceof ClosureExpression) {
                         Parameter[] parameters = ((ClosureExpression) rightExpression).getParameters();
@@ -3684,7 +3678,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitIfElse(final IfStatement ifElse) {
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
-
         try {
             // create a new temporary element in the if-then-else type info
             typeCheckingContext.pushTemporaryTypeInfo();
@@ -3706,18 +3699,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else {
                 elseBlock.visit(this);
             }
+
+            // GROOVY-9786: if chaining: "if (...) x=?; else if (...) x=?;"
+            Map<VariableExpression, ClassNode> updates = elseBlock.getNodeMetaData("assignments");
+            if (updates != null) {
+                for (Map.Entry<VariableExpression, ClassNode> entry : updates.entrySet()) {
+                    recordAssignment(entry.getKey(), entry.getValue());
+                }
+            }
         } finally {
-            popAssignmentTracking(oldTracker);
+            ifElse.putNodeMetaData("assignments", popAssignmentTracking(oldTracker));
         }
-        BinaryExpression instanceOfExpression = findInstanceOfNotReturnExpression(ifElse);
-        if (instanceOfExpression == null) {
-        } else {
-            if (typeCheckingContext.enclosingBlocks.size() > 0) {
+
+        if (!typeCheckingContext.enclosingBlocks.isEmpty()) {
+            BinaryExpression instanceOfExpression = findInstanceOfNotReturnExpression(ifElse);
+            if (instanceOfExpression == null) {
+                instanceOfExpression = findInstanceOfNotReturnExpression(ifElse);
+            }
+            if (instanceOfExpression != null) {
                 visitInstanceofNot(instanceOfExpression);
             }
         }
     }
-
 
     public void visitInstanceofNot(BinaryExpression be) {
         final BlockStatement currentBlock = typeCheckingContext.enclosingBlocks.getFirst();
@@ -3732,7 +3735,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         pushInstanceOfTypeInfo(be.getLeftExpression(), be.getRightExpression());
     }
-
 
     @Override
     public void visitBlockStatement(BlockStatement block) {
@@ -3814,6 +3816,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     public void visitCaseStatement(final CaseStatement statement) {
         super.visitCaseStatement(statement);
         restoreTypeBeforeConditional();
+    }
+
+    private void recordAssignment(final VariableExpression lhsExpr, final ClassNode rhsType) {
+        List<ClassNode> types = typeCheckingContext.ifElseForWhileAssignmentTracker.get(lhsExpr);
+        if (types == null) {
+            types = new LinkedList<>();
+            ClassNode lhsType = lhsExpr.getNodeMetaData(INFERRED_TYPE);
+            types.add(lhsType);
+            typeCheckingContext.ifElseForWhileAssignmentTracker.put(lhsExpr, types);
+        }
+        types.add(rhsType);
     }
 
     private void restoreTypeBeforeConditional() {
