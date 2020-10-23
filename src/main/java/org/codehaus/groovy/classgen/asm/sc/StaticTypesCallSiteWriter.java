@@ -55,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
@@ -549,8 +550,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
     }
 
     boolean makeGetField(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean safe, final boolean implicitThis) {
-        FieldNode field = receiverType.getField(fieldName);
-
+        FieldNode field = getField(receiverType, fieldName); // GROOVY-7039: include interface constants
         if (field != null && isDirectAccessAllowed(field, controller.getClassNode())) {
             CompileStack compileStack = controller.getCompileStack();
             MethodVisitor mv = controller.getMethodVisitor();
@@ -592,18 +592,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             }
             operandStack.replace(replacementType);
             return true;
-        }
-
-        for (ClassNode face : receiverType.getInterfaces()) {
-            // GROOVY-7039
-            if (face != receiverType && makeGetField(receiver, face, fieldName, safe, implicitThis)) {
-                return true;
-            }
-        }
-
-        ClassNode superClass = receiverType.getSuperClass();
-        if (superClass != null && !OBJECT_TYPE.equals(superClass)) {
-            return makeGetField(receiver, superClass, fieldName, safe, implicitThis);
         }
         return false;
     }
