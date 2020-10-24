@@ -277,9 +277,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             return;
         }
 
-        String receiverName = (receiver instanceof ClassExpression ? receiver.getType() : receiverType).toString(false);
-        controller.getSourceUnit().addError(
-                new SyntaxException("Access to " + receiverName + "#" + propertyName + " is forbidden", receiver));
+        addPropertyAccessError(receiver, propertyName, receiverType);
         controller.getMethodVisitor().visitInsn(ACONST_NULL);
         controller.getOperandStack().push(OBJECT_TYPE);
     }
@@ -453,28 +451,29 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             receiverType = controller.getTypeChooser().resolveType(receiver, receiverType);
         }
 
-        String property = propertyName;
         if (implicitThis && controller.getInvocationWriter() instanceof StaticInvocationWriter) {
             Expression currentCall = ((StaticInvocationWriter) controller.getInvocationWriter()).getCurrentCall();
-            if (currentCall != null && currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) != null) {
-                property = currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
-                String[] props = property.split("\\.");
-                BytecodeExpression thisLoader = bytecodeX(CLOSURE_TYPE, mv -> mv.visitVarInsn(ALOAD, 0));
-                PropertyExpression pexp = propX(thisLoader, constX(props[0]), safe);
-                for (int i = 1, n = props.length; i < n; i += 1) {
-                    pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, CLOSURE_TYPE);
-                    pexp = propX(pexp, props[i]);
+            if (currentCall != null) {
+                String implicitReceiver = currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
+                if (implicitReceiver != null) {
+                    String[] pathElements = implicitReceiver.split("\\.");
+                    BytecodeExpression thisLoader = bytecodeX(CLOSURE_TYPE, mv -> mv.visitVarInsn(ALOAD, 0));
+                    PropertyExpression pexp = propX(thisLoader, constX(pathElements[0]), safe);
+                    for (int i = 1, n = pathElements.length; i < n; i += 1) {
+                        pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, CLOSURE_TYPE);
+                        pexp = propX(pexp, pathElements[i]);
+                    }
+                    pexp.visit(controller.getAcg());
+                    return;
                 }
-                pexp.visit(controller.getAcg());
-                return;
             }
         }
 
-        if (makeGetPropertyWithGetter(receiver, receiverType, property, safe, implicitThis)) return;
-        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, property, safe, implicitThis)) return;
-        if (makeGetField(receiver, receiverType, property, safe, implicitThis)) return;
+        if (makeGetPropertyWithGetter(receiver, receiverType, propertyName, safe, implicitThis)) return;
+        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, propertyName, safe, implicitThis)) return;
+        if (makeGetField(receiver, receiverType, propertyName, safe, implicitThis)) return;
 
-        MethodCallExpression call = callX(receiver, "getProperty", args(constX(property)));
+        MethodCallExpression call = callX(receiver, "getProperty", args(constX(propertyName)));
         call.setImplicitThis(implicitThis);
         call.setMethodTarget(GROOVYOBJECT_GETPROPERTY_METHOD);
         call.setSafe(safe);
@@ -927,4 +926,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         }
         return false;
     }*/
+
+    private void addPropertyAccessError(final Expression receiver, final String propertyName, final ClassNode receiverType) {
+        String receiverName = (receiver instanceof ClassExpression ? receiver.getType() : receiverType).toString(false);
+        String message = "Access to " + receiverName + "#" + propertyName + " is forbidden";
+        controller.getSourceUnit().addError(new SyntaxException(message, receiver));
+    }
 }
