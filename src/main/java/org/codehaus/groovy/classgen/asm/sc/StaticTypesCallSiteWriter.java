@@ -81,6 +81,9 @@ import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.make;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.classgen.AsmClassGenerator.samePackages;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
@@ -451,13 +454,13 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             receiverType = classNode;
         }
         
-        String property = methodName;
+        String propertyName = methodName;
         if (implicitThis) {
             if (controller.getInvocationWriter() instanceof StaticInvocationWriter) {
                 MethodCallExpression currentCall = ((StaticInvocationWriter) controller.getInvocationWriter()).getCurrentCall();
                 if (currentCall != null && currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) != null) {
-                    property = currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
-                    String[] props = property.split("\\.");
+                    propertyName = currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
+                    String[] props = propertyName.split("\\.");
                     BytecodeExpression thisLoader = new BytecodeExpression() {
                         @Override
                         public void visit(final MethodVisitor mv) {
@@ -477,15 +480,16 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             }
         }
 
-        if (makeGetPropertyWithGetter(receiver, receiverType, property, safe, implicitThis)) return;
-        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, property, safe, implicitThis)) return;
-        if (makeGetField(receiver, receiverType, property, safe, implicitThis)) return;
+        if (makeGetPropertyWithGetter(receiver, receiverType, propertyName, safe, implicitThis)) return;
+        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, propertyName, safe, implicitThis)) return;
+        if (makeGetField(receiver, receiverType, propertyName, safe, implicitThis)) return;
 
-        MethodCallExpression call = new MethodCallExpression(
-                receiver,
-                "getProperty",
-                new ArgumentListExpression(new ConstantExpression(property))
-        );
+        boolean isScriptVariable = (receiverType.isScript() && receiver instanceof VariableExpression && ((VariableExpression) receiver).getAccessedVariable() == null);
+        if (!isScriptVariable && controller.getClassNode().getOuterClass() == null) { // inner class still needs dynamic property sequence
+            addPropertyAccessError(receiver, propertyName, receiverType);
+        }
+
+        MethodCallExpression call = callX(receiver, "getProperty", args(constX(propertyName)));
         call.setImplicitThis(implicitThis);
         call.setSafe(safe);
         call.setMethodTarget(GROOVYOBJECT_GETPROPERTY_METHOD);
@@ -939,5 +943,14 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             return true;
         }
         return false;
+<<<<<<< HEAD
+=======
+    }*/
+
+    private void addPropertyAccessError(final Expression receiver, final String propertyName, final ClassNode receiverType) {
+        String receiverName = (receiver instanceof ClassExpression ? receiver.getType() : receiverType).toString(false);
+        String message = "Access to " + receiverName + "#" + propertyName + " is forbidden";
+        controller.getSourceUnit().addError(new SyntaxException(message, receiver));
+>>>>>>> c27b2c3e51... GROOVY-9093: SC: add compile-time error for inaccessible field or getter (port to 3_0_X)
     }
 }
