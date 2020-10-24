@@ -453,7 +453,12 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, property, safe, implicitThis)) return;
         if (makeGetField(receiver, receiverType, property, safe, implicitThis)) return;
 
-        MethodCallExpression call = callX(receiver, "getProperty", args(constX(property)));
+        boolean isScriptVariable = (receiverType.isScript() && receiver instanceof VariableExpression && ((VariableExpression) receiver).getAccessedVariable() == null);
+        if (!isScriptVariable && controller.getClassNode().getOuterClass() == null) { // inner class still needs dynamic property sequence
+            addPropertyAccessError(receiver, propertyName, receiverType);
+        }
+
+        MethodCallExpression call = callX(receiver, "getProperty", args(constX(propertyName)));
         call.setImplicitThis(implicitThis);
         call.setMethodTarget(GROOVYOBJECT_GETPROPERTY_METHOD);
         call.setSafe(safe);
@@ -876,4 +881,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         }
         return false;
     }*/
+
+    private void addPropertyAccessError(final Expression receiver, final String propertyName, final ClassNode receiverType) {
+        String receiverName = (receiver instanceof ClassExpression ? receiver.getType() : receiverType).toString(false);
+        String message = "Access to " + receiverName + "#" + propertyName + " is forbidden";
+        controller.getSourceUnit().addError(new SyntaxException(message, receiver));
+    }
 }
