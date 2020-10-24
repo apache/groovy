@@ -126,10 +126,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     }
 
     @Override
-    public void makeGetPropertySite(Expression receiver, final String methodName, final boolean safe, final boolean implicitThis) {
+    public void makeGetPropertySite(Expression receiver, final String propertyName, final boolean safe, final boolean implicitThis) {
         Object dynamic = receiver.getNodeMetaData(StaticCompilationMetadataKeys.RECEIVER_OF_DYNAMIC_PROPERTY);
         if (dynamic !=null) {
-            makeDynamicGetProperty(receiver, methodName, safe);
+            makeDynamicGetProperty(receiver, propertyName, safe);
             return;
         }
         TypeChooser typeChooser = controller.getTypeChooser();
@@ -163,7 +163,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
 
         MethodVisitor mv = controller.getMethodVisitor();
 
-        if (receiverType.isArray() && methodName.equals("length")) {
+        if (receiverType.isArray() && propertyName.equals("length")) {
             receiver.visit(controller.getAcg());
             ClassNode arrayGetReturnType = typeChooser.resolveType(receiver, classNode);
             controller.getOperandStack().doGroovyCast(arrayGetReturnType);
@@ -172,7 +172,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             return;
         } else if (
                 (receiverType.implementsInterface(COLLECTION_TYPE)
-                        || COLLECTION_TYPE.equals(receiverType)) && ("size".equals(methodName) || "length".equals(methodName))) {
+                        || COLLECTION_TYPE.equals(receiverType)) && ("size".equals(propertyName) || "length".equals(propertyName))) {
             MethodCallExpression expr = new MethodCallExpression(
                     receiver,
                     "size",
@@ -190,26 +190,26 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
 
         if (!isStaticProperty && (receiverType.implementsInterface(MAP_TYPE) || MAP_TYPE.equals(receiverType))) {
             // for maps, replace map.foo with map.get('foo')
-            writeMapDotProperty(receiver, methodName, mv, safe);
+            writeMapDotProperty(receiver, propertyName, mv, safe);
             return;
         }
-        if (makeGetPropertyWithGetter(receiver, receiverType, methodName, safe, implicitThis)) return;
-        if (makeGetField(receiver, receiverType, methodName, safe, implicitThis)) return;
+        if (makeGetPropertyWithGetter(receiver, receiverType, propertyName, safe, implicitThis)) return;
+        if (makeGetField(receiver, receiverType, propertyName, safe, implicitThis)) return;
         if (receiver instanceof ClassExpression) {
-            if (makeGetField(receiver, receiver.getType(), methodName, safe, implicitThis)) return;
-            if (makeGetPropertyWithGetter(receiver, receiver.getType(), methodName, safe, implicitThis)) return;
-            if (makeGetPrivateFieldWithBridgeMethod(receiver, receiver.getType(), methodName, safe, implicitThis)) return;
+            if (makeGetField(receiver, receiver.getType(), propertyName, safe, implicitThis)) return;
+            if (makeGetPropertyWithGetter(receiver, receiver.getType(), propertyName, safe, implicitThis)) return;
+            if (makeGetPrivateFieldWithBridgeMethod(receiver, receiver.getType(), propertyName, safe, implicitThis)) return;
         }
         if (isClassReceiver) {
             // we are probably looking for a property of the class
-            if (makeGetPropertyWithGetter(receiver, CLASS_Type, methodName, safe, implicitThis)) return;
-            if (makeGetField(receiver, CLASS_Type, methodName, safe, false)) return;
+            if (makeGetPropertyWithGetter(receiver, CLASS_Type, propertyName, safe, implicitThis)) return;
+            if (makeGetField(receiver, CLASS_Type, propertyName, safe, false)) return;
         }
-        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, methodName, safe, implicitThis)) return;
+        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, propertyName, safe, implicitThis)) return;
 
         // GROOVY-5580, it is still possible that we're calling a superinterface property
-        String getterName = "get" + MetaClassHelper.capitalize(methodName);
-        String altGetterName = "is" + MetaClassHelper.capitalize(methodName);
+        String getterName = "get" + MetaClassHelper.capitalize(propertyName);
+        String altGetterName = "is" + MetaClassHelper.capitalize(propertyName);
         if (receiverType.isInterface()) {
             Set<ClassNode> allInterfaces = receiverType.getAllInterfaces();
             MethodNode getterMethod = null;
@@ -263,15 +263,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         }
 
         if (!isStaticProperty && (receiverType.implementsInterface(LIST_TYPE) || LIST_TYPE.equals(receiverType))) {
-            writeListDotProperty(receiver, methodName, mv, safe);
+            writeListDotProperty(receiver, propertyName, mv, safe);
             return;
         }
 
-        controller.getSourceUnit().addError(
-                new SyntaxException("Access to "+
-                                                (receiver instanceof ClassExpression ?receiver.getType():receiverType).toString(false)
-                                                +"#"+methodName+" is forbidden", receiver.getLineNumber(), receiver.getColumnNumber(), receiver.getLastLineNumber(), receiver.getLastColumnNumber())
-        );
+        addPropertyAccessError(receiver, propertyName, receiverType);
         controller.getMethodVisitor().visitInsn(ACONST_NULL);
         controller.getOperandStack().push(OBJECT_TYPE);
     }
@@ -943,14 +939,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             return true;
         }
         return false;
-<<<<<<< HEAD
-=======
-    }*/
+    }
 
     private void addPropertyAccessError(final Expression receiver, final String propertyName, final ClassNode receiverType) {
         String receiverName = (receiver instanceof ClassExpression ? receiver.getType() : receiverType).toString(false);
         String message = "Access to " + receiverName + "#" + propertyName + " is forbidden";
         controller.getSourceUnit().addError(new SyntaxException(message, receiver));
->>>>>>> c27b2c3e51... GROOVY-9093: SC: add compile-time error for inaccessible field or getter (port to 3_0_X)
     }
 }

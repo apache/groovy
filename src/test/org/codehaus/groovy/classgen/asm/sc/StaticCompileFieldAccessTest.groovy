@@ -23,7 +23,8 @@ import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 /**
  * Unit tests for static compilation: access field nodes.
  */
-class StaticCompileFieldAccessTest extends AbstractBytecodeTestCase {
+final class StaticCompileFieldAccessTest extends AbstractBytecodeTestCase {
+
     void testAccessProperty() {
         compile(method:'m', '''
             class A {
@@ -126,26 +127,6 @@ class StaticCompileFieldAccessTest extends AbstractBytecodeTestCase {
         clazz.newInstance().run()
     }
 
-    void testReturnProtectedFieldInDifferentPackage() {
-        compile(method:'m', '''
-            import org.codehaus.groovy.classgen.asm.sc.StaticCompileFieldAccessTest.StaticCompileFieldAccessSupport1 as A
-
-            A a = new A()
-            @groovy.transform.CompileStatic
-            int m(A a) {
-                return a.x
-            }
-            assert m(a) == 10
-        ''')
-        assert sequence.hasStrictSequence([
-                'ALOAD',
-                'LDC "x"',
-                'INVOKEINTERFACE groovy/lang/GroovyObject.getProperty (Ljava/lang/String;)Ljava/lang/Object;'
-        ])
-
-        clazz.newInstance().run()
-    }
-
     void testReturnPublicFieldFromNonGroovyObject() {
         compile(method:'m', '''
             java.awt.Point a = [100,200]
@@ -215,32 +196,4 @@ class StaticCompileFieldAccessTest extends AbstractBytecodeTestCase {
             ''')
         }
     }
-
-    /*
-     * this test should fail, but passes because it generates ScriptBytecodeAdapter.getGroovyObjectField
-     * instead of direct field access
-    void testShouldFailToReturnPrivateField() {
-        shouldFail {
-            compile(method: 'm', '''
-            package test
-
-            class A {
-                int x = 10
-            }
-
-            A a = new A()
-            @groovy.transform.CompileStatic
-            int m(A a) {
-                return a.@x // x is a private member, direct access should not be allowed
-            }
-            assert m(a) == 10
-        ''')
-            println sequence
-        }
-    }*/
-
-    public static class StaticCompileFieldAccessSupport1 {
-        protected int x = 10
-    }
-
 }
