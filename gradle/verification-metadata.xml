@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <!--
 
      Licensed to the Apache Software Foundation (ASF) under one
@@ -38,7 +37,6 @@
    Do not remove this header.
 
 -->
-
 <verification-metadata xmlns="https://schema.gradle.org/dependency-verification" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://schema.gradle.org/dependency-verification https://schema.gradle.org/dependency-verification/dependency-verification-1.0.xsd">
    <configuration>
       <verify-metadata>false</verify-metadata>
@@ -73,6 +71,7 @@
             <trusting group="commons-io"/>
             <trusting group="commons-codec"/>
             <trusting group="^org[.]apache($|([.].*))" regex="true"/>
+            <trusting group="org.apache.commons"/>
          </trusted-key>
          <trusted-key id="31fae244a81d64507b47182e1b2718089ce964b8" group="com.thoughtworks.qdox" name="qdox" version="1.12.1"/>
          <trusted-key id="32d98ffd50617f6ed7e6abd236feecf06c2da10b" group="biz.aQute.bnd" name="biz.aQute.bndlib" version="4.0.0"/>
@@ -102,6 +101,7 @@
          <trusted-key id="666a4692ce11b7b3f4eb7b3410066a9707090cf9" group="org.javassist" name="javassist"/>
          <trusted-key id="67497e9d680ce8e95bd6b8f85ad66315fc018797" group="com.beust" name="jcommander" version="1.72"/>
          <trusted-key id="694621a7227d8d5289699830abe9f3126bb741c1" group="com.google.guava"/>
+         <trusted-key id="6bfab2e3c6490b421b25c76c9c8c892f91f8e6d1" group="org.apache.rat"/>
          <trusted-key id="70cd19bfd9f6c330027d6f260315bfb7970a144f">
             <trusting group="^com[.]sun[.]xml[.]bind($|([.].*))" regex="true"/>
             <trusting group="com.sun.xml.bind"/>
@@ -155,6 +155,7 @@
          </trusted-key>
          <trusted-key id="cdcaa216b086a7b603b638c5145d819475314d97" group="org.json" name="json" version="20200518"/>
          <trusted-key id="ce8075a251547bee249bc151a2115ae15f6b8b72">
+            <trusting group="org.apache.commons" name="commons-compress" version="1.11"/>
             <trusting group="org.apache.commons" name="commons-compress" version="1.19"/>
             <trusting group="org.apache.ant"/>
             <trusting group="xmlunit"/>
@@ -288,6 +289,11 @@
             <pgp value="8756c4f765c9ac3cb6b85d62379ce192d401ab61"/>
          </artifact>
       </component>
+      <component group="com.github.javaparser" name="javaparser-core" version="3.16.2">
+         <artifact name="javaparser-core-3.16.2.jar">
+            <pgp value="8756c4f765c9ac3cb6b85d62379ce192d401ab61"/>
+         </artifact>
+      </component>
       <component group="com.github.siom79.japicmp" name="japicmp" version="0.13.1">
          <artifact name="japicmp-0.13.1.jar">
             <pgp value="fffd810fffde203d5fa27263beabcfbee059e4e5"/>
@@ -393,6 +399,11 @@
             <pgp value="0cc641c3a62453ab390066c4a41f13c999945293"/>
          </artifact>
       </component>
+      <component group="commons-io" name="commons-io" version="2.2">
+         <artifact name="commons-io-2.2.jar">
+            <pgp value="2db4f1ef0fa761ecc4ea935c86fdc7e2a11262cb"/>
+         </artifact>
+      </component>
       <component group="commons-io" name="commons-io" version="2.7">
          <artifact name="commons-io-2.7.jar">
             <pgp value="2db4f1ef0fa761ecc4ea935c86fdc7e2a11262cb"/>
@@ -401,6 +412,11 @@
       <component group="commons-lang" name="commons-lang" version="2.4">
          <artifact name="commons-lang-2.4.jar">
             <pgp value="636de9055c4c75c7bd9830771241bc872c5e4ec0"/>
+         </artifact>
+      </component>
+      <component group="commons-lang" name="commons-lang" version="2.6">
+         <artifact name="commons-lang-2.6.jar">
+            <pgp value="d196a5e3e70732eeb2e5007f1861c322c56014b2"/>
          </artifact>
       </component>
       <component group="commons-logging" name="commons-logging" version="1.2">
@@ -566,6 +582,16 @@
       <component group="org.antlr" name="antlr-runtime" version="3.5.2">
          <artifact name="antlr-runtime-3.5.2.jar">
             <pgp value="842afb86375d805422835bfd82b5574242c20d6f"/>
+         </artifact>
+      </component>
+      <component group="org.apache.bcel" name="bcel" version="6.5.0">
+         <artifact name="bcel-6.5.0.jar">
+            <pgp value="2db4f1ef0fa761ecc4ea935c86fdc7e2a11262cb"/>
+         </artifact>
+      </component>
+      <component group="org.apache.commons" name="commons-compress" version="1.11">
+         <artifact name="commons-compress-1.11.jar">
+            <pgp value="ce8075a251547bee249bc151a2115ae15f6b8b72"/>
          </artifact>
       </component>
       <component group="org.apache.commons" name="commons-compress" version="1.19">
