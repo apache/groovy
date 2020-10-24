@@ -473,6 +473,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, propertyName, safe, implicitThis)) return;
         if (makeGetField(receiver, receiverType, propertyName, safe, implicitThis)) return;
 
+        boolean isScriptVariable = (receiverType.isScript() && receiver instanceof VariableExpression && ((VariableExpression) receiver).getAccessedVariable() == null);
+        if (!isScriptVariable && controller.getClassNode().getOuterClass() == null) { // inner class still needs dynamic property sequence
+            addPropertyAccessError(receiver, propertyName, receiverType);
+        }
+
         MethodCallExpression call = callX(receiver, "getProperty", args(constX(propertyName)));
         call.setImplicitThis(implicitThis);
         call.setMethodTarget(GROOVYOBJECT_GETPROPERTY_METHOD);
