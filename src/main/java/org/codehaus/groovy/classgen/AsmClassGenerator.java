@@ -943,27 +943,36 @@ public class AsmClassGenerator extends ClassGenerator {
         return name;
     }
 
-    private static boolean isValidFieldNodeForByteCodeAccess(final FieldNode fn, final ClassNode accessingNode) {
-        if (fn == null) return false;
-        ClassNode declaringClass = fn.getDeclaringClass();
-        // same class is always allowed access
-        if (fn.isPublic() || declaringClass.equals(accessingNode)) return true;
-        boolean samePackages = Objects.equals(declaringClass.getPackageName(), accessingNode.getPackageName());
-        // protected means same class or same package, or subclass
-        if (fn.isProtected() && (samePackages || accessingNode.isDerivedFrom(declaringClass))) {
-            return true;
-        }
-        if (!fn.isPrivate()) {
-            // package private is the only modifier left. It means  same package is allowed, subclass not, same class is
-            return samePackages;
-        }
+    /**
+     * Determines if the given class can directly access the given field (via
+     * {@code GETFIELD}, {@code GETSTATIC}, etc. bytecode instructions).
+     */
+    public static boolean isFieldDirectlyAccessible(final FieldNode field, final ClassNode clazz) {
+        if (field == null) return false;
+
+        // a public field is accessible from anywhere
+        if (field.isPublic()) return true;
+
+        ClassNode declaringClass = field.getDeclaringClass();
+
+        // any field is accessible from the declaring class
+        if (clazz.equals(declaringClass)) return true;
+
+        // a private field isn't accessible beyond the declaring class
+        if (field.isPrivate()) return false;
+
+        // a protected field is accessible from any subclass of the declaring class
+        if (field.isProtected() && clazz.isDerivedFrom(declaringClass)) return true;
+
+        // a protected or package-private field is accessible from the declaring package
+        if (Objects.equals(clazz.getPackageName(), declaringClass.getPackageName())) return true;
+
         return false;
     }
 
     public static FieldNode getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(final ClassNode accessingNode, final ClassNode current, final String fieldName, final boolean skipCurrent) {
         return getField(current, fieldName, fieldNode ->
-            (!skipCurrent || !current.equals(fieldNode.getDeclaringClass()))
-                && isValidFieldNodeForByteCodeAccess(fieldNode, accessingNode)
+            (!skipCurrent || !current.equals(fieldNode.getDeclaringClass())) && isFieldDirectlyAccessible(fieldNode, accessingNode)
         );
     }
 
@@ -1138,7 +1147,7 @@ public class AsmClassGenerator extends ClassGenerator {
                     } else {
                         fieldNode = classNode.getDeclaredField(name);
 
-                        if (fieldNode == null && !isValidFieldNodeForByteCodeAccess(classNode.getField(name), classNode)) {
+                        if (fieldNode == null && !isFieldDirectlyAccessible(getField(classNode, name), classNode)) {
                             // GROOVY-9501, GROOVY-9569, GROOVY-9650, GROOVY-9655, GROOVY-9665, GROOVY-9683, GROOVY-9695
                             if (checkStaticOuterField(expression, name)) return;
                         }
