@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import groovy.test.NotYetImplemented
 import groovy.transform.stc.FieldsAndPropertiesSTCTest
 
 final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest implements StaticCompilationTestSupport {
@@ -263,7 +262,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         }
     }
 
-    @NotYetImplemented
+    // GROOVY-9791
     void testReadFieldFromSuperClass2() {
         assertScript '''
             package p
@@ -281,11 +280,11 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             assert new B().m() == 0
         '''
         def b = astTrees['B'][1]
-        assert  b.contains('GETFIELD A.x')
+        assert  b.contains('GETFIELD p/A.x')
         assert !b.contains('INVOKEINTERFACE groovy/lang/GroovyObject.getProperty')
     }
 
-    @NotYetImplemented
+    // GROOVY-9791
     void testReadFieldFromSuperClass3() {
         assertScript '''
             package p
@@ -303,7 +302,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             assert B.m() == 0
         '''
         def b = astTrees['B'][1]
-        assert  b.contains('GETFIELD A.x')
+        assert  b.contains('GETSTATIC p/A.x')
         assert !b.contains('INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.getGroovyObjectProperty')
     }
 
