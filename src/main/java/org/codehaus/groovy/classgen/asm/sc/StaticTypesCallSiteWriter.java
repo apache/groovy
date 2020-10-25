@@ -84,7 +84,6 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
-import static org.codehaus.groovy.classgen.AsmClassGenerator.samePackages;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
@@ -561,9 +560,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
 
     boolean makeGetField(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean safe, final boolean implicitThis) {
         FieldNode field = receiverType.getField(fieldName);
-        // direct access is allowed if we are in the same class as the declaring class
-        // or we are in an inner class
-        if (field != null && isDirectAccessAllowed(field, controller.getClassNode())) {
+        if (field != null && AsmClassGenerator.isFieldDirectlyAccessible(field, controller.getClassNode())) {
             CompileStack compileStack = controller.getCompileStack();
             MethodVisitor mv = controller.getMethodVisitor();
             ClassNode replacementType = field.getOriginType();
@@ -616,27 +613,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             return makeGetField(receiver, superClass, fieldName, safe, implicitThis);
         }
         return false;
-    }
-
-    private static boolean isDirectAccessAllowed(FieldNode field, ClassNode receiver) {
-        ClassNode declaringClass = field.getDeclaringClass().redirect();
-        ClassNode receiverType = receiver.redirect();
-
-        // first, direct access from within the class
-        if (declaringClass.equals(receiverType)) return true;
-        if (field.isPrivate()) return false;
-
-        // now, inner class node access to outer class fields
-        receiverType = receiverType.getOuterClass();
-        while (receiverType != null) {
-            if (declaringClass.equals(receiverType)) {
-                return true;
-            }
-            receiverType = receiverType.getOuterClass();
-        }
-
-        // finally public and visible
-        return field.isPublic() || samePackages(receiver.getPackageName(), declaringClass.getPackageName());
     }
 
     @Override

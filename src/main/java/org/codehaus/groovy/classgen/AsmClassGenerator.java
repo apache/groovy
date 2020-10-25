@@ -949,37 +949,44 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public static boolean samePackages(final String pkg1, final String pkg2) {
-        return (
-                (pkg1 ==null && pkg2 ==null)
-                        || pkg1 !=null && pkg1.equals(pkg2)
-        );
+        return Objects.equals(pkg1, pkg2);
     }
 
-    private static boolean isValidFieldNodeForByteCodeAccess(FieldNode fn, ClassNode accessingNode) {
-        if (fn == null) return false;
-        ClassNode declaringClass = fn.getDeclaringClass();
-        // same class is always allowed access
-        if (Modifier.isPublic(fn.getModifiers()) || declaringClass.equals(accessingNode)) return true;
-        boolean samePackages = samePackages(declaringClass.getPackageName(), accessingNode.getPackageName());
-        // protected means same class or same package, or subclass
-        if (Modifier.isProtected(fn.getModifiers()) && (samePackages || accessingNode.isDerivedFrom(declaringClass))) {
-            return true;
-        }
-        if (!fn.isPrivate()) {
-            // package private is the only modifier left. It means  same package is allowed, subclass not, same class is
-            return samePackages;
-        }
+    /**
+     * Determines if the given class can directly access the given field (via
+     * {@code GETFIELD}, {@code GETSTATIC}, etc. bytecode instructions).
+     */
+    public static boolean isFieldDirectlyAccessible(final FieldNode field, final ClassNode clazz) {
+        if (field == null) return false;
+
+        // a public field is accessible from anywhere
+        if (field.isPublic()) return true;
+
+        ClassNode declaringClass = field.getDeclaringClass();
+
+        // any field is accessible from the declaring class
+        if (clazz.equals(declaringClass)) return true;
+
+        // a private field isn't accessible beyond the declaring class
+        if (field.isPrivate()) return false;
+
+        // a protected field is accessible from any subclass of the declaring class
+        if (field.isProtected() && clazz.isDerivedFrom(declaringClass)) return true;
+
+        // a protected or package-private field is accessible from the declaring package
+        if (Objects.equals(clazz.getPackageName(), declaringClass.getPackageName())) return true;
+
         return false;
     }
 
-    public static FieldNode getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(ClassNode accessingNode, ClassNode current, String name, boolean skipCurrent) {
+    public static FieldNode getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(final ClassNode accessingNode, final ClassNode current, final String fieldName, final boolean skipCurrent) {
         if (!skipCurrent) {
-            FieldNode currentClassField = current.getDeclaredField(name);
-            if (isValidFieldNodeForByteCodeAccess(currentClassField, accessingNode)) return currentClassField;
+            FieldNode fn = current.getDeclaredField(fieldName);
+            if (isFieldDirectlyAccessible(fn, accessingNode)) return fn;
         }
-        for (ClassNode node = current.getSuperClass(); node!=null; node = node.getSuperClass()) {
-            FieldNode fn = node.getDeclaredField(name);
-            if (isValidFieldNodeForByteCodeAccess(fn, accessingNode)) return fn;
+        for (ClassNode cn = current.getSuperClass(); cn != null; cn = cn.getSuperClass()) {
+            FieldNode fn = cn.getDeclaredField(fieldName);
+            if (isFieldDirectlyAccessible(fn, accessingNode)) return fn;
         }
         return null;
     }
@@ -1054,7 +1061,7 @@ public class AsmClassGenerator extends ClassGenerator {
                             }
                         }
                     }
-                    if (field == null && !isValidFieldNodeForByteCodeAccess(classNode.getField(name), classNode)) {
+                    if (field == null && !isFieldDirectlyAccessible(classNode.getField(name), classNode)) {
                         // GROOVY-5259, GROOVY-9501, GROOVY-9569
                         if (checkStaticOuterField(expression, name)) return;
                     }
