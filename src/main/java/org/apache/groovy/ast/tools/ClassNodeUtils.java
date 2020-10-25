@@ -34,13 +34,17 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
 
 import java.lang.reflect.Modifier;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.isGenerated;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
@@ -388,27 +392,32 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Return the (potentially inherited) field of the classnode.
-     *
-     * @param classNode the classnode
-     * @param fieldName the name of the field
-     * @return the field or null if not found
+     * Searches the class for a field that matches specified name.
      */
     public static FieldNode getField(final ClassNode classNode, final String fieldName) {
-        ClassNode node = classNode;
-        Set<String> visited = new HashSet<>();
-        while (node != null) {
-            FieldNode fn = node.getDeclaredField(fieldName);
-            if (fn != null) return fn;
-            ClassNode[] interfaces = node.getInterfaces();
-            for (ClassNode iNode : interfaces) {
-                if (visited.contains(iNode.getName())) continue;
-                FieldNode ifn = getField(iNode, fieldName);
-                visited.add(iNode.getName());
-                if (ifn != null) return ifn;
+        return getField(classNode, fieldName, fieldNode -> true);
+    }
+
+    /**
+     * Searches the class for a field that matches specified name and test.
+     */
+    public static FieldNode getField(final ClassNode classNode, final String fieldName, final Predicate<FieldNode> acceptability) {
+        Queue<ClassNode> todo = new ArrayDeque<>(Collections.singletonList(classNode));
+        Set<ClassNode> done = new HashSet<>();
+        ClassNode next;
+
+        while ((next = todo.poll()) != null) {
+            if (done.add(next)) {
+                FieldNode fieldNode = next.getDeclaredField(fieldName);
+                if (fieldNode != null && acceptability.test(fieldNode))
+                    return fieldNode;
+
+                Collections.addAll(todo, next.getInterfaces());
+                ClassNode superType = next.getSuperClass();
+                if (superType != null) todo.add(superType);
             }
-            node = node.getSuperClass();
         }
+
         return null;
     }
 }

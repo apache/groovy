@@ -124,6 +124,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -959,16 +960,11 @@ public class AsmClassGenerator extends ClassGenerator {
         return false;
     }
 
-    public static FieldNode getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(final ClassNode accessingNode, final ClassNode current, final String name, final boolean skipCurrent) {
-        if (!skipCurrent) {
-            FieldNode currentClassField = current.getDeclaredField(name);
-            if (isValidFieldNodeForByteCodeAccess(currentClassField, accessingNode)) return currentClassField;
-        }
-        for (ClassNode node = current.getSuperClass(); node != null; node = node.getSuperClass()) {
-            FieldNode fn = node.getDeclaredField(name);
-            if (isValidFieldNodeForByteCodeAccess(fn, accessingNode)) return fn;
-        }
-        return null;
+    public static FieldNode getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(final ClassNode accessingNode, final ClassNode current, final String fieldName, final boolean skipCurrent) {
+        return getField(current, fieldName, fieldNode ->
+            (!skipCurrent || !current.equals(fieldNode.getDeclaringClass()))
+                && isValidFieldNodeForByteCodeAccess(fieldNode, accessingNode)
+        );
     }
 
     private void visitAttributeOrProperty(final PropertyExpression pexp, final MethodCallerMultiAdapter adapter) {
