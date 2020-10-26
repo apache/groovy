@@ -229,7 +229,7 @@ public class DOMBuilder extends BuilderSupport {
                 QName qname = (QName) key;
                 element.setAttributeNS(qname.getNamespaceURI(), qname.getQualifiedName(), value.toString());
             } else {
-                throw new IllegalArgumentException("The key: " + key + " should be an instanceof of " + QName.class);
+                throw new IllegalArgumentException("The key: " + key + " should be an instance of " + QName.class);
             }
         }
     }
