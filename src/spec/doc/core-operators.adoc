@@ -439,7 +439,7 @@ The spread operator is null-safe, meaning that if an element of the collection i
 ----
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=spreaddot_nullsafe,indent=0]
 ----
-<1> build a list for which of of the elements is `null`
+<1> build a list for which one of the elements is `null`
 <2> using the spread operator will *not* throw a `NullPointerException`
 <3> the receiver might also be null, in which case the return value is `null`
 
