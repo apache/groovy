@@ -220,7 +220,7 @@ public class SwingGroovyMethods {
      * Allow DefaultListModel to work with subscript operators.<p>
      * <b>WARNING:</b> this operation does not replace the element at the
      * specified index, rather it inserts the element at that index, thus
-     * increasing the size of of the model by 1.
+     * increasing the size of the model by 1.
      *
      * @param self  a DefaultListModel
      * @param index an index

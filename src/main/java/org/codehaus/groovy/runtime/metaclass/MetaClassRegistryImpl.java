@@ -409,7 +409,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     }
 
     /**
-     * Gets an array of of all registered ConstantMetaClassListener instances.
+     * Gets an array of all registered ConstantMetaClassListener instances.
      */
     public MetaClassRegistryChangeEventListener[] getMetaClassRegistryChangeEventListeners() {
         synchronized (changeListenerList) {
