@@ -43,6 +43,7 @@ import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
@@ -249,6 +250,27 @@ public class GeneralUtils {
 
     public static ClosureExpression closureX(final Statement code) {
         return closureX(Parameter.EMPTY_ARRAY, code);
+    }
+
+    /**
+     * Builds a lambda expression
+     *
+     * @param params lambda parameters
+     * @param code lambda code
+     * @return the lambda expression
+     */
+    public static LambdaExpression lambdaX(final Parameter[] params, final Statement code) {
+        return new LambdaExpression(params, code);
+    }
+
+    /**
+     * Builds a lambda expression with no parameters
+     *
+     * @param code lambda code
+     * @return the lambda expression
+     */
+    public static LambdaExpression lambdaX(final Statement code) {
+        return lambdaX(Parameter.EMPTY_ARRAY, code);
     }
 
     /**
