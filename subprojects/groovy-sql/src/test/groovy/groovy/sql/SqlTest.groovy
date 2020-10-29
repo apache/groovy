@@ -18,9 +18,11 @@
  */
 package groovy.sql
 
-import groovy.test.GroovyTestCase
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TestName
 
-import javax.sql.DataSource
 import java.sql.Connection
 
 import static groovy.sql.SqlTestConstants.DB_DATASOURCE
@@ -28,23 +30,27 @@ import static groovy.sql.SqlTestConstants.DB_DS_KEY
 import static groovy.sql.SqlTestConstants.DB_PASSWORD
 import static groovy.sql.SqlTestConstants.DB_URL_PREFIX
 import static groovy.sql.SqlTestConstants.DB_USER
+import static groovy.test.GroovyAssert.assertScript
 
 /**
  * This is more of a sample program than a unit test and is here as an easy
  * to read demo of GDO. The actual full unit test case is in SqlCompleteTest
  */
-class SqlTest extends GroovyTestCase {
+final class SqlTest {
 
-    private sql
+    private Sql sql
 
+    @Before
     void setUp() {
         sql = createSql()
     }
 
+    @Test
     void testSqlQuery() {
         sql.eachRow("select * from PERSON") { println("Hello ${it.firstname} ${it.lastname}") }
     }
 
+    @Test
     void testQueryUsingColumnIndex() {
         def answer = null
         sql.eachRow("select count(*) from PERSON") { answer = it[0] }
@@ -52,6 +58,7 @@ class SqlTest extends GroovyTestCase {
         assert answer == 3
     }
 
+    @Test
     void testQueryUsingNegativeColumnIndex() {
         def first = null
         def last = null
@@ -64,17 +71,20 @@ class SqlTest extends GroovyTestCase {
         assert last == "Strachan"
     }
 
+    @Test
     void testSqlQueryWithWhereClause() {
         def foo = "drink"
         sql.eachRow("select * from FOOD where type=${foo}") { println("Drink ${it.name}") }
     }
 
+    @Test
     void testEachRowWithWhereClauseWith2Arguments() {
         def foo = "cheese"
         def bar = "edam"
         sql.eachRow("select * from FOOD where type=${foo} and name != ${bar}") { println("Found cheese ${it.name}") }
     }
 
+    @Test
     void testFirstRowWithWhereClauseWith2Arguments() {
         def foo = "cheese"
         def bar = "edam"
@@ -82,22 +92,26 @@ class SqlTest extends GroovyTestCase {
         assert result.name == 'brie'
     }
 
+    @Test
     void testSqlQueryWithIncorrectlyQuotedDynamicExpressions() {
         def foo = "cheese"
         def bar = "edam"
         sql.eachRow("select * from FOOD where type='${foo}' and name != '${bar}'") { println("Found cheese ${it.name}") }
     }
 
+    @Test
     void testDataSet() {
         def people = sql.dataSet("PERSON")
         people.each { println("Hey ${it.firstname}") }
     }
 
+    @Test
     void testDataSetWithClosurePredicate() {
         def food = sql.dataSet("FOOD")
         food.findAll { it.type == "cheese" }.each { println("Cheese ${it.name}") }
     }
 
+    @Test
     void testExecuteUpdate() {
         def foo = 'food-drink'
         def bar = 'guinness'
@@ -107,6 +121,7 @@ class SqlTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testExecuteInsert() {
         def value = 'log entry'
         if (sql.dataSource.connection.metaData.supportsGetGeneratedKeys()) {
@@ -118,6 +133,7 @@ class SqlTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testExecuteInsertWithColumnNamesListParams() {
         def value = 'log entry'
         if (sql.dataSource.connection.metaData.supportsGetGeneratedKeys()) {
@@ -126,6 +142,7 @@ class SqlTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testExecuteInsertWithColumnNamesVarargParams() {
         def value = 'log entry'
         if (sql.dataSource.connection.metaData.supportsGetGeneratedKeys()) {
@@ -134,6 +151,7 @@ class SqlTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testExecuteInsertWithColumnNamesNoVarargs() {
         if (sql.dataSource.connection.metaData.supportsGetGeneratedKeys()) {
             def keys = sql.executeInsert("insert into LOG (value) values 'log entry'", ['ID'] as String[])
@@ -141,6 +159,7 @@ class SqlTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testExecuteInsertWithColumnNamesGString() {
         def value = 'log entry'
         if (sql.dataSource.connection.metaData.supportsGetGeneratedKeys()) {
@@ -152,6 +171,7 @@ class SqlTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testExecuteWithProcessResultsClosure() {
         sql.execute("insert into LOG (value) values ('log entry')") {
             isResultSet, result ->
@@ -159,6 +179,7 @@ class SqlTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testMetaData() {
         sql.eachRow('select * from PERSON') {
             assert it[0] != null
@@ -166,6 +187,7 @@ class SqlTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testSubClass() {
         def sub = new SqlSubclass(sql)
         def res = null
@@ -192,6 +214,7 @@ class SqlTest extends GroovyTestCase {
         assert data.size() == 2 && !(data - ['firstname', 'lastname'])
     }
 
+    @Test
     void testCallMethodFromObjectOnGroovyResultSet() {
         sql.eachRow('select * from PERSON') {
             println it.toString()
@@ -199,30 +222,62 @@ class SqlTest extends GroovyTestCase {
         }
     }
 
-    private createSql() {
-        DataSource ds = DB_DATASOURCE.newInstance(
-                (DB_DS_KEY): DB_URL_PREFIX + getMethodName(),
-                user: DB_USER,
-                password: DB_PASSWORD)
+    @Test // GROOVY-168
+    void testBugInNormalMethod() {
+        def li = ['a', 'b']
+        for (x in li) {
+            sql.eachRow('SELECT count(*) FROM FOOD') { e ->
+                println " ${x}"
+                assert x != null
+            }
+        }
+        sql.close()
+    }
+
+    @Test // GROOVY-168
+    void testBugInsideScript() {
+        assertScript '''
+            import groovy.sql.SqlHelperTestCase
+            def sql = SqlHelperTestCase.makeSql()
+            def li = ["a", "b"]
+            for (x in li) {
+                sql.eachRow("SELECT count(*) FROM FOOD") { e ->
+                    println " ${x}"
+                    assert x != null
+                }
+            }
+            sql.close()
+        '''
+    }
+
+    //--------------------------------------------------------------------------
+
+    @Rule
+    public final TestName test = new TestName()
+
+    private Sql createSql() {
+        javax.sql.DataSource ds = DB_DATASOURCE.newInstance(
+                (DB_DS_KEY): DB_URL_PREFIX + test.methodName,
+                user: DB_USER, password: DB_PASSWORD)
         sql = new Sql(ds.connection)
         def sql = new Sql(ds)
 
-        sql.execute("create table PERSON ( firstname VARCHAR(10), lastname VARCHAR(10) )")
-        sql.execute("create table FOOD ( type VARCHAR(10), name VARCHAR(10))")
-        sql.execute("create table LOG ( value VARCHAR(20), ID INTEGER IDENTITY)")
+        sql.execute('create table PERSON ( firstname VARCHAR(10), lastname VARCHAR(10) )')
+        sql.execute('create table FOOD ( type VARCHAR(10), name VARCHAR(10))')
+        sql.execute('create table LOG ( value VARCHAR(20), ID INTEGER IDENTITY)')
 
         // now let's populate the datasets
-        def people = sql.dataSet("PERSON")
-        people.add(firstname: "James", lastname: "Strachan")
-        people.add(firstname: "Bob", lastname: "Mcwhirter")
-        people.add(firstname: "Sam", lastname: "Pullara")
+        def people = sql.dataSet('PERSON')
+        people.add(firstname: 'James', lastname: 'Strachan')
+        people.add(firstname: 'Bob', lastname: 'Mcwhirter')
+        people.add(firstname: 'Sam', lastname: 'Pullara')
 
-        def food = sql.dataSet("FOOD")
-        food.add(type: "cheese", name: "edam")
-        food.add(type: "cheese", name: "brie")
-        food.add(type: "cheese", name: "cheddar")
-        food.add(type: "drink", name: "beer")
-        food.add(type: "drink", name: "coffee")
+        def food = sql.dataSet('FOOD')
+        food.add(type: 'cheese', name: 'edam')
+        food.add(type: 'cheese', name: 'brie')
+        food.add(type: 'cheese', name: 'cheddar')
+        food.add(type: 'drink', name: 'beer')
+        food.add(type: 'drink', name: 'coffee')
 
         return sql
     }

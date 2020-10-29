@@ -18,36 +18,26 @@
  */
 package groovy.bugs
 
-import groovy.sql.SqlHelperTestCase
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class ForAndSqlBug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
 
-    void testBugInNormalMethod() {
-        def sql = SqlHelperTestCase.makeSql()
-        def li = ["a", "b"]
-        for (x in li) {
-            sql.eachRow("SELECT count(*) FROM FOOD") { e ->
-                println " ${x}"
-                assert x != null
-            }
-        }
-        sql.close()
-    }
-
-    void testBugInsideScript() {
+final class Groovy5041 {
+    @Test
+    void testAICParameter() {
         assertScript '''
-            import groovy.sql.SqlHelperTestCase
-            def sql = SqlHelperTestCase.makeSql()
-            def li = ["a", "b"]
-            for (x in li) {
-                sql.eachRow("SELECT count(*) FROM FOOD") { e ->
-                    println " ${x}"
-                    assert x != null
-                }
+            abstract class C {
+                C(x) {}
+                abstract call()
             }
-            sql.close()
+
+            def x = 1
+            def c = new C(x) {
+                def call() { x }
+            }
+            assert c.call() == 1
+            x = 2
+            assert c.call() == 2
         '''
     }
-
 }
