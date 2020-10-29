@@ -26,19 +26,19 @@ import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
  */
 class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
-    void testDeclaration() {
+    void testDeclaration1() {
         assertScript '''
             List test = new LinkedList<String>()
         '''
     }
 
-    void testDeclaration5() {
+    void testDeclaration2() {
         assertScript '''
             Map<String,Integer> obj = new HashMap<String,Integer>()
         '''
     }
 
-    void testDeclaration6() {
+    void testDeclaration3() {
         shouldFailWithMessages '''
             Map<String,String> obj = new HashMap<String,Integer>()
         ''', 'Incompatible generic argument types. Cannot assign java.util.HashMap <String, Integer> to: java.util.Map <String, String>'
@@ -159,15 +159,54 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testReturnTypeInferenceWithMethodGenerics() {
+    void testReturnTypeInferenceWithMethodGenerics1() {
         assertScript '''
             List<Long> list = Arrays.asList([0L,0L] as Long[])
+            assert list.size() == 2
         '''
     }
 
-    void testReturnTypeInferenceWithMethodGenericsAndVarArg() {
+    void testReturnTypeInferenceWithMethodGenerics2() {
         assertScript '''
             List<Long> list = Arrays.asList(0L,0L)
+            assert list.size() == 2
+        '''
+    }
+
+    void testReturnTypeInferenceWithMethodGenerics3() {
+        assertScript '''
+            Number number = Optional.of(42).get()
+            assert number.intValue() == 42
+        '''
+    }
+
+    // GROOVY-9796
+    void testReturnTypeInferenceWithMethodGenerics4() {
+        shouldFailWithMessages '''
+            Number number = Optional.of(42).orElse(Double.NaN)
+            assert number.intValue() == 42
+        ''', '[Static type checking] - Cannot find matching method java.util.Optional#orElse(double).'
+    }
+
+    void testReturnTypeInferenceWithMethodGenerics5() {
+        assertScript '''
+            Number number = Optional.of((Number) 42).orElse(Double.NaN)
+            assert number.intValue() == 42
+        '''
+    }
+
+    // GROOVY-9796
+    void testReturnTypeInferenceWithMethodGenerics6() {
+        shouldFailWithMessages '''
+            Number number = Optional.ofNullable((Integer) null).orElse(42d)
+            assert number.intValue() == 42
+        ''', '[Static type checking] - Cannot find matching method java.util.Optional#orElse(double).'
+    }
+
+    void testReturnTypeInferenceWithMethodGenerics7() {
+        assertScript '''
+            Number number = Optional.<Number>ofNullable((Integer) null).orElse(42d)
+            assert number.intValue() == 42
         '''
     }
 
@@ -207,7 +246,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot call java.util.LinkedList <String>#<init>(java.util.Collection <? extends java.lang.String>) with arguments [java.util.List <java.lang.Integer>]'
     }
 
-    void testCompatibleGenericAssignmentWithInference() {
+    void testIncompatibleGenericAssignment() {
         shouldFailWithMessages '''
             List<String> elements = ['a','b', 1]
         ''', 'Incompatible generic argument types. Cannot assign java.util.List <java.io.Serializable> to: java.util.List <String>'
@@ -1102,6 +1141,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             printEqual(1, 'foo')
         ''', '#printEqual(T, T) with arguments [int, java.lang.String]'
     }
+
     void testIncompatibleGenericsForTwoArgumentsUsingEmbeddedPlaceholder() {
         shouldFailWithMessages '''
             public <T> void printEqual(T arg1, List<T> arg2) {

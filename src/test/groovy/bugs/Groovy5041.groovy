@@ -26,18 +26,18 @@ final class Groovy5041 {
     @Test
     void testAICParameter() {
         assertScript '''
-            class C {
-                C(x) {}
+            abstract class A {
+                A(x) {}
                 abstract call()
             }
 
             def x = 1
-            def c = new C(x) {
+            def a = new A(x) {
                 def call() { x }
             }
-            assert c.call() == 1
+            assert a.call() == 1
             x = 2
-            assert c.call() == 2
+            assert a.call() == 2
         '''
     }
 }
