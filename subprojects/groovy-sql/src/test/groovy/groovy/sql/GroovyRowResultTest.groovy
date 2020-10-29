@@ -18,72 +18,93 @@
  */
 package groovy.sql
 
-import groovy.test.GroovyTestCase
+import groovy.transform.CompileStatic
+import org.junit.Test
 
-class GroovyRowResultTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
 
-    void testMap() {
-        def row = createRow();
-        def row2 = createRow();
+final class GroovyRowResultTest {
 
-        /**
-         * Test for implementing Map
-         */
-        assert row instanceof Map, "BUG! GroovyRowResult doesn't implement Map!"
+    protected GroovyRowResult createRow() {
+        def map = [:]
+        map.put('miXed', 'quick')
+        map.put('nullMixed', null)
+        map.put('lower', 'brown')
+        map.put('nulllower', null)
+        map.put('UPPER', 'fox')
+        map.put('NULLUPPER', null)
+        def row = new GroovyRowResult(map)
+        assert row != null, 'failed to load GroovyRowResult class'
+        return row
+    }
+
+    @CompileStatic @Test
+    void testMapType() {
+        Map<String, Object> row = createRow() // GROOVY-9784
+    }
+
+    @Test
+    void testMapMethods() {
+        def row = createRow()
+        def row2 = createRow()
 
         /**
          * Test for put and accessing the new property
          */
-        row.put("john", "Doe")
-        assert row.john == "Doe"
-        assert row["john"] == "Doe"
+        row.put('john', 'Doe')
+        assert row.john == 'Doe'
         assert row['john'] == 'Doe'
-        assert row.containsKey("john")
-        assert row.containsKey("JOHN")
-        assert row.containsKey("John")
-        assert !row2.containsKey("john")
-        assert row.containsValue("Doe")
-        assert !row2.containsKey("Doe")
+        assert row['john'] == 'Doe'
+        assert row.containsKey('john')
+        assert row.containsKey('JOHN')
+        assert row.containsKey('John')
+        assert !row2.containsKey('john')
+        assert row.containsValue('Doe')
+        assert !row2.containsKey('Doe')
 
         /**
          * Test for equality (1) and size
          */
-        assert row != row2, "rows unexpectedly equal"
+        assert row != row2, 'rows unexpectedly equal'
         assert row.size() == 7
         assert row2.size() == 6
 
         /**
          * Test for remove, equality (2) and isEmpty (1)
          */
-        row.remove("john")
-        assert row == row2, "rows different after remove"
-        assert !row.isEmpty(), "row empty after remove"
+        row.remove('john')
+        assert row == row2, 'rows different after remove'
+        assert !row.isEmpty(), 'row empty after remove'
 
         /**
          * Test for clear, equality (3) and isEmpty (2)
          */
         row.clear()
         row2.clear()
-        assert row == row2, "rows different after clear"
-        assert row.isEmpty(), "row not empty after clear"
+        assert row == row2, 'rows different after clear'
+        assert row.isEmpty(), 'row not empty after clear'
     }
 
+    @Test
     void testProperties() {
         def row = createRow()
-        assert row.miXed == "quick"
-        assert row.mixed == "quick"
-        assert row.lower == "brown"
-        assert row.LOWER == "brown"
-        assert row.upper == "fox"
-        assert row.UPPER == "fox"
+
+        assert row.miXed == 'quick'
+        assert row.mixed == 'quick'
+        assert row.lower == 'brown'
+        assert row.LOWER == 'brown'
+        assert row.upper == 'fox'
+        assert row.UPPER == 'fox'
 
         shouldFail(MissingPropertyException) {
             row.foo
         }
+    }
 
-        /**
-         * This is for GROOVY-1296
-         */
+    @Test // GROOVY-1296
+    void testNullProperties() {
+        def row = createRow()
+
         assert row.nullMixed == null
         assert row[1] == null
         assert row.nulllower == null
@@ -98,36 +119,27 @@ class GroovyRowResultTest extends GroovyTestCase {
         assert !row.containsKey('UPPER')
     }
 
+    @Test
     void testOrder() {
         def row = createRow()
-        assert row[0] == "quick"
+
+        assert row[0] == 'quick'
         assert row[1] == null
-        assert row[2] == "brown"
+        assert row[2] == 'brown'
         assert row[3] == null
-        assert row[4] == "fox"
+        assert row[4] == 'fox'
         assert row[5] == null
         assert row[27] == null
         assert row[-1] == null
-        assert row[-2] == "fox"
+        assert row[-2] == 'fox'
     }
 
-    protected def createRow() {
-        def map = new LinkedHashMap()
-        map.put("miXed", "quick")
-        map.put("nullMixed", null)
-        map.put("lower", "brown")
-        map.put("nulllower", null)
-        map.put("UPPER", "fox")
-        map.put("NULLUPPER", null)
-        def row = new GroovyRowResult(map)
-        assert row != null, "failed to load GroovyRowResult class"
-        return row
-    }
-
+    @Test
     void testCaseInsensitivePut() {
-        def row = new GroovyRowResult(SOMEKEY: "v1")
+        def row = new GroovyRowResult(SOMEKEY: 'v1')
+
         assert row.someKEY == 'v1'
-        row.somekey = "v2"
+        row.somekey = 'v2'
         assert row.someKEY == 'v2'
         assert row.put('sOmEkEy', 'v3') == 'v2'
         assert row.someKEY == 'v3'
