@@ -23,6 +23,7 @@ import org.apache.groovy.ginq.dsl.GinqAstBuilder
 import org.apache.groovy.ginq.dsl.GinqAstVisitor
 import org.apache.groovy.ginq.dsl.expression.GinqExpression
 import org.apache.groovy.ginq.provider.collection.GinqAstWalker
+import org.apache.groovy.lang.annotation.Incubating
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
@@ -36,6 +37,7 @@ import org.codehaus.groovy.macro.runtime.MacroContext
  *
  * @since 4.0.0
  */
+@Incubating
 @CompileStatic
 class GinqGroovyMethods {
     /**
