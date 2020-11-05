@@ -22,6 +22,7 @@ import groovy.lang.Tuple2;
 import groovy.transform.Internal;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiPredicate;
@@ -47,6 +48,18 @@ public interface Queryable<T> {
      */
     static <T> Queryable<T> from(Iterable<T> iterable) {
         return new QueryableCollection<>(iterable);
+    }
+
+    /**
+     * Factory method to create {@link Queryable} instance
+     *
+     * @param array array object
+     * @param <T> the type of element
+     * @return the {@link Queryable} instance
+     * @since 4.0.0
+     */
+    static <T> Queryable<T> from(T[] array) {
+        return new QueryableCollection<>(Arrays.asList(array));
     }
 
     /**

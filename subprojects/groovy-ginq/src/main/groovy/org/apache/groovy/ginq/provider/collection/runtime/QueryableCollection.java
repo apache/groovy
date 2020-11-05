@@ -324,6 +324,19 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof QueryableCollection)) return false;
+        QueryableCollection<?> that = (QueryableCollection<?>) o;
+        return toList().equals(that.toList());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(toList());
+    }
+
+    @Override
     public String toString() {
         return AsciiTableMaker.makeAsciiTable(this);
     }

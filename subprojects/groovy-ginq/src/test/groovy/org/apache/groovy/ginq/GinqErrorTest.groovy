@@ -26,6 +26,28 @@ import static groovy.test.GroovyAssert.shouldFail
 @CompileStatic
 class GinqErrorTest {
     @Test
+    void "testGinq - from - 1"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [0, 1, 2]
+            }
+        '''
+
+        assert err.toString().contains('`select` clause is missing')
+    }
+
+    @Test
+    void "testGinq - select - 1"() {
+        def err = shouldFail '''\
+            GQ {
+                select n
+            }
+        '''
+
+        assert err.toString().contains('`from` clause is missing')
+    }
+
+    @Test
     void "testGinq - from select - 1"() {
         def err = shouldFail '''\
             def numbers = [0, 1, 2]
