@@ -100,6 +100,8 @@ include::../../../../../subprojects/groovy-json/src/spec/doc/json-userguide.adoc
 
 include::../../../../../subprojects/groovy-sql/src/spec/doc/sql-userguide.adoc[leveloffset=+2]
 
+include::../../../../../subprojects/groovy-ginq/src/spec/doc/ginq-userguide.adoc[leveloffset=+2]
+
 include::../../../../../subprojects/groovy-xml/src/spec/doc/xml-userguide.adoc[leveloffset=+2]
 
 include::../../../../../subprojects/groovy-yaml/src/spec/doc/yaml-userguide.adoc[leveloffset=+2]

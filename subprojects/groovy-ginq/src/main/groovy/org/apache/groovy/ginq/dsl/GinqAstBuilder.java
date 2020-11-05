@@ -71,6 +71,9 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
 
     private AbstractGinqExpression getLatestGinqExpressionClause() {
         GinqExpression ginqExpression = ginqExpressionStack.peek();
+        if (null == ginqExpression) {
+            this.collectSyntaxError(new GinqSyntaxError("`from` clause is missing", -1, -1));
+        }
         return ginqExpression.getNodeMetaData(__LATEST_GINQ_EXPRESSION_CLAUSE);
     }
 
