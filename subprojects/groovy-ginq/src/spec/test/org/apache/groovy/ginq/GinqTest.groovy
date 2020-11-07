@@ -2191,7 +2191,7 @@ class GinqTest {
             def result = q.toString()
             println result
     
-            def expected = '+-----------+------------+\\n| first_col | second_col |\\n+-----------+------------+\\n| 1         | 2          |\\n| 2         | 3          |\\n| 3         | 4          |\\n+-----------+------------+\\n\'
+            def expected = '\\n+-----------+------------+\\n| first_col | second_col |\\n+-----------+------------+\\n| 1         | 2          |\\n| 2         | 3          |\\n| 3         | 4          |\\n+-----------+------------+\\n\'
             assert expected == result
         '''
     }
@@ -2204,13 +2204,9 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - as List - 2"() {
+    void "testGinq - as Set - 1"() {
         assertScript '''
-            @groovy.transform.CompileStatic
-            def x() {
-                GQ {from n in 1..<11 where n % 2 == 0 select n ** 2} as List
-            }
-            assert [4, 16, 36, 64, 100] == x()
+            assert [4, 16, 36, 64, 100] as Set == GQ {from n in 1..<11 where n % 2 == 0 select n ** 2} as Set
         '''
     }
 

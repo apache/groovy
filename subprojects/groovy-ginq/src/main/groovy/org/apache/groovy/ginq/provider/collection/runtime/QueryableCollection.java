@@ -338,6 +338,6 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public String toString() {
-        return AsciiTableMaker.makeAsciiTable(this);
+        return "\n" + AsciiTableMaker.makeAsciiTable(this);
     }
 }

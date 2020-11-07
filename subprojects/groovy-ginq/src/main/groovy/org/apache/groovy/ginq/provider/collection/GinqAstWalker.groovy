@@ -37,8 +37,10 @@ import org.apache.groovy.ginq.dsl.expression.WhereExpression
 import org.apache.groovy.ginq.provider.collection.runtime.NamedRecord
 import org.apache.groovy.ginq.provider.collection.runtime.Queryable
 import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper
+import org.apache.groovy.util.Maps
 import org.codehaus.groovy.GroovyBugError
 import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.CastExpression
@@ -60,14 +62,19 @@ import org.codehaus.groovy.syntax.Types
 
 import java.util.stream.Collectors
 
+import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.declS
 import static org.codehaus.groovy.ast.tools.GeneralUtils.lambdaX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
 
 /**
  * Visit AST of GINQ to generate target method calls for GINQ
@@ -76,9 +83,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt
  */
 @CompileStatic
 class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable {
-    private final SourceUnit sourceUnit
-    private final Deque<GinqExpression> ginqExpressionStack = new ArrayDeque<>()
-
     GinqAstWalker(SourceUnit sourceUnit) {
         this.sourceUnit = sourceUnit
     }
@@ -149,9 +153,23 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
         MethodCallExpression selectMethodCallExpression = this.visitSelectExpression(selectExpression)
 
+        def result = callX(
+                    lambdaX(block(
+                            declS(
+                                    localVarX(metaDataMapName),
+                                    callX(MAPS_TYPE, "of", args(
+                                            new ConstantExpression(MD_ALIAS_NAME_LIST), new ListExpression(aliasExpressionList),
+                                            new ConstantExpression(MD_GROUP_NAME_LIST), (ListExpression) (currentGinqExpression.getNodeMetaData(MD_GROUP_NAME_LIST) ?: []),
+                                            new ConstantExpression(MD_SELECT_NAME_LIST), (ListExpression) (currentGinqExpression.getNodeMetaData(MD_SELECT_NAME_LIST) ?: [])
+                                    ))
+                            ),
+                            stmt(selectMethodCallExpression)
+                    )),
+                "call")
+
         ginqExpressionStack.pop()
 
-        return selectMethodCallExpression
+        return result
     }
 
     @Override
@@ -271,7 +289,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         Expression classifierExpr = groupExpression.classifierExpr
 
         List<Expression> argumentExpressionList = ((ArgumentListExpression) classifierExpr).getExpressions()
-        ConstructorCallExpression namedListCtorCallExpression = constructNamedRecordCtorCallExpression(argumentExpressionList)
+        ConstructorCallExpression namedListCtorCallExpression = constructNamedRecordCtorCallExpression(argumentExpressionList, MD_GROUP_NAME_LIST)
 
         LambdaExpression classifierLambdaExpression = constructLambdaExpression(dataSourceExpression, namedListCtorCallExpression)
 
@@ -315,7 +333,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
             LambdaExpression lambdaExpression = constructLambdaExpression(dataSourceExpression, target)
 
-            return ctorX(ClassHelper.make(Queryable.Order.class), args(lambdaExpression, new ConstantExpression(asc)))
+            return ctorX(ORDER_TYPE, args(lambdaExpression, new ConstantExpression(asc)))
         }).collect(Collectors.toList())
 
         def orderMethodCallExpression = callX(orderMethodCallReceiver, "orderBy", args(orderCtorCallExpressions))
@@ -344,7 +362,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         List<Expression> expressionList = ((TupleExpression) projectionExpr).getExpressions()
         Expression lambdaCode
         if (expressionList.size() > 1) {
-            ConstructorCallExpression namedListCtorCallExpression = constructNamedRecordCtorCallExpression(expressionList)
+            ConstructorCallExpression namedListCtorCallExpression = constructNamedRecordCtorCallExpression(expressionList, MD_SELECT_NAME_LIST)
             lambdaCode = namedListCtorCallExpression
         } else {
             lambdaCode = expressionList.get(0)
@@ -353,7 +371,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return callXWithLambda(selectMethodReceiver, "select", dataSourceExpression, lambdaCode)
     }
 
-    private ConstructorCallExpression constructNamedRecordCtorCallExpression(List<Expression> expressionList) {
+    private ConstructorCallExpression constructNamedRecordCtorCallExpression(List<Expression> expressionList, String metaDataKey) {
         int expressionListSize = expressionList.size()
         List<Expression> elementExpressionList = new ArrayList<>(expressionListSize)
         List<Expression> nameExpressionList = new ArrayList<>(expressionListSize)
@@ -377,10 +395,33 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             nameExpressionList << nameExpression
         }
 
+        def nameListExpression = new ListExpression(nameExpressionList)
+        currentGinqExpression.putNodeMetaData(metaDataKey, nameListExpression)
+
         ConstructorCallExpression namedRecordCtorCallExpression =
-                ctorX(ClassHelper.make(NamedRecord.class), args(new ListExpression(elementExpressionList),
-                        new ListExpression(nameExpressionList), new ListExpression(aliasExpressionList)))
+                ctorX(NAMED_RECORD_TYPE, args(new ListExpression(elementExpressionList),
+                        getMetaDataMethodCall(metaDataKey), getMetaDataMethodCall(MD_ALIAS_NAME_LIST)))
         return namedRecordCtorCallExpression
+    }
+
+    private int metaDataMapNameSeq = 0
+    private String getMetaDataMapName() {
+        String name = (String) currentGinqExpression.getNodeMetaData(__META_DATA_MAP_NAME_PREFIX)
+
+        if (!name) {
+            name = "${__META_DATA_MAP_NAME_PREFIX}${metaDataMapNameSeq++}"
+            currentGinqExpression.putNodeMetaData(__META_DATA_MAP_NAME_PREFIX, name)
+        }
+
+        return name
+    }
+
+    private MethodCallExpression getMetaDataMethodCall(String key) {
+        callX(varX(metaDataMapName), "get", new ConstantExpression(key))
+    }
+
+    private MethodCallExpression putMetaDataMethodCall(String key, Expression value) {
+        callX(varX(metaDataMapName), "put", args(new ConstantExpression(key), value))
     }
 
     private List<Expression> getAliasExpressionList() {
@@ -433,6 +474,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         if (expression instanceof VariableExpression) {
             if (expression.isThisExpression()) return expression
             if (expression.text && Character.isUpperCase(expression.text.charAt(0))) return expression // type should not be transformed
+            if (expression.text.startsWith(__META_DATA_MAP_NAME_PREFIX)) return expression
 
             if (groupByVisited) { //  groupby
                 // in #1, we will correct receiver of built-in aggregate functions
@@ -442,9 +484,9 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                         if (_G == expression.text) {
                             transformedExpression =
                                     callX(
-                                        new ClassExpression(ClassHelper.make(QueryableHelper.class)),
+                                        new ClassExpression(QUERYABLE_HELPER_TYPE),
                                             "navigate",
-                                        args(new VariableExpression(lambdaParamName), new ListExpression(aliasExpressionList))
+                                        args(new VariableExpression(lambdaParamName), getMetaDataMethodCall(MD_ALIAS_NAME_LIST))
                                     )
                         } else {
                             transformedExpression = isJoin
@@ -563,9 +605,9 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         )
     }
 
-    private int seq = 0
+    private int lambdaParamSeq = 0
     private String generateLambdaParamName() {
-        "__t_${seq++}"
+        "__t_${lambdaParamSeq++}"
     }
 
     private Tuple2<String, Expression> correctVariablesOfLambdaExpression(DataSourceExpression dataSourceExpression, Expression lambdaCode) {
@@ -608,7 +650,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     }
 
     private static ClassExpression makeQueryableCollectionClassExpression() {
-        new ClassExpression(ClassHelper.make(Queryable.class))
+        new ClassExpression(QUERYABLE_TYPE)
     }
 
     @Override
@@ -616,8 +658,21 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         sourceUnit
     }
 
+    private final SourceUnit sourceUnit
+    private final Deque<GinqExpression> ginqExpressionStack = new ArrayDeque<>()
+
+    private static final ClassNode MAPS_TYPE = makeWithoutCaching(Maps.class)
+    private static final ClassNode QUERYABLE_TYPE = makeWithoutCaching(Queryable.class)
+    private static final ClassNode ORDER_TYPE = makeWithoutCaching(Queryable.Order.class)
+    private static final ClassNode NAMED_RECORD_TYPE = makeWithoutCaching(NamedRecord.class)
+    private static final ClassNode QUERYABLE_HELPER_TYPE = makeWithoutCaching(QueryableHelper.class)
+
     private static final String __METHOD_CALL_RECEIVER = "__methodCallReceiver"
     private static final String __GROUPBY_VISITED = "__groupByVisited"
     private static final String __LAMBDA_PARAM_NAME = "__LAMBDA_PARAM_NAME"
+    private static final String __META_DATA_MAP_NAME_PREFIX = '__metaDataMap_'
+    private static final String MD_GROUP_NAME_LIST = "groupNameList"
+    private static final String MD_SELECT_NAME_LIST = "selectNameList"
+    private static final String MD_ALIAS_NAME_LIST = 'aliasNameList'
     private static final String _G = '_g' // the implicit variable representing grouped `Queryable` object
 }
