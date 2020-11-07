@@ -360,12 +360,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         Expression projectionExpr = selectExpression.getProjectionExpr()
 
         List<Expression> expressionList = ((TupleExpression) projectionExpr).getExpressions()
-        Expression lambdaCode
-        if (expressionList.size() > 1) {
+        Expression lambdaCode = expressionList.get(0)
+        def expressionListSize = expressionList.size()
+        if (expressionListSize > 1 || (expressionListSize == 1 && lambdaCode instanceof CastExpression)) {
             ConstructorCallExpression namedListCtorCallExpression = constructNamedRecordCtorCallExpression(expressionList, MD_SELECT_NAME_LIST)
             lambdaCode = namedListCtorCallExpression
-        } else {
-            lambdaCode = expressionList.get(0)
         }
 
         return callXWithLambda(selectMethodReceiver, "select", dataSourceExpression, lambdaCode)

@@ -152,6 +152,16 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from select - 8"() {
+        assertScript '''
+            assert [[1], [2], [3]] == GQ {
+                from n in [1, 2, 3]
+                select n as v1
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - from where select - 1"() {
         assertScript '''
             def numbers = [0, 1, 2, 3, 4, 5]
