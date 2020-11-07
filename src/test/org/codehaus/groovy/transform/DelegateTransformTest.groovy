@@ -18,16 +18,24 @@
  */
 package org.codehaus.groovy.transform
 
-import gls.CompilableTestSupport
+import org.junit.Test
+
+import java.util.concurrent.locks.Lock
+
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertTrue
 
 /**
  * Tests for the {@code @Delegate} AST transform.
  */
-class DelegateTransformTest extends CompilableTestSupport {
+final class DelegateTransformTest {
 
-    /** fix for GROOVY-3380   */
+    @Test // GROOVY-3380
     void testDelegateImplementingANonPublicInterface() {
-        assertScript """
+        assertScript '''
             import org.codehaus.groovy.transform.ClassImplementingANonPublicInterface
 
             class DelegatingToClassImplementingANonPublicInterface {
@@ -36,12 +44,12 @@ class DelegateTransformTest extends CompilableTestSupport {
 
             def constant = new DelegatingToClassImplementingANonPublicInterface().returnConstant()
             assert constant == "constant"
-        """
+        '''
     }
 
-    /** fix for GROOVY-3380   */
+    @Test // GROOVY-3380
     void testDelegateImplementingANonPublicInterfaceWithZipFileConcreteCase() {
-        assertScript """
+        assertScript '''
             import java.util.zip.*
 
             class ZipWrapper{
@@ -49,12 +57,12 @@ class DelegateTransformTest extends CompilableTestSupport {
             }
 
             new ZipWrapper()
-        """
+        '''
     }
 
-    /** test for GROOVY-5974 */
+    @Test // GROOVY-5974
     void testDelegateExcludes() {
-        assertScript """
+        assertScript '''
           class MapSet {
             @Delegate(interfaces=false, excludes=['remove','clear']) Map m = [a: 1]
             @Delegate Set s = new LinkedHashSet([2, 3, 4] as Set) // HashSet not good enough in JDK 1.5
@@ -69,11 +77,12 @@ class DelegateTransformTest extends CompilableTestSupport {
           assert ms.toString() == '[a:1] [2, 4]'
           ms.clear()
           assert ms.toString() == '[a:1] []'
-        """
+        '''
     }
 
+    @Test
     void testDelegateCompileStatic() {
-        assertScript """
+        assertScript '''
           @groovy.transform.CompileStatic
           class MapSet {
             @Delegate(interfaces=false, excludes=['remove','clear']) Map m = [a: 1]
@@ -89,11 +98,12 @@ class DelegateTransformTest extends CompilableTestSupport {
           assert ms.toString() == '{a=1} [2, 4]'
           ms.clear()
           assert ms.toString() == '{a=1} []'
-        """
+        '''
     }
 
+    @Test
     void testLock() {
-        def res = new GroovyShell().evaluate("""
+        def res = new GroovyShell().evaluate('''
               import java.util.concurrent.locks.*
 
               class LockableMap {
@@ -105,7 +115,7 @@ class DelegateTransformTest extends CompilableTestSupport {
               }
 
               new LockableMap ()
-        """)
+        ''')
 
         res.lock()
         try {
@@ -123,31 +133,32 @@ class DelegateTransformTest extends CompilableTestSupport {
         assertEquals("in list", res.@list[0])
 
         assertTrue res instanceof Map
-        assertTrue res instanceof java.util.concurrent.locks.Lock
+        assertTrue res instanceof Lock
         assertFalse res instanceof List
     }
 
+    @Test
     void testMultiple() {
-        def res = new GroovyShell().evaluate("""
-        class X {
-          def value = 10
-        }
+        def res = new GroovyShell().evaluate('''
+            class X {
+              def value = 10
+            }
 
-        class Y {
-          @Delegate X  x  = new X ()
-          @Delegate XX xx = new XX ()
+            class Y {
+              @Delegate X  x  = new X ()
+              @Delegate XX xx = new XX ()
 
-          void setValue (v) {
-            this.@x.@value = 12
-          }
-        }
+              void setValue (v) {
+                this.@x.@value = 12
+              }
+            }
 
-        class XX {
-          def value2 = 11
-        }
+            class XX {
+              def value2 = 11
+            }
 
-        new Y ()
-        """)
+            new Y ()
+        ''')
 
         assertEquals 10, res.value
         assertEquals 11, res.value2
@@ -155,31 +166,32 @@ class DelegateTransformTest extends CompilableTestSupport {
         assertEquals 12, res.value
     }
 
+    @Test
     void testUsingDateCompiles() {
-        assertScript """
-        class Foo {
-          @Delegate Date d = new Date();
-        }
-        Foo
-      """
+        assertScript '''
+            class Foo {
+                @Delegate Date d = new Date();
+            }
+            Foo
+        '''
     }
 
-    /** fix for GROOVY-3471   */
+    @Test // GROOVY-3471
     void testDelegateOnAMapTypeFieldWithInitializationUsingConstructorProperties() {
-        assertScript """
+        assertScript '''
             class Test3471 { @Delegate Map mp }
             def t = new Test3471(mp: new HashMap()) // this was resulting in a NPE due to MetaClassImpl's special handling of Map
             assert t.keySet().size() == 0
-        """
+        '''
     }
 
-    /** GROOVY-3323   */
+    @Test // GROOVY-3323
     void testDelegateTransformCorrectlyDelegatesMethodsFromSuperInterfaces() {
         assert new DelegateBarImpl(new DelegateFooImpl()).bar() == 'bar impl'
         assert new DelegateBarImpl(new DelegateFooImpl()).foo() == 'foo impl'
     }
 
-    /** GROOVY-3555   */
+    @Test // GROOVY-3555
     void testDelegateTransformIgnoresDeprecatedMethodsByDefault() {
         def b1 = new DelegateBarForcingDeprecated(baz: new BazWithDeprecatedFoo())
         def b2 = new DelegateBarWithoutDeprecated(baz: new BazWithDeprecatedFoo())
@@ -191,9 +203,9 @@ class DelegateTransformTest extends CompilableTestSupport {
         }
     }
 
-    /** GROOVY-4163   */
+    @Test // GROOVY-4163
     void testDelegateTransformAllowsInterfacesAndDelegation() {
-        assertScript """
+        assertScript '''
             class Temp implements Runnable {
                 @Delegate
                 private Thread runnable
@@ -203,23 +215,33 @@ class DelegateTransformTest extends CompilableTestSupport {
                     def temp = new Temp(runnable: thread)
                 }
             }
-        """
+        '''
     }
 
+    @Test
+    void testDelegateToObjectShouldFail() {
+        shouldFail '''
+            class B {
+                @Delegate b = new Object()
+            }
+        '''
+    }
+
+    @Test
     void testDelegateToSelfTypeShouldFail() {
-        shouldNotCompile """
+        shouldFail '''
             class B {
                 @Delegate B b = new B()
-                static main(args){
+                static main(args) {
                     new B()
                 }
             }
-        """
+        '''
     }
 
-    // GROOVY-4265
+    @Test // GROOVY-4265
     void testShouldPreferDelegatedOverStaticSuperMethod() {
-        assertScript """
+        assertScript '''
             class A {
                 static foo(){"A->foo()"}
             }
@@ -230,18 +252,10 @@ class DelegateTransformTest extends CompilableTestSupport {
                 def foo(){"C->foo()"}
             }
             assert new B().foo() == 'C->foo()'
-        """
+        '''
     }
 
-    void testDelegateToObjectShouldFail() {
-        shouldNotCompile """
-            class B {
-                @Delegate b = new Object()
-            }
-        """
-    }
-
-    /** GROOVY-4244 */
+    @Test // GROOVY-4244
     void testSetPropertiesThroughDelegate() {
         def foo = new Foo4244()
 
@@ -255,25 +269,26 @@ class DelegateTransformTest extends CompilableTestSupport {
         }
     }
 
+    @Test
     void testDelegateSuperInterfaces_Groovy4619() {
         assert 'doSomething' in SomeClass4619.class.methods*.name
     }
 
-    // GROOVY-5112
+    @Test // GROOVY-5112
     void testGenericsOnArray() {
         assertScript '''
             class ListWrapper {
-              @Delegate
-              List myList
+                @Delegate
+                List myList
 
-              @Delegate
-              URL homepage
+                @Delegate
+                URL homepage
             }
             new ListWrapper()
         '''
     }
 
-    // GROOVY-5732
+    @Test // GROOVY-5732
     void testInterfacesFromSuperClasses() {
         assertScript '''
             interface I5732 {
@@ -294,7 +309,7 @@ class DelegateTransformTest extends CompilableTestSupport {
         '''
     }
 
-    // GROOVY-5729
+    @Test // GROOVY-5729
     void testDeprecationWithInterfaces() {
         assertScript '''
             interface I5729 {
@@ -322,9 +337,9 @@ class DelegateTransformTest extends CompilableTestSupport {
         '''
     }
 
-    // GROOVY-5446
+    @Test // GROOVY-5446
     void testDelegateWithParameterAnnotations() {
-        assertScript """
+        assertScript '''
             import java.lang.annotation.*
 
             @Retention(RetentionPolicy.RUNTIME)
@@ -349,11 +364,12 @@ class DelegateTransformTest extends CompilableTestSupport {
             println delegateMethod.parameterAnnotations
 
             assert delegateAnno == originalAnno
-        """
+        '''
     }
 
+    @Test
     void testDelegateWithMethodAnnotations() {
-        assertScript """
+        assertScript '''
             import java.lang.annotation.*
 
             @Retention(RetentionPolicy.RUNTIME)
@@ -382,11 +398,12 @@ class DelegateTransformTest extends CompilableTestSupport {
 
             assert delegateAnno.value() == 42
             assert delegateAnno.value() == originalAnno.value()
-        """
+        '''
     }
 
+    @Test
     void testParameterAnnotationsShouldNotBeCarriedOverByDefault() {
-        assertScript """
+        assertScript '''
             import java.lang.annotation.*
 
             @Retention(RetentionPolicy.RUNTIME)
@@ -408,69 +425,68 @@ class DelegateTransformTest extends CompilableTestSupport {
 
             def delegateMethod = A_Delegate.getMethod('method', [Object.class] as Class[])
             assert delegateMethod.parameterAnnotations[0].length == 0
-        """
+        '''
     }
 
     // this test reflects that we currently don't support carrying over
     // Closure Annotations rather than a desired design goal
     // TODO: support Closure Annotations and then remove/change this test
+    @Test
     void testAnnotationWithClosureMemberIsNotSupported() {
-        def message = shouldFail {
-            assertScript """
-                import java.lang.annotation.*
+        def err = shouldFail '''
+            import java.lang.annotation.*
 
-                @Retention(RetentionPolicy.RUNTIME)
-                @Target([ElementType.METHOD])
-                public @interface SomeAnnotation {
-                    Class value()
-                }
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target([ElementType.METHOD])
+            public @interface SomeAnnotation {
+                Class value()
+            }
 
-                class A {
-                    @SomeAnnotation({ param != null })
-                    def method(def param) { "Test" }
-                }
+            class A {
+                @SomeAnnotation({ param != null })
+                def method(def param) { "Test" }
+            }
 
-                class A_Delegate {
-                    @Delegate(methodAnnotations = true)
-                    A a = new A()
-                }
-            """
-        }
+            class A_Delegate {
+                @Delegate(methodAnnotations = true)
+                A a = new A()
+            }
+        '''
 
-        assert message.contains('@Delegate does not support keeping Closure annotation members.')
+        assert err.message.contains('@Delegate does not support keeping Closure annotation members.')
     }
 
     // this test reflects that we currently don't support carrying over
     // Closure Annotations rather than a desired design goal
     // TODO: support Closure Annotations and then remove/change this test
+    @Test
     void testAnnotationWithClosureClassDescendantIsNotSupported() {
-        def message = shouldFail {
-            assertScript """
-                import java.lang.annotation.*
+        def err = shouldFail '''
+            import java.lang.annotation.*
 
-                @Retention(RetentionPolicy.RUNTIME)
-                @Target([ElementType.METHOD])
-                public @interface SomeAnnotation {
-                    Class value()
-                }
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target([ElementType.METHOD])
+            public @interface SomeAnnotation {
+                Class value()
+            }
 
-                class A {
-                    @SomeAnnotation(org.codehaus.groovy.runtime.GeneratedClosure.class)
-                    def method(def param) { "Test" }
-                }
+            class A {
+                @SomeAnnotation(org.codehaus.groovy.runtime.GeneratedClosure.class)
+                def method(def param) { "Test" }
+            }
 
-                class A_Delegate {
-                    @Delegate(methodAnnotations = true)
-                    A a = new A()
-                }
-            """
-        }
-        assert message.contains('@Delegate does not support keeping Closure annotation members.')
+            class A_Delegate {
+                @Delegate(methodAnnotations = true)
+                A a = new A()
+            }
+        '''
+
+        assert err.message.contains('@Delegate does not support keeping Closure annotation members.')
     }
 
-    // GROOVY-5445
+    @Test // GROOVY-5445
     void testDelegateToSuperProperties() {
-        assertScript """
+        assertScript '''
             class Foo {
                 @Delegate Bar delegate = new Bar()
                 def foo() {
@@ -485,10 +501,10 @@ class DelegateTransformTest extends CompilableTestSupport {
             def f = new Foo()
             f.foo()
             assert f.bar + f.baz == 'barbaz'
-        """
+        '''
     }
 
-    // GROOVY-7243
+    @Test // GROOVY-7243
     void testInclude() {
         assertScript '''
             class Book {
@@ -533,9 +549,9 @@ class DelegateTransformTest extends CompilableTestSupport {
         '''
     }
 
-    // GROOVY-6329
+    @Test // GROOVY-6329
     void testIncludeAndExcludeByType() {
-        assertScript """
+        assertScript '''
             interface OddInclusionsTU<T, U> {
                 boolean addAll(Collection<? extends T> t)
                 boolean add(U u)
@@ -571,12 +587,12 @@ class DelegateTransformTest extends CompilableTestSupport {
             assert list.indexOf(8) == 1
             list.clear()
             assert list.all == [2, 8, 4, 6, 3, 5, 7, 9]
-        """
+        '''
     }
 
-    // GROOVY-5211
+    @Test // GROOVY-5211
     void testAvoidFieldNameClashWithParameterName() {
-        assertScript """
+        assertScript '''
             class A {
                 def foo(a) { a * 2 }
             }
@@ -586,66 +602,66 @@ class DelegateTransformTest extends CompilableTestSupport {
             }
 
             assert new B().foo(10) == 20
-        """
+        '''
     }
 
-    // GROOVY-6542
+    @Test // GROOVY-6542
     void testLineNumberInStackTrace() {
-        try {
-            assertScript '''import groovy.transform.ASTTest
+        def err = shouldFail '''\
+            @groovy.transform.ASTTest(phase=CANONICALIZATION, value={
+                def property = node.getDeclaredField('thingie')
+                def method = node.getDeclaredMethod('blowup')
+                def call = method.code.expression
 
-    @ASTTest(phase=CANONICALIZATION, value={
-        def fieldNode = node.getDeclaredField('thingie')
-        def blowupMethod = node.getDeclaredMethod('blowup')
-        def mce = blowupMethod.code.expression
-        assert mce.lineNumber==fieldNode.lineNumber
-        assert mce.lineNumber>0
-    })
-    class Upper {
-      @Delegate Lower thingie
+                assert property.lineNumber > 0
+                assert call.lineNumber == property.lineNumber
+            })
+            class Upper {
+                @Delegate Lower thingie
 
-      Upper() {
-        thingie = new Lower()
-      }
+                Upper() {
+                    thingie = new Lower()
+                }
+            }
+
+            class Lower {
+                def foo() {
+                    println("Foo!")
+                }
+
+                def blowup(String a) {
+                    throw new Exception("blow up with ${a}")
+                }
+
+                def blowup() {
+                    throw new Exception("blow up")
+                }
+            }
+
+            def up = new Upper()
+            up.foo()
+            up.blowup("bar")
+        '''
+
+        String stackTrace = err.asString()
+        assert stackTrace =~ /at Upper\.blowup\(TestScript\d+\.groovy:10\)/
     }
 
-    class Lower {
-      def foo() {
-        println("Foo!")
-      }
-
-      def blowup(String a) {
-        throw new Exception("blow up with ${a}")
-      }
-
-      def blowup() {
-        throw new Exception("blow up")
-      }
-    }
-
-    def up = new Upper()
-    up.foo()
-    up.blowup("bar")
-    '''
-        } catch (e) {
-            // ok
-        }
-    }
-
-    //
+    @Test
     void testShouldNotReuseRawClassNode() {
-        assertScript '''import org.codehaus.groovy.transform.DelegateMap
-class Foo {
-    DelegateMap dm = new DelegateMap()
-}
-def foo = new Foo()
-assert foo.dm.x == '123'
-'''
+        assertScript '''
+            import org.codehaus.groovy.transform.DelegateMap
+            class Foo {
+                DelegateMap dm = new DelegateMap()
+            }
+            def foo = new Foo()
+            assert foo.dm.x == '123'
+        '''
     }
 
-    // GROOVY-7118
+    @Test // GROOVY-7118
     void testDelegateOfMethodHavingPlaceholder() {
-        assertScript """
+        assertScript '''
             interface FooInt {
               public <T extends Throwable> T get(Class<T> clazz) throws Exception
             }
@@ -673,10 +689,10 @@ assert foo.dm.x == '123'
                 @Delegate Bar bar = new Bar()
             }
             assert new BarMain().get(Exception).class == Exception
-        """
+        '''
     }
 
-    // GROOVY-7261
+    @Test // GROOVY-7261
     void testShouldWorkWithLazyTransform() {
         assertScript '''
             class Foo {
@@ -692,7 +708,7 @@ assert foo.dm.x == '123'
         '''
     }
 
-    // GROOVY-6454
+    @Test // GROOVY-6454
     void testMethodsWithInternalNameShouldNotBeDelegatedTo() {
         assertScript '''
             class HasMethodWithInternalName {
@@ -709,7 +725,7 @@ assert foo.dm.x == '123'
         '''
     }
 
-    // GROOVY-6454
+    @Test // GROOVY-6454
     void testMethodsWithInternalNameShouldBeDelegatedToIfRequested() {
         assertScript '''
             interface HasMethodWithInternalName {
@@ -725,7 +741,7 @@ assert foo.dm.x == '123'
         '''
     }
 
-    // GROOVY-6454
+    @Test // GROOVY-6454
     void testProperitesWithInternalNameShouldBeDelegatedToIfRequested() {
         assertScript '''
             class HasPropertyWithInternalName {
@@ -743,6 +759,7 @@ assert foo.dm.x == '123'
         '''
     }
 
+    @Test
     void testDelegateToGetterMethod() {
         // given:
         def delegate = { new DelegateFooImpl() }
@@ -752,9 +769,9 @@ assert foo.dm.x == '123'
         assert foo.foo() == delegate().foo()
     }
 
-    // GROOVY-5752
+    @Test // GROOVY-5752
     void testDelegationShouldAccountForPrimitiveBooleanProperties() {
-        assertScript """
+        assertScript '''
             class A {
                 boolean a
                 boolean b
@@ -778,10 +795,10 @@ assert foo.dm.x == '123'
             assert b.isA()
             assert b.isB()
             assert b.getC()
-        """
+        '''
     }
 
-    //GROOVY-8132
+    @Test //GROOVY-8132
     void testOwnerPropertyPreferredToDelegateProperty() {
         assertScript '''
             class Foo {
@@ -797,6 +814,7 @@ assert foo.dm.x == '123'
         '''
     }
 
+    @Test
     void testOwnerMethodPreferredToDelegateMethod() {
         assertScript '''
             class Foo {
@@ -812,11 +830,9 @@ assert foo.dm.x == '123'
         '''
     }
 
-    // GROOVY-8204
+    @Test // GROOVY-8204
     void testDelegateToArray() {
         assertScript '''
-            import groovy.lang.Delegate
-
             class BugsMe {
                 @Delegate
                 String[] content = ['foo', 'bar']
@@ -828,9 +844,9 @@ assert foo.dm.x == '123'
         '''
     }
 
-    // GROOVY-9289
+    @Test // GROOVY-9289
     void testExcludesWithInvalidPropertyNameResultsInError() {
-        def message = shouldFail """
+        def err = shouldFail '''
             class WMap {
                 String name
                 @Delegate(excludes = "name")
@@ -843,11 +859,12 @@ assert foo.dm.x == '123'
             }
 
             new WMap('example', [name: 'weird'])
-        """
-        assert message.contains("Error during @Delegate processing: 'excludes' property or method 'name' does not exist.")
+        '''
+
+        assert err.message.contains("Error during @Delegate processing: 'excludes' property or method 'name' does not exist.")
     }
 
-    // GROOVY-8825
+    @Test // GROOVY-8825
     void testDelegateToPrecompiledGroovyGeneratedMethod() {
         assertScript '''
             import org.codehaus.groovy.transform.CompiledClass8825
@@ -859,7 +876,7 @@ assert foo.dm.x == '123'
         '''
     }
 
-    // GROOVY-9414
+    @Test // GROOVY-9414
     void testDelegateToPropertyViaGetter() {
         assertScript '''
             class Bar {
@@ -872,6 +889,8 @@ assert foo.dm.x == '123'
         '''
     }
 }
+
+//------------------------------------------------------------------------------
 
 interface DelegateFoo {
     def foo()
