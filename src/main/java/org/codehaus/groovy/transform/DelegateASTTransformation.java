@@ -379,14 +379,14 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                     alsoLazy ? propX(varX("this"), delegate.name.substring(1)) : delegate.getOp,
                     candidate.getName(),
                     args);
-            mce.setSourcePosition(delegate.delegate);
+            mce.setSourcePosition(delegate.delegate); // GROOVY-6542
             ClassNode returnType = correctToGenericsSpecRecurse(genericsSpec, candidate.getReturnType(), currentMethodGenPlaceholders);
             MethodNode newMethod = addGeneratedMethod(delegate.owner, candidate.getName(),
                     candidate.getModifiers() & (~ACC_ABSTRACT) & (~ACC_NATIVE),
                     returnType,
                     newParams,
                     candidate.getExceptions(),
-                    stmt(mce));
+                    candidate.isVoidMethod() ? stmt(mce) : returnS(mce));
             newMethod.setGenericsTypes(candidate.getGenericsTypes());
 
             if (memberHasValue(delegate.annotation, MEMBER_METHOD_ANNOTATIONS, Boolean.TRUE)) {
