@@ -55,7 +55,7 @@ class SourceRecord<T> implements Serializable {
         if (ALL == name) return sourceRecord
 
         if (!aliasList.contains(name)) {
-            throw new GroovyRuntimeException("Failed to find: $name")
+            return null
         }
 
         def accessPath = sourceRecord

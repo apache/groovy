@@ -180,6 +180,6 @@ class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.toString().contains('Failed to find: x')
+        assert err.toString().contains('No such property: x')
     }
 }

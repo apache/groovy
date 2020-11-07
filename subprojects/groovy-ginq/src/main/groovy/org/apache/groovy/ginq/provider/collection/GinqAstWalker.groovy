@@ -158,9 +158,9 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                             declS(
                                     localVarX(metaDataMapName),
                                     callX(MAPS_TYPE, "of", args(
-                                            new ConstantExpression(MD_ALIAS_NAME_LIST), new ListExpression(aliasExpressionList),
-                                            new ConstantExpression(MD_GROUP_NAME_LIST), (ListExpression) (currentGinqExpression.getNodeMetaData(MD_GROUP_NAME_LIST) ?: []),
-                                            new ConstantExpression(MD_SELECT_NAME_LIST), (ListExpression) (currentGinqExpression.getNodeMetaData(MD_SELECT_NAME_LIST) ?: [])
+                                            new ConstantExpression(MD_ALIAS_NAME_LIST), aliasNameListExpression,
+                                            new ConstantExpression(MD_GROUP_NAME_LIST), groupNameListExpression,
+                                            new ConstantExpression(MD_SELECT_NAME_LIST), selectNameListExpression
                                     ))
                             ),
                             stmt(selectMethodCallExpression)
@@ -423,6 +423,18 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         callX(varX(metaDataMapName), "put", args(new ConstantExpression(key), value))
     }
 
+    private ListExpression getSelectNameListExpression() {
+        return (ListExpression) (currentGinqExpression.getNodeMetaData(MD_SELECT_NAME_LIST) ?: [])
+    }
+
+    private ListExpression getGroupNameListExpression() {
+        return (ListExpression) (currentGinqExpression.getNodeMetaData(MD_GROUP_NAME_LIST) ?: [])
+    }
+
+    private ListExpression getAliasNameListExpression() {
+        return new ListExpression(aliasExpressionList)
+    }
+
     private List<Expression> getAliasExpressionList() {
         dataSourceAliasList.stream()
                 .map(e -> new ConstantExpression(e))
@@ -493,8 +505,12 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                                     : new VariableExpression(lambdaParamName)
                         }
                     } else {
-                        // replace `gk` in the groupby with `__t.v1.gk`, note: __t.v1 stores the group key
-                        transformedExpression = propX(propX(new VariableExpression(lambdaParamName), 'v1'), expression.text)
+                        if (groupNameListExpression.getExpressions().stream().map(e -> e.text).anyMatch(e -> e == expression.text)
+                            || aliasNameListExpression.getExpressions().stream().map(e -> e.text).anyMatch(e -> e == expression.text)
+                        ) {
+                            // replace `gk` in the groupby with `__t.v1.gk`, note: __t.v1 stores the group key
+                            transformedExpression = propX(propX(new VariableExpression(lambdaParamName), 'v1'), expression.text)
+                        }
                     }
                 }
             } else if (isJoin) {

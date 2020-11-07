@@ -162,6 +162,17 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from select - 9"() {
+        assertScript '''
+            int rowNumber = 0
+            assert [[0, 0], [1, 1], [2, 2]] == GQ {
+                from n in [0, 1, 2]
+                select rowNumber++, n
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - from where select - 1"() {
         assertScript '''
             def numbers = [0, 1, 2, 3, 4, 5]
@@ -1967,6 +1978,21 @@ class GinqTest {
                 select length, firstChar, max(s)
 // end::ginq_grouping_09[]
             }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby select - 17"() {
+        assertScript '''
+            def test() {
+                final int x = 1
+                assert [[1, 1, 2], [3, 1, 2], [6, 1, 3]] == GQ {
+                    from n in [1, 1, 3, 3, 6, 6, 6]
+                    groupby n
+                    select n, x, count(n)
+                }.toList()
+            }
+            test()
         '''
     }
 
