@@ -210,6 +210,12 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_nested_02,inde
 ----
 
 === GINQ Tips
+==== Row Number
+`_rn` is the implicit variable representing row number for each record in the result set. It starts with `0`
+[source, sql]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_05,indent=0]
+----
 
 ==== List Comprehension
 

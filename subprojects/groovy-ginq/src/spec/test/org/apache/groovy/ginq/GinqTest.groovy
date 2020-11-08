@@ -2321,8 +2321,10 @@ class GinqTest {
     void "testGinq - row number - 0"() {
         assertScript '''
             assert [[0, 1], [1, 2], [2, 3]] == GQ {
+// tag::ginq_tips_05[]
                 from n in [1, 2, 3] 
                 select _rn, n
+// end::ginq_tips_05[]
             }.toList()
         '''
     }
