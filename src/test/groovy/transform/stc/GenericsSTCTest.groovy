@@ -628,8 +628,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-9762
     void testShouldUseMethodGenericType7() {
-        // TODO GROOVY-9762 reinstate fourth case below for GROOVY_3_0_X once working
-        for (toList in ['{ list(it) }', 'o -> list(o)', 'this.&list'/*, 'this::list'*/]) {
+        for (toList in ['{ list(it) }', 'o -> list(o)', 'this.&list', 'this::list']) {
             assertScript """
                 def <T> List<T> list(T item) {
                     return [item]

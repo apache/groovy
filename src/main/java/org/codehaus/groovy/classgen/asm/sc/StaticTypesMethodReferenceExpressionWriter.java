@@ -301,7 +301,8 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     }
 
     private MethodNode findMethodRefMethod(String methodRefName, Parameter[] abstractMethodParameters, Expression typeOrTargetRef) {
-        ClassNode typeOrTargetRefType = typeOrTargetRef.getType();
+        ClassNode typeOrTargetRefType = isClassExpr(typeOrTargetRef) ? typeOrTargetRef.getType()
+                : controller.getTypeChooser().resolveType(typeOrTargetRef, controller.getClassNode());
         List<MethodNode> methodNodeList = typeOrTargetRefType.getMethods(methodRefName);
         Set<MethodNode> dgmMethodNodeSet = findDGMMethodsForClassNode(controller.getSourceUnit().getClassLoader(), typeOrTargetRefType, methodRefName);
 
