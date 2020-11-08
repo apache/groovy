@@ -124,6 +124,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
@@ -890,20 +891,30 @@ public class AsmClassGenerator extends ClassGenerator {
         return name;
     }
 
-    private static boolean isValidFieldNodeForByteCodeAccess(final FieldNode fn, final ClassNode accessingNode) {
-        if (fn == null) return false;
-        ClassNode declaringClass = fn.getDeclaringClass();
-        // same class is always allowed access
-        if (fn.isPublic() || declaringClass.equals(accessingNode)) return true;
-        boolean samePackages = Objects.equals(declaringClass.getPackageName(), accessingNode.getPackageName());
-        // protected means same class or same package, or subclass
-        if (fn.isProtected() && (samePackages || accessingNode.isDerivedFrom(declaringClass))) {
-            return true;
-        }
-        if (!fn.isPrivate()) {
-            // package private is the only modifier left. It means  same package is allowed, subclass not, same class is
-            return samePackages;
-        }
+    /**
+     * Determines if the given class can directly access the given field (via
+     * {@code GETFIELD}, {@code GETSTATIC}, etc. bytecode instructions).
+     */
+    public static boolean isValidFieldNodeForByteCodeAccess(final FieldNode field, final ClassNode accessingClass) {
+        if (field == null) return false;
+
+        // a public field is accessible from anywhere
+        if (field.isPublic()) return true;
+
+        ClassNode declaringClass = field.getDeclaringClass();
+
+        // any field is accessible from the declaring class
+        if (accessingClass.equals(declaringClass)) return true;
+
+        // a private field isn't accessible beyond the declaring class
+        if (field.isPrivate()) return false;
+
+        // a protected field is accessible from any subclass of the declaring class
+        if (field.isProtected() && accessingClass.isDerivedFrom(declaringClass)) return true;
+
+        // a protected or package-private field is accessible from the declaring package
+        if (Objects.equals(accessingClass.getPackageName(), declaringClass.getPackageName())) return true;
+
         return false;
     }
 
@@ -1028,20 +1039,6 @@ public class AsmClassGenerator extends ClassGenerator {
         return true;
     }
 
-    private static boolean getterAndSetterExists(final MethodNode setter, final MethodNode getter) {
-        return setter != null && getter != null && setter.getDeclaringClass().equals(getter.getDeclaringClass());
-    }
-
-    private static MethodNode findSetterOfSuperClass(final ClassNode classNode, final FieldNode fieldNode) {
-        String setterMethodName = getSetterName(fieldNode.getName());
-        return classNode.getSuperClass().getSetterMethod(setterMethodName);
-    }
-
-    private static MethodNode findGetterOfSuperClass(final ClassNode classNode, final FieldNode fieldNode) {
-        String getterMethodName = "get" + capitalize(fieldNode.getName());
-        return classNode.getSuperClass().getGetterMethod(getterMethodName);
-    }
-
     private boolean checkStaticOuterField(final PropertyExpression pexp, final String propertyName) {
         for (final ClassNode outer : controller.getClassNode().getOuterClasses()) {
             FieldNode field = outer.getDeclaredField(propertyName);
@@ -1104,7 +1101,7 @@ public class AsmClassGenerator extends ClassGenerator {
                     } else {
                         fieldNode = classNode.getDeclaredField(name);
                     }
-                    if (fieldNode == null && !isValidFieldNodeForByteCodeAccess(classNode.getField(name), classNode)) {
+                    if (fieldNode == null && !isValidFieldNodeForByteCodeAccess(getField(classNode, name), classNode)) {
                         // GROOVY-9501, GROOVY-9569, GROOVY-9650, GROOVY-9655, GROOVY-9665, GROOVY-9683, GROOVY-9695
                         if (checkStaticOuterField(expression, name)) return;
                     }
@@ -1179,16 +1176,6 @@ public class AsmClassGenerator extends ClassGenerator {
         } else {
             controller.getAssertionWriter().record(expression.getProperty());
         }
-    }
-
-    private static boolean usesSuper(PropertyExpression pe) {
-        Expression expression = pe.getObjectExpression();
-        if (expression instanceof VariableExpression) {
-            VariableExpression varExp = (VariableExpression) expression;
-            String variable = varExp.getName();
-            return variable.equals("super");
-        }
-        return false;
     }
 
     @Override

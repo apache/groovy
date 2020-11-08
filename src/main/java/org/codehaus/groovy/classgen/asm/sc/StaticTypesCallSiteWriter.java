@@ -54,8 +54,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
@@ -529,9 +529,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     }
 
     boolean makeGetField(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean safe, final boolean implicitThis) {
-        FieldNode field = receiverType.getField(fieldName);
-
-        if (field != null && isDirectAccessAllowed(field, controller.getClassNode())) {
+        FieldNode field = getField(receiverType, fieldName); // GROOVY-7039: include interface constants
+        if (field != null && AsmClassGenerator.isValidFieldNodeForByteCodeAccess(field, controller.getClassNode())) {
             CompileStack compileStack = controller.getCompileStack();
             MethodVisitor mv = controller.getMethodVisitor();
             ClassNode replacementType = field.getOriginType();
@@ -572,48 +571,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             }
             operandStack.replace(replacementType);
             return true;
-        }
-
-        for (ClassNode face : receiverType.getInterfaces()) {
-            // GROOVY-7039
-            if (face != receiverType && makeGetField(receiver, face, fieldName, safe, implicitThis)) {
-                return true;
-            }
-        }
-
-        ClassNode superClass = receiverType.getSuperClass();
-        if (superClass != null && !OBJECT_TYPE.equals(superClass)) {
-            return makeGetField(receiver, superClass, fieldName, safe, implicitThis);
-        }
-        return false;
-    }
-
-    /**
-     * Direct access is allowed from the declaring class of the field and sometimes from inner and peer types.
-     *
-     * @return {@code true} if GETFIELD or GETSTATIC is safe for given field and receiver
-     */
-    private static boolean isDirectAccessAllowed(final FieldNode field, final ClassNode receiver) {
-        // first, direct access from anywhere for public fields
-        if (field.isPublic()) return true;
-
-        ClassNode declaringType = field.getDeclaringClass().redirect(), receiverType = receiver.redirect();
-
-        // next, direct access from within the declaring class
-        if (receiverType.equals(declaringType)) return true;
-
-        if (field.isPrivate()) return false;
-
-        // next, direct access from within the declaring package
-        if (Objects.equals(receiver.getPackageName(), declaringType.getPackageName())) return true;
-
-        // last, inner class access to outer class fields
-        receiverType = receiverType.getOuterClass();
-        while (receiverType != null) {
-            if (receiverType.equals(declaringType)) {
-                return true;
-            }
-            receiverType = receiverType.getOuterClass();
         }
         return false;
     }

@@ -503,9 +503,9 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         ''', 'No such property: p for class: Outer$Inner'
     }
 
-    void testPrivateFieldAccessInClosure() {
+    void testPrivateFieldAccessInClosure1() {
         assertScript '''
-            class C {
+            class A {
                 private int x
                 void test() {
                     def c = { -> x = 666 }
@@ -513,28 +513,14 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     assert x == 666
                 }
             }
-            new C().test()
+            new A().test()
         '''
     }
 
     // GROOVY-9683
     void testPrivateFieldAccessInClosure2() {
         assertScript '''
-            class C {
-                private static X = 'xxx'
-                void test() {
-                    [:].with {
-                        assert X == 'xxx'
-                    }
-                }
-            }
-            new C().test()
-        '''
-    }
-
-    void testPrivateFieldAccessInClosure3() {
-        assertScript '''
-            class C {
+            class A {
                 private static X = 'xxx'
                 void test() {
                     [:].withDefault { throw new MissingPropertyException(it.toString()) }.with {
@@ -542,29 +528,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     }
                 }
             }
-            new C().test()
-        '''
-    }
-
-    // GROOVY-9695
-    void testPrivateFieldAccessInClosure4() {
-        assertScript '''
-            class C {
-                private static final X = 'xxx'
-                void test() {
-                    Map m = [:]
-                    def c = { ->
-                        assert X == 'xxx'
-                        m[X] = 123
-                    }
-                    c()
-                    assert m == [xxx:123]
-                }
-            }
-            new C().test()
-            class D extends C {
-            }
-            new D().test()
+            new A().test()
         '''
     }
 
