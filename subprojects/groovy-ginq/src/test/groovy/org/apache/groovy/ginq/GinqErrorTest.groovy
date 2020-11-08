@@ -91,7 +91,7 @@ class GinqErrorTest {
         def err = shouldFail '''\
             def nums1 = [1, 2, 3]
             def nums2 = [1, 2, 3]
-            assert [[1, 1], [2, 2], [3, 3]] == GQ {
+            GQ {
                 from n1 in nums1
                 innerjoin n2 in nums2
                 select n1, n2
@@ -172,7 +172,7 @@ class GinqErrorTest {
                 }
             }
             def persons = [new Person('Linda', 100, 'Female'), new Person('Daniel', 135, 'Male'), new Person('David', 121, 'Male')]
-            assert [['Female', 1], ['Male', 2]] == GQ {
+            GQ {
                 from p in persons
                 groupby p.gender
                 orderby count()
@@ -181,5 +181,18 @@ class GinqErrorTest {
         '''
 
         assert err.toString().contains('No such property: x')
+    }
+
+    @Test
+    void "testGinq - from groupby select - 7"() {
+        def err = shouldFail '''
+            assert [[1, 2], [3, 6], [6, 18]] == GQ {
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                groupby n
+                select n, agg(_g.stream().map(r -> r.x).reduce(BigDecimal.ZERO, BigDecimal::add))
+            }.toList()
+        '''
+
+        assert err.toString().contains('Failed to find data source by the alias: x')
     }
 }
