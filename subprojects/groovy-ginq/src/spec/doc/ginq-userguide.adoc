@@ -251,3 +251,10 @@ which is the default behaviour of GINQ:
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_customize_01,indent=0]
 ----
+
+=== GINQ Examples
+==== Generate Multiplication Table
+[source, sql]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_examples_01,indent=0]
+----
