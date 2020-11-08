@@ -54,10 +54,12 @@ import org.codehaus.groovy.ast.expr.GStringExpression
 import org.codehaus.groovy.ast.expr.LambdaExpression
 import org.codehaus.groovy.ast.expr.ListExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.PostfixExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
 
 import java.util.stream.Collectors
@@ -163,6 +165,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                                             new ConstantExpression(MD_SELECT_NAME_LIST), selectNameListExpression
                                     ))
                             ),
+                            declS(localVarX(rowNumberName), new ConstantExpression(0L)),
                             stmt(selectMethodCallExpression)
                     )),
                 "call")
@@ -367,6 +370,19 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             lambdaCode = namedListCtorCallExpression
         }
 
+        lambdaCode = lambdaCode.transformExpression(new ExpressionTransformer() {
+            @Override
+            Expression transform(Expression expression) {
+                if (expression instanceof VariableExpression) {
+                    if (_RN == expression.text) {
+                        return new PostfixExpression(varX(rowNumberName), new Token(Types.PLUS_PLUS, '++', -1, -1))
+                    }
+                }
+
+                return expression.transformExpression(this)
+            }
+        })
+
         return callXWithLambda(selectMethodReceiver, "select", dataSourceExpression, lambdaCode)
     }
 
@@ -398,8 +414,12 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         currentGinqExpression.putNodeMetaData(metaDataKey, nameListExpression)
 
         ConstructorCallExpression namedRecordCtorCallExpression =
-                ctorX(NAMED_RECORD_TYPE, args(new ListExpression(elementExpressionList),
-                        getMetaDataMethodCall(metaDataKey), getMetaDataMethodCall(MD_ALIAS_NAME_LIST)))
+                ctorX(NAMED_RECORD_TYPE,
+                        args(
+                                new ListExpression(elementExpressionList),
+                                getMetaDataMethodCall(metaDataKey), getMetaDataMethodCall(MD_ALIAS_NAME_LIST)
+                        )
+                )
         return namedRecordCtorCallExpression
     }
 
@@ -410,6 +430,18 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         if (!name) {
             name = "${__META_DATA_MAP_NAME_PREFIX}${metaDataMapNameSeq++}"
             currentGinqExpression.putNodeMetaData(__META_DATA_MAP_NAME_PREFIX, name)
+        }
+
+        return name
+    }
+
+    private int rowNumberNameSeq = 0
+    private String getRowNumberName() {
+        String name = (String) currentGinqExpression.getNodeMetaData(__ROW_NUMBER_NAME_PREFIX)
+
+        if (!name) {
+            name = "${__ROW_NUMBER_NAME_PREFIX}${rowNumberNameSeq++}"
+            currentGinqExpression.putNodeMetaData(__ROW_NUMBER_NAME_PREFIX, name)
         }
 
         return name
@@ -686,8 +718,10 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final String __GROUPBY_VISITED = "__groupByVisited"
     private static final String __LAMBDA_PARAM_NAME = "__LAMBDA_PARAM_NAME"
     private static final String __META_DATA_MAP_NAME_PREFIX = '__metaDataMap_'
+    private static final String __ROW_NUMBER_NAME_PREFIX = '__rowNumber_'
     private static final String MD_GROUP_NAME_LIST = "groupNameList"
     private static final String MD_SELECT_NAME_LIST = "selectNameList"
     private static final String MD_ALIAS_NAME_LIST = 'aliasNameList'
     private static final String _G = '_g' // the implicit variable representing grouped `Queryable` object
+    private static final String _RN = '_rn' // the implicit variable representing row number
 }

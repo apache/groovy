@@ -2316,4 +2316,28 @@ class GinqTest {
             assert [1, 2, 3] == GQ {from n in new int[] {1, 2, 3} select n}.toList()
         '''
     }
+
+    @Test
+    void "testGinq - row number - 0"() {
+        assertScript '''
+            assert [[0, 1], [1, 2], [2, 3]] == GQ {
+                from n in [1, 2, 3] 
+                select _rn, n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - row number - 1"() {
+        assertScript '''
+            assert [[0, 1, 2], [1, 2, 3]] == GQ {
+                from v in (
+                    from n in [1, 2, 3]
+                    select _rn, n
+                )
+                where v.n > 1
+                select _rn, v._rn as vRn, v.n
+            }.toList()
+        '''
+    }
 }
