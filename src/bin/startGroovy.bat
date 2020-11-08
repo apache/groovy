@@ -294,6 +294,9 @@ if "%JAVA_VERSION%" gtr "1.8.0" if "%GROOVY_TURN_OFF_JAVA_WARNINGS%" == "true"  
 
 if exist "%USERPROFILE%/.groovy/postinit.bat" call "%USERPROFILE%/.groovy/postinit.bat"
 
+@rem GROOVY-6453: groovysh in Windows 7/8/10 doesn't support arrow keys and Del
+set JAVA_OPTS=%JAVA_OPTS% -Djline.terminal=none
+
 @rem Execute Groovy
 "%JAVA_EXE%" %GROOVY_OPTS% %JAVA_OPTS% -classpath "%STARTER_CLASSPATH%" %STARTER_MAIN_CLASS% --main %CLASS% --conf "%STARTER_CONF%" --classpath "%CP%" %REPLACE_PREVIEW% %CMD_LINE_ARGS%
 
