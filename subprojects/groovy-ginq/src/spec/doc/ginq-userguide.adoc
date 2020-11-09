@@ -76,7 +76,7 @@ Currently GINQ supports `Iterable`, `Stream` and array as its data source:
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_datasource_03,indent=0]
 ----
 
-===== Java `Stream` Data Source
+===== `Stream` Data Source
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_datasource_01,indent=0]

@@ -43,8 +43,12 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
 
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Build the AST for GINQ
@@ -77,10 +81,16 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
         return ginqExpression.getNodeMetaData(__LATEST_GINQ_EXPRESSION_CLAUSE);
     }
 
+    private static final Set<String> KEY_WORD_SET = new HashSet<>(Arrays.asList(
+            "from", "innerjoin", "leftjoin", "rightjoin", "fulljoin", "crossjoin",
+            "where", "on", "having", "groupby", "orderby", "limit", "select"));
+
     @Override
     public void visitMethodCallExpression(MethodCallExpression call) {
         super.visitMethodCallExpression(call);
         final String methodName = call.getMethodAsString();
+
+        if (!KEY_WORD_SET.contains(methodName)) return;
 
         if ("from".equals(methodName)) {
             ginqExpressionStack.push(new GinqExpression()); // store the result

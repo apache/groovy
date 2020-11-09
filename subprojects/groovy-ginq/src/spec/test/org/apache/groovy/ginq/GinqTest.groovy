@@ -2357,9 +2357,16 @@ class GinqTest {
     @Test
     void "testGinq - from stream - 0"() {
         assertScript '''
-// tag::ginq_datasource_01[]
             def stream = [1, 2, 3].stream()
             assert [1, 2, 3] == GQ {from n in stream select n}.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from stream - 1"() {
+        assertScript '''
+// tag::ginq_datasource_01[]
+            assert [1, 2, 3] == GQ {from n in [1, 2, 3].stream() select n}.toList()
 // end::ginq_datasource_01[]
         '''
     }
