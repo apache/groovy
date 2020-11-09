@@ -968,6 +968,8 @@ public class GenericsUtils {
                     for (ClassNode upperBound : upperBounds) {
                         if (hasUnresolvedGenerics(upperBound)) return true;
                     }
+                } else {
+                    if (hasUnresolvedGenerics(genericsType.getType())) return true;
                 }
             }
         }
