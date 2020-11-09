@@ -1862,7 +1862,7 @@ public abstract class StaticTypeCheckingSupport {
         return false;
     }
 
-    private static ClassNode[] applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final ClassNode[] bounds) {
+    static ClassNode[] applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final ClassNode[] bounds) {
         if (bounds == null) return null;
         ClassNode[] newBounds = new ClassNode[bounds.length];
         for (int i = 0, n = bounds.length; i < n; i += 1) {
