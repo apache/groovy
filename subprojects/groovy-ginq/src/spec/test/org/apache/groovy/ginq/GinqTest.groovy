@@ -2346,9 +2346,30 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from iterable - 0"() {
+        assertScript '''
+// tag::ginq_datasource_03[]
+            assert [1, 2, 3] == GQ {from n in [1, 2, 3] select n}.toList()
+// end::ginq_datasource_03[]
+        '''
+    }
+
+    @Test
+    void "testGinq - from stream - 0"() {
+        assertScript '''
+// tag::ginq_datasource_01[]
+            def stream = [1, 2, 3].stream()
+            assert [1, 2, 3] == GQ {from n in stream select n}.toList()
+// end::ginq_datasource_01[]
+        '''
+    }
+
+    @Test
     void "testGinq - from array - 0"() {
         assertScript '''
+// tag::ginq_datasource_02[]
             assert [1, 2, 3] == GQ {from n in new int[] {1, 2, 3} select n}.toList()
+// end::ginq_datasource_02[]
         '''
     }
 
