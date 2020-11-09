@@ -164,12 +164,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     public <U> Queryable<U> select(Function<? super T, ? extends U> mapper) {
         Stream<U> stream = this.stream().map(mapper);
 
-        final Queryable<U> queryable = from(stream);
-        if (queryable instanceof QueryableCollection) {
-            ((QueryableCollection) queryable).setReusable();
-        }
-
-        return queryable;
+        return from(stream);
     }
 
     @Override
