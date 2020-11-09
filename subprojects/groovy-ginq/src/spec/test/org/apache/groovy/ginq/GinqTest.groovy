@@ -2348,9 +2348,11 @@ class GinqTest {
     @Test
     void "testGinq - from iterable - 0"() {
         assertScript '''
+            assert [1, 2, 3] == GQ {
 // tag::ginq_datasource_03[]
-            assert [1, 2, 3] == GQ {from n in [1, 2, 3] select n}.toList()
+                from n in [1, 2, 3] select n
 // end::ginq_datasource_03[]
+            }.toList()
         '''
     }
 
@@ -2365,18 +2367,22 @@ class GinqTest {
     @Test
     void "testGinq - from stream - 1"() {
         assertScript '''
+            assert [1, 2, 3] == GQ {
 // tag::ginq_datasource_01[]
-            assert [1, 2, 3] == GQ {from n in [1, 2, 3].stream() select n}.toList()
+                from n in [1, 2, 3].stream() select n
 // end::ginq_datasource_01[]
+            }.toList()
         '''
     }
 
     @Test
     void "testGinq - from array - 0"() {
         assertScript '''
+            assert [1, 2, 3] == GQ {
 // tag::ginq_datasource_02[]
-            assert [1, 2, 3] == GQ {from n in new int[] {1, 2, 3} select n}.toList()
+                from n in new int[] {1, 2, 3} select n
 // end::ginq_datasource_02[]
+            }.toList()
         '''
     }
 
