@@ -44,7 +44,18 @@ class GinqErrorTest {
             }
         '''
 
-        assert err.toString().contains('`from` clause is missing')
+        assert err.toString().contains('One `from` is expected and must be the first clause')
+    }
+
+    @Test
+    void "testGinq - select from - 1"() {
+        def err = shouldFail '''\
+            GQ {
+                select n from n in [0, 1, 2]
+            }
+        '''
+
+        assert err.toString().contains("One `from` is expected and must be the first clause")
     }
 
     @Test
@@ -157,7 +168,7 @@ class GinqErrorTest {
     }
 
     @Test
-    void "testGinq - from groupby select - 3"() {
+    void "testGinq - from groupby select - 1"() {
         def err = shouldFail '''
             @groovy.transform.EqualsAndHashCode
             class Person {
@@ -184,7 +195,7 @@ class GinqErrorTest {
     }
 
     @Test
-    void "testGinq - from groupby select - 7"() {
+    void "testGinq - from groupby select - 2"() {
         def err = shouldFail '''
             assert [[1, 2], [3, 6], [6, 18]] == GQ {
                 from n in [1, 1, 3, 3, 6, 6, 6]

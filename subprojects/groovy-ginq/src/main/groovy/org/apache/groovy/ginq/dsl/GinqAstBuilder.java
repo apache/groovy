@@ -47,7 +47,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -76,7 +75,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
     private AbstractGinqExpression getLatestGinqExpressionClause() {
         GinqExpression ginqExpression = ginqExpressionStack.peek();
         if (null == ginqExpression) {
-            this.collectSyntaxError(new GinqSyntaxError("`from` clause is missing", -1, -1));
+            this.collectSyntaxError(new GinqSyntaxError("One `from` is expected and must be the first clause", -1, -1));
         }
         return ginqExpression.getNodeMetaData(__LATEST_GINQ_EXPRESSION_CLAUSE);
     }
