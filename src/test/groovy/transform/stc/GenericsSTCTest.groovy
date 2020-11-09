@@ -644,6 +644,42 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-9803
+    void testShouldUseMethodGenericType8() {
+        assertScript '''
+            def opt = Optional.of(42)
+                .map(Collections::singleton)
+                .map(x -> x.first().intValue()) // Cannot find matching method java.lang.Object#intValue()
+            assert opt.get() == 42
+        '''
+        // same as above but with separate type parameter name for each location
+        assertScript '''
+            abstract class A<I,O> {
+                abstract O apply(I input)
+            }
+            class C<T> {
+                static <U> C<U> of(U item) {
+                    new C<U>()
+                }
+                def <V> C<V> map(A<? super T, ? super V> func) {
+                    new C<V>()
+                }
+            }
+            class D {
+                static <W> Set<W> wrap(W o) {
+                }
+            }
+
+            void test() {
+                def c = C.of(42)
+                def d = c.map(D.&wrap)
+                def e = d.map(x -> x.first().intValue())
+            }
+
+            test()
+        '''
+    }
+
     // GROOVY-5516
     void testAddAllWithCollectionShouldBeAllowed() {
         assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
