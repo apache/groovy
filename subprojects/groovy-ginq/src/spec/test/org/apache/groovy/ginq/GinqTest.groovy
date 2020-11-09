@@ -2376,6 +2376,18 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from GINQ result set - 1"() {
+        assertScript '''
+// tag::ginq_datasource_04[]
+            def vt = GQ {from m in [1, 2, 3] select m}
+            assert [1, 2, 3] == GQ {
+                from n in vt select n
+            }.toList()
+// end::ginq_datasource_04[]
+        '''
+    }
+
+    @Test
     void "testGinq - from array - 0"() {
         assertScript '''
             assert [1, 2, 3] == GQ {

@@ -68,7 +68,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_execution_02,i
 === GINQ Syntax
 ==== Data Source
 The data source for GINQ could be specified by `from` clause.
-Currently GINQ supports `Iterable`, `Stream` and array as its data source:
+Currently GINQ supports `Iterable`, `Stream`, array and GINQ result set as its data source:
 
 ===== `Iterable` Data Source
 [source, sql]
@@ -86,6 +86,12 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_datasource_01,
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_datasource_02,indent=0]
+----
+
+===== GINQ Result Set Data Source
+[source, sql]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_datasource_04,indent=0]
 ----
 
 ==== Projection
