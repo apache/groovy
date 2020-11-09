@@ -2693,9 +2693,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
                 expression.visit(this);
-                if (expression.getNodeMetaData(DELEGATION_METADATA) != null) {
-                    expression.removeNodeMetaData(DELEGATION_METADATA);
-                }
+                expression.removeNodeMetaData(DELEGATION_METADATA);
             }
         }
         if (expressions.size() > 0 && expressions.get(0) instanceof MapExpression && params.length > 0) {
@@ -3593,13 +3591,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (!isFunctionalInterface(paramType.redirect())) {
                 addError("The argument is a method reference, but the parameter type is not a functional interface", argumentExpression);
                 newArgumentExpressionList.add(argumentExpression);
-                continue;
+            } else {
+                newArgumentExpressionList.add(constructLambdaExpressionForMethodReference(paramType));
+                methodReferenceParamIndexList.add(i);
             }
-
-            LambdaExpression constructedLambdaExpression = constructLambdaExpressionForMethodReference(paramType);
-
-            newArgumentExpressionList.add(constructedLambdaExpression);
-            methodReferenceParamIndexList.add(i);
         }
 
         visitMethodCallArguments(receiver, new ArgumentListExpression(newArgumentExpressionList), true, selectedMethod);
@@ -5148,10 +5143,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     argumentType = argumentType.getComponentType();
                 }
                 if (isUsingGenericsOrIsArrayUsingGenerics(paramType)) {
-                    if (implementsInterfaceOrIsSubclassOf(argumentType, CLOSURE_TYPE) && isSAMType(paramType)) {
-                        // implicit closure coercion in action!
-                        Map<GenericsTypeName, GenericsType> pholders = applyGenericsContextToParameterClass(resolvedPlaceholders, paramType);
-                        argumentType = convertClosureTypeToSAMType(expressions.get(i), argumentType, paramType, pholders);
+                    if (argumentType.isDerivedFrom(CLOSURE_TYPE)) {
+                        MethodNode sam = findSAM(paramType);
+                        if (sam != null) { // implicit closure coercion in action!
+                            argumentType = !paramType.isUsingGenerics() ? paramType
+                                    : convertClosureTypeToSAMType(expressions.get(i), argumentType, sam, paramType,
+                                            applyGenericsContextToParameterClass(resolvedPlaceholders, paramType));
+                        }
                     }
                     if (isVargs && lastArg && argumentType.isArray()) {
                         argumentType = argumentType.getComponentType();
@@ -5275,41 +5273,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * This method will convert a closure type to the appropriate SAM type, which will be used
-     * to infer return type generics.
+     * Converts a closure type to the appropriate SAM type, which is used to
+     * infer return type generics.
      *
-     * @param closureType the inferred type of a closure (Closure&lt;ClosureReturnType&gt;)
+     * @param closureType the inferred type of a closure {@code Closure<Type>}
      * @param samType     the type into which the closure is coerced into
-     * @return same SAM type, but completed with information from the closure node
+     * @return SAM type augmented using information from the argument expression
      */
-    private static ClassNode convertClosureTypeToSAMType(final Expression expression, final ClassNode closureType, final ClassNode samType, final Map<GenericsTypeName, GenericsType> placeholders) {
-        if (!samType.isUsingGenerics()) return samType;
-
-        // use the generics information from the Closure to further specify the type
-        MethodNode sam = findSAM(samType);
-        if (closureType.isUsingGenerics() && sam != null) {
-            //correct SAM type for generics
-            //sam = applyGenericsContext(placeholders, sam);
-
-            // the return type of the SAM method exactly corresponds to the inferred return type
+    private static ClassNode convertClosureTypeToSAMType(final Expression expression, final ClassNode closureType, final MethodNode sam, final ClassNode samType, final Map<GenericsTypeName, GenericsType> placeholders) {
+        // use the generics information from Closure to further specify the type
+        if (closureType.isUsingGenerics()) {
             ClassNode samReturnType = sam.getReturnType();
-            ClassNode closureReturnType = expression.getNodeMetaData(INFERRED_TYPE);
-            if (closureReturnType != null && closureReturnType.isUsingGenerics()) {
-                ClassNode unwrapped = closureReturnType.getGenericsTypes()[0].getType();
-                extractGenericsConnections(placeholders, unwrapped, samReturnType);
-            } else if (samReturnType.isGenericsPlaceHolder()) {
-                placeholders.put(new GenericsTypeName(samReturnType.getGenericsTypes()[0].getName()), closureType.getGenericsTypes()[0]);
-            }
+            // the return type of the SAM exactly corresponds to the inferred return type of the closure
+            extractGenericsConnections(placeholders, closureType.getGenericsTypes()[0].getType(), samReturnType);
 
-            // now repeat the same for each parameter given in the ClosureExpression
-            if (expression instanceof ClosureExpression && sam.getParameters().length > 0) {
-                List<ClassNode[]> genericsToConnect = new LinkedList<>();
+            Parameter[] parameters = sam.getParameters();
+            // repeat the same for each parameter given in the ClosureExpression
+            if (parameters.length > 0 && expression instanceof ClosureExpression) {
+                List<ClassNode[]> genericsToConnect = new ArrayList<>();
                 Parameter[] closureParams = ((ClosureExpression) expression).getParameters();
-                ClassNode[] closureParamTypes = extractTypesFromParameters(closureParams);
-                if (expression.getNodeMetaData(CLOSURE_ARGUMENTS) != null) {
-                    closureParamTypes = expression.getNodeMetaData(CLOSURE_ARGUMENTS);
-                }
-                Parameter[] parameters = sam.getParameters();
+                ClassNode[] closureParamTypes = expression.getNodeMetaData(CLOSURE_ARGUMENTS);
+                if (closureParamTypes == null) closureParamTypes = extractTypesFromParameters(closureParams);
+
                 for (int i = 0, n = parameters.length; i < n; i += 1) {
                     Parameter parameter = parameters[i];
                     if (parameter.getOriginType().isUsingGenerics() && closureParamTypes.length > i) {
@@ -5345,8 +5330,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
         }
-        ClassNode result = applyGenericsContext(placeholders, samType.redirect());
-        return result;
+
+        return applyGenericsContext(placeholders, samType.redirect());
     }
 
     private ClassNode resolveGenericsWithContext(final Map<GenericsTypeName, GenericsType> resolvedPlaceholders, final ClassNode currentType) {
