@@ -143,6 +143,12 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_01,in
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_02,indent=0]
 ----
+
+[source, sql]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_10,indent=0]
+----
+
 The group columns could be renamed with `as` clause:
 [source, sql]
 ----

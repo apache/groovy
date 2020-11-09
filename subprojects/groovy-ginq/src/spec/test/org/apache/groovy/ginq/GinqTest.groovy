@@ -1997,6 +1997,20 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from groupby select - 18"() {
+        assertScript '''
+            assert [[1, 2], [3, 2]] == GQ {
+// tag::ginq_grouping_10[]
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                groupby n
+                having count() < 3
+                select n, count()
+// end::ginq_grouping_10[]
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - from where groupby select - 1"() {
         assertScript '''
             assert [[1, 2], [6, 3]] == GQ {
