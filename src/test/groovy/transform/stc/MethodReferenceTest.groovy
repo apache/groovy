@@ -26,7 +26,7 @@ import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 final class MethodReferenceTest {
- 
+
     private final GroovyShell shell = new GroovyShell(new CompilerConfiguration().tap {
         addCompilationCustomizers(new ImportCustomizer().addStarImports('java.util.function')
                 .addImports('java.util.stream.Collectors', 'groovy.transform.CompileStatic'))
@@ -67,19 +67,6 @@ final class MethodReferenceTest {
             void p() {
                 def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, BigDecimal::add)
                 assert 6.0G == result
-            }
-
-            p()
-        '''
-    }
-
-    @Test // class::staticMethod
-    void testFunctionCS() {
-        assertScript shell, '''
-            @CompileStatic
-            void p() {
-                def result = [1, -2, 3].stream().map(Math::abs).collect(Collectors.toList())
-                assert [1, 2, 3] == result
             }
 
             p()
@@ -255,6 +242,43 @@ final class MethodReferenceTest {
     }
 
     @Test // class::staticMethod
+    void testFunctionCS() {
+        assertScript shell, '''
+            @CompileStatic
+            void p() {
+                def result = [1, -2, 3].stream().map(Math::abs).collect(Collectors.toList())
+                assert [1, 2, 3] == result
+            }
+
+            p()
+        '''
+    }
+
+    @Test // class::staticMethod -- GROOVY-9799
+    void testFunctionCS2() {
+        assertScript shell, '''
+            class C {
+                String x
+            }
+
+            class D {
+                String x
+                static D from(C c) {
+                    new D(x: c.x)
+                }
+            }
+
+            @CompileStatic
+            def test(C c) {
+                Optional.of(c).map(D::from).get()
+            }
+
+            def d = test(new C(x: 'x'))
+            assert d.x == 'x'
+        '''
+    }
+
+    @Test // class::staticMethod
     void testFunctionCS_RHS() {
         assertScript shell, '''
             @CompileStatic
@@ -362,7 +386,7 @@ final class MethodReferenceTest {
             p()
         '''
 
-        assert err =~ 'Invalid receiver type: class java.lang.Integer is not compatible with class java.lang.String'
+        assert err =~ 'Invalid receiver type: java.lang.Integer is not compatible with java.lang.String'
     }
 
     @Test // class::instanceMethod, actually class::staticMethod
