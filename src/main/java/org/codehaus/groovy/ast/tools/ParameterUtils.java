@@ -21,37 +21,33 @@ package org.codehaus.groovy.ast.tools;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 
 import java.util.function.BiPredicate;
 
 public class ParameterUtils {
 
-    public static boolean parametersEqual(Parameter[] a, Parameter[] b) {
+    public static boolean parametersEqual(final Parameter[] a, final Parameter[] b) {
         return parametersEqual(a, b, false);
     }
 
-    public static boolean parametersEqualWithWrapperType(Parameter[] a, Parameter[] b) {
+    public static boolean parametersEqualWithWrapperType(final Parameter[] a, final Parameter[] b) {
         return parametersEqual(a, b, true);
     }
 
     /**
-     * Checks if two parameter arrays are type-compatible.
+     * Checks compatibility of parameter arrays. Each parameter should match the
+     * following condition: {@code sourceType.isAssignableTo(targetType)}
      *
-     * each parameter should match the following condition:
-     * {@code targetParameter.getType().getTypeClass().isAssignableFrom(sourceParameter.getType().getTypeClass())}
-     *
-     * @param source source parameters
-     * @param target target parameters
-     * @return the check result
      * @since 3.0.0
      */
-    public static boolean parametersCompatible(Parameter[] source, Parameter[] target) {
-        return parametersMatch(source, target, (sourceType, targetType) ->
-            ClassHelper.getWrapper(targetType).getTypeClass().isAssignableFrom(ClassHelper.getWrapper(sourceType).getTypeClass())
-        );
+    public static boolean parametersCompatible(final Parameter[] source, final Parameter[] target) {
+        return parametersMatch(source, target, StaticTypeCheckingSupport::isAssignableTo);
     }
 
-    private static boolean parametersEqual(Parameter[] a, Parameter[] b, boolean wrapType) {
+    //--------------------------------------------------------------------------
+
+    private static boolean parametersEqual(final Parameter[] a, final Parameter[] b, final boolean wrapType) {
         return parametersMatch(a, b, (aType, bType) -> {
             if (wrapType) {
                 aType = ClassHelper.getWrapper(aType);
@@ -61,19 +57,17 @@ public class ParameterUtils {
         });
     }
 
-    private static boolean parametersMatch(Parameter[] a, Parameter[] b, BiPredicate<ClassNode, ClassNode> typeChecker) {
+    private static boolean parametersMatch(final Parameter[] a, final Parameter[] b, final BiPredicate<ClassNode, ClassNode> typeChecker) {
         if (a.length == b.length) {
-            boolean answer = true;
             for (int i = 0, n = a.length; i < n; i += 1) {
                 ClassNode aType = a[i].getType();
                 ClassNode bType = b[i].getType();
 
                 if (!typeChecker.test(aType, bType)) {
-                    answer = false;
-                    break;
+                    return false;
                 }
             }
-            return answer;
+            return true;
         }
         return false;
     }

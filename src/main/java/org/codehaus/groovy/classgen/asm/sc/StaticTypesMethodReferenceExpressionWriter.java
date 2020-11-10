@@ -35,7 +35,6 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
-import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MethodReferenceExpressionWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
@@ -55,8 +54,10 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
+import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersCompatible;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filterMethodsByVisibility;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssignableTo;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUMENTS;
 
 /**
@@ -128,10 +129,8 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             if (isConstructorReference) {
                 // TODO: move the checking code to the parser
                 addFatalError("Constructor reference must be className::new", methodReferenceExpression);
-            }
-
-            if (methodRefMethod.isStatic()) {
-                ClassExpression classExpression = new ClassExpression(typeOrTargetRefType);
+            } else if (methodRefMethod.isStatic()) {
+                ClassExpression classExpression = classX(typeOrTargetRefType);
                 classExpression.setSourcePosition(typeOrTargetRef);
                 typeOrTargetRef = classExpression;
                 isClassExpression = true;
@@ -165,17 +164,13 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             addFatalError("Failed to find the expected method["
                     + methodRefName + "("
                     + Arrays.stream(parametersWithExactType)
-                            .map(e -> e.getType().getName())
+                            .map(e -> e.getType().getText())
                             .collect(Collectors.joining(","))
                     + ")] in the type[" + typeOrTargetRefType.getName() + "]", methodReferenceExpression);
-        }
-
-        if (parametersWithExactType.length > 0 && isTypeReferingInstanceMethod(typeOrTargetRef, methodRefMethod)) {
-            Parameter firstParameter = parametersWithExactType[0];
-            Class<?> typeOrTargetClass = typeOrTargetRef.getType().getTypeClass();
-            Class<?> firstParameterClass = firstParameter.getType().getTypeClass();
-            if (!typeOrTargetClass.isAssignableFrom(firstParameterClass)) {
-                throw new RuntimeParserException("Invalid receiver type: " + firstParameterClass + " is not compatible with " + typeOrTargetClass, typeOrTargetRef);
+        } else if (parametersWithExactType.length > 0 && isTypeReferingInstanceMethod(typeOrTargetRef, methodRefMethod)) {
+            ClassNode firstParameterType = parametersWithExactType[0].getType();
+            if (!isAssignableTo(firstParameterType, typeOrTargetRefType)) {
+                throw new RuntimeParserException("Invalid receiver type: " + firstParameterType.getText() + " is not compatible with " + typeOrTargetRefType.getText(), typeOrTargetRef);
             }
         }
     }
@@ -272,35 +267,31 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         return parameters;
     }
 
-    private MethodNode findMethodRefMethod(final String methodRefName, final Parameter[] abstractMethodParameters, final Expression typeOrTargetRef, final ClassNode typeOrTargetRefType) {
-        List<MethodNode> methods = typeOrTargetRefType.getMethods(methodRefName);
-        methods.addAll(findDGMMethodsForClassNode(controller.getSourceUnit().getClassLoader(), typeOrTargetRefType, methodRefName));
+    private MethodNode findMethodRefMethod(final String methodName, final Parameter[] samParameters, final Expression typeOrTargetRef, final ClassNode typeOrTargetRefType) {
+        List<MethodNode> methods = findVisibleMethods(methodName, typeOrTargetRefType);
+
+        return chooseMethodRefMethodCandidate(typeOrTargetRef, methods.stream().filter(method -> {
+            Parameter[] parameters = method.getParameters();
+            if (isTypeReferingInstanceMethod(typeOrTargetRef, method)) {
+                // there is an implicit parameter for "String::length"
+                ClassNode firstParamType = method.getDeclaringClass();
+
+                int n = parameters.length;
+                Parameter[] plusOne = new Parameter[n + 1];
+                plusOne[0] = new Parameter(firstParamType, "");
+                System.arraycopy(parameters, 0, plusOne, 1, n);
+
+                parameters = plusOne;
+            }
+            return parametersCompatible(samParameters, parameters);
+        }).collect(Collectors.toList()));
+    }
+
+    private List<MethodNode> findVisibleMethods(final String name, final ClassNode type) {
+        List<MethodNode> methods = type.getMethods(name);
+        methods.addAll(findDGMMethodsForClassNode(controller.getSourceUnit().getClassLoader(), type, name));
         methods = filterMethodsByVisibility(methods, controller.getClassNode());
-
-        List<MethodNode> candidates = new ArrayList<>();
-        for (MethodNode mn : methods) {
-            Parameter[] parameters = abstractMethodParameters;
-            if (isTypeReferingInstanceMethod(typeOrTargetRef, mn)) {
-                if (abstractMethodParameters.length == 0) {
-                    continue;
-                }
-
-                parameters = removeFirstParameter(abstractMethodParameters);
-            }
-
-            Parameter[] methodParameters;
-            if (isExtensionMethod(mn)) {
-                methodParameters = removeFirstParameter(((ExtensionMethodNode) mn).getExtensionMethodNode().getParameters());
-            } else {
-                methodParameters = mn.getParameters();
-            }
-
-            if (ParameterUtils.parametersCompatible(parameters, methodParameters)) {
-                candidates.add(mn);
-            }
-        }
-
-        return chooseMethodRefMethodCandidate(typeOrTargetRef, candidates);
+        return methods;
     }
 
     private void addFatalError(final String msg, final ASTNode node) {
