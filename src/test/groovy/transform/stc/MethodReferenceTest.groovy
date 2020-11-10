@@ -25,14 +25,14 @@ class MethodReferenceTest extends GroovyTestCase {
     void testFunctionCI() {
         assertScript '''
             import java.util.stream.Collectors
-            
+
             @groovy.transform.CompileStatic
             void p() {
                 def result = [1, 2, 3].stream().map(Object::toString).collect(Collectors.toList())
                 assert 3 == result.size()
                 assert ['1', '2', '3'] == result
             }
-            
+
             p()
         '''
     }
@@ -48,7 +48,7 @@ class MethodReferenceTest extends GroovyTestCase {
                 assert 3 == result.size()
                 assert ['1', '2', '3'] == result
             }
-            
+
             p()
         '''
     }
@@ -62,7 +62,7 @@ class MethodReferenceTest extends GroovyTestCase {
 
                 assert 6.0G == result
             }
-            
+
             p()
         '''
     }
@@ -70,16 +70,33 @@ class MethodReferenceTest extends GroovyTestCase {
     // class::staticMethod
     void testFunctionCS() {
         assertScript '''
-            import java.util.stream.Collectors
-
-            @groovy.transform.CompileStatic
+            @CompileStatic
             void p() {
                 def result = [1, -2, 3].stream().map(Math::abs).collect(Collectors.toList())
-
                 assert [1, 2, 3] == result
             }
-            
             p()
+        '''
+    }
+
+    // class::staticMethod -- GROOVY-9799
+    void testFunctionCS2() {
+        assertScript '''
+            class C {
+                String x
+            }
+            class D {
+                String x
+                static D from(C c) {
+                    new D(x: c.x)
+                }
+            }
+            @CompileStatic
+            def test(C c) {
+                Optional.of(c).map(D::from).get()
+            }
+            def d = test(new C(x: 'x'))
+            assert d.x == 'x'
         '''
     }
 
@@ -93,9 +110,9 @@ class MethodReferenceTest extends GroovyTestCase {
 
                 assert 6.0G == result
             }
-            
+
             p()
-            
+
             @groovy.transform.CompileStatic
             class Adder {
                 BigDecimal add(BigDecimal a, BigDecimal b) {
@@ -115,9 +132,9 @@ class MethodReferenceTest extends GroovyTestCase {
 
                 assert 6.0G == result
             }
-            
+
             p()
-            
+
             @groovy.transform.CompileStatic
             class Adder {
                 BigDecimal add(Number a, Number b) {
@@ -136,9 +153,9 @@ class MethodReferenceTest extends GroovyTestCase {
 
                 assert 6.0G == result
             }
-            
+
             p()
-            
+
             @groovy.transform.CompileStatic
             class Adder {
                 public BigDecimal add(BigDecimal a, BigDecimal b) {
@@ -157,15 +174,15 @@ class MethodReferenceTest extends GroovyTestCase {
 
                 assert new BigDecimal(6) == result
             }
-            
+
             p()
-            
+
             @groovy.transform.CompileStatic
             class Adder {
                 BigDecimal add(BigDecimal a, BigDecimal b) {
                     a.add(b)
                 }
-                
+
                 Adder getThis() {
                     return this
                 }
@@ -183,9 +200,9 @@ class MethodReferenceTest extends GroovyTestCase {
 
                 assert 6.0G == result
             }
-            
+
             p()
-            
+
             @groovy.transform.CompileStatic
             class Adder {
                 static BigDecimal add(BigDecimal a, BigDecimal b) {
@@ -204,9 +221,9 @@ class MethodReferenceTest extends GroovyTestCase {
 
                 assert 6.0G == result
             }
-            
+
             p()
-            
+
             @groovy.transform.CompileStatic
             class Adder {
                 static BigDecimal add(BigDecimal a, BigDecimal b) {
@@ -225,15 +242,15 @@ class MethodReferenceTest extends GroovyTestCase {
 
                 assert 6.0G == result
             }
-            
+
             p()
-            
+
             @groovy.transform.CompileStatic
             class Adder {
                 static BigDecimal add(BigDecimal a, BigDecimal b) {
                     a.add(b)
                 }
-                
+
                 static Adder newInstance() {
                     new Adder()
                 }
@@ -248,7 +265,7 @@ class MethodReferenceTest extends GroovyTestCase {
             void p() {
                 assert new Integer[] { 1, 2, 3 } == [1, 2, 3].stream().toArray(Integer[]::new)
             }
-            
+
             p()
 
         '''
@@ -263,7 +280,7 @@ class MethodReferenceTest extends GroovyTestCase {
             void p() {
                 assert [1, 2, 3] == ["1", "2", "3"].stream().map(Integer::new).collect(Collectors.toList())
             }
-            
+
             p()
 
         '''
@@ -282,7 +299,7 @@ class MethodReferenceTest extends GroovyTestCase {
 
                 assert [1, 2, 3] == result
             }
-            
+
             p()
         '''
     }
@@ -299,7 +316,7 @@ class MethodReferenceTest extends GroovyTestCase {
 
                 assert [1, 2, 3] == result
             }
-            
+
             p()
         '''
     }
@@ -317,9 +334,9 @@ class MethodReferenceTest extends GroovyTestCase {
 
                 assert 6.0G == result
             }
-            
+
             p()
-            
+
             @groovy.transform.CompileStatic
             class Adder {
                 BigDecimal add(BigDecimal a, BigDecimal b) {
@@ -341,9 +358,9 @@ class MethodReferenceTest extends GroovyTestCase {
 
                 assert 6.0G == result
             }
-            
+
             p()
-            
+
             @groovy.transform.CompileStatic
             class Adder {
                 BigDecimal add(BigDecimal a, BigDecimal b) {
@@ -364,7 +381,7 @@ class MethodReferenceTest extends GroovyTestCase {
                 Function<String, Integer> f = Integer::new
                 assert [1, 2, 3] == ["1", "2", "3"].stream().map(f).collect(Collectors.toList())
             }
-            
+
             p()
         '''
     }
@@ -380,7 +397,7 @@ class MethodReferenceTest extends GroovyTestCase {
                 IntFunction<Integer[]> f = Integer[]::new
                 assert new Integer[] { 1, 2, 3 } == [1, 2, 3].stream().toArray(f)
             }
-            
+
             p()
         '''
     }
@@ -391,7 +408,7 @@ class MethodReferenceTest extends GroovyTestCase {
             void p() {
                 [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, BigDecimal::addx)
             }
-            
+
             p()
         '''
 
@@ -402,31 +419,31 @@ class MethodReferenceTest extends GroovyTestCase {
     void testFunctionCI_WRONGTYPE() {
         def errMsg = shouldFail '''
             import java.util.stream.Collectors
-            
+
             @groovy.transform.CompileStatic
             void p() {
                 def result = [1, 2, 3].stream().map(String::toString).collect(Collectors.toList())
                 assert 3 == result.size()
                 assert ['1', '2', '3'] == result
             }
-            
+
             p()
         '''
 
-        assert errMsg.contains('Invalid receiver type: class java.lang.Integer is not compatible with class java.lang.String')
+        assert errMsg.contains('Invalid receiver type: java.lang.Integer is not compatible with java.lang.String')
     }
 
     // class::instanceMethod, actually class::staticMethod
     void testFunctionCI_DGM() {
         assertScript '''
             import java.util.stream.Collectors
-            
+
             @groovy.transform.CompileStatic
             void p() {
                 def result = ['a', 'ab', 'abc'].stream().map(String::size).collect(Collectors.toList())
                 assert [1, 2, 3] == result
             }
-            
+
             p()
         '''
     }
@@ -435,13 +452,13 @@ class MethodReferenceTest extends GroovyTestCase {
     void testFunctionCS_DGSM() {
         assertScript '''
             import java.util.stream.Collectors
-            
+
             @groovy.transform.CompileStatic
             void p() {
                 def result = [{}, {}, {}].stream().map(Thread::startDaemon).collect(Collectors.toList())
                 assert result.every(e -> e instanceof Thread)
             }
-            
+
             p()
         '''
     }
@@ -450,14 +467,14 @@ class MethodReferenceTest extends GroovyTestCase {
     void testFunctionCI_SHADOW_DGM() {
         assertScript '''
             import java.util.stream.Collectors
-            
+
             @groovy.transform.CompileStatic
             void p() {
                 def result = [[a:1], [b:2], [c:3]].stream().map(Object::toString).collect(Collectors.toList())
                 assert 3 == result.size()
                 assert ['[a:1]', '[b:2]', '[c:3]'] == result
             }
-            
+
             p()
         '''
     }
@@ -466,16 +483,16 @@ class MethodReferenceTest extends GroovyTestCase {
     void testFunctionCS_MULTI_DGSM() {
         assertScript '''
             import java.util.stream.Collectors
-            
+
             @groovy.transform.CompileStatic
             void p() {
                 def result = [{}, {}, {}].stream().map(Thread::startDaemon).collect(Collectors.toList())
                 assert result.every(e -> e instanceof Thread)
-                
+
                 result = [{}, {}, {}].stream().map(Thread::startDaemon).collect(Collectors.toList())
                 assert result.every(e -> e instanceof Thread)
             }
-            
+
             p()
         '''
     }
