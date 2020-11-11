@@ -70,7 +70,9 @@ class MethodReferenceTest extends GroovyTestCase {
     // class::staticMethod
     void testFunctionCS() {
         assertScript '''
-            @groovy.transform.CompileStatic
+            import groovy.transform.CompileStatic
+            import java.util.stream.Collectors
+            @CompileStatic
             void p() {
                 def result = [1, -2, 3].stream().map(Math::abs).collect(Collectors.toList())
                 assert [1, 2, 3] == result
