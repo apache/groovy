@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform;
 
 import groovy.transform.AnnotationCollector;
+import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -137,7 +138,7 @@ public class AnnotationCollectorTransform {
 
             ArrayExpression ae = new ArrayExpression(ClassHelper.OBJECT_TYPE.makeArray(), outer);
             Statement code = new ReturnStatement(ae);
-            helper.addMethod("value", ACC_PUBLIC | ACC_STATIC,
+            ClassNodeUtils.addGeneratedMethod(helper, "value", ACC_PUBLIC | ACC_STATIC,
                     ClassHelper.OBJECT_TYPE.makeArray().makeArray(),
                     Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
 
