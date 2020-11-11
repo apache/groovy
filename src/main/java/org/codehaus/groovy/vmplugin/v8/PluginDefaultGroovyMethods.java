@@ -813,8 +813,8 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * source.
      *
      * <pre class="groovyTestCase">
-     * [].spliterator().stream().toList().isEmpty()
-     * ['one', 'two'].spliterator().stream().toList() == ['one', 'two']
+     * assert [].spliterator().stream().toList().isEmpty()
+     * assert ['one', 'two'].spliterator().stream().toList() == ['one', 'two']
      * </pre>
      *
      * @since 3.0.0
