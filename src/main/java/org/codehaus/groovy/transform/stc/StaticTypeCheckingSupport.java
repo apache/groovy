@@ -1778,10 +1778,14 @@ public abstract class StaticTypeCheckingSupport {
         GenericsType[] gts = parameterUsage.getGenericsTypes();
         if (gts == null) return Collections.emptyMap();
 
-        GenericsType[] newGTs = applyGenericsContext(spec, gts);
-        ClassNode newTarget = parameterUsage.redirect().getPlainNodeReference();
-        newTarget.setGenericsTypes(newGTs);
-        return GenericsUtils.extractPlaceholders(newTarget);
+        ClassNode newType = parameterUsage.redirect().getPlainNodeReference();
+        newType.setGenericsTypes(applyGenericsContext(spec, gts));
+
+        Map<GenericsTypeName, GenericsType> newSpec = GenericsUtils.extractPlaceholders(newType);
+        newSpec.replaceAll((xx, gt) -> // GROOVY-9762, GROOVY-9803: reduce "? super T" to "T"
+            Optional.ofNullable(gt.getLowerBound()).map(GenericsType::new).orElse(gt)
+        );
+        return newSpec;
     }
 
     private static GenericsType[] applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final GenericsType[] gts) {
