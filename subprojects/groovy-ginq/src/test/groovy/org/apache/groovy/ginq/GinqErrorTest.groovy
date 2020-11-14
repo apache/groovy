@@ -140,7 +140,7 @@ class GinqErrorTest {
     }
 
     @Test
-    void "testGinq - from orderby where - 1"() {
+    void "testGinq - from orderby where select - 1"() {
         def err = shouldFail '''\
             GQ {
                 from n in [1, 2, 3]
@@ -205,5 +205,18 @@ class GinqErrorTest {
         '''
 
         assert err.toString().contains('Failed to find data source by the alias: x')
+    }
+
+    @Test
+    void "testGinq - from orderby select - 1"() {
+        def err = shouldFail '''
+            GQ {
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                orderby n in xxx
+                select n
+            }.toList()
+        '''
+
+        assert err.toString().contains('Invalid order: xxx, `asc`/`desc` is expected @ line 4, column 30.')
     }
 }

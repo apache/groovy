@@ -331,7 +331,18 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             boolean asc = true
             if (e instanceof BinaryExpression && e.operation.type == Types.KEYWORD_IN) {
                 target = e.leftExpression
-                asc = 'asc' == e.rightExpression.text
+
+                String orderOption = e.rightExpression.text
+                if (!ORDER_OPTION_LIST.contains(orderOption)) {
+                    this.collectSyntaxError(
+                            new GinqSyntaxError(
+                                    "Invalid order: " + orderOption + ", `asc`/`desc` is expected",
+                                    e.rightExpression.getLineNumber(), e.rightExpression.getColumnNumber()
+                            )
+                    )
+                }
+
+                asc = 'asc' == orderOption
             }
 
             LambdaExpression lambdaExpression = constructLambdaExpression(dataSourceExpression, target)
@@ -713,6 +724,8 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final ClassNode ORDER_TYPE = makeWithoutCaching(Queryable.Order.class)
     private static final ClassNode NAMED_RECORD_TYPE = makeWithoutCaching(NamedRecord.class)
     private static final ClassNode QUERYABLE_HELPER_TYPE = makeWithoutCaching(QueryableHelper.class)
+
+    private static final List<String> ORDER_OPTION_LIST = Arrays.asList('asc', 'desc')
 
     private static final String __METHOD_CALL_RECEIVER = "__methodCallReceiver"
     private static final String __GROUPBY_VISITED = "__groupByVisited"
