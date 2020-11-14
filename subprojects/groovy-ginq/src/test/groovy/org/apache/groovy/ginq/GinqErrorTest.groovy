@@ -209,7 +209,7 @@ class GinqErrorTest {
 
     @Test
     void "testGinq - from orderby select - 1"() {
-        def err = shouldFail '''
+        def err = shouldFail '''\
             GQ {
                 from n in [1, 1, 3, 3, 6, 6, 6]
                 orderby n in xxx
@@ -217,6 +217,20 @@ class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.toString().contains('Invalid order: xxx, `asc`/`desc` is expected @ line 4, column 30.')
+        assert err.toString().contains('Invalid order: xxx, `asc`/`desc` is expected @ line 3, column 30.')
+    }
+
+    @Test
+    void "testGinq - from orderby groupby select - 1"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                orderby n
+                groupby n
+                select n
+            }.toList()
+        '''
+
+        assert err.toString().contains("The preceding clause of `groupby` should not be `orderby` @ line 4, column 17.")
     }
 }

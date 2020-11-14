@@ -218,6 +218,13 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
 
             currentGinqExpression.setGroupExpression(groupExpression);
 
+            if (latestGinqExpressionClause instanceof OrderExpression) {
+                this.collectSyntaxError(new GinqSyntaxError(
+                        "The preceding clause of `" + methodName + "` should not be `orderby`",
+                        call.getLineNumber(), call.getColumnNumber()
+                ));
+            }
+
             if (latestGinqExpressionClause instanceof DataSourceHolder) {
                 groupExpression.setDataSourceExpression(((DataSourceHolder) latestGinqExpressionClause).getDataSourceExpression());
             }
