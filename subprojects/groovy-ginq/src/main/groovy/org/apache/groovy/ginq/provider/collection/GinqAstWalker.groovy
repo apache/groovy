@@ -569,7 +569,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                         expression.objectExpression = propX(new VariableExpression(lambdaParamName), 'v2')
                         transformedExpression = expression
                         visitingAggregateFunction = false
-                    } else if (methodName in ['count', 'min', 'max', 'sum', 'agg'] && 1 == ((TupleExpression) expression.arguments).getExpressions().size()) {
+                    } else if (methodName in ['count', 'min', 'max', 'sum', 'avg', 'agg'] && 1 == ((TupleExpression) expression.arguments).getExpressions().size()) {
                         visitingAggregateFunction = true
                         Expression lambdaCode = ((TupleExpression) expression.arguments).getExpression(0)
                         lambdaCode.putNodeMetaData(__LAMBDA_PARAM_NAME, findRootObjectExpression(lambdaCode).text)

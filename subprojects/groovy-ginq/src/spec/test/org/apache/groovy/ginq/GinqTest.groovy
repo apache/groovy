@@ -2011,6 +2011,43 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from groupby select - 19"() {
+        assertScript '''
+            @groovy.transform.EqualsAndHashCode
+            class Person {
+                String name
+                int weight
+                String gender
+                
+                Person(String name, int weight, String gender) {
+                    this.name = name
+                    this.weight = weight
+                    this.gender = gender
+                }
+            }
+            def persons = [new Person('Linda', 100, 'Female'), new Person('Daniel', 135, 'Male'), new Person('David', 122, 'Male')]
+            assert [['Male', 128.5], ['Female', 100]] == GQ {
+                from p in persons
+                groupby p.gender
+                select p.gender, avg(p.weight)
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby select - 20"() {
+        assertScript '''
+            assert [[1, 1], [3, 3], [6, 6]] == GQ {
+// tag::ginq_grouping_11[]
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                groupby n
+                select n, avg(n)
+// end::ginq_grouping_11[]
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - from where groupby select - 1"() {
         assertScript '''
             assert [[1, 2], [6, 3]] == GQ {

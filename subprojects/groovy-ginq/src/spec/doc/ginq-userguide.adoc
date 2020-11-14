@@ -162,9 +162,9 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_09,in
 
 ===== Aggregate Functions
 GINQ supports some built-in aggregate functions, e.g.
-`count`, `min`, `max`, `sum` and the most powerful function `agg`.
+`count`, `min`, `max`, `sum`, `avg` and the most powerful function `agg`.
 [NOTE]
-`count(...)`, `min(...)`, `max(...)`, `sum(...)` just operate on non-`null` values,
+`count(...)`, `min(...)`, `max(...)` just operate on non-`null` values,
 and `count()` is similar to `count(*)` in SQL.
 [source, sql]
 ----
@@ -184,6 +184,11 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_05,in
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_04,indent=0]
+----
+
+[source, sql]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_11,indent=0]
 ----
 
 `_g` is an implicit variable for `agg` aggregate function, it represents the grouped `Queryable` object and its record(e.g. `r`) could reference the data source by alias(e.g. `n`):
