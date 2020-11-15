@@ -72,6 +72,7 @@ final class AutoImplementTransformTest {
 
             @groovy.transform.AutoImplement
             class Foo extends WithNext implements Iterator<String> { }
+
             assert new Foo().next() == 'foo'
         '''
     }
@@ -88,20 +89,85 @@ final class AutoImplementTransformTest {
         '''
     }
 
-    @NotYetImplemented @Test // GROOVY-9816
+    @Test // GROOVY-9816
     void testPropertyMethodsNotOverwritten() {
         assertScript '''
             interface Bar {
-              def getBaz(); void setBaz(baz)
+                def getBaz(); void setBaz(baz)
             }
 
             @groovy.transform.AutoImplement
             class Foo implements Bar {
-              def baz
+                def baz
             }
 
             def foo = new Foo(baz: 123)
             assert foo.baz == 123
+        '''
+
+        assertScript '''
+            interface Bar {
+                def getBaz(); void setBaz(baz)
+            }
+
+            @groovy.transform.AutoImplement
+            class Foo implements Bar {
+                final baz = 123
+            }
+
+            // setter is independent of constant
+            def foo = new Foo(baz: 456)
+            assert foo.baz == 123
+        '''
+
+        assertScript '''
+            interface Bar {
+                boolean getBaz(); boolean isBaz()
+            }
+
+            @groovy.transform.AutoImplement
+            class Foo implements Bar {
+                boolean baz
+            }
+
+            def foo = new Foo(baz: true)
+            assert foo.getBaz()
+            assert foo.isBaz()
+            assert foo.baz
+        '''
+
+        assertScript '''
+            interface Bar {
+                boolean getBaz(); boolean isBaz()
+            }
+
+            @groovy.transform.AutoImplement
+            class Foo implements Bar {
+                boolean baz
+                boolean getBaz() { baz }
+            }
+
+            def foo = new Foo(baz: true)
+            assert foo.getBaz()
+            assert foo.isBaz()
+            assert foo.baz
+        '''
+
+        assertScript '''
+            interface Bar {
+                boolean getBaz(); boolean isBaz()
+            }
+
+            @groovy.transform.AutoImplement
+            class Foo implements Bar {
+                boolean baz
+                boolean isBaz() { baz }
+            }
+
+            def foo = new Foo(baz: true)
+            assert foo.getBaz()
+            assert foo.isBaz()
+            assert foo.baz
         '''
     }
 
