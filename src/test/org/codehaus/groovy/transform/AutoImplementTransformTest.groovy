@@ -126,17 +126,15 @@ final class AutoImplementTransformTest {
             '''
     }
 
-    @NotYetImplemented @Test // GROOVY-8270
-    void testCovariantMethodImpl() {
+    @Test // GROOVY-8270
+    void testGenericsParameterTypes() {
         assertScript '''
             @groovy.transform.AutoImplement
             class Foo implements Comparator<String> { }
             // Can't have an abstract method in a non-abstract class. The class 'Foo' must be declared
             // abstract or the method 'int compare(java.lang.Object, java.lang.Object)' must be implemented.
 
-            def foo = new Foo()
-            assert (foo <=> 'foo') == 0
-            assert (foo.compareTo('foo')) == 0
+            assert new Foo().compare('bar', 'baz') == 0
             '''
     }
 }
