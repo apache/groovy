@@ -37,7 +37,7 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -120,9 +120,9 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
         ClassNode next = cNode;
         while (true) {
             Map<String, ClassNode> genericsSpec = createGenericsSpec(next);
-            for (MethodNode mn : next.getMethods()) {
-                MethodNode correctedMethod = correctToGenericsSpec(genericsSpec, mn);
-                if (next != cNode) {
+            if (next != cNode) {
+                for (MethodNode mn : next.getMethods()) {
+                    MethodNode correctedMethod = correctToGenericsSpec(genericsSpec, mn);
                     ClassNode correctedClass = correctToGenericsSpecRecurse(genericsSpec, next);
                     MethodNode found = getDeclaredMethodCorrected(genericsSpec, correctedMethod, correctedClass);
                     if (found != null) {
@@ -134,7 +134,8 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
                     }
                 }
             }
-            List<ClassNode> interfaces = new ArrayList<>(Arrays.asList(next.getInterfaces()));
+            List<ClassNode> interfaces = new ArrayList<>();
+            Collections.addAll(interfaces, next.getInterfaces());
             Map<String, ClassNode> updatedGenericsSpec = new HashMap<>(genericsSpec);
             while (!interfaces.isEmpty()) {
                 ClassNode origInterface = interfaces.remove(0);
@@ -143,7 +144,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
                     updatedGenericsSpec = createGenericsSpec(origInterface, updatedGenericsSpec);
                     ClassNode correctedInterface = correctToGenericsSpecRecurse(updatedGenericsSpec, origInterface);
                     for (MethodNode nextMethod : correctedInterface.getMethods()) {
-                        MethodNode correctedMethod = correctToGenericsSpec(genericsSpec, nextMethod);
+                        MethodNode correctedMethod = correctToGenericsSpec(updatedGenericsSpec, nextMethod);
                         MethodNode found = getDeclaredMethodCorrected(updatedGenericsSpec, correctedMethod, correctedInterface);
                         if (found != null) {
                             String td = methodDescriptorWithoutReturnType(found);
@@ -153,7 +154,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
                             result.put(td, found);
                         }
                     }
-                    interfaces.addAll(Arrays.asList(correctedInterface.getInterfaces()));
+                    Collections.addAll(interfaces, correctedInterface.getInterfaces());
                 }
             }
             ClassNode superClass = next.getUnresolvedSuperClass();
