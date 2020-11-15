@@ -136,6 +136,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static final String DO_CALL_METHOD = "doCall";
     private static final String GET_PROPERTY_METHOD = "getProperty";
     private static final String SET_PROPERTY_METHOD = "setProperty";
+    private static final String CONSTRUCTOR_NAME = "<init>";
 
     private static final Class[] METHOD_MISSING_ARGS = new Class[]{String.class, Object.class};
     private static final Class[] GETTER_MISSING_ARGS = new Class[]{String.class};
@@ -413,7 +414,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
 
             for (final MetaMethod method : getNewMetaMethods(c)) {
-                if (method.getName().equals("<init>") && !method.getDeclaringClass().equals(theCachedClass)) continue;
+                if (method.getName().equals(CONSTRUCTOR_NAME) && !method.getDeclaringClass().equals(theCachedClass)) continue;
                 if (!newGroovyMethodsSet.contains(method)) {
                     newGroovyMethodsSet.add(method);
                     addMetaMethodToIndex(method, header);
@@ -1464,11 +1465,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     public Constructor retrieveConstructor(Class[] arguments) {
-        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, arguments);
+        CachedConstructor constructor = (CachedConstructor) chooseMethod(CONSTRUCTOR_NAME, constructors, arguments);
         if (constructor != null) {
             return constructor.getCachedConstructor();
         }
-        constructor = (CachedConstructor) chooseMethod("<init>", constructors, arguments);
+        constructor = (CachedConstructor) chooseMethod(CONSTRUCTOR_NAME, constructors, arguments);
         if (constructor != null) {
             return constructor.getCachedConstructor();
         }
@@ -1658,9 +1659,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (arguments == null) arguments = EMPTY_ARGUMENTS;
         Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
         MetaClassHelper.unwrap(arguments);
-        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
+        CachedConstructor constructor = (CachedConstructor) chooseMethod(CONSTRUCTOR_NAME, constructors, argClasses);
         if (constructor == null) {
-            constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
+            constructor = (CachedConstructor) chooseMethod(CONSTRUCTOR_NAME, constructors, argClasses);
         }
         if (constructor == null) {
             throw new GroovyRuntimeException(
@@ -1741,7 +1742,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         @Override
         public String getName() {
-            return "<init>";
+            return CONSTRUCTOR_NAME;
         }
 
         @Override
@@ -1779,7 +1780,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (arguments == null) arguments = EMPTY_ARGUMENTS;
         Class[] argTypes = MetaClassHelper.convertToTypeArray(arguments);
         MetaClassHelper.unwrap(arguments);
-        Object res = chooseMethod("<init>", constructors, argTypes);
+        Object res = chooseMethod(CONSTRUCTOR_NAME, constructors, argTypes);
         if (res instanceof MetaMethod) return (MetaMethod) res;
         CachedConstructor constructor = (CachedConstructor) res;
         if (constructor != null) return new MetaConstructor(constructor, false);
@@ -1801,7 +1802,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // if we get here Map variant already not found so allow for no-arg plus setters
         Class[] argTypes = Arrays.copyOf(origArgTypes, origArgTypes.length - 1);
         Object[] args = Arrays.copyOf(origArgs, origArgs.length - 1);
-        Object res = chooseMethod("<init>", constructors, argTypes);
+        Object res = chooseMethod(CONSTRUCTOR_NAME, constructors, argTypes);
         // chooseMethod allows fuzzy matching implicit null case but we don't want that here
         // code here handles inner class case but we currently don't do fuzzy matching for inner classes
         if (res instanceof ParameterTypes && ((ParameterTypes) res).getParameterTypes().length == origArgTypes.length) {
@@ -1823,7 +1824,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (arguments == null) arguments = EMPTY_ARGUMENTS;
         Class[] argTypes = MetaClassHelper.convertToTypeArray(arguments);
         MetaClassHelper.unwrap(arguments);
-        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, argTypes);
+        CachedConstructor constructor = (CachedConstructor) chooseMethod(CONSTRUCTOR_NAME, constructors, argTypes);
         if (constructor != null) {
             return constructor.doConstructorInvoke(arguments);
         }
@@ -1910,7 +1911,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // check for propertyMissing provided through a category
         Object[] arguments = EMPTY_ARGUMENTS;
         if (method == null && !useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
-            method = getCategoryMethodGetter(sender, "propertyMissing", true);
+            method = getCategoryMethodGetter(sender, PROPERTY_MISSING, true);
             if (method != null) arguments = new Object[]{name};
         }
 
@@ -2180,7 +2181,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private static MetaMethod getCategoryMethodMissing(Class sender) {
-        List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods("methodMissing");
+        List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods(METHOD_MISSING);
         if (possibleGenericMethods != null) {
             for (Object possibleGenericMethod : possibleGenericMethods) {
                 MetaMethod mmethod = (MetaMethod) possibleGenericMethod;
@@ -3615,7 +3616,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public CallSite createConstructorSite(CallSite site, Object[] args) {
         if (!(this instanceof AdaptingMetaClass)) {
             Class[] argTypes = MetaClassHelper.convertToTypeArray(args);
-            CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, argTypes);
+            CachedConstructor constructor = (CachedConstructor) chooseMethod(CONSTRUCTOR_NAME, constructors, argTypes);
             if (constructor != null) {
                 return ConstructorSite.createConstructorSite(site, this, constructor, argTypes, args);
             }
