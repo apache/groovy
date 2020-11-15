@@ -2136,12 +2136,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
 
-        if (mp != null) {
-            if (mp instanceof MetaBeanProperty) {
-                MetaBeanProperty mbp = (MetaBeanProperty) mp;
-                method = mbp.getGetter();
-                mp = mbp.getField();
-            }
+        if (mp instanceof MetaBeanProperty) {
+            MetaBeanProperty mbp = (MetaBeanProperty) mp;
+            method = mbp.getGetter();
+            mp = mbp.getField();
         }
 
         // check for a category method named like a getter
