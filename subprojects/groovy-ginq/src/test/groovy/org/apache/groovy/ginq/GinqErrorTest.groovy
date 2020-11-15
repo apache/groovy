@@ -231,6 +231,6 @@ class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.toString().contains("The preceding clause of `groupby` should not be `orderby` @ line 4, column 17.")
+        assert err.toString().contains("The clause `groupby` should be in front of `orderby` @ line 4, column 17.")
     }
 }

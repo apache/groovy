@@ -295,7 +295,7 @@ public interface Queryable<T> {
      * Aggregate function {@code avg}, similar to SQL's {@code avg}
      *
      * @param mapper choose the field to calculate the average
-     * @return sum result
+     * @return avg result
      * @since 4.0.0
      */
     BigDecimal avg(Function<? super T, ? extends Number> mapper);

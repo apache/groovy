@@ -220,7 +220,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
 
             if (latestGinqExpressionClause instanceof OrderExpression) {
                 this.collectSyntaxError(new GinqSyntaxError(
-                        "The preceding clause of `" + methodName + "` should not be `orderby`",
+                        "The clause `" + methodName + "` should be in front of `orderby`",
                         call.getLineNumber(), call.getColumnNumber()
                 ));
             }
