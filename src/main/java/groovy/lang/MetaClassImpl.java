@@ -82,7 +82,6 @@ import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import javax.annotation.Nullable;
-
 import java.beans.BeanInfo;
 import java.beans.EventSetDescriptor;
 import java.beans.Introspector;
@@ -112,6 +111,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static groovy.lang.Tuple.tuple;
 import static java.lang.Character.isUpperCase;
 import static org.apache.groovy.util.Arrays.concat;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
@@ -2175,7 +2175,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
 
-        return new Tuple2<>(method, mp);
+        return tuple(method, mp);
     }
 
     private static MetaMethod getCategoryMethodMissing(Class sender) {
@@ -4096,16 +4096,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             MetaClass delegateMetaClass = lookupObjectMetaClass(delegate);
             method = delegateMetaClass.pickMethod(methodName, argClasses);
             if (method != null)
-                return new Tuple2<>(delegateMetaClass.invokeMethod(delegate, methodName, originalArguments), method);
+                return tuple(delegateMetaClass.invokeMethod(delegate, methodName, originalArguments), method);
         }
         if (method == null && owner != closure) {
             MetaClass ownerMetaClass = lookupObjectMetaClass(owner);
             method = ownerMetaClass.pickMethod(methodName, argClasses);
             if (method != null)
-                return new Tuple2<>(ownerMetaClass.invokeMethod(owner, methodName, originalArguments), method);
+                return tuple(ownerMetaClass.invokeMethod(owner, methodName, originalArguments), method);
         }
 
-        return new Tuple2<>(InvokeMethodResult.NONE, method);
+        return tuple(InvokeMethodResult.NONE, method);
     }
 
     private enum InvokeMethodResult {
