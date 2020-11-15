@@ -22,11 +22,10 @@ import groovy.lang.MetaProperty;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.Statement;
 
+import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
-
-import static org.apache.groovy.util.BeanUtils.capitalize;
 
 /**
  * Represents a property (member variable, a getter and setter)
@@ -82,12 +81,10 @@ public class PropertyNode extends AnnotatedNode implements Variable {
      * {@code isFoo} is the default if no {@code getFoo} method exists in the declaring class.
      */
     public String getGetterNameOrDefault() {
-//        return setterName != null ? setterName : MetaProperty.getSetterName(getName());
-
         if (getterName != null) return getterName;
         String defaultName = "get" + capitalize(getName());
         if (ClassHelper.boolean_TYPE.equals(getOriginType())
-                && getDeclaringClass().getMethod(defaultName, Parameter.EMPTY_ARRAY) == null) {
+                && !getDeclaringClass().hasMethod(defaultName, Parameter.EMPTY_ARRAY)) {
             defaultName = "is" + capitalize(getName());
         }
         return defaultName;
