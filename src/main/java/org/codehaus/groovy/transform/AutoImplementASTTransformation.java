@@ -28,11 +28,12 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
-import org.codehaus.groovy.ast.tools.ParameterUtils;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -43,16 +44,23 @@ import java.util.List;
 import java.util.Map;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
+import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
 import static org.codehaus.groovy.antlr.AntlrParserPlugin.getDefaultValueForPrimitive;
 import static org.codehaus.groovy.ast.expr.ArgumentListExpression.EMPTY_ARGUMENTS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
+import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersEqual;
+import static org.codehaus.groovy.classgen.Verifier.capitalize;
 
 /**
  * Generates code for the {@code @AutoImplement} annotation.
@@ -96,13 +104,24 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
     private void createMethods(final ClassNode cNode, final ClassNode exception, final String message, final ClosureExpression code) {
         for (MethodNode candidate : getAllCorrectedMethodsMap(cNode).values()) {
             if (candidate.isAbstract()) {
+                Statement statement = buildMethodBody(exception, message, code, candidate.getReturnType());
+                String propertyName = getPropertyName(candidate);
+                if (propertyName != null && candidate.getParameters().length == 0) {
+                    String accessorName = candidate.getName().startsWith("is")
+                            ? "get" + capitalize(propertyName) : "is" + capitalize(propertyName);
+                    if (cNode.hasMethod(accessorName, Parameter.EMPTY_ARRAY)) {
+                        // delegate to existing accessor to reduce the surprise
+                        statement = returnS(callX(varX("this"), accessorName));
+                    }
+                }
+
                 addGeneratedMethod(cNode,
                         candidate.getName(),
                         candidate.getModifiers() & 0x7, // visibility only
                         candidate.getReturnType(),
                         candidate.getParameters(),
                         candidate.getExceptions(),
-                        buildMethodBody(exception, message, code, candidate.getReturnType())
+                        statement
                 );
             }
         }
@@ -163,13 +182,38 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
             }
             next = correctToGenericsSpecRecurse(updatedGenericsSpec, superClass);
         }
+
+        // GROOVY-9816: remove entries for to-be-generated property access and mutate methods
+        for (ClassNode cn = cNode; cn != null && !cn.equals(ClassHelper.OBJECT_TYPE); cn = cn.getSuperClass()) {
+            for (PropertyNode pn : cn.getProperties()) {
+                if (!pn.getField().isFinal()) {
+                    result.remove(getSetterName(pn.getName()) + ":" + pn.getType().getText() + ",");
+                }
+                if (!pn.getType().equals(ClassHelper.boolean_TYPE)) {
+                    result.remove(getGetterName(pn) + ":");
+//                } else if (getGetterName(pn) != null) {
+//                    result.remove(getGetterName(pn) + ":");
+                } else {
+                    // getter generated only if no explicit isser and vice versa
+                    String isserName  = "is" + capitalize(pn.getName());
+                    String getterName = getGetterName(pn);
+                    if (!cNode.hasMethod(isserName, Parameter.EMPTY_ARRAY)) {
+                        result.remove(getterName + ":");
+                    }
+                    if (!cNode.hasMethod(getterName, Parameter.EMPTY_ARRAY)) {
+                        result.remove(isserName + ":");
+                    }
+                }
+            }
+        }
+
         return result;
     }
 
     private static MethodNode getDeclaredMethodCorrected(final Map<String, ClassNode> genericsSpec, final MethodNode origMethod, final ClassNode correctedClass) {
         for (MethodNode nameMatch : correctedClass.getDeclaredMethods(origMethod.getName())) {
             MethodNode correctedMethod = correctToGenericsSpec(genericsSpec, nameMatch);
-            if (ParameterUtils.parametersEqual(correctedMethod.getParameters(), origMethod.getParameters())) {
+            if (parametersEqual(correctedMethod.getParameters(), origMethod.getParameters())) {
                 return correctedMethod;
             }
         }
