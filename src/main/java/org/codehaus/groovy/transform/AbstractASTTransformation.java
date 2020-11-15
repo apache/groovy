@@ -39,7 +39,6 @@ import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
-import org.objectweb.asm.Opcodes;
 
 import java.lang.annotation.Retention;
 import java.util.ArrayList;

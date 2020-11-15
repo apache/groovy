@@ -21,7 +21,6 @@ package org.codehaus.groovy.classgen;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.control.SourceUnit;
-import org.objectweb.asm.Opcodes;
 
 import java.util.LinkedList;
 
