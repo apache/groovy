@@ -168,6 +168,34 @@ class GinqErrorTest {
     }
 
     @Test
+    void "testGinq - from limit orderby - 1"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 2, 3]
+                limit 1
+                orderby n
+                select n
+            }
+        '''
+
+        assert err.toString().contains('The clause `orderby` should be in front of `limit` @ line 4, column 17.')
+    }
+
+    @Test
+    void "testGinq - from limit groupby - 1"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 2, 3]
+                limit 1
+                groupby n
+                select n
+            }
+        '''
+
+        assert err.toString().contains('The clause `groupby` should be in front of `limit` @ line 4, column 17.')
+    }
+
+    @Test
     void "testGinq - from groupby select - 1"() {
         def err = shouldFail '''
             @groovy.transform.EqualsAndHashCode

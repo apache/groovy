@@ -223,6 +223,11 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
                         "The clause `" + methodName + "` should be in front of `orderby`",
                         call.getLineNumber(), call.getColumnNumber()
                 ));
+            } else if (latestGinqExpressionClause instanceof LimitExpression) {
+                this.collectSyntaxError(new GinqSyntaxError(
+                        "The clause `" + methodName + "` should be in front of `limit`",
+                        call.getLineNumber(), call.getColumnNumber()
+                ));
             }
 
             if (latestGinqExpressionClause instanceof DataSourceHolder) {
@@ -238,6 +243,13 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
             orderExpression.setSourcePosition(call.getMethod());
 
             currentGinqExpression.setOrderExpression(orderExpression);
+
+            if (latestGinqExpressionClause instanceof LimitExpression) {
+                this.collectSyntaxError(new GinqSyntaxError(
+                        "The clause `" + methodName + "` should be in front of `limit`",
+                        call.getLineNumber(), call.getColumnNumber()
+                ));
+            }
 
             if (latestGinqExpressionClause instanceof DataSourceHolder) {
                 orderExpression.setDataSourceExpression(((DataSourceHolder) latestGinqExpressionClause).getDataSourceExpression());
