@@ -78,8 +78,11 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+
+import static org.codehaus.groovy.antlr.PrimitiveHelper.getDefaultValueForPrimitive;
 
 /**
  * Handy methods when working with the Groovy AST
@@ -338,6 +341,16 @@ public class GeneralUtils {
 
     public static DeclarationExpression declX(final Expression target, final Expression init) {
         return new DeclarationExpression(target, ASSIGN, init);
+    }
+
+    /**
+     * Returns a constant expression with the default value for the given type
+     * (i.e., {@code false} for boolean, {@code 0} for numbers or {@code null}.
+     *
+     * @since 4.0.0
+     */
+    public static ConstantExpression defaultValueX(final ClassNode type) {
+        return Optional.ofNullable((ConstantExpression) getDefaultValueForPrimitive(type)).orElse(nullX());
     }
 
     public static MapEntryExpression entryX(final Expression key, final Expression value) {
@@ -758,7 +771,7 @@ public class GeneralUtils {
     }
 
     public static Statement returnS(final Expression expr) {
-        return new ReturnStatement(new ExpressionStatement(expr));
+        return new ReturnStatement(expr);
     }
 
     public static Statement safeExpression(final Expression fieldExpr, final Expression expression) {

@@ -49,7 +49,6 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isInnerClass;
 import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
-import static org.codehaus.groovy.antlr.PrimitiveHelper.getDefaultValueForPrimitive;
 import static org.codehaus.groovy.ast.ClassHelper.MAP_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.make;
@@ -63,11 +62,11 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.defaultValueX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.entryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.list2args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.plusX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
@@ -191,7 +190,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         for (PropertyNode pNode : props) {
             String name = pNode.getName();
             // create entry [name: __namedArgs.getOrDefault('name', initialValue)]
-            Expression defaultValue = Optional.ofNullable(pNode.getInitialExpression()).orElseGet(() -> getDefaultExpression(pNode.getType()));
+            Expression defaultValue = Optional.ofNullable(pNode.getInitialExpression()).orElseGet(() -> defaultValueX(pNode.getType()));
             entries.add(entryX(constX(name), asType(callX(varX(mapParam), "getOrDefault", args(constX(name), defaultValue)), pNode.getType(), coerce)));
             // create annotation @NamedParam(value='name', type=DelegateType)
             AnnotationNode namedParam = new AnnotationNode(NAMED_PARAM_TYPE);
@@ -202,10 +201,6 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         Expression delegateMap = mapX(entries);
         args.addExpression(castX(fromParam.getType(), delegateMap));
         return true;
-    }
-
-    private Expression getDefaultExpression(ClassNode pType) {
-        return Optional.ofNullable(getDefaultValueForPrimitive(pType)).orElse(nullX());
     }
 
     private boolean hasDuplicates(final MethodNode mNode, final List<String> propNames, final String next) {

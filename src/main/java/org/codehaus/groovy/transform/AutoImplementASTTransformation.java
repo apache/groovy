@@ -30,7 +30,6 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilePhase;
@@ -46,11 +45,10 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
 import static org.apache.groovy.util.BeanUtils.capitalize;
-import static org.codehaus.groovy.antlr.PrimitiveHelper.getDefaultValueForPrimitive;
-import static org.codehaus.groovy.ast.expr.ArgumentListExpression.EMPTY_ARGUMENTS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.defaultValueX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
@@ -102,27 +100,43 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
     private void createMethods(final ClassNode cNode, final ClassNode exception, final String message, final ClosureExpression code) {
         for (MethodNode candidate : getAllCorrectedMethodsMap(cNode).values()) {
             if (candidate.isAbstract()) {
-                Statement statement = buildMethodBody(exception, message, code, candidate.getReturnType());
-                String propertyName = getPropertyName(candidate);
-                if (propertyName != null && candidate.getParameters().length == 0) {
-                    String accessorName = candidate.getName().startsWith("is")
-                            ? getGetterName(propertyName) : "is" + capitalize(propertyName);
-                    if (cNode.hasMethod(accessorName, Parameter.EMPTY_ARRAY)) {
-                        // delegate to existing accessor to reduce the surprise
-                        statement = returnS(callX(varX("this"), accessorName));
-                    }
-                }
-
                 addGeneratedMethod(cNode,
                         candidate.getName(),
                         candidate.getModifiers() & 0x7, // visibility only
                         candidate.getReturnType(),
                         candidate.getParameters(),
                         candidate.getExceptions(),
-                        statement
+                        createMethodBody(cNode, candidate, exception, message, code)
                 );
             }
         }
+    }
+
+    private static Statement createMethodBody(final ClassNode cNode, final MethodNode mNode, final ClassNode exception, final String message, final ClosureExpression code) {
+        if (mNode.getParameters().length == 0) {
+            String propertyName = getPropertyName(mNode);
+            if (propertyName != null) {
+                String accessorName = mNode.getName().startsWith("is") ? getGetterName(propertyName) : "is" + capitalize(propertyName);
+                if (cNode.hasMethod(accessorName, Parameter.EMPTY_ARRAY)) {
+                    // delegate to existing accessor to reduce the surprise
+                    return returnS(callX(varX("this"), accessorName));
+                }
+            }
+        }
+
+        if (code != null) {
+            return code.getCode();
+        }
+
+        if (exception != null) {
+            if (message == null) {
+                return throwS(ctorX(exception));
+            } else {
+                return throwS(ctorX(exception, constX(message)));
+            }
+        }
+
+        return returnS(defaultValueX(mNode.getReturnType()));
     }
 
     /**
@@ -216,20 +230,5 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
             }
         }
         return null;
-    }
-
-    private BlockStatement buildMethodBody(final ClassNode exception, final String message, final ClosureExpression code, final ClassNode returnType) {
-        BlockStatement body = new BlockStatement();
-        if (code != null) {
-            body.addStatement(code.getCode());
-        } else if (exception != null) {
-            body.addStatement(throwS(ctorX(exception, message == null ? EMPTY_ARGUMENTS : constX(message))));
-        } else {
-            Expression result = getDefaultValueForPrimitive(returnType);
-            if (result != null) {
-                body.addStatement(returnS(result));
-            }
-        }
-        return body;
     }
 }
