@@ -733,7 +733,7 @@ public class GeneralUtils {
     }
 
     public static Statement returnS(final Expression expr) {
-        return new ReturnStatement(new ExpressionStatement(expr));
+        return new ReturnStatement(expr);
     }
 
     public static Statement safeExpression(final Expression fieldExpr, final Expression expression) {

@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.transform
 
-import groovy.test.NotYetImplemented
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -172,6 +171,20 @@ final class AutoImplementTransformTest {
     }
 
     @Test
+    void testVoidReturnType() {
+        assertScript '''
+            interface Bar {
+                void baz()
+            }
+
+            @groovy.transform.AutoImplement
+            class Foo implements Bar { }
+
+            new Foo().baz() // no value to assert
+        '''
+    }
+
+    @Test
     void testGenericReturnTypes() {
         assertScript '''
             interface HasXs<T> {
@@ -193,7 +206,7 @@ final class AutoImplementTransformTest {
     }
 
     @Test // GROOVY-8270
-    void testGenericsParameterTypes() {
+    void testGenericParameterTypes() {
         assertScript '''
             @groovy.transform.AutoImplement
             class Foo implements Comparator<String> { }
