@@ -21,7 +21,7 @@ def appendNode(node, text) {
     node.append(new XmlParser().parseText(text))
 }
 
-if (gradle.startParameter.taskNames.any { it =~ /idea'/ }) {
+if (gradle.startParameter.taskNames.any { it =~ /(?i)idea/ }) {
 
     allprojects {
         apply plugin: 'idea'
