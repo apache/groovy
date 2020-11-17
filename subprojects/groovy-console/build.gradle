@@ -24,6 +24,7 @@ dependencies {
     api rootProject // AstBrowser has methods with Closure params...
     implementation "com.github.javaparser:javaparser-core:${versions.javaParser}"
     implementation "org.ow2.asm:asm-util:${versions.asm}"
+    implementation "org.abego.treelayout:org.abego.treelayout.core:${versions.treelayout}"
     implementation project(':groovy-swing')
     implementation project(':groovy-templates')
     implementation ("org.apache.ivy:ivy:${versions.ivy}") {
