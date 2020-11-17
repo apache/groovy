@@ -17,10 +17,10 @@
  *  under the License.
  */
 dependencies {
-    api('javax.servlet:javax.servlet-api:3.0.1') { dep ->
+    api("javax.servlet:javax.servlet-api:$servletApiVersion") { dep ->
         provided dep
     }
-    api('javax.servlet:jsp-api:2.0') { dep ->
+    api("javax.servlet:jsp-api:$jspApiVersion") { dep ->
         provided dep
         exclude(group: 'javax.servlet', module: 'servlet-api')
     }

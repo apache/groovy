@@ -27,6 +27,7 @@ import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
@@ -131,8 +132,27 @@ public class ServletBinding extends Binding {
         }
         public ServletOutputStream getOutputStream() {
             return new ServletOutputStream() {
+                @Override
+                public boolean isReady() {
+                    try {
+                        return getResponseStream().isReady();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                @Override
+                public void setWriteListener(WriteListener writeListener) {
+                    try {
+                        getResponseStream().setWriteListener(writeListener);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                @Override
                 public void write(int b) throws IOException {
-                    getResponseStream().write(b);                    
+                    getResponseStream().write(b);
                 }
                 public void close() throws IOException {
                     getResponseStream().close();

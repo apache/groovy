@@ -163,6 +163,8 @@ ext {
     junit5Version = '5.7.0'
     junit5PlatformVersion = '1.7.0'
     jcipAnnotationsVersion = '1.0'
+    jspApiVersion = '2.3.3'
+    servletApiVersion = '4.0.1'
 }
 
 dependencies {
