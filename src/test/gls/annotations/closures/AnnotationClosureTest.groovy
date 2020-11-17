@@ -112,6 +112,13 @@ class Foo {}
         assert closure.call() == 3
     }
 
+    void testWorksOnAnnotationWithArray() {
+        def closureClasses = ClassWithAnnArrayClosure.getAnnotation(AnnWithClassArrayElement).elem()
+        assert closureClasses?.size() == 2
+        assert closureClasses[0].newInstance(null, null)() == 3
+        assert closureClasses[1].newInstance(null, null)() == 5
+    }
+
     void testMayContainGString() {
         def closureClass = ClosureWithGString.getAnnotation(AnnWithClassElement).elem()
         def closure = closureClass.newInstance(null, null)
@@ -170,8 +177,17 @@ class Foo {}
 }
 
 @Retention(RetentionPolicy.RUNTIME)
+@interface AnnWithClassArrayElement {
+    Class[] elem()
+}
+
+@Retention(RetentionPolicy.RUNTIME)
 @interface AnnWithStringElement {
     String elem()
+}
+
+@AnnWithClassArrayElement(elem = [{ 1 + 2 }, { 2 + 3 }])
+class ClassWithAnnArrayClosure {
 }
 
 @AnnWithClassElement(elem = { 1 + 2 })
