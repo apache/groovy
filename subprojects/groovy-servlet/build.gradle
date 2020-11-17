@@ -21,8 +21,8 @@ plugins {
 }
 
 dependencies {
-    compileOnlyApi('javax.servlet:javax.servlet-api:3.0.1')
-    compileOnlyApi('javax.servlet:jsp-api:2.0') {
+    compileOnlyApi("javax.servlet:javax.servlet-api:${versions.javaxServletApi}")
+    compileOnlyApi("javax.servlet.jsp:javax.servlet.jsp-api:${versions.javaxJspApi}") {
         exclude(group: 'javax.servlet', module: 'servlet-api')
     }
 
@@ -30,8 +30,8 @@ dependencies {
     implementation project(':groovy-xml') // needed for MarkupBuilder
     implementation project(':groovy-templates') // needed by TemplateServlet
 
-    testImplementation('javax.servlet:javax.servlet-api:3.0.1')
-    testImplementation('javax.servlet:jsp-api:2.0') {
+    testImplementation("javax.servlet:javax.servlet-api:${versions.javaxServletApi}")
+    testImplementation("javax.servlet.jsp:javax.servlet.jsp-api:${versions.javaxJspApi}") {
         exclude(group: 'javax.servlet', module: 'servlet-api')
     }
     testImplementation "jmock:jmock:${versions.jmock}"
