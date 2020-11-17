@@ -2111,7 +2111,7 @@ public class AsmClassGenerator extends ClassGenerator {
             arrayElementType = 1;
         } else if (expr instanceof ConstantExpression) {
             arrayElementType = 2;
-        } else if (expr instanceof ClassExpression) {
+        } else if (expr instanceof ClassExpression || expr instanceof ClosureExpression) {
             arrayElementType = 3;
         } else if (expr instanceof PropertyExpression) {
             arrayElementType = 4;
@@ -2131,7 +2131,11 @@ public class AsmClassGenerator extends ClassGenerator {
                 av.visit(null, ((ConstantExpression) expr).getValue());
                 break;
             case 3:
-                av.visit(null, Type.getType(BytecodeHelper.getTypeDescription(expr.getType())));
+                ClassNode type = expr.getType();
+                if (expr instanceof ClosureExpression) {
+                    type = controller.getClosureWriter().getOrAddClosureClass((ClosureExpression) expr, ACC_PUBLIC);
+                }
+                av.visit(null, Type.getType(BytecodeHelper.getTypeDescription(type)));
                 break;
             case 4:
                 PropertyExpression propExpr = (PropertyExpression) expr;
