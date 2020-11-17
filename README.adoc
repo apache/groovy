@@ -22,7 +22,7 @@
 = Apache Groovy
 The Groovy development team
 :revdate: 18-11-2020
-:build-icon: https://ci.groovy-lang.org:8111/app/rest/builds/buildType:(id:Groovy_Jdk7Build)/statusIcon
+:build-icon: https://ci.groovy-lang.org/app/rest/builds/buildType:(id:Groovy25xCheckJdk11)/statusIcon
 :travis-build-icon: https://travis-ci.com/apache/groovy.svg?branch=GROOVY_2_5_X
 :noheader:
 :groovy-www: https://groovy-lang.org/
