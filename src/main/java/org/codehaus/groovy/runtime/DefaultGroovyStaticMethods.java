@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -211,42 +213,21 @@ public class DefaultGroovyStaticMethods {
     }
 
     public static File createTempDir(File self) throws IOException {
-        return createTempDir(self, "groovy-generated-", "-tmpdir");
+        return createTempDir(self, "groovy-generated-", "tmpdir-");
+    }
+
+    public static File createTempDir(File self, final String prefix) throws IOException {
+        return createTempDirNio(prefix);
     }
 
     public static File createTempDir(File self, final String prefix, final String suffix) throws IOException {
-        final int MAXTRIES = 3;
-        int accessDeniedCounter = 0;
-        File tempFile=null;
-        for (int i=0; i<MAXTRIES; i++) {
-            try {
-                tempFile = File.createTempFile(prefix, suffix);
-                tempFile.delete();
-                tempFile.mkdirs();
-                break;
-            } catch (IOException ioe) {
-                if (ioe.getMessage().startsWith("Access is denied")) {
-                    accessDeniedCounter++;
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException ignore) {
-                    }
-                }
-                if (i == MAXTRIES - 1) {
-                    if (accessDeniedCounter == MAXTRIES) {
-                        String msg = "Access is denied.\nWe tried " + accessDeniedCounter +
-                                " times to create a temporary directory and failed each time." +
-                                " If you are on Windows, you are possibly victim to" +
-                                " http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6325169." +
-                                " This is not a bug in Groovy.";
-                        throw new IOException(msg);
-                    } else {
-                        throw ioe;
-                    }
-                }
-            }
-        }
-        return tempFile;
+        // more secure Files api doesn't support suffix, so just append it to the prefix
+        return createTempDirNio(prefix + suffix);
+    }
+
+    private static File createTempDirNio(String prefix) throws IOException {
+        Path tempPath = Files.createTempDirectory(prefix);
+        return tempPath.toFile();
     }
 
     /**
