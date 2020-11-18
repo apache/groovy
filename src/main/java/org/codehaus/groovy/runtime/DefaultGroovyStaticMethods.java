@@ -180,23 +180,6 @@ public class DefaultGroovyStaticMethods {
         sleepImpl(milliseconds, onInterrupt);
     }
 
-    @Deprecated
-    public static Date parse(Date self, String format, String input) throws ParseException {
-        return new SimpleDateFormat(format).parse(input);
-    }
-
-    @Deprecated
-    public static Date parse(Date self, String format, String input, TimeZone zone) throws ParseException {
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
-        sdf.setTimeZone(zone);
-        return sdf.parse(input);
-    }
-
-    @Deprecated
-    public static Date parseToStringDate(Date self, String dateToString) throws ParseException {
-        return new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy", Locale.US).parse(dateToString);
-    }
-
     /**
      * Works exactly like ResourceBundle.getBundle(String).  This is needed
      * because the java method depends on a particular stack configuration that
@@ -248,18 +231,18 @@ public class DefaultGroovyStaticMethods {
             } catch (IOException ioe) {
                 if (ioe.getMessage().startsWith("Access is denied")) {
                     accessDeniedCounter++;
-                    try { Thread.sleep(100); } catch (InterruptedException e) {}
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ignore) {
+                    }
                 }
-                if (i==MAXTRIES-1) {
-                    if (accessDeniedCounter==MAXTRIES) {
-                        String msg =
-                                "Access is denied.\nWe tried " +
-                                        + accessDeniedCounter+
-                                        " times to create a temporary directory"+
-                                        " and failed each time. If you are on Windows"+
-                                        " you are possibly victim to"+
-                                        " http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6325169. "+
-                                        " this is no bug in Groovy.";
+                if (i == MAXTRIES - 1) {
+                    if (accessDeniedCounter == MAXTRIES) {
+                        String msg = "Access is denied.\nWe tried " + accessDeniedCounter +
+                                " times to create a temporary directory and failed each time." +
+                                " If you are on Windows, you are possibly victim to" +
+                                " http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6325169." +
+                                " This is not a bug in Groovy.";
                         throw new IOException(msg);
                     } else {
                         throw ioe;
