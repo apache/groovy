@@ -261,7 +261,7 @@ public class DefaultGroovyStaticMethods {
      *          the current time and midnight, January 1, 1970 UTC.
      * @see     System#currentTimeMillis()
      */
-    public static long currentTimeSeconds(System self){
-    return System.currentTimeMillis() / 1000;
-  }
+    public static long currentTimeSeconds(System self) {
+        return System.currentTimeMillis() / 1000;
+    }
 }
