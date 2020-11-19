@@ -48,17 +48,17 @@ jobs:
       # Select correct Grails branch for this build:
       - name: Checkout Grails 4.1.x (master)
         run: cd .. && git clone --depth 1 https://github.com/grails/grails-core.git -b master
-        if: ${{ github.ref == 'refs/heads/GROOVY_3_0_X' }}
+        if: ${{ (github.event_name == 'pull_request' && github.base_ref == 'GROOVY_3_0_X') || github.ref == 'refs/heads/GROOVY_3_0_X' }}
       - name: Checkout Grails 4.0.x (4.0.x)
         run: cd .. && git clone --depth 1 https://github.com/grails/grails-core.git -b 4.0.x
-        if: ${{ github.ref == 'refs/heads/GROOVY_2_5_X' }}
+        if: ${{ (github.event_name == 'pull_request' && github.base_ref == 'GROOVY_2_5_X') || github.ref == 'refs/heads/GROOVY_2_5_X' }}
 
       - name: Build and install groovy (no docs)
         run: ./gradlew clean install -x groovydoc -x javadoc -x javadocAll -x groovydocAll -x asciidoc -x docGDK --no-build-cache --no-scan --no-daemon
         timeout-minutes: 60
 
       - name: Set CI_GROOVY_VERSION for Grails
-        run: echo "::set-env name=CI_GROOVY_VERSION::$(cat gradle.properties | grep groovyVersion | cut -d\= -f2 |  tr -d '[:space:]')"
+        run: echo "CI_GROOVY_VERSION=$(cat gradle.properties | grep groovyVersion | cut -d\= -f2 |  tr -d '[:space:]')" >> $GITHUB_ENV
       - name: echo CI_GROOVY_VERSION
         run: echo $CI_GROOVY_VERSION
       - name: Build Grails
