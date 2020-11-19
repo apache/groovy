@@ -91,7 +91,7 @@ public class JavaStubGenerator {
         this.requireSuperResolved = requireSuperResolved;
         this.java5 = java5;
         this.encoding = encoding;
-        outputPath.mkdirs();
+        if (null != outputPath) outputPath.mkdirs();
     }
 
     public JavaStubGenerator(final File outputPath) {

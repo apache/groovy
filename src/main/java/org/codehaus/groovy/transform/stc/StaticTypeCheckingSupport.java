@@ -111,6 +111,7 @@ import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
 import static org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.getSuperClass;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND_EQUAL;
@@ -1926,42 +1927,44 @@ public abstract class StaticTypeCheckingSupport {
                                 || !OBJECT_TYPE.equals(upperBounds[0])));
     }
 
-    private static ClassNode[] applyGenericsContext(
-            Map<GenericsTypeName, GenericsType> spec, ClassNode[] bounds
-    ) {
-        if (bounds == null) return null;
-        ClassNode[] newBounds = new ClassNode[bounds.length];
-        for (int i = 0; i < bounds.length; i++) {
-            newBounds[i] = applyGenericsContext(spec, bounds[i]);
+    static ClassNode[] applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final ClassNode[] types) {
+        if (types == null) return null;
+        final int nTypes = types.length;
+        ClassNode[] newTypes = new ClassNode[nTypes];
+        for (int i = 0; i < nTypes; i += 1) {
+            newTypes[i] = applyGenericsContext(spec, types[i]);
         }
-        return newBounds;
+        return newTypes;
     }
 
-    static ClassNode applyGenericsContext(
-            Map<GenericsTypeName, GenericsType> spec, ClassNode bound
-    ) {
-        if (bound == null) return null;
-        if (bound.isArray()) {
-            return applyGenericsContext(spec, bound.getComponentType()).makeArray();
+    static ClassNode applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final ClassNode type) {
+        if (type == null || !isUsingGenericsOrIsArrayUsingGenerics(type)) {
+            return type;
         }
-        if (!bound.isUsingGenerics()) return bound;
-        ClassNode newBound = bound.getPlainNodeReference();
-        newBound.setGenericsTypes(applyGenericsContext(spec, bound.getGenericsTypes()));
-        if (bound.isGenericsPlaceHolder()) {
-            GenericsType[] gt = newBound.getGenericsTypes();
-            boolean hasBounds = hasNonTrivialBounds(gt[0]);
-            if (hasBounds || !gt[0].isPlaceholder()) return getCombinedBoundType(gt[0]);
-            String placeHolderName = newBound.getGenericsTypes()[0].getName();
-            if (!placeHolderName.equals(newBound.getUnresolvedName())) {
-                // we should produce a clean placeholder ClassNode here
-                ClassNode clean = make(placeHolderName);
-                clean.setGenericsTypes(newBound.getGenericsTypes());
-                clean.setRedirect(newBound);
-                newBound = clean;
+        if (type.isArray()) {
+            return applyGenericsContext(spec, type.getComponentType()).makeArray();
+        }
+        ClassNode newType = type.getPlainNodeReference();
+        GenericsType[] gt = type.getGenericsTypes();
+        if (asBoolean(spec)) {
+            gt = applyGenericsContext(spec, gt);
+        }
+        newType.setGenericsTypes(gt);
+        if (type.isGenericsPlaceHolder()) {
+            boolean nonTrivial = hasNonTrivialBounds(gt[0]);
+            if (nonTrivial || !gt[0].isPlaceholder()) {
+                return getCombinedBoundType(gt[0]);
             }
-            newBound.setGenericsPlaceHolder(true);
+            String placeholderName = gt[0].getName();
+            if (!placeholderName.equals(newType.getUnresolvedName())) {
+                ClassNode clean = make(placeholderName);
+                clean.setGenericsTypes(gt);
+                clean.setRedirect(newType);
+                newType = clean;
+            }
+            newType.setGenericsPlaceHolder(true);
         }
-        return newBound;
+        return newType;
     }
 
     private static ClassNode getCombinedBoundType(GenericsType genericsType) {
