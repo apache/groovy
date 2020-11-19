@@ -1371,7 +1371,71 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
               }
             }
             new Element()
-'''
+        '''
+
+        // GROOVY-9822
+        config.with {
+            targetDirectory = File.createTempDir()
+            jointCompilationOptions = [memStub: true]
+        }
+        File parentDir = File.createTempDir()
+        try {
+            def a = new File(parentDir, 'Types.java')
+            a.write '''
+                import java.io.*;
+                import java.util.*;
+
+                // from org.apache.tinkerpop:gremlin-core:3.4.8
+
+                interface TraversalStrategy<S extends TraversalStrategy> extends Serializable, Comparable<Class<? extends TraversalStrategy>> {
+                    interface VerificationStrategy extends TraversalStrategy<VerificationStrategy> {
+                    }
+                }
+                abstract class AbstractTraversalStrategy<S extends TraversalStrategy> implements TraversalStrategy<S> {
+                }
+                abstract // don't want to implement Comparable
+                class ReadOnlyStrategy extends AbstractTraversalStrategy<TraversalStrategy.VerificationStrategy>
+                        implements TraversalStrategy.VerificationStrategy {
+                    static ReadOnlyStrategy instance() { return null; }
+                }
+
+                interface TraversalSource extends Cloneable, AutoCloseable {
+                    default TraversalSource withStrategies(TraversalStrategy... strategies) {
+                        return null;
+                    }
+                }
+                abstract // don't want to implement AutoCloseable
+                class GraphTraversalSource implements TraversalSource {
+                    @Override
+                    public GraphTraversalSource withStrategies(TraversalStrategy... strategies) {
+                        return (GraphTraversalSource) TraversalSource.super.withStrategies(strategies);
+                    }
+                }
+                class Graph {
+                    public <C extends TraversalSource> C traversal(Class<C> c) {
+                        return null;
+                    }
+                    public GraphTraversalSource traversal() {
+                        return null;
+                    }
+                }
+            '''
+            def b = new File(parentDir, 'Script.groovy')
+            b.write '''
+                GraphTraversalSource test(Graph graph) {
+                    def strategy = ReadOnlyStrategy.instance()
+                    graph.traversal().withStrategies(strategy)
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b)
+            cu.compile()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+        }
     }
 
     void testRegressionInConstructorCheck() {
