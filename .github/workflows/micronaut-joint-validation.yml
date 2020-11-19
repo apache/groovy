@@ -59,7 +59,7 @@ jobs:
         run: echo $CI_GROOVY_VERSION
 
       - name: Check Micronaut Core
-        run: cd ../micronaut-core && ./gradlew clean inject-groovy:check test-suite-groovy:check --no-build-cache --no-scan --no-daemon -PgroovyVersion=$CI_GROOVY_VERSION --init-script ../maven-local-init.gradle
+        run: cd ../micronaut-core && ./gradlew clean check --no-build-cache --no-scan --no-daemon -PgroovyVersion=$CI_GROOVY_VERSION --init-script ../maven-local-init.gradle
         timeout-minutes: 60
 
       - name: Check Micronaut Groovy
