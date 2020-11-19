@@ -2232,6 +2232,38 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
             null
         '''
+
+        // GROOVY-9821
+        config.with {
+            targetDirectory = File.createTempDir()
+            jointCompilationOptions = [memStub: true]
+        }
+        File parentDir = File.createTempDir()
+        try {
+            def a = new File(parentDir, 'Types.java')
+            a.write '''
+                interface A {
+                    java.util.Collection<? extends B> getBees();
+                }
+                interface B {
+                    Object getC();
+                }
+            '''
+            def b = new File(parentDir, 'Script.groovy')
+            b.write '''
+                def test(A a) {
+                    a.bees*.c
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b)
+            cu.compile()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+        }
     }
 
     // GROOVY-7804
