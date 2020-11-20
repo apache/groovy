@@ -68,7 +68,8 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testCallMethodUsingAIC() {
-        assertScript '''abstract class Foo { abstract String item() }
+        assertScript '''
+            abstract class Foo { abstract String item() }
             boolean valid(Foo foo) {
                 foo.item() == 'ok'
             }
@@ -80,7 +81,8 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testCallMethodUsingAICImplementingInterface() {
-        assertScript '''abstract class Foo implements Runnable { abstract String item() }
+        assertScript '''
+            abstract class Foo implements Runnable { abstract String item() }
             boolean valid(Foo foo) {
                 foo.item() == 'ok'
             }
@@ -93,7 +95,7 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testAICIntoClass() {
+    void testAICReferencingOuterMethod() {
         assertScript '''
             class Outer {
                 int outer() { 1 }
@@ -108,6 +110,33 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             assert new Outer().test() == 1
+        '''
+    }
+
+    // GROOVY-6882
+    void testAICReferencingOuterMethodOverride() {
+        assertScript '''
+            class B {
+                def m() { 'B' }
+            }
+
+            class C extends B {
+                @Override
+                def m() { 'C' }
+
+                void test() {
+                    def aic = new Runnable() {
+                        void run() {
+                            assert m() == 'C' // Cannot choose between [C#m(), B#m()]
+                        }
+                    }
+                    aic.run()
+
+                    assert m() == 'C'
+                }
+            }
+
+            new C().test()
         '''
     }
 
