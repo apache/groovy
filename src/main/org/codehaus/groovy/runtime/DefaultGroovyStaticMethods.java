@@ -216,8 +216,8 @@ public class DefaultGroovyStaticMethods {
      * Note that a new SimpleDateFormat instance is created for every
      * invocation of this method (for thread safety).
      *
-     * @param self          placeholder variable used by Groovy categories; ignored for default static methods
-     * @param dateToString  String to be parsed to create the date instance. Must match the pattern EEE MMM dd HH:mm:ss zzz yyyy with US-locale symbols
+     * @param self         placeholder variable used by Groovy categories; ignored for default static methods
+     * @param dateToString String to be parsed to create the date instance. Must match the pattern EEE MMM dd HH:mm:ss zzz yyyy with US-locale symbols
      * @return a new Date instance representing the parsed input string
      * @throws ParseException if there is a parse error
      */
@@ -264,30 +264,39 @@ public class DefaultGroovyStaticMethods {
     }
 
     public static File createTempDir(File self, final String prefix, final String suffix) throws IOException {
+        try {
+            return createTempDirNio(prefix + suffix);
+        } catch (IOException ignore) {
+        } catch (ClassNotFoundException ignore) {
+        }
+        return createTempDirFallback(prefix, suffix);
+    }
+
+    private static File createTempDirFallback(final String prefix, final String suffix) throws IOException {
         final int MAXTRIES = 3;
         int accessDeniedCounter = 0;
-        File tempFile=null;
-        for (int i=0; i<MAXTRIES; i++) {
+        File tempFile = null;
+        for (int i = 0; i < MAXTRIES; i++) {
             try {
                 tempFile = File.createTempFile(prefix, suffix);
                 tempFile.delete();
-                tempFile.mkdirs();
+                if (!tempFile.mkdirs()) continue;
                 break;
             } catch (IOException ioe) {
                 if (ioe.getMessage().startsWith("Access is denied")) {
                     accessDeniedCounter++;
-                    try { Thread.sleep(100); } catch (InterruptedException e) {}
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ignore) {
+                    }
                 }
-                if (i==MAXTRIES-1) {
-                    if (accessDeniedCounter==MAXTRIES) {
-                        String msg =
-                                "Access is denied.\nWe tried " +
-                                        + accessDeniedCounter+
-                                        " times to create a temporary directory"+
-                                        " and failed each time. If you are on Windows"+
-                                        " you are possibly victim to"+
-                                        " http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6325169. "+
-                                        " this is no bug in Groovy.";
+                if (i == MAXTRIES - 1) {
+                    if (accessDeniedCounter == MAXTRIES) {
+                        String msg = "Access is denied.\nWe tried " + accessDeniedCounter +
+                                " times to create a temporary directory and failed each time." +
+                                " If you are on Windows you are possibly victim to" +
+                                " http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6325169. " +
+                                " This is not a bug in Groovy.";
                         throw new IOException(msg);
                     } else {
                         throw ioe;
@@ -297,6 +306,14 @@ public class DefaultGroovyStaticMethods {
             }
         }
         return tempFile;
+    }
+
+    private static final Object[] NO_ARGS = new Object[0];
+
+    private static File createTempDirNio(String prefix) throws IOException, ClassNotFoundException {
+        Class<?> filesClass = Class.forName("java.nio.file.Files");
+        Object path = InvokerHelper.invokeStaticMethod(filesClass, "createTempDirectory", new Object[]{prefix});
+        return (File) InvokerHelper.invokeMethod(path, "toFile", NO_ARGS);
     }
 
     /**
