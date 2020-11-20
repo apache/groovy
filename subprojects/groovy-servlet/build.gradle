@@ -23,7 +23,7 @@ plugins {
 dependencies {
     compileOnlyApi("javax.servlet:javax.servlet-api:${versions.javaxServletApi}")
     compileOnlyApi("javax.servlet.jsp:javax.servlet.jsp-api:${versions.javaxJspApi}") {
-        exclude(group: 'javax.servlet', module: 'servlet-api')
+        transitive = false
     }
 
     api rootProject  // ServletBinding extends Binding...
