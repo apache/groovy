@@ -20,6 +20,7 @@ package groovy.transform.stc
 
 import groovy.test.NotYetImplemented
 import org.codehaus.groovy.antlr.AntlrParserPluginFactory
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 
 /**
  * Unit tests for static type checking : generics.
