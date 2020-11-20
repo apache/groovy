@@ -129,7 +129,9 @@ class ImportCommand extends CommandSupport {
         }
         finally {
             // Remove the class generated while testing the import syntax
-            classLoader.removeClassCacheEntry(type?.name)
+            if (type?.name) {
+                classLoader.removeClassCacheEntry(type.name)
+            }
         }
     }
 }
