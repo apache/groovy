@@ -299,16 +299,15 @@ public class DefaultGroovyStaticMethods {
         return tempFile;
     }
 
-  /**
-   * Get the current time in seconds
-   *
-   * @param self   placeholder variable used by Groovy categories; ignored for default static methods
-   * @return  the difference, measured in seconds, between
-   *          the current time and midnight, January 1, 1970 UTC.
-   * @see     System#currentTimeMillis()
-   */
-  public static long currentTimeSeconds(System self){
-    return System.currentTimeMillis() / 1000;
-  }
+    /**
+     * Get the current time in seconds
+     *
+     * @param self placeholder variable used by Groovy categories; ignored for default static methods
+     * @return the difference, measured in seconds, between the current time and midnight, January 1, 1970 UTC.
+     * @see System#currentTimeMillis()
+     */
+    public static long currentTimeSeconds(System self) {
+        return System.currentTimeMillis() / 1000;
+    }
 
 }
