@@ -122,7 +122,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<Integer> list = new LinkedList<>()
             list.add 'Hello'
-        ''', '[Static type checking] - Cannot call java.util.LinkedList <java.lang.Integer>#add(java.lang.Integer) with arguments [java.lang.String]'
+        ''', '[Static type checking] - Cannot find matching method java.util.LinkedList#add(java.lang.String). Please check if the declared type is correct and if the method exists.'
     }
 
     void testAddOnListWithDiamondAndWrongTypeUsingLeftShift() {
@@ -419,25 +419,25 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testPutMethodWithPrimitiveValue() {
+    void testPutMethodWithPrimitiveValue1() {
         assertScript '''
-            Map<String, Integer> map = new HashMap<String,Integer>()
+            def map = new HashMap<String, Integer>()
             map.put('hello', 1)
+        '''
+    }
+
+    void testPutMethodWithPrimitiveValue2() {
+        assertScript '''
+            def map = new HashMap<String, Integer>()
+            map['hello'] = 1
         '''
     }
 
     void testPutMethodWithWrongValueType() {
         shouldFailWithMessages '''
-            Map<String, Integer> map = new HashMap<String,Integer>()
+            def map = new HashMap<String, Integer>()
             map.put('hello', new Object())
-        ''', '[Static type checking] - Cannot call java.util.HashMap <String, Integer>#put(java.lang.String, java.lang.Integer) with arguments [java.lang.String, java.lang.Object]'
-    }
-
-    void testPutMethodWithPrimitiveValueAndArrayPut() {
-        assertScript '''
-            Map<String, Integer> map = new HashMap<String,Integer>()
-            map['hello'] = 1
-        '''
+        ''', '[Static type checking] - Cannot find matching method java.util.HashMap#put(java.lang.String, java.lang.Object). Please check if the declared type is correct and if the method exists.'
     }
 
     void testShouldComplainAboutToInteger() {
@@ -746,7 +746,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             })
             Map<Date, Date> map = new HashMap<>()
             map.put('foo', new Date())
-        ''', '[Static type checking] - Cannot call java.util.HashMap <java.util.Date, java.util.Date>#put(java.util.Date, java.util.Date) with arguments [java.lang.String, java.util.Date]'
+        ''', '[Static type checking] - Cannot find matching method java.util.HashMap#put(java.lang.String, java.util.Date). Please check if the declared type is correct and if the method exists.'
     }
     void testInferDiamondForAssignmentWithDatesAndIllegalKeyUsingSquareBracket() {
         shouldFailWithMessages '''
@@ -784,7 +784,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             })
             Map<Date, Date> map = new HashMap<>()
             map.put(new Date(), 'foo')
-        ''', '[Static type checking] - Cannot call java.util.HashMap <java.util.Date, java.util.Date>#put(java.util.Date, java.util.Date) with arguments [java.util.Date, java.lang.String]'
+        ''', '[Static type checking] - Cannot find matching method java.util.HashMap#put(java.util.Date, java.lang.String). Please check if the declared type is correct and if the method exists.'
     }
     void testInferDiamondForAssignmentWithDatesAndIllegalValueUsingSquareBracket() {
         shouldFailWithMessages '''
