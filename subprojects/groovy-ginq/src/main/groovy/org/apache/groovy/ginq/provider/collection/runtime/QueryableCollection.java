@@ -178,14 +178,26 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public Queryable<T> intersect(Queryable<? extends T> queryable) {
-        Stream<T> stream = this.stream().filter(a -> queryable.stream().anyMatch(b -> b.equals(a))).distinct();
+        Stream<T> stream = this.stream().filter(a -> {
+            if (queryable instanceof QueryableCollection) {
+                ((QueryableCollection) queryable).makeReusable();
+            }
+
+            return queryable.stream().anyMatch(b -> b.equals(a));
+        }).distinct();
 
         return from(stream);
     }
 
     @Override
     public Queryable<T> minus(Queryable<? extends T> queryable) {
-        Stream<T> stream = this.stream().filter(a -> queryable.stream().noneMatch(b -> b.equals(a))).distinct();
+        Stream<T> stream = this.stream().filter(a -> {
+            if (queryable instanceof QueryableCollection) {
+                ((QueryableCollection) queryable).makeReusable();
+            }
+
+            return queryable.stream().noneMatch(b -> b.equals(a));
+        }).distinct();
 
         return from(stream);
     }
