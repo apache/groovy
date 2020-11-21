@@ -56,6 +56,14 @@ class QueryableCollectionTest {
     }
 
     @Test
+    void testInnerJoin2() {
+        def nums1 = [1, 2, 3].stream()
+        def nums2 = [2, 3, 4].stream()
+        def result = from(nums1).innerJoin(from(nums2), (a, b) -> a == b).toList()
+        assert [[2, 2], [3, 3]] == result
+    }
+
+    @Test
     void testLeftJoin0() {
         def nums1 = [1, 2, 3]
         def nums2 = [1, 2, 3]
@@ -216,6 +224,22 @@ class QueryableCollectionTest {
     }
 
     @Test
+    void testLeftJoin10() {
+        def nums1 = [1, 2, 3].stream()
+        def nums2 = [1, 2, 3].stream()
+        def result = from(nums1).leftJoin(from(nums2), (a, b) -> a == b).toList()
+        assert [[1, 1], [2, 2], [3, 3]] == result
+    }
+
+    @Test
+    void testRightJoin10() {
+        def nums2 = [1, 2, 3].stream()
+        def nums1 = [1, 2, 3].stream()
+        def result = from(nums1).rightJoin(from(nums2), (a, b) -> a == b).toList()
+        assert [[1, 1], [2, 2], [3, 3]] == result
+    }
+
+    @Test
     void testFullJoin() {
         def nums1 = [1, 2, 3]
         def nums2 = [2, 3, 4]
@@ -227,6 +251,14 @@ class QueryableCollectionTest {
     void testCrossJoin() {
         def nums1 = [1, 2, 3]
         def nums2 = [3, 4, 5]
+        def result = from(nums1).crossJoin(from(nums2)).toList()
+        assert [[1, 3], [1, 4], [1, 5], [2, 3], [2, 4], [2, 5], [3, 3], [3, 4], [3, 5]] == result
+    }
+
+    @Test
+    void testCrossJoin2() {
+        def nums1 = [1, 2, 3].stream()
+        def nums2 = [3, 4, 5].stream()
         def result = from(nums1).crossJoin(from(nums2)).toList()
         assert [[1, 3], [1, 4], [1, 5], [2, 3], [2, 4], [2, 5], [3, 3], [3, 4], [3, 5]] == result
     }
@@ -407,9 +439,25 @@ class QueryableCollectionTest {
     }
 
     @Test
+    void testIntersect2() {
+        def nums1 = [1, 2, 2, 3].stream()
+        def nums2 = [2, 3, 3, 4].stream()
+        def result = from(nums1).intersect(from(nums2)).toList()
+        assert [2, 3] == result
+    }
+
+    @Test
     void testMinus() {
         def nums1 = [1, 1, 2, 3]
         def nums2 = [2, 3, 4]
+        def result = from(nums1).minus(from(nums2)).toList()
+        assert [1] == result
+    }
+
+    @Test
+    void testMinus2() {
+        def nums1 = [1, 1, 2, 3].stream()
+        def nums2 = [2, 3, 4].stream()
         def result = from(nums1).minus(from(nums2)).toList()
         assert [1] == result
     }
