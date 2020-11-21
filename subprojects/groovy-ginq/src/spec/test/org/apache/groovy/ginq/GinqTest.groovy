@@ -2561,6 +2561,23 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - exists - 3"() {
+        assertScript '''
+            assert [1, 2] == GQ {
+// tag::ginq_filtering_04[]
+                from n in [0, 1, 2]
+                where (
+                    from m in [1, 2]
+                    where m == n
+                    select m
+                ).exists()
+                select n
+// end::ginq_filtering_04[]
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - not exists - 1"() {
         assertScript '''
             assert [1] == GQ {
