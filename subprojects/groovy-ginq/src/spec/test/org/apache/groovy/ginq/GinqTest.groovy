@@ -938,6 +938,25 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - nested from - 24"() {
+        assertScript '''
+            assert ['ab', 'bck'] == GQ {
+                from s in ['a', 'ab', 'bck']
+                where s.size() in (
+                    from x in ['ak', 'bg']
+                    where x[0] == s[0]
+                    select x.size()
+                ) || s.length() in (
+                    from y in ['abj', 'bpt']
+                    where y[0] == s[0]
+                    select y.length()
+                )
+                select s
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - from leftjoin select - 1"() {
         assertScript '''
             def nums1 = [1, 2, 3]

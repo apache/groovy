@@ -36,15 +36,12 @@ import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.ExpressionTransformer;
-import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
@@ -80,7 +77,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
         return ginqExpression.getNodeMetaData(__LATEST_GINQ_EXPRESSION_CLAUSE);
     }
 
-    private static final Set<String> KEY_WORD_SET = new HashSet<>(Arrays.asList(
+    private static final Set<String> KEYWORD_SET = new HashSet<>(Arrays.asList(
             "from", "innerjoin", "leftjoin", "rightjoin", "fulljoin", "crossjoin",
             "where", "on", "having", "groupby", "orderby", "limit", "select"));
 
@@ -89,7 +86,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
         super.visitMethodCallExpression(call);
         final String methodName = call.getMethodAsString();
 
-        if (!KEY_WORD_SET.contains(methodName)) return;
+        if (!KEYWORD_SET.contains(methodName)) return;
 
         if ("from".equals(methodName)) {
             ginqExpressionStack.push(new GinqExpression()); // store the result
@@ -120,14 +117,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
             }
             BinaryExpression binaryExpression = (BinaryExpression) expression;
             Expression aliasExpr = binaryExpression.getLeftExpression();
-            Expression dataSourceExpr;
-            if (null == latestGinqExpression) {
-                dataSourceExpr = binaryExpression.getRightExpression();
-            } else {
-                // use the nested ginq expresion and clear it
-                dataSourceExpr = latestGinqExpression;
-                latestGinqExpression = null;
-            }
+            Expression dataSourceExpr = binaryExpression.getRightExpression();
 
             DataSourceExpression dataSourceExpression;
             if ("from".equals(methodName)) {
@@ -145,30 +135,6 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
 
         if ("where".equals(methodName) || "on".equals(methodName) || "having".equals(methodName)) {
             Expression filterExpr = ((ArgumentListExpression) call.getArguments()).getExpression(0);
-
-            // construct `ListExpression` instance to visit `filterExpr` as well
-            new ListExpression(Collections.singletonList(filterExpr)).transformExpression(new ExpressionTransformer() {
-                @Override
-                public Expression transform(Expression expression) {
-                    if (isSelectMethodCallExpression(expression)) {
-                        return expression;
-                    }
-
-                    if (expression instanceof BinaryExpression) {
-                        final BinaryExpression binaryExpression = (BinaryExpression) expression;
-                        if (binaryExpression.getOperation().getType() == Types.KEYWORD_IN) {
-                            if (null != latestGinqExpression && isSelectMethodCallExpression(binaryExpression.getRightExpression())) {
-                                // use the nested ginq and clear it
-                                binaryExpression.setRightExpression(latestGinqExpression);
-                                latestGinqExpression = null;
-                                return binaryExpression;
-                            }
-                        }
-                    }
-
-                    return expression.transformExpression(this);
-                }
-            });
 
             FilterExpression filterExpression;
             if ("where".equals(methodName)) {
@@ -288,6 +254,19 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
             latestGinqExpression.setSourcePosition(call);
 
             return;
+        }
+    }
+
+    @Override
+    public void visitBinaryExpression(BinaryExpression expression) {
+        super.visitBinaryExpression(expression);
+
+        if (expression.getOperation().getType() == Types.KEYWORD_IN) {
+            if (null != latestGinqExpression && isSelectMethodCallExpression(expression.getRightExpression())) {
+                // use the nested ginq and clear it
+                expression.setRightExpression(latestGinqExpression);
+                latestGinqExpression = null;
+            }
         }
     }
 
