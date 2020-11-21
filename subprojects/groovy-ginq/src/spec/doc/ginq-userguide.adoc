@@ -107,6 +107,18 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_projection_01,
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_01,indent=0]
 ----
 
+===== Exists
+[source, sql]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_02,indent=0]
+----
+
+===== Not Exists
+[source, sql]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_03,indent=0]
+----
+
 ==== Joining
 [source, sql]
 ----

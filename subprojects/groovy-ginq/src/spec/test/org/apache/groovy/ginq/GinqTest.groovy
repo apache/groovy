@@ -2527,4 +2527,38 @@ class GinqTest {
             }.toList()
         '''
     }
+
+    @Test
+    void "testGinq - exists - 1"() {
+        assertScript '''
+            assert [2, 3] == GQ {
+// tag::ginq_filtering_02[]
+                from n in [1, 2, 3]
+                where (
+                    from m in [2, 3]
+                    where m == n
+                    select m
+                ).exists()
+                select n
+// end::ginq_filtering_02[]
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - not exists - 1"() {
+        assertScript '''
+            assert [1] == GQ {
+// tag::ginq_filtering_03[]
+                from n in [1, 2, 3]
+                where !(
+                    from m in [2, 3]
+                    where m == n
+                    select m
+                ).exists()
+                select n
+// end::ginq_filtering_03[]
+            }.toList()
+        '''
+    }
 }

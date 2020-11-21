@@ -79,7 +79,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
 
     private static final Set<String> KEYWORD_SET = new HashSet<>(Arrays.asList(
             "from", "innerjoin", "leftjoin", "rightjoin", "fulljoin", "crossjoin",
-            "where", "on", "having", "groupby", "orderby", "limit", "select"));
+            "where", "on", "having", "exists", "groupby", "orderby", "limit", "select"));
 
     @Override
     public void visitMethodCallExpression(MethodCallExpression call) {
@@ -176,6 +176,17 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
             setLatestGinqExpressionClause(filterExpression);
 
             return;
+        }
+
+        if ("exists".equals(methodName)) {
+            if (null != latestGinqExpression) {
+                ArgumentListExpression argumentListExpression = (ArgumentListExpression) call.getArguments();
+                if (argumentListExpression.getExpressions().isEmpty() && isSelectMethodCallExpression(call.getObjectExpression())) {
+                    call.setObjectExpression(latestGinqExpression);
+                    // use the nested ginq and clear it
+                    latestGinqExpression = null;
+                }
+            }
         }
 
         if ("groupby".equals(methodName)) {

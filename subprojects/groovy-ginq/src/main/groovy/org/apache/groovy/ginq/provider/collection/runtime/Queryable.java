@@ -214,6 +214,15 @@ public interface Queryable<T> {
     <U> Queryable<U> select(Function<? super T, ? extends U> mapper);
 
     /**
+     * Check if the result is empty, similar to SQL's {@code exists}
+     *
+     * @return the result of checking, {@code true} if result is not empty, otherwise {@code false}
+     */
+    default boolean exists() {
+        return stream().count() > 0;
+    }
+
+    /**
      * Eliminate duplicated records, similar to SQL's {@code distinct}
      *
      * @return the distinct result

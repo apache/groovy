@@ -269,16 +269,31 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         Expression fromMethodCallExpression = whereExpression.getNodeMetaData(__METHOD_CALL_RECEIVER)
         Expression filterExpr = whereExpression.getFilterExpr()
 
-        filterExpr = filterExpr.transformExpression(new ExpressionTransformer() {
-            @Override
-            Expression transform(Expression expression) {
-                if (expression instanceof AbstractGinqExpression) {
-                    return callX((Expression) GinqAstWalker.this.visit((AbstractGinqExpression) expression), "toList")
-                }
+        // construct the `ListExpression` instance to transform `filterExpr` in the same time
+        filterExpr = ((ListExpression) new ListExpression(Collections.singletonList(filterExpr)).transformExpression(
+                new ExpressionTransformer() {
+                    @Override
+                    Expression transform(Expression expression) {
+                        if (expression instanceof AbstractGinqExpression) {
+                            def ginqExpression = GinqAstWalker.this.visit((AbstractGinqExpression) expression)
+                            return ginqExpression
+                        }
 
-                return expression.transformExpression(this)
-            }
-        })
+                        if (expression instanceof BinaryExpression) {
+                            if (expression.operation.type == Types.KEYWORD_IN) {
+                                if (expression.rightExpression instanceof AbstractGinqExpression) {
+                                    expression.rightExpression =
+                                            callX(GinqAstWalker.this.visit((AbstractGinqExpression) expression.rightExpression),
+                                                    "toList")
+                                    return expression
+                                }
+                            }
+                        }
+
+                        return expression.transformExpression(this)
+                    }
+                }
+        )).getExpression(0)
 
         def whereMethodCallExpression = callXWithLambda(fromMethodCallExpression, "where", dataSourceExpression, filterExpr)
         whereMethodCallExpression.setSourcePosition(whereExpression)
