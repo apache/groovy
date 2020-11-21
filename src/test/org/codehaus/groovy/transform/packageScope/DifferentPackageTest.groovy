@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.transform.packageScope
 
-import groovy.test.NotYetImplemented
 import org.codehaus.groovy.control.*
 import org.codehaus.groovy.tools.GroovyClass
 import org.junit.Test
@@ -187,7 +186,7 @@ final class DifferentPackageTest {
         assert loader.loadClass('p.Peer').half() == 21
     }
 
-    @Test @NotYetImplemented // GROOVY-9093
+    @Test // GROOVY-9093
     void testDifferentPackageShouldNotSeeInstanceProps() {
         def err = shouldFail CompilationFailedException, {
             def loader = addSources(
@@ -202,14 +201,12 @@ final class DifferentPackageTest {
                         }
                     }
                 ''')
-            // TODO: Don't need this once compiler errors
-            assert loader.loadClass('q.Two').newInstance().valueSize() == 5
         }
 
-        assert err =~ / Access to ... value is forbidden /
+        assert err.message =~ /Access to q.Two#value is forbidden/
     }
 
-    @Test @NotYetImplemented // GROOVY-9093
+    @Test // GROOVY-9093
     void testDifferentPackageShouldNotSeeStaticProps1() {
         def err = shouldFail CompilationFailedException, {
             def loader = addSources(
@@ -224,10 +221,9 @@ final class DifferentPackageTest {
                         }
                     }
                 ''')
-            loader.loadClass('q.Two').half()
         }
 
-        assert err =~ / MissingPropertyException: No such property: CONST for class: q.Two /
+        assert err.message =~ /Access to q.Two#CONST is forbidden/
     }
 
     @Test
@@ -249,6 +245,6 @@ final class DifferentPackageTest {
                 ''')
         }
 
-        assert err =~ / Access to p.One#CONST is forbidden /
+        assert err.message =~ /Access to p.One#CONST is forbidden/
     }
 }
