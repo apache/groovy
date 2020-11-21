@@ -85,6 +85,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
  */
 @CompileStatic
 class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable {
+
     GinqAstWalker(SourceUnit sourceUnit) {
         this.sourceUnit = sourceUnit
     }
@@ -535,7 +536,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                 // the correct receiver is `__t.v2`, so we should not replace `__t` here
                 if (lambdaParamName != expression.text) {
                     if (visitingAggregateFunction) {
-                        if (_G == expression.text) {
+                        if (FUNCTION_AGG == visitingAggregateFunction && _G == expression.text) {
                             transformedExpression =
                                     callX(
                                         new ClassExpression(QUERYABLE_HELPER_TYPE),
@@ -564,21 +565,19 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             if (groupByVisited) { // groupby
                 if (expression.implicitThis) {
                     String methodName = expression.methodAsString
-                    if ('count' == methodName && ((TupleExpression) expression.arguments).getExpressions().isEmpty()) { // Similar to count(*) in SQL
-                        visitingAggregateFunction = true
+                    visitingAggregateFunction = methodName
+                    if (FUNCTION_COUNT == methodName && ((TupleExpression) expression.arguments).getExpressions().isEmpty()) { // Similar to count(*) in SQL
                         expression.objectExpression = propX(new VariableExpression(lambdaParamName), 'v2')
                         transformedExpression = expression
-                        visitingAggregateFunction = false
-                    } else if (methodName in ['count', 'min', 'max', 'sum', 'avg', 'agg'] && 1 == ((TupleExpression) expression.arguments).getExpressions().size()) {
-                        visitingAggregateFunction = true
+                    } else if (methodName in [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_AGG] && 1 == ((TupleExpression) expression.arguments).getExpressions().size()) {
                         Expression lambdaCode = ((TupleExpression) expression.arguments).getExpression(0)
                         lambdaCode.putNodeMetaData(__LAMBDA_PARAM_NAME, findRootObjectExpression(lambdaCode).text)
                         transformedExpression =
                                 callXWithLambda(
                                         propX(new VariableExpression(lambdaParamName), 'v2'), methodName,
                                         dataSourceExpression, lambdaCode)
-                        visitingAggregateFunction = false
                     }
+                    visitingAggregateFunction = null
                 }
             }
         }
@@ -641,7 +640,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return expression
     }
 
-    private boolean visitingAggregateFunction
+    private String visitingAggregateFunction
 
     @Override
     Expression visit(AbstractGinqExpression expression) {
@@ -726,6 +725,12 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final ClassNode QUERYABLE_HELPER_TYPE = makeWithoutCaching(QueryableHelper.class)
 
     private static final List<String> ORDER_OPTION_LIST = Arrays.asList('asc', 'desc')
+    private static final String FUNCTION_COUNT = 'count'
+    private static final String FUNCTION_MIN = 'min'
+    private static final String FUNCTION_MAX = 'max'
+    private static final String FUNCTION_SUM = 'sum'
+    private static final String FUNCTION_AVG = 'avg'
+    private static final String FUNCTION_AGG = 'agg'
 
     private static final String __METHOD_CALL_RECEIVER = "__methodCallReceiver"
     private static final String __GROUPBY_VISITED = "__groupByVisited"
