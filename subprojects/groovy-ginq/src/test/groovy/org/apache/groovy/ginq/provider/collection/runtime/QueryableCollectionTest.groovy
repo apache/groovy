@@ -491,6 +491,13 @@ class QueryableCollectionTest {
         assert nums == result
     }
 
+    @Test
+    void testExists() {
+        def nums = [1, 2, 3]
+        def result = from(nums).exists()
+        assert result
+    }
+
     @ToString
     @EqualsAndHashCode
     static class Person {

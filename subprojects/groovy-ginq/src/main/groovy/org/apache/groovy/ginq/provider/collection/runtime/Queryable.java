@@ -219,7 +219,7 @@ public interface Queryable<T> {
      * @return the result of checking, {@code true} if result is not empty, otherwise {@code false}
      */
     default boolean exists() {
-        return stream().count() > 0;
+        return count() > 0;
     }
 
     /**
