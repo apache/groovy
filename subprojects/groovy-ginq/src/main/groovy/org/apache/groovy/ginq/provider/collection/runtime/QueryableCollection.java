@@ -69,49 +69,43 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public <U> Queryable<Tuple2<T, U>> innerJoin(Queryable<? extends U> queryable, BiPredicate<? super T, ? super U> joiner) {
-        if (queryable instanceof QueryableCollection) {
-            ((QueryableCollection) queryable).setReusable();
-        }
-
         Stream<Tuple2<T, U>> stream =
                 this.stream()
-                        .flatMap(p ->
-                                queryable.stream()
-                                        .filter(c -> joiner.test(p, c))
-                                        .map(c -> Tuple.tuple(p, c)));
+                        .flatMap(p -> {
+                            if (queryable instanceof QueryableCollection) {
+                                ((QueryableCollection) queryable).makeReusable();
+                            }
+
+                            return queryable.stream()
+                                    .filter(c -> joiner.test(p, c))
+                                    .map(c -> Tuple.tuple(p, c));
+                        });
 
         return from(stream);
     }
 
     @Override
     public <U> Queryable<Tuple2<T, U>> leftJoin(Queryable<? extends U> queryable, BiPredicate<? super T, ? super U> joiner) {
-        if (queryable instanceof QueryableCollection) {
-            ((QueryableCollection) queryable).setReusable();
-        }
-
         return outerJoin(this, queryable, joiner);
     }
 
     @Override
     public <U> Queryable<Tuple2<T, U>> rightJoin(Queryable<? extends U> queryable, BiPredicate<? super T, ? super U> joiner) {
-        if (queryable instanceof QueryableCollection) {
-            ((QueryableCollection) queryable).setReusable();
-        }
-
         return outerJoin(queryable, this, (a, b) -> joiner.test(b, a)).select(e -> Tuple.tuple(e.getV2(), e.getV1()));
     }
 
     @Override
     public <U> Queryable<Tuple2<T, U>> crossJoin(Queryable<? extends U> queryable) {
-        if (queryable instanceof QueryableCollection) {
-            ((QueryableCollection) queryable).setReusable();
-        }
-
         Stream<Tuple2<T, U>> stream =
                 this.stream()
-                        .flatMap(p ->
-                                queryable.stream()
-                                        .map(c -> Tuple.tuple(p, c)));
+                        .flatMap(p -> {
+                            if (queryable instanceof QueryableCollection) {
+                                ((QueryableCollection) queryable).makeReusable();
+                            }
+
+                            return queryable.stream()
+                                    .map(c -> Tuple.tuple(p, c));
+                        });
 
         return from(stream);
     }
@@ -264,30 +258,35 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     private static <T, U> Queryable<Tuple2<T, U>> outerJoin(Queryable<? extends T> queryable1, Queryable<? extends U> queryable2, BiPredicate<? super T, ? super U> joiner) {
         Stream<Tuple2<T, U>> stream =
                 queryable1.stream()
-                        .flatMap(p ->
-                                queryable2.stream()
-                                        .map(c -> joiner.test(p, c) ? c : null)
-                                        .reduce(new ArrayList<U>(), (r, e) -> {
-                                            int size = r.size();
-                                            if (0 == size) {
-                                                r.add(e);
-                                                return r;
-                                            }
+                        .flatMap(p -> {
+                            if (queryable2 instanceof QueryableCollection) {
+                                ((QueryableCollection) queryable2).makeReusable();
+                            }
 
-                                            int lastIndex = size - 1;
-                                            Object lastElement = r.get(lastIndex);
-
-                                            if (null != e) {
-                                                if (null == lastElement) {
-                                                    r.set(lastIndex, e);
-                                                } else {
-                                                    r.add(e);
-                                                }
-                                            }
-
+                            return queryable2.stream()
+                                    .map(c -> joiner.test(p, c) ? c : null)
+                                    .reduce(new ArrayList<U>(), (r, e) -> {
+                                        int size = r.size();
+                                        if (0 == size) {
+                                            r.add(e);
                                             return r;
-                                        }, (i, o) -> o).stream()
-                                        .map(c -> null == c ? Tuple.tuple(p, null) : Tuple.tuple(p, c)));
+                                        }
+
+                                        int lastIndex = size - 1;
+                                        Object lastElement = r.get(lastIndex);
+
+                                        if (null != e) {
+                                            if (null == lastElement) {
+                                                r.set(lastIndex, e);
+                                            } else {
+                                                r.add(e);
+                                            }
+                                        }
+
+                                        return r;
+                                    }, (i, o) -> o).stream()
+                                    .map(c -> null == c ? Tuple.tuple(p, null) : Tuple.tuple(p, c));
+                        });
 
         return from(stream);
     }
@@ -313,7 +312,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     @Override
     public Stream<T> stream() {
         if (isReusable()) {
-            return toStream(sourceIterable);  // we have to create new stream every time because Java stream can not be reused
+            sourceStream = toStream(sourceIterable);  // we have to create new stream every time because Java stream can not be reused
         }
 
         return sourceStream;
@@ -331,7 +330,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return null != sourceIterable;
     }
 
-    private void setReusable() {
+    private void makeReusable() {
         if (null != this.sourceIterable) return;
 
         this.sourceIterable = toIterable(this.sourceStream);
