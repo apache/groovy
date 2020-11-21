@@ -514,7 +514,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 0"() {
+    void "testGinq - nested from select - 0"() {
         assertScript '''
             assert [1, 2, 3] == GQ {
 // tag::ginq_nested_01[]
@@ -529,7 +529,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 1"() {
+    void "testGinq - nested from select - 1"() {
         assertScript '''
             def numbers = [1, 2, 3]
             assert [1, 2, 3] == GQ {
@@ -543,7 +543,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 2"() {
+    void "testGinq - nested from select - 2"() {
         assertScript '''
             def numbers = [1, 2, 3]
             assert [1, 2] == GQ {
@@ -558,7 +558,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 3"() {
+    void "testGinq - nested from select - 3"() {
         assertScript '''
             def numbers = [1, 2, 3]
             assert [2] == GQ {
@@ -574,7 +574,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 4"() {
+    void "testGinq - nested from select - 4"() {
         assertScript '''
             def nums1 = [1, 2, 3, 4, 5]
             def nums2 = [1, 2, 3, 4, 5]
@@ -592,7 +592,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 5"() {
+    void "testGinq - nested from select - 5"() {
         assertScript '''
             def nums1 = [1, 2, 3, 4, 5]
             def nums2 = [1, 2, 3, 4, 5]
@@ -610,7 +610,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 6"() {
+    void "testGinq - nested from select - 6"() {
         assertScript '''
             def nums1 = [1, 2, 3, 4, 5]
             def nums2 = [1, 2, 3, 4, 5]
@@ -628,7 +628,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 7"() {
+    void "testGinq - nested from select - 7"() {
         assertScript '''
             def nums1 = [1, 2, 3, 4, 5]
             def nums2 = [1, 2, 3, 4, 5]
@@ -646,7 +646,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 8"() {
+    void "testGinq - nested from select - 8"() {
         assertScript '''
             def nums1 = [1, 2, 3, 4, 5]
             def nums2 = [1, 2, 3, 4, 5]
@@ -664,7 +664,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 9"() {
+    void "testGinq - nested from select - 9"() {
         assertScript '''
             assert [2, 6] == GQ {
                 from v in (
@@ -681,7 +681,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 10"() {
+    void "testGinq - nested from select - 10"() {
         assertScript '''
             assert [2, 6] == GQ {
                 from v in (
@@ -698,7 +698,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 11"() {
+    void "testGinq - nested from select - 11"() {
         assertScript '''
             assert [[1, 2], [2, 3]] == GQ {
                 from v in (
@@ -715,7 +715,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 12"() {
+    void "testGinq - nested from select - 12"() {
         assertScript '''
             assert [[1, 2], [2, 3]] == GQ {
                 from v in (
@@ -732,7 +732,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 13"() {
+    void "testGinq - nested from select - 13"() {
         assertScript '''
             assert [2, 6] == GQ {
                 from v in (
@@ -750,7 +750,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 14"() {
+    void "testGinq - nested from select - 14"() {
         assertScript '''
             assert [2, 3] == GQ {
                 from n in [1, 2, 3]
@@ -764,7 +764,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 15"() {
+    void "testGinq - nested from select - 15"() {
         assertScript '''
             assert [1, 2] == GQ {
 // tag::ginq_nested_02[]
@@ -780,7 +780,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 16"() {
+    void "testGinq - nested from select - 16"() {
         assertScript '''
             assert [[2, 2]] == GQ {
                 from t in [[0, 0], [1, 1], [2, 2]]
@@ -795,7 +795,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 17"() {
+    void "testGinq - nested from select - 17"() {
         assertScript '''
             import static groovy.lang.Tuple.*
             
@@ -844,7 +844,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 18"() {
+    void "testGinq - nested from select - 18"() {
         assertScript '''
             assert [1, 2] == GQ {
                 from n in (
@@ -861,7 +861,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 19"() {
+    void "testGinq - nested from select - 19"() {
         assertScript '''
             assert [2] == GQ {
                 from n in (
@@ -880,7 +880,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 20"() {
+    void "testGinq - nested from select - 20"() {
         assertScript '''
             assert [[1, 1], [2, 4], [3, 9]] == GQ {
                 from v in (
@@ -895,7 +895,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 21"() {
+    void "testGinq - nested from select - 21"() {
         assertScript '''
             assert [2] == GQ {
                 from n in [0, 1, 2]
@@ -909,7 +909,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 22"() {
+    void "testGinq - nested from select - 22"() {
         assertScript '''
             assert [2] == GQ {
                 from n in [0, 1, 2]
@@ -923,7 +923,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 23"() {
+    void "testGinq - nested from select - 23"() {
         assertScript '''
             assert ['ab'] == GQ {
                 from s in ['a', 'ab', 'bck']
@@ -938,7 +938,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - nested from - 24"() {
+    void "testGinq - nested from select - 24"() {
         assertScript '''
             assert ['ab', 'bck'] == GQ {
                 from s in ['a', 'ab', 'bck']
@@ -950,6 +950,25 @@ class GinqTest {
                     from y in ['abj', 'bpt']
                     where y[0] == s[0]
                     select y.length()
+                )
+                select s
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from select - 25"() {
+        assertScript '''
+            assert ['ab'] == GQ {
+                from s in ['a', 'ab', 'bck']
+                where s.size() in (
+                    from x in ['ak', 'bg']
+                    where x[0] == s[0]
+                    select x.size()
+                ) && s in (
+                    from y in ['a', 'ab']
+                    where y == s
+                    select y
                 )
                 select s
             }.toList()
