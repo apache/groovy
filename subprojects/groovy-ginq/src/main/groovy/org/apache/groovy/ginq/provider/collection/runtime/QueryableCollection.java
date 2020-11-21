@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime;
 
-import groovy.lang.Tuple;
 import groovy.lang.Tuple2;
 import groovy.transform.Internal;
 
@@ -37,6 +36,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static groovy.lang.Tuple.tuple;
 import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from;
 
 /**
@@ -78,7 +78,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
                             return queryable.stream()
                                     .filter(c -> joiner.test(p, c))
-                                    .map(c -> Tuple.tuple(p, c));
+                                    .map(c -> tuple(p, c));
                         });
 
         return from(stream);
@@ -91,7 +91,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public <U> Queryable<Tuple2<T, U>> rightJoin(Queryable<? extends U> queryable, BiPredicate<? super T, ? super U> joiner) {
-        return outerJoin(queryable, this, (a, b) -> joiner.test(b, a)).select(e -> Tuple.tuple(e.getV2(), e.getV1()));
+        return outerJoin(queryable, this, (a, b) -> joiner.test(b, a)).select(e -> tuple(e.getV2(), e.getV1()));
     }
 
     @Override
@@ -104,7 +104,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                             }
 
                             return queryable.stream()
-                                    .map(c -> Tuple.tuple(p, c));
+                                    .map(c -> tuple(p, c));
                         });
 
         return from(stream);
@@ -123,8 +123,8 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                 this.stream()
                         .collect(Collectors.groupingBy(classifier, Collectors.toList()))
                         .entrySet().stream()
-                        .filter(m -> null == having || having.test(Tuple.tuple(m.getKey(), from(m.getValue()))))
-                        .map(m -> Tuple.tuple(m.getKey(), from(m.getValue())));
+                        .filter(m -> null == having || having.test(tuple(m.getKey(), from(m.getValue()))))
+                        .map(m -> tuple(m.getKey(), from(m.getValue())));
 
         return from(stream);
     }
@@ -285,7 +285,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
                                         return r;
                                     }, (i, o) -> o).stream()
-                                    .map(c -> null == c ? Tuple.tuple(p, null) : Tuple.tuple(p, c));
+                                    .map(c -> null == c ? tuple(p, null) : tuple(p, c));
                         });
 
         return from(stream);
@@ -322,10 +322,6 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return StreamSupport.stream(sourceIterable.spliterator(), false);
     }
 
-    private static <T> Iterable<T> toIterable(Stream<T> sourceStream) {
-        return sourceStream.collect(Collectors.toList());
-    }
-
     private boolean isReusable() {
         return null != sourceIterable;
     }
@@ -333,7 +329,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     private void makeReusable() {
         if (null != this.sourceIterable) return;
 
-        this.sourceIterable = toIterable(this.sourceStream);
+        this.sourceIterable = this.sourceStream.collect(Collectors.toList());
     }
 
     @Override
