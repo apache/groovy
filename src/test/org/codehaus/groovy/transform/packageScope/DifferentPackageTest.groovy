@@ -186,41 +186,43 @@ final class DifferentPackageTest {
         assert loader.loadClass('p.Peer').half() == 21
     }
 
-    @Test // GROOVY-9093
+    @Test
+    // GROOVY-9093
     void testDifferentPackageShouldNotSeeInstanceProps() {
         def err = shouldFail CompilationFailedException, {
-            def loader = addSources(
-                One: P_DOT_ONE,
-                Two: '''
-                    package q
+            addSources(
+                    One: P_DOT_ONE,
+                    Two: '''
+                        package q
 
-                    @groovy.transform.CompileStatic
-                    class Two extends p.One {
-                        int valueSize() {
-                            value.size() // not visible
+                        @groovy.transform.CompileStatic
+                        class Two extends p.One {
+                            int valueSize() {
+                                value.size() // not visible
+                            }
                         }
-                    }
-                ''')
+                    ''')
         }
 
         assert err.message =~ /Access to q.Two#value is forbidden/
     }
 
-    @Test // GROOVY-9093
+    @Test
+    // GROOVY-9093
     void testDifferentPackageShouldNotSeeStaticProps1() {
         def err = shouldFail CompilationFailedException, {
-            def loader = addSources(
-                One: P_DOT_ONE,
-                Two: '''
-                    package q
+            addSources(
+                    One: P_DOT_ONE,
+                    Two: '''
+                        package q
 
-                    @groovy.transform.CompileStatic
-                    class Two extends p.One {
-                        static def half() {
-                            (CONST / 2) // not visible
+                        @groovy.transform.CompileStatic
+                        class Two extends p.One {
+                            static def half() {
+                                (CONST / 2) // not visible
+                            }
                         }
-                    }
-                ''')
+                    ''')
         }
 
         assert err.message =~ /Access to q.Two#CONST is forbidden/
