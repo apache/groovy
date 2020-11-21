@@ -248,6 +248,14 @@ class QueryableCollectionTest {
     }
 
     @Test
+    void testFullJoin2() {
+        def nums1 = [1, 2, 3].stream()
+        def nums2 = [2, 3, 4].stream()
+        def result = from(nums1).fullJoin(from(nums2), (a, b) -> a == b).toList()
+        assert [[1, null], [2, 2], [3, 3], [null, 4]] == result
+    }
+
+    @Test
     void testCrossJoin() {
         def nums1 = [1, 2, 3]
         def nums2 = [3, 4, 5]

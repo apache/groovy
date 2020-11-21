@@ -95,6 +95,18 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     @Override
+    public <U> Queryable<Tuple2<T, U>> fullJoin(Queryable<? extends U> queryable, BiPredicate<? super T, ? super U> joiner) {
+        if (queryable instanceof QueryableCollection) {
+            ((QueryableCollection) queryable).makeReusable();
+        }
+        this.makeReusable();
+
+        Queryable<Tuple2<T, U>> lj = this.leftJoin(queryable, joiner);
+        Queryable<Tuple2<T, U>> rj = this.rightJoin(queryable, joiner);
+        return lj.union(rj);
+    }
+
+    @Override
     public <U> Queryable<Tuple2<T, U>> crossJoin(Queryable<? extends U> queryable) {
         Stream<Tuple2<T, U>> stream =
                 this.stream()

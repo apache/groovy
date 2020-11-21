@@ -128,11 +128,7 @@ public interface Queryable<T> {
      * @return the join result
      * @since 4.0.0
      */
-    default <U> Queryable<Tuple2<T, U>> fullJoin(Queryable<? extends U> queryable, BiPredicate<? super T, ? super U> joiner) {
-        Queryable<Tuple2<T, U>> lj = this.leftJoin(queryable, joiner);
-        Queryable<Tuple2<T, U>> rj = this.rightJoin(queryable, joiner);
-        return lj.union(rj);
-    }
+    <U> Queryable<Tuple2<T, U>> fullJoin(Queryable<? extends U> queryable, BiPredicate<? super T, ? super U> joiner);
 
     /**
      * Cross join another {@link Queryable} instance, similar to SQL's {@code cross join}
