@@ -22,12 +22,13 @@
 = Querying collections in a SQL-like style
 
 Groovy's `groovy-ginq` module provides a higher-level abstraction over collections.
-Also, querying XML, JSON, YAML, etc. could be supported by GINQ too because they can be parsed into collections.
-As GORM and Hibernate are powerful enough to support DB populating, we will cover collections first.
+It could perform queries against in-memory collections of objects in a SQL-like style.
+Also, querying XML, JSON, YAML, etc. could be also supported because they can be parsed into collections.
+As GORM and jOOQ are powerful enough to support querying DB, we will cover collections first.
 
 == GINQ a.k.a. Groovy-Integrated Query
 
-GINQ is a DSL for querying, which consists of the following structure:
+GINQ is a DSL for querying with SQL-like syntax, which consists of the following structure:
 ```sql
 GINQ
 |__ from
@@ -49,6 +50,8 @@ As we could see, the simplest GINQ consists of a `from` clause and a `select` cl
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_simplest,indent=0]
 ----
+[NOTE]
+__ONLY ONE__ `from` clause is required in GINQ. Also, GINQ supports multiple data sources through `from` and the related joins.
 
 As a DSL, GINQ should be wrapped with the following block to be executed:
 ```groovy
