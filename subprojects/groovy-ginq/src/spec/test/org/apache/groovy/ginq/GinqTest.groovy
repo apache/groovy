@@ -2628,4 +2628,117 @@ class GinqTest {
             }.toList()
         '''
     }
+
+    @Test
+    void "testGinq - lazy - 1"() {
+        assertScript '''
+            int cnt = 0
+            def result = GQ {
+                from n in [1, 2, 3]
+                select n, cnt++
+            }
+            assert 0 == cnt
+            def stream = result.stream()
+            assert 0 == cnt
+            stream.toList()
+            assert cnt > 0
+        '''
+    }
+
+    @Test
+    void "testGinq - lazy - 2"() {
+        assertScript '''
+            int cnt = 0
+            def result = GQ {
+                from n in [1, 2, 3]
+                where n > 1
+                select n, cnt++
+            }
+            assert 0 == cnt
+            def stream = result.stream()
+            assert 0 == cnt
+            stream.toList()
+            assert cnt > 0
+        '''
+    }
+
+    @Test
+    void "testGinq - lazy - 3"() {
+        assertScript '''
+            int cnt = 0
+            def result = GQ {
+                from n in [1, 2, 3]
+                innerjoin m in [2, 3, 4] on m == n
+                where n > 1 && m < 5
+                select n, m, cnt++
+            }
+            assert 0 == cnt
+            def stream = result.stream()
+            assert 0 == cnt
+            stream.toList()
+            assert cnt > 0
+        '''
+    }
+
+    @Test
+    void "testGinq - lazy - 4"() {
+        assertScript '''
+            int cnt = 0
+            def result = GQ {
+                from n in [1, 2, 3]
+                innerjoin m in [2, 3, 4] on m == n
+                where n > 1 && m < 5
+                groupby n, m
+                select n, m, agg(_g.stream().map(r -> r.n + r.m + cnt++).reduce(BigDecimal.ZERO, BigDecimal::add))
+            }
+            assert 0 == cnt
+            def stream = result.stream()
+            assert 0 == cnt
+            stream.toList()
+            assert cnt > 0
+        '''
+    }
+
+    @Test
+    void "testGinq - lazy - 5"() {
+        assertScript '''
+            int cnt = 0
+            def result = GQ {
+                from n in [1, 2, 3]
+                innerjoin m in [2, 3, 4] on m == n
+                where n > 1 && m < 5
+                groupby n, m
+                orderby n in desc, m in asc
+                select n, m, agg(_g.stream().map(r -> r.n + r.m + cnt++).reduce(BigDecimal.ZERO, BigDecimal::add))
+            }
+            assert 0 == cnt
+            def stream = result.stream()
+            assert 0 == cnt
+            stream.toList()
+            assert cnt > 0
+        '''
+    }
+
+    @Test
+    void "testGinq - lazy - 6"() {
+        assertScript '''
+            int cnt = 0
+            def result = GQ {
+                from n in [1, 2, 3]
+                innerjoin m in [2, 3, 4] on m == n
+                where n > 1 && m < 5 && (
+                    from k in [2, 3, 4, 5]
+                    select k, cnt++
+                ).exists()
+                groupby n, m
+                orderby n in desc, m in asc
+                select n, m, agg(_g.stream().map(r -> r.n + r.m + cnt++).reduce(BigDecimal.ZERO, BigDecimal::add))
+            }
+            assert 0 == cnt
+            def stream = result.stream()
+            assert 0 == cnt
+            stream.toList()
+            assert cnt > 0
+        '''
+    }
 }
