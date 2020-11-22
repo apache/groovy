@@ -58,12 +58,12 @@ As a DSL, GINQ should be wrapped with the following block to be executed:
 GQ { /* GINQ CODE */ }
 ```
 For example,
-[source, sql]
+[source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_execution_01,indent=0]
 ----
 
-[source, sql]
+[source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_execution_02,indent=0]
 ----
@@ -102,7 +102,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_datasource_02,
 ----
 
 ===== GINQ Result Set Data Source
-[source, sql]
+[source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_datasource_04,indent=0]
 ----
@@ -300,24 +300,24 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_05,indent
 ==== List Comprehension
 
 List comprehension is an elegant way to define and create lists based on existing lists:
-[source, sql]
+[source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_01,indent=0]
 ----
 
-[source, sql]
+[source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_02,indent=0]
 ----
 
 GINQ could be used as list comprehension in the loops directly:
-[source, sql]
+[source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_03,indent=0]
 ----
 
 ==== Query JSON
-[source, sql]
+[source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_04,indent=0]
 ----
@@ -327,7 +327,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_04,indent
 For advanced users, you could customize GINQ behaviour by specifying your own target code generator.
 For example, we could specify the qualified class name `org.apache.groovy.ginq.provider.collection.GinqAstWalker` as the target code generator to generate GINQ method calls for querying collections,
 which is the default behaviour of GINQ:
-[source, sql]
+[source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_customize_01,indent=0]
 ----
