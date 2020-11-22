@@ -67,6 +67,16 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_execution_01,i
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_execution_02,indent=0]
 ----
+And it is strongly recommended to use `def` to define the variable for the result of GINQ execution:
+```groovy
+def result = GQ {
+    /* GINQ CODE */
+}
+def stream = result.stream() // get the stream from GINQ result
+def list = result.toList() // get the list from GINQ result
+```
+[WARNING]
+Currently GINQ can not work well when STC is enabled.
 
 === GINQ Syntax
 ==== Data Source
