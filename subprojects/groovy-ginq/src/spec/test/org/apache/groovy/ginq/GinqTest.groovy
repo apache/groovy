@@ -2741,4 +2741,28 @@ class GinqTest {
             assert cnt > 0
         '''
     }
+
+    @Test
+    void "testGinq - lazy - 7"() {
+        assertScript '''
+            int cnt = 0
+            def result = GQ {
+                from n in [1, 2, 3]
+                innerjoin m in [2, 3, 4] on m == n
+                where n > 1 && m < 5 && (
+                    from k in [2, 3, 4, 5]
+                    select k, cnt++
+                ).exists()
+                groupby n, m
+                orderby n in desc, m in asc
+                limit 0, 1
+                select n, m, agg(_g.stream().map(r -> r.n + r.m + cnt++).reduce(BigDecimal.ZERO, BigDecimal::add))
+            }
+            assert 0 == cnt
+            def stream = result.stream()
+            assert 0 == cnt
+            stream.toList()
+            assert cnt > 0
+        '''
+    }
 }
