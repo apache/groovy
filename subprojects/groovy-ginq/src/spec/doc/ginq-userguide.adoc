@@ -133,6 +133,9 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_03,i
 ----
 
 ==== Joining
+
+More data sources for GINQ could be specified by join clauses.
+
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_joining_01,indent=0]
