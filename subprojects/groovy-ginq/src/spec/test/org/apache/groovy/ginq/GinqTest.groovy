@@ -22,6 +22,8 @@ import groovy.transform.CompileStatic
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.isAtLeastJdk
+import static org.junit.Assume.assumeTrue
 
 @CompileStatic
 class GinqTest {
@@ -2721,6 +2723,8 @@ class GinqTest {
 
     @Test
     void "testGinq - lazy - 6"() {
+        assumeTrue(isAtLeastJdk('9.0'))
+
         assertScript '''
             int cnt = 0
             def result = GQ {
@@ -2744,6 +2748,8 @@ class GinqTest {
 
     @Test
     void "testGinq - lazy - 7"() {
+        assumeTrue(isAtLeastJdk('9.0'))
+
         assertScript '''
             int cnt = 0
             def result = GQ {
