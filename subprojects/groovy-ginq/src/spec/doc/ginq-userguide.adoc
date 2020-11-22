@@ -30,8 +30,9 @@ As GORM and jOOQ are powerful enough to support querying DB, we will cover colle
 
 GINQ is a DSL for querying with SQL-like syntax, which consists of the following structure:
 ```sql
-GINQ
+GQ, i.e. abbreviation for GINQ
 |__ from
+|   |__ in
 |__ [innerjoin/leftjoin/rightjoin/fulljoin/crossjoin]*
 |   |__ on (Note: `crossjoin` does not need the `on` clause)
 |__ [where]
@@ -67,7 +68,8 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_execution_01,i
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_execution_02,indent=0]
 ----
-And it is strongly recommended to use `def` to define the variable for the result of GINQ execution:
+And it is strongly recommended to use `def` to define the variable for the result of GINQ execution,
+which is a `Queryable` instance that is lazy.
 ```groovy
 def result = GQ {
     /* GINQ CODE */
