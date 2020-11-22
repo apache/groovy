@@ -173,6 +173,26 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from select - 10"() {
+        assertScript '''
+// tag::ginq_projection_02[]
+            @groovy.transform.EqualsAndHashCode
+            class Person {
+                String name
+                Person(String name) {
+                    this.name = name
+                }
+            }
+            def persons = [new Person('Daniel'), new Person('Paul'), new Person('Eric')]
+            assert persons == GQ {
+                from n in ['Daniel', 'Paul', 'Eric']
+                select new Person(n)
+            }.toList()
+// end::ginq_projection_02[]
+        '''
+    }
+
+    @Test
     void "testGinq - from where select - 1"() {
         assertScript '''
             def numbers = [0, 1, 2, 3, 4, 5]

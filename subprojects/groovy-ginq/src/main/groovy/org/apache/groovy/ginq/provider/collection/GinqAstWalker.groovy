@@ -700,7 +700,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         }
 
         if (lambdaCode instanceof ConstructorCallExpression) {
-            if (NamedRecord.class == lambdaCode.type.getTypeClass()) {
+            if (NamedRecord.class.name == lambdaCode.type.redirect().name) {
                 // store the source record
                 lambdaCode = callX(lambdaCode, 'sourceRecord', new VariableExpression(lambdaParamName))
             }
