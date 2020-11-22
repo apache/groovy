@@ -338,3 +338,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_customize_01,i
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_examples_01,indent=0]
 ----
+
+==== More examples
+link: https://github.com/apache/groovy/blob/master/subprojects/groovy-ginq/src/spec/test/org/apache/groovy/ginq/GinqTest.groovy[GINQ examples]
+
