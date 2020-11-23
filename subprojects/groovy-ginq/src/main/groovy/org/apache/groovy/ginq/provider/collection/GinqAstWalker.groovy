@@ -514,6 +514,8 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             throw new GroovyBugError("lambdaParamName is null. dataSourceExpression:${dataSourceExpression}, expr:${expr}")
         }
 
+        boolean isJoin = dataSourceExpression instanceof JoinExpression
+
         // (1) correct itself
         expr = correctVars(dataSourceExpression, lambdaParamName, expr)
 
@@ -559,9 +561,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                                         args(new VariableExpression(lambdaParamName), getMetaDataMethodCall(MD_ALIAS_NAME_LIST))
                                     )
                         } else {
-                            transformedExpression = isJoin
-                                    ? correctVarsForJoin(dataSourceExpression, expression, new VariableExpression(lambdaParamName))
-                                    : new VariableExpression(lambdaParamName)
+                            transformedExpression = new VariableExpression(lambdaParamName)
                         }
                     } else {
                         if (groupNameListExpression.getExpressions().stream().map(e -> e.text).anyMatch(e -> e == expression.text)
