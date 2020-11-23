@@ -41,12 +41,14 @@ import org.apache.groovy.util.Maps
 import org.codehaus.groovy.GroovyBugError
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.CodeVisitorSupport
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.CastExpression
 import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression
+import org.codehaus.groovy.ast.expr.DeclarationExpression
 import org.codehaus.groovy.ast.expr.EmptyExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.ExpressionTransformer
@@ -58,6 +60,7 @@ import org.codehaus.groovy.ast.expr.PostfixExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
@@ -70,6 +73,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.block
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS
+import static org.codehaus.groovy.ast.tools.GeneralUtils.declX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.lambdaX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param
@@ -229,13 +233,19 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         Expression otherAliasExpr = otherDataSourceExpression.aliasExpr
 
         String otherParamName = otherAliasExpr.text
+        List<DeclarationExpression> declarationExpressionList = Collections.emptyList()
         Expression filterExpr = EmptyExpression.INSTANCE
         if (onExpression) {
             filterExpr = onExpression.getFilterExpr()
-            Tuple2<String, Expression> paramNameAndLambdaCode = correctVariablesOfLambdaExpression(otherDataSourceExpression, filterExpr)
+            Tuple3<String, List<DeclarationExpression>, Expression> paramNameAndLambdaCode = correctVariablesOfLambdaExpression(otherDataSourceExpression, filterExpr)
             otherParamName = paramNameAndLambdaCode.v1
-            filterExpr = paramNameAndLambdaCode.v2
+            declarationExpressionList = paramNameAndLambdaCode.v2
+            filterExpr = paramNameAndLambdaCode.v3
         }
+
+        List<Statement> statementList = []
+        statementList.addAll(declarationExpressionList.stream().map(e -> stmt(e)).collect(Collectors.toList()))
+        statementList.add(stmt(filterExpr))
 
         MethodCallExpression resultMethodCallExpression
         MethodCallExpression joinMethodCallExpression = callX(receiver, joinExpression.joinName.replace('join', 'Join'),
@@ -246,7 +256,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                                         param(ClassHelper.DYNAMIC_TYPE, otherParamName),
                                         param(ClassHelper.DYNAMIC_TYPE, joinExpression.aliasExpr.text)
                                 ),
-                                stmt(filterExpr)
+                                block(statementList as Statement[])
                         )
                 )
         )
@@ -385,6 +395,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     @Override
     MethodCallExpression visitSelectExpression(SelectExpression selectExpression) {
+        currentGinqExpression.putNodeMetaData(__VISITING_SELECT, true)
         Expression selectMethodReceiver = selectExpression.getNodeMetaData(__METHOD_CALL_RECEIVER)
         DataSourceExpression dataSourceExpression = selectExpression.dataSourceExpression
         Expression projectionExpr = selectExpression.getProjectionExpr()
@@ -410,7 +421,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             }
         })
 
-        return callXWithLambda(selectMethodReceiver, "select", dataSourceExpression, lambdaCode)
+        def selectMethodCallExpression = callXWithLambda(selectMethodReceiver, "select", dataSourceExpression, lambdaCode)
+
+        currentGinqExpression.putNodeMetaData(__VISITING_SELECT, false)
+
+        return selectMethodCallExpression
     }
 
     private ConstructorCallExpression constructNamedRecordCtorCallExpression(List<Expression> expressionList, String metaDataKey) {
@@ -508,13 +523,37 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return dataSourceExpressionList.stream().map(e -> e.aliasExpr.text).collect(Collectors.toList())
     }
 
-    private Expression correctVariablesOfGinqExpression(DataSourceExpression dataSourceExpression, Expression expr) {
+    private Tuple2<List<DeclarationExpression>, Expression> correctVariablesOfGinqExpression(DataSourceExpression dataSourceExpression, Expression expr) {
         String lambdaParamName = expr.getNodeMetaData(__LAMBDA_PARAM_NAME)
         if (null == lambdaParamName) {
             throw new GroovyBugError("lambdaParamName is null. dataSourceExpression:${dataSourceExpression}, expr:${expr}")
         }
 
         boolean isJoin = dataSourceExpression instanceof JoinExpression
+
+        List<DeclarationExpression> declarationExpressionList
+        if (isJoin) {
+            def lambdaParam = new VariableExpression(lambdaParamName)
+            Map<String, Expression> aliasToAccessPathMap = findAliasAccessPathForJoin(dataSourceExpression, lambdaParam)
+
+            def variableNameSet = [] as Set
+            expr.visit(new CodeVisitorSupport() {
+                @Override
+                void visitVariableExpression(VariableExpression expression) {
+                    variableNameSet << expression.text
+                    super.visitVariableExpression(expression)
+                }
+            })
+
+            declarationExpressionList =
+                    aliasToAccessPathMap.entrySet().stream()
+                    .filter(e -> variableNameSet.contains(e.key))
+                    .map(e -> declX(localVarX(e.key), e.value))
+                    .collect(Collectors.toList())
+        } else {
+            declarationExpressionList = Collections.emptyList()
+        }
+
 
         // (1) correct itself
         expr = correctVars(dataSourceExpression, lambdaParamName, expr)
@@ -535,12 +574,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             }
         })
 
-        return expr
+        return Tuple.tuple(declarationExpressionList, expr)
     }
 
     private Expression correctVars(DataSourceExpression dataSourceExpression, String lambdaParamName, Expression expression) {
         boolean groupByVisited = isGroupByVisited()
-        boolean isJoin = dataSourceExpression instanceof JoinExpression
 
         Expression transformedExpression = null
         if (expression instanceof VariableExpression) {
@@ -572,8 +610,6 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                         }
                     }
                 }
-            } else if (isJoin) {
-                transformedExpression = correctVarsForJoin(dataSourceExpression, expression, new VariableExpression(lambdaParamName))
             }
         } else if (expression instanceof MethodCallExpression) {
             // #1
@@ -604,11 +640,10 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return expression
     }
 
-    private Expression correctVarsForJoin(DataSourceExpression dataSourceExpression, Expression expression, Expression prop) {
+    private static Map<String, Expression> findAliasAccessPathForJoin(DataSourceExpression dataSourceExpression, Expression prop) {
         boolean isJoin = dataSourceExpression instanceof JoinExpression
-        if (!isJoin) return expression
+        if (!isJoin) return Collections.emptyMap()
 
-        Expression transformedExpression = null
         /*
                  * `n1`(`from` node) join `n2` join `n3`  will construct a join tree:
                  *
@@ -625,24 +660,22 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                  *
                  * The following code shows how to construct the access path for variables
                  */
-        for (DataSourceExpression dse = dataSourceExpression;
-             null == transformedExpression && dse instanceof JoinExpression;
-             dse = dse.dataSourceExpression) {
-
+        Map<String, Expression> aliasToAccessPathMap = new LinkedHashMap<>()
+        for (DataSourceExpression dse = dataSourceExpression; dse instanceof JoinExpression; dse = dse.dataSourceExpression) {
             DataSourceExpression otherDataSourceExpression = dse.dataSourceExpression
             Expression firstAliasExpr = otherDataSourceExpression?.aliasExpr ?: EmptyExpression.INSTANCE
             Expression secondAliasExpr = dse.aliasExpr
 
-            if (firstAliasExpr.text == expression.text && otherDataSourceExpression !instanceof JoinExpression) {
-                transformedExpression = propX(prop, 'v1')
-            } else if (secondAliasExpr.text == expression.text) {
-                transformedExpression = propX(prop, 'v2')
-            } else { // not found
+            aliasToAccessPathMap.put(secondAliasExpr.text, propX(prop, 'v2'))
+
+            if (otherDataSourceExpression instanceof JoinExpression) {
                 prop = propX(prop, 'v1')
+            } else {
+                aliasToAccessPathMap.put(firstAliasExpr.text, propX(prop, 'v1'))
             }
         }
 
-        return transformedExpression
+        return aliasToAccessPathMap
     }
 
     private static Expression findRootObjectExpression(Expression expression) {
@@ -669,11 +702,16 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     }
 
     private LambdaExpression constructLambdaExpression(DataSourceExpression dataSourceExpression, Expression lambdaCode) {
-        Tuple2<String, Expression> paramNameAndLambdaCode = correctVariablesOfLambdaExpression(dataSourceExpression, lambdaCode)
+        Tuple3<String, List<DeclarationExpression>, Expression> paramNameAndLambdaCode = correctVariablesOfLambdaExpression(dataSourceExpression, lambdaCode)
+
+        List<DeclarationExpression> declarationExpressionList = paramNameAndLambdaCode.v2
+        List<Statement> statementList = []
+        statementList.addAll(declarationExpressionList.stream().map(e -> stmt(e)).collect(Collectors.toList()))
+        statementList.add(stmt(paramNameAndLambdaCode.v3))
 
         lambdaX(
                 params(param(ClassHelper.DYNAMIC_TYPE, paramNameAndLambdaCode.v1)),
-                stmt(paramNameAndLambdaCode.v2)
+                block(statementList as Statement[])
         )
     }
 
@@ -682,9 +720,10 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         "__t_${lambdaParamSeq++}"
     }
 
-    private Tuple2<String, Expression> correctVariablesOfLambdaExpression(DataSourceExpression dataSourceExpression, Expression lambdaCode) {
+    private Tuple3<String, List<DeclarationExpression>, Expression> correctVariablesOfLambdaExpression(DataSourceExpression dataSourceExpression, Expression lambdaCode) {
         boolean groupByVisited = isGroupByVisited()
 
+        List<DeclarationExpression> declarationExpressionList = Collections.emptyList()
         String lambdaParamName
         if (dataSourceExpression instanceof JoinExpression || groupByVisited) {
             lambdaParamName = lambdaCode.getNodeMetaData(__LAMBDA_PARAM_NAME)
@@ -693,24 +732,32 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             }
 
             lambdaCode.putNodeMetaData(__LAMBDA_PARAM_NAME, lambdaParamName)
-            lambdaCode = correctVariablesOfGinqExpression(dataSourceExpression, lambdaCode)
+            Tuple2<List<DeclarationExpression>, Expression> declarationAndLambdaCode = correctVariablesOfGinqExpression(dataSourceExpression, lambdaCode)
+            if (!(visitingAggregateFunction || (groupByVisited && visitingSelect))) {
+                declarationExpressionList = declarationAndLambdaCode.v1
+            }
+            lambdaCode = declarationAndLambdaCode.v2
         } else {
             lambdaParamName = dataSourceExpression.aliasExpr.text
             lambdaCode.putNodeMetaData(__LAMBDA_PARAM_NAME, lambdaParamName)
         }
 
         if (lambdaCode instanceof ConstructorCallExpression) {
-            if (NamedRecord.class.name == lambdaCode.type.redirect().name) {
+            if (NAMEDRECORD_CLASS_NAME == lambdaCode.type.redirect().name) {
                 // store the source record
                 lambdaCode = callX(lambdaCode, 'sourceRecord', new VariableExpression(lambdaParamName))
             }
         }
 
-        return Tuple.tuple(lambdaParamName, lambdaCode)
+        return Tuple.tuple(lambdaParamName, declarationExpressionList, lambdaCode)
     }
 
     private boolean isGroupByVisited() {
         return currentGinqExpression.getNodeMetaData(__GROUPBY_VISITED) ?: false
+    }
+
+    private boolean isVisitingSelect() {
+        return currentGinqExpression.getNodeMetaData(__VISITING_SELECT) ?: false
     }
 
     private static MethodCallExpression callXWithLambda(Expression receiver, String methodName, LambdaExpression lambdaExpression) {
@@ -747,8 +794,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final String FUNCTION_AVG = 'avg'
     private static final String FUNCTION_AGG = 'agg'
 
+    private static final String NAMEDRECORD_CLASS_NAME = NamedRecord.class.name
+
     private static final String __METHOD_CALL_RECEIVER = "__methodCallReceiver"
     private static final String __GROUPBY_VISITED = "__groupByVisited"
+    private static final String __VISITING_SELECT = "__visitingSelect"
     private static final String __LAMBDA_PARAM_NAME = "__LAMBDA_PARAM_NAME"
     private static final String __META_DATA_MAP_NAME_PREFIX = '__metaDataMap_'
     private static final String __ROW_NUMBER_NAME_PREFIX = '__rowNumber_'

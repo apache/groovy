@@ -2600,6 +2600,23 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - exists - 4"() {
+        assertScript '''
+            assert [2, 3] == GQ {
+                from n in [1, 2, 3]
+                innerjoin m in [1, 2, 3] on m == n
+                innerjoin k in [1, 2, 3] on k == n
+                where (
+                    from t in [2, 3]
+                    where t == n && t == m && t == k
+                    select t
+                ).exists()
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - not exists - 1"() {
         assertScript '''
             assert [1] == GQ {
@@ -2763,6 +2780,27 @@ class GinqTest {
                 orderby n in desc, m in asc
                 limit 0, 1
                 select n, m, agg(_g.stream().map(r -> r.n + r.m + cnt++).reduce(BigDecimal.ZERO, BigDecimal::add))
+            }
+            assert 0 == cnt
+            def stream = result.stream()
+            assert 0 == cnt
+            stream.toList()
+            assert cnt > 0
+        '''
+    }
+
+    @Test
+    void "testGinq - lazy - 8"() {
+        assertScript '''
+            int cnt = 0
+            def result = GQ {
+                from n in [1, 2, 3]
+                where (
+                    from k in [2, 3, 4, 5]
+                    where k == n
+                    select k, cnt++
+                ).exists()
+                select n, cnt++
             }
             assert 0 == cnt
             def stream = result.stream()
