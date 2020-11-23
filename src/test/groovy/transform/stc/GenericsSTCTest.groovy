@@ -1296,12 +1296,12 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         } finally {
             parentDir.deleteDir()
             config.targetDirectory.deleteDir()
+            config.jointCompilationOptions.stubDir.deleteDir()
         }
     }
 
-    static File createTempDir() {
-        File tempDirectory = File.createTempDir("Groovy3464Bug", Long.toString(System.currentTimeMillis()))
-        return tempDirectory
+    private static File createTempDir() {
+        File.createTempDir('groovy-junit-', Long.toString(System.currentTimeMillis()))
     }
 
     void testRegressionInConstructorCheck() {
@@ -2026,6 +2026,39 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
             null
         '''
+
+        // GROOVY-9821
+        config.with {
+            targetDirectory = createTempDir()
+            jointCompilationOptions = [stubDir: createTempDir()]
+        }
+        File parentDir = createTempDir()
+        try {
+            def a = new File(parentDir, 'Types.java')
+            a.write '''
+                interface A9821 {
+                    java.util.Collection<? extends B9821> getBees();
+                }
+                interface B9821 {
+                    Object getC();
+                }
+            '''
+            def b = new File(parentDir, 'Script.groovy')
+            b.write '''
+                def test(A9821 a) {
+                    a.bees*.c
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b)
+            cu.compile()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+            config.jointCompilationOptions.stubDir.deleteDir()
+        }
     }
 
     // GROOVY-7804

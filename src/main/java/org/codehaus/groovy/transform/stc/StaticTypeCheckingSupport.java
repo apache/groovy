@@ -1967,7 +1967,7 @@ public abstract class StaticTypeCheckingSupport {
         return newType;
     }
 
-    private static ClassNode getCombinedBoundType(GenericsType genericsType) {
+    static ClassNode getCombinedBoundType(GenericsType genericsType) {
         //TODO: this method should really return some kind of meta ClassNode
         // representing the combination of all bounds. The code here, just picks
         // something out to be able to proceed and is not actually correct
