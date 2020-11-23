@@ -1618,11 +1618,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         for (Receiver<String> receiver : receivers) {
             ClassNode receiverType = receiver.getType();
-            ClassNode propertyType = getTypeForMapPropertyExpression(receiverType, objectExpressionType, pexp);
+            ClassNode propertyType = getTypeForMapPropertyExpression(receiverType, pexp);
             if (propertyType == null)
-                propertyType = getTypeForListPropertyExpression(receiverType, objectExpressionType, pexp);
+                propertyType = getTypeForListPropertyExpression(receiverType, pexp);
             if (propertyType == null)
-                propertyType = getTypeForSpreadExpression(receiverType, objectExpressionType, pexp);
+                propertyType = getTypeForSpreadExpression(receiverType, pexp);
             if (propertyType == null)
                 continue;
             if (visitor != null) {
@@ -1659,67 +1659,63 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return getterMethod;
     }
 
-    private ClassNode getTypeForSpreadExpression(final ClassNode testClass, final ClassNode objectExpressionType, final PropertyExpression pexp) {
+    private ClassNode getTypeForMultiValueExpression(final ClassNode compositeType, final Expression prop) {
+        GenericsType[] gts = compositeType.getGenericsTypes();
+        ClassNode itemType = (gts != null && gts.length == 1 ? getCombinedBoundType(gts[0]) : OBJECT_TYPE);
+
+        AtomicReference<ClassNode> propertyType = new AtomicReference<>();
+        if (existsProperty(propX(varX("{}", itemType), prop), true, new PropertyLookupVisitor(propertyType))) {
+            return extension.buildListType(propertyType.get());
+        }
+        return null;
+    }
+
+    private ClassNode getTypeForSpreadExpression(final ClassNode testClass, final PropertyExpression pexp) {
         if (pexp.isSpreadSafe()) {
             MethodCallExpression mce = callX(varX("_", testClass), "iterator");
             mce.setImplicitThis(false);
             mce.visit(this);
             ClassNode iteratorType = getType(mce);
             if (isOrImplements(iteratorType, Iterator_TYPE)) {
-                GenericsType[] gts = iteratorType.getGenericsTypes();
-                ClassNode itemType = (gts != null && gts.length == 1 ? getCombinedBoundType(gts[0]) : OBJECT_TYPE);
+                return getTypeForMultiValueExpression(iteratorType, pexp.getProperty());
+            }
+        }
+        return null;
+    }
 
-                AtomicReference<ClassNode> propertyType = new AtomicReference<>();
-                if (existsProperty(propX(varX("{}", itemType), pexp.getProperty()), true, new PropertyLookupVisitor(propertyType))) {
-                    return extension.buildListType(propertyType.get());
+    private ClassNode getTypeForListPropertyExpression(final ClassNode testClass, final PropertyExpression pexp) {
+        if (isOrImplements(testClass, LIST_TYPE)) {
+            ClassNode listType = testClass.equals(LIST_TYPE) ? testClass
+                    : GenericsUtils.parameterizeType(testClass, LIST_TYPE);
+            return getTypeForMultiValueExpression(listType, pexp.getProperty());
+        }
+        return null;
+    }
+
+    private ClassNode getTypeForMapPropertyExpression(final ClassNode testClass, final PropertyExpression pexp) {
+        if (isOrImplements(testClass, MAP_TYPE)) {
+            ClassNode mapType = testClass.equals(MAP_TYPE) ? testClass
+                    : GenericsUtils.parameterizeType(testClass, MAP_TYPE);
+            GenericsType[] gts = mapType.getGenericsTypes();//<K,V>
+            if (gts == null || gts.length != 2) return OBJECT_TYPE;
+
+            if (!pexp.isSpreadSafe()) {
+                return getCombinedBoundType(gts[1]);
+            } else {
+                // map*.property syntax acts on Entry
+                switch (pexp.getPropertyAsString()) {
+                case "key":
+                    ClassNode keyList = LIST_TYPE.getPlainNodeReference();
+                    keyList.setGenericsTypes(new GenericsType[]{gts[0]});
+                    return keyList;
+                case "value":
+                    ClassNode valueList = LIST_TYPE.getPlainNodeReference();
+                    valueList.setGenericsTypes(new GenericsType[]{gts[1]});
+                    return valueList;
+                default:
+                    addStaticTypeError("Spread operator on map only allows one of [key,value]", pexp);
                 }
             }
-        }
-        return null;
-    }
-
-    private ClassNode getTypeForListPropertyExpression(final ClassNode testClass, final ClassNode objectExpressionType, final PropertyExpression pexp) {
-        if (!implementsInterfaceOrIsSubclassOf(testClass, LIST_TYPE)) return null;
-        ClassNode intf = GenericsUtils.parameterizeType(objectExpressionType, LIST_TYPE.getPlainNodeReference());
-        GenericsType[] types = intf.getGenericsTypes();
-        if (types == null || types.length != 1) return OBJECT_TYPE;
-
-        PropertyExpression subExp = new PropertyExpression(varX("{}", types[0].getType()), pexp.getPropertyAsString());
-        AtomicReference<ClassNode> result = new AtomicReference<>();
-        if (existsProperty(subExp, true, new PropertyLookupVisitor(result))) {
-            return extension.buildListType(result.get());
-        }
-        return null;
-    }
-
-    private ClassNode getTypeForMapPropertyExpression(final ClassNode testClass, final ClassNode objectExpressionType, final PropertyExpression pexp) {
-        if (!implementsInterfaceOrIsSubclassOf(testClass, MAP_TYPE)) return null;
-        ClassNode intf;
-        if (objectExpressionType.getGenericsTypes() != null) {
-            intf = GenericsUtils.parameterizeType(objectExpressionType, MAP_TYPE.getPlainNodeReference());
-        } else {
-            intf = MAP_TYPE.getPlainNodeReference();
-        }
-        // 0 is the key, 1 is the value
-        GenericsType[] types = intf.getGenericsTypes();
-        if (types == null || types.length != 2) return OBJECT_TYPE;
-
-        if (pexp.isSpreadSafe()) {
-            // map*.property syntax
-            // only "key" and "value" are allowed
-            if ("key".equals(pexp.getPropertyAsString())) {
-                ClassNode listKey = LIST_TYPE.getPlainNodeReference();
-                listKey.setGenericsTypes(new GenericsType[]{types[0]});
-                return listKey;
-            } else if ("value".equals(pexp.getPropertyAsString())) {
-                ClassNode listValue = LIST_TYPE.getPlainNodeReference();
-                listValue.setGenericsTypes(new GenericsType[]{types[1]});
-                return listValue;
-            } else {
-                addStaticTypeError("Spread operator on map only allows one of [key,value]", pexp);
-            }
-        } else {
-            return types[1].getType();
         }
         return null;
     }
