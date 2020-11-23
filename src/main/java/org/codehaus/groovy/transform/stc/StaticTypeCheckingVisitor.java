@@ -188,6 +188,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.toGenericTypesString;
@@ -245,6 +246,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDG
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findSetters;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findTargetVariable;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.fullyResolveType;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getCombinedBoundType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getCorrectedClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getGenericsWithoutArray;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getOperationName;
@@ -1661,21 +1663,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private ClassNode getTypeForSpreadExpression(final ClassNode testClass, final ClassNode objectExpressionType, final PropertyExpression pexp) {
-        if (!pexp.isSpreadSafe()) return null;
-        MethodCallExpression mce = callX(varX("_", testClass), "iterator", ArgumentListExpression.EMPTY_ARGUMENTS);
-        mce.setImplicitThis(false);
-        mce.visit(this);
-        ClassNode callType = getType(mce);
-        if (!implementsInterfaceOrIsSubclassOf(callType, Iterator_TYPE)) return null;
-        GenericsType[] types = callType.getGenericsTypes();
-        ClassNode contentType = OBJECT_TYPE;
-        if (types != null && types.length == 1) contentType = types[0].getType();
-        PropertyExpression subExp = new PropertyExpression(varX("{}", contentType), pexp.getPropertyAsString());
-        AtomicReference<ClassNode> result = new AtomicReference<>();
-        if (existsProperty(subExp, true, new PropertyLookupVisitor(result))) {
-            ClassNode intf = LIST_TYPE.getPlainNodeReference();
-            intf.setGenericsTypes(new GenericsType[]{new GenericsType(getWrapper(result.get()))});
-            return intf;
+        if (pexp.isSpreadSafe()) {
+            MethodCallExpression mce = callX(varX("_", testClass), "iterator");
+            mce.setImplicitThis(false);
+            mce.visit(this);
+            ClassNode iteratorType = getType(mce);
+            if (isOrImplements(iteratorType, Iterator_TYPE)) {
+                GenericsType[] gts = iteratorType.getGenericsTypes();
+                ClassNode itemType = (gts != null && gts.length == 1 ? getCombinedBoundType(gts[0]) : OBJECT_TYPE);
+
+                AtomicReference<ClassNode> propertyType = new AtomicReference<>();
+                if (existsProperty(propX(varX("{}", itemType), pexp.getProperty()), true, new PropertyLookupVisitor(propertyType))) {
+                    ClassNode listType = LIST_TYPE.getPlainNodeReference();
+                    listType.setGenericsTypes(new GenericsType[]{new GenericsType(getWrapper(propertyType.get()))});
+                    return listType;
+                }
+            }
         }
         return null;
     }
