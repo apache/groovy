@@ -444,14 +444,34 @@ public class MetaMethodIndex {
         return o;
     }
 
-    private static boolean isNonRealMethod(MetaMethod method) {
-        return method instanceof NewInstanceMetaMethod ||
-                method instanceof NewStaticMetaMethod ||
-                method instanceof ClosureMetaMethod ||
-                method instanceof GeneratedMetaMethod ||
-                method instanceof ClosureStaticMetaMethod ||
-                method instanceof MixinInstanceMetaMethod ||
-                method instanceof ClosureMetaMethod.AnonymousMetaMethod;
+    private static boolean isOverridden(final MetaMethod inIndex, final MetaMethod toIndex) {
+        // do not overwrite private methods
+        // do not overwrite interface methods with instance methods
+        // Note: private methods from parent classes are not shown here,
+        // but when doing the multi-method connection step, we overwrite
+        // methods of the parent class with methods of a subclass and
+        // in that case we want to keep the private methods
+        if (!inIndex.isPrivate() && (isNonRealMethod(inIndex)
+                || !inIndex.getDeclaringClass().isInterface()
+                || (toIndex.getDeclaringClass().isInterface() ^ toIndex.isStatic()))) {
+            CachedClass toIndexDC = toIndex.getDeclaringClass();
+            CachedClass inIndexDC = inIndex.getDeclaringClass();
+            if ((toIndexDC == inIndexDC && isNonRealMethod(toIndex))
+                    || !toIndexDC.isAssignableFrom(inIndexDC.getTheClass())) {
+                return true; // prefer toIndex
+            }
+        }
+        return false; // prefer inIndex
+    }
+
+    private static boolean isNonRealMethod(final MetaMethod method) {
+        return method instanceof NewInstanceMetaMethod
+            || method instanceof NewStaticMetaMethod
+            || method instanceof ClosureMetaMethod
+            || method instanceof GeneratedMetaMethod
+            || method instanceof ClosureStaticMetaMethod
+            || method instanceof MixinInstanceMetaMethod
+            || method instanceof ClosureMetaMethod.AnonymousMetaMethod;
     }
 
     private static boolean isMatchingMethod(MetaMethod aMethod, MetaMethod method) {
