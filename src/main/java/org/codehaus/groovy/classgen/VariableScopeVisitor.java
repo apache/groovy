@@ -192,7 +192,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            for (ClassNode face : cn.getInterfaces()) {
+            for (ClassNode face : cn.getAllInterfaces()) {
                 FieldNode fn = face.getDeclaredField(name);
                 if (fn != null) return fn;
             }

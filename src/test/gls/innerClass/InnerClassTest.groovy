@@ -89,6 +89,30 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-9825
+    void testAccessSuperInterfaceConstantWithInnerClass() {
+        assertScript '''
+            class Baz {
+                static void main(args) {
+                    assert new Inner().inner() == 1
+                }
+                static class Inner implements Bar {
+                    def inner() {
+                        FOO
+                    }
+                }
+            }
+
+            interface Foo {
+                int FOO = 1
+            }
+
+            interface Bar extends Foo {
+                int BAR = 3
+            }
+        '''
+    }
+
     @Test // GROOVY-9499
     void testAccessStaticMethodFromAICInSuperCtorCall() {
         assertScript '''
