@@ -371,75 +371,32 @@ public class MetaMethodIndex {
         }
     }
 
-    public Object addMethodToList(Object o, MetaMethod method) {
+    public Object addMethodToList(final Object o, final MetaMethod toIndex) {
         if (o == null) {
-            return method;
+            return toIndex;
         }
 
         if (o instanceof MetaMethod) {
-            MetaMethod match = (MetaMethod) o;
-            if (!isMatchingMethod(match, method)) {
-                FastArray list = new FastArray(2);
-                list.add(match);
-                list.add(method);
-                return list;
-            } else {
-                if (match.isPrivate()
-                        || (!isNonRealMethod(match)
-                            && match.getDeclaringClass().isInterface()
-                            && !method.getDeclaringClass().isInterface()
-                            && !method.isStatic())) {
-                    // do not overwrite interface methods with instance methods
-                    // do not overwrite private methods
-                    // Note: private methods from parent classes are not shown here,
-                    // but when doing the multimethod connection step, we overwrite
-                    // methods of the parent class with methods of a subclass and
-                    // in that case we want to keep the private methods
-                } else {
-                    CachedClass methodC = method.getDeclaringClass();
-                    CachedClass matchC = match.getDeclaringClass();
-                    if (methodC == matchC) {
-                        if (isNonRealMethod(method)) {
-                            return method;
-                        }
-                    } else if (!methodC.isAssignableFrom(matchC.getTheClass())) {
-                        return method;
-                    }
-                }
+            final MetaMethod inIndex = (MetaMethod) o;
+            if (!isMatchingMethod(inIndex, toIndex)) {
+                return new FastArray(new Object[]{inIndex, toIndex});
             }
-            return o;
+
+            if (isOverridden(inIndex, toIndex)) {
+                return toIndex;
+            }
+            return inIndex;
         }
 
         if (o instanceof FastArray) {
-            FastArray list = (FastArray) o;
-            int found = findMatchingMethod(list, method);
-
+            final FastArray index = (FastArray) o;
+            int found = findMatchingMethod(index, toIndex);
             if (found == -1) {
-                list.add(method);
+                index.add(toIndex);
             } else {
-                MetaMethod match = (MetaMethod) list.get(found);
-                if (match==method) return o;
-                if (match.isPrivate()
-                        || (!isNonRealMethod(match)
-                            && match.getDeclaringClass().isInterface()
-                            && !method.getDeclaringClass().isInterface()
-                            && !method.isStatic())) {
-                    // do not overwrite interface methods with instance methods
-                    // do not overwrite private methods
-                    // Note: private methods from parent classes are not shown here,
-                    // but when doing the multimethod connection step, we overwrite
-                    // methods of the parent class with methods of a subclass and
-                    // in that case we want to keep the private methods
-                } else {
-                    CachedClass  methodC = method.getDeclaringClass();
-                    CachedClass matchC = match.getDeclaringClass();
-                    if (methodC == matchC) {
-                        if (isNonRealMethod(method)) {
-                            list.set(found, method);
-                        }
-                    } else if (!methodC.isAssignableFrom(matchC.getTheClass())) {
-                        list.set(found, method);
-                    }
+                final MetaMethod inIndex = (MetaMethod) index.get(found);
+                if (inIndex != toIndex && isOverridden(inIndex, toIndex)) {
+                    index.set(found, toIndex);
                 }
             }
         }
@@ -447,32 +404,49 @@ public class MetaMethodIndex {
         return o;
     }
 
-    private static boolean isNonRealMethod(MetaMethod method) {
-        return method instanceof NewInstanceMetaMethod ||
-                method instanceof NewStaticMetaMethod ||
-                method instanceof ClosureMetaMethod ||
-                method instanceof GeneratedMetaMethod ||
-                method instanceof ClosureStaticMetaMethod ||
-                method instanceof MixinInstanceMetaMethod ||
-                method instanceof ClosureMetaMethod.AnonymousMetaMethod;
-    }
-
-    private static boolean isMatchingMethod(MetaMethod aMethod, MetaMethod method) {
-        if (aMethod==method) return true;
-        CachedClass[] params1 = aMethod.getParameterTypes();
-        CachedClass[] params2 = method.getParameterTypes();
-        if (params1.length != params2.length) {
-            return false;
-        }
-
-        boolean matches = true;
-        for (int i = 0; i < params1.length; i++) {
-            if (params1[i] != params2[i]) {
-                matches = false;
-                break;
+    private static boolean isOverridden(final MetaMethod inIndex, final MetaMethod toIndex) {
+        // do not overwrite private methods
+        // do not overwrite interface methods with instance methods
+        // Note: private methods from parent classes are not shown here,
+        // but when doing the multi-method connection step, we overwrite
+        // methods of the parent class with methods of a subclass and
+        // in that case we want to keep the private methods
+        if (!inIndex.isPrivate() && (isNonRealMethod(inIndex)
+                || !inIndex.getDeclaringClass().isInterface()
+                ||  toIndex.getDeclaringClass().isInterface()
+                ||  toIndex.isStatic())) {
+            CachedClass toIndexDC = toIndex.getDeclaringClass();
+            CachedClass inIndexDC = inIndex.getDeclaringClass();
+            if ((toIndexDC == inIndexDC && isNonRealMethod(toIndex))
+                    || !toIndexDC.isAssignableFrom(inIndexDC.getTheClass())) {
+                return true; // prefer toIndex
             }
         }
-        return matches;
+        return false; // prefer inIndex
+    }
+
+    private static boolean isNonRealMethod(final MetaMethod method) {
+        return method instanceof NewInstanceMetaMethod
+            || method instanceof NewStaticMetaMethod
+            || method instanceof ClosureMetaMethod
+            || method instanceof GeneratedMetaMethod
+            || method instanceof ClosureStaticMetaMethod
+            || method instanceof MixinInstanceMetaMethod
+            || method instanceof ClosureMetaMethod.AnonymousMetaMethod;
+    }
+
+    private static boolean isMatchingMethod(final MetaMethod method1, final MetaMethod method2) {
+        if (method1 == method2) return true;
+        CachedClass[] params1 = method1.getParameterTypes();
+        CachedClass[] params2 = method2.getParameterTypes();
+        if (params1.length != params2.length) return false;
+
+        for (int i = 0, n = params1.length; i < n; i += 1) {
+            if (params1[i] != params2[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static int findMatchingMethod(FastArray list, MetaMethod method) {
