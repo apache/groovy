@@ -413,8 +413,7 @@ public class MetaMethodIndex {
         // in that case we want to keep the private methods
         if (!inIndex.isPrivate() && (isNonRealMethod(inIndex)
                 || !inIndex.getDeclaringClass().isInterface()
-                ||  toIndex.getDeclaringClass().isInterface()
-                ||  toIndex.isStatic())) {
+                || (toIndex.getDeclaringClass().isInterface() ^ toIndex.isStatic()))) {
             CachedClass toIndexDC = toIndex.getDeclaringClass();
             CachedClass inIndexDC = inIndex.getDeclaringClass();
             if ((toIndexDC == inIndexDC && isNonRealMethod(toIndex))
