@@ -64,6 +64,7 @@ import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
+import org.objectweb.asm.Opcodes
 
 import java.util.stream.Collectors
 
@@ -160,23 +161,25 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
         MethodCallExpression selectMethodCallExpression = this.visitSelectExpression(selectExpression)
 
-        def result = callX(
-                    lambdaX(block(
-                            declS(
-                                    localVarX(metaDataMapName),
-                                    callX(MAPS_TYPE, "of", args(
-                                            new ConstantExpression(MD_ALIAS_NAME_LIST), aliasNameListExpression,
-                                            new ConstantExpression(MD_GROUP_NAME_LIST), groupNameListExpression,
-                                            new ConstantExpression(MD_SELECT_NAME_LIST), selectNameListExpression
-                                    ))
-                            ),
-                            declS(localVarX(rowNumberName), new ConstantExpression(0L)),
-                            stmt(selectMethodCallExpression)
-                    )),
-                "call")
+        List<Statement> statementList = []
+        def metaDataMapVar = localVarX(metaDataMapName)
+        metaDataMapVar.modifiers = metaDataMapVar.modifiers | Opcodes.ACC_FINAL
+        statementList << declS(
+                metaDataMapVar,
+                callX(MAPS_TYPE, "of", args(
+                        new ConstantExpression(MD_ALIAS_NAME_LIST), aliasNameListExpression,
+                        new ConstantExpression(MD_GROUP_NAME_LIST), groupNameListExpression,
+                        new ConstantExpression(MD_SELECT_NAME_LIST), selectNameListExpression
+                ))
+        )
+        if (rowNumberUsed) {
+            statementList << declS(localVarX(rowNumberName), new ConstantExpression(0L))
+        }
+        statementList << stmt(selectMethodCallExpression)
+
+        def result = callX(lambdaX(block(statementList as Statement[])), "call")
 
         ginqExpressionStack.pop()
-
         return result
     }
 
@@ -413,6 +416,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             Expression transform(Expression expression) {
                 if (expression instanceof VariableExpression) {
                     if (_RN == expression.text) {
+                        currentGinqExpression.putNodeMetaData(__RN_USED, true)
                         return new PostfixExpression(varX(rowNumberName), new Token(Types.PLUS_PLUS, '++', -1, -1))
                     }
                 }
@@ -536,7 +540,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             def lambdaParam = new VariableExpression(lambdaParamName)
             Map<String, Expression> aliasToAccessPathMap = findAliasAccessPathForJoin(dataSourceExpression, lambdaParam)
 
-            def variableNameSet = [] as Set
+            def variableNameSet = new HashSet<String>()
             expr.visit(new CodeVisitorSupport() {
                 @Override
                 void visitVariableExpression(VariableExpression expression) {
@@ -548,7 +552,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             declarationExpressionList =
                     aliasToAccessPathMap.entrySet().stream()
                     .filter(e -> variableNameSet.contains(e.key))
-                    .map(e -> declX(localVarX(e.key), e.value))
+                    .map(e -> {
+                        def v = localVarX(e.key)
+                        v.modifiers = v.modifiers | Opcodes.ACC_FINAL
+                        return declX(v, e.value)
+                    })
                     .collect(Collectors.toList())
         } else {
             declarationExpressionList = Collections.emptyList()
@@ -760,6 +768,10 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return currentGinqExpression.getNodeMetaData(__VISITING_SELECT) ?: false
     }
 
+    private boolean isRowNumberUsed() {
+        return currentGinqExpression.getNodeMetaData(__RN_USED)  ?: false
+    }
+
     private static MethodCallExpression callXWithLambda(Expression receiver, String methodName, LambdaExpression lambdaExpression) {
         callX(
                 receiver,
@@ -796,10 +808,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     private static final String NAMEDRECORD_CLASS_NAME = NamedRecord.class.name
 
-    private static final String __METHOD_CALL_RECEIVER = "__methodCallReceiver"
-    private static final String __GROUPBY_VISITED = "__groupByVisited"
-    private static final String __VISITING_SELECT = "__visitingSelect"
+    private static final String __METHOD_CALL_RECEIVER = "__METHOD_CALL_RECEIVER"
+    private static final String __GROUPBY_VISITED = "__GROUPBY_VISITED"
+    private static final String __VISITING_SELECT = "__VISITING_SELECT"
     private static final String __LAMBDA_PARAM_NAME = "__LAMBDA_PARAM_NAME"
+    private static final String  __RN_USED = '__RN_USED'
     private static final String __META_DATA_MAP_NAME_PREFIX = '__metaDataMap_'
     private static final String __ROW_NUMBER_NAME_PREFIX = '__rowNumber_'
     private static final String MD_GROUP_NAME_LIST = "groupNameList"
