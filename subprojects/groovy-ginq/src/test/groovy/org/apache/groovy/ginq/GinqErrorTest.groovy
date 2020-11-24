@@ -261,4 +261,21 @@ class GinqErrorTest {
 
         assert err.toString().contains("The clause `groupby` should be in front of `orderby` @ line 4, column 17.")
     }
+
+    @Test
+    void "testGinq - exists - 1"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 2, 3]
+                where exists(
+                    from m in [2, 3, 4]
+                    where m == n
+                    select m
+                )
+                select n
+            }
+        '''
+
+        assert err.toString().contains("Invalid syntax found in `where' clause @ line 3, column 17.")
+    }
 }
