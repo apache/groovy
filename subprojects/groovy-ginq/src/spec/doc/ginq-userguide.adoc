@@ -35,7 +35,7 @@ GQ, i.e. abbreviation for GINQ
 |   |__ <data_source_alias> in <data_source>
 |__ [innerjoin/leftjoin/rightjoin/fulljoin/crossjoin]*
 |   |__ <data_source_alias> in <data_source>
-|   |__ on <condition> ((&& | ||) <condition>)* (NOTE: `crossjoin` does not need the `on` clause)
+|   |__ on <condition> ((&& | ||) <condition>)* (NOTE: `crossjoin` does not need `on` clause)
 |__ [where]
 |   |__ <condition> ((&& | ||) <condition>)*
 |__ [groupby]
@@ -50,7 +50,7 @@ GQ, i.e. abbreviation for GINQ
     |__ <expression> [as <alias>] (, <expression> [as <alias>])*
 ```
 [NOTE]
-`[]` means the related clause is optional. Also, the clauses of GINQ are order sensitive,
+`[]` means the related clause is optional, `*` means zero or more times, and `+` means one or more times. Also, the clauses of GINQ are order sensitive,
 so the order of clauses should be kept as the above structure
 
 As we could see, the simplest GINQ consists of a `from` clause and a `select` clause, which looks like:
@@ -208,7 +208,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_09,in
 GINQ supports some built-in aggregate functions, e.g.
 `count`, `min`, `max`, `sum`, `avg` and the most powerful function `agg`.
 [NOTE]
-`count(...)`, `min(...)`, `max(...)` just operate on non-`null` values,
+`count(...)`, `min(...)` and `max(...)` just operate on non-`null` values,
 and `count()` is similar to `count(*)` in SQL.
 [source, sql]
 ----
