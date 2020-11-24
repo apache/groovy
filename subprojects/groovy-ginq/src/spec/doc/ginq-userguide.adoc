@@ -32,16 +32,22 @@ GINQ is a DSL for querying with SQL-like syntax, which consists of the following
 ```sql
 GQ, i.e. abbreviation for GINQ
 |__ from
-|   |__ <alias> in <data_source>
+|   |__ <data_source_alias> in <data_source>
 |__ [innerjoin/leftjoin/rightjoin/fulljoin/crossjoin]*
-|   |__ <alias> in <data_source> on <conditions> (NOTE: `crossjoin` does not need the `on` clause)
+|   |__ <data_source_alias> in <data_source>
+|   |__ on <condition> ((&& | ||) <condition>)* (NOTE: `crossjoin` does not need the `on` clause)
 |__ [where]
+|   |__ <condition> ((&& | ||) <condition>)*
 |__ [groupby]
+|   |__ <expression> [as <alias>] (, <expression> [as <alias>])*
 |   |__ [having]
+|       |__ <condition> ((&& | ||) <condition>)*
 |__ [orderby]
-|   |__ (<expression> [in asc|desc])+
+|   |__ <expression> [in asc|desc] (, <expression> [in asc|desc])*
 |__ [limit]
+|   |__ <offset> [, <size>]
 |__ select
+    |__ <expression> [as <alias>] (, <expression> [as <alias>])*
 ```
 [NOTE]
 `[]` means the related clause is optional. Also, the clauses of GINQ are order sensitive,
