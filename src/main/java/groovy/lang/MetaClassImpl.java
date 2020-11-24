@@ -1093,13 +1093,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 throw e;
             }
 
-            if (arguments.length <= 0 || !(arguments[0].getClass().equals(ownerClass))) {
+            if (arguments.length < 1 || !ownerClass.isAssignableFrom(arguments[0].getClass())) {
                 return invokeMissingMethod(object, methodName, arguments);
             }
 
-            Object newOwner = arguments[0];
+            Object newReceiver = arguments[0];
             Object[] newArguments = Arrays.copyOfRange(arguments, 1, arguments.length);
-            return ownerMetaClass.invokeMethod(ownerClass, newOwner, methodName, newArguments, false, false);
+            return ownerMetaClass.invokeMethod(ownerClass, newReceiver, methodName, newArguments, false, false);
         }
     }
 
