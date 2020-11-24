@@ -43,9 +43,9 @@ GQ, i.e. abbreviation for GINQ
 |   |__ [having]
 |       |__ <condition> ((&& | ||) <condition>)*
 |__ [orderby]
-|   |__ <expression> [in asc|desc] (, <expression> [in asc|desc])*
+|   |__ <expression> [in (asc|desc)] (, <expression> [in (asc|desc)])*
 |__ [limit]
-|   |__ <offset> [, <size>]
+|   |__ [<offset>,] <size>
 |__ select
     |__ <expression> [as <alias>] (, <expression> [as <alias>])*
 ```
