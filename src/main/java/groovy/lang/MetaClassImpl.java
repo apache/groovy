@@ -1332,7 +1332,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (value instanceof Closure) {
             Closure<?> closure = (Closure<?>) value;
             MetaClass metaClass = closure.getMetaClass();
-            return metaClass.invokeMethod(closure.getClass(), closure, DO_CALL_METHOD, originalArguments, false, fromInsideClass);
+            return metaClass.invokeMethod(closure.getClass(), closure, CALL_METHOD, originalArguments, false, fromInsideClass);
         }
 
         if (value != null && !(value instanceof Map) && !methodName.equals(CALL_METHOD)) {
