@@ -54,7 +54,7 @@ final class DifferentPackageTest {
     //--------------------------------------------------------------------------
 
     @Test
-    void testSamePackageShouldSeeInstanceProps1() {
+    void testSamePackageShouldSeeObjectProps1() {
         def loader = addSources(
             One: P_DOT_ONE,
             Two: '''
@@ -72,7 +72,7 @@ final class DifferentPackageTest {
     }
 
     @Test
-    void testSamePackageShouldSeeInstanceProps2() {
+    void testSamePackageShouldSeeObjectProps2() {
         def loader = addSources(
             One: P_DOT_ONE,
             Peer: '''
@@ -187,7 +187,7 @@ final class DifferentPackageTest {
     }
 
     @Test // GROOVY-9093
-    void testDifferentPackageShouldNotSeeInstanceProps() {
+    void testDifferentPackageShouldNotSeeObjectProps1() {
         def loader = addSources(
             One: P_DOT_ONE,
             Two: '''
@@ -200,8 +200,10 @@ final class DifferentPackageTest {
                     }
                 }
             ''')
-        // TODO: Don't need this once compiler errors
-        assert loader.loadClass('q.Two').newInstance().valueSize() == 5
+        try { // TODO: Don't need this once compiler emits error
+            assert loader.loadClass('q.Two').newInstance().valueSize() == 5
+        } catch (MissingPropertyException java9plus) {
+        }
     }
 
     @Test // GROOVY-9093
