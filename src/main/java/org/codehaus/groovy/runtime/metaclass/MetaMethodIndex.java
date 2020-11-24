@@ -38,7 +38,7 @@ public class MetaMethodIndex {
         public Class subclass;
 
         public Header(Class cls) {
-            this (cls, null);
+            this(cls, null);
         }
 
         public Header(Class cls, Class subclass) {
@@ -49,7 +49,7 @@ public class MetaMethodIndex {
     }
 
     public static class CacheEntry {
-        public final Class [] params;
+        public final Class[] params;
         public final MetaMethod method;
 
         public CacheEntry(final Class[] params, final MetaMethod method) {
@@ -70,7 +70,8 @@ public class MetaMethodIndex {
 
         public CacheEntry cachedMethod, cachedMethodForSuper, cachedStaticMethod;
 
-        public String toString () {
+        @Override
+        public String toString() {
             return "[" + name + ", " + cls.getName() + "]";
         }
     }
@@ -81,14 +82,13 @@ public class MetaMethodIndex {
         CachedClass last = null;
         if (!theCachedClass.isInterface()) {
             for (CachedClass c = theCachedClass; c != null; c = c.getCachedSuperClass()) {
-              final SingleKeyHashMap.Entry e = methodHeaders.getOrPut(c.getTheClass());
-              e.value = new Header (c.getTheClass(), last == null ? null : last.getTheClass());
-              last = c;
+                final SingleKeyHashMap.Entry e = methodHeaders.getOrPut(c.getTheClass());
+                e.value = new Header(c.getTheClass(), last == null ? null : last.getTheClass());
+                last = c;
             }
-        }
-        else {
+        } else {
             final SingleKeyHashMap.Entry e = methodHeaders.getOrPut(Object.class);
-            e.value = new Header (Object.class, theCachedClass.getTheClass());
+            e.value = new Header(Object.class, theCachedClass.getTheClass());
         }
     }
 
@@ -136,7 +136,7 @@ public class MetaMethodIndex {
 
         for (int j = 0; j < oldLength; j++) {
 
-            for (Entry e = oldTable[j]; e != null;) {
+            for (Entry e = oldTable[j]; e != null; ) {
                 Entry next = e.nextHashEntry;
                 int index = e.hash & (newLength - 1);
 
@@ -179,10 +179,12 @@ public class MetaMethodIndex {
                 index = i;
             }
 
+            @Override
             public boolean hasNext() {
                 return next != null;
             }
 
+            @Override
             public Entry next() {
                 return nextEntry();
             }
@@ -208,7 +210,7 @@ public class MetaMethodIndex {
         int h = hash(31 * cls.hashCode() + name.hashCode());
         Entry e = table[h & (table.length - 1)];
         for (; e != null; e = e.nextHashEntry)
-            if (e.hash == h && cls == e.cls && Objects.equals(e.name, name) )
+            if (e.hash == h && cls == e.cls && Objects.equals(e.name, name))
                 return e;
 
         return null;
@@ -221,7 +223,7 @@ public class MetaMethodIndex {
         final int index = h & (t.length - 1);
         Entry e = t[index];
         for (; e != null; e = e.nextHashEntry)
-            if (e.hash == h && cls == e.cls && Objects.equals(e.name, name) )
+            if (e.hash == h && cls == e.cls && Objects.equals(e.name, name))
                 return e;
 
         Entry entry = new Entry();
@@ -314,8 +316,9 @@ public class MetaMethodIndex {
 
     private void copyNonPrivateMethodsFromSuper(Entry e) {
         Object oldListOrMethod = e.methodsForSuper;
-        if (oldListOrMethod == null)
-          return;
+        if (oldListOrMethod == null) {
+            return;
+        }
 
         if (oldListOrMethod instanceof FastArray) {
             FastArray oldList = (FastArray) oldListOrMethod;
@@ -345,8 +348,9 @@ public class MetaMethodIndex {
 
     private void copyNonPrivateNonNewMetaMethods(Entry from, Header to) {
         Object oldListOrMethod = from.methods;
-        if (oldListOrMethod == null)
-          return;
+        if (oldListOrMethod == null) {
+            return;
+        }
 
         if (oldListOrMethod instanceof FastArray) {
             FastArray oldList = (FastArray) oldListOrMethod;
@@ -368,75 +372,32 @@ public class MetaMethodIndex {
         }
     }
 
-    public Object addMethodToList(Object o, MetaMethod method) {
+    public Object addMethodToList(final Object o, final MetaMethod toIndex) {
         if (o == null) {
-            return method;
+            return toIndex;
         }
 
         if (o instanceof MetaMethod) {
-            MetaMethod match = (MetaMethod) o;
-            if (!isMatchingMethod(match, method)) {
-                FastArray list = new FastArray(2);
-                list.add(match);
-                list.add(method);
-                return list;
-            } else {
-                if (match.isPrivate()
-                        || (!isNonRealMethod(match)
-                            && match.getDeclaringClass().isInterface()
-                            && !method.getDeclaringClass().isInterface()
-                            && !method.isStatic())) {
-                    // do not overwrite interface methods with instance methods
-                    // do not overwrite private methods
-                    // Note: private methods from parent classes are not shown here,
-                    // but when doing the multimethod connection step, we overwrite
-                    // methods of the parent class with methods of a subclass and
-                    // in that case we want to keep the private methods
-                } else {
-                    CachedClass methodC = method.getDeclaringClass();
-                    CachedClass matchC = match.getDeclaringClass();
-                    if (methodC == matchC) {
-                        if (isNonRealMethod(method)) {
-                            return method;
-                        }
-                    } else if (!methodC.isAssignableFrom(matchC.getTheClass())) {
-                        return method;
-                    }
-                }
+            final MetaMethod inIndex = (MetaMethod) o;
+            if (!isMatchingMethod(inIndex, toIndex)) {
+                return new FastArray(new Object[]{inIndex, toIndex});
             }
-            return o;
+
+            if (isOverridden(inIndex, toIndex)) {
+                return toIndex;
+            }
+            return inIndex;
         }
 
         if (o instanceof FastArray) {
-            FastArray list = (FastArray) o;
-            int found = findMatchingMethod(list, method);
-
+            final FastArray index = (FastArray) o;
+            int found = findMatchingMethod(index, toIndex);
             if (found == -1) {
-                list.add(method);
+                index.add(toIndex);
             } else {
-                MetaMethod match = (MetaMethod) list.get(found);
-                if (match==method) return o;
-                if (match.isPrivate()
-                        || (!isNonRealMethod(match)
-                            && match.getDeclaringClass().isInterface()
-                            && !method.getDeclaringClass().isInterface()
-                            && !method.isStatic())) {
-                    // do not overwrite interface methods with instance methods
-                    // do not overwrite private methods
-                    // Note: private methods from parent classes are not shown here,
-                    // but when doing the multimethod connection step, we overwrite
-                    // methods of the parent class with methods of a subclass and
-                    // in that case we want to keep the private methods
-                } else {
-                    CachedClass  methodC = method.getDeclaringClass();
-                    CachedClass matchC = match.getDeclaringClass();
-                    if (methodC == matchC) {
-                        if (isNonRealMethod(method)) {
-                            list.set(found, method);
-                        }
-                    } else if (!methodC.isAssignableFrom(matchC.getTheClass())) {
-                        list.set(found, method);
-                    }
+                final MetaMethod inIndex = (MetaMethod) index.get(found);
+                if (inIndex != toIndex && isOverridden(inIndex, toIndex)) {
+                    index.set(found, toIndex);
                 }
             }
         }
@@ -466,30 +427,26 @@ public class MetaMethodIndex {
 
     private static boolean isNonRealMethod(final MetaMethod method) {
         return method instanceof NewInstanceMetaMethod
-            || method instanceof NewStaticMetaMethod
-            || method instanceof ClosureMetaMethod
-            || method instanceof GeneratedMetaMethod
-            || method instanceof ClosureStaticMetaMethod
-            || method instanceof MixinInstanceMetaMethod
-            || method instanceof ClosureMetaMethod.AnonymousMetaMethod;
+                || method instanceof NewStaticMetaMethod
+                || method instanceof ClosureMetaMethod
+                || method instanceof GeneratedMetaMethod
+                || method instanceof ClosureStaticMetaMethod
+                || method instanceof MixinInstanceMetaMethod
+                || method instanceof ClosureMetaMethod.AnonymousMetaMethod;
     }
 
-    private static boolean isMatchingMethod(MetaMethod aMethod, MetaMethod method) {
-        if (aMethod==method) return true;
-        CachedClass[] params1 = aMethod.getParameterTypes();
-        CachedClass[] params2 = method.getParameterTypes();
-        if (params1.length != params2.length) {
-            return false;
-        }
+    private static boolean isMatchingMethod(final MetaMethod method1, final MetaMethod method2) {
+        if (method1 == method2) return true;
+        CachedClass[] params1 = method1.getParameterTypes();
+        CachedClass[] params2 = method2.getParameterTypes();
+        if (params1.length != params2.length) return false;
 
-        boolean matches = true;
-        for (int i = 0; i < params1.length; i++) {
+        for (int i = 0, n = params1.length; i < n; i += 1) {
             if (params1[i] != params2[i]) {
-                matches = false;
-                break;
+                return false;
             }
         }
-        return matches;
+        return true;
     }
 
     private static int findMatchingMethod(FastArray list, MetaMethod method) {
@@ -505,7 +462,6 @@ public class MetaMethodIndex {
 
     public void copyMethodsToSuper() {
         Entry[] table = this.table;
-        int length = table.length;
 
         for (Entry entry : table) {
             for (Entry e = entry; e != null; e = e.nextHashEntry) {
@@ -550,18 +506,18 @@ public class MetaMethodIndex {
     }
 
     public void clearCaches() {
-        for (int i = 0; i != table.length; ++i )
-          for (Entry e = table [i]; e != null; e = e.nextHashEntry ) {
-              e.cachedMethod = e.cachedMethodForSuper = e.cachedStaticMethod = null;
-          }
+        for (int i = 0; i != table.length; ++i)
+            for (Entry e = table[i]; e != null; e = e.nextHashEntry) {
+                e.cachedMethod = e.cachedMethodForSuper = e.cachedStaticMethod = null;
+            }
     }
 
     public void clearCaches(String name) {
-        for (int i = 0; i != table.length; ++i )
-          for (Entry e = table [i]; e != null; e = e.nextHashEntry ) {
-              if (e.name.equals(name)) {
-                  e.cachedMethod = e.cachedMethodForSuper = e.cachedStaticMethod = null;
-              }
-          }
+        for (int i = 0; i != table.length; ++i)
+            for (Entry e = table[i]; e != null; e = e.nextHashEntry) {
+                if (e.name.equals(name)) {
+                    e.cachedMethod = e.cachedMethodForSuper = e.cachedStaticMethod = null;
+                }
+            }
     }
 }
