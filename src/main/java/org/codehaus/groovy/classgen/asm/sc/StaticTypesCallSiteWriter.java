@@ -449,7 +449,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         if (receiver instanceof VariableExpression && ((VariableExpression) receiver).isThisExpression() && !controller.isInClosure()) {
             receiverType = classNode;
         }
-        
+
         String propertyName = methodName;
         if (implicitThis) {
             if (controller.getInvocationWriter() instanceof StaticInvocationWriter) {
@@ -479,11 +479,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         if (makeGetPropertyWithGetter(receiver, receiverType, propertyName, safe, implicitThis)) return;
         if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, propertyName, safe, implicitThis)) return;
         if (makeGetField(receiver, receiverType, propertyName, safe, implicitThis)) return;
-
-        boolean isScriptVariable = (receiverType.isScript() && receiver instanceof VariableExpression && ((VariableExpression) receiver).getAccessedVariable() == null);
-        if (!isScriptVariable && controller.getClassNode().getOuterClass() == null) { // inner class still needs dynamic property sequence
-            addPropertyAccessError(receiver, propertyName, receiverType);
-        }
 
         MethodCallExpression call = callX(receiver, "getProperty", args(constX(propertyName)));
         call.setImplicitThis(implicitThis);
