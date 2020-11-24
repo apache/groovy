@@ -78,10 +78,6 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
         return ginqExpression.getNodeMetaData(__LATEST_GINQ_EXPRESSION_CLAUSE);
     }
 
-    private static final Set<String> KEYWORD_SET = new HashSet<>(Arrays.asList(
-            "from", "innerjoin", "leftjoin", "rightjoin", "fulljoin", "crossjoin",
-            "where", "on", "having", "exists", "groupby", "orderby", "limit", "select"));
-
     @Override
     public void visitMethodCallExpression(MethodCallExpression call) {
         super.visitMethodCallExpression(call);
@@ -89,14 +85,14 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
 
         if (!KEYWORD_SET.contains(methodName)) return;
 
-        if ("from".equals(methodName)) {
+        if (KW_FROM.equals(methodName)) {
             ginqExpressionStack.push(new GinqExpression()); // store the result
         }
 
         GinqExpression currentGinqExpression = ginqExpressionStack.peek();
         AbstractGinqExpression latestGinqExpressionClause = getLatestGinqExpressionClause();
 
-        if ("from".equals(methodName)  || JoinExpression.isJoinExpression(methodName)) {
+        if (KW_FROM.equals(methodName)  || JoinExpression.isJoinExpression(methodName)) {
             ArgumentListExpression arguments = (ArgumentListExpression) call.getArguments();
             if (arguments.getExpressions().size() != 1) {
                 this.collectSyntaxError(
@@ -121,7 +117,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
             Expression dataSourceExpr = binaryExpression.getRightExpression();
 
             DataSourceExpression dataSourceExpression;
-            if ("from".equals(methodName)) {
+            if (KW_FROM.equals(methodName)) {
                 dataSourceExpression = new FromExpression(aliasExpr, dataSourceExpr);
                 currentGinqExpression.setFromExpression((FromExpression) dataSourceExpression);
             } else {
@@ -134,13 +130,13 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
             return;
         }
 
-        if ("where".equals(methodName) || "on".equals(methodName) || "having".equals(methodName)) {
+        if (KW_WHERE.equals(methodName) || KW_ON.equals(methodName) || KW_HAVING.equals(methodName)) {
             Expression filterExpr = ((ArgumentListExpression) call.getArguments()).getExpression(0);
 
             FilterExpression filterExpression;
-            if ("where".equals(methodName)) {
+            if (KW_WHERE.equals(methodName)) {
                 filterExpression = new WhereExpression(filterExpr);
-            } else if ("on".equals(methodName)) {
+            } else if (KW_ON.equals(methodName)) {
                 filterExpression = new OnExpression(filterExpr);
             } else {
                 filterExpression = new HavingExpression(filterExpr);
@@ -162,7 +158,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
                 ((GroupExpression) latestGinqExpressionClause).setHavingExpression((HavingExpression) filterExpression);
             } else {
                 this.collectSyntaxError(new GinqSyntaxError(
-                        "The preceding clause of `" + methodName + "` should be " + ("on".equals(methodName) ? "" : "`from`/") + "join clause",
+                        "The preceding clause of `" + methodName + "` should be " + (KW_ON.equals(methodName) ? "" : "`from`/") + "join clause",
                         call.getLineNumber(), call.getColumnNumber()
                 ));
             }
@@ -179,7 +175,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
             return;
         }
 
-        if ("exists".equals(methodName)) {
+        if (KW_EXISTS.equals(methodName)) {
             if (null != latestGinqExpression) {
                 ArgumentListExpression argumentListExpression = (ArgumentListExpression) call.getArguments();
                 if (argumentListExpression.getExpressions().isEmpty() && isSelectMethodCallExpression(call.getObjectExpression())) {
@@ -190,7 +186,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
             }
         }
 
-        if ("groupby".equals(methodName)) {
+        if (KW_GROUPBY.equals(methodName)) {
             GroupExpression groupExpression = new GroupExpression(call.getArguments());
             groupExpression.setSourcePosition(call.getMethod());
 
@@ -216,7 +212,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
             return;
         }
 
-        if ("orderby".equals(methodName)) {
+        if (KW_ORDERBY.equals(methodName)) {
             OrderExpression orderExpression = new OrderExpression(call.getArguments());
             orderExpression.setSourcePosition(call.getMethod());
 
@@ -237,7 +233,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
             return;
         }
 
-        if ("limit".equals(methodName)) {
+        if (KW_LIMIT.equals(methodName)) {
             LimitExpression limitExpression = new LimitExpression(call.getArguments());
             limitExpression.setSourcePosition(call.getMethod());
 
@@ -251,7 +247,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
             return;
         }
 
-        if ("select".equals(methodName)) {
+        if (KW_SELECT.equals(methodName)) {
             SelectExpression selectExpression = new SelectExpression(call.getArguments());
             selectExpression.setSourcePosition(call.getMethod());
 
@@ -297,7 +293,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
     }
 
     private static boolean isSelectMethodCallExpression(Expression expression) {
-        return expression instanceof MethodCallExpression && "select".equals(((MethodCallExpression) expression).getMethodAsString());
+        return expression instanceof MethodCallExpression && KW_SELECT.equals(((MethodCallExpression) expression).getMethodAsString());
     }
 
     @Override
@@ -306,4 +302,17 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
     }
 
     private static final String __LATEST_GINQ_EXPRESSION_CLAUSE = "__latestGinqExpressionClause";
+
+    private static final String KW_FROM = "from";
+    private static final String KW_WHERE = "where";
+    private static final String KW_ON = "on";
+    private static final String KW_HAVING = "having";
+    private static final String KW_EXISTS = "exists";
+    private static final String KW_GROUPBY = "groupby";
+    private static final String KW_ORDERBY = "orderby";
+    private static final String KW_LIMIT = "limit";
+    private static final String KW_SELECT = "select";
+    private static final Set<String> KEYWORD_SET = new HashSet<>(Arrays.asList(
+            KW_FROM, "innerjoin", "leftjoin", "rightjoin", "fulljoin", "crossjoin",
+            KW_WHERE, KW_ON, KW_HAVING, KW_EXISTS, KW_GROUPBY, KW_ORDERBY, KW_LIMIT, KW_SELECT));
 }
