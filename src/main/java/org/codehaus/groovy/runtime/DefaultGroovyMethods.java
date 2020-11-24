@@ -16727,16 +16727,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates over the elements of an aggregate of items, starting from a
      * specified startIndex, and returns the index of the first item that matches the
      * condition specified in the closure.
-     * Example (aggregate is {@code ChronoUnit} enum values):
+     * Example (aggregate is {@link java.util.concurrent.TimeUnit TimeUnit} enum values):
      * <pre class="groovyTestCase">
-     * import java.time.temporal.ChronoUnit
+     * import java.util.concurrent.TimeUnit
      * def nameStartsWithM = { it.name().startsWith('M') }
-     * def first  = ChronoUnit.findIndexOf(nameStartsWithM)
-     * def second = ChronoUnit.findIndexOf(first + 1, nameStartsWithM)
-     * def third  = ChronoUnit.findIndexOf(second + 1, nameStartsWithM)
+     * def first  = TimeUnit.findIndexOf(nameStartsWithM)
+     * def second = TimeUnit.findIndexOf(first + 1, nameStartsWithM)
+     * def third  = TimeUnit.findIndexOf(second + 1, nameStartsWithM)
      * Set units  = [first, second, third]
-     * assert !units.contains(-1) // should have found 3 of MICROS, MILLIS, MINUTES, MONTHS, ...
-     * assert units.size() == 3 // just check size so as not to rely on order
+     * assert units.size() == 3 // check size so as not to rely on order
+     * assert !units.contains(-1) // should have found MICROSECONDS, MILLISECONDS, MINUTES
      * </pre>
      *
      * @param self       the iteration object over which to iterate
@@ -16849,13 +16849,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the elements of an aggregate of items and returns
      * the index of the last item that matches the condition specified in the closure.
-     * Example (aggregate is {@code ChronoUnit} enum values):
+     * Example (aggregate is {link java.util.concurrent.TimeUnit TimeUnit} enum values):
      * <pre class="groovyTestCase">
-     * import java.time.temporal.ChronoUnit
+     * import java.util.concurrent.TimeUnit
      * def nameStartsWithM = { it.name().startsWith('M') }
-     * def first = ChronoUnit.findIndexOf(nameStartsWithM)
-     * def last  = ChronoUnit.findLastIndexOf(nameStartsWithM)
-     * // should have found 2 unique index values for MICROS, MILLIS, MINUTES, MONTHS, ...
+     * def first = TimeUnit.findIndexOf(nameStartsWithM)
+     * def last  = TimeUnit.findLastIndexOf(nameStartsWithM)
+     * // should have found 2 unique index values for MICROSECONDS, MILLISECONDS, MINUTES
      * assert first != -1 && last != -1 && first != last
      * </pre>
      *

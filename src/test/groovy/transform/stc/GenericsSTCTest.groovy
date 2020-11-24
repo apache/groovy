@@ -1261,15 +1261,13 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
 
                 interface TraversalSource extends Cloneable, AutoCloseable {
-                    default TraversalSource withStrategies(TraversalStrategy... strategies) {
-                        return null;
-                    }
+                    TraversalSource withStrategies(TraversalStrategy... strategies);
                 }
                 abstract // don't want to implement AutoCloseable
                 class GraphTraversalSource implements TraversalSource {
                     @Override
                     public GraphTraversalSource withStrategies(TraversalStrategy... strategies) {
-                        return (GraphTraversalSource) TraversalSource.super.withStrategies(strategies);
+                        return null;
                     }
                 }
                 class Graph {
@@ -1478,7 +1476,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         '#foo(java.util.List <A extends A>) with arguments [java.util.ArrayList <java.lang.Object>]'
     }
-    
+
     void testMethodLevelGenericsForMethodCall() {
         // Groovy-5891
         assertScript '''
@@ -1532,7 +1530,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         "Cannot call <T> GoodCodeRed <Long>#attach(GoodCodeRed <Long>) with arguments [GoodCodeRed <Integer>]"
     }
-    
+
     void testHiddenGenerics() {
         // Groovy-6237
         assertScript '''
@@ -1545,7 +1543,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             class MyList extends LinkedList<Object> {}
             List<Blah> o = new MyList()
         ''','Incompatible generic argument types. Cannot assign MyList to: java.util.List <Blah>'
-        
+
         // Groovy-5873
         assertScript """
             abstract class Parent<T> {
@@ -1555,7 +1553,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Impl impl = new Impl()
             Integer i = impl.value
         """
-        
+
         // GROOVY-5920
         assertScript """
             class Data<T> {
@@ -1603,7 +1601,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             promise.get()
         '''
     }
-    
+
     // GROOVY-6455
     void testDelegateWithGenerics() {
         assertScript '''
@@ -1646,7 +1644,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-6760
     void testGenericsAtMethodLevelWithGenericsInTypeOfGenericType() {
         assertScript '''
-            @Grab(group='com.netflix.rxjava', module='rxjava-core', version='0.18.1') 
+            @Grab(group='com.netflix.rxjava', module='rxjava-core', version='0.18.1')
             import rx.Observable
             import java.util.concurrent.Callable
 
@@ -1696,22 +1694,22 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
             Test1.pair2(1,2) // the call does not really matter
         '''
-        
+
         assertScript '''
             class Foo {
                 String method() {
                     return callT('abc')
                 }
-            
+
                 private <T> T callT(T t) {
                     return callV(t)
                 }
-            
+
                 private <V> V callV(V v) {
                     return v
                 }
             }
-            
+
             println new Foo().method()
         '''
     }
@@ -1741,7 +1739,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             User.main()
         '''
     }
-    
+
     void testConcreteTypeInsteadOfGenerifiedInterface() {
         assertScript '''
             import groovy.transform.ASTTest
@@ -1761,7 +1759,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                }
             }
             class IntToFloatConverter implements Converter<Integer,Float> {
-                public Float convertC(Integer from) { from.floatValue() } 
+                public Float convertC(Integer from) { from.floatValue() }
             }
             void foo() {
                 @ASTTest(phase=INSTRUCTION_SELECTION,value={
@@ -1773,7 +1771,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             foo()
         '''
     }
-    
+
     // GROOVY-6748
     void testCleanGenerics() {
         assertScript '''
@@ -1789,7 +1787,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             new Class1().method3(["a"],["b"])
         '''
     }
-    
+
     // GROOVY-6761
     void testInVariantAndContraVariantGenerics() {
         assertScript '''
@@ -1987,7 +1985,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-9635
     void testCovariantReturnTypeInferredFromMethod3() {
         assertScript '''
-            import java.util.function.Function
+            interface Function<T, R> {
+                R apply(T t)
+            }
 
             class C<R extends Number> {
                 def <V> V m(Function<C, V> f) { // R from C is confused with R->V from Function

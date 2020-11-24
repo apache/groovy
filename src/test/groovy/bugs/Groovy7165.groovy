@@ -30,7 +30,9 @@ final class Groovy7165 {
     @Test
     void testPrivateStaticSuperField1() {
         assertScript '''
-            import java.util.function.Function
+            interface Function<T, R> {
+                R apply(T t)
+            }
 
             @groovy.transform.CompileStatic
             class Bug {
