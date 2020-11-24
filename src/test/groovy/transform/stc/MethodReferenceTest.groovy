@@ -29,8 +29,7 @@ class MethodReferenceTest extends GroovyTestCase {
             @groovy.transform.CompileStatic
             void p() {
                 def result = [1, 2, 3].stream().map(Object::toString).collect(Collectors.toList())
-                assert 3 == result.size()
-                assert ['1', '2', '3'] == result
+                assert result == ['1', '2', '3']
             }
 
             p()
@@ -38,18 +37,62 @@ class MethodReferenceTest extends GroovyTestCase {
     }
 
     // class::instanceMethod
-    void testFunctionCI_MULTI_MATCHED_METHODS() {
+    void testFunctionCI2() {
         assertScript '''
             import java.util.stream.Collectors
-            
+
             @groovy.transform.CompileStatic
             void p() {
                 def result = [1, 2, 3].stream().map(Integer::toString).collect(Collectors.toList())
-                assert 3 == result.size()
-                assert ['1', '2', '3'] == result
+                assert result ['1', '2', '3']
             }
 
             p()
+        '''
+    }
+
+    // class::instanceMethod
+    void testFunctionCI3() {
+        def err = shouldFail '''
+            import java.util.stream.Collectors
+
+            @groovy.transform.CompileStatic
+            void p() {
+                def result = [1, 2, 3].stream().map(String::toString).collect(Collectors.toList())
+            }
+
+            p()
+        '''
+
+        assert err =~ /Invalid receiver type: java.lang.Integer is not compatible with java.lang.String/
+    }
+
+    // class::instanceMethod -- GROOVY-9814
+    void testFunctionCI4() {
+        assertScript '''
+            import java.util.function.*
+            import groovy.transform.CompileStatic
+
+            @CompileStatic
+            class One { String id }
+
+            @CompileStatic
+            class Two extends One { }
+
+            @CompileStatic @groovy.transform.Immutable(knownImmutableClasses=[Function])
+            class FunctionHolder<T> {
+                Function<T, ?> extractor
+
+                def apply(T t) {
+                    extractor.apply(t)
+                }
+            }
+
+            def fh = new FunctionHolder(One::getId)
+            assert fh.apply(new One(id:'abc')) == 'abc'
+
+            fh = new FunctionHolder(One::getId)
+            assert fh.apply(new Two(id:'xyz')) == 'xyz' // sub-type argument
         '''
     }
 
