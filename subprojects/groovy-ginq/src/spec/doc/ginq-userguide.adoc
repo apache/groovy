@@ -23,7 +23,7 @@
 
 Groovy's `groovy-ginq` module provides a higher-level abstraction over collections.
 It could perform queries against in-memory collections of objects in a SQL-like style.
-Also, querying XML, JSON, YAML, etc. could be also supported because they can be parsed into collections.
+Also, querying XML, JSON, YAML, etc. could also be supported because they can be parsed into collections.
 As GORM and jOOQ are powerful enough to support querying DB, we will cover collections first.
 
 == GINQ a.k.a. Groovy-Integrated Query
@@ -32,13 +32,14 @@ GINQ is a DSL for querying with SQL-like syntax, which consists of the following
 ```sql
 GQ, i.e. abbreviation for GINQ
 |__ from
-|   |__ in
+|   |__ <alias> in <data_source>
 |__ [innerjoin/leftjoin/rightjoin/fulljoin/crossjoin]*
-|   |__ on (Note: `crossjoin` does not need the `on` clause)
+|   |__ <alias> in <data_source> on <conditions> (NOTE: `crossjoin` does not need the `on` clause)
 |__ [where]
 |__ [groupby]
 |   |__ [having]
 |__ [orderby]
+|   |__ (<expression> [in asc|desc])+
 |__ [limit]
 |__ select
 ```
