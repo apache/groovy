@@ -35,6 +35,7 @@ import org.apache.groovy.ginq.dsl.expression.WhereExpression;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -290,6 +291,20 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
         }
 
         super.visitVariableExpression(expression);
+    }
+
+    @Override
+    public void visitDeclarationExpression(DeclarationExpression expression) {
+        final String typeName = expression.getLeftExpression().getType().getNameWithoutPackage();
+        if (KEYWORD_SET.contains(typeName)) {
+            this.collectSyntaxError(
+                    new GinqSyntaxError(
+                            "`" + typeName + "` clause cannot contain assignment expression",
+                            expression.getLineNumber(), expression.getColumnNumber()
+                    )
+            );
+        }
+        super.visitDeclarationExpression(expression);
     }
 
     private static boolean isSelectMethodCallExpression(Expression expression) {

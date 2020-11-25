@@ -278,4 +278,17 @@ class GinqErrorTest {
 
         assert err.toString().contains("Invalid syntax found in `where' clause @ line 3, column 17.")
     }
+
+    @Test
+    void "testGinq - from where - 1"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [0, 1, 2]
+                where n = 1
+                select n
+            }
+        '''
+
+        assert err.toString().contains('`where` clause cannot contain assignment expression @ line 3, column 17.')
+    }
 }
