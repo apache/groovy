@@ -38,7 +38,7 @@ public class MetaMethodIndex {
         public Class subclass;
 
         public Header(Class cls) {
-            this (cls, null);
+            this(cls, null);
         }
 
         public Header(Class cls, Class subclass) {
@@ -49,7 +49,7 @@ public class MetaMethodIndex {
     }
 
     public static class CacheEntry {
-        public final Class [] params;
+        public final Class[] params;
         public final MetaMethod method;
 
         public CacheEntry(final Class[] params, final MetaMethod method) {
@@ -70,7 +70,7 @@ public class MetaMethodIndex {
 
         public CacheEntry cachedMethod, cachedMethodForSuper, cachedStaticMethod;
 
-        public String toString () {
+        public String toString() {
             return "[" + name + ", " + cls.getName() + "]";
         }
     }
@@ -81,14 +81,13 @@ public class MetaMethodIndex {
         CachedClass last = null;
         if (!theCachedClass.isInterface()) {
             for (CachedClass c = theCachedClass; c != null; c = c.getCachedSuperClass()) {
-              final SingleKeyHashMap.Entry e = methodHeaders.getOrPut(c.getTheClass());
-              e.value = new Header (c.getTheClass(), last == null ? null : last.getTheClass());
-              last = c;
+                final SingleKeyHashMap.Entry e = methodHeaders.getOrPut(c.getTheClass());
+                e.value = new Header(c.getTheClass(), last == null ? null : last.getTheClass());
+                last = c;
             }
-        }
-        else {
+        } else {
             final SingleKeyHashMap.Entry e = methodHeaders.getOrPut(Object.class);
-            e.value = new Header (Object.class, theCachedClass.getTheClass());
+            e.value = new Header(Object.class, theCachedClass.getTheClass());
         }
     }
 
@@ -136,7 +135,7 @@ public class MetaMethodIndex {
 
         for (int j = 0; j < oldLength; j++) {
 
-            for (Entry e = oldTable[j]; e != null;) {
+            for (Entry e = oldTable[j]; e != null; ) {
                 Entry next = e.nextHashEntry;
                 int index = e.hash & (newLength - 1);
 
@@ -208,7 +207,7 @@ public class MetaMethodIndex {
         int h = hash(31 * cls.hashCode() + name.hashCode());
         Entry e = table[h & (table.length - 1)];
         for (; e != null; e = e.nextHashEntry)
-            if (e.hash == h && cls == e.cls && Objects.equals(e.name, name) )
+            if (e.hash == h && cls == e.cls && Objects.equals(e.name, name))
                 return e;
 
         return null;
@@ -221,7 +220,7 @@ public class MetaMethodIndex {
         final int index = h & (t.length - 1);
         Entry e = t[index];
         for (; e != null; e = e.nextHashEntry)
-            if (e.hash == h && cls == e.cls && Objects.equals(e.name, name) )
+            if (e.hash == h && cls == e.cls && Objects.equals(e.name, name))
                 return e;
 
         Entry entry = new Entry();
@@ -315,7 +314,7 @@ public class MetaMethodIndex {
     private void copyNonPrivateMethodsFromSuper(Entry e) {
         Object oldListOrMethod = e.methodsForSuper;
         if (oldListOrMethod == null)
-          return;
+            return;
 
         if (oldListOrMethod instanceof FastArray) {
             FastArray oldList = (FastArray) oldListOrMethod;
@@ -346,7 +345,7 @@ public class MetaMethodIndex {
     private void copyNonPrivateNonNewMetaMethods(Entry from, Header to) {
         Object oldListOrMethod = from.methods;
         if (oldListOrMethod == null)
-          return;
+            return;
 
         if (oldListOrMethod instanceof FastArray) {
             FastArray oldList = (FastArray) oldListOrMethod;
@@ -383,9 +382,9 @@ public class MetaMethodIndex {
             } else {
                 if (match.isPrivate()
                         || (!isNonRealMethod(match)
-                            && match.getDeclaringClass().isInterface()
-                            && !method.getDeclaringClass().isInterface()
-                            && !method.isStatic())) {
+                        && match.getDeclaringClass().isInterface()
+                        && !method.getDeclaringClass().isInterface()
+                        && !method.isStatic())) {
                     // do not overwrite interface methods with instance methods
                     // do not overwrite private methods
                     // Note: private methods from parent classes are not shown here,
@@ -415,12 +414,12 @@ public class MetaMethodIndex {
                 list.add(method);
             } else {
                 MetaMethod match = (MetaMethod) list.get(found);
-                if (match==method) return o;
+                if (match == method) return o;
                 if (match.isPrivate()
                         || (!isNonRealMethod(match)
-                            && match.getDeclaringClass().isInterface()
-                            && !method.getDeclaringClass().isInterface()
-                            && !method.isStatic())) {
+                        && match.getDeclaringClass().isInterface()
+                        && !method.getDeclaringClass().isInterface()
+                        && !method.isStatic())) {
                     // do not overwrite interface methods with instance methods
                     // do not overwrite private methods
                     // Note: private methods from parent classes are not shown here,
@@ -428,7 +427,7 @@ public class MetaMethodIndex {
                     // methods of the parent class with methods of a subclass and
                     // in that case we want to keep the private methods
                 } else {
-                    CachedClass  methodC = method.getDeclaringClass();
+                    CachedClass methodC = method.getDeclaringClass();
                     CachedClass matchC = match.getDeclaringClass();
                     if (methodC == matchC) {
                         if (isNonRealMethod(method)) {
@@ -455,7 +454,7 @@ public class MetaMethodIndex {
     }
 
     private static boolean isMatchingMethod(MetaMethod aMethod, MetaMethod method) {
-        if (aMethod==method) return true;
+        if (aMethod == method) return true;
         CachedClass[] params1 = aMethod.getParameterTypes();
         CachedClass[] params2 = method.getParameterTypes();
         if (params1.length != params2.length) {
@@ -530,18 +529,18 @@ public class MetaMethodIndex {
     }
 
     public void clearCaches() {
-        for (int i = 0; i != table.length; ++i )
-          for (Entry e = table [i]; e != null; e = e.nextHashEntry ) {
-              e.cachedMethod = e.cachedMethodForSuper = e.cachedStaticMethod = null;
-          }
+        for (int i = 0; i != table.length; ++i)
+            for (Entry e = table[i]; e != null; e = e.nextHashEntry) {
+                e.cachedMethod = e.cachedMethodForSuper = e.cachedStaticMethod = null;
+            }
     }
 
     public void clearCaches(String name) {
-        for (int i = 0; i != table.length; ++i )
-          for (Entry e = table [i]; e != null; e = e.nextHashEntry ) {
-              if (e.name.equals(name)) {
-                  e.cachedMethod = e.cachedMethodForSuper = e.cachedStaticMethod = null;
-              }
-          }
+        for (int i = 0; i != table.length; ++i)
+            for (Entry e = table[i]; e != null; e = e.nextHashEntry) {
+                if (e.name.equals(name)) {
+                    e.cachedMethod = e.cachedMethodForSuper = e.cachedStaticMethod = null;
+                }
+            }
     }
 }
