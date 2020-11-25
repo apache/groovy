@@ -2829,4 +2829,25 @@ class GinqTest {
             assert cnt > 0
         '''
     }
+
+    @Test
+    void "testGinq - lazy - 10"() {
+        assertScript '''
+            int cnt = 0
+            def result = GQ {
+                from n in [0, 1, 2, 3, 4, 5]
+                where n in (
+                    from k in [0, 1, 2, 3, 4]
+                    where k >= n
+                    select cnt++ - k
+                )
+                select n, cnt++
+            }
+            assert 0 == cnt
+            def stream = result.stream()
+            assert 0 == cnt
+            assert [[0, 5]] == stream.toList()
+            assert cnt > 0
+        '''
+    }
 }
