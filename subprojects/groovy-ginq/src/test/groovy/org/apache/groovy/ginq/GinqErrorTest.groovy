@@ -33,7 +33,7 @@ class GinqErrorTest {
             }
         '''
 
-        assert err.toString().contains('`select` clause is missing')
+        assert err.toString().contains('`select` clause is missing @ line 2, column 17.')
     }
 
     @Test

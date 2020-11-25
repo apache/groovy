@@ -63,6 +63,12 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
     }
 
     public GinqExpression getGinqExpression() {
+        if (null == latestGinqExpression && !ginqExpressionStack.isEmpty()) {
+            GinqExpression latestGinqExpression = ginqExpressionStack.peek();
+            this.collectSyntaxError(new GinqSyntaxError("`select` clause is missing",
+                    latestGinqExpression.getLineNumber(), latestGinqExpression.getColumnNumber()));
+        }
+
         return latestGinqExpression;
     }
 
@@ -87,7 +93,9 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
         if (!KEYWORD_SET.contains(methodName)) return;
 
         if (KW_FROM.equals(methodName)) {
-            ginqExpressionStack.push(new GinqExpression()); // store the result
+            final GinqExpression ginqExpression = new GinqExpression();
+            ginqExpression.setSourcePosition(call);
+            ginqExpressionStack.push(ginqExpression); // store the result
         }
 
         GinqExpression currentGinqExpression = ginqExpressionStack.peek();
