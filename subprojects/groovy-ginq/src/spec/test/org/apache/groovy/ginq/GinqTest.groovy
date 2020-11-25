@@ -2659,7 +2659,7 @@ class GinqTest {
             assert 0 == cnt
             def stream = result.stream()
             assert 0 == cnt
-            stream.toList()
+            assert [[1, 0], [2, 1], [3, 2]] == stream.toList()
             assert cnt > 0
         '''
     }
@@ -2676,7 +2676,7 @@ class GinqTest {
             assert 0 == cnt
             def stream = result.stream()
             assert 0 == cnt
-            stream.toList()
+            assert [[2, 0], [3, 1]] == stream.toList()
             assert cnt > 0
         '''
     }
@@ -2694,7 +2694,7 @@ class GinqTest {
             assert 0 == cnt
             def stream = result.stream()
             assert 0 == cnt
-            stream.toList()
+            assert [[2, 2, 0], [3, 3, 1]] == stream.toList()
             assert cnt > 0
         '''
     }
@@ -2713,7 +2713,7 @@ class GinqTest {
             assert 0 == cnt
             def stream = result.stream()
             assert 0 == cnt
-            stream.toList()
+            assert [[3, 3, 6], [2, 2, 5]] == stream.toList()
             assert cnt > 0
         '''
     }
@@ -2733,7 +2733,7 @@ class GinqTest {
             assert 0 == cnt
             def stream = result.stream()
             assert 0 == cnt
-            stream.toList()
+            assert [[3, 3, 6], [2, 2, 5]] == stream.toList()
             assert cnt > 0
         '''
     }
@@ -2758,7 +2758,7 @@ class GinqTest {
             assert 0 == cnt
             def stream = result.stream()
             assert 0 == cnt
-            stream.toList()
+            assert [[3, 3, 6], [2, 2, 5]] == stream.toList()
             assert cnt > 0
         '''
     }
@@ -2784,7 +2784,7 @@ class GinqTest {
             assert 0 == cnt
             def stream = result.stream()
             assert 0 == cnt
-            stream.toList()
+            assert [[3, 3, 6]] == stream.toList()
             assert cnt > 0
         '''
     }
@@ -2805,7 +2805,27 @@ class GinqTest {
             assert 0 == cnt
             def stream = result.stream()
             assert 0 == cnt
-            stream.toList()
+            assert [[2, 1], [3, 3]] == stream.toList()
+            assert cnt > 0
+        '''
+    }
+
+    @Test
+    void "testGinq - lazy - 9"() {
+        assertScript '''
+            int cnt = 0
+            def result = GQ {
+                from n in [0, 1, 2, 3, 4, 5]
+                where n in (
+                    from k in [0, 1, 2, 3, 4]
+                    select cnt++ - k
+                )
+                select n, cnt++
+            }
+            assert 0 == cnt
+            def stream = result.stream()
+            assert 0 == cnt
+            assert [[0, 5]] == stream.toList()
             assert cnt > 0
         '''
     }
