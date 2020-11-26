@@ -102,7 +102,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     @Override
     MethodCallExpression visitGinqExpression(GinqExpression ginqExpression) {
         if (!ginqExpression) {
-            this.collectSyntaxError(new GinqSyntaxError("`select` clause is missing", -1, -1))
+            throw new GroovyBugError("`ginqExpression` should not be null") // should never happen!
         }
 
         ginqExpressionStack.push(ginqExpression)
