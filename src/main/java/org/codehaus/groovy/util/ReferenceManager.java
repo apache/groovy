@@ -36,6 +36,7 @@ public class ReferenceManager {
                         try {
                             r = queue.remove(1000);
                         }  catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
                             break;
                         }
                         if (r==null) continue;
