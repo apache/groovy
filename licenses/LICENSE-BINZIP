@@ -242,6 +242,14 @@ BSD License.  For details, see licenses/jline2-license.txt.
 
 ------------------------------------------------------------------------
 
+javax.servlet.jsp-api License (for groovy-servlet module)
+
+This product bundles the javax.servlet.jsp-api jar in binary form
+which is available under the CDDL 1.1 license:
+licenses/jsp-api-license.txt
+
+------------------------------------------------------------------------
+
 JSR166y License (optionally used by the optional GPars dependency)
 
 This product bundles the jsr166y jar (containing works from
@@ -280,6 +288,14 @@ The stylesheet.css file (originally normalize.css) is used by the
 groovydoc and docgenerator components for groovy-jdk/gapi documentation.
 It is made available under a MIT License:
 licenses/normalize-stylesheet-license.txt
+
+------------------------------------------------------------------------
+
+javax.servlet.jsp-api License (for groovy-servlet module)
+
+This product bundles the javax.servlet-api jar in binary form
+which is available under the CDDL 1.0 license:
+licenses/servlet-api-license.txt
 
 ------------------------------------------------------------------------
 

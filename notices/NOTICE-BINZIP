@@ -7,6 +7,9 @@ The Apache Software Foundation (http://www.apache.org/).
 This product includes/uses ANTLR (http://www.antlr2.org/)
 developed by Terence Parr 1989-2006
 
+This product bundles the javax.servlet.jsp-api jar in binary
+form which is available under the CDDL 1.0 license
+
 This product bundles the JUnit4 jar (junit.org)
 which is available under the terms of the Eclipse Public License v1.0
 
@@ -22,6 +25,11 @@ Contribution License Agreement" and for which the following copyright notices ap
     (C) Copyright 2005 Intel Corporation
     (C) Copyright 2005-2006 Intel Corporation
     (C) Copyright 2006 Intel Corporation
+
+This product bundles the javax.servlet-api jar in binary
+form which is available under the CDDL 1.0 license
+and for which the following copyright notice applies
+Copyright (c) 1997-2011 Oracle and/or its affiliates. All rights reserved.
 
 This product bundles icons from the famfamfam.com silk icons set
 http://www.famfamfam.com/lab/icons/silk/

@@ -1,0 +1,5 @@
+javax.servlet.jsp-api License (for groovy-servlet module)
+
+This product bundles the javax.servlet-api jar in binary form
+which is available under the CDDL 1.0 license:
+licenses/servlet-api-license.txt
