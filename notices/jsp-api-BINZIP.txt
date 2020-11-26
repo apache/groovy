@@ -1,0 +1,4 @@
+This product bundles the javax.servlet.jsp-api jar in binary
+form which is available under the CDDL 1.1 license
+and for which the following copyright notice applies
+Copyright (c) 1997-2013 Oracle and/or its affiliates. All rights reserved.
