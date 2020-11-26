@@ -144,8 +144,8 @@ dependencies {
     tools "org.jboss.bridger:bridger:${versions.bridger}"
 
     tools("net.sourceforge.cobertura:cobertura:${versions.cobertura}") {
-        exclude(module: 'asm')
-        exclude(module: 'asm')
+        exclude(group: 'asm')
+        exclude(group: 'org.ow2.asm')
         exclude(module: 'ant')
     }
     tools "org.ow2.asm:asm:${versions.asm}"
