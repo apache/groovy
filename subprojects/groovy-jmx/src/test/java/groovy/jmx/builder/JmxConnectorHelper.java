@@ -45,7 +45,7 @@ public class JmxConnectorHelper {
                 port = port + 1;
                 System.out.println("JmxBuilder - *** FAILED *** to create RMI Registry - Will Retry on port [" + port + "].");
                 try {
-                    Thread.currentThread().sleep(500);
+                    Thread.sleep(500);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }

@@ -241,10 +241,15 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void waitForProcessOutput(Process self, Appendable output, Appendable error) {
         Thread tout = consumeProcessOutputStream(self, output);
         Thread terr = consumeProcessErrorStream(self, error);
-        try { tout.join(); } catch (InterruptedException ignore) {}
-        try { terr.join(); } catch (InterruptedException ignore) {}
-        try { self.waitFor(); } catch (InterruptedException ignore) {}
-        closeStreams(self);
+        boolean interrupted = false;
+        try {
+            try { tout.join(); } catch (InterruptedException ignore) { interrupted = true; }
+            try { terr.join(); } catch (InterruptedException ignore) { interrupted = true; }
+            try { self.waitFor(); } catch (InterruptedException ignore) { interrupted = true; }
+            closeStreams(self);
+        } finally {
+            if (interrupted) Thread.currentThread().interrupt();
+        }
     }
 
     /**
@@ -263,10 +268,15 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void waitForProcessOutput(Process self, OutputStream output, OutputStream error) {
         Thread tout = consumeProcessOutputStream(self, output);
         Thread terr = consumeProcessErrorStream(self, error);
-        try { tout.join(); } catch (InterruptedException ignore) {}
-        try { terr.join(); } catch (InterruptedException ignore) {}
-        try { self.waitFor(); } catch (InterruptedException ignore) {}
-        closeStreams(self);
+        boolean interrupted = false;
+        try {
+            try { tout.join(); } catch (InterruptedException ignore) { interrupted = true; }
+            try { terr.join(); } catch (InterruptedException ignore) { interrupted = true; }
+            try { self.waitFor(); } catch (InterruptedException ignore) { interrupted = true; }
+            closeStreams(self);
+        } finally {
+            if (interrupted) Thread.currentThread().interrupt();
+        }
     }
 
     /**
@@ -438,8 +448,8 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
         private void doProcessWait() {
             try {
                 process.waitFor();
-            } catch (InterruptedException e) {
-                // Ignore
+            } catch (InterruptedException ignore) {
+                Thread.currentThread().interrupt();
             }
         }
 
@@ -456,8 +466,8 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
             if (!finished) {
                 try {
                     wait(millis);
-                } catch (InterruptedException e) {
-                    // Ignore
+                } catch (InterruptedException ignore) {
+                    Thread.currentThread().interrupt();
                 }
                 if (!finished) {
                     process.destroy();
