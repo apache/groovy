@@ -428,10 +428,12 @@ ext.distSpec = copySpec {
         include 'asm-license.txt'
         include 'hamcrest-license.txt'
         include 'jline2-license.txt'
+        include 'jsp-api-license.txt'
         include 'jsr166y-license.txt'
         include 'jsr223-license.txt'
         include 'junit4-license.txt'
         include 'junit5-license.txt'
+        include 'servlet-api-license.txt'
         include 'xstream-license.txt'
     }
 }
