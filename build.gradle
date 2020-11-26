@@ -147,7 +147,7 @@ configurations {
 }
 
 ext {
-    antVersion = '1.9.4'
+    antVersion = '1.9.15'
     asmVersion = '7.2'
     antlrVersion = '2.7.7'
     coberturaVersion = '1.9.4.1'
