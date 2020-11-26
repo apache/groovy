@@ -383,7 +383,7 @@ public class MetaMethodIndex {
                 return new FastArray(new Object[]{inIndex, toIndex});
             }
 
-            if (isOverridden(inIndex, toIndex)) {
+            if (inIndex != toIndex && isOverridden(inIndex, toIndex)) {
                 return toIndex;
             }
             return inIndex;
@@ -427,12 +427,12 @@ public class MetaMethodIndex {
 
     private static boolean isNonRealMethod(final MetaMethod method) {
         return method instanceof NewInstanceMetaMethod
-                || method instanceof NewStaticMetaMethod
-                || method instanceof ClosureMetaMethod
-                || method instanceof GeneratedMetaMethod
-                || method instanceof ClosureStaticMetaMethod
-                || method instanceof MixinInstanceMetaMethod
-                || method instanceof ClosureMetaMethod.AnonymousMetaMethod;
+            || method instanceof NewStaticMetaMethod
+            || method instanceof ClosureMetaMethod
+            || method instanceof GeneratedMetaMethod
+            || method instanceof ClosureStaticMetaMethod
+            || method instanceof MixinInstanceMetaMethod
+            || method instanceof ClosureMetaMethod.AnonymousMetaMethod;
     }
 
     private static boolean isMatchingMethod(final MetaMethod method1, final MetaMethod method2) {
