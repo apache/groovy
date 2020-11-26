@@ -77,10 +77,11 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
         ginqExpression.putNodeMetaData(__LATEST_GINQ_EXPRESSION_CLAUSE, ginqExpressionClause);
     }
 
-    private AbstractGinqExpression getLatestGinqExpressionClause() {
+    private AbstractGinqExpression getLatestGinqExpressionClause(MethodCallExpression call) {
         GinqExpression ginqExpression = ginqExpressionStack.peek();
         if (null == ginqExpression) {
-            this.collectSyntaxError(new GinqSyntaxError("One `from` is expected and must be the first clause", -1, -1));
+            this.collectSyntaxError(new GinqSyntaxError("One `from` is expected and must be the first clause",
+                    call.getLineNumber(), call.getColumnNumber()));
         }
         return ginqExpression.getNodeMetaData(__LATEST_GINQ_EXPRESSION_CLAUSE);
     }
@@ -99,7 +100,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
         }
 
         GinqExpression currentGinqExpression = ginqExpressionStack.peek();
-        AbstractGinqExpression latestGinqExpressionClause = getLatestGinqExpressionClause();
+        AbstractGinqExpression latestGinqExpressionClause = getLatestGinqExpressionClause(call);
 
         if (KW_FROM.equals(methodName)  || JoinExpression.isJoinExpression(methodName)) {
             ArgumentListExpression arguments = (ArgumentListExpression) call.getArguments();

@@ -44,7 +44,7 @@ class GinqErrorTest {
             }
         '''
 
-        assert err.toString().contains('One `from` is expected and must be the first clause')
+        assert err.toString().contains('One `from` is expected and must be the first clause @ line 2, column 17.')
     }
 
     @Test
@@ -55,7 +55,7 @@ class GinqErrorTest {
             }
         '''
 
-        assert err.toString().contains("One `from` is expected and must be the first clause")
+        assert err.toString().contains("One `from` is expected and must be the first clause @ line 2, column 24.")
     }
 
     @Test
