@@ -67,7 +67,7 @@ distribution {
             from(configurations.distributionsRuntimeClasspath) {
                 exclude {
                     it.file.name.contains('activation') ||
-                            it.file.name.contains('jaxb-') ||
+                            it.file.name.startsWith('jaxb-') ||
                             it.file.name.contains('livetribe-jsr223') ||
                             it.file.name.startsWith('openbeans-') ||
                             it.file.name.startsWith('asm-') ||
