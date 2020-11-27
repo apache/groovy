@@ -135,15 +135,15 @@ class JmxMetaMapBuilderTest extends GroovyTestCase {
         assert attribs.Available.setMethod == null
     }
 
-    void testbuildObjectWithNameOnly() {
+    void testBuildObjectWithNameOnly() {
         def object = new MockManagedObject()
         def map = JmxMetaMapBuilder.buildObjectMapFrom(object, [
                 target: object,
-                name: "jmx.builder:type=TestObject"
+                name  : "jmx.builder:type=TestObject"
         ])
-
+    
         assert map
-
+    
         def attribs = map.attributes
         assert attribs.Something
         assert attribs.Something.type == "java.lang.String"
@@ -151,7 +151,7 @@ class JmxMetaMapBuilderTest extends GroovyTestCase {
         assert attribs.Something.getMethod == "getSomething"
         assert !attribs.Something.writable
         assert attribs.Something.setMethod == null
-
+    
         assert attribs.SomethingElse
         assert attribs.SomethingElse.type == "int"
         assert attribs.SomethingElse.readable
@@ -180,17 +180,29 @@ class JmxMetaMapBuilderTest extends GroovyTestCase {
         assert ops."doSomethingElse".params."java.lang.String".name == "java.lang.String"
         assert ops."doSomethingElse".params."java.lang.String".displayName
     }
-
+    
+    void testBuildObjectWithGStringJmxName() {
+        def object = new MockManagedObject()
+        def name = "jmx.builder:type=TestObject@${object.hashCode()}"
+        def map = JmxMetaMapBuilder.buildObjectMapFrom(object, [
+                target: object,
+                name  : name
+        ])
+        
+        assert map
+        assert map.jmxName.toString() == name
+    }
+    
     void testBuildAttributeMapFromDescriptorMap() {
         def object = new MockManagedObject()
         def attribs = JmxMetaMapBuilder.buildAttributeMapFrom(object, [
-                something: "*",
+                something    : "*",
                 somethingElse: [desc: "somethingElse", readable: false, writable: true],
-                available: [desc: "availability", readable: true, writable: true]
+                available    : [desc: "availability", readable: true, writable: true]
         ])
-
+        
         assert attribs
-
+        
         assert attribs.Something
         assert attribs.Something.type == "java.lang.String"
         assert attribs.Something.readable

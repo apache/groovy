@@ -172,7 +172,7 @@ class JmxMetaMapBuilder {
     private static ObjectName getObjectName(def map) {
         if (!map) return null
         def jmxName
-        if (map.name instanceof String) {
+        if (map.name instanceof String || map.name instanceof GString) {
             jmxName = new ObjectName(map.name)
         } else if (map.name instanceof ObjectName) {
             jmxName = map.name
