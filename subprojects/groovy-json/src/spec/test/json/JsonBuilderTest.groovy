@@ -18,32 +18,16 @@
  */
 package json
 
-import org.junit.BeforeClass
 import org.junit.Test
 
-import static groovy.grape.Grape.resolve
 import static groovy.test.GroovyAssert.assertScript
 
 final class JsonBuilderTest {
-
-    @BeforeClass
-    static void setUpClass() {
-        // make sure files are installed locally
-        [
-            [groupId:'com.google.code.gson', artifactId:'gson', version:'2.3.1'],
-            [groupId:'net.javacrumbs.json-unit', artifactId:'json-unit', version:'1.5.6']
-        ].each { spec ->
-            resolve([autoDownload:true, classLoader:new GroovyClassLoader()], spec)
-        }
-    }
-
     @Test
     void testJsonBuilder() {
         assertScript """
-            @Grab('com.google.code.gson:gson:2.3.1') // json-unit requires gson, jackson1, or jackson2
-            @Grab('net.javacrumbs.json-unit:json-unit:1.5.6')
-            import net.javacrumbs.jsonunit.JsonAssert
             import groovy.json.*
+            import net.javacrumbs.jsonunit.JsonAssert
 
             // tag::json_string[]
             String carRecords = '''
