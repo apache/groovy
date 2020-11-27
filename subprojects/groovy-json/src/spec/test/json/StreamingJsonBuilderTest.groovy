@@ -45,7 +45,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
                 }
             '''
             // end::json_string[]
-            
+
             // tag::streaming_json_builder[]
             StringWriter writer = new StringWriter()
             StreamingJsonBuilder builder = new StreamingJsonBuilder(writer)
@@ -63,7 +63,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
             }
             String json = JsonOutput.prettyPrint(writer.toString())
             // end::streaming_json_builder[]
-            
+
             // tag::json_assert[]
             JsonAssert.assertJsonEquals(json, carRecords)
             // end::json_assert[]
