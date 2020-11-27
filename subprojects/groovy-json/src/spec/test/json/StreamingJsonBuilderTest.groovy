@@ -24,8 +24,6 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
 
     void testStreamingJsonBuilder() {
         assertScript """
-            @Grab('com.google.code.gson:gson:2.8.6') //required by json-unit
-            @Grab('net.javacrumbs.json-unit:json-unit:2.9.0')
             import groovy.json.*
             import net.javacrumbs.jsonunit.JsonAssert
 

@@ -148,6 +148,7 @@
          <trusted-key id="b94797af54ae59b1e3c154da8e1ad594207b7fb2" group="org.reflections" name="reflections" version="0.9.12"/>
          <trusted-key id="ba926f64ca647b6d853a38672e2010f8a7ff4a41" group="org.codehaus.plexus"/>
          <trusted-key id="bdb5fa4fe719d787fb3d3197f6d4a1d411e9d1ae" group="com.google.guava"/>
+         <trusted-key id="c5c776287800887af679da34d03081ee195be743" group="net.javacrumbs.json-unit"/>
          <trusted-key id="c739ce4075d9f0f0ded13a7d39be51a1084c9113" group="org.apache.maven.doxia"/>
          <trusted-key id="cd5464315f0b98c77e6e8ecd9daadc1c9fcc82d0">
             <trusting group="org.apache.commons"/>
@@ -305,6 +306,11 @@
       <component group="com.google.code.findbugs" name="jsr305" version="3.0.2">
          <artifact name="jsr305-3.0.2.jar">
             <pgp value="7616eb882daf57a11477aaf559a252fb1199d873"/>
+         </artifact>
+      </component>
+      <component group="com.google.code.gson" name="gson" version="2.8.6">
+         <artifact name="gson-2.8.6.jar">
+            <pgp value="afcc4c7594d09e2182c60e0f7a01b0f236e5430f"/>
          </artifact>
       </component>
       <component group="com.google.errorprone" name="error_prone_annotations" version="2.2.0">

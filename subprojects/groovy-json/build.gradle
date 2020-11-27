@@ -24,16 +24,10 @@ dependencies {
     api rootProject  // JsonBuilder extends GroovyObjectSupport...
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-dateutil')
-    testImplementation 'net.javacrumbs.json-unit:json-unit:1.5.6'
+    testImplementation 'net.javacrumbs.json-unit:json-unit:2.9.0'
     testRuntimeOnly "org.slf4j:slf4j-api:${versions.slf4j}"
     testRuntimeOnly project(':groovy-ant') // for JavadocAssertionTests
-    testRuntimeOnly 'com.google.code.gson:gson:2.3.1' // json-unit requires gson, jackson1, or jackson2
-    testRuntimeOnly(project(':')) {
-        because "Tests are using Grapes"
-        capabilities {
-            requireCapability("org.apache.groovy:groovy-grapes")
-        }
-    }
+    testRuntimeOnly 'com.google.code.gson:gson:2.8.6' // json-unit requires gson, jackson1, or jackson2
 }
 
 plugins.withId('eclipse') {
