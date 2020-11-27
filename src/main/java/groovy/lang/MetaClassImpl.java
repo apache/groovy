@@ -81,7 +81,6 @@ import org.codehaus.groovy.util.SingleKeyHashMap;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
-import javax.annotation.Nullable;
 import java.beans.BeanInfo;
 import java.beans.EventSetDescriptor;
 import java.beans.Introspector;
@@ -134,9 +133,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private static final String CALL_METHOD = "call";
     private static final String DO_CALL_METHOD = "doCall";
+    private static final String CONSTRUCTOR_NAME = "<init>";
     private static final String GET_PROPERTY_METHOD = "getProperty";
     private static final String SET_PROPERTY_METHOD = "setProperty";
-    private static final String CONSTRUCTOR_NAME = "<init>";
 
     private static final Class[] METHOD_MISSING_ARGS = new Class[]{String.class, Object.class};
     private static final Class[] GETTER_MISSING_ARGS = new Class[]{String.class};
@@ -1332,7 +1331,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (value instanceof Closure) {
             Closure<?> closure = (Closure<?>) value;
             MetaClass metaClass = closure.getMetaClass();
-            return metaClass.invokeMethod(closure.getClass(), closure, CALL_METHOD, originalArguments, false, fromInsideClass);
+            try {
+                return metaClass.invokeMethod(closure.getClass(), closure, DO_CALL_METHOD, originalArguments, false, fromInsideClass);
+            } catch (MissingMethodException mme) {
+                // fall through -- "doCall" is not instrisic to Closure
+            }
         }
 
         if (value != null && !(value instanceof Map) && !methodName.equals(CALL_METHOD)) {
@@ -2563,7 +2566,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private static void copyNonPrivateFields(Map<String, MetaProperty> from, Map<String, MetaProperty> to, @Nullable CachedClass klass) {
+    private static void copyNonPrivateFields(Map<String, MetaProperty> from, Map<String, MetaProperty> to, @javax.annotation.Nullable CachedClass klass) {
         for (Map.Entry<String, MetaProperty> entry : from.entrySet()) {
             CachedField field = (CachedField) entry.getValue();
             int modifiers = field.getModifiers();
