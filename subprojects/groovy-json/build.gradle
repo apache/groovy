@@ -20,7 +20,7 @@ dependencies {
     compile rootProject
     testCompile project(':groovy-test')
     testCompile project(':groovy-dateutil')
-    testCompile 'net.javacrumbs.json-unit:json-unit:1.5.5'
+    testCompile 'net.javacrumbs.json-unit:json-unit:1.31.1'
     testRuntime 'com.google.code.gson:gson:2.3.1' //required by json-unit
     testRuntime "org.slf4j:slf4j-api:$slf4jVersion"
     testRuntime project(':groovy-ant') // for JavadocAssertionTests
