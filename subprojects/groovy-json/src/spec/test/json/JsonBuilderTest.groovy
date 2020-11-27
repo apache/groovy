@@ -23,9 +23,6 @@ class JsonBuilderTest extends GroovyTestCase {
     void testJsonBuilder() {
         assertScript """
             import groovy.json.*
-            @Grapes([
-                @Grab('com.google.code.gson:gson:2.3.1'), //required by json-unit
-                @Grab('net.javacrumbs.json-unit:json-unit:1.5.5')])
             import net.javacrumbs.jsonunit.JsonAssert
 
             // tag::json_string[]
