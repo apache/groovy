@@ -2551,6 +2551,16 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - row number - 2"() {
+        assertScript '''
+            assert [0, 1, 2] == GQ {
+                from n in [1, 2, 3]
+                select _rn
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - exists - 1"() {
         assertScript '''
             assert [2, 3] == GQ {

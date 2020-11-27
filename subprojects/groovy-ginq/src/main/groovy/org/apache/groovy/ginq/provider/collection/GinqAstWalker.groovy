@@ -411,7 +411,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             lambdaCode = namedListCtorCallExpression
         }
 
-        lambdaCode = lambdaCode.transformExpression(new ExpressionTransformer() {
+        lambdaCode = ((ListExpression) new ListExpression(Collections.singletonList(lambdaCode)).transformExpression(new ExpressionTransformer() {
             @Override
             Expression transform(Expression expression) {
                 if (expression instanceof VariableExpression) {
@@ -423,7 +423,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
                 return expression.transformExpression(this)
             }
-        })
+        })).getExpression(0)
 
         def selectMethodCallExpression = callXWithLambda(selectMethodReceiver, "select", dataSourceExpression, lambdaCode)
 
