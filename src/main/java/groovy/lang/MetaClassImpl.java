@@ -81,7 +81,6 @@ import org.codehaus.groovy.util.SingleKeyHashMap;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
-import javax.annotation.Nullable;
 import java.beans.BeanInfo;
 import java.beans.EventSetDescriptor;
 import java.beans.Introspector;
@@ -1329,7 +1328,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (value instanceof Closure) {
             Closure<?> closure = (Closure<?>) value;
             MetaClass metaClass = closure.getMetaClass();
-            return metaClass.invokeMethod(closure.getClass(), closure, CALL_METHOD, originalArguments, false, fromInsideClass);
+            try {
+                return metaClass.invokeMethod(closure.getClass(), closure, DO_CALL_METHOD, originalArguments, false, fromInsideClass);
+            } catch (MissingMethodException mme) {
+                // fall through -- "doCall" is not instrisic to Closure
+            }
         }
 
         if (value != null && !(value instanceof Map) && !methodName.equals(CALL_METHOD)) {
@@ -2545,7 +2548,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private static void copyNonPrivateFields(SingleKeyHashMap from, SingleKeyHashMap to, @Nullable CachedClass klass) {
+    private static void copyNonPrivateFields(SingleKeyHashMap from, SingleKeyHashMap to, @javax.annotation.Nullable CachedClass klass) {
         for (ComplexKeyHashMap.EntryIterator it = from.getEntrySetIterator(); it.hasNext(); ) {
             SingleKeyHashMap.Entry entry = (SingleKeyHashMap.Entry) it.next();
             CachedField field = (CachedField) entry.getValue();
