@@ -904,15 +904,15 @@ class GinqTest {
     @Test
     void "testGinq - nested from select - 20"() {
         assertScript '''
+// tag::ginq_projection_01[]
             assert [[1, 1], [2, 4], [3, 9]] == GQ {
                 from v in (
-// tag::ginq_projection_01[]
                     from n in [1, 2, 3]
                     select n, Math.pow(n, 2) as powerOfN
-// end::ginq_projection_01[]
                 )
                 select v.n, v.powerOfN
             }.toList()
+// end::ginq_projection_01[]
         '''
     }
 

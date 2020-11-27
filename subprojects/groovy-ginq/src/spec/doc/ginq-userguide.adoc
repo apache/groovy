@@ -118,10 +118,13 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_datasource_04,
 
 ==== Projection
 The column names could be renamed with `as` clause:
-[source, sql]
+[source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_projection_01,indent=0]
 ----
+[NOTE]
+The renamed column could be referenced by its new name, e.g. `v.powerOfN`
+
 
 Construct new objects as column values:
 
