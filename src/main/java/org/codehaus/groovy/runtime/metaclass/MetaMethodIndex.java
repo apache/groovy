@@ -405,24 +405,33 @@ public class MetaMethodIndex {
         return o;
     }
 
+    /**
+     * TODO
+     * <p>
+     * Note: private methods from parent classes are not handled here, but when
+     * doing the multi-method connection step, methods of the parent class will
+     * be overwritten with methods of a subclass and in that case private methods
+     * should be kept.
+     */
     private static boolean isOverridden(final MetaMethod inIndex, final MetaMethod toIndex) {
         // do not overwrite private methods
-        // do not overwrite interface methods with instance methods
-        // Note: private methods from parent classes are not shown here,
-        // but when doing the multi-method connection step, we overwrite
-        // methods of the parent class with methods of a subclass and
-        // in that case we want to keep the private methods
-        if (!inIndex.isPrivate() && (isNonRealMethod(inIndex)
-                || !inIndex.getDeclaringClass().isInterface()
-                || (toIndex.getDeclaringClass().isInterface() ^ toIndex.isStatic()))) {
-            CachedClass toIndexDC = toIndex.getDeclaringClass();
-            CachedClass inIndexDC = inIndex.getDeclaringClass();
-            if ((toIndexDC == inIndexDC && isNonRealMethod(toIndex))
-                    || !toIndexDC.isAssignableFrom(inIndexDC.getTheClass())) {
-                return true; // prefer toIndex
-            }
+        if (inIndex.isPrivate()) return false;
+
+        CachedClass inIndexDC = inIndex.getDeclaringClass();
+        CachedClass toIndexDC = toIndex.getDeclaringClass();
+        if (inIndexDC == toIndexDC) {
+            return isNonRealMethod(toIndex);
         }
-        return false; // prefer inIndex
+
+        // interface vs instance method; be careful...
+        if (!inIndex.isStatic() && !toIndex.isStatic()
+                && inIndexDC.isInterface() != toIndexDC.isInterface()) {
+            // this is the old logic created for GROOVY-2391 and GROOVY-7879, which was labeled as "do not overwrite interface methods with instance methods"
+            return (isNonRealMethod(inIndex) || !inIndexDC.isInterface() || toIndexDC.isInterface()) && !toIndexDC.isAssignableFrom(inIndexDC.getTheClass());
+        }
+
+        // prefer most-specific or most-recent for type disjunction
+        return inIndexDC.isAssignableFrom(toIndexDC.getTheClass());
     }
 
     private static boolean isNonRealMethod(final MetaMethod method) {
