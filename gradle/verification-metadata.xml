@@ -298,6 +298,11 @@
             <pgp value="8756c4f765c9ac3cb6b85d62379ce192d401ab61"/>
          </artifact>
       </component>
+      <component group="com.github.javaparser" name="javaparser-core" version="3.17.0">
+         <artifact name="javaparser-core-3.17.0.jar">
+            <pgp value="8756c4f765c9ac3cb6b85d62379ce192d401ab61"/>
+         </artifact>
+      </component>
       <component group="com.github.siom79.japicmp" name="japicmp" version="0.13.1">
          <artifact name="japicmp-0.13.1.jar">
             <pgp value="fffd810fffde203d5fa27263beabcfbee059e4e5"/>
