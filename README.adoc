@@ -180,7 +180,7 @@ The omission of package name: class is `semantics.PowerAssertTest` but only `Pow
 == Verifying dependencies
 To generate the missing verification metadata when add/bump dependencies:
 
-    gradlew --write-verification-metadata pgp,sha512 help --dry-run
+    gradlew --write-verification-metadata pgp,sha512 --dry-run
 
 then compare `verification-metadata.xml` with the generated `verification-metadata.dryrun.xml`, and merge the missing verification metadata into `verification-metadata.xml`
 after the result of the above operation is reviewed.
