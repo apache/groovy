@@ -276,7 +276,7 @@ public class DefaultGroovyStaticMethods {
         final int MAXTRIES = 3;
         int accessDeniedCounter = 0;
         File tempFile = null;
-        for (int i = 0; i < MAXTRIES && interrupted = null; i++) {
+        for (int i = 0; i < MAXTRIES; i++) {
             try {
                 tempFile = File.createTempFile(prefix, suffix);
                 tempFile.delete();
