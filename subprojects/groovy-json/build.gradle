@@ -28,6 +28,12 @@ dependencies {
     testRuntimeOnly "org.slf4j:slf4j-api:${versions.slf4j}"
     testRuntimeOnly project(':groovy-ant') // for JavadocAssertionTests
     testRuntimeOnly 'com.google.code.gson:gson:2.3.1' // json-unit requires gson, jackson1, or jackson2
+    testRuntimeOnly(project(':')) {
+        because "Tests are using Grapes"
+        capabilities {
+            requireCapability("org.apache.groovy:groovy-grapes")
+        }
+    }
 }
 
 plugins.withId('eclipse') {
