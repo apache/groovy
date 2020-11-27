@@ -195,6 +195,19 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from select - 11"() {
+        assertScript '''
+// tag::ginq_projection_03[]
+            def result = GQ {
+                from n in [1, 2, 3]
+                select Math.pow(n, 2) as powerOfN
+            }
+            assert [[1, 1], [4, 4], [9, 9]] == result.stream().map(r -> [r[0], r.powerOfN]).toList()
+// end::ginq_projection_03[]
+        '''
+    }
+
+    @Test
     void "testGinq - from where select - 1"() {
         assertScript '''
             def numbers = [0, 1, 2, 3, 4, 5]
