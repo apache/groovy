@@ -125,7 +125,8 @@ If the version of Gradle you have installed is close to the required version,
 you might be able to get away without the `-b wrapper.gradle` above, but if in
 doubt leave it in.
 
-*NOTE*: At this point, the Gradle wrapper should be set up and from now on you should use
+[NOTE]
+At this point, the Gradle wrapper should be set up and from now on you should use
 the `gradlew` command instead of `gradle`. (On Unix-like systems, use `./gradlew`).
 
 == Building from Source
@@ -140,7 +141,8 @@ To build everything using Gradle, use the following command (`./gradlew` on Unix
 
     gradlew clean dist
 
-Note: The gradlew command automatically downloads the correct Gradle version if needed, you do not need to download it first.
+[NOTE]
+The gradlew command automatically downloads the correct Gradle version if needed, you do not need to download it first.
 
 This will generate a distribution similar to the zip you can download on the Groovy download page.
 
@@ -172,7 +174,16 @@ All code samples of the documentation guide are pulled from actual test cases. T
 
     gradlew testSinglePowerAssertTest
 
-(Note the omission of package name: class is `semantics.PowerAssertTest` but only `PowerAssertTest` is added to `testSingle`.)
+[NOTE]
+The omission of package name: class is `semantics.PowerAssertTest` but only `PowerAssertTest` is added to `testSingle`.
+
+== Verifying dependencies
+To generate the missing verification metadata when add/bump dependencies:
+
+    gradlew --write-verification-metadata pgp,sha512 help --dry-run
+
+then compare `verification-metadata.xml` with the generated `verification-metadata.dryrun.xml`, and merge the missing verification metadata into `verification-metadata.xml`
+after the result of the above operation is reviewed.
 
 == Continuous Integration Server
 
