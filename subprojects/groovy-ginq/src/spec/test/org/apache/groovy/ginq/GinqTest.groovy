@@ -2363,11 +2363,8 @@ class GinqTest {
                 select n as first_col, n + 1 as second_col
             }
     
-            def result = q.toString()
-            println result
-    
             def expected = '\\n+-----------+------------+\\n| first_col | second_col |\\n+-----------+------------+\\n| 1         | 2          |\\n| 2         | 3          |\\n| 3         | 4          |\\n+-----------+------------+\\n\'
-            assert expected == result
+            assert expected == q.toString()
         '''
     }
 

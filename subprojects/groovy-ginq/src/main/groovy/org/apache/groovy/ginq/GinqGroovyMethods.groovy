@@ -78,8 +78,7 @@ class GinqGroovyMethods {
         GinqExpression ginqExpression = ginqAstBuilder.getGinqExpression()
 
         Map<String, String> configuration = createConfiguration(ginqConfigurationMapExpression)
-
-        Class<?> clazz = GinqGroovyMethods.class.classLoader.loadClass(configuration.get(AST_WALKER))
+        Class<?> clazz = GinqGroovyMethods.class.classLoader.loadClass(configuration.get(CONF_AST_WALKER))
         GinqAstVisitor ginqAstWalker = (GinqAstVisitor) clazz.getDeclaredConstructor(SourceUnit.class).newInstance(sourceUnit)
         ginqAstWalker.setConfiguration(configuration)
 
@@ -88,7 +87,7 @@ class GinqGroovyMethods {
 
     private static MapExpression defaultConfiguration() {
         return mapX(Arrays.asList(
-                new MapEntryExpression(new ConstantExpression(AST_WALKER), new ConstantExpression(GinqAstWalker.class.name))
+                new MapEntryExpression(new ConstantExpression(CONF_AST_WALKER), new ConstantExpression(DEFAULT_AST_WALKER_CLASS_NAME))
         ))
     }
 
@@ -102,5 +101,6 @@ class GinqGroovyMethods {
 
     private GinqGroovyMethods() {}
 
-    private static final String AST_WALKER = 'astWalker'
+    private static final String CONF_AST_WALKER = 'astWalker'
+    private static final String DEFAULT_AST_WALKER_CLASS_NAME = GinqAstWalker.class.name
 }
