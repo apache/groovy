@@ -187,6 +187,10 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     }
 
     private void addDummyGroupExpressionIfNecessary() {
+        if (currentGinqExpression.groupExpression) {
+            return
+        }
+
         boolean hasAggFunctionInSelect = false
         SelectExpression selectExpression = currentGinqExpression.selectExpression
         selectExpression.projectionExpr.visit(new CodeVisitorSupport() {
@@ -204,13 +208,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         })
 
         if (hasAggFunctionInSelect) {
-            if (!currentGinqExpression.groupExpression) {
-                currentGinqExpression.groupExpression =
-                        new GroupExpression(
-                                new ArgumentListExpression(
-                                        Collections.singletonList(
-                                                (Expression) new ConstantExpression(Integer.MIN_VALUE))))
-            }
+            currentGinqExpression.groupExpression =
+                    new GroupExpression(
+                            new ArgumentListExpression(
+                                    Collections.singletonList(
+                                            (Expression) new ConstantExpression(Integer.MIN_VALUE))))
         }
     }
 
