@@ -478,7 +478,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         List<Expression> nameExpressionList = new ArrayList<>(expressionListSize)
         for (Expression e : expressionList) {
             Expression elementExpression = e
-            Expression nameExpression = new ConstantExpression(e.text)
+            Expression nameExpression = null
 
             if (e instanceof CastExpression) {
                 elementExpression = e.expression
@@ -492,6 +492,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                     nameExpression = e.property
                 }
             }
+
+            if (null == nameExpression) {
+                nameExpression = new ConstantExpression(e.text)
+            }
+
             elementExpressionList << elementExpression
             nameExpressionList << nameExpression
         }
