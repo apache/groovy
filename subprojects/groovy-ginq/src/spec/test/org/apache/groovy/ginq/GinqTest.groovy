@@ -3098,4 +3098,13 @@ class GinqTest {
             }.toList()
         '''
     }
+
+    @Test
+    void "testGinq - GQL - 8"() {
+        assertScript '''
+// tag::ginq_tips_06[]
+            assert [2, 3, 4] == GQL {from n in [1, 2, 3] select n + 1}
+// end::ginq_tips_06[]
+        '''
+    }
 }

@@ -18,13 +18,13 @@
  */
 package org.apache.groovy.ginq
 
-
 import groovy.transform.CompileStatic
 import org.apache.groovy.ginq.dsl.GinqAstBuilder
 import org.apache.groovy.ginq.dsl.GinqAstVisitor
 import org.apache.groovy.ginq.dsl.expression.GinqExpression
 import org.apache.groovy.ginq.provider.collection.GinqAstWalker
 import org.apache.groovy.lang.annotation.Incubating
+import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
@@ -35,6 +35,7 @@ import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.macro.runtime.Macro
 import org.codehaus.groovy.macro.runtime.MacroContext
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.asX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX
 
 /**
@@ -56,6 +57,19 @@ class GinqGroovyMethods {
     @Macro
     static Expression GQ(final MacroContext ctx, final ClosureExpression ginqClosureExpression) {
         GQ(ctx, defaultConfiguration(), ginqClosureExpression)
+    }
+
+    /**
+     * Represents the abbreviation of {@code GQ {...} as List}, which is very useful when used as list comprehension
+     *
+     * @param ctx the macro context
+     * @param ginqClosureExpression hold the GINQ code
+     * @return target method invocation
+     * @since 4.0.0
+     */
+    @Macro
+    static Expression GQL(final MacroContext ctx, final ClosureExpression ginqClosureExpression) {
+        asX(ClassHelper.LIST_TYPE, GQ(ctx, ginqClosureExpression))
     }
 
     /**
