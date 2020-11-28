@@ -2770,6 +2770,26 @@ class GinqTest {
                     where m == n
                     limit 1
                     select m   
+                ), (
+                    from m in [3, 4, 5]
+                    where m == n
+                    limit 1
+                    select m   
+                )
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - subQuery - 7"() {
+        assertScript '''
+            assert [[null, null], [2, null], [3, 3]] == GQ {
+                from n in [1, 2, 3]
+                select (
+                    from m in [2, 3, 4]
+                    where m == n
+                    limit 1
+                    select m   
                 ) as sqr1, (
                     from m in [3, 4, 5]
                     where m == n
@@ -2781,7 +2801,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - subQuery - 7"() {
+    void "testGinq - subQuery - 8"() {
         assertScript '''
             assert [[1, null], [2, 2], [3, 3]] == GQ {
                 from v in (
@@ -2798,7 +2818,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - subQuery - 8"() {
+    void "testGinq - subQuery - 9"() {
         assertScript '''
             assert [9, 7, 4] == GQ {
                 from n in [1, 2, 3]

@@ -47,10 +47,12 @@ public class FromExpression extends DataSourceExpression {
     }
 
     @Override
+    public String getText() {
+        return "from " + aliasExpr.getText() + " in " + dataSourceExpr.getText();
+    }
+
+    @Override
     public String toString() {
-        return "FromExpression{" +
-                "aliasExpr=" + aliasExpr +
-                ", dataSourceExpr=" + dataSourceExpr +
-                '}';
+        return getText();
     }
 }

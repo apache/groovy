@@ -37,9 +37,12 @@ public class HavingExpression extends FilterExpression {
     }
 
     @Override
+    public String getText() {
+        return "having " + filterExpr.getText();
+    }
+
+    @Override
     public String toString() {
-        return "HavingExpression{" +
-                "filterExpr=" + filterExpr +
-                '}';
+        return getText();
     }
 }

@@ -43,9 +43,12 @@ public class OrderExpression extends ProcessExpression {
     }
 
     @Override
+    public String getText() {
+        return "orderby " + ordersExpr.getText();
+    }
+
+    @Override
     public String toString() {
-        return "OrderExpression{" +
-                "ordersExpr=" + ordersExpr +
-                '}';
+        return getText();
     }
 }

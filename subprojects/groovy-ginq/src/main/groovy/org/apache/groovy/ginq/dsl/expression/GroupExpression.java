@@ -52,10 +52,13 @@ public class GroupExpression extends ProcessExpression {
     }
 
     @Override
+    public String getText() {
+        return "groupby " + classifierExpr.getText() +
+                (null == havingExpression ? "" : "\n" + havingExpression.getText());
+    }
+
+    @Override
     public String toString() {
-        return "GroupExpression{" +
-                "classifierExpr=" + classifierExpr +
-                ", havingExpression=" + havingExpression +
-                '}';
+        return getText();
     }
 }

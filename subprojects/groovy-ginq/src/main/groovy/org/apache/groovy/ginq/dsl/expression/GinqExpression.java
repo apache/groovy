@@ -22,6 +22,7 @@ import org.apache.groovy.ginq.dsl.GinqAstVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Represents GINQ expression, which has the following structure:
@@ -112,15 +113,18 @@ public class GinqExpression extends AbstractGinqExpression {
     }
 
     @Override
+    public String getText() {
+        return fromExpression.getText() + "\n"
+                + joinExpressionList.stream().map(e -> e.getText()).collect(Collectors.joining("\n")) + "\n"
+                + (null == whereExpression ? "" : whereExpression.getText() + "\n")
+                + (null == groupExpression ? "" : groupExpression.getText() + "\n")
+                + (null == orderExpression ? "" : orderExpression.getText() + "\n")
+                + (null == limitExpression ? "" : limitExpression.getText() + "\n")
+                + selectExpression.getText();
+    }
+
+    @Override
     public String toString() {
-        return "GinqExpression{" +
-                "fromExpression=" + fromExpression +
-                ", joinExpressionList=" + joinExpressionList +
-                ", whereExpression=" + whereExpression +
-                ", groupExpression=" + groupExpression +
-                ", orderExpression=" + orderExpression +
-                ", limitExpression=" + limitExpression +
-                ", selectExpression=" + selectExpression +
-                '}';
+        return getText();
     }
 }

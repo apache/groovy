@@ -37,9 +37,12 @@ public class OnExpression extends FilterExpression {
     }
 
     @Override
+    public String getText() {
+        return "on " + filterExpr.getText();
+    }
+
+    @Override
     public String toString() {
-        return "OnExpression{" +
-                "filterExpr=" + filterExpr +
-                '}';
+        return getText();
     }
 }

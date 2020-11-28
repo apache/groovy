@@ -37,9 +37,12 @@ public class WhereExpression extends FilterExpression {
     }
 
     @Override
+    public String getText() {
+        return "where " + filterExpr.getText();
+    }
+
+    @Override
     public String toString() {
-        return "WhereExpression{" +
-                "filterExpr=" + filterExpr +
-                '}';
+        return getText();
     }
 }

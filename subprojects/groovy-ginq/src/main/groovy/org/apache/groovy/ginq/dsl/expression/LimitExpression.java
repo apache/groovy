@@ -43,9 +43,12 @@ public class LimitExpression extends ProcessExpression {
     }
 
     @Override
+    public String getText() {
+        return "limit " + offsetAndSizeExpr.getText();
+    }
+
+    @Override
     public String toString() {
-        return "LimitExpression{" +
-                "offsetAndSizeExpr=" + offsetAndSizeExpr +
-                '}';
+        return getText();
     }
 }

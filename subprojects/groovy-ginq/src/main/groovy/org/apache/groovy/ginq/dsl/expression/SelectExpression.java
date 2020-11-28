@@ -43,9 +43,12 @@ public class SelectExpression extends ProcessExpression {
     }
 
     @Override
+    public String getText() {
+        return "select " + projectionExpr.getText();
+    }
+
+    @Override
     public String toString() {
-        return "SelectExpression{" +
-                "projectionExpr=" + projectionExpr +
-                '}';
+        return getText();
     }
 }

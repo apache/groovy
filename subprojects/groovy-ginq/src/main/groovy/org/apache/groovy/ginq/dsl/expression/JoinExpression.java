@@ -77,13 +77,12 @@ public class JoinExpression extends DataSourceExpression implements DataSourceHo
     }
 
     @Override
+    public String getText() {
+        return joinName + " " + aliasExpr.getText() + " in " + dataSourceExpr.getText() + " " + onExpression.getText();
+    }
+
+    @Override
     public String toString() {
-        return "JoinExpression{" +
-                "joinName='" + joinName + '\'' +
-                ", onExpression=" + onExpression +
-                ", dataSourceExpression=" + dataSourceExpression +
-                ", aliasExpr=" + aliasExpr +
-                ", dataSourceExpr=" + dataSourceExpr +
-                '}';
+        return getText();
     }
 }
