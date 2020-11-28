@@ -115,7 +115,7 @@ public class GinqExpression extends AbstractGinqExpression {
     @Override
     public String getText() {
         return fromExpression.getText() + " "
-                + joinExpressionList.stream().map(e -> e.getText()).collect(Collectors.joining(" ")) + " "
+                + (joinExpressionList.isEmpty() ? "" : joinExpressionList.stream().map(e -> e.getText()).collect(Collectors.joining(" ")) + " ")
                 + (null == whereExpression ? "" : whereExpression.getText() + " ")
                 + (null == groupExpression ? "" : groupExpression.getText() + " ")
                 + (null == orderExpression ? "" : orderExpression.getText() + " ")
