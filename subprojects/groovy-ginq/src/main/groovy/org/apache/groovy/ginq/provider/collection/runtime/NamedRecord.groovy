@@ -41,10 +41,10 @@ class NamedRecord<E, T> extends NamedTuple<E> {
     def getAt(String name) {
         if (exists(name)) {
             def value = super.getAt(name)
-            if (null != value) return value
+            return value
         }
 
-        sourceRecord.get(name)
+        return sourceRecord.get(name)
     }
 
     NamedRecord<E, T> sourceRecord(T sr) {

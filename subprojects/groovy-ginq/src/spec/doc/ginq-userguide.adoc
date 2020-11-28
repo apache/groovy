@@ -291,11 +291,14 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_pagination_02,
 ----
 
 ==== Nested GINQ
+
+===== Nested GINQ in `from` clause
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_nested_01,indent=0]
 ----
 
+===== Nested GINQ in `where` clause
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_nested_02,indent=0]
@@ -304,6 +307,21 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_nested_02,inde
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_04,indent=0]
+----
+
+===== Nested GINQ in `select` clause
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_nested_03,indent=0]
+----
+[NOTE]
+It's recommended to use `limit 1` to restrict the count of sub-query result
+because `TooManyValuesException` will be thrown if more than one values returned
+
+We could use `as` clause to name the sub-query result
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_nested_04,indent=0]
 ----
 
 === GINQ Tips

@@ -2680,7 +2680,7 @@ class GinqTest {
                     from m in [2, 3, 4]
                     where m == n
                     select m   
-                ) as sq
+                ) as sqr
             }.toList()
         '''
     }
@@ -2688,14 +2688,16 @@ class GinqTest {
     @Test
     void "testGinq - subQuery - 1"() {
         assertScript '''
+// tag::ginq_nested_04[]
             assert [[1, null], [2, 2], [3, 3]] == GQ {
                 from n in [1, 2, 3]
                 select n, (
                     from m in [2, 3, 4]
                     where m == n
                     select m   
-                ) as sq
+                ) as sqr
             }.toList()
+// end::ginq_nested_04[]
         '''
     }
 
@@ -2709,7 +2711,7 @@ class GinqTest {
                     from m in [2, 3, 4]
                     where m == n && m == k
                     select m   
-                ) as sq
+                ) as sqr
             }.toList()
         '''
     }
@@ -2747,6 +2749,7 @@ class GinqTest {
     @Test
     void "testGinq - subQuery - 5"() {
         assertScript '''
+// tag::ginq_nested_03[]
             assert [null, 2, 3] == GQ {
                 from n in [1, 2, 3]
                 select (
@@ -2756,6 +2759,7 @@ class GinqTest {
                     select m   
                 )
             }.toList()
+// end::ginq_nested_03[]
         '''
     }
 
@@ -2769,12 +2773,29 @@ class GinqTest {
                     where m == n
                     limit 1
                     select m   
-                ) as sq1, (
+                ) as sqr1, (
                     from m in [3, 4, 5]
                     where m == n
                     limit 1
                     select m   
-                ) as sq2
+                ) as sqr2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - subQuery - 7"() {
+        assertScript '''
+            assert [[1, null], [2, 2], [3, 3]] == GQ {
+                from v in (
+                    from n in [1, 2, 3]
+                    select n, (
+                        from m in [2, 3, 4]
+                        where m == n
+                        select m   
+                    ) as sqr
+                )
+                select v.n, v.sqr
             }.toList()
         '''
     }
