@@ -362,8 +362,8 @@
             <pgp value="314fe82e5a4c5377bca2edec5208812e1e4a6db0"/>
          </artifact>
       </component>
-      <component group="com.h3xstream.findsecbugs" name="findsecbugs-plugin" version="1.10.1">
-         <artifact name="findsecbugs-plugin-1.10.1.jar">
+      <component group="com.h3xstream.findsecbugs" name="findsecbugs-plugin" version="1.11.0">
+         <artifact name="findsecbugs-plugin-1.11.0.jar">
             <pgp value="cfc10b69382cbcf5387e51484ece492b63e38acf"/>
          </artifact>
       </component>
