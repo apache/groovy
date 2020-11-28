@@ -243,6 +243,16 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_04,in
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_11,indent=0]
 ----
 
+Also, we could apply the aggregate functions for the whole GINQ result
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_aggfunction_02,indent=0]
+----
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_aggfunction_01,indent=0]
+----
+
 `_g` is an implicit variable for `agg` aggregate function, it represents the grouped `Queryable` object and its record(e.g. `r`) could reference the data source by alias(e.g. `n`):
 [source, sql]
 ----

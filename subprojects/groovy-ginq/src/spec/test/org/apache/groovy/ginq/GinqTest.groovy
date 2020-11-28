@@ -3006,10 +3006,12 @@ class GinqTest {
     @Test
     void "testGinq - agg function - 1"() {
         assertScript '''
+// tag::ginq_aggfunction_01[]
             assert [[1, 3, 2, 3, 3]] == GQ {
                 from n in [1, 2, 3]
                 select min(n), max(n), avg(n), count(n), count()
             }.toList()
+// end::ginq_aggfunction_01[]
         '''
     }
 
@@ -3026,10 +3028,12 @@ class GinqTest {
     @Test
     void "testGinq - agg function - 3"() {
         assertScript '''
+// tag::ginq_aggfunction_02[]
             assert [3] == GQ {
                 from n in [1, 2, 3]
                 select max(n)
             }.toList()
+// end::ginq_aggfunction_02[]
         '''
     }
 
