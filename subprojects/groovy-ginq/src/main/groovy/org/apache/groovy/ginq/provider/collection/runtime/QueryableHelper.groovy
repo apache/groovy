@@ -56,7 +56,8 @@ class QueryableHelper {
      * @throws TooManyValuesException if list contains more than one values
      * @since 4.0.0
      */
-    static <T> T singleValue(final List<? extends T> list) {
+    static <T> T singleValue(final Queryable<? extends T> queryable) {
+        List<? extends T> list = queryable.toList()
         int size = list.size()
 
         if (0 == size) {

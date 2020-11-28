@@ -457,7 +457,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                 if (expression instanceof AbstractGinqExpression) {
                     return callX(
                             new ClassExpression(QUERYABLE_HELPER_TYPE), "singleValue",
-                            callX(GinqAstWalker.this.visit((AbstractGinqExpression) expression),"toList")
+                            GinqAstWalker.this.visit((AbstractGinqExpression) expression)
                     )
                 }
 
