@@ -3103,7 +3103,7 @@ class GinqTest {
     void "testGinq - GQL - 8"() {
         assertScript '''
 // tag::ginq_tips_06[]
-            assert [2, 3, 4] == GQL {from n in [1, 2, 3] select n + 1}
+            assert [4, 16, 36, 64, 100] == GQL {from n in 1..<11 where n % 2 == 0 select n ** 2}
 // end::ginq_tips_06[]
         '''
     }
