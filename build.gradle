@@ -159,7 +159,7 @@ dependencies {
     testFixturesImplementation "xmlunit:xmlunit:${versions.xmlunit}"
     testFixturesImplementation project(':groovy-test')
     testFixturesImplementation project(':groovy-xml')
-    spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.10.1'
+    spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.11.0'
     testImplementation "net.jcip:jcip-annotations:${versions.jcipAnnotations}"
 
     testRuntimeOnly(project(":")) {
