@@ -133,6 +133,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             resultMethodCallReceiver = whereMethodCallExpression
         }
 
+        addDummyGroupExpressionIfNecessary()
         GroupExpression groupExpression = currentGinqExpression.groupExpression
         if (groupExpression) {
             groupExpression.dataSourceExpression = resultDataSourceExpression
@@ -183,6 +184,34 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
         ginqExpressionStack.pop()
         return result
+    }
+
+    private void addDummyGroupExpressionIfNecessary() {
+        boolean hasAggFunctionInSelect = false
+        SelectExpression selectExpression = currentGinqExpression.selectExpression
+        selectExpression.projectionExpr.visit(new CodeVisitorSupport() {
+            @Override
+            void visitMethodCallExpression(MethodCallExpression call) {
+                if (AGG_FUNCTION_NAME_LIST.contains(call.methodAsString)) {
+                    def argumentCnt = ((ArgumentListExpression) call.getArguments()).getExpressions().size()
+                    if (1 == argumentCnt || (FUNCTION_COUNT == call.methodAsString && 0 == argumentCnt)) {
+                        hasAggFunctionInSelect = true
+                        return
+                    }
+                }
+                super.visitMethodCallExpression(call)
+            }
+        })
+
+        if (hasAggFunctionInSelect) {
+            if (!currentGinqExpression.groupExpression) {
+                currentGinqExpression.groupExpression =
+                        new GroupExpression(
+                                new ArgumentListExpression(
+                                        Collections.singletonList(
+                                                (Expression) new ConstantExpression(Integer.MIN_VALUE))))
+            }
+        }
     }
 
     @Override
@@ -638,7 +667,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                     if (FUNCTION_COUNT == methodName && ((TupleExpression) expression.arguments).getExpressions().isEmpty()) { // Similar to count(*) in SQL
                         expression.objectExpression = propX(new VariableExpression(lambdaParamName), 'v2')
                         transformedExpression = expression
-                    } else if (methodName in [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_AGG] && 1 == ((TupleExpression) expression.arguments).getExpressions().size()) {
+                    } else if (methodName in AGG_FUNCTION_NAME_LIST && 1 == ((TupleExpression) expression.arguments).getExpressions().size()) {
                         Expression lambdaCode = ((TupleExpression) expression.arguments).getExpression(0)
                         lambdaCode.putNodeMetaData(__LAMBDA_PARAM_NAME, findRootObjectExpression(lambdaCode).text)
                         transformedExpression =
@@ -817,6 +846,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final String FUNCTION_SUM = 'sum'
     private static final String FUNCTION_AVG = 'avg'
     private static final String FUNCTION_AGG = 'agg'
+    private static final List<String> AGG_FUNCTION_NAME_LIST = [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_AGG]
 
     private static final String NAMEDRECORD_CLASS_NAME = NamedRecord.class.name
 

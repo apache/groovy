@@ -19,6 +19,7 @@
 package org.apache.groovy.ginq.dsl.expression;
 
 import org.apache.groovy.ginq.dsl.GinqAstVisitor;
+import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.NodeMetaDataHandler;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
@@ -35,4 +36,9 @@ public abstract class AbstractGinqExpression extends Expression implements NodeM
     }
 
     public abstract <R> R accept(GinqAstVisitor<R> visitor);
+
+    @Override
+    public void visit(GroovyCodeVisitor visitor) {
+        // do nothing for now
+    }
 }

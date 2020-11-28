@@ -3002,4 +3002,64 @@ class GinqTest {
             assert cnt > 0
         '''
     }
+
+    @Test
+    void "testGinq - agg function - 1"() {
+        assertScript '''
+            assert [[1, 3, 2, 3, 3]] == GQ {
+                from n in [1, 2, 3]
+                select min(n), max(n), avg(n), count(n), count()
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - agg function - 2"() {
+        assertScript '''
+            assert [1] == GQ {
+                from n in [1, 2, 3]
+                select min(n)
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - agg function - 3"() {
+        assertScript '''
+            assert [3] == GQ {
+                from n in [1, 2, 3]
+                select max(n)
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - agg function - 4"() {
+        assertScript '''
+            assert [2] == GQ {
+                from n in [1, 2, 3]
+                select avg(n)
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - agg function - 5"() {
+        assertScript '''
+            assert [3] == GQ {
+                from n in [1, 2, 3]
+                select count(n)
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - agg function - 6"() {
+        assertScript '''
+            assert [3] == GQ {
+                from n in [1, 2, 3]
+                select count()
+            }.toList()
+        '''
+    }
 }
