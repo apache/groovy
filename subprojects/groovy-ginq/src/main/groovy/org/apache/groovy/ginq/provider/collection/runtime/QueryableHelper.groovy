@@ -49,11 +49,11 @@ class QueryableHelper {
     }
 
     /**
-     * Returns single value of list
+     * Returns single value of {@link Queryable} instance
      *
-     * @param list the list
+     * @param queryable the {@link Queryable} instance
      * @return the single value
-     * @throws TooManyValuesException if list contains more than one values
+     * @throws TooManyValuesException if the {@link Queryable} instance contains more than one value
      * @since 4.0.0
      */
     static <T> T singleValue(final Queryable<? extends T> queryable) {
