@@ -23,7 +23,7 @@ import groovy.test.GroovyTestCase
 class Groovy8060Bug extends GroovyTestCase {
     void testLoggingWithinClosuresThatAreMethodArgsShouldHaveGuards() {
         assertScript '''
-            @Grab('org.slf4j:slf4j-simple:1.7.25')
+            @Grab('org.slf4j:slf4j-simple:1.7.30')
             import groovy.util.logging.Slf4j
 
             @Slf4j

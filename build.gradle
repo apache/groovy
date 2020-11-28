@@ -153,7 +153,7 @@ ext {
     openbeansVersion = '1.0'
     picocliVersion = '4.5.1'
     qdoxVersion = '1.12.1'
-    slf4jVersion = '1.7.25'
+    slf4jVersion = '1.7.30'
     xmlunitVersion = '1.6'
     xstreamVersion = '1.4.13'
     spockVersion = '2.0-M4-groovy-3.0'
