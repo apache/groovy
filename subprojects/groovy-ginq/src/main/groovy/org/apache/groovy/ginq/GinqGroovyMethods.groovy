@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ginq
 
+
 import groovy.transform.CompileStatic
 import org.apache.groovy.ginq.dsl.GinqAstBuilder
 import org.apache.groovy.ginq.dsl.GinqAstVisitor
@@ -27,10 +28,14 @@ import org.apache.groovy.lang.annotation.Incubating
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
+import org.codehaus.groovy.ast.expr.MapEntryExpression
+import org.codehaus.groovy.ast.expr.MapExpression
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.macro.runtime.Macro
 import org.codehaus.groovy.macro.runtime.MacroContext
+
+import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX
 
 /**
  * Declare GINQ macro methods
@@ -50,33 +55,52 @@ class GinqGroovyMethods {
      */
     @Macro
     static Expression GQ(final MacroContext ctx, final ClosureExpression ginqClosureExpression) {
-        GQ(ctx, new ConstantExpression(GinqAstWalker.class.name), ginqClosureExpression)
+        GQ(ctx, defaultConfiguration(), ginqClosureExpression)
     }
 
     /**
      * Transform GINQ code to target method invocation
      *
      * @param ctx the macro context
-     * @param ginqAstWalkerFullClassNameConstantExpression specify the qualified class name of GINQ AST walker to generate target method invocation
+     * @param ginqConfigurationMapExpression specify the configuration for GINQ, e.g. {@code astWalker}
      * @param ginqClosureExpression hold the GINQ code
      * @return target method invocation
      * @since 4.0.0
      */
     @Macro
-    static Expression GQ(final MacroContext ctx, final ConstantExpression ginqAstWalkerFullClassNameConstantExpression, final ClosureExpression ginqClosureExpression) {
-        return transformGinqCode(ctx.sourceUnit, ginqAstWalkerFullClassNameConstantExpression, ginqClosureExpression.code)
+    static Expression GQ(final MacroContext ctx, final MapExpression ginqConfigurationMapExpression, final ClosureExpression ginqClosureExpression) {
+        return transformGinqCode(ctx.sourceUnit, ginqConfigurationMapExpression, ginqClosureExpression.code)
     }
 
-    static Expression transformGinqCode(SourceUnit sourceUnit, ConstantExpression ginqAstWalkerFullClassNameConstantExpression, Statement code) {
+    static Expression transformGinqCode(SourceUnit sourceUnit, MapExpression ginqConfigurationMapExpression, Statement code) {
         GinqAstBuilder ginqAstBuilder = new GinqAstBuilder(sourceUnit)
         code.visit(ginqAstBuilder)
         GinqExpression ginqExpression = ginqAstBuilder.getGinqExpression()
 
-        Class<?> clazz = GinqGroovyMethods.class.classLoader.loadClass(ginqAstWalkerFullClassNameConstantExpression.text)
+        Map<String, String> configuration = createConfiguration(ginqConfigurationMapExpression)
+
+        Class<?> clazz = GinqGroovyMethods.class.classLoader.loadClass(configuration.get(AST_WALKER))
         GinqAstVisitor ginqAstWalker = (GinqAstVisitor) clazz.getDeclaredConstructor(SourceUnit.class).newInstance(sourceUnit)
+        ginqAstWalker.setConfiguration(configuration)
 
         return (Expression) ginqAstWalker.visitGinqExpression(ginqExpression)
     }
 
+    private static MapExpression defaultConfiguration() {
+        return mapX(Arrays.asList(
+                new MapEntryExpression(new ConstantExpression(AST_WALKER), new ConstantExpression(GinqAstWalker.class.name))
+        ))
+    }
+
+    private static Map<String, String> createConfiguration(MapExpression ginqConfigurationMapExpression) {
+        Map<String, String> configuration = [:]
+        for (MapEntryExpression mapEntryExpression : ginqConfigurationMapExpression.getMapEntryExpressions()) {
+            configuration.put(mapEntryExpression.keyExpression.text, mapEntryExpression.valueExpression.text)
+        }
+        return configuration
+    }
+
     private GinqGroovyMethods() {}
+
+    private static final String AST_WALKER = 'astWalker'
 }

@@ -30,6 +30,8 @@ import org.apache.groovy.ginq.dsl.expression.OrderExpression;
 import org.apache.groovy.ginq.dsl.expression.SelectExpression;
 import org.apache.groovy.ginq.dsl.expression.WhereExpression;
 
+import java.util.Map;
+
 /**
  * Represents the visitor for AST of GINQ
  *
@@ -48,4 +50,6 @@ public interface GinqAstVisitor<R> {
     R visitLimitExpression(LimitExpression limitExpression);
     R visitSelectExpression(SelectExpression selectExpression);
     R visit(AbstractGinqExpression expression);
+    void setConfiguration(Map<String, String> configuration);
+    Map<String, String> getConfiguration();
 }

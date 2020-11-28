@@ -832,6 +832,16 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         sourceUnit
     }
 
+    private Map<String, String> configuration
+    @Override
+    void setConfiguration(Map<String, String> configuration) {
+        this.configuration = configuration
+    }
+    @Override
+    Map<String, String> getConfiguration() {
+        return configuration
+    }
+
     private final SourceUnit sourceUnit
     private final Deque<GinqExpression> ginqExpressionStack = new ArrayDeque<>()
 

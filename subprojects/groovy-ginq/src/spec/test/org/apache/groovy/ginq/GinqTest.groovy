@@ -2389,7 +2389,7 @@ class GinqTest {
     void "testGinq - customize GINQ target - 0"() {
         assertScript '''
 // tag::ginq_customize_01[]
-            assert [0, 1, 2] == GQ('org.apache.groovy.ginq.provider.collection.GinqAstWalker') {
+            assert [0, 1, 2] == GQ(astWalker: 'org.apache.groovy.ginq.provider.collection.GinqAstWalker') {
                 from n in [0, 1, 2]
                 select n
             }.toList()
