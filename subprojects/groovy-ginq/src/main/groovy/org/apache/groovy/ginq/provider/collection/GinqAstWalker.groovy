@@ -212,7 +212,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                     new GroupExpression(
                             new ArgumentListExpression(
                                     Collections.singletonList(
-                                            (Expression) new ConstantExpression(Integer.MIN_VALUE))))
+                                            (Expression) ConstantExpression.NULL)))
         }
     }
 
