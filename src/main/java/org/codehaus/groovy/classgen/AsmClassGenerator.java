@@ -208,22 +208,24 @@ public class AsmClassGenerator extends ClassGenerator {
 
     // GroovyClassVisitor interface
     //-------------------------------------------------------------------------
-    public void visitClass(ClassNode classNode) {
+
+    @Override
+    public void visitClass(final ClassNode classNode) {
         referencedClasses.clear();
+
         WriterControllerFactory factory = classNode.getNodeMetaData(WriterControllerFactory.class);
         WriterController normalController = new WriterController();
-        if (factory!=null) {
-            this.controller = factory.makeController(normalController);
+        if (factory != null) {
+            controller = factory.makeController(normalController);
         } else {
-            this.controller = normalController;
+            controller = normalController;
         }
-        this.controller.init(this, context, cv, classNode);
-        this.cv = this.controller.getClassVisitor();
-
-        if (controller.shouldOptimizeForInt() || factory!=null) {
+        controller.init(this, context, cv, classNode);
+        if (controller.shouldOptimizeForInt() || factory != null) {
             OptimizingStatementWriter.setNodeMeta(controller.getTypeChooser(),classNode);
         }
 
+        cv = controller.getClassVisitor();
         try {
             int bytecodeVersion = controller.getBytecodeVersion();
             Object min = classNode.getNodeMetaData(MINIMUM_BYTECODE_VERSION);
@@ -243,11 +245,14 @@ public class AsmClassGenerator extends ClassGenerator {
             );
             cv.visitSource(sourceFile, null);
             if (classNode instanceof InnerClassNode) {
-                InnerClassNode innerClass = (InnerClassNode) classNode;
-                MethodNode enclosingMethod = innerClass.getEnclosingMethod();
+                makeInnerClassEntry(classNode.getOuterClass()); // GROOVY-9842
+                makeInnerClassEntry(classNode); // GROOVY-4649, et al.
+
+                MethodNode enclosingMethod = classNode.getEnclosingMethod();
                 if (enclosingMethod != null) {
-                    String outerClassName = BytecodeHelper.getClassInternalName(innerClass.getOuterClass().getName());
-                    cv.visitOuterClass(outerClassName, enclosingMethod.getName(), BytecodeHelper.getMethodDescriptor(enclosingMethod));
+                    cv.visitOuterClass(
+                            BytecodeHelper.getClassInternalName(classNode.getOuterClass().getName()),
+                            enclosingMethod.getName(), BytecodeHelper.getMethodDescriptor(enclosingMethod));
                 }
             }
             if (classNode.getName().endsWith("package-info")) {
@@ -287,12 +292,10 @@ public class AsmClassGenerator extends ClassGenerator {
                 createSyntheticStaticFields();
             }
 
-            // GROOVY-6750 and GROOVY-6808
-            for (Iterator<InnerClassNode> iter = classNode.getInnerClasses(); iter.hasNext();) {
-                InnerClassNode innerClass = iter.next();
-                makeInnerClassEntry(innerClass);
+            // GROOVY-4649, GROOVY-6750, GROOVY-6808
+            for (Iterator<InnerClassNode> it = classNode.getInnerClasses(); it.hasNext(); ) {
+                makeInnerClassEntry(it.next());
             }
-            makeInnerClassEntry(classNode);
 
             cv.visitEnd();
         } catch (GroovyRuntimeException e) {
