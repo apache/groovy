@@ -2801,6 +2801,20 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - subQuery - 8"() {
+        assertScript '''
+            assert [9, 7, 4] == GQ {
+                from n in [1, 2, 3]
+                select (
+                    from m in [2, 3, 4]
+                    where m > n
+                    select sum(m)  
+                )
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - lazy - 1"() {
         assertScript '''
             int cnt = 0
