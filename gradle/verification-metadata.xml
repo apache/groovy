@@ -787,8 +787,8 @@
             <pgp value="47063e8ba7a6450e4a52e7ae466caed6e0747d50"/>
          </artifact>
       </component>
-      <component group="org.codenarc" name="CodeNarc" version="1.6.1">
-         <artifact name="CodeNarc-1.6.1.jar">
+      <component group="org.codenarc" name="CodeNarc" version="2.0.0">
+         <artifact name="CodeNarc-2.0.0.jar">
             <pgp value="851264c36365d4ff9427625f38362fd5cfa2668b"/>
          </artifact>
       </component>
