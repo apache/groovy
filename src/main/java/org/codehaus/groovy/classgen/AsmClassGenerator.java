@@ -206,20 +206,18 @@ public class AsmClassGenerator extends ClassGenerator {
     @Override
     public void visitClass(final ClassNode classNode) {
         referencedClasses.clear();
+
         WriterControllerFactory factory = classNode.getNodeMetaData(WriterControllerFactory.class);
-        WriterController normalController = new WriterController();
+        controller = new WriterController();
         if (factory != null) {
-            this.controller = factory.makeController(normalController);
-        } else {
-            this.controller = normalController;
+            controller = factory.makeController(controller);
         }
-        this.controller.init(this, context, classVisitor, classNode);
-        this.classVisitor = this.controller.getClassVisitor();
-
+        controller.init(this, context, classVisitor, classNode);
         if (controller.shouldOptimizeForInt() || factory != null) {
-            OptimizingStatementWriter.setNodeMeta(controller.getTypeChooser(),classNode);
+            OptimizingStatementWriter.setNodeMeta(controller.getTypeChooser(), classNode);
         }
 
+        classVisitor = controller.getClassVisitor();
         try {
             int bytecodeVersion = controller.getBytecodeVersion();
             Object min = classNode.getNodeMetaData(MINIMUM_BYTECODE_VERSION);
@@ -239,11 +237,14 @@ public class AsmClassGenerator extends ClassGenerator {
             );
             classVisitor.visitSource(sourceFile, null);
             if (classNode instanceof InnerClassNode) {
-                InnerClassNode innerClass = (InnerClassNode) classNode;
-                MethodNode enclosingMethod = innerClass.getEnclosingMethod();
+                makeInnerClassEntry(classNode.getOuterClass()); // GROOVY-9842
+                makeInnerClassEntry(classNode); // GROOVY-4649, et al.
+
+                MethodNode enclosingMethod = classNode.getEnclosingMethod();
                 if (enclosingMethod != null) {
-                    String outerClassName = BytecodeHelper.getClassInternalName(innerClass.getOuterClass().getName());
-                    classVisitor.visitOuterClass(outerClassName, enclosingMethod.getName(), BytecodeHelper.getMethodDescriptor(enclosingMethod));
+                    classVisitor.visitOuterClass(
+                            BytecodeHelper.getClassInternalName(classNode.getOuterClass().getName()),
+                            enclosingMethod.getName(), BytecodeHelper.getMethodDescriptor(enclosingMethod));
                 }
             }
             if (classNode.getName().endsWith("package-info")) {
@@ -255,16 +256,15 @@ public class AsmClassGenerator extends ClassGenerator {
             } else {
                 visitAnnotations(classNode, classVisitor);
                 if (classNode.isInterface()) {
-                    ClassNode owner = classNode;
-                    if (owner instanceof InnerClassNode) {
-                        owner = owner.getOuterClass();
-                    }
                     String outerClassName = classNode.getName();
                     String name = outerClassName + "$" + context.getNextInnerClassIdx();
                     controller.setInterfaceClassLoadingClass(
-                            new InterfaceHelperClassNode (
-                                    owner, name, ACC_SUPER | ACC_SYNTHETIC | ACC_STATIC, ClassHelper.OBJECT_TYPE,
-                                    controller.getCallSiteWriter().getCallSites()));
+                            new InterfaceHelperClassNode(
+                                    Optional.ofNullable(classNode.getOuterClass()).orElse(classNode),
+                                    name, ACC_SUPER | ACC_STATIC | ACC_SYNTHETIC, ClassHelper.OBJECT_TYPE,
+                                    controller.getCallSiteWriter().getCallSites()
+                            )
+                    );
                     super.visitClass(classNode);
                     createInterfaceSyntheticStaticFields();
                 } else {
@@ -280,21 +280,20 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
             }
 
-            // GROOVY-6750 and GROOVY-6808
-            for (Iterator<InnerClassNode> iter = classNode.getInnerClasses(); iter.hasNext();) {
-                InnerClassNode innerClass = iter.next();
-                makeInnerClassEntry(innerClass);
+            // GROOVY-4649, GROOVY-6750, GROOVY-6808
+            for (Iterator<InnerClassNode> it = classNode.getInnerClasses(); it.hasNext(); ) {
+                makeInnerClassEntry(it.next());
             }
-            makeInnerClassEntry(classNode);
 
             classVisitor.visitEnd();
         } catch (GroovyRuntimeException e) {
             e.setModule(classNode.getModule());
             throw e;
-        } catch (NegativeArraySizeException nase) {
-            throw new GroovyRuntimeException("NegativeArraySizeException while processing " + sourceFile, nase);
-        } catch (NullPointerException npe) {
-            throw new GroovyRuntimeException("NPE while processing " + sourceFile, npe);
+        } catch (NullPointerException | NegativeArraySizeException e) {
+            String m = e.getClass().getSimpleName() + " while processing " + sourceFile;
+            GroovyRuntimeException gre = new GroovyRuntimeException(m, e);
+            gre.setModule(classNode.getModule());
+            throw gre;
         }
     }
 
