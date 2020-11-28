@@ -3007,9 +3007,10 @@ class GinqTest {
     void "testGinq - agg function - 1"() {
         assertScript '''
 // tag::ginq_aggfunction_01[]
-            assert [[1, 3, 2, 3, 3]] == GQ {
+            assert [[1, 3, 2, 6, 3, 3, 6]] == GQ {
                 from n in [1, 2, 3]
-                select min(n), max(n), avg(n), count(n), count()
+                select min(n), max(n), avg(n), sum(n), count(n), count(), 
+                        agg(_g.stream().map(r -> r.n).reduce(BigDecimal.ZERO, BigDecimal::add))
             }.toList()
 // end::ginq_aggfunction_01[]
         '''
@@ -3050,9 +3051,9 @@ class GinqTest {
     @Test
     void "testGinq - agg function - 5"() {
         assertScript '''
-            assert [3] == GQ {
+            assert [6] == GQ {
                 from n in [1, 2, 3]
-                select count(n)
+                select sum(n)
             }.toList()
         '''
     }
@@ -3062,7 +3063,27 @@ class GinqTest {
         assertScript '''
             assert [3] == GQ {
                 from n in [1, 2, 3]
+                select count(n)
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - agg function - 7"() {
+        assertScript '''
+            assert [3] == GQ {
+                from n in [1, 2, 3]
                 select count()
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - agg function - 8"() {
+        assertScript '''
+            assert [6] == GQ {
+                from n in [1, 2, 3]
+                select agg(_g.stream().map(r -> r.n).reduce(BigDecimal.ZERO, BigDecimal::add))
             }.toList()
         '''
     }
