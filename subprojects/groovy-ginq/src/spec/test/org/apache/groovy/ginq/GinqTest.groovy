@@ -2832,6 +2832,54 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - subQuery - 10"() {
+        assertScript '''
+            assert [null, 2, 3] == GQ {
+                from n in [1, 2, 3]
+                select (
+                    from m in [2, 3, 4]
+                    innerjoin k in [2, 3, 4] on k == m
+                    where m == n
+                    select k
+                )
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - subQuery - 11"() {
+        assertScript '''
+            assert [null, 2, 3] == GQ {
+                from n in [1, 2, 3]
+                select (
+                    from m in [2, 3, 4]
+                    innerjoin k in [2, 3, 4] on k == m
+                    where m == n
+                    orderby m in desc
+                    select k
+                )
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - subQuery - 12"() {
+        assertScript '''
+            assert [null, 2, 3] == GQ {
+                from n in [1, 2, 3]
+                select (
+                    from m in [2, 3, 4]
+                    innerjoin k in [2, 3, 4] on k == m
+                    where m == n
+                    orderby m in desc
+                    limit 0, 3
+                    select k
+                )
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - lazy - 1"() {
         assertScript '''
             int cnt = 0

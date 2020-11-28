@@ -54,7 +54,7 @@ public class GroupExpression extends ProcessExpression {
     @Override
     public String getText() {
         return "groupby " + classifierExpr.getText() +
-                (null == havingExpression ? "" : "\n" + havingExpression.getText());
+                (null == havingExpression ? "" : " " + havingExpression.getText());
     }
 
     @Override
