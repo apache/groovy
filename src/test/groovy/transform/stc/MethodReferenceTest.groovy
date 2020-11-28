@@ -19,7 +19,7 @@
 package groovy.transform.stc
 
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.*
+import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -83,17 +83,17 @@ final class MethodReferenceTest {
 
             @CompileStatic @groovy.transform.Immutable(knownImmutableClasses=[Function])
             class FunctionHolder<T> {
-              Function<T, ?> extractor
+                Function<T, ?> extractor
 
-              def apply(T t) {
-                extractor.apply(t)
-              }
+                def apply(T t) {
+                    extractor.apply(t)
+                }
             }
 
             def fh = new FunctionHolder(One::getId)
             assert fh.apply(new One(id:'abc')) == 'abc'
 
-                fh = new FunctionHolder(One::getId)
+            fh = new FunctionHolder(One::getId)
             assert fh.apply(new Two(id:'xyz')) == 'xyz' // sub-type argument
         '''
     }
