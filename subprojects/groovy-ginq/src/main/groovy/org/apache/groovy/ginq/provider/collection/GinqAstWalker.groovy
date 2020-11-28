@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ginq.provider.collection
 
+
 import groovy.transform.CompileStatic
 import org.apache.groovy.ginq.dsl.GinqAstVisitor
 import org.apache.groovy.ginq.dsl.GinqSyntaxError
@@ -420,6 +421,13 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                         currentGinqExpression.putNodeMetaData(__RN_USED, true)
                         return new PostfixExpression(varX(rowNumberName), new Token(Types.PLUS_PLUS, '++', -1, -1))
                     }
+                }
+
+                if (expression instanceof AbstractGinqExpression) {
+                    return callX(
+                            new ClassExpression(QUERYABLE_HELPER_TYPE), "singleValue",
+                            callX(GinqAstWalker.this.visit((AbstractGinqExpression) expression),"toList")
+                    )
                 }
 
                 return expression.transformExpression(this)

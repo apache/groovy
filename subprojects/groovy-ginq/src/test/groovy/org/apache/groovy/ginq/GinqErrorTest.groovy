@@ -291,4 +291,20 @@ class GinqErrorTest {
 
         assert err.toString().contains('`where` clause cannot contain assignment expression @ line 3, column 17.')
     }
+
+    @Test
+    void "testGinq - subQuery - 1"() {
+        def err = shouldFail '''
+            GQ {
+                from n in [2, 3]
+                select n, (
+                    from m in [2, 3, 4]
+                    where m > n
+                    select m   
+                ) as q
+            }.toList()
+        '''
+
+        assert err.toString().contains('subquery returns more than one value: [3, 4]')
+    }
 }

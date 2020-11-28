@@ -2672,6 +2672,114 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - subQuery - 0"() {
+        assertScript '''
+            assert [[null], [2], [3]] == GQ {
+                from n in [1, 2, 3]
+                select (
+                    from m in [2, 3, 4]
+                    where m == n
+                    select m   
+                ) as sq
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - subQuery - 1"() {
+        assertScript '''
+            assert [[1, null], [2, 2], [3, 3]] == GQ {
+                from n in [1, 2, 3]
+                select n, (
+                    from m in [2, 3, 4]
+                    where m == n
+                    select m   
+                ) as sq
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - subQuery - 2"() {
+        assertScript '''
+            assert [[1, null], [2, 2], [3, 3]] == GQ {
+                from n in [1, 2, 3]
+                innerjoin k in [1, 2, 3] on k == n
+                select n, (
+                    from m in [2, 3, 4]
+                    where m == n && m == k
+                    select m   
+                ) as sq
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - subQuery - 3"() {
+        assertScript '''
+            assert [null, 2, 3] == GQ {
+                from n in [1, 2, 3]
+                innerjoin k in [1, 2, 3] on k == n
+                select (
+                    from m in [2, 3, 4]
+                    where m == n && m == k
+                    select m   
+                )
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - subQuery - 4"() {
+        assertScript '''
+            assert [[1, null], [2, 2], [3, 3]] == GQ {
+                from n in [1, 2, 3]
+                innerjoin k in [1, 2, 3] on k == n
+                select n, (
+                    from m in [2, 3, 4]
+                    where m == n && m == k
+                    select m   
+                )
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - subQuery - 5"() {
+        assertScript '''
+            assert [null, 2, 3] == GQ {
+                from n in [1, 2, 3]
+                select (
+                    from m in [2, 3, 4]
+                    where m == n
+                    limit 1
+                    select m   
+                )
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - subQuery - 6"() {
+        assertScript '''
+            assert [[null, null], [2, null], [3, 3]] == GQ {
+                from n in [1, 2, 3]
+                select (
+                    from m in [2, 3, 4]
+                    where m == n
+                    limit 1
+                    select m   
+                ) as sq1, (
+                    from m in [3, 4, 5]
+                    where m == n
+                    limit 1
+                    select m   
+                ) as sq2
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - lazy - 1"() {
         assertScript '''
             int cnt = 0

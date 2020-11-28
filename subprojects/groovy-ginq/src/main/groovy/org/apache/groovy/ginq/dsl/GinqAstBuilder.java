@@ -35,6 +35,7 @@ import org.apache.groovy.ginq.dsl.expression.WhereExpression;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -46,6 +47,7 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -314,6 +316,34 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
             );
         }
         super.visitDeclarationExpression(expression);
+    }
+
+    @Override
+    public void visitCastExpression(CastExpression expression) {
+        super.visitCastExpression(expression);
+
+        if (null != latestGinqExpression && isSelectMethodCallExpression(expression.getExpression())) {
+            // use the nested ginq and clear it
+            expression.setExpression(latestGinqExpression);
+            latestGinqExpression = null;
+        }
+    }
+
+    @Override
+    public void visitArgumentlistExpression(ArgumentListExpression expression) {
+        List<Expression> list = expression.getExpressions();
+        if (list != null) {
+            for (int i = 0, n = list.size(); i < n; i++) {
+                Expression expr = list.get(i);
+                expr.visit(this);
+
+                if (null != latestGinqExpression && isSelectMethodCallExpression(expr)) {
+                    // use the nested ginq and clear it
+                    list.set(i, latestGinqExpression);
+                    latestGinqExpression = null;
+                }
+            }
+        }
     }
 
     private static boolean isSelectMethodCallExpression(Expression expression) {

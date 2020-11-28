@@ -28,7 +28,7 @@ import java.util.Objects;
  */
 public class CastExpression extends Expression {
 
-    private final Expression expression;
+    private Expression expression;
     private final boolean ignoreAutoboxing;
 
     private boolean coerce;
@@ -52,6 +52,10 @@ public class CastExpression extends Expression {
 
     public Expression getExpression() {
         return expression;
+    }
+
+    public void setExpression(Expression expression) {
+        this.expression = expression;
     }
 
     public boolean isIgnoringAutoboxing() {

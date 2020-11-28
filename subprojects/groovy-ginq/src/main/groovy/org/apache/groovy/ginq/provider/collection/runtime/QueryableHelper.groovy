@@ -48,5 +48,26 @@ class QueryableHelper {
         return from(sourceRecordList)
     }
 
+    /**
+     * Returns single value of list
+     *
+     * @param list the list
+     * @return the single value
+     * @throws TooManyValuesException if list contains more than one values
+     * @since 4.0.0
+     */
+    static <T> T singleValue(final List<? extends T> list) {
+        int size = list.size()
+
+        if (0 == size) {
+            return null
+        }
+        if (1 == size) {
+            return list.get(0)
+        }
+
+        throw new TooManyValuesException("subquery returns more than one value: $list")
+    }
+
     private QueryableHelper() {}
 }

@@ -55,7 +55,7 @@ class AsciiTableMaker {
                     }
                 })
 
-                return makeAsciiTable(list, DEFAULT_MAX_WIDTH, true)
+                return "\n" + makeAsciiTable(list, DEFAULT_MAX_WIDTH, true)
             }
         }
 
