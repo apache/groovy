@@ -3255,6 +3255,16 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - agg function - 9"() {
+        assertScript '''
+            assert [3] == GQ {
+                from n in [1, 2, 3]
+                select sum(1)
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - GQL - 8"() {
         assertScript '''
 // tag::ginq_tips_06[]
