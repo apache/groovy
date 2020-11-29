@@ -21,7 +21,6 @@ package org.apache.groovy.ginq
 import groovy.transform.CompileStatic
 import org.junit.Test
 
-import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 @CompileStatic

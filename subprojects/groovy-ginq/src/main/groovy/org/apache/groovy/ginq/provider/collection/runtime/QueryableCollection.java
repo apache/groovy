@@ -241,12 +241,10 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     @Override
     public BigDecimal avg(Function<? super T, ? extends Number> mapper) {
         Object[] result = agg(q -> this.stream()
-                .map(e -> {
-                    Number n = mapper.apply(e);
-                    if (null == n) return BigDecimal.ZERO;
-
-                    return n instanceof BigDecimal ? (BigDecimal) n : new BigDecimal(n.toString());
-                }).reduce(new Object[] {0L, BigDecimal.ZERO}, (r, e) -> {
+                .map(mapper::apply)
+                .filter(Objects::nonNull)
+                .map(n -> n instanceof BigDecimal ? (BigDecimal) n : new BigDecimal(n.toString()))
+                .reduce(new Object[] {0L, BigDecimal.ZERO}, (r, e) -> {
                     r[0] = (Long) r[0] + 1;
                     r[1] = ((BigDecimal) r[1]).add(e);
                     return r;

@@ -366,6 +366,45 @@ class QueryableCollectionTest {
     }
 
     @Test
+    @CompileDynamic
+    void testGroupBySelect7() {
+        def nums = [null, 2, 3]
+        def result =
+                from(nums).groupBy(e -> 1)
+                        .select(e ->
+                                e.v2.sum(n -> n)
+                                )
+                        .toList()
+        assert [5] == result
+    }
+
+    @Test
+    @CompileDynamic
+    void testGroupBySelect8() {
+        def nums = [null, 2, 3]
+        def result =
+                from(nums).groupBy(e -> 1)
+                        .select(e ->
+                                e.v2.count(n -> n)
+                        )
+                        .toList()
+        assert [2] == result
+    }
+
+    @Test
+    @CompileDynamic
+    void testGroupBySelect9() {
+        def nums = [null, 2, 3]
+        def result =
+                from(nums).groupBy(e -> 1)
+                        .select(e ->
+                                e.v2.avg(n -> n)
+                        )
+                        .toList()
+        assert [2.5] == result
+    }
+
+    @Test
     void testOrderBy() {
         Person daniel = new Person('Daniel', 35)
         Person peter = new Person('Peter', 10)
