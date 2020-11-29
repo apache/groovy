@@ -91,6 +91,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
  */
 @CompileStatic
 class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable {
+
     GinqAstWalker(SourceUnit sourceUnit) {
         this.sourceUnit = sourceUnit
     }
@@ -224,7 +225,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                     new GroupExpression(
                             new ArgumentListExpression(
                                     Collections.singletonList(
-                                            (Expression) new ListExpression())))
+                                            (Expression) new ConstantExpression(EMPTY_STRING))))
         }
     }
 
@@ -941,6 +942,8 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final List<String> AGG_FUNCTION_NAME_LIST = [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_AGG]
 
     private static final String NAMEDRECORD_CLASS_NAME = NamedRecord.class.name
+
+    private static final String EMPTY_STRING = ''
 
     private static final String __METHOD_CALL_RECEIVER = "__METHOD_CALL_RECEIVER"
     private static final String __GROUPBY_VISITED = "__GROUPBY_VISITED"
