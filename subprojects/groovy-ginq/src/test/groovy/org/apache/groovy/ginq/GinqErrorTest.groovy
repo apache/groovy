@@ -310,7 +310,7 @@ class GinqErrorTest {
     }
 
     @Test
-    void "testGinq - from groupby select - 17"() {
+    void "testGinq - from groupby select - 3"() {
         def err = shouldFail '''\
             GQ {
                 from n in [1, 2, 3]
@@ -321,5 +321,18 @@ class GinqErrorTest {
         '''
 
         assert err.toString().contains('`m` is not in the `groupby` clause @ line 5, column 27.')
+    }
+
+    @Test
+    void "testGinq - from groupby select - 4"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 2, 3]
+                groupby n
+                select n, hello(n)
+            }.toList()    
+        '''
+
+        assert err.toString().contains('`this.hello(n)` is not an aggregate function @ line 4, column 27.')
     }
 }

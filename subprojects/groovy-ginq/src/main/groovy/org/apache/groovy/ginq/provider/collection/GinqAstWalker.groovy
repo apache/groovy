@@ -186,6 +186,25 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return result
     }
 
+    private static boolean isAggregateFunction(Expression expression) {
+        Expression expr = expression
+        if (expression instanceof CastExpression) {
+            expr = expression.expression
+        }
+
+        if (expr instanceof MethodCallExpression) {
+            MethodCallExpression call = (MethodCallExpression) expr
+            if (AGG_FUNCTION_NAME_LIST.contains(call.methodAsString)) {
+                def argumentCnt = ((ArgumentListExpression) call.getArguments()).getExpressions().size()
+                if (1 == argumentCnt || (FUNCTION_COUNT == call.methodAsString && 0 == argumentCnt)) {
+                    return true
+                }
+            }
+        }
+
+        return false
+    }
+
     private void addDummyGroupExpressionIfNecessary() {
         if (currentGinqExpression.groupExpression) {
             return
@@ -196,12 +215,9 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         selectExpression.projectionExpr.visit(new CodeVisitorSupport() {
             @Override
             void visitMethodCallExpression(MethodCallExpression call) {
-                if (AGG_FUNCTION_NAME_LIST.contains(call.methodAsString)) {
-                    def argumentCnt = ((ArgumentListExpression) call.getArguments()).getExpressions().size()
-                    if (1 == argumentCnt || (FUNCTION_COUNT == call.methodAsString && 0 == argumentCnt)) {
-                        hasAggFunctionInSelect = true
-                        return
-                    }
+                if (isAggregateFunction(call)) {
+                    hasAggFunctionInSelect = true
+                    return
                 }
                 super.visitMethodCallExpression(call)
             }
@@ -437,19 +453,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         Expression projectionExpr = selectExpression.getProjectionExpr()
 
         List<Expression> expressionList = ((TupleExpression) projectionExpr).getExpressions()
-
-        if (groupByVisited) {
-            final groupNameList = groupNameListExpression.getExpressions().stream().map(e -> e.text).collect(Collectors.toList())
-            for (Expression expr : expressionList) {
-                if (!(expr instanceof MethodCallExpression || (expr instanceof CastExpression && expr.expression instanceof MethodCallExpression))
-                        && (transformCol(expr).v2.text !in groupNameList)) {
-                    this.collectSyntaxError(new GinqSyntaxError(
-                            "`${expr.text}` is not in the `groupby` clause",
-                            expr.getLineNumber(), expr.getColumnNumber()
-                    ))
-                }
-            }
-        }
+        validateGroupCols(expressionList)
 
         Expression lambdaCode = expressionList.get(0)
         def expressionListSize = expressionList.size()
@@ -484,6 +488,32 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         currentGinqExpression.putNodeMetaData(__VISITING_SELECT, false)
 
         return selectMethodCallExpression
+    }
+
+    private void validateGroupCols(List<Expression> expressionList) {
+        if (groupByVisited) {
+            final groupNameList = groupNameListExpression.getExpressions().stream().map(e -> e.text).collect(Collectors.toList())
+            for (Expression expr : expressionList) {
+                if (transformCol(expr).v2.text in groupNameList) {
+                    continue
+                }
+
+                def isMethodCall = expr instanceof MethodCallExpression || (expr instanceof CastExpression && expr.expression instanceof MethodCallExpression)
+                if (isMethodCall) {
+                    if (!isAggregateFunction(expr)) {
+                        this.collectSyntaxError(new GinqSyntaxError(
+                                "`${expr instanceof CastExpression ? expr.expression.text : expr.text}` is not an aggregate function",
+                                expr.getLineNumber(), expr.getColumnNumber()
+                        ))
+                    }
+                } else {
+                    this.collectSyntaxError(new GinqSyntaxError(
+                            "`${expr.text}` is not in the `groupby` clause",
+                            expr.getLineNumber(), expr.getColumnNumber()
+                    ))
+                }
+            }
+        }
     }
 
     private static Tuple2<Expression, Expression> transformCol(Expression e) {
