@@ -15,8 +15,8 @@
 
 name: "Grails Joint Validation Build"
 #  GROOVY_2_5_X == Grails 4.0.x
-#  GROOVY_3_0_X == grails master
-#  Groovy master branch does not map to any due to changed package names.
+#  GROOVY_3_0_X == Grails master/4.1.x
+#  Groovy master branch does not yet map to any due to changed package names.
 on:
   push:
     branches:
@@ -31,10 +31,10 @@ on:
 jobs:
   build:
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         os: [ubuntu-18.04]
-        java: [11.0.8, 15.0.1]
+        java: [11.0.9, 15.0.1]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v1
