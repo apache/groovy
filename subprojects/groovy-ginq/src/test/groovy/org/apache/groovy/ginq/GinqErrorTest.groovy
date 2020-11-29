@@ -328,6 +328,20 @@ class GinqErrorTest {
         def err = shouldFail '''\
             GQ {
                 from n in [1, 2, 3]
+                innerjoin m in [2, 3, 4] on m == n
+                groupby n
+                select n, n + m, count(n)
+            }.toList()    
+        '''
+
+        assert err.toString().contains('`m` is not in the `groupby` clause @ line 5, column 31.')
+    }
+
+    @Test
+    void "testGinq - from groupby select - 5"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 2, 3]
                 groupby n
                 select n, hello(n)
             }.toList()    

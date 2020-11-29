@@ -2136,6 +2136,36 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from groupby select - 21"() {
+        assertScript '''
+            def test() {
+                final int x = 1
+                assert [[1, 1, 2, 2], [6, 1, 7, 3], [3, 1, 4, 2]] == GQ {
+                    from n in [1, 1, 3, 3, 6, 6, 6]
+                    groupby n, x
+                    select n, x, n + x, count(n)
+                }.toList()
+            }
+            test()
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby select - 22"() {
+        assertScript '''
+            def test() {
+                final int x = 1
+                assert [[1, 1, 2, 2], [6, 1, 7, 3], [3, 1, 4, 2]] == GQ {
+                    from n in [1, 1, 3, 3, 6, 6, 6]
+                    groupby n, x
+                    select n, x, n + x as nPlusX, count(n)
+                }.toList()
+            }
+            test()
+        '''
+    }
+
+    @Test
     void "testGinq - from where groupby select - 1"() {
         assertScript '''
             assert [[1, 2], [6, 3]] == GQ {
