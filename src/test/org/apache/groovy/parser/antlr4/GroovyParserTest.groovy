@@ -263,7 +263,6 @@ final class GroovyParserTest extends GroovyTestCase {
         doRunAndTestAntlr4('core/DoWhile_04x.groovy')
     }
 
-
     void "test groovy core - TryCatch"() {
         doTest('core/TryCatch_01.groovy')
     }
@@ -289,7 +288,6 @@ final class GroovyParserTest extends GroovyTestCase {
         doRunAndTestAntlr4('core/DefaultMethod_01x.groovy')
         doRunAndTestAntlr4('core/DefaultMethod_02x.groovy')
     }
-
 
     void "test groovy core - Switch"() {
         doTest('core/Switch_01.groovy')

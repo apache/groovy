@@ -458,13 +458,13 @@ gstringPath
 // LAMBDA EXPRESSION
 lambdaExpression
 options { baseContext = standardLambdaExpression; }
-	:	lambdaParameters nls ARROW nls lambdaBody
-	;
+    :   lambdaParameters nls ARROW nls lambdaBody
+    ;
 
 // JAVA STANDARD LAMBDA EXPRESSION
 standardLambdaExpression
-	:	standardLambdaParameters nls ARROW nls lambdaBody
-	;
+    :   standardLambdaParameters nls ARROW nls lambdaBody
+    ;
 
 lambdaParameters
 options { baseContext = standardLambdaParameters; }
@@ -481,9 +481,9 @@ standardLambdaParameters
     ;
 
 lambdaBody
-	:	block
-	|	statementExpression
-	;
+    :   block
+    |   statementExpression
+    ;
 
 // CLOSURE
 closure
@@ -738,9 +738,10 @@ postfixExpression
     ;
 
 expression
-    // qualified names, array expressions, method invocation, post inc/dec, type casting (level 1)
-    // The cast expression must be put before pathExpression to resovle the ambiguities between type casting and call on parentheses expression, e.g. (int)(1 / 2)
+    // must come before postfixExpression to resovle the ambiguities between casting and call on parentheses expression, e.g. (int)(1 / 2)
     :   castParExpression castOperandExpression                                             #castExprAlt
+
+    // qualified names, array expressions, method invocation, post inc/dec
     |   postfixExpression                                                                   #postfixExprAlt
 
     // ~(BNOT)/!(LNOT) (level 1)
@@ -833,16 +834,16 @@ expression
                      enhancedStatementExpression                                            #assignmentExprAlt
     ;
 
-
 castOperandExpression
 options { baseContext = expression; }
     :   castParExpression castOperandExpression                                             #castExprAlt
+
     |   postfixExpression                                                                   #postfixExprAlt
 
-    // ~(BNOT)/!(LNOT) (level 1)
+    // ~(BNOT)/!(LNOT)
     |   (BITNOT | NOT) nls castOperandExpression                                            #unaryNotExprAlt
 
-    // ++(prefix)/--(prefix)/+(unary)/-(unary) (level 3)
+    // ++(prefix)/--(prefix)/+(unary)/-(unary)
     |   op=(INC | DEC | ADD | SUB) castOperandExpression                                    #unaryAddExprAlt
     ;
 
@@ -896,7 +897,7 @@ pathExpression returns [int t]
             primary
         |
             // if 'static' followed by DOT, we can treat them as identifiers, e.g. static.unused = { -> }
-            { DOT == _input.LT(2).getType() }?
+            { _input.LT(2).getType() == DOT }?
             STATIC
         ) (pathElement { $t = $pathElement.t; })*
     ;
@@ -1186,7 +1187,7 @@ identifier
     |   CapitalizedIdentifier
     |   VAR
     |   IN
-//    |   DEF
+//  |   DEF
     |   TRAIT
     |   AS
     ;
