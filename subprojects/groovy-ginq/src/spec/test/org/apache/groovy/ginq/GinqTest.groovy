@@ -2223,6 +2223,28 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from groupby select - 28"() {
+        assertScript '''
+            assert [[1, 3], [3, 5], [6, 9]] == GQ {
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                groupby n
+                select n, n + count(n)
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby select - 29"() {
+        assertScript '''
+            assert [[1, 3], [3, 5], [6, 9]] == GQ {
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                groupby n
+                select n, n + count(n) as nPlusCount
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - from where groupby select - 1"() {
         assertScript '''
             assert [[1, 2], [6, 3]] == GQ {
