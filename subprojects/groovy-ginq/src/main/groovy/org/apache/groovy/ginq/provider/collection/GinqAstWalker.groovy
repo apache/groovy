@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.ginq.provider.collection
 
-
 import groovy.transform.CompileStatic
 import org.apache.groovy.ginq.dsl.GinqAstVisitor
 import org.apache.groovy.ginq.dsl.GinqSyntaxError
@@ -92,7 +91,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
  */
 @CompileStatic
 class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable {
-
     GinqAstWalker(SourceUnit sourceUnit) {
         this.sourceUnit = sourceUnit
     }
@@ -165,10 +163,8 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         MethodCallExpression selectMethodCallExpression = this.visitSelectExpression(selectExpression)
 
         List<Statement> statementList = []
-        def metaDataMapVar = localVarX(metaDataMapName)
-        metaDataMapVar.modifiers = metaDataMapVar.modifiers | Opcodes.ACC_FINAL
         statementList << declS(
-                metaDataMapVar,
+                localVarX(metaDataMapName).tap {it.modifiers |= Opcodes.ACC_FINAL},
                 callX(MAPS_TYPE, "of", args(
                         new ConstantExpression(MD_ALIAS_NAME_LIST), aliasNameListExpression,
                         new ConstantExpression(MD_GROUP_NAME_LIST), groupNameListExpression,
@@ -664,11 +660,10 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                     aliasToAccessPathMap.entrySet().stream()
                             .filter(e -> variableNameSet.contains(e.key))
                             .map(e -> {
-                                def v = localVarX(e.key)
-                                v.modifiers = v.modifiers | Opcodes.ACC_FINAL
+                                def v = localVarX(e.key).tap {it.modifiers |= Opcodes.ACC_FINAL  }
 
                                 if (isGroup) {
-                                    return declX(v, propX(propX(new VariableExpression(lambdaParamName), 'v1'), e.key))
+                                    return declX(v, propX(varX(__SOURCE_RECORD), e.key))
                                 } else {
                                     return declX(v, e.value)
                                 }
@@ -704,6 +699,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         Expression transformedExpression = null
         if (expression instanceof VariableExpression) {
             if (expression.isThisExpression()) return expression
+            if (expression.text in [__SOURCE_RECORD, __GROUP]) return expression
             if (expression.text && Character.isUpperCase(expression.text.charAt(0))) return expression // type should not be transformed
             if (expression.text.startsWith(__META_DATA_MAP_NAME_PREFIX)) return expression
 
@@ -727,7 +723,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                                 && aliasNameListExpression.getExpressions().stream().map(e -> e.text).allMatch(e -> e != expression.text)
                         ) {
                             // replace `gk` in the groupby with `__t.v1.gk`, note: __t.v1 stores the group key
-                            transformedExpression = propX(propX(new VariableExpression(lambdaParamName), 'v1'), expression.text)
+                            transformedExpression = propX(varX(__SOURCE_RECORD), expression.text)
                         }
                     }
                 }
@@ -739,14 +735,14 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                     String methodName = expression.methodAsString
                     visitingAggregateFunctionStack.push(methodName)
                     if (FUNCTION_COUNT == methodName && ((TupleExpression) expression.arguments).getExpressions().isEmpty()) { // Similar to count(*) in SQL
-                        expression.objectExpression = propX(new VariableExpression(lambdaParamName), 'v2')
+                        expression.objectExpression = varX(__GROUP)
                         transformedExpression = expression
                     } else if (methodName in AGG_FUNCTION_NAME_LIST) {
                         Expression lambdaCode = ((TupleExpression) expression.arguments).getExpression(0)
                         lambdaCode.putNodeMetaData(__LAMBDA_PARAM_NAME, findRootObjectExpression(lambdaCode).text)
                         transformedExpression =
                                 callXWithLambda(
-                                        propX(new VariableExpression(lambdaParamName), 'v2'), methodName,
+                                        varX(__GROUP), methodName,
                                         dataSourceExpression, lambdaCode)
                     }
                     visitingAggregateFunctionStack.pop()
@@ -858,6 +854,18 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             Tuple2<List<DeclarationExpression>, Expression> declarationAndLambdaCode = correctVariablesOfGinqExpression(dataSourceExpression, lambdaCode)
             if (!visitingAggregateFunctionStack) {
                 declarationExpressionList = declarationAndLambdaCode.v1
+
+                if (groupByVisited) {
+                    final sourceRecordDecl =
+                            declX(localVarX(__SOURCE_RECORD).tap { it.modifiers |= Opcodes.ACC_FINAL },
+                                    propX(new VariableExpression(lambdaParamName), 'v1'))
+                    declarationExpressionList.add(0, sourceRecordDecl)
+
+                    final groupDecl =
+                            declX(localVarX(__GROUP).tap { it.modifiers |= Opcodes.ACC_FINAL },
+                                    propX(new VariableExpression(lambdaParamName), 'v2'))
+                    declarationExpressionList.add(1, groupDecl)
+                }
             }
             lambdaCode = declarationAndLambdaCode.v2
         } else {
@@ -941,9 +949,12 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final String  __RN_USED = '__RN_USED'
     private static final String __META_DATA_MAP_NAME_PREFIX = '__metaDataMap_'
     private static final String __ROW_NUMBER_NAME_PREFIX = '__rowNumber_'
+    private static final String __SOURCE_RECORD = "__sourceRecord"
+    private static final String __GROUP = "__group"
     private static final String MD_GROUP_NAME_LIST = "groupNameList"
     private static final String MD_SELECT_NAME_LIST = "selectNameList"
     private static final String MD_ALIAS_NAME_LIST = 'aliasNameList'
+
     private static final String _G = '_g' // the implicit variable representing grouped `Queryable` object
     private static final String _RN = '_rn' // the implicit variable representing row number
 }
