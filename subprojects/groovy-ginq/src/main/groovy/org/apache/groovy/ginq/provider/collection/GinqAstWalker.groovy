@@ -194,7 +194,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
         if (expr instanceof MethodCallExpression) {
             MethodCallExpression call = (MethodCallExpression) expr
-            if (AGG_FUNCTION_NAME_LIST.contains(call.methodAsString)) {
+            if (call.implicitThis && AGG_FUNCTION_NAME_LIST.contains(call.methodAsString)) {
                 def argumentCnt = ((ArgumentListExpression) call.getArguments()).getExpressions().size()
                 if (1 == argumentCnt || (FUNCTION_COUNT == call.methodAsString && 0 == argumentCnt)) {
                     return true
@@ -735,7 +735,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         } else if (expression instanceof MethodCallExpression) {
             // #1
             if (groupByVisited) { // groupby
-                if (expression.implicitThis) {
+                if (isAggregateFunction(expression)) {
                     String methodName = expression.methodAsString
                     visitingAggregateFunction = methodName
                     if (FUNCTION_COUNT == methodName && ((TupleExpression) expression.arguments).getExpressions().isEmpty()) { // Similar to count(*) in SQL
