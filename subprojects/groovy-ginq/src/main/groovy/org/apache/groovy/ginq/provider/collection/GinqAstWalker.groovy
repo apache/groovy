@@ -711,8 +711,8 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                 // in #1, we will correct receiver of built-in aggregate functions
                 // the correct receiver is `__t.v2`, so we should not replace `__t` here
                 if (lambdaParamName != expression.text) {
-                    if (visitingAggregateFunction) {
-                        if (FUNCTION_AGG == visitingAggregateFunction && _G == expression.text) {
+                    if (visitingAggregateFunctionStack) {
+                        if (FUNCTION_AGG == visitingAggregateFunctionStack.peek() && _G == expression.text) {
                             transformedExpression =
                                     callX(
                                         new ClassExpression(QUERYABLE_HELPER_TYPE),
@@ -737,11 +737,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             if (groupByVisited) { // groupby
                 if (isAggregateFunction(expression)) {
                     String methodName = expression.methodAsString
-                    visitingAggregateFunction = methodName
+                    visitingAggregateFunctionStack.push(methodName)
                     if (FUNCTION_COUNT == methodName && ((TupleExpression) expression.arguments).getExpressions().isEmpty()) { // Similar to count(*) in SQL
                         expression.objectExpression = propX(new VariableExpression(lambdaParamName), 'v2')
                         transformedExpression = expression
-                    } else if (methodName in AGG_FUNCTION_NAME_LIST && 1 == ((TupleExpression) expression.arguments).getExpressions().size()) {
+                    } else if (methodName in AGG_FUNCTION_NAME_LIST) {
                         Expression lambdaCode = ((TupleExpression) expression.arguments).getExpression(0)
                         lambdaCode.putNodeMetaData(__LAMBDA_PARAM_NAME, findRootObjectExpression(lambdaCode).text)
                         transformedExpression =
@@ -749,7 +749,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                                         propX(new VariableExpression(lambdaParamName), 'v2'), methodName,
                                         dataSourceExpression, lambdaCode)
                     }
-                    visitingAggregateFunction = null
+                    visitingAggregateFunctionStack.pop()
                 }
             }
         }
@@ -811,7 +811,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return expression
     }
 
-    private String visitingAggregateFunction
+    private final Deque<String> visitingAggregateFunctionStack = new ArrayDeque<>()
 
     @Override
     Expression visit(AbstractGinqExpression expression) {
@@ -850,13 +850,13 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         String lambdaParamName
         if (dataSourceExpression instanceof JoinExpression || groupByVisited) {
             lambdaParamName = lambdaCode.getNodeMetaData(__LAMBDA_PARAM_NAME)
-            if (!lambdaParamName || visitingAggregateFunction) {
+            if (!lambdaParamName || visitingAggregateFunctionStack) {
                 lambdaParamName = generateLambdaParamName()
             }
 
             lambdaCode.putNodeMetaData(__LAMBDA_PARAM_NAME, lambdaParamName)
             Tuple2<List<DeclarationExpression>, Expression> declarationAndLambdaCode = correctVariablesOfGinqExpression(dataSourceExpression, lambdaCode)
-            if (!visitingAggregateFunction) {
+            if (!visitingAggregateFunctionStack) {
                 declarationExpressionList = declarationAndLambdaCode.v1
             }
             lambdaCode = declarationAndLambdaCode.v2
