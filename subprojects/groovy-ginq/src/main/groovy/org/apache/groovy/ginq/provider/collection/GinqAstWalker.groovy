@@ -437,6 +437,20 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         Expression projectionExpr = selectExpression.getProjectionExpr()
 
         List<Expression> expressionList = ((TupleExpression) projectionExpr).getExpressions()
+
+        if (groupByVisited) {
+            final groupNameList = groupNameListExpression.getExpressions().stream().map(e -> e.text).collect(Collectors.toList())
+            for (Expression expr : expressionList) {
+                if (!(expr instanceof MethodCallExpression || (expr instanceof CastExpression && expr.expression instanceof MethodCallExpression))
+                        && (transformCol(expr).v2.text !in groupNameList)) {
+                    this.collectSyntaxError(new GinqSyntaxError(
+                            "`${expr.text}` is not in the `groupby` clause",
+                            expr.getLineNumber(), expr.getColumnNumber()
+                    ))
+                }
+            }
+        }
+
         Expression lambdaCode = expressionList.get(0)
         def expressionListSize = expressionList.size()
         if (expressionListSize > 1 || (expressionListSize == 1 && lambdaCode instanceof CastExpression)) {
@@ -472,33 +486,39 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return selectMethodCallExpression
     }
 
+    private static Tuple2<Expression, Expression> transformCol(Expression e) {
+        Expression elementExpression = e
+        Expression nameExpression = null
+
+        if (e instanceof CastExpression) {
+            elementExpression = e.expression
+            nameExpression = new ConstantExpression(e.type.text)
+        } else if (e instanceof PropertyExpression) {
+            if (e.property instanceof ConstantExpression) {
+                elementExpression = e
+                nameExpression = new ConstantExpression(e.property.text)
+            } else if (e.property instanceof GStringExpression) {
+                elementExpression = e
+                nameExpression = e.property
+            }
+        }
+
+        if (null == nameExpression) {
+            nameExpression = new ConstantExpression(e.text)
+        }
+
+        return tuple(elementExpression, nameExpression)
+    }
+
     private ConstructorCallExpression constructNamedRecordCtorCallExpression(List<Expression> expressionList, String metaDataKey) {
         int expressionListSize = expressionList.size()
         List<Expression> elementExpressionList = new ArrayList<>(expressionListSize)
         List<Expression> nameExpressionList = new ArrayList<>(expressionListSize)
         for (Expression e : expressionList) {
-            Expression elementExpression = e
-            Expression nameExpression = null
+            Tuple2<Expression, Expression> elementAndName = transformCol(e)
 
-            if (e instanceof CastExpression) {
-                elementExpression = e.expression
-                nameExpression = new ConstantExpression(e.type.text)
-            } else if (e instanceof PropertyExpression) {
-                if (e.property instanceof ConstantExpression) {
-                    elementExpression = e
-                    nameExpression = new ConstantExpression(e.property.text)
-                } else if (e.property instanceof GStringExpression) {
-                    elementExpression = e
-                    nameExpression = e.property
-                }
-            }
-
-            if (null == nameExpression) {
-                nameExpression = new ConstantExpression(e.text)
-            }
-
-            elementExpressionList << elementExpression
-            nameExpressionList << nameExpression
+            elementExpressionList << elementAndName.v1
+            nameExpressionList << elementAndName.v2
         }
 
         def nameListExpression = new ListExpression(nameExpressionList)

@@ -21,6 +21,7 @@ package org.apache.groovy.ginq
 import groovy.transform.CompileStatic
 import org.junit.Test
 
+import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 @CompileStatic
@@ -306,5 +307,19 @@ class GinqErrorTest {
         '''
 
         assert err.toString().contains('subquery returns more than one value: [3, 4]')
+    }
+
+    @Test
+    void "testGinq - from groupby select - 17"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 2, 3]
+                innerjoin m in [2, 3, 4] on m == n
+                groupby n
+                select n, m, count(n)
+            }.toList()    
+        '''
+
+        assert err.toString().contains('`m` is not in the `groupby` clause @ line 5, column 27.')
     }
 }

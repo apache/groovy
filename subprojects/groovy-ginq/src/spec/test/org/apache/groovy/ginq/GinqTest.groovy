@@ -2074,9 +2074,9 @@ class GinqTest {
         assertScript '''
             def test() {
                 final int x = 1
-                assert [[1, 1, 2], [3, 1, 2], [6, 1, 3]] == GQ {
+                assert [[1, 1, 2], [6, 1, 3], [3, 1, 2]] == GQ {
                     from n in [1, 1, 3, 3, 6, 6, 6]
-                    groupby n
+                    groupby n, x
                     select n, x, count(n)
                 }.toList()
             }
