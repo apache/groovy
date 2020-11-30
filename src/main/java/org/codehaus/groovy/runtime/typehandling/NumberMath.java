@@ -174,7 +174,7 @@ public abstract class NumberMath {
         if (n instanceof BigInteger) {
             return new BigDecimal((BigInteger) n);
         }
-        if (n instanceof Byte || n instanceof Short || n instanceof Integer || n instanceof Long) {
+        if (n instanceof Integer || n instanceof Long || n instanceof Byte || n instanceof Short) {
             return new BigDecimal(n.longValue());
         }
         return new BigDecimal(n.toString());
@@ -184,7 +184,7 @@ public abstract class NumberMath {
         if (n instanceof BigInteger) {
             return (BigInteger) n;
         }
-        if (n instanceof Byte || n instanceof Short || n instanceof Integer || n instanceof Long) {
+        if (n instanceof Integer || n instanceof Long || n instanceof Byte || n instanceof Short) {
             return BigInteger.valueOf(n.longValue());
         }
         return new BigInteger(n.toString());
