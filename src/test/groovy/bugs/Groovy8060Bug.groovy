@@ -20,11 +20,17 @@ package groovy.bugs
 
 import groovy.test.GroovyTestCase
 
+/**
+ * Flaky on CI servers, so retry a few times. We should make most tests involving
+ * Grape more isolated but having at least one end-to-end functional test might still be okay.
+ */
 class Groovy8060Bug extends GroovyTestCase {
+    private static final int MAX_RETRIES = 3
     void testLoggingWithinClosuresThatAreMethodArgsShouldHaveGuards() {
-        int retry = 3 // flaky on CI servers, so retry if needed
+        int retry = 0
         boolean success = false
-        while (retry-- > 0 && !success) {
+        Exception maybeIgnore = null
+        while (retry++ < MAX_RETRIES && !success) {
             try {
                 assertScript '''
                     @Grab('org.slf4j:slf4j-simple:1.7.30')
@@ -42,9 +48,11 @@ class Groovy8060Bug extends GroovyTestCase {
                     }
                 '''
                 success = true
-            } catch(Exception ignore) {
-                sleep 100
+            } catch(Exception ex) {
+                maybeIgnore = ex
+                sleep 100 * retry
             }
         }
+        if (!success) throw new RuntimeException("Couldn't assert script after $MAX_RETRIES retries", maybeIgnore)
     }
 }
