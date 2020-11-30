@@ -109,6 +109,7 @@ class NumberMathTest extends GroovyTestCase {
         def BD1 = new BigDecimal("1.0")
         def BD2 = new BigDecimal("2.0")
         def BD20 = new BigDecimal("2.00")
+        def BD100 = new BigDecimal(new BigInteger(1), -2) // 100
 
         assert I1 / I2 instanceof BigDecimal
         assert I1 / I2 == new BigDecimal("0.5")
@@ -139,6 +140,19 @@ class NumberMathTest extends GroovyTestCase {
         assert I2 / I3 == new BigDecimal("0.6666666667")
 
         assert I1 / BD2 instanceof BigDecimal
+        assert I1 / BD2 == new BigDecimal("0.5")
+
+        assert I1 / BD20 instanceof BigDecimal
+        assert I1 / BD20 == new BigDecimal("0.5")
+
+        assert BI1 / BD2 instanceof BigDecimal
+        assert BI1 / BD2 == new BigDecimal("0.5")
+
+        assert I1 / BD100 instanceof BigDecimal
+        assert I1 / BD100 == new BigDecimal("0.01")
+
+        assert BI1 / BD100 instanceof BigDecimal
+        assert BI1 / BD100 == new BigDecimal("0.01")
 
         //Test keeping max scale of (L, R or 10)
         def BBD1 = new BigDecimal("0.12345678901234567")
