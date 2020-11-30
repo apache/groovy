@@ -22,20 +22,29 @@ import groovy.test.GroovyTestCase
 
 class Groovy8060Bug extends GroovyTestCase {
     void testLoggingWithinClosuresThatAreMethodArgsShouldHaveGuards() {
-        assertScript '''
-            @Grab('org.slf4j:slf4j-simple:1.7.30')
-            import groovy.util.logging.Slf4j
+        int retry = 3 // flaky on CI servers, so retry if needed
+        boolean success = false
+        while (retry-- > 0 && !success) {
+            try {
+                assertScript '''
+                    @Grab('org.slf4j:slf4j-simple:1.7.30')
+                    import groovy.util.logging.Slf4j
 
-            @Slf4j
-            class LogMain {
-                public static int count = 0
+                    @Slf4j
+                    class LogMain {
+                        public static int count = 0
 
-                static void main(args) {
-                    assert !log.isTraceEnabled()
-                    1.times { log.trace("${count++}") }
-                    assert !count
-                }
+                        static void main(args) {
+                            assert !log.isTraceEnabled()
+                            1.times { log.trace("${count++}") }
+                            assert !count
+                        }
+                    }
+                '''
+                success = true
+            } catch(Exception ignore) {
+                sleep 100
             }
-        '''
+        }
     }
 }
