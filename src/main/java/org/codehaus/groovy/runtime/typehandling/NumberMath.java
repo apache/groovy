@@ -175,7 +175,7 @@ public abstract class NumberMath {
             return new BigDecimal((BigInteger) n);
         }
         if (n instanceof Integer || n instanceof Long || n instanceof Byte || n instanceof Short) {
-            return new BigDecimal(n.longValue());
+            return BigDecimal.valueOf(n.longValue());
         }
         return new BigDecimal(n.toString());
     }
