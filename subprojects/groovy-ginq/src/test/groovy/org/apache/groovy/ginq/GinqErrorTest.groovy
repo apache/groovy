@@ -348,4 +348,21 @@ class GinqErrorTest {
 
         assert err.toString().contains('`this.hello(n)` is not an aggregate function @ line 4, column 27.')
     }
+
+    @Test
+    void "testGinq - subQuery - 13"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 2, 3]
+                groupby n
+                select (
+                    from m in [1, 2, 3]
+                    where m == n
+                    select sum(m)
+                )
+            }.toList()
+        '''
+
+        assert err.toString().contains('sub-query could not be used in the `select` clause with `groupby` @ line 4, column 24.')
+    }
 }

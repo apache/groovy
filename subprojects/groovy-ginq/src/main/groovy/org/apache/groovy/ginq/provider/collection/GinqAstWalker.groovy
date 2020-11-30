@@ -521,6 +521,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                                         expr.getLineNumber(), expr.getColumnNumber()
                                 ))
                             }
+                        } else if (isExpression(expr, AbstractGinqExpression)) {
+                            GinqAstWalker.this.collectSyntaxError(new GinqSyntaxError(
+                                    "sub-query could not be used in the `select` clause with `groupby`",
+                                    expr.getLineNumber(), expr.getColumnNumber()
+                            ))
                         }
 
                         return expr.transformExpression(this)
