@@ -187,7 +187,10 @@ public abstract class NumberMath {
         if (n instanceof Integer || n instanceof Long || n instanceof Byte || n instanceof Short) {
             return BigInteger.valueOf(n.longValue());
         }
-        return new BigInteger(n instanceof BigDecimal ? ((BigDecimal) n).toPlainString() : n.toString());
+        if (n instanceof BigDecimal) {
+            return ((BigDecimal) n).toBigIntegerExact();
+        }
+        return new BigInteger(n.toString());
     }
 
     /**
