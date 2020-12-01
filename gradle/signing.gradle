@@ -62,7 +62,7 @@ def promptUser(String prompt) {
     if (System.console() == null) {
         new groovy.swing.SwingBuilder().edt {
             dialog(modal: true, // pause build
-                    title: 'Reponse required', // dialog title
+                    title: 'Response required', // dialog title
                     alwaysOnTop: true,
                     resizable: false,
                     locationRelativeTo: null, // centered on screen
