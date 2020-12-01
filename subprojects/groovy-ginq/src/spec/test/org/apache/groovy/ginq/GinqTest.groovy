@@ -3287,11 +3287,96 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - GQL - 8"() {
+    void "testGinq - GQL - 1"() {
         assertScript '''
 // tag::ginq_tips_06[]
             assert [4, 16, 36, 64, 100] == GQL {from n in 1..<11 where n % 2 == 0 select n ** 2}
 // end::ginq_tips_06[]
+        '''
+    }
+
+    @Test
+    void "testGinq - GQL - 2"() {
+        assertScript '''
+            def result = GQL {from n in [1] select n}
+            assert result instanceof List
+            assert 1 == result[0]
+        '''
+    }
+
+    @Test
+    void "testGinq - asType - 1"() {
+        assertScript '''
+            def result = GQ {from n in [1] select n} as Collection
+            assert result instanceof List
+            assert 1 == result[0]
+        '''
+    }
+
+    @Test
+    void "testGinq - asType - 2"() {
+        assertScript '''
+            def result = GQ {from n in [1] select n} as int[]
+            assert result instanceof int[]
+            assert 1 == result[0]
+        '''
+    }
+
+    @Test
+    void "testGinq - asType - 3"() {
+        assertScript '''
+            def result = GQ {from n in [1] select n} as Set
+            assert result instanceof Set
+            assert 1 == result[0]
+        '''
+    }
+
+    @Test
+    void "testGinq - asType - 4"() {
+        assertScript '''
+            import java.util.stream.Stream
+            
+            def result = GQ {from n in [1] select n} as Stream
+            assert result instanceof Stream
+            assert 1 == result.findFirst().get()
+        '''
+    }
+
+    @Test
+    void "testGinq - asType - 5"() {
+        assertScript '''
+            def result = GQ {from n in [1] select n} as Iterable
+            assert result instanceof List
+            assert 1 == result[0]
+        '''
+    }
+
+    @Test
+    void "testGinq - asType - 6"() {
+        assertScript '''
+            def result = GQ {from n in [1] select n} as Iterator
+            assert result instanceof Iterator
+            assert 1 == result.next()
+        '''
+    }
+
+    @Test
+    void "testGinq - asType - 7"() {
+        assertScript '''
+            import org.apache.groovy.ginq.provider.collection.runtime.Queryable
+            
+            def original = GQ {from n in [1] select n}
+            def result = original as Queryable
+            assert original === result
+        '''
+    }
+
+    @Test
+    void "testGinq - asType - 8"() {
+        assertScript '''
+            def original = GQ {from n in [1] select n}
+            def result = original as Object
+            assert original === result
         '''
     }
 }

@@ -20,15 +20,19 @@ package org.apache.groovy.ginq.provider.collection.runtime;
 
 import groovy.lang.Tuple2;
 import groovy.transform.Internal;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -352,6 +356,30 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         if (null != this.sourceIterable) return;
 
         this.sourceIterable = this.sourceStream.collect(Collectors.toList());
+    }
+
+    public Object asType(Class<?> clazz) {
+        if (List.class == clazz || Collection.class == clazz || Iterable.class == clazz) {
+            return toList();
+        }
+
+        if (clazz.isArray()) {
+            return DefaultGroovyMethods.asType(toList(), clazz);
+        }
+
+        if (Set.class == clazz) {
+            return new LinkedHashSet<>(toList());
+        }
+
+        if (Stream.class == clazz) {
+            return stream();
+        }
+
+        if (Iterator.class == clazz) {
+            return iterator();
+        }
+
+        return DefaultGroovyMethods.asType(this, clazz);
     }
 
     @Override
