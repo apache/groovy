@@ -173,6 +173,7 @@ distribution {
          'src',
          'build.gradle',
          'settings.gradle',
+         'versions.properties',
          'gradle.properties',
          'LICENSE',
          'NOTICE',
