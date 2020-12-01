@@ -171,14 +171,14 @@ distribution {
          'security',
          'gradle',
          'src',
+         'wrapperBootstrap',
          'build.gradle',
          'settings.gradle',
          'versions.properties',
          'gradle.properties',
          'LICENSE',
          'NOTICE',
-         'README.adoc',
-         'wrapper.gradle'].each {
+         'README.adoc'].each {
             def file = rootProject.file(it)
             from(file) {
                 if (file.directory) {
