@@ -212,7 +212,7 @@ interface Services {
     SoftwareComponentFactory getSoftwareComponentFactory()
 }
 
-// The Gradle distribution module isn't a Java library
+// The Groovy distribution module isn't a Java library
 // so we create a custom publication
 def factory = objects.newInstance(Services).softwareComponentFactory
 def component = factory.adhoc('groovyDistribution')
@@ -227,6 +227,9 @@ def bin = configurations.create("distributionBinary") {
     outgoing {
         artifacts {
             artifact tasks.named('distBin')
+            artifact tasks.named('distSrc')
+            artifact tasks.named('distDoc')
+            artifact tasks.named('distSdk')
         }
     }
 }

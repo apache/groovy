@@ -147,7 +147,9 @@ class SharedConfiguration {
 
         boolean shouldSign(TaskExecutionGraph taskGraph) {
             trySign.get() || (config.isReleaseVersion.get() &&
-                    (taskGraph.hasTask(':artifactoryPublish') || forceSign.get()))
+                    (forceSign.get() || [':artifactoryPublish', ':publishAllPublicationsToApacheRepository'].any {
+                        taskGraph.hasTask(it)
+                    }))
         }
 
         boolean hasAllKeyDetails() {

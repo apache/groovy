@@ -17,11 +17,11 @@ if (pluginManager.hasPlugin('java-platform')) {
 publishing {
     repositories {
         maven {
-            name "FileRepo"
+            name "LocalFile"
             url "${rootProject.buildDir}/repo"
         }
         maven {
-            name "ApacheRepo"
+            name "Apache"
             url  findProperty('groovyVersion').contains('SNAPSHOT')
                     ? 'https://repository.apache.org/content/repositories/snapshots'
                     : 'https://repository.apache.org/service/local/staging/deploy/maven2'
