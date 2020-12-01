@@ -3379,4 +3379,13 @@ class GinqTest {
             assert original === result
         '''
     }
+
+    @Test
+    void "testGinq - asType - 9"() {
+        assertScript '''
+            def result = GQ {from n in [1] select n} as List
+            assert result instanceof List
+            assert 1 == result[0]
+        '''
+    }
 }
