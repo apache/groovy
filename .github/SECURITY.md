@@ -21,6 +21,11 @@ to additional releases.
 (**) While in early stages of pre-release, security fixes are
 done on a best effort basis.
 
+## List of Security Vulnerability Fixes
+
+The Groovy website has a list of [Security fixes](https://groovy-lang.org/security.html)
+applicable to Groovy 2.4.4 and above (versions released since moving to Apache).
+
 ## Reporting a Vulnerability
 
 Apache Groovy follows the Apache
