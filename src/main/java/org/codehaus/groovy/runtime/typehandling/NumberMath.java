@@ -168,11 +168,29 @@ public abstract class NumberMath {
     }
 
     public static BigDecimal toBigDecimal(Number n) {
-        return (n instanceof BigDecimal ? (BigDecimal) n : new BigDecimal(n.toString()));
+        if (n instanceof BigDecimal) {
+            return (BigDecimal) n;
+        }
+        if (n instanceof BigInteger) {
+            return new BigDecimal((BigInteger) n);
+        }
+        if (n instanceof Integer || n instanceof Long || n instanceof Byte || n instanceof Short) {
+            return BigDecimal.valueOf(n.longValue());
+        }
+        return new BigDecimal(n.toString());
     }
 
     public static BigInteger toBigInteger(Number n) {
-        return (n instanceof BigInteger ? (BigInteger) n : new BigInteger(n.toString()));
+        if (n instanceof BigInteger) {
+            return (BigInteger) n;
+        }
+        if (n instanceof Integer || n instanceof Long || n instanceof Byte || n instanceof Short) {
+            return BigInteger.valueOf(n.longValue());
+        }
+        if (n instanceof BigDecimal) {
+            return ((BigDecimal) n).toBigIntegerExact();
+        }
+        return new BigInteger(n.toString());
     }
 
     /**
