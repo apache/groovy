@@ -21,6 +21,7 @@ package org.apache.groovy.ginq.provider.collection.runtime;
 import groovy.lang.Tuple2;
 import groovy.transform.Internal;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -238,7 +239,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                     Number n = mapper.apply(e);
                     if (null == n) return BigDecimal.ZERO;
 
-                    return n instanceof BigDecimal ? (BigDecimal) n : new BigDecimal(n.toString());
+                    return NumberMath.toBigDecimal(n);
                 }).reduce(BigDecimal.ZERO, BigDecimal::add));
     }
 
@@ -247,7 +248,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         Object[] result = agg(q -> this.stream()
                 .map(mapper::apply)
                 .filter(Objects::nonNull)
-                .map(n -> n instanceof BigDecimal ? (BigDecimal) n : new BigDecimal(n.toString()))
+                .map(n -> NumberMath.toBigDecimal(n))
                 .reduce(new Object[] {0L, BigDecimal.ZERO}, (r, e) -> {
                     r[0] = (Long) r[0] + 1;
                     r[1] = ((BigDecimal) r[1]).add(e);
@@ -255,7 +256,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                 }, (o1, o2) -> o1)
         );
 
-        return ((BigDecimal) result[1]).divide(new BigDecimal((Long) result[0]), 16, RoundingMode.HALF_UP);
+        return ((BigDecimal) result[1]).divide(BigDecimal.valueOf((Long) result[0]), 16, RoundingMode.HALF_UP);
     }
 
     @Override

@@ -309,20 +309,10 @@ public class DefaultTypeTransformation {
                 return answer;
             }
             if (type == BigDecimal.class) {
-                if (n instanceof Float || n instanceof Double) {
-                    return new BigDecimal(n.doubleValue());
-                }
-                return new BigDecimal(n.toString());
+                return NumberMath.toBigDecimal(n);
             }
             if (type == BigInteger.class) {
-                if (object instanceof Float || object instanceof Double) {
-                    BigDecimal bd = new BigDecimal(n.doubleValue());
-                    return bd.toBigInteger();
-                }
-                if (object instanceof BigDecimal) {
-                    return ((BigDecimal) object).toBigInteger();
-                }
-                return new BigInteger(n.toString());
+                return NumberMath.toBigInteger(n);
             }
         }
 

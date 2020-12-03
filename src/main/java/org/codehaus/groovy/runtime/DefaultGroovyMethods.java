@@ -15766,7 +15766,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 throw new GroovyRuntimeException("The argument (" + to +
                         ") to upto() cannot be less than the value (" + self + ") it's called on.");
         } else {
-            BigDecimal to1 = new BigDecimal(to.toString());
+            BigDecimal to1 = NumberMath.toBigDecimal(to);
             if (self.compareTo(to1) <= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
                     closure.call(i);
@@ -15998,7 +15998,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             } else
                 throw new GroovyRuntimeException("The argument (" + to +
                         ") to downto() cannot be greater than the value (" + self + ") it's called on.");        } else {
-            BigDecimal to1 = new BigDecimal(to.toString());
+            BigDecimal to1 = NumberMath.toBigDecimal(to);
             if (self.compareTo(to1) >= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
                     closure.call(i);
@@ -16027,9 +16027,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void step(Number self, Number to, Number stepNumber, Closure closure) {
         if (self instanceof BigDecimal || to instanceof BigDecimal || stepNumber instanceof BigDecimal) {
             final BigDecimal zero = BigDecimal.valueOf(0, 1);  // Same as "0.0".
-            BigDecimal self1 = (self instanceof BigDecimal) ? (BigDecimal) self : new BigDecimal(self.toString());
-            BigDecimal to1 = (to instanceof BigDecimal) ? (BigDecimal) to : new BigDecimal(to.toString());
-            BigDecimal stepNumber1 = (stepNumber instanceof BigDecimal) ? (BigDecimal) stepNumber : new BigDecimal(stepNumber.toString());
+            BigDecimal self1 = NumberMath.toBigDecimal(self);
+            BigDecimal to1 = NumberMath.toBigDecimal(to);
+            BigDecimal stepNumber1 = NumberMath.toBigDecimal(stepNumber);
             if (stepNumber1.compareTo(zero) > 0 && to1.compareTo(self1) > 0) {
                 for (BigDecimal i = self1; i.compareTo(to1) < 0; i = i.add(stepNumber1)) {
                     closure.call(i);
@@ -16463,16 +16463,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static BigDecimal toBigDecimal(Number self) {
-        // Quick method for scalars.
-        if ((self instanceof Long)
-                || (self instanceof Integer)
-                || (self instanceof Short)
-                || (self instanceof Byte))
-        {
-            return BigDecimal.valueOf(self.longValue());
-        }
-
-        return new BigDecimal(self.toString());
+        return NumberMath.toBigDecimal(self);
     }
 
     /**
@@ -16512,17 +16503,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static BigInteger toBigInteger(Number self) {
-        if (self instanceof BigInteger) {
-            return (BigInteger) self;
-        } else if (self instanceof BigDecimal) {
-            return ((BigDecimal) self).toBigInteger();
-        } else if (self instanceof Double) {
-            return new BigDecimal((Double)self).toBigInteger();
-        } else if (self instanceof Float) {
-            return new BigDecimal((Float)self).toBigInteger();
-        } else {
-            return new BigInteger(Long.toString(self.longValue()));
-        }
+        return NumberMath.toBigInteger(self);
     }
 
     // Boolean based methods
