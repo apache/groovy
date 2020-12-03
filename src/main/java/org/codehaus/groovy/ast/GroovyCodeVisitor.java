@@ -68,6 +68,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
@@ -202,8 +203,13 @@ public interface GroovyCodeVisitor {
         if (list != null) list.forEach(expr -> expr.visit(this));
     }
 
-    default void visit(ASTNode astNode) {
-        if (null == astNode) return;
-        astNode.visit(this);
+    default void visit(Statement statement) {
+        if (null == statement) return;
+        statement.visit(this);
+    }
+
+    default void visit(Expression expression) {
+        if (null == expression) return;
+        expression.visit(this);
     }
 }
