@@ -83,7 +83,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.params
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
-
 /**
  * Visit AST of GINQ to generate target method calls for GINQ
  *
@@ -217,6 +216,15 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                     return
                 }
                 super.visitMethodCallExpression(call)
+            }
+
+            @Override
+            void visitListOfExpressions(List<? extends Expression> list) {
+                if (list != null)
+                    list.forEach(expr -> {
+                        if (expr instanceof AbstractGinqExpression) return // do not visit subquery
+                        expr.visit(this)
+                    })
             }
         })
 

@@ -44,6 +44,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashSet;
@@ -64,11 +65,27 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
         this.sourceUnit = sourceUnit;
     }
 
+    private final List<MethodCallExpression> ignoredMethodCallExpressionList = new ArrayList<>();
+
     public GinqExpression getGinqExpression() {
         if (null == latestGinqExpression && !ginqExpressionStack.isEmpty()) {
             GinqExpression latestGinqExpression = ginqExpressionStack.peek();
             this.collectSyntaxError(new GinqSyntaxError("`select` clause is missing",
                     latestGinqExpression.getLineNumber(), latestGinqExpression.getColumnNumber()));
+        }
+
+        latestGinqExpression.visit(new CodeVisitorSupport() {
+            @Override
+            public void visitMethodCallExpression(MethodCallExpression call) {
+                ignoredMethodCallExpressionList.remove(call);
+                super.visitMethodCallExpression(call);
+            }
+        });
+
+        if (!ignoredMethodCallExpressionList.isEmpty()) {
+            MethodCallExpression methodCallExpression = ignoredMethodCallExpressionList.get(0);
+            this.collectSyntaxError(new GinqSyntaxError("Unknown clause: " + methodCallExpression.getMethodAsString(),
+                    methodCallExpression.getLineNumber(), methodCallExpression.getColumnNumber()));
         }
 
         return latestGinqExpression;
@@ -93,7 +110,10 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
         super.visitMethodCallExpression(call);
         final String methodName = call.getMethodAsString();
 
-        if (!KEYWORD_SET.contains(methodName)) return;
+        if (!KEYWORD_SET.contains(methodName)) {
+            ignoredMethodCallExpressionList.add(call);
+            return;
+        }
 
         if (KW_FROM.equals(methodName)) {
             final GinqExpression ginqExpression = new GinqExpression();

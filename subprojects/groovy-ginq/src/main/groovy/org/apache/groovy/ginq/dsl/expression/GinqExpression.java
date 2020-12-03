@@ -19,6 +19,7 @@
 package org.apache.groovy.ginq.dsl.expression;
 
 import org.apache.groovy.ginq.dsl.GinqAstVisitor;
+import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,40 @@ public class GinqExpression extends AbstractGinqExpression {
     private OrderExpression orderExpression;
     private LimitExpression limitExpression;
     private SelectExpression selectExpression;
+
+    @Override
+    public void visit(GroovyCodeVisitor visitor) {
+        visitor.visit(fromExpression.aliasExpr);
+        visitor.visit(fromExpression.dataSourceExpr);
+
+        for (JoinExpression joinExpression : joinExpressionList) {
+            visitor.visit((joinExpression.aliasExpr));
+            visitor.visit((joinExpression.dataSourceExpr));
+
+            if (null != joinExpression.getOnExpression()) {
+                visitor.visit((joinExpression.getOnExpression().filterExpr));
+            }
+        }
+
+        if (null != whereExpression) {
+            visitor.visit(whereExpression.filterExpr);
+        }
+        if (null != groupExpression) {
+            visitor.visit(groupExpression.getClassifierExpr());
+
+            if (null != groupExpression.getHavingExpression()) {
+                visitor.visit(groupExpression.getHavingExpression().filterExpr);
+            }
+        }
+        if (null != orderExpression) {
+            visitor.visit(orderExpression.getOrdersExpr());
+        }
+        if (null != limitExpression) {
+            visitor.visit(limitExpression.getOffsetAndSizeExpr());
+        }
+
+        visitor.visit(selectExpression.getProjectionExpr());
+    }
 
     @Override
     public <R> R accept(GinqAstVisitor<R> visitor) {

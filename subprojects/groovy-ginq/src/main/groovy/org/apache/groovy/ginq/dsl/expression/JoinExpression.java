@@ -78,7 +78,7 @@ public class JoinExpression extends DataSourceExpression implements DataSourceHo
 
     @Override
     public String getText() {
-        return joinName + " " + aliasExpr.getText() + " in " + dataSourceExpr.getText() + " " + onExpression.getText();
+        return joinName + " " + aliasExpr.getText() + " in " + dataSourceExpr.getText() + (null == onExpression ? "" : " " + onExpression.getText());
     }
 
     @Override

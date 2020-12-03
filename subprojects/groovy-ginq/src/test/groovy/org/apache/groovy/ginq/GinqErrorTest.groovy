@@ -365,4 +365,17 @@ class GinqErrorTest {
 
         assert err.toString().contains('sub-query could not be used in the `select` clause with `groupby` @ line 4, column 24.')
     }
+
+    @Test
+    void "testGinq - from unknown select - 1"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 2, 3]
+                hello world > 0
+                select n
+            }
+        '''
+
+        assert err.toString().concat('Unknown clause: hello @ line 3, column 17.')
+    }
 }

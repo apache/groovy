@@ -201,4 +201,9 @@ public interface GroovyCodeVisitor {
     default void visitListOfExpressions(List<? extends Expression> list) {
         if (list != null) list.forEach(expr -> expr.visit(this));
     }
+
+    default void visit(ASTNode astNode) {
+        if (null == astNode) return;
+        astNode.visit(this);
+    }
 }
