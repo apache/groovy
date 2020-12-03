@@ -21,6 +21,7 @@ package groovy.lang;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.IteratorClosureAdapter;
 import org.codehaus.groovy.runtime.RangeInfo;
+import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -418,16 +419,16 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
                 final BigInteger fromNum = new BigInteger(from.toString());
                 final BigInteger toTemp = new BigInteger(to.toString());
                 final BigInteger toNum = inclusive ? toTemp : toTemp.subtract(BigInteger.ONE);
-                final BigInteger sizeNum = new BigDecimal(toNum.subtract(fromNum)).divide(new BigDecimal(stepSize.longValue()), RoundingMode.DOWN).toBigInteger().add(BigInteger.ONE);
+                final BigInteger sizeNum = new BigDecimal(toNum.subtract(fromNum)).divide(BigDecimal.valueOf(stepSize.longValue()), RoundingMode.DOWN).toBigInteger().add(BigInteger.ONE);
                 tempsize = sizeNum.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) < 0 ? sizeNum.intValue() : Integer.MAX_VALUE;
                 shortcut = true;
             } else if (((from instanceof BigDecimal || from instanceof BigInteger) && to instanceof Number) ||
                     ((to instanceof BigDecimal || to instanceof BigInteger) && from instanceof Number)) {
                 // let's fast calculate the size
-                final BigDecimal fromNum = new BigDecimal(from.toString());
-                final BigDecimal toTemp = new BigDecimal(to.toString());
-                final BigDecimal toNum = inclusive ? toTemp : toTemp.subtract(new BigDecimal("1.0"));
-                final BigInteger sizeNum = toNum.subtract(fromNum).divide(new BigDecimal(stepSize.longValue()), RoundingMode.DOWN).toBigInteger().add(BigInteger.ONE);
+                final BigDecimal fromNum = NumberMath.toBigDecimal((Number) from);
+                final BigDecimal toTemp = NumberMath.toBigDecimal((Number) to);
+                final BigDecimal toNum = inclusive ? toTemp : toTemp.subtract(BigDecimal.ONE);
+                final BigInteger sizeNum = toNum.subtract(fromNum).divide(BigDecimal.valueOf(stepSize.longValue()), RoundingMode.DOWN).toBigInteger().add(BigInteger.ONE);
                 tempsize = sizeNum.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) < 0 ? sizeNum.intValue() : Integer.MAX_VALUE;
                 shortcut = true;
             }
@@ -452,7 +453,7 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
     }
 
     private boolean isIntegral(Number stepSize) {
-        BigDecimal tempStepSize = new BigDecimal(stepSize.toString());
+        BigDecimal tempStepSize = NumberMath.toBigDecimal(stepSize);
         return tempStepSize.equals(new BigDecimal(tempStepSize.toBigInteger()));
     }
 
