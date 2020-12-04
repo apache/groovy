@@ -772,32 +772,31 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     /**
-     * @return the field node on the outer class or null if this is not an
-     *         inner class
+     * @return outer class field or {@code null} if not found or this is not an inner class
      */
-    public FieldNode getOuterField(String name) {
+    public FieldNode getOuterField(final String name) {
+        if (redirect != null) {
+            return redirect.getOuterField(name);
+        }
         return null;
     }
 
-    /**
-     * Helper method to avoid casting to inner class
-     */
     public ClassNode getOuterClass() {
+        if (redirect != null) {
+            return redirect.getOuterClass();
+        }
         return null;
     }
 
     public List<ClassNode> getOuterClasses() {
-        if (!(this instanceof InnerClassNode)) {
+        ClassNode outer = getOuterClass();
+        if (outer == null) {
             return Collections.emptyList();
         }
-
-        List<ClassNode> result = new LinkedList<>();
-        ClassNode outestClass = ((InnerClassNode) this).getOuterMostClass();
-        ClassNode cn = this;
-
+        List<ClassNode> result = new ArrayList<>();
         do {
-            result.add(cn = cn.getOuterClass());
-        } while (!cn.equals(outestClass));
+            result.add(outer);
+        } while ((outer = outer.getOuterClass()) != null);
 
         return result;
     }
