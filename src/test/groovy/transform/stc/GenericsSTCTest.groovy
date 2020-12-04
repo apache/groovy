@@ -1137,6 +1137,39 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-7549, GROOVY-9847
+    void testRegressionInGenericsTypeInference2() {
+        assertScript '''
+            class Test {
+                @groovy.transform.ToString(excludes='children')
+                private static class TreeAttr {
+                    String name
+                    Integer val = 0
+                    List<TreeAttr> children = []
+                }
+
+                static main(args) {
+                    new Test().test(1)
+                }
+
+                void test(Integer count) {
+                    TreeAttr root = new TreeAttr(name:'foo')
+                    List<TreeAttr> collector = root.children
+
+                    for (name in ['bar','baz']) { // tokens in a path
+                        def item = collector.find { it.name == name }
+                        if (!item) {
+                            item = new TreeAttr(name: name)
+                            collector.add(item)
+                        }
+                        collector = item.children
+                        if (count) item.val += count
+                    }
+                }
+            }
+        '''
+    }
+
     // In Groovy, we do not throw warnings (in general) and in that situation, not for unchecked
     // assignments like in Java
     // In the following test, the LHS of the assignment uses generics, while the RHS does not.
