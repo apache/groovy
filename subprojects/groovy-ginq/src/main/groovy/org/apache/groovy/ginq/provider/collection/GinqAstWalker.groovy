@@ -19,6 +19,7 @@
 package org.apache.groovy.ginq.provider.collection
 
 import groovy.transform.CompileStatic
+import org.apache.groovy.ginq.dsl.GinqAstBaseVisitor
 import org.apache.groovy.ginq.dsl.GinqAstVisitor
 import org.apache.groovy.ginq.dsl.GinqSyntaxError
 import org.apache.groovy.ginq.dsl.SyntaxErrorReportable
@@ -41,7 +42,6 @@ import org.apache.groovy.util.Maps
 import org.codehaus.groovy.GroovyBugError
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.CodeVisitorSupport
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.CastExpression
@@ -208,7 +208,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
         boolean hasAggFunctionInSelect = false
         SelectExpression selectExpression = currentGinqExpression.selectExpression
-        selectExpression.projectionExpr.visit(new CodeVisitorSupport() {
+        selectExpression.projectionExpr.visit(new GinqAstBaseVisitor() {
             @Override
             void visitMethodCallExpression(MethodCallExpression call) {
                 if (isAggregateFunction(call)) {
@@ -660,7 +660,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         List<DeclarationExpression> declarationExpressionList = Collections.emptyList()
         if (isJoin || isGroup) {
             def variableNameSet = new HashSet<String>()
-            expr.visit(new CodeVisitorSupport() {
+            expr.visit(new GinqAstBaseVisitor() {
                 @Override
                 void visitVariableExpression(VariableExpression expression) {
                     variableNameSet << expression.text

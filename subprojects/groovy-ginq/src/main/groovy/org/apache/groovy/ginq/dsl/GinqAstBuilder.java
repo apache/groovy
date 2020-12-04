@@ -74,7 +74,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
                     latestGinqExpression.getLineNumber(), latestGinqExpression.getColumnNumber()));
         }
 
-        latestGinqExpression.visit(new CodeVisitorSupport() {
+        latestGinqExpression.visit(new GinqAstBaseVisitor() {
             @Override
             public void visitMethodCallExpression(MethodCallExpression call) {
                 ignoredMethodCallExpressionList.remove(call);

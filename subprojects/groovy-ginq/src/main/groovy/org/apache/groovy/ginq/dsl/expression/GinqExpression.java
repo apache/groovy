@@ -54,36 +54,7 @@ public class GinqExpression extends AbstractGinqExpression {
 
     @Override
     public void visit(GroovyCodeVisitor visitor) {
-        visitor.visit(fromExpression.aliasExpr);
-        visitor.visit(fromExpression.dataSourceExpr);
-
-        for (JoinExpression joinExpression : joinExpressionList) {
-            visitor.visit((joinExpression.aliasExpr));
-            visitor.visit((joinExpression.dataSourceExpr));
-
-            if (null != joinExpression.getOnExpression()) {
-                visitor.visit((joinExpression.getOnExpression().filterExpr));
-            }
-        }
-
-        if (null != whereExpression) {
-            visitor.visit(whereExpression.filterExpr);
-        }
-        if (null != groupExpression) {
-            visitor.visit(groupExpression.getClassifierExpr());
-
-            if (null != groupExpression.getHavingExpression()) {
-                visitor.visit(groupExpression.getHavingExpression().filterExpr);
-            }
-        }
-        if (null != orderExpression) {
-            visitor.visit(orderExpression.getOrdersExpr());
-        }
-        if (null != limitExpression) {
-            visitor.visit(limitExpression.getOffsetAndSizeExpr());
-        }
-
-        visitor.visit(selectExpression.getProjectionExpr());
+        ((GinqAstVisitor) visitor).visitGinqExpression(this);
     }
 
     @Override

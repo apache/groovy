@@ -30,6 +30,7 @@ import org.apache.groovy.ginq.dsl.expression.OrderExpression;
 import org.apache.groovy.ginq.dsl.expression.SelectExpression;
 import org.apache.groovy.ginq.dsl.expression.WhereExpression;
 
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -50,6 +51,6 @@ public interface GinqAstVisitor<R> {
     R visitLimitExpression(LimitExpression limitExpression);
     R visitSelectExpression(SelectExpression selectExpression);
     R visit(AbstractGinqExpression expression);
-    void setConfiguration(Map<String, String> configuration);
-    Map<String, String> getConfiguration();
+    default void setConfiguration(Map<String, String> configuration) {}
+    default Map<String, String> getConfiguration() { return Collections.emptyMap(); }
 }
