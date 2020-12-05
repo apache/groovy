@@ -118,7 +118,7 @@ expecting.
 
 To bootstrap Gradle, at the top directory of your unpacked source, run the command:
 
-    gradle -p wrapperBootstrap bootstrap
+    gradle -p bootstrap
 
 On Unix-like systems, use `./gradle`.
 

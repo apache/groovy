@@ -22,14 +22,16 @@ file("$projectDir/../gradle.properties").withInputStream {
     props.load(it)
 }
 
+defaultTasks 'bootstrap'
+
 tasks.withType(Wrapper).configureEach {
     gradleVersion = props.gradle_version
 }
 
 task bootstrap(dependsOn: 'wrapper') {
     doLast {
-    ant.move file: "${projectDir}/gradlew", todir: "${projectDir}/../"
-    ant.move file: "${projectDir}/gradlew.bat", todir: "${projectDir}/../"
-    ant.move file: "${projectDir}/gradle/wrapper", todir: "${projectDir}/../gradle/"
+        ant.move file: "${projectDir}/gradlew", todir: "${projectDir}/../"
+        ant.move file: "${projectDir}/gradlew.bat", todir: "${projectDir}/../"
+        ant.move file: "${projectDir}/gradle/wrapper", todir: "${projectDir}/../gradle/"
     }
 }
