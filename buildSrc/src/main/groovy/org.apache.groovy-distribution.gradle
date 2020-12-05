@@ -163,6 +163,7 @@ def distDoc = tasks.register('distDoc', Zip) {
     //dependsOn: doc
     archiveBaseName = 'apache-groovy'
     archiveAppendix = 'docs'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     into("groovy-${project.version}") {
         with distributionExtension.docSpec
     }
