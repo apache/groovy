@@ -30,8 +30,9 @@ import java.util.List;
  * @since 4.0.0
  */
 public class JoinExpression extends DataSourceExpression implements DataSourceHolder {
+    private static final String INNER_JOIN = "innerjoin";
     private static final String CROSS_JOIN = "crossjoin";
-    private static final List<String> JOIN_NAME_LIST = Arrays.asList("innerjoin", "leftjoin", "rightjoin", "fulljoin", CROSS_JOIN);
+    private static final List<String> JOIN_NAME_LIST = Arrays.asList(INNER_JOIN, "leftjoin", "rightjoin", "fulljoin", CROSS_JOIN);
     private final String joinName;
     private OnExpression onExpression;
     private DataSourceExpression dataSourceExpression;
@@ -47,6 +48,10 @@ public class JoinExpression extends DataSourceExpression implements DataSourceHo
 
     public boolean isCrossJoin() {
         return CROSS_JOIN.equals(joinName);
+    }
+
+    public boolean isInnerJoin() {
+        return INNER_JOIN.equals(joinName);
     }
 
     @Override

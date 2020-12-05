@@ -27,7 +27,7 @@ import org.codehaus.groovy.ast.expr.Expression;
  */
 public abstract class DataSourceExpression extends AbstractGinqExpression implements DataSourceHolder {
     protected final Expression aliasExpr;
-    protected final Expression dataSourceExpr;
+    protected Expression dataSourceExpr;
 
     public DataSourceExpression(Expression aliasExpr, Expression dataSourceExpr) {
         this.aliasExpr = aliasExpr;
@@ -40,5 +40,7 @@ public abstract class DataSourceExpression extends AbstractGinqExpression implem
     public Expression getDataSourceExpr() {
         return dataSourceExpr;
     }
-
+    public void setDataSourceExpr(Expression dataSourceExpr) {
+        this.dataSourceExpr = dataSourceExpr;
+    }
 }

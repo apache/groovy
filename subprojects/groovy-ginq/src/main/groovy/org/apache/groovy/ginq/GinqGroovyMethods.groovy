@@ -22,11 +22,11 @@ import groovy.transform.CompileStatic
 import org.apache.groovy.ginq.dsl.GinqAstBuilder
 import org.apache.groovy.ginq.dsl.GinqAstVisitor
 import org.apache.groovy.ginq.dsl.expression.GinqExpression
+import org.apache.groovy.ginq.provider.collection.GinqAstOptimizer
 import org.apache.groovy.ginq.provider.collection.GinqAstWalker
 import org.apache.groovy.lang.annotation.Incubating
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.expr.ClosureExpression
-import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MapEntryExpression
 import org.codehaus.groovy.ast.expr.MapExpression
@@ -36,8 +36,6 @@ import org.codehaus.groovy.macro.runtime.Macro
 import org.codehaus.groovy.macro.runtime.MacroContext
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.asX
-import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX
-
 /**
  * Declare GINQ macro methods
  *
@@ -56,7 +54,7 @@ class GinqGroovyMethods {
      */
     @Macro
     static Expression GQ(final MacroContext ctx, final ClosureExpression ginqClosureExpression) {
-        GQ(ctx, defaultConfiguration(), ginqClosureExpression)
+        GQ(ctx, null, ginqClosureExpression)
     }
 
     /**
@@ -76,7 +74,7 @@ class GinqGroovyMethods {
      * Transform GINQ code to target method invocation
      *
      * @param ctx the macro context
-     * @param ginqConfigurationMapExpression specify the configuration for GINQ, e.g. {@code astWalker}
+     * @param ginqConfigurationMapExpression specify the configuration for GINQ, e.g. {@code astWalker}, {@code optimize}
      * @param ginqClosureExpression hold the GINQ code
      * @return target method invocation
      * @since 4.0.0
@@ -92,21 +90,23 @@ class GinqGroovyMethods {
         GinqExpression ginqExpression = ginqAstBuilder.getGinqExpression()
 
         Map<String, String> configuration = createConfiguration(ginqConfigurationMapExpression)
-        Class<?> clazz = GinqGroovyMethods.class.classLoader.loadClass(configuration.get(CONF_AST_WALKER))
+
+        if (TRUE == configuration.get(CONF_OPTIMIZE, TRUE)) {
+            GinqAstOptimizer ginqAstOptimizer = new GinqAstOptimizer()
+            ginqAstOptimizer.visitGinqExpression(ginqExpression)
+        }
+
+        Class<?> clazz = GinqGroovyMethods.class.classLoader.loadClass(configuration.get(CONF_AST_WALKER, DEFAULT_AST_WALKER_CLASS_NAME))
         GinqAstVisitor ginqAstWalker = (GinqAstVisitor) clazz.getDeclaredConstructor(SourceUnit.class).newInstance(sourceUnit)
         ginqAstWalker.setConfiguration(configuration)
 
         return (Expression) ginqAstWalker.visitGinqExpression(ginqExpression)
     }
 
-    private static MapExpression defaultConfiguration() {
-        return mapX(Arrays.asList(
-                new MapEntryExpression(new ConstantExpression(CONF_AST_WALKER), new ConstantExpression(DEFAULT_AST_WALKER_CLASS_NAME))
-        ))
-    }
-
     private static Map<String, String> createConfiguration(MapExpression ginqConfigurationMapExpression) {
         Map<String, String> configuration = [:]
+        if (!ginqConfigurationMapExpression) return configuration
+
         for (MapEntryExpression mapEntryExpression : ginqConfigurationMapExpression.getMapEntryExpressions()) {
             configuration.put(mapEntryExpression.keyExpression.text, mapEntryExpression.valueExpression.text)
         }
@@ -115,6 +115,8 @@ class GinqGroovyMethods {
 
     private GinqGroovyMethods() {}
 
+    private static final String CONF_OPTIMIZE = 'optimize'
     private static final String CONF_AST_WALKER = 'astWalker'
     private static final String DEFAULT_AST_WALKER_CLASS_NAME = GinqAstWalker.class.name
+    private static final String TRUE = 'true'
 }

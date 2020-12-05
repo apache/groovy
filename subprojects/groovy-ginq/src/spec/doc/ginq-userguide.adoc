@@ -390,6 +390,15 @@ which is the default behaviour of GINQ:
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_customize_01,indent=0]
 ----
 
+==== Optimize GINQ
+
+GINQ optimizer is enabled by default for better performance. It will change the GINQ AST to achieve better execution plan.
+We could disable it by hand:
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_optimize_01,indent=0]
+----
+
 === GINQ Examples
 ==== Generate Multiplication Table
 [source, sql]

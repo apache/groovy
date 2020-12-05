@@ -32,7 +32,8 @@ import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 public abstract class AbstractGinqExpression extends Expression implements NodeMetaDataHandler {
     @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
-        throw new UnsupportedOperationException("transform GINQ expression is not supported yet");
+        // do nothing for now
+        return this;
     }
 
     public abstract <R> R accept(GinqAstVisitor<R> visitor);

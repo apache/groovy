@@ -18,7 +18,20 @@
  */
 package org.apache.groovy.ginq
 
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
+import org.apache.groovy.ginq.dsl.GinqAstBuilder
+import org.apache.groovy.ginq.dsl.expression.GinqExpression
+import org.apache.groovy.ginq.provider.collection.GinqAstOptimizer
+import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.expr.BinaryExpression
+import org.codehaus.groovy.ast.expr.ClosureExpression
+import org.codehaus.groovy.ast.expr.DeclarationExpression
+import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.Phases
+import org.codehaus.groovy.syntax.Types
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -3386,6 +3399,65 @@ class GinqTest {
             def result = GQ {from n in [1] select n} as List
             assert result instanceof List
             assert 1 == result[0]
+        '''
+    }
+
+    @Test
+    @CompileDynamic
+    void "testGinq - optimize - 1"() {
+        def code = '''
+            def hello() {
+                def c = {
+                    from n1 in nums1
+                    innerjoin n2 in nums2 on n1 == n2
+                    where n1 > 1 && n2 <= 3
+                    select n1, n2
+                }
+                return
+            }
+        '''
+        def sourceUnit
+        def ast = new CompilationUnit().tap {
+            sourceUnit = addSource 'hello.groovy', code
+            compile Phases.CONVERSION
+        }.ast
+
+        MethodNode methodNode = ast.classes[0].methods.grep(e -> e.name == 'hello')[0]
+        ExpressionStatement delcareStatement = ((BlockStatement) methodNode.getCode()).getStatements()[0]
+        DeclarationExpression declarationExpression = delcareStatement.getExpression()
+        ClosureExpression closureException = declarationExpression.rightExpression
+
+        GinqAstBuilder ginqAstBuilder = new GinqAstBuilder(sourceUnit)
+        closureException.code.visit(ginqAstBuilder)
+        GinqExpression ginqExpression = ginqAstBuilder.getGinqExpression()
+
+        GinqAstOptimizer ginqAstOptimizer = new GinqAstOptimizer()
+        ginqAstOptimizer.visitGinqExpression(ginqExpression)
+        BinaryExpression filterExpr = (BinaryExpression) ginqExpression.whereExpression.filterExpr
+        assert 'true' == filterExpr.leftExpression.text
+        assert 'true' == filterExpr.rightExpression.text
+
+        assert ginqExpression.fromExpression.dataSourceExpr instanceof GinqExpression
+        BinaryExpression contructedFilterExpr1 = ((GinqExpression) ginqExpression.fromExpression.dataSourceExpr).whereExpression.filterExpr
+        assert Types.COMPARE_GREATER_THAN == contructedFilterExpr1.operation.type
+        assert '1' == contructedFilterExpr1.rightExpression.text
+
+        assert ginqExpression.joinExpressionList[0].dataSourceExpr instanceof GinqExpression
+        BinaryExpression contructedFilterExpr2 = ((GinqExpression) ginqExpression.joinExpressionList[0].dataSourceExpr).whereExpression.filterExpr
+        assert Types.COMPARE_LESS_THAN_EQUAL == contructedFilterExpr2.operation.type
+        assert '3' == contructedFilterExpr2.rightExpression.text
+    }
+
+    @Test
+    void "testGinq - optimize - 2"() {
+        assertScript '''
+// tag::ginq_optimize_01[]
+            assert [[1, 1], [2, 2], [3, 3]] == GQ(optimize:false) {
+                from n1 in [1, 2, 3]
+                innerjoin n2 in [1, 2, 3] on n1 == n2
+                select n1, n2
+            }.toList()
+// end::ginq_optimize_01[]
         '''
     }
 }
