@@ -991,11 +991,12 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         appendStacktrace("\n${sw.builder}\n")
     }
 
-    def finishNormal(Object result) {
+    def finishNormal(Object result, Long elapsedTime=null) {
+        String elapsedTimeStr = null != elapsedTime ? " Elapsed time: ${elapsedTime}ms." : ''
         // Take down the wait/cancel dialog
         history[-1].result = result
         if (result != null) {
-            statusLabel.text = 'Execution complete.'
+            statusLabel.text = "Execution complete.${elapsedTimeStr}"
             appendOutputNl('Result: ', promptStyle)
             def obj = (visualizeScriptResults
                     ? OutputTransforms.transformResult(result, shell.getContext()._outputTransforms)
@@ -1004,7 +1005,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             // multi-methods are magical!
             appendOutput(obj, resultStyle)
         } else {
-            statusLabel.text = 'Execution complete. Result was null.'
+            statusLabel.text = "Execution complete. Result was null.${elapsedTimeStr}"
         }
         bindResults()
         if (detachedOutput) {
@@ -1357,23 +1358,23 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                 if (beforeExecution) {
                     beforeExecution()
                 }
-                def result
+                Tuple2<Object, Long> resultAndElapsedTime
                 if (useScriptClassLoaderForScriptExecution) {
                     ClassLoader savedThreadContextClassLoader = Thread.currentThread().contextClassLoader
                     try {
                         Thread.currentThread().contextClassLoader = shell.classLoader
-                        result = doRun(selected, st, record)
+                        resultAndElapsedTime = doRun(selected, st, record)
                     }
                     finally {
                         Thread.currentThread().contextClassLoader = savedThreadContextClassLoader
                     }
                 } else {
-                    result = doRun(selected, st, record)
+                    resultAndElapsedTime = doRun(selected, st, record)
                 }
                 if (afterExecution) {
                     afterExecution()
                 }
-                SwingUtilities.invokeLater { finishNormal(result) }
+                SwingUtilities.invokeLater { finishNormal(resultAndElapsedTime.v1, resultAndElapsedTime.v2) }
             } catch (Throwable t) {
                 if (t instanceof StackOverflowError) {
                     // set the flag that will be used in printing exception details in output pane
@@ -1401,9 +1402,13 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     @CompileStatic
-    private Object doRun(boolean selected, SourceType st, HistoryRecord record) {
+    private Tuple2<Object, Long> doRun(boolean selected, SourceType st, HistoryRecord record) {
         def src = record.getTextToRun(selected)
-        return st.run(src)
+        long begin = System.currentTimeMillis()
+        Object result = st.run(src)
+        long end = System.currentTimeMillis()
+
+        return Tuple.tuple(result, (end - begin))
     }
 
     @CompileStatic
