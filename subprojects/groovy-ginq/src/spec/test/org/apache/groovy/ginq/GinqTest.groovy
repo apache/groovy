@@ -21,8 +21,8 @@ package org.apache.groovy.ginq
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import org.apache.groovy.ginq.dsl.GinqAstBuilder
+import org.apache.groovy.ginq.dsl.GinqAstOptimizer
 import org.apache.groovy.ginq.dsl.expression.GinqExpression
-import org.apache.groovy.ginq.provider.collection.GinqAstOptimizer
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.ClosureExpression
@@ -1175,6 +1175,20 @@ class GinqTest {
                 from n1 in nums1
                 leftjoin n2 in nums2 on n1 == n2
                 where n2 != null
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from leftjoin where select - 2"() {
+        assertScript '''
+            def nums1 = [1, 2, 3, null]
+            def nums2 = [2, 3, 4, null]
+            assert [[2, 2], [3, 3]] == GQ {
+                from n1 in nums1
+                leftjoin n2 in nums2 on n1 == n2
+                where n1 != null && n2 != null
                 select n1, n2
             }.toList()
         '''
@@ -3449,7 +3463,50 @@ class GinqTest {
     }
 
     @Test
+    @CompileDynamic
     void "testGinq - optimize - 2"() {
+        def code = '''
+            def hello() {
+                def c = {
+                    from n1 in nums1
+                    leftjoin n2 in nums2 on n1 == n2
+                    where n1 > 1 && n2 <= 3
+                    select n1, n2
+                }
+                return
+            }
+        '''
+        def sourceUnit
+        def ast = new CompilationUnit().tap {
+            sourceUnit = addSource 'hello.groovy', code
+            compile Phases.CONVERSION
+        }.ast
+
+        MethodNode methodNode = ast.classes[0].methods.grep(e -> e.name == 'hello')[0]
+        ExpressionStatement delcareStatement = ((BlockStatement) methodNode.getCode()).getStatements()[0]
+        DeclarationExpression declarationExpression = delcareStatement.getExpression()
+        ClosureExpression closureException = declarationExpression.rightExpression
+
+        GinqAstBuilder ginqAstBuilder = new GinqAstBuilder(sourceUnit)
+        closureException.code.visit(ginqAstBuilder)
+        GinqExpression ginqExpression = ginqAstBuilder.getGinqExpression()
+
+        GinqAstOptimizer ginqAstOptimizer = new GinqAstOptimizer()
+        ginqAstOptimizer.visitGinqExpression(ginqExpression)
+        BinaryExpression filterExpr = (BinaryExpression) ginqExpression.whereExpression.filterExpr
+        assert 'true' == filterExpr.leftExpression.text
+        assert 'true' != filterExpr.rightExpression.text
+
+        assert ginqExpression.fromExpression.dataSourceExpr instanceof GinqExpression
+        BinaryExpression contructedFilterExpr1 = ((GinqExpression) ginqExpression.fromExpression.dataSourceExpr).whereExpression.filterExpr
+        assert Types.COMPARE_GREATER_THAN == contructedFilterExpr1.operation.type
+        assert '1' == contructedFilterExpr1.rightExpression.text
+
+        assert ginqExpression.joinExpressionList[0].dataSourceExpr !instanceof GinqExpression
+    }
+
+    @Test
+    void "testGinq - optimize - 3"() {
         assertScript '''
 // tag::ginq_optimize_01[]
             assert [[1, 1], [2, 2], [3, 3]] == GQ(optimize:false) {

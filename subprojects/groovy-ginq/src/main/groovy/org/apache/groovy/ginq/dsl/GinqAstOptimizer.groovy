@@ -16,13 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.ginq.provider.collection
+package org.apache.groovy.ginq.dsl
 
 import groovy.transform.CompileStatic
-import org.apache.groovy.ginq.dsl.GinqAstBaseVisitor
 import org.apache.groovy.ginq.dsl.expression.DataSourceExpression
 import org.apache.groovy.ginq.dsl.expression.FromExpression
 import org.apache.groovy.ginq.dsl.expression.GinqExpression
+import org.apache.groovy.ginq.dsl.expression.JoinExpression
 import org.apache.groovy.ginq.dsl.expression.SelectExpression
 import org.apache.groovy.ginq.dsl.expression.WhereExpression
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
@@ -40,7 +40,7 @@ import java.util.stream.Collectors
 /**
  * Optimize the execution plan of GINQ through transforming AST.
  * <p>
- * Note:The optimizer only optimizes the AST for inner joins for now, e.g.
+ * Note:The optimizer only optimizes the AST for inner/left joins for now, e.g.
  *
  * <pre>
  *    from n1 in nums1
@@ -75,16 +75,34 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
             return null
         }
 
-        boolean allInnerJoin = ginqExpression.joinExpressionList.every {it.innerJoin}
-        if (!allInnerJoin) return
+        List<DataSourceExpression> optimizingDataSourceExpressionList = []
+        optimizingDataSourceExpressionList << ginqExpression.fromExpression
+        for (JoinExpression joinExpression : ginqExpression.joinExpressionList) {
+            if (joinExpression.innerJoin) {
+                optimizingDataSourceExpressionList << joinExpression
+            } else if (joinExpression.leftJoin) {
+                break
+            } else {
+                optimizingDataSourceExpressionList.clear()
+                break
+            }
+        }
 
-        List<DataSourceExpression> dataSourceExpressionList = [].tap {
+        if (!optimizingDataSourceExpressionList) {
+            return null
+        }
+        final List<String> optimizingAliasList =
+                (List<String>) optimizingDataSourceExpressionList.stream()
+                        .map((DataSourceExpression e) -> e.aliasExpr.text)
+                        .collect(Collectors.toList())
+
+        List<DataSourceExpression> allDataSourceExpressionList = [].tap {
             it << ginqExpression.fromExpression
             it.addAll(ginqExpression.joinExpressionList)
         }
 
-        final List<String> aliasList =
-                (List<String>) dataSourceExpressionList.stream()
+        final List<String> allAliasList =
+                (List<String>) allDataSourceExpressionList.stream()
                         .map((DataSourceExpression e) -> e.aliasExpr.text)
                         .collect(Collectors.toList())
 
@@ -129,34 +147,9 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
             })
 
             candidatesToOptimize.stream()
-                    .forEach(e -> collectConditionsToOptimize(e, aliasList, conditionsToOptimize))
+                    .forEach(e -> collectConditionsToOptimize(e, allAliasList, optimizingAliasList, conditionsToOptimize))
 
-            conditionsToOptimize.forEach((String alias, List<Expression> conditions) -> {
-                DataSourceExpression dataSourceExpression =
-                        dataSourceExpressionList.grep { DataSourceExpression e -> e.aliasExpr.text == alias }[0]
-
-                if (dataSourceExpression) {
-                    GinqExpression contructedGinqExpression = new GinqExpression()
-                    String constructedAlias = "alias${System.nanoTime()}"
-
-                    List<Expression> transformedConditions =
-                            conditions.stream()
-                                    .map(e -> correctVars(e, alias, constructedAlias))
-                                    .collect(Collectors.toList())
-
-                    contructedGinqExpression.fromExpression =
-                            new FromExpression(new VariableExpression(constructedAlias), dataSourceExpression.dataSourceExpr)
-                    contructedGinqExpression.whereExpression =
-                            new WhereExpression(contructFilterExpr(transformedConditions))
-                    contructedGinqExpression.selectExpression =
-                            new SelectExpression(
-                                    new ArgumentListExpression(
-                                            Collections.singletonList(
-                                                    (Expression) new VariableExpression(constructedAlias))))
-
-                    dataSourceExpression.dataSourceExpr = contructedGinqExpression
-                }
-            })
+            transformFromClause(conditionsToOptimize, optimizingAliasList, optimizingDataSourceExpressionList)
 
             whereExpression.filterExpr =
                     ((ListExpression) new ListExpression(Collections.singletonList(whereExpression.filterExpr))
@@ -173,6 +166,37 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
         };
 
         return null
+    }
+
+    private void transformFromClause(LinkedHashMap<String, List<Expression>> conditionsToOptimize, List<String> optimizingAliasList, List<DataSourceExpression> optimizingDataSourceExpressionList) {
+        conditionsToOptimize.forEach((String alias, List<Expression> conditions) -> {
+            if (!optimizingAliasList.contains(alias)) return
+
+            DataSourceExpression dataSourceExpression =
+                    optimizingDataSourceExpressionList.grep { DataSourceExpression e -> e.aliasExpr.text == alias }[0]
+
+            if (dataSourceExpression) {
+                GinqExpression contructedGinqExpression = new GinqExpression()
+                String constructedAlias = "alias${System.nanoTime()}"
+
+                List<Expression> transformedConditions =
+                        conditions.stream()
+                                .map(e -> correctVars(e, alias, constructedAlias))
+                                .collect(Collectors.toList())
+
+                contructedGinqExpression.fromExpression =
+                        new FromExpression(new VariableExpression(constructedAlias), dataSourceExpression.dataSourceExpr)
+                contructedGinqExpression.whereExpression =
+                        new WhereExpression(contructFilterExpr(transformedConditions))
+                contructedGinqExpression.selectExpression =
+                        new SelectExpression(
+                                new ArgumentListExpression(
+                                        Collections.singletonList(
+                                                (Expression) new VariableExpression(constructedAlias))))
+
+                dataSourceExpression.dataSourceExpr = contructedGinqExpression
+            }
+        })
     }
 
     Expression correctVars(Expression expression, final String alias, final String constructedAlias) {
@@ -203,13 +227,13 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
         return new BinaryExpression(condition, new Token(Types.LOGICAL_AND, '&&', -1, -1), remainingCondition)
     }
 
-    private void collectConditionsToOptimize(Expression expression, List<String> aliasList, Map<String, List<Expression>> conditionsToOptimize) {
+    private void collectConditionsToOptimize(Expression expression, List<String> allAliasList, List<String> optimizingAliasList, Map<String, List<Expression>> conditionsToOptimize) {
         boolean toAdd = true
         Set<String> usedAliasSet = new HashSet<>()
         expression.visit(new GinqAstBaseVisitor() {
             @Override
             void visitVariableExpression(VariableExpression variableExpression) {
-                if (!aliasList.contains(variableExpression.text)) {
+                if (!allAliasList.contains(variableExpression.text)) {
                     toAdd = false
                     return
                 }
@@ -220,13 +244,18 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
             }
         })
 
-        if (usedAliasSet.size() > 1) {
-            toAdd = false
+        if (usedAliasSet.size() != 1) {
+            return
+        }
+
+        final alias = usedAliasSet[0]
+        if (!optimizingAliasList.contains(alias)) {
+            return
         }
 
         if (toAdd) {
             expression.putNodeMetaData(TO_OPTIMIZE, true)
-            conditionsToOptimize.computeIfAbsent(usedAliasSet[0], k -> []).add(expression)
+            conditionsToOptimize.computeIfAbsent(alias, k -> []).add(expression)
         }
     }
 

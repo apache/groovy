@@ -20,9 +20,9 @@ package org.apache.groovy.ginq
 
 import groovy.transform.CompileStatic
 import org.apache.groovy.ginq.dsl.GinqAstBuilder
+import org.apache.groovy.ginq.dsl.GinqAstOptimizer
 import org.apache.groovy.ginq.dsl.GinqAstVisitor
 import org.apache.groovy.ginq.dsl.expression.GinqExpression
-import org.apache.groovy.ginq.provider.collection.GinqAstOptimizer
 import org.apache.groovy.ginq.provider.collection.GinqAstWalker
 import org.apache.groovy.lang.annotation.Incubating
 import org.codehaus.groovy.ast.ClassHelper
@@ -36,6 +36,7 @@ import org.codehaus.groovy.macro.runtime.Macro
 import org.codehaus.groovy.macro.runtime.MacroContext
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.asX
+
 /**
  * Declare GINQ macro methods
  *
