@@ -60,6 +60,8 @@ def generateReleaseInfo = tasks.register("generateReleaseInfo", ReleaseInfoGener
 def groovydocJar = tasks.register("groovydocJar", Jar) {
     from groovydoc
     archiveClassifier = 'groovydoc'
+    group = 'build'
+    description = 'Assembles a jar archive containing the main groovydoc.'
 }
 
 configurations {
