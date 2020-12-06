@@ -301,7 +301,7 @@ def shadowApi = createConsumableConfiguration(objects, tasks, configurations, 'g
 def shadowRuntime = createConsumableConfiguration(objects, tasks, configurations, 'groovyRuntimeElements', Usage.JAVA_RUNTIME, 'jarjar', capabilities, targetJvmVersion)
 dependencies {
     // All Groovy modules depend on the Groovy BOM which itself has constraints on all
-    // Groovy modules, which brings nice alignement features!
+    // Groovy modules, which brings nice alignment features!
     groovyApiElements platform(project(":groovy-bom"))
     groovyRuntimeElements platform(project(":groovy-bom"))
 }
