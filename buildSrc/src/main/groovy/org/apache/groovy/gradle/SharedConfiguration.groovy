@@ -116,9 +116,8 @@ class SharedConfiguration {
                 // try to read artifactory.properties
                 Directory base = layout.projectDirectory
                 RegularFile artifactoryFile = base.file('artifactory.properties')
-                while (!artifactoryFile.asFile.exists()) {
+                while (!artifactoryFile.asFile.exists() && base.asFile.parent) {
                     base = base.dir('..')
-                    if (!base) break
                     artifactoryFile = base.file('artifactory.properties')
                 }
                 artifactoryFile
