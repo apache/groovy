@@ -22,7 +22,9 @@ package org.apache.groovy.gradle
 import groovy.transform.CompileStatic
 import org.gradle.StartParameter
 import org.gradle.api.execution.TaskExecutionGraph
+import org.gradle.api.file.Directory
 import org.gradle.api.file.ProjectLayout
+import org.gradle.api.file.RegularFile
 import org.gradle.api.logging.Logger
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
@@ -98,7 +100,16 @@ class SharedConfiguration {
         final Provider<String> repoKey
 
         Artifactory(ProjectLayout layout, ProviderFactory providers, Logger logger) {
-            def artifactoryProperties = providers.fileContents(layout.projectDirectory.file("artifactory.properties")).asText.forUseAtConfigurationTime().map {
+            // try to read artifactory.properties
+            Directory base = layout.projectDirectory
+            RegularFile artifactoryFile = base.file('artifactory.properties')
+            while (!artifactoryFile.asFile.exists()) {
+                base = base.dir('..')
+                if (!base) break
+                artifactoryFile = base.file('artifactory.properties')
+            }
+
+            def artifactoryProperties = providers.fileContents(artifactoryFile).asText.forUseAtConfigurationTime().map {
                 def props = new Properties()
                 props.load(new StringReader(it))
                 props
