@@ -240,7 +240,7 @@ assert filter(['Java','Groovy'], { it.contains 'G'} as Predicate) == ['Groovy']
 // end::method_call_with_explicit_coercion[]
 
 // tag::method_call_with_implicit_coercion[]
-assert filter(['Java','Groovy']) { it.contains 'G'} == ['Groovy']
+assert filter(['Java','Groovy'], { it.contains 'G'}) == ['Groovy']
 // end::method_call_with_implicit_coercion[]
 '''
     }
