@@ -213,12 +213,6 @@ tasks.withType(Javadoc).configureEach {
     options.source = sharedConfiguration.targetJavaVersion.get()
 }
 
-components.java {
-    addVariantsFromConfiguration(configurations.groovydocElements) {
-        mapToOptional()
-    }
-}
-
 tasks.named("compileTestGroovy") {
     options.forkOptions.jvmArgs += ["-Dspock.iKnowWhatImDoing.disableGroovyVersionCheck=true"]
 }
@@ -282,6 +276,18 @@ interface Services {
 def factory = objects.newInstance(Services).softwareComponentFactory
 def component = factory.adhoc('groovyLibrary')
 components.add(component)
+
+components.groovyLibrary {
+    addVariantsFromConfiguration(configurations.groovydocElements) {
+        mapToOptional()
+    }
+    addVariantsFromConfiguration(configurations.javadocElements) {
+        mapToOptional()
+    }
+    addVariantsFromConfiguration(configurations.sourcesElements) {
+        mapToOptional()
+    }
+}
 
 // By declaring a codehaus capability we can tell Gradle that the user has to
 // choose between "old" groovy and "new" groovy
