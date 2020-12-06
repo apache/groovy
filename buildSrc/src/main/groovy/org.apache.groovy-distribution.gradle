@@ -228,14 +228,26 @@ def bin = configurations.create("distributionBinary") {
     outgoing {
         artifacts {
             artifact tasks.named('distBin')
+        }
+    }
+}
+component.addVariantsFromConfiguration(bin) {
+    mapToOptional()
+}
+
+def sdkElements = configurations.create("sdkElements") {
+    canBeConsumed = false
+    canBeResolved = false
+    outgoing {
+        artifacts {
             artifact tasks.named('distSrc')
             artifact tasks.named('distDoc')
             artifact tasks.named('distSdk')
         }
     }
 }
-component.addVariantsFromConfiguration(bin) {
-    mapToOptional()
+signing {
+    sign sdkElements
 }
 
 
