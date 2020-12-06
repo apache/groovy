@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.gradle
 
-
 import groovy.transform.CompileStatic
 import org.gradle.StartParameter
 import org.gradle.api.execution.TaskExecutionGraph
@@ -100,16 +99,7 @@ class SharedConfiguration {
         final Provider<String> repoKey
 
         Artifactory(ProjectLayout layout, ProviderFactory providers, Logger logger) {
-            // try to read artifactory.properties
-            Directory base = layout.projectDirectory
-            RegularFile artifactoryFile = base.file('artifactory.properties')
-            while (!artifactoryFile.asFile.exists()) {
-                base = base.dir('..')
-                if (!base) break
-                artifactoryFile = base.file('artifactory.properties')
-            }
-
-            def artifactoryProperties = providers.fileContents(artifactoryFile).asText.forUseAtConfigurationTime().map {
+            def artifactoryProperties = providers.fileContents(artifactoryFile(providers, layout)).asText.forUseAtConfigurationTime().map {
                 def props = new Properties()
                 props.load(new StringReader(it))
                 props
@@ -119,6 +109,20 @@ class SharedConfiguration {
             context = provider(providers, artifactoryProperties, "artifactoryContext", "artifactoryContext", "ARTIFACTORY_CONTEXT")
             repoKey = provider(providers, artifactoryProperties, "artifactoryRepoKey", "artifactoryRepoKey", "ARTIFACTORY_REPO_KEY")
             logger.lifecycle "ArtifactoryUser user: ${username.getOrElse("not defined")}"
+        }
+
+        private Provider<RegularFile> artifactoryFile(ProviderFactory providers, ProjectLayout layout) {
+            providers.provider {
+                // try to read artifactory.properties
+                Directory base = layout.projectDirectory
+                RegularFile artifactoryFile = base.file('artifactory.properties')
+                while (!artifactoryFile.asFile.exists()) {
+                    base = base.dir('..')
+                    if (!base) break
+                    artifactoryFile = base.file('artifactory.properties')
+                }
+                artifactoryFile
+            }
         }
 
         private Provider<String> provider(ProviderFactory providers, Provider<Properties> properties, String propertyName, String gradlePropertyName, String envVarName) {
