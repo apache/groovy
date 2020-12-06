@@ -149,8 +149,8 @@ public class BinaryExpressionTransformer {
             Expression right = staticCompilationTransformer.transform(rightExpression);
 
             if (operationType == Types.COMPARE_TO
-                    && findType(leftExpression).implementsInterface(ClassHelper.COMPARABLE_TYPE)
-                    && findType(rightExpression).implementsInterface(ClassHelper.COMPARABLE_TYPE)) {
+                    && findType(left).implementsInterface(ClassHelper.COMPARABLE_TYPE)
+                    && findType(right).implementsInterface(ClassHelper.COMPARABLE_TYPE)) {
                 call = callX(left, "compareTo", args(right));
                 call.setImplicitThis(false);
                 call.setMethodTarget(COMPARE_TO_METHOD);
@@ -183,7 +183,7 @@ public class BinaryExpressionTransformer {
                 return expr;
             }
 
-            BinaryExpression optimized = tryOptimizeCharComparison(left, right, bin);
+            Expression optimized = tryOptimizeCharComparison(left, right, bin);
             if (optimized != null) {
                 optimized.removeNodeMetaData(StaticCompilationMetadataKeys.BINARY_EXP_TARGET);
                 optimized.removeNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
@@ -197,7 +197,7 @@ public class BinaryExpressionTransformer {
             MethodNode adapter = StaticCompilationTransformer.BYTECODE_BINARY_ADAPTERS.get(operationType);
             if (adapter != null) {
                 Expression sba = classX(StaticCompilationTransformer.BYTECODE_ADAPTER_CLASS);
-                call = callX(sba, "compareEquals", args(expr, right));
+                call = callX(sba, adapter.getName(), args(expr, right));
                 call.setMethodTarget(adapter);
             } else {
                 call = callX(expr, name, args(right));
@@ -210,7 +210,7 @@ public class BinaryExpressionTransformer {
             }
             // case of +=, -=, /=, ...
             // the method represents the operation type only, and we must add an assignment
-            expr = binX(left, Token.newSymbol(Types.EQUAL, operation.getStartLine(), operation.getStartColumn()), call);
+            expr = binX(left, Token.newSymbol(Types.ASSIGN, operation.getStartLine(), operation.getStartColumn()), call);
             expr.setSourcePosition(bin);
             return expr;
         }
