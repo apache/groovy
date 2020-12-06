@@ -3509,9 +3509,10 @@ class GinqTest {
     void "testGinq - optimize - 3"() {
         assertScript '''
 // tag::ginq_optimize_01[]
-            assert [[1, 1], [2, 2], [3, 3]] == GQ(optimize:false) {
+            assert [[2, 2]] == GQ(optimize:false) {
                 from n1 in [1, 2, 3]
                 innerjoin n2 in [1, 2, 3] on n1 == n2
+                where n1 > 1 &&  n2 < 3
                 select n1, n2
             }.toList()
 // end::ginq_optimize_01[]
