@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.ExpressionTransformer
 import org.codehaus.groovy.ast.expr.ListExpression
+import org.codehaus.groovy.ast.expr.NotExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
@@ -115,6 +116,14 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
         return null
     }
 
+    private static String constantText(ConstantExpression constantExpression) {
+        if (constantExpression.value instanceof CharSequence) {
+            return "'$constantExpression.value'"
+        }
+
+        return constantExpression.text
+    }
+
     private void transformWhereClause(WhereExpression whereExpression, GinqExpression ginqExpression) {
         List<Expression> candidates = findCandidatesToOptimize(whereExpression)
         List<Expression> nonOptimizedCandidates = candidates.grep { Expression e ->
@@ -122,9 +131,14 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
                 return false
             }
 
+            if (e instanceof NotExpression && e.expression instanceof ConstantExpression && !((ConstantExpression) e.expression).value) {
+                return false
+            }
+
             if (e instanceof BinaryExpression && e.leftExpression instanceof ConstantExpression && e.rightExpression instanceof ConstantExpression) {
                 try {
-                    def result = new GroovyShell().evaluate("$e.leftExpression.text $e.operation.text $e.rightExpression.text")
+                    def result = new GroovyShell().evaluate(
+                            "${constantText((ConstantExpression) e.leftExpression)} $e.operation.text ${constantText((ConstantExpression) e.rightExpression)}")
                     if (result) {
                         return false
                     }

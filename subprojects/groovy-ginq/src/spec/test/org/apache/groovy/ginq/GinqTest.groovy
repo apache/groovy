@@ -3486,7 +3486,7 @@ class GinqTest {
                 def c = {
                     from n1 in nums1
                     innerjoin n2 in nums2 on n1 == n2
-                    where n1 > 1 && n2 <= 3 && true
+                    where n1 > 1 && n2 <= 3 && true && !false
                     select n1, n2
                 }
                 return
@@ -3530,7 +3530,7 @@ class GinqTest {
                 def c = {
                     from n1 in nums1
                     innerjoin n2 in nums2 on n1 == n2
-                    where n1 > 1 && n2 <= 3 && 1 < 2 && 3 == 3 && 4 > 3
+                    where n1 > 1 && n2 <= 3 && 1 < 2 && 3 == 3 && 4 > 3 && 'a' < 'b'
                     select n1, n2
                 }
                 return
