@@ -562,6 +562,24 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from innerjoin innerjoin leftjoin select - 1"() {
+        assertScript '''
+            def nums1 = [1, 2, 3, 4, 5]
+            def nums2 = [2, 3, 4, 5, 6, 7]
+            def nums3 = [1, 2, 3]
+            assert [[3, 3, 3]] == GQ {
+                from n1 in nums1
+                innerjoin n2 in nums2 on n2 == n1
+                leftjoin n3 in nums3 on n3 == n2
+                where 1 < n1 && n1 < 5 
+                        && 2 < n2 && n2 < 7 
+                        && n3 != null
+                select n1, n2, n3
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - nested from select - 0"() {
         assertScript '''
             assert [1, 2, 3] == GQ {
