@@ -26,13 +26,13 @@ import org.codehaus.groovy.control.Phases
 import javax.swing.tree.TreeNode
 
 /**
- * Unit test for ScriptToTreeNodeAdapter.
+ * Unit test for {@link ScriptToTreeNodeAdapter}.
  *
  * The assertions in this test case often assert against the toString() representation of
  * an object. Normally, this is bad form. However, the class under test is meant to display
  * toString() forms in a user interface. So in this case it is appropriate.
  */
-class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
+final class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
 
      private final classLoader = new GroovyClassLoader()
 
@@ -285,7 +285,7 @@ class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                         eq('Methods'),
                         eq('MethodNode - main'),
                         startsWith('ExpressionStatement'),  //notice, there is only one ExpressionStatement
-                        startsWith('MethodCall'),
+                        startsWith('StaticMethodCallExpression'),
                 ]
         )
     }

@@ -326,6 +326,12 @@ public class ModuleNode extends ASTNode implements Opcodes {
         }
     }
 
+    private static Parameter[] finalParam(final ClassNode type, final String name) {
+        Parameter parameter = param(type, name);
+        parameter.setModifiers(ACC_FINAL);
+        return params(parameter);
+    }
+
     protected ClassNode createStatementsClass() {
         ClassNode classNode = getScriptClassDummy();
         if (classNode.getName().endsWith("package-info")) {
@@ -339,12 +345,11 @@ public class ModuleNode extends ASTNode implements Opcodes {
                 "main",
                 ACC_PUBLIC | ACC_STATIC,
                 ClassHelper.VOID_TYPE,
-                params(param(ClassHelper.STRING_TYPE.makeArray(), "args")),
+                finalParam(ClassHelper.STRING_TYPE.makeArray(), "args"),
                 ClassNode.EMPTY_ARRAY,
-                // InvokerHelper.runScript(scriptClass, args)
                 stmt(
                     callX(
-                        classX(ClassHelper.make(InvokerHelper.class)),
+                        ClassHelper.make(InvokerHelper.class),
                         "runScript",
                         args(classX(classNode), varX("args"))
                     )
@@ -374,7 +379,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
 
         classNode.addConstructor(
             ACC_PUBLIC,
-            params(param(ClassHelper.make(Binding.class), "context")),
+            finalParam(ClassHelper.make(Binding.class), "context"),
             ClassNode.EMPTY_ARRAY,
             stmt);
 

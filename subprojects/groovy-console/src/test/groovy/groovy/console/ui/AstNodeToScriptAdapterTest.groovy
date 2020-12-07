@@ -31,25 +31,24 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt
 
 /**
- * Unit test for ScriptToTreeNodeAdapter.
+ * Unit test for {@link AstNodeToScriptAdapter}.
  *
  * The assertions in this test case often assert against the toString() representation of
  * an object. Normally, this is bad form. However, the class under test is meant to display
  * toString() forms in a user interface. So in this case it is appropriate.
  */
-class AstNodeToScriptAdapterTest extends GroovyTestCase {
+final class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
     private static String compileToScript(String script, CompilePhase phase = CompilePhase.SEMANTIC_ANALYSIS) {
         new AstNodeToScriptAdapter().compileToScript(script, phase.phaseNumber)
     }
 
     void testScript() {
-
         String result = compileToScript('true')
 
         assert result =~ /public class script[0-9]* extends groovy\.lang\.Script \{/
         assert result =~ /public script[0-9]*\(\) \{\s*\}/
-        assert result =~ /public script[0-9]*\(groovy.lang.Binding context\) \{\s*super\(context\)\s*\}/
+        assert result =~ /public script[0-9]*\(final groovy.lang.Binding context\) \{\s*super\(context\)\s*\}/
         assert result =~ /public java.lang.Object run\(\) \{\s*true\s*\}/
     }
 
