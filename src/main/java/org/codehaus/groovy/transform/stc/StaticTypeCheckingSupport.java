@@ -2146,6 +2146,8 @@ public abstract class StaticTypeCheckingSupport {
         ReturnStatement code = new ReturnStatement(expr);
         addGeneratedMethod(node, "eval", Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
         CompilerConfiguration copyConf = new CompilerConfiguration(config);
+        // disable preview features so class can be inspected by this JVM
+        copyConf.setPreviewFeatures(false);
         CompilationUnit cu = new CompilationUnit(copyConf);
         cu.addClassNode(node);
         cu.compile(Phases.CLASS_GENERATION);
