@@ -3485,6 +3485,94 @@ class GinqTest {
             def hello() {
                 def c = {
                     from n1 in nums1
+                    innerjoin n2 in nums2 on n1 == n2
+                    where n1 > 1 && n2 <= 3 && true
+                    select n1, n2
+                }
+                return
+            }
+        '''
+        def sourceUnit
+        def ast = new CompilationUnit().tap {
+            sourceUnit = addSource 'hello.groovy', code
+            compile Phases.CONVERSION
+        }.ast
+
+        MethodNode methodNode = ast.classes[0].methods.grep(e -> e.name == 'hello')[0]
+        ExpressionStatement delcareStatement = ((BlockStatement) methodNode.getCode()).getStatements()[0]
+        DeclarationExpression declarationExpression = delcareStatement.getExpression()
+        ClosureExpression closureException = declarationExpression.rightExpression
+
+        GinqAstBuilder ginqAstBuilder = new GinqAstBuilder(sourceUnit)
+        closureException.code.visit(ginqAstBuilder)
+        GinqExpression ginqExpression = ginqAstBuilder.getGinqExpression()
+
+        GinqAstOptimizer ginqAstOptimizer = new GinqAstOptimizer()
+        ginqAstOptimizer.visitGinqExpression(ginqExpression)
+        assert null == ginqExpression.whereExpression
+
+        assert ginqExpression.fromExpression.dataSourceExpr instanceof GinqExpression
+        BinaryExpression contructedFilterExpr1 = ((GinqExpression) ginqExpression.fromExpression.dataSourceExpr).whereExpression.filterExpr
+        assert Types.COMPARE_GREATER_THAN == contructedFilterExpr1.operation.type
+        assert '1' == contructedFilterExpr1.rightExpression.text
+
+        assert ginqExpression.joinExpressionList[0].dataSourceExpr instanceof GinqExpression
+        BinaryExpression contructedFilterExpr2 = ((GinqExpression) ginqExpression.joinExpressionList[0].dataSourceExpr).whereExpression.filterExpr
+        assert Types.COMPARE_LESS_THAN_EQUAL == contructedFilterExpr2.operation.type
+        assert '3' == contructedFilterExpr2.rightExpression.text
+    }
+
+    @Test
+    @CompileDynamic
+    void "testGinq - optimize - 3"() {
+        def code = '''
+            def hello() {
+                def c = {
+                    from n1 in nums1
+                    innerjoin n2 in nums2 on n1 == n2
+                    where n1 > 1 && n2 <= 3 && 1 < 2 && 3 == 3 && 4 > 3
+                    select n1, n2
+                }
+                return
+            }
+        '''
+        def sourceUnit
+        def ast = new CompilationUnit().tap {
+            sourceUnit = addSource 'hello.groovy', code
+            compile Phases.CONVERSION
+        }.ast
+
+        MethodNode methodNode = ast.classes[0].methods.grep(e -> e.name == 'hello')[0]
+        ExpressionStatement delcareStatement = ((BlockStatement) methodNode.getCode()).getStatements()[0]
+        DeclarationExpression declarationExpression = delcareStatement.getExpression()
+        ClosureExpression closureException = declarationExpression.rightExpression
+
+        GinqAstBuilder ginqAstBuilder = new GinqAstBuilder(sourceUnit)
+        closureException.code.visit(ginqAstBuilder)
+        GinqExpression ginqExpression = ginqAstBuilder.getGinqExpression()
+
+        GinqAstOptimizer ginqAstOptimizer = new GinqAstOptimizer()
+        ginqAstOptimizer.visitGinqExpression(ginqExpression)
+        assert null == ginqExpression.whereExpression
+
+        assert ginqExpression.fromExpression.dataSourceExpr instanceof GinqExpression
+        BinaryExpression contructedFilterExpr1 = ((GinqExpression) ginqExpression.fromExpression.dataSourceExpr).whereExpression.filterExpr
+        assert Types.COMPARE_GREATER_THAN == contructedFilterExpr1.operation.type
+        assert '1' == contructedFilterExpr1.rightExpression.text
+
+        assert ginqExpression.joinExpressionList[0].dataSourceExpr instanceof GinqExpression
+        BinaryExpression contructedFilterExpr2 = ((GinqExpression) ginqExpression.joinExpressionList[0].dataSourceExpr).whereExpression.filterExpr
+        assert Types.COMPARE_LESS_THAN_EQUAL == contructedFilterExpr2.operation.type
+        assert '3' == contructedFilterExpr2.rightExpression.text
+    }
+
+    @Test
+    @CompileDynamic
+    void "testGinq - optimize - 4"() {
+        def code = '''
+            def hello() {
+                def c = {
+                    from n1 in nums1
                     leftjoin n2 in nums2 on n1 == n2
                     where n1 > 1 && n2 <= 3
                     select n1, n2
@@ -3523,7 +3611,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - optimize - 3"() {
+    void "testGinq - optimize - 5"() {
         assertScript '''
 // tag::ginq_optimize_01[]
             assert [[2, 2]] == GQ(optimize:false) {

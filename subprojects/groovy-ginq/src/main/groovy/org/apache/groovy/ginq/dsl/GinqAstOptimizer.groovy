@@ -27,6 +27,7 @@ import org.apache.groovy.ginq.dsl.expression.SelectExpression
 import org.apache.groovy.ginq.dsl.expression.WhereExpression
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.BinaryExpression
+import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.ExpressionTransformer
 import org.codehaus.groovy.ast.expr.ListExpression
@@ -107,28 +108,43 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
 
         WhereExpression whereExpression = ginqExpression.whereExpression
         if (whereExpression) {
-            Map<String, List<Expression>> conditionsToOptimize = [:]
-            List<Expression> candidatesToOptimize = findCandidatesToOptimize(whereExpression)
-
-            candidatesToOptimize.stream()
-                    .forEach(e -> collectConditionsToOptimize(e, allAliasList, optimizingAliasList, conditionsToOptimize))
-
-            transformFromClause(conditionsToOptimize, optimizingAliasList, optimizingDataSourceExpressionList)
-
-            List<Expression> candidates = findCandidatesToOptimize(whereExpression)
-            List<Expression> nonOptimizedCandidates = candidates.grep { Expression e ->
-                Boolean optimize = e.getNodeMetaData(TO_OPTIMIZE)
-                return null == optimize || !optimize
-            }
-
-            if (nonOptimizedCandidates) {
-                whereExpression.filterExpr = contructFilterExpr(nonOptimizedCandidates)
-            } else {
-                ginqExpression.whereExpression = null
-            }
+            transformFromClause(whereExpression, optimizingAliasList, allAliasList, optimizingDataSourceExpressionList)
+            transformWhereClause(whereExpression, ginqExpression)
         }
 
         return null
+    }
+
+    private void transformWhereClause(WhereExpression whereExpression, GinqExpression ginqExpression) {
+        List<Expression> candidates = findCandidatesToOptimize(whereExpression)
+        List<Expression> nonOptimizedCandidates = candidates.grep { Expression e ->
+            if (e instanceof ConstantExpression && e.value) {
+                return false
+            }
+
+            if (e instanceof BinaryExpression && e.leftExpression instanceof ConstantExpression && e.rightExpression instanceof ConstantExpression) {
+                try {
+                    def result = new GroovyShell().evaluate("$e.leftExpression.text $e.operation.text $e.rightExpression.text")
+                    if (result) {
+                        return false
+                    }
+                } catch (ignored) {
+                }
+            }
+
+            Boolean optimize = e.getNodeMetaData(TO_OPTIMIZE)
+            if (null == optimize || !optimize) {
+                return true
+            }
+
+            return false
+        }
+
+        if (nonOptimizedCandidates) {
+            whereExpression.filterExpr = constructFilterExpr(nonOptimizedCandidates)
+        } else {
+            ginqExpression.whereExpression = null
+        }
     }
 
     private List<Expression> findCandidatesToOptimize(WhereExpression whereExpression) {
@@ -166,14 +182,20 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
         return candidatesToOptimize
     }
     static boolean isCandidate(Expression expression) {
-        if (expression instanceof BinaryExpression && expression.operation.type in [Types.LOGICAL_AND, Types.LOGICAL_OR]) {
+        if (expression instanceof BinaryExpression && expression.operation.type in LOGICAL_OP_TYPE_LIST) {
             return false
         }
 
         return true
     }
 
-    private void transformFromClause(LinkedHashMap<String, List<Expression>> conditionsToOptimize, List<String> optimizingAliasList, List<DataSourceExpression> optimizingDataSourceExpressionList) {
+    private void transformFromClause(WhereExpression whereExpression, List<String> optimizingAliasList, List<String> allAliasList, List<DataSourceExpression> optimizingDataSourceExpressionList) {
+        Map<String, List<Expression>> conditionsToOptimize = [:]
+        List<Expression> candidatesToOptimize = findCandidatesToOptimize(whereExpression)
+
+        candidatesToOptimize.stream()
+                .forEach(e -> collectConditionsToOptimize(e, allAliasList, optimizingAliasList, conditionsToOptimize))
+
         conditionsToOptimize.forEach((String alias, List<Expression> conditions) -> {
             if (!optimizingAliasList.contains(alias)) return
 
@@ -192,7 +214,7 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
                 contructedGinqExpression.fromExpression =
                         new FromExpression(new VariableExpression(constructedAlias), dataSourceExpression.dataSourceExpr)
                 contructedGinqExpression.whereExpression =
-                        new WhereExpression(contructFilterExpr(transformedConditions))
+                        new WhereExpression(constructFilterExpr(transformedConditions))
                 contructedGinqExpression.selectExpression =
                         new SelectExpression(
                                 new ArgumentListExpression(
@@ -219,7 +241,7 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
         })).getExpression(0)
     }
 
-    private Expression contructFilterExpr(List<Expression> conditions) {
+    private Expression constructFilterExpr(List<Expression> conditions) {
         if (!conditions) throw new IllegalArgumentException("The argument `conditions` should not be empty")
         if (1 == conditions.size()) return conditions[0]
 
@@ -228,7 +250,7 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
         }
 
         def condition = conditions[0]
-        def remainingCondition = contructFilterExpr(conditions[1..-1])
+        def remainingCondition = constructFilterExpr(conditions[1..-1])
         return new BinaryExpression(condition, new Token(Types.LOGICAL_AND, '&&', -1, -1), remainingCondition)
     }
 
@@ -264,5 +286,6 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
         }
     }
 
+    private static final List<Integer> LOGICAL_OP_TYPE_LIST = [Types.LOGICAL_AND, Types.LOGICAL_OR]
     private static final String TO_OPTIMIZE = "TO_OPTIMIZE"
 }
