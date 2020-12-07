@@ -1955,7 +1955,8 @@ public abstract class StaticTypeCheckingSupport {
     public static boolean isUnboundedWildcard(final GenericsType gt) {
         if (gt.isWildcard() && gt.getLowerBound() == null) {
             ClassNode[] upperBounds = gt.getUpperBounds();
-            return (upperBounds == null || upperBounds.length == 0 || (upperBounds.length == 1 && OBJECT_TYPE.equals(upperBounds[0])));
+            return (upperBounds == null || upperBounds.length == 0 || (upperBounds.length == 1
+                    && upperBounds[0].equals(OBJECT_TYPE) && !upperBounds[0].isGenericsPlaceHolder()));
         }
         return false;
     }

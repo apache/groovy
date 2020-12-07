@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.ast.tools;
 
-import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Tuple2;
 import groovy.transform.stc.IncorrectTypeHintException;
 import org.codehaus.groovy.GroovyBugError;
@@ -969,6 +968,8 @@ public class GenericsUtils {
                     for (ClassNode upperBound : upperBounds) {
                         if (hasUnresolvedGenerics(upperBound)) return true;
                     }
+                } else {
+                    if (hasUnresolvedGenerics(genericsType.getType())) return true;
                 }
             }
         }
