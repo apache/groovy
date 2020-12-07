@@ -87,4 +87,20 @@ class Groovy7361Bug extends StaticTypeCheckingTestCase implements StaticCompilat
             new B().checkMap()
         '''
     }
+
+    // GROOVY-9771
+    void testShouldNotThrowClassCastExceptionForSubscriptPrivateAccess() {
+        assertScript '''
+            class C {
+                private final Map<String, Boolean> map = [:]
+                void checkMap() {
+                    { ->
+                        map['key'] = true
+                    }.call()
+                    assert map == [key: true]
+                }
+            }
+            new C().checkMap()
+        '''
+    }
 }

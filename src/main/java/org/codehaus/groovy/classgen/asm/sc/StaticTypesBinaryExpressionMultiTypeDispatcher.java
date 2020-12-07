@@ -51,6 +51,7 @@ import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
+import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
@@ -145,7 +146,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                         pexp instanceof AttributeExpression)) return;
             }
         }
-        // GROOVY-5620: Spread safe/Null safe operator on LHS is not supported
+        // GROOVY-5620: spread-safe operator on LHS is not supported
         if (expression.getLeftExpression() instanceof PropertyExpression
                 && ((PropertyExpression) expression.getLeftExpression()).isSpreadSafe()
                 && StaticTypeCheckingSupport.isAssignment(expression.getOperation().getType())) {
@@ -309,7 +310,6 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         return false;
     }
 
-    @SuppressWarnings("unchecked")
     private boolean makeSetPrivateFieldWithBridgeMethod(final Expression receiver, final ClassNode receiverType, final String fieldName, final Expression arguments, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
         WriterController controller = getController();
         FieldNode field = receiverType.getField(fieldName);
@@ -359,44 +359,44 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         return false;
     }
 
-    protected void assignToArray(Expression parent, Expression receiver, Expression index, Expression rhsValueLoader) {
-        ClassNode current = getController().getClassNode();
-        ClassNode arrayType = getController().getTypeChooser().resolveType(receiver, current);
+    protected void assignToArray(final Expression parent, final Expression receiver, final Expression subscript, final Expression rhsValueLoader) {
+        WriterController controller = getController();
+        ClassNode current = controller.getClassNode();
+        ClassNode arrayType = controller.getTypeChooser().resolveType(receiver, current);
+
         ClassNode arrayComponentType = arrayType.getComponentType();
         int operationType = getOperandType(arrayComponentType);
         BinaryExpressionWriter bew = binExpWriter[operationType];
 
         if (bew.arraySet(true) && arrayType.isArray()) {
-            super.assignToArray(parent, receiver, index, rhsValueLoader);
+            super.assignToArray(parent, receiver, subscript, rhsValueLoader);
         } else {
-            /******
-            / This code path is needed because ACG creates array access expressions
-            *******/
+            /*
+             * This code path is needed because ACG creates array access expressions
+             */
 
-            WriterController controller = getController();
-            // let's replace this assignment to a subscript operator with a
-            // method call
-            // e.g. x[5] = 10
-            // -> (x, [], 5), =, 10
-            // -> methodCall(x, "putAt", [5, 10])
-            ArgumentListExpression ae = new ArgumentListExpression(index, rhsValueLoader);
+            // GROOVY-6061
             if (rhsValueLoader instanceof VariableSlotLoader && parent instanceof BinaryExpression) {
-                // GROOVY-6061
                 rhsValueLoader.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE,
-                        controller.getTypeChooser().resolveType(parent, controller.getClassNode()));
+                        controller.getTypeChooser().resolveType(parent, current));
             }
-            MethodCallExpression mce = new MethodCallExpression(receiver, "putAt", ae);
+            // GROOVY-9771
+            receiver.visit(new StaticCompilationVisitor(controller.getSourceUnit(), current));
+
+            // replace assignment to a subscript operator with a method call
+            // e.g. x[5] = 10 -> methodCall(x, "putAt", [5, 10])
+            ArgumentListExpression ale = new ArgumentListExpression(subscript, rhsValueLoader);
+            MethodCallExpression mce = new MethodCallExpression(receiver, "putAt", ale);
             mce.setSourcePosition(parent);
 
             OperandStack operandStack = controller.getOperandStack();
             int height = operandStack.getStackLength();
             mce.visit(controller.getAcg());
             operandStack.pop();
-            operandStack.remove(operandStack.getStackLength()-height);
+            operandStack.remove(operandStack.getStackLength() - height);
 
             // return value of assignment
             rhsValueLoader.visit(controller.getAcg());
         }
     }
-
 }
