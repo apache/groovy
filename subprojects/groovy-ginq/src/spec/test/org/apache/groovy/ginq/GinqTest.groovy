@@ -3465,9 +3465,7 @@ class GinqTest {
 
         GinqAstOptimizer ginqAstOptimizer = new GinqAstOptimizer()
         ginqAstOptimizer.visitGinqExpression(ginqExpression)
-        BinaryExpression filterExpr = (BinaryExpression) ginqExpression.whereExpression.filterExpr
-        assert 'true' == filterExpr.leftExpression.text
-        assert 'true' == filterExpr.rightExpression.text
+        assert null == ginqExpression.whereExpression
 
         assert ginqExpression.fromExpression.dataSourceExpr instanceof GinqExpression
         BinaryExpression contructedFilterExpr1 = ((GinqExpression) ginqExpression.fromExpression.dataSourceExpr).whereExpression.filterExpr
@@ -3512,8 +3510,9 @@ class GinqTest {
         GinqAstOptimizer ginqAstOptimizer = new GinqAstOptimizer()
         ginqAstOptimizer.visitGinqExpression(ginqExpression)
         BinaryExpression filterExpr = (BinaryExpression) ginqExpression.whereExpression.filterExpr
-        assert 'true' == filterExpr.leftExpression.text
-        assert 'true' != filterExpr.rightExpression.text
+        assert 'n2' == filterExpr.leftExpression.text
+        assert Types.COMPARE_LESS_THAN_EQUAL == filterExpr.operation.type
+        assert '3' == filterExpr.rightExpression.text
 
         assert ginqExpression.fromExpression.dataSourceExpr instanceof GinqExpression
         BinaryExpression contructedFilterExpr1 = ((GinqExpression) ginqExpression.fromExpression.dataSourceExpr).whereExpression.filterExpr

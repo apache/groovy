@@ -27,7 +27,6 @@ import org.apache.groovy.ginq.dsl.expression.SelectExpression
 import org.apache.groovy.ginq.dsl.expression.WhereExpression
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.BinaryExpression
-import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.ExpressionTransformer
 import org.codehaus.groovy.ast.expr.ListExpression
@@ -36,7 +35,6 @@ import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
 
 import java.util.stream.Collectors
-
 /**
  * Optimize the execution plan of GINQ through transforming AST.
  * <p>
@@ -60,7 +58,6 @@ import java.util.stream.Collectors
  *      where alias23802906 <= 3
  *      select alias23802906
  *    ) on n1 == n2
- *    where true && true  // omit the original filters with `true`, we could optimize further, e.g. omit the `where` totally
  *    select n1, n2
  * </pre>
  *
@@ -110,10 +107,37 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
 
         WhereExpression whereExpression = ginqExpression.whereExpression
         if (whereExpression) {
-            boolean toOptimize = true
             Map<String, List<Expression>> conditionsToOptimize = [:]
-            List<Expression> candidatesToOptimize = []
+            List<Expression> candidatesToOptimize = findCandidatesToOptimize(whereExpression)
 
+            candidatesToOptimize.stream()
+                    .forEach(e -> collectConditionsToOptimize(e, allAliasList, optimizingAliasList, conditionsToOptimize))
+
+            transformFromClause(conditionsToOptimize, optimizingAliasList, optimizingDataSourceExpressionList)
+
+            List<Expression> candidates = findCandidatesToOptimize(whereExpression)
+            List<Expression> nonOptimizedCandidates = candidates.grep { Expression e ->
+                Boolean optimize = e.getNodeMetaData(TO_OPTIMIZE)
+                return null == optimize || !optimize
+            }
+
+            if (nonOptimizedCandidates) {
+                whereExpression.filterExpr = contructFilterExpr(nonOptimizedCandidates)
+            } else {
+                ginqExpression.whereExpression = null
+            }
+        }
+
+        return null
+    }
+
+    private List<Expression> findCandidatesToOptimize(WhereExpression whereExpression) {
+        boolean toOptimize = true
+        List<Expression> candidatesToOptimize = []
+
+        if (isCandidate(whereExpression.filterExpr)) {
+            candidatesToOptimize << whereExpression.filterExpr
+        } else {
             whereExpression.filterExpr.visit(new GinqAstBaseVisitor() {
                 @Override
                 void visitBinaryExpression(BinaryExpression expression) {
@@ -136,36 +160,17 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
 
                     super.visitBinaryExpression(expression)
                 }
-
-                static boolean isCandidate(Expression expression) {
-                    if (expression instanceof BinaryExpression && expression.operation.type in [Types.LOGICAL_AND, Types.LOGICAL_OR]) {
-                        return false
-                    }
-
-                    return true
-                }
             })
+        }
 
-            candidatesToOptimize.stream()
-                    .forEach(e -> collectConditionsToOptimize(e, allAliasList, optimizingAliasList, conditionsToOptimize))
+        return candidatesToOptimize
+    }
+    static boolean isCandidate(Expression expression) {
+        if (expression instanceof BinaryExpression && expression.operation.type in [Types.LOGICAL_AND, Types.LOGICAL_OR]) {
+            return false
+        }
 
-            transformFromClause(conditionsToOptimize, optimizingAliasList, optimizingDataSourceExpressionList)
-
-            whereExpression.filterExpr =
-                    ((ListExpression) new ListExpression(Collections.singletonList(whereExpression.filterExpr))
-                            .transformExpression(new ExpressionTransformer() {
-                                @Override
-                                Expression transform(Expression expression) {
-                                    if (expression.getNodeMetaData(TO_OPTIMIZE)) {
-                                        return ConstantExpression.TRUE
-                                    }
-
-                                    return expression.transformExpression(this)
-                                }
-                            })).getExpression(0)
-        };
-
-        return null
+        return true
     }
 
     private void transformFromClause(LinkedHashMap<String, List<Expression>> conditionsToOptimize, List<String> optimizingAliasList, List<DataSourceExpression> optimizingDataSourceExpressionList) {
