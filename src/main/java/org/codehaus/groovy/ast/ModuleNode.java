@@ -47,6 +47,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
+import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -329,6 +330,12 @@ public class ModuleNode extends ASTNode {
         }
     }
 
+    private static Parameter[] finalParam(final ClassNode type, final String name) {
+        Parameter parameter = param(type, name);
+        parameter.setModifiers(ACC_FINAL);
+        return params(parameter);
+    }
+
     protected ClassNode createStatementsClass() {
         ClassNode classNode = getScriptClassDummy();
         if (classNode.getName().endsWith("package-info")) {
@@ -342,12 +349,11 @@ public class ModuleNode extends ASTNode {
                 "main",
                 ACC_PUBLIC | ACC_STATIC,
                 ClassHelper.VOID_TYPE,
-                params(param(ClassHelper.STRING_TYPE.makeArray(), "args")),
+                finalParam(ClassHelper.STRING_TYPE.makeArray(), "args"),
                 ClassNode.EMPTY_ARRAY,
-                // InvokerHelper.runScript(scriptClass, args)
                 stmt(
                     callX(
-                        classX(ClassHelper.make(InvokerHelper.class)),
+                        ClassHelper.make(InvokerHelper.class),
                         "runScript",
                         args(classX(classNode), varX("args"))
                     )
@@ -377,7 +383,7 @@ public class ModuleNode extends ASTNode {
 
         classNode.addConstructor(
             ACC_PUBLIC,
-            params(param(ClassHelper.make(Binding.class), "context")),
+            finalParam(ClassHelper.make(Binding.class), "context"),
             ClassNode.EMPTY_ARRAY,
             stmt);
 
@@ -397,7 +403,7 @@ public class ModuleNode extends ASTNode {
     private MethodNode handleMainMethodIfPresent(final List<MethodNode> methods) {
         boolean found = false;
         MethodNode result = null;
-        for (Iterator<MethodNode> iter = methods.iterator(); iter.hasNext();) {
+        for (Iterator<MethodNode> iter = methods.iterator(); iter.hasNext(); ) {
             MethodNode node = iter.next();
             if (node.getName().equals("main")) {
                 if (node.isStatic() && node.getParameters().length == 1) {
