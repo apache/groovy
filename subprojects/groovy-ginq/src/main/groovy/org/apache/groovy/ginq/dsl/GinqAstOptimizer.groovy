@@ -70,6 +70,8 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
 
     @Override
     Void visitGinqExpression(GinqExpression ginqExpression) {
+        super.visitGinqExpression(ginqExpression)
+
         if (!ginqExpression.joinExpressionList) {
             return null
         }
@@ -90,6 +92,12 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
         if (!optimizingDataSourceExpressionList) {
             return null
         }
+
+        List<Expression> candidatesToOptimize = findCandidatesToOptimize(ginqExpression.whereExpression)
+        if (!candidatesToOptimize) {
+            return null
+        }
+
         final List<String> optimizingAliasList =
                 (List<String>) optimizingDataSourceExpressionList.stream()
                         .map((DataSourceExpression e) -> e.aliasExpr.text)
@@ -105,11 +113,9 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
                         .map((DataSourceExpression e) -> e.aliasExpr.text)
                         .collect(Collectors.toList())
 
-        super.visitGinqExpression(ginqExpression)
-
         WhereExpression whereExpression = ginqExpression.whereExpression
         if (whereExpression) {
-            boolean transformed = transformFromClause(whereExpression, optimizingAliasList, allAliasList, optimizingDataSourceExpressionList)
+            boolean transformed = transformFromClause(candidatesToOptimize, optimizingAliasList, allAliasList, optimizingDataSourceExpressionList)
             if (transformed) {
                 transformWhereClause(whereExpression, ginqExpression)
             }
@@ -164,6 +170,10 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
     }
 
     private List<Expression> findCandidatesToOptimize(WhereExpression whereExpression) {
+        if (!whereExpression) {
+            return Collections.emptyList()
+        }
+
         boolean toOptimize = true
         List<Expression> candidatesToOptimize = []
 
@@ -209,18 +219,13 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
         return true
     }
 
-    private boolean transformFromClause(WhereExpression whereExpression, List<String> optimizingAliasList, List<String> allAliasList, List<DataSourceExpression> optimizingDataSourceExpressionList) {
+    private boolean transformFromClause(List<Expression> candidatesToOptimize, List<String> optimizingAliasList, List<String> allAliasList, List<DataSourceExpression> optimizingDataSourceExpressionList) {
         Map<String, List<Expression>> conditionsToOptimize = [:]
-        List<Expression> candidatesToOptimize = findCandidatesToOptimize(whereExpression)
+        candidatesToOptimize.stream()
+                .forEach(e ->
+                        collectConditionsToOptimize(e, allAliasList, optimizingAliasList, conditionsToOptimize))
 
         boolean transformed = false
-        if (!candidatesToOptimize) {
-            return transformed
-        }
-
-        candidatesToOptimize.stream()
-                .forEach(e -> collectConditionsToOptimize(e, allAliasList, optimizingAliasList, conditionsToOptimize))
-
         conditionsToOptimize.forEach((String alias, List<Expression> conditions) -> {
             if (!optimizingAliasList.contains(alias)) return
 

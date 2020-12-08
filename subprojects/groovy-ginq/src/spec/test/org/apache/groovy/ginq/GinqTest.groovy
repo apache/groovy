@@ -562,6 +562,23 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from innerjoin where select - 6"() {
+        assertScript '''
+            assert [[3, 3]] == GQ {
+                    from n1 in [1, 2, 3]
+                    innerjoin n2 in [1, 2, 3] on n1 == n2
+                    where n1 in (
+                        from m1 in [1, 2, 3]
+                        innerjoin m2 in [2, 3, 4] on m2 == m1
+                        where m1 > 2 && m2 < 4
+                        select m1
+                    ) && n1 > 1 && n2 <= 3
+                    select n1, n2
+                }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - from innerjoin innerjoin leftjoin select - 1"() {
         assertScript '''
             def nums1 = [1, 2, 3, 4, 5]
@@ -3615,5 +3632,65 @@ class GinqTest {
 
         assert ginqExpression.fromExpression.dataSourceExpr !instanceof GinqExpression
         assert ginqExpression.joinExpressionList[0].dataSourceExpr !instanceof GinqExpression
+    }
+
+    @Test
+    @CompileDynamic
+    void "testGinq - optimize - 6"() {
+        def code = '''
+            def hello() {
+                def c = {
+                    from n1 in nums1
+                    innerjoin n2 in nums2 on n1 == n2
+                    where n1 in (
+                        from m1 in [1, 2, 3]
+                        innerjoin m2 in [2, 3, 4] on m2 == m1
+                        where m1 > 2 && m2 < 4
+                        select m1
+                    ) && n1 > 1 && n2 <= 3
+                    select n1, n2
+                }
+                return
+            }
+        '''
+        def sourceUnit
+        def ast = new CompilationUnit().tap {
+            sourceUnit = addSource 'hello.groovy', code
+            compile Phases.CONVERSION
+        }.ast
+
+        MethodNode methodNode = ast.classes[0].methods.grep(e -> e.name == 'hello')[0]
+        ExpressionStatement delcareStatement = ((BlockStatement) methodNode.getCode()).getStatements()[0]
+        DeclarationExpression declarationExpression = delcareStatement.getExpression()
+        ClosureExpression closureException = declarationExpression.rightExpression
+
+        GinqAstBuilder ginqAstBuilder = new GinqAstBuilder(sourceUnit)
+        closureException.code.visit(ginqAstBuilder)
+        GinqExpression ginqExpression = ginqAstBuilder.getGinqExpression()
+
+        GinqAstOptimizer ginqAstOptimizer = new GinqAstOptimizer()
+        ginqAstOptimizer.visitGinqExpression(ginqExpression)
+        BinaryExpression filterExpr = ginqExpression.whereExpression.filterExpr
+        GinqExpression nestedGinq = filterExpr.rightExpression
+        assert nestedGinq.fromExpression.dataSourceExpr instanceof GinqExpression
+        BinaryExpression constructedFilterExpr1OfNestedGinq = ((GinqExpression) nestedGinq.fromExpression.dataSourceExpr).whereExpression.filterExpr
+        assert Types.COMPARE_GREATER_THAN == constructedFilterExpr1OfNestedGinq.operation.type
+        assert '2' == constructedFilterExpr1OfNestedGinq.rightExpression.text
+
+        assert nestedGinq.joinExpressionList[0].dataSourceExpr instanceof GinqExpression
+        BinaryExpression contructedFilterExpr2OfNestedGinq = ((GinqExpression) nestedGinq.joinExpressionList[0].dataSourceExpr).whereExpression.filterExpr
+        assert Types.COMPARE_LESS_THAN == contructedFilterExpr2OfNestedGinq.operation.type
+        assert '4' == contructedFilterExpr2OfNestedGinq.rightExpression.text
+
+
+        assert ginqExpression.fromExpression.dataSourceExpr instanceof GinqExpression
+        BinaryExpression contructedFilterExpr1 = ((GinqExpression) ginqExpression.fromExpression.dataSourceExpr).whereExpression.filterExpr
+        assert Types.COMPARE_GREATER_THAN == contructedFilterExpr1.operation.type
+        assert '1' == contructedFilterExpr1.rightExpression.text
+
+        assert ginqExpression.joinExpressionList[0].dataSourceExpr instanceof GinqExpression
+        BinaryExpression contructedFilterExpr2 = ((GinqExpression) ginqExpression.joinExpressionList[0].dataSourceExpr).whereExpression.filterExpr
+        assert Types.COMPARE_LESS_THAN_EQUAL == contructedFilterExpr2.operation.type
+        assert '3' == contructedFilterExpr2.rightExpression.text
     }
 }
