@@ -21,7 +21,6 @@ package org.codehaus.groovy.classgen.asm;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClosureListExpression;
@@ -345,97 +344,78 @@ public class StatementWriter {
 
         Statement tryStatement = statement.getTryStatement();
         Statement finallyStatement = statement.getFinallyStatement();
-
-        // start try block, label needed for exception table
-        Label tryStart = new Label();
-        mv.visitLabel(tryStart);
         BlockRecorder tryBlock = makeBlockRecorder(finallyStatement);
-        tryBlock.startRange(tryStart);
 
+        startRange(tryBlock, mv);
         tryStatement.visit(controller.getAcg());
 
-        // goto finally part
+        // skip past catch block(s)
         Label finallyStart = new Label();
         mv.visitJumpInsn(GOTO, finallyStart);
 
-        Label tryEnd = new Label();
-        mv.visitLabel(tryEnd);
-        tryBlock.closeRange(tryEnd);
-        // pop for "makeBlockRecorder(finallyStatement)"
-        controller.getCompileStack().pop();
+        closeRange(tryBlock, mv);
+        // pop for BlockRecorder
+        compileStack.pop();
 
         BlockRecorder catches = makeBlockRecorder(finallyStatement);
         for (CatchStatement catchStatement : statement.getCatchStatements()) {
-            ClassNode exceptionType = catchStatement.getExceptionType();
-            String exceptionTypeInternalName = BytecodeHelper.getClassInternalName(exceptionType);
+            Label catchBlock = startRange(catches, mv);
 
-            // start catch block, label needed for exception table
-            Label catchStart = new Label();
-            mv.visitLabel(catchStart);
-            catches.startRange(catchStart);
-
-            // create exception variable and store the exception
-            Parameter exceptionVariable = catchStatement.getVariable();
+            // create variable for the exception
             compileStack.pushState();
-            compileStack.defineVariable(exceptionVariable, true);
+            // TODO: Is it okay that "catch (e)" makes variable type Object?
+            compileStack.defineVariable(catchStatement.getVariable(), true);
             // handle catch body
             catchStatement.visit(controller.getAcg());
-            // place holder to avoid problems with empty catch blocks
+            // placeholder to avoid problems with empty catch block
             mv.visitInsn(NOP);
             // pop for the variable
-            controller.getCompileStack().pop();
+            compileStack.pop();
 
             // end of catch
-            Label catchEnd = new Label();
-            mv.visitLabel(catchEnd);
-            catches.closeRange(catchEnd);
-
-            // goto finally start
+            closeRange(catches, mv);
             mv.visitJumpInsn(GOTO, finallyStart);
-            compileStack.writeExceptionTable(tryBlock, catchStart, exceptionTypeInternalName);
+            compileStack.writeExceptionTable(tryBlock, catchBlock,
+                    BytecodeHelper.getClassInternalName(catchStatement.getExceptionType()));
         }
 
         // used to handle exceptions in catches and regularly visited finals
-        Label catchAny = new Label();
+        Label catchAll = new Label();
 
-        // add "catch any" block to exception table for try part we do this
-        // after the exception blocks, because else this one would supersede
-        // any of those otherwise
-        compileStack.writeExceptionTable(tryBlock, catchAny, null);
+        // add "catch all" block to exception table for try part; we do this
+        // after the exception blocks so they are not superseded by this one
+        compileStack.writeExceptionTable(tryBlock, catchAll, null);
         // same for the catch parts
-        compileStack.writeExceptionTable(catches, catchAny, null);
+        compileStack.writeExceptionTable(catches , catchAll, null);
 
-        // pop for "makeBlockRecorder(catches)"
+        // pop for BlockRecorder
         compileStack.pop();
 
         // start finally
         mv.visitLabel(finallyStart);
         finallyStatement.visit(controller.getAcg());
 
-        // goto after all-catching block
-        Label skipCatchAll = new Label();
-        mv.visitJumpInsn(GOTO, skipCatchAll);
+        // skip past all-catching block
+        Label afterCatchAll = new Label();
+        mv.visitJumpInsn(GOTO, afterCatchAll);
 
-        // start a block catching any Exception
-        mv.visitLabel(catchAny);
-        // store exception
-        // TODO: maybe define a Throwable and use it here instead of Object
-        operandStack.push(ClassHelper.OBJECT_TYPE);
-        int anyExceptionIndex = compileStack.defineTemporaryVariable("exception", true);
+        mv.visitLabel(catchAll);
+        operandStack.push(ClassHelper.make(Throwable.class));
+        int anyThrowableIndex = compileStack.defineTemporaryVariable("throwable", true);
 
         // GROOVY-9199
         controller.resetLineNumber();
         int line = finallyStatement.getLineNumber();
-        if (line > 0) mv.visitLineNumber(line, catchAny);
+        if (line > 0) mv.visitLineNumber(line, catchAll);
 
         finallyStatement.visit(controller.getAcg());
 
-        // load the exception and rethrow it
-        mv.visitVarInsn(ALOAD, anyExceptionIndex);
+        // load the throwable and rethrow it
+        mv.visitVarInsn(ALOAD, anyThrowableIndex);
         mv.visitInsn(ATHROW);
 
-        mv.visitLabel(skipCatchAll);
-        compileStack.removeVar(anyExceptionIndex);
+        mv.visitLabel(afterCatchAll);
+        compileStack.removeVar(anyThrowableIndex);
     }
 
     private BlockRecorder makeBlockRecorder(final Statement finallyStatement) {
@@ -447,6 +427,19 @@ public class StatementWriter {
         };
         controller.getCompileStack().pushBlockRecorder(recorder);
         return recorder;
+    }
+
+    private static Label startRange(final BlockRecorder br, final MethodVisitor mv) {
+        Label label = new Label();
+        mv.visitLabel(label);
+        br.startRange(label);
+        return label;
+    }
+
+    private static void  closeRange(final BlockRecorder br, final MethodVisitor mv) {
+        Label label = new Label();
+        mv.visitLabel(label);
+        br.closeRange(label);
     }
 
     public void writeSwitch(final SwitchStatement statement) {
@@ -599,9 +592,8 @@ public class StatementWriter {
         OperandStack operandStack = controller.getOperandStack();
         ClassNode returnType = controller.getReturnType();
 
-        if (returnType == ClassHelper.VOID_TYPE) {
-            if (!(statement.isReturningNullOrVoid())) {
-                //TODO: move to Verifier
+        if (returnType.equals(ClassHelper.VOID_TYPE)) {
+            if (!statement.isReturningNullOrVoid()) { // TODO: move to Verifier
                 controller.getAcg().throwException("Cannot use return statement with an expression on a method that returns void");
             }
             controller.getCompileStack().applyBlockRecorder();
