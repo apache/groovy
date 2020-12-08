@@ -3671,8 +3671,11 @@ class GinqTest {
         GinqAstOptimizer ginqAstOptimizer = new GinqAstOptimizer()
         ginqAstOptimizer.visitGinqExpression(ginqExpression)
         BinaryExpression filterExpr = ginqExpression.whereExpression.filterExpr
+        assert 'n1' == filterExpr.leftExpression.text
+        assert Types.KEYWORD_IN == filterExpr.operation.type
         GinqExpression nestedGinq = filterExpr.rightExpression
         assert nestedGinq.fromExpression.dataSourceExpr instanceof GinqExpression
+
         BinaryExpression constructedFilterExpr1OfNestedGinq = ((GinqExpression) nestedGinq.fromExpression.dataSourceExpr).whereExpression.filterExpr
         assert Types.COMPARE_GREATER_THAN == constructedFilterExpr1OfNestedGinq.operation.type
         assert '2' == constructedFilterExpr1OfNestedGinq.rightExpression.text
