@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.DeclarationExpression
+import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.control.CompilationUnit
@@ -3686,6 +3687,73 @@ class GinqTest {
         assert '4' == contructedFilterExpr2OfNestedGinq.rightExpression.text
 
         assert null == nestedGinq.whereExpression
+
+
+        assert ginqExpression.fromExpression.dataSourceExpr instanceof GinqExpression
+        BinaryExpression contructedFilterExpr1 = ((GinqExpression) ginqExpression.fromExpression.dataSourceExpr).whereExpression.filterExpr
+        assert Types.COMPARE_GREATER_THAN == contructedFilterExpr1.operation.type
+        assert '1' == contructedFilterExpr1.rightExpression.text
+
+        assert ginqExpression.joinExpressionList[0].dataSourceExpr instanceof GinqExpression
+        BinaryExpression contructedFilterExpr2 = ((GinqExpression) ginqExpression.joinExpressionList[0].dataSourceExpr).whereExpression.filterExpr
+        assert Types.COMPARE_LESS_THAN_EQUAL == contructedFilterExpr2.operation.type
+        assert '3' == contructedFilterExpr2.rightExpression.text
+    }
+
+    @Test
+    @CompileDynamic
+    void "testGinq - optimize - 7"() {
+        def code = '''
+            def hello() {
+                def gqc = {
+                    from n1 in nums1
+                    innerjoin n2 in nums2 on n1 == n2
+                    where (
+                        from m1 in [1, 2, 3]
+                        innerjoin m2 in [2, 3, 4] on m2 == m1
+                        where m1 > 2 && m2 < 4 && m1 == n1
+                        select m1
+                    ).exists() && n1 > 1 && n2 <= 3
+                    select n1, n2
+                }
+                return
+            }
+        '''
+        def sourceUnit
+        def ast = new CompilationUnit().tap {
+            sourceUnit = addSource 'hello.groovy', code
+            compile Phases.CONVERSION
+        }.ast
+
+        MethodNode methodNode = ast.classes[0].methods.grep(e -> e.name == 'hello')[0]
+        ExpressionStatement delcareStatement = ((BlockStatement) methodNode.getCode()).getStatements()[0]
+        DeclarationExpression declarationExpression = delcareStatement.getExpression()
+        ClosureExpression closureException = declarationExpression.rightExpression
+
+        GinqAstBuilder ginqAstBuilder = new GinqAstBuilder(sourceUnit)
+        closureException.code.visit(ginqAstBuilder)
+        GinqExpression ginqExpression = ginqAstBuilder.getGinqExpression()
+
+        GinqAstOptimizer ginqAstOptimizer = new GinqAstOptimizer()
+        ginqAstOptimizer.visitGinqExpression(ginqExpression)
+        MethodCallExpression filterExpr = ginqExpression.whereExpression.filterExpr
+        assert 'exists' == filterExpr.methodAsString
+        GinqExpression nestedGinq = filterExpr.objectExpression
+        assert nestedGinq.fromExpression.dataSourceExpr instanceof GinqExpression
+
+        BinaryExpression constructedFilterExpr1OfNestedGinq = ((GinqExpression) nestedGinq.fromExpression.dataSourceExpr).whereExpression.filterExpr
+        assert Types.COMPARE_GREATER_THAN == constructedFilterExpr1OfNestedGinq.operation.type
+        assert '2' == constructedFilterExpr1OfNestedGinq.rightExpression.text
+
+        assert nestedGinq.joinExpressionList[0].dataSourceExpr instanceof GinqExpression
+        BinaryExpression contructedFilterExpr2OfNestedGinq = ((GinqExpression) nestedGinq.joinExpressionList[0].dataSourceExpr).whereExpression.filterExpr
+        assert Types.COMPARE_LESS_THAN == contructedFilterExpr2OfNestedGinq.operation.type
+        assert '4' == contructedFilterExpr2OfNestedGinq.rightExpression.text
+
+        BinaryExpression filterExprOfNestedGinq = nestedGinq.whereExpression.filterExpr
+        assert 'm1' == filterExprOfNestedGinq.leftExpression.text
+        assert Types.COMPARE_EQUAL == filterExprOfNestedGinq.operation.type
+        assert 'n1' == filterExprOfNestedGinq.rightExpression.text
 
 
         assert ginqExpression.fromExpression.dataSourceExpr instanceof GinqExpression
