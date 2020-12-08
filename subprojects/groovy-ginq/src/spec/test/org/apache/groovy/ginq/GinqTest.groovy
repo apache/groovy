@@ -3456,7 +3456,7 @@ class GinqTest {
     void "testGinq - optimize - 1"() {
         def code = '''
             def hello() {
-                def c = {
+                def gqc = {
                     from n1 in nums1
                     innerjoin n2 in nums2 on n1 == n2
                     where n1 > 1 && n2 <= 3
@@ -3500,7 +3500,7 @@ class GinqTest {
     void "testGinq - optimize - 2"() {
         def code = '''
             def hello() {
-                def c = {
+                def gqc = {
                     from n1 in nums1
                     innerjoin n2 in nums2 on n1 == n2
                     where n1 > 1 && n2 <= 3 && 1 < 2 && 3 == 3 && 4 > 3 && 'a' < 'b' && "a's" < "b's" && true && !false
@@ -3544,7 +3544,7 @@ class GinqTest {
     void "testGinq - optimize - 3"() {
         def code = '''
             def hello() {
-                def c = {
+                def gqc = {
                     from n1 in nums1
                     leftjoin n2 in nums2 on n1 == n2
                     where n1 > 1 && n2 <= 3
@@ -3602,7 +3602,7 @@ class GinqTest {
     void "testGinq - optimize - 5"() {
         def code = '''
             def hello() {
-                def c = {
+                def gqc = {
                     from n1 in nums1
                     innerjoin n2 in nums2 on n1 == n2
                     where n1 > 1 || n2 <= 3
@@ -3639,7 +3639,7 @@ class GinqTest {
     void "testGinq - optimize - 6"() {
         def code = '''
             def hello() {
-                def c = {
+                def gqc = {
                     from n1 in nums1
                     innerjoin n2 in nums2 on n1 == n2
                     where n1 in (
@@ -3684,6 +3684,8 @@ class GinqTest {
         BinaryExpression contructedFilterExpr2OfNestedGinq = ((GinqExpression) nestedGinq.joinExpressionList[0].dataSourceExpr).whereExpression.filterExpr
         assert Types.COMPARE_LESS_THAN == contructedFilterExpr2OfNestedGinq.operation.type
         assert '4' == contructedFilterExpr2OfNestedGinq.rightExpression.text
+
+        assert null == nestedGinq.whereExpression
 
 
         assert ginqExpression.fromExpression.dataSourceExpr instanceof GinqExpression
