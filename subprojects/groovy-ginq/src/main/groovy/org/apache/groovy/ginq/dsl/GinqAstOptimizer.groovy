@@ -109,8 +109,10 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
 
         WhereExpression whereExpression = ginqExpression.whereExpression
         if (whereExpression) {
-            transformFromClause(whereExpression, optimizingAliasList, allAliasList, optimizingDataSourceExpressionList)
-            transformWhereClause(whereExpression, ginqExpression)
+            boolean transformed = transformFromClause(whereExpression, optimizingAliasList, allAliasList, optimizingDataSourceExpressionList)
+            if (transformed) {
+                transformWhereClause(whereExpression, ginqExpression)
+            }
         }
 
         return null
@@ -118,7 +120,7 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
 
     private static String constantText(ConstantExpression constantExpression) {
         if (constantExpression.value instanceof CharSequence) {
-            return "'$constantExpression.value'"
+            return "'''${constantExpression.value}'''"
         }
 
         return constantExpression.text
@@ -193,6 +195,10 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
             })
         }
 
+        if (!toOptimize) {
+            candidatesToOptimize.clear()
+        }
+
         return candidatesToOptimize
     }
     static boolean isCandidate(Expression expression) {
@@ -203,9 +209,14 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
         return true
     }
 
-    private void transformFromClause(WhereExpression whereExpression, List<String> optimizingAliasList, List<String> allAliasList, List<DataSourceExpression> optimizingDataSourceExpressionList) {
+    private boolean transformFromClause(WhereExpression whereExpression, List<String> optimizingAliasList, List<String> allAliasList, List<DataSourceExpression> optimizingDataSourceExpressionList) {
         Map<String, List<Expression>> conditionsToOptimize = [:]
         List<Expression> candidatesToOptimize = findCandidatesToOptimize(whereExpression)
+
+        boolean transformed = false
+        if (!candidatesToOptimize) {
+            return transformed
+        }
 
         candidatesToOptimize.stream()
                 .forEach(e -> collectConditionsToOptimize(e, allAliasList, optimizingAliasList, conditionsToOptimize))
@@ -225,6 +236,10 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
                                 .map(e -> correctVars(e, alias, constructedAlias))
                                 .collect(Collectors.toList())
 
+                if (transformedConditions) {
+                    transformed = true
+                }
+
                 contructedGinqExpression.fromExpression =
                         new FromExpression(new VariableExpression(constructedAlias), dataSourceExpression.dataSourceExpr)
                 contructedGinqExpression.whereExpression =
@@ -238,6 +253,8 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
                 dataSourceExpression.dataSourceExpr = contructedGinqExpression
             }
         })
+
+        return transformed
     }
 
     Expression correctVars(Expression expression, final String alias, final String constructedAlias) {
