@@ -27,7 +27,6 @@ import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -35,10 +34,10 @@ import org.objectweb.asm.Opcodes;
 public class CompareToNullExpression extends BinaryExpression implements Opcodes {
     private final boolean equalsNull;
 
-    public CompareToNullExpression(final Expression objectExpression, final boolean compareToNull) {
-        super(objectExpression, new Token(Types.COMPARE_TO, compareToNull ? "==" : "!=", -1, -1), ConstantExpression.NULL);
+    public CompareToNullExpression(final Expression expression, final boolean equalsNull) {
+        super(expression, Token.newSymbol(equalsNull ? "==" : "!=", -1, -1), ConstantExpression.NULL);
         super.setType(ClassHelper.boolean_TYPE);
-        this.equalsNull = compareToNull;
+        this.equalsNull = equalsNull;
     }
 
     public Expression getObjectExpression() {
