@@ -3768,8 +3768,11 @@ class GinqTest {
     }
 
     private static void assertGinqScript(String script) {
-        assertScript(script)
-        String newScript = script.replace(/\bGQ\b/, 'GQ(optimize:false)')
-        assertScript(newScript)
+        String newScript = script.replaceAll(/\bGQ\s*[{]/, 'GQ(optimize:false) {')
+        [newScript, script].collect { String c ->
+            Thread.start {
+                assertScript(c)
+            }
+        }*.join()
     }
 }
