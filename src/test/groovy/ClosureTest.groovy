@@ -23,19 +23,36 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
 import static groovy.lang.Closure.IDENTITY
 
-/**
- * Tests Closures in Groovy
- */
-class ClosureTest extends GroovyTestCase {
+final class ClosureTest extends GroovyTestCase {
 
-    def count
+    private int count
+
+    def incrementCallCount() {
+        count += 1
+    }
+
+    def assertClosure(Closure block) {
+        block.call(this)
+    }
+
+    protected void callBlock(int n, Closure block) {
+        for (i in 0..n) {
+            block.call(this)
+        }
+    }
+
+    protected void callBlock2(n, block) {
+        for (i in 0..n) {
+            block.call(this)
+        }
+    }
+
+    //--------------------------------------------------------------------------
 
     void testSimpleBlockCall() {
-        count = 0
+        def c = { owner -> owner.incrementCallCount() }
 
-        def block = { owner -> owner.incrementCallCount() }
-
-        assertClosure(block)
+        assertClosure(c)
         assert count == 1
 
         assertClosure({ owner -> owner.incrementCallCount() })
@@ -43,10 +60,7 @@ class ClosureTest extends GroovyTestCase {
     }
 
     void testVariableLengthParameterList() {
-
         def c1 = { Object[] args -> args.each { count += it } }
-
-        count = 0
         c1(1, 2, 3)
         assert count == 6
 
@@ -74,8 +88,6 @@ class ClosureTest extends GroovyTestCase {
     }
 
     void testBlockAsParameter() {
-        count = 0
-
         callBlock(5, { owner -> owner.incrementCallCount() })
         assert count == 6
 
@@ -86,8 +98,6 @@ class ClosureTest extends GroovyTestCase {
     void testMethodClosure() {
         def block = this.&incrementCallCount
 
-        count = 0
-
         block.call()
 
         assert count == 1
@@ -97,31 +107,11 @@ class ClosureTest extends GroovyTestCase {
         assert block.call(3, 7) == 3
     }
 
-    def incrementCallCount() {
-        //System.out.println("invoked increment method!")
-        count = count + 1
+    private int numAgents = 4
+    private boolean testDone = false
+    private static class TinyAgent {
+        int x
     }
-
-    def assertClosure(Closure block) {
-        assert block != null
-        block.call(this)
-    }
-
-    protected void callBlock(Integer num, Closure block) {
-        for (i in 0..num) {
-            block.call(this)
-        }
-    }
-
-    protected void callBlock2(num, block) {
-        for (i in 0..num) {
-            block.call(this)
-        }
-    }
-
-
-    int numAgents = 4
-    boolean testDone = false
 
     void testIntFieldAccess() {
         def agents = new ArrayList();
@@ -134,14 +124,40 @@ class ClosureTest extends GroovyTestCase {
         assert agents.size() == numAgents
     }
 
-    void testWithIndex() {
+    // GROOVY-6989
+    void testEach() {
+        assertScript '''
+            Object[] arr = new Object[1]
+            arr[0] = "1"
+            List list = new ArrayList()
+            list.add(arr)
+
+            list.each { def obj ->
+                assert obj[0] == "1"
+            }
+
+            list.each { Object[] obj ->
+                assert obj[0] == "1"
+            }
+        '''
+    }
+
+    void testEachWithArray() {
+        def l = []
+        l << ([1, 2] as Object[])
+        l.each {
+            assert it == [1, 2] as Object[]
+        }
+    }
+
+    void testEachWithIndex() {
         def str = ''
         def sum = 0
         ['a', 'b', 'c', 'd'].eachWithIndex { item, index -> str += item; sum += index }
         assert str == 'abcd' && sum == 6
     }
 
-    void testMapWithEntryIndex() {
+    void testMapEachWithIndex() {
         def keyStr = ''
         def valStr = ''
         def sum = 0
@@ -153,7 +169,7 @@ class ClosureTest extends GroovyTestCase {
         assert keyStr == 'abcd' && valStr == 'zyxw' && sum == 6
     }
 
-    void testMapWithKeyValueIndex() {
+    void testMapEachWithIndexKV() {
         def keyStr = ''
         def valStr = ''
         def sum = 0
@@ -166,8 +182,7 @@ class ClosureTest extends GroovyTestCase {
     }
 
     /**
-     * Test access to Closure's properties
-     * cf GROOVY-2089
+     * GROOVY-2089 access to Closure's properties
      */
     void testGetProperties() {
         def c = { println it }
@@ -181,8 +196,7 @@ class ClosureTest extends GroovyTestCase {
         assert c.resolveStrategy == c.getResolveStrategy()
         assert c.thisObject == c.getThisObject()
 
-        // no idea why this one fails
-        // assert c.metaClass == c.getMetaClass()
+        assert c.metaClass != c.getMetaClass() // no idea why this isn't equal
     }
 
     void testGetPropertiesGenerically() {
@@ -214,7 +228,7 @@ class ClosureTest extends GroovyTestCase {
     /**
      * GROOVY-2150 ensure list call is available on closure
      */
-    void testCallClosureWithlist() {
+    void testCallClosureWithList() {
         def list = [1, 2]
         def cl = { a, b -> a + b }
         assert cl(list) == 3
@@ -224,8 +238,8 @@ class ClosureTest extends GroovyTestCase {
      * GROOVY-4484 ensure variable can be used in assignment inside closure
      */
     void testDeclarationOutsideWithAssignmentInsideAndReferenceInNestedClosure() {
-        assertScript """
-            class Dummy{}
+        assertScript '''
+            class Dummy { }
             Dummy foo(arg){new Dummy()}
 
             def phasePicker
@@ -234,7 +248,7 @@ class ClosureTest extends GroovyTestCase {
             }
 
             assert c() instanceof Dummy
-        """
+        '''
     }
 
     void testIdentity() {
@@ -262,14 +276,6 @@ class ClosureTest extends GroovyTestCase {
         assert map.collectEntries(IDENTITY) == map
     }
 
-    void testEachWithArray() {
-        def l = []
-        l << ([1, 2] as Object[])
-        l.each {
-            assert it == [1, 2] as Object[]
-        }
-    }
-
     void testClosureDehydrateAndRehydrate() {
         def closure = { 'Hello' }
         assert closure.delegate != null
@@ -278,38 +284,35 @@ class ClosureTest extends GroovyTestCase {
         assert closure() == 'Hello'
 
         def serializable = closure.dehydrate()
-        assert !serializable.is(closure)
+        assert serializable !== closure
         assert serializable.delegate == null
         assert serializable.owner == null
         assert serializable.thisObject == null
         assert serializable() == 'Hello'
 
         def rehydrate = serializable.rehydrate(closure.delegate, closure.owner, closure.thisObject)
-        assert !rehydrate.is(serializable)
-        assert !rehydrate.is(closure)
-        assert rehydrate.delegate.is(closure.delegate)
-        assert rehydrate.owner.is(closure.owner)
-        assert rehydrate.thisObject.is(closure.thisObject)
+        assert rehydrate !== serializable
+        assert rehydrate !== closure
+        assert rehydrate.delegate === closure.delegate
+        assert rehydrate.owner === closure.owner
+        assert rehydrate.thisObject === closure.thisObject
         assert rehydrate() == 'Hello'
-
     }
 
     // GROOVY-5151
     void testClosureSerialization() {
         // without dehydrate, as Controller is not serializable, the serialization will fail
-        shouldFail(NotSerializableException) {
-            assertScript '''
+        shouldFail NotSerializableException, '''
             class Controller { // not Serializable
                 def action = { 'Hello' }
                 def action2 = { action() } // call to other closure
             }
             def ctrl = new Controller()
-            def bos = new ByteArrayOutputStream()
-            bos.withObjectOutputStream {
+            def baos = new ByteArrayOutputStream()
+            baos.withObjectOutputStream {
                 it << ctrl.action
             }
         '''
-        }
 
         // dehydrated action1 should be serializable
         assertScript '''
@@ -318,10 +321,9 @@ class ClosureTest extends GroovyTestCase {
                 def action2 = { action() } // call to other closure
             }
             def ctrl = new Controller()
-            def a1 = ctrl.action.dehydrate()
-            def bos = new ByteArrayOutputStream()
-            bos.withObjectOutputStream {
-                it << a1
+            def baos = new ByteArrayOutputStream()
+            baos.withObjectOutputStream {
+                it << ctrl.action.dehydrate()
             }
         '''
 
@@ -332,10 +334,9 @@ class ClosureTest extends GroovyTestCase {
                 def action2 = { action() } // call to other closure
             }
             def ctrl = new Controller()
-            def a2 = ctrl.action2.dehydrate()
-            def bos = new ByteArrayOutputStream()
-            bos.withObjectOutputStream {
-                it << a2
+            def baos = new ByteArrayOutputStream()
+            baos.withObjectOutputStream {
+                it << ctrl.action2.dehydrate()
             }
         '''
 
@@ -346,12 +347,11 @@ class ClosureTest extends GroovyTestCase {
                 def action2 = { action() } // call to other closure
             }
             def ctrl = new Controller()
-            def a1 = ctrl.action.dehydrate()
-            def bos = new ByteArrayOutputStream()
-            bos.withObjectOutputStream {
-                it << a1
+            def baos = new ByteArrayOutputStream()
+            baos.withObjectOutputStream {
+                it << ctrl.action.dehydrate()
             }
-            byte[] arr = bos.toByteArray()
+            byte[] arr = baos.toByteArray()
             def rehyd
             new ByteArrayInputStream(arr).withObjectInputStream(this.class.classLoader) {
                 it.eachObject { o -> rehyd = o }
@@ -366,91 +366,87 @@ class ClosureTest extends GroovyTestCase {
                 def action2 = { action() } // call to other closure
             }
             def ctrl = new Controller()
-            def a2 = ctrl.action2.dehydrate()
-            def bos = new ByteArrayOutputStream()
-            bos.withObjectOutputStream {
-                it << a2
+            def baos = new ByteArrayOutputStream()
+            baos.withObjectOutputStream {
+                it << ctrl.action2.dehydrate()
             }
-            byte[] arr = bos.toByteArray()
+            byte[] arr = baos.toByteArray()
             def rehyd
             new ByteArrayInputStream(arr).withObjectInputStream(this.class.classLoader) {
                 it.eachObject { o -> rehyd = o }
             }
             ctrl = new Controller() // assert new instance
-            rehyd = rehyd.rehydrate(ctrl,ctrl,ctrl)
+            rehyd = rehyd.rehydrate(ctrl, ctrl, ctrl)
             assert rehyd() == 'Hello'
         '''
 
-        shouldFail(NotSerializableException) {
-            assertScript '''
-            class X{}
-            def x = new X ()
+        shouldFail NotSerializableException, '''
+            class X {}
+            def x = new X()
             def cl = {x}
-            def dehyd = cl.dehydrate() // true means to dehydrate non serializable fields too
-            def bos = new ByteArrayOutputStream()
-            bos.withObjectOutputStream {
-              it << dehyd
+            def baos = new ByteArrayOutputStream()
+            baos.withObjectOutputStream {
+                it << cl.dehydrate()
             }
-            '''
-        }
+        '''
     }
 
     // GROOVY-5875
     void testStaticInnerClassDelegateFirstAccess() {
         assertScript '''
-             class Owner {
-                 Object delegate
-                 String ownerProp = "owner"
+            class Owner {
+                Object delegate
+                String ownerProp = "owner"
 
-                 void run() {
-                     def c = {
-                         delegateProp = ownerProp
-                     }
-                     c.delegate = delegate
-                     c.resolveStrategy = Closure.DELEGATE_FIRST
-                     c()
-                     assert c.delegate.delegateProp == ownerProp
-                 }
-             }
+                void run() {
+                    def c = {
+                        delegateProp = ownerProp
+                    }
+                    c.delegate = delegate
+                    c.resolveStrategy = Closure.DELEGATE_FIRST
+                    c()
+                    assert c.delegate.delegateProp == ownerProp
+                }
+            }
 
-             class Container {
-                 static class Delegate {
-                      String delegateProp = "delegate"
-                 }
-             }
+            class Container {
+                static class Delegate {
+                     String delegateProp = "delegate"
+                }
+            }
 
-             def owner = new Owner()
-             owner.delegate = new Container.Delegate()
-             owner.run()
+            def owner = new Owner()
+            owner.delegate = new Container.Delegate()
+            owner.run()
         '''
     }
 
     void testStaticInnerClassOwnerFirstAccess() {
         assertScript '''
-             class Owner {
-                 Object delegate
-                 String ownerProp = "owner"
+            class Owner {
+                Object delegate
+                String ownerProp = "owner"
 
-                 void run() {
-                     def c = {
-                         delegateProp = ownerProp
-                     }
-                     c.delegate = delegate
-                     c.resolveStrategy = Closure.OWNER_FIRST
-                     c()
-                     assert c.delegate.delegateProp == ownerProp
-                 }
-             }
+                void run() {
+                    def c = {
+                        delegateProp = ownerProp
+                    }
+                    c.delegate = delegate
+                    c.resolveStrategy = Closure.OWNER_FIRST
+                    c()
+                    assert c.delegate.delegateProp == ownerProp
+                }
+            }
 
-             class Container {
-                 static class Delegate {
-                      String delegateProp = "delegate"
-                 }
-             }
+            class Container {
+                static class Delegate {
+                     String delegateProp = "delegate"
+                }
+            }
 
-             def owner = new Owner()
-             owner.delegate = new Container.Delegate()
-             owner.run()
+            def owner = new Owner()
+            owner.delegate = new Container.Delegate()
+            owner.run()
         '''
     }
 
@@ -458,7 +454,7 @@ class ClosureTest extends GroovyTestCase {
         def gcl = new GroovyClassLoader()
         def msg = shouldFail MultipleCompilationErrorsException, {
             gcl.parseClass('''
-                public class ClosureTestA {
+                class ClosureTestA {
                     static class ClosureTestB {
                         def propertyMissing(String myName, Object myValue) {
                             return myValue
@@ -483,21 +479,21 @@ class ClosureTest extends GroovyTestCase {
     void testInnerClassOwnerWithPropertyMissingImplementation() {
         def gcl = new GroovyClassLoader()
         gcl.parseClass('''
-                public class ClosureTestA {
-                    class ClosureTestB {
-                        def propertyMissing(String myName, Object myValue) {
-                            return myValue
-                        }
+            class ClosureTestA {
+                class ClosureTestB {
+                    def propertyMissing(String myName, Object myValue) {
+                        return myValue
+                    }
 
-                        def propertyMissing(String myName) {
-                            return 42
-                        }
+                    def propertyMissing(String myName) {
+                        return 42
+                    }
 
-                        def methodMissing(String myName, Object myArgs) {
-                            return 42
-                        }
+                    def methodMissing(String myName, Object myArgs) {
+                        return 42
                     }
                 }
+            }
         ''')
     }
 
@@ -505,41 +501,18 @@ class ClosureTest extends GroovyTestCase {
         def gcl = new GroovyClassLoader()
         def msg = shouldFail MultipleCompilationErrorsException, {
             gcl.parseClass('''
-                    public class ClosureTestA {
-                        static class ClosureTestB {
-                            def methodMissing(String myName, Object myArgs) {
-                                return 42
-                            }
-                        }
-
-                        static class ClosureTestB1 extends ClosureTestB {
-
+                class ClosureTestA {
+                    static class ClosureTestB {
+                        def methodMissing(String myName, Object myArgs) {
+                            return 42
                         }
                     }
+
+                    static class ClosureTestB1 extends ClosureTestB {
+                    }
+                }
             ''')
         }
         assert msg.contains('"methodMissing" implementations are not supported on static inner classes as a synthetic version of "methodMissing" is added during compilation for the purpose of outer class delegation.')
     }
-
-    // GROOVY-6989
-    void testEachCall() {
-        assertScript '''
-            Object[] arr = new Object[1]
-            arr[0] = "1"
-            List list = new ArrayList()
-            list.add(arr)
-
-            list.each { def obj ->
-                assert obj[0] == "1"
-            }
-
-            list.each { Object[] obj ->
-                assert obj[0] == "1"
-            }
-        '''
-    }
-}
-
-public class TinyAgent {
-    int x
 }
