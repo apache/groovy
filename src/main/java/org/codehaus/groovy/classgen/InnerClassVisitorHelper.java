@@ -24,117 +24,99 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.ast.stmt.ReturnStatement;
-import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
 
-    protected static void setPropertyGetterDispatcher(BlockStatement block, Expression thiz, Parameter[] parameters) {
-        List<ConstantExpression> gStringStrings = new ArrayList<ConstantExpression>();
-        gStringStrings.add(new ConstantExpression(""));
-        gStringStrings.add(new ConstantExpression(""));
-        List<Expression> gStringValues = new ArrayList<Expression>();
-        gStringValues.add(new VariableExpression(parameters[0]));
+    protected static void addFieldInit(final Parameter p, final FieldNode fn, final BlockStatement block) {
+        block.addStatement(assignS(fieldX(fn), varX(p)));
+    }
+
+    protected static void setPropertyGetterDispatcher(final BlockStatement block, final Expression target, final Parameter[] parameters) {
         block.addStatement(
-                new ReturnStatement(
-                        new PropertyExpression(
-                                thiz,
-                                new GStringExpression("$name", gStringStrings, gStringValues)
+                returnS(
+                        propX(
+                                target,
+                                dynName(parameters[0])
                         )
                 )
         );
     }
 
-    protected static void setPropertySetterDispatcher(BlockStatement block, Expression thiz, Parameter[] parameters) {
-        List<ConstantExpression> gStringStrings = new ArrayList<ConstantExpression>();
-        gStringStrings.add(new ConstantExpression(""));
-        gStringStrings.add(new ConstantExpression(""));
-        List<Expression> gStringValues = new ArrayList<Expression>();
-        gStringValues.add(new VariableExpression(parameters[0]));
+    protected static void setPropertySetterDispatcher(final BlockStatement block, final Expression target, final Parameter[] parameters) {
         block.addStatement(
-                new ExpressionStatement(
-                        new BinaryExpression(
-                                new PropertyExpression(
-                                        thiz,
-                                        new GStringExpression("$name", gStringStrings, gStringValues)
+                stmt(
+                        assignX(
+                                propX(
+                                        target,
+                                        dynName(parameters[0])
                                 ),
-                                Token.newSymbol(Types.ASSIGN, -1, -1),
-                                new VariableExpression(parameters[1])
+                                varX(parameters[1])
                         )
                 )
         );
     }
 
-    protected static void setMethodDispatcherCode(BlockStatement block, Expression thiz, Parameter[] parameters) {
-        List<ConstantExpression> gStringStrings = new ArrayList<ConstantExpression>();
-        gStringStrings.add(new ConstantExpression(""));
-        gStringStrings.add(new ConstantExpression(""));
-        List<Expression> gStringValues = new ArrayList<Expression>();
-        gStringValues.add(new VariableExpression(parameters[0]));
+    protected static void setMethodDispatcherCode(final BlockStatement block, final Expression target, final Parameter[] parameters) {
         block.addStatement(
-                new ReturnStatement(
-                        new MethodCallExpression(
-                                thiz,
-                                new GStringExpression("$name", gStringStrings, gStringValues),
-                                new ArgumentListExpression(
-                                        new SpreadExpression(new VariableExpression(parameters[1]))
-                                )
+                returnS(
+                        callX(
+                                target,
+                                dynName(parameters[0]),
+                                args(new SpreadExpression(varX(parameters[1])))
                         )
                 )
         );
     }
 
-    protected static boolean isStatic(InnerClassNode node) {
-        return node.getDeclaredField("this$0") == null;
+    private static Expression dynName(final Parameter p) {
+        List<ConstantExpression> gStringStrings = new ArrayList<>();
+        gStringStrings.add(new ConstantExpression(""));
+        gStringStrings.add(new ConstantExpression(""));
+
+        List<Expression> gStringValues = new ArrayList<>();
+        gStringValues.add(varX(p));
+
+        return new GStringExpression("$name", gStringStrings, gStringValues);
     }
 
-    protected static ClassNode getClassNode(ClassNode node, boolean isStatic) {
-        if (isStatic) node = ClassHelper.CLASS_Type;
-        return node;
+    protected static boolean isStatic(final InnerClassNode cn) {
+        return cn.getDeclaredField("this$0") == null;
     }
 
-    protected static int getObjectDistance(ClassNode node) {
+    protected static ClassNode getClassNode(final ClassNode cn, final boolean isStatic) {
+        return isStatic ? ClassHelper.CLASS_Type : cn; // TODO: Set class type parameter?
+    }
+
+    protected static int getObjectDistance(ClassNode cn) {
         int count = 0;
-        while (node != null && node != ClassHelper.OBJECT_TYPE) {
-            count++;
-            node = node.getSuperClass();
+        while (cn != null && cn != ClassHelper.OBJECT_TYPE) {
+            cn = cn.getSuperClass();
+            count += 1;
         }
         return count;
     }
 
-    protected static void addFieldInit(Parameter p, FieldNode fn, BlockStatement block) {
-        block.addStatement(assignS(fieldX(fn), varX(p)));
-    }
-
-    protected static boolean shouldHandleImplicitThisForInnerClass(ClassNode cn) {
-        if (cn.isEnum() || cn.isInterface()) return false;
-        if ((cn.getModifiers() & Opcodes.ACC_STATIC) != 0) return false;
-
-        if (!(cn instanceof InnerClassNode)) return false;
-        InnerClassNode innerClass = (InnerClassNode) cn;
-        // scope != null means aic, we don't handle that here
-        if (innerClass.getVariableScope() != null) return false;
-        // static inner classes don't need this$0
-        return (innerClass.getModifiers() & Opcodes.ACC_STATIC) == 0;
+    protected static boolean shouldHandleImplicitThisForInnerClass(final ClassNode cn) {
+        final int explicitOrImplicitStatic = Opcodes.ACC_STATIC | Opcodes.ACC_INTERFACE | Opcodes.ACC_ENUM;
+        return (cn.getModifiers() & explicitOrImplicitStatic) == 0 && (cn instanceof InnerClassNode && !((InnerClassNode) cn).isAnonymous());
     }
 }
