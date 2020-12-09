@@ -3588,7 +3588,7 @@ class GinqTest {
     void "testGinq - optimize - 4"() {
         assertGinqScript '''
 // tag::ginq_optimize_01[]
-            assert [[2, 2]] == GQ(optimize:false) {
+            assert [[2, 2]] == GQ(optimize: false) {
                 from n1 in [1, 2, 3]
                 innerjoin n2 in [1, 2, 3] on n1 == n2
                 where n1 > 1 &&  n2 < 3
@@ -3769,10 +3769,8 @@ class GinqTest {
 
     private static void assertGinqScript(String script) {
         String newScript = script.replaceAll(/\bGQ\s*[{]/, 'GQ(optimize:false) {')
-        [newScript, script].collect { String c ->
-            Thread.start {
-                assertScript(c)
-            }
-        }*.join()
+        [newScript, script].each { String c ->
+            assertScript(c)
+        }
     }
 }
