@@ -31,6 +31,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -100,12 +101,14 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                 .collect(
                         Collectors.toMap(
                                 c -> hash(fieldsExtractor2.apply(c)),
-                                c -> {
-                                    List<U> list = new ArrayList<>();
-                                    list.add(c);
-                                    return list;
-                                },
+                                Collections::singletonList,
                                 (oldList, newList) -> {
+                                    if (!(oldList instanceof ArrayList)) {
+                                        List<U> tmpList = new ArrayList<>(HASHTABLE_BUCKET_INITIAL_SIZE);
+                                        tmpList.addAll(oldList);
+                                        oldList = tmpList;
+                                    }
+
                                     oldList.addAll(newList);
                                     return oldList;
                                 }
@@ -131,9 +134,10 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(stream);
     }
 
-    private static final int HASHTABLE_SIZE = SystemUtil.getIntegerSafe("groovy.ginq.hashtable.size", 128);
+    private static final int HASHTABLE_MAX_SIZE = SystemUtil.getIntegerSafe("groovy.ginq.hashtable.max.size", 128);
+    private static final int HASHTABLE_BUCKET_INITIAL_SIZE = SystemUtil.getIntegerSafe("groovy.ginq.hashtable.bucket.initial.size", 16);
     private static Integer hash(Object obj) {
-        return Objects.hash(obj) % HASHTABLE_SIZE; // mod 100 to limit the size of hash table
+        return Objects.hash(obj) % HASHTABLE_MAX_SIZE; // mod 100 to limit the size of hash table
     }
 
     @Override

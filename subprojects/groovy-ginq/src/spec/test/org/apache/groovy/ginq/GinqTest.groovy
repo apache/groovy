@@ -3864,6 +3864,18 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from innerhashjoin select - 5"() {
+        assertGinqScript '''
+            assert [[1, 1], [2, 2], [3, 3]] == GQ {
+                from n1 in 1..1000
+                innerhashjoin n2 in 1..10000 on n2 == n1
+                where n1 <= 3 && n2 <= 5
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - from innerhashjoin groupby select - 1"() {
         assertGinqScript '''
             import java.util.stream.Collectors
