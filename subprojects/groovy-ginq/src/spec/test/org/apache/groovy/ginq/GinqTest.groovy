@@ -3768,14 +3768,94 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from innerhashjoin select - 0"() {
+        assertGinqScript '''
+            assert [[1, 1], [3, 3]] == GQ {
+// tag::ginq_joining_06[]
+                from n1 in [1, 2, 3]
+                innerhashjoin n2 in [1, 3] on n1 == n2
+                select n1, n2
+// end::ginq_joining_06[]
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - from innerhashjoin select - 1"() {
         assertGinqScript '''
             def nums1 = [1, 2, 3]
-            def nums2 = [1, 2, 3]
-            assert [[1, 1], [2, 2], [3, 3]] == GQ {
+            def nums2 = [2, 3, 4]
+            assert [[2, 2], [3, 3]] == GQ {
                 from n1 in nums1
                 innerhashjoin n2 in nums2 on n1 == n2
                 select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from innerhashjoin select - 2"() {
+        assertGinqScript '''
+            def nums1 = [1, 2, 3]
+            def nums2 = [2, 3, 4]
+            assert [[2, 2], [3, 3]] == GQ {
+                from n1 in nums1
+                innerhashjoin n2 in nums2 on n2 == n1
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from innerhashjoin select - 3"() {
+        assertGinqScript '''
+            def nums1 = [1, 2, 3]
+            def nums2 = [1, 4, 9]
+            assert [[1, 1], [2, 4], [3, 9]] == GQ {
+                from n1 in nums1
+                innerhashjoin n2 in nums2 on ((int) Math.pow(n1, 2)) == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from innerhashjoin select - 4"() {
+        assertGinqScript '''
+            import java.util.stream.Collectors
+            
+            @groovy.transform.EqualsAndHashCode
+            class Person {
+                String name
+                int age
+                Person(String name, int age) {
+                    this.name = name
+                    this.age = age
+                }
+            }
+            
+            def persons1 = [new Person('Daniel', 36), new Person('Peter', 15), new Person('Linda', 23)]
+            def persons2 = [new Person('Daniel', 36), new Person('Tom', 15), new Person('Rose', 23)]
+            
+            assert [new Person('Daniel', 36)] == GQ {
+                from p1 in persons1
+                innerhashjoin p2 in persons2 on p1.name == p2.name && p1.age == p2.age
+                select p1
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from innerhashjoin groupby select - 1"() {
+        assertGinqScript '''
+            import java.util.stream.Collectors
+            
+            assert [[2, 2, 2, 'bc'], [3, 3, 3, 'def']] == GQ {
+                from n in [1, 2, 3]
+                innerhashjoin m in [1, 2, 3] on m == n
+                innerhashjoin s in ['bc', 'def'] on n == s.length()
+                groupby n, m, s.length()
+                select n, m, s.length(), agg(_g.stream().map(r -> r.s).collect(Collectors.joining()))
             }.toList()
         '''
     }

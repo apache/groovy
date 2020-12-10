@@ -304,7 +304,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
         List<Statement> statementList = []
         statementList.addAll(declarationExpressionList.stream().map(e -> stmt(e)).collect(Collectors.toList()))
-        statementList.add(stmt(filterExpr))
+
 
         List<Expression> argumentExpressionList = []
         argumentExpressionList << constructFromMethodCallExpression(joinExpression.dataSourceExpr)
@@ -312,28 +312,48 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             List<Expression> leftExpressionList = []
             List<Expression> rightExpressionList = []
             List<BinaryExpression> equalExpressionList = []
+
+            if (onExpression.filterExpr !instanceof BinaryExpression) {
+                this.collectSyntaxError(
+                        new GinqSyntaxError(
+                                "Only binary expressions(`==`, `&&`) are allowed in `on` clause of hash join",
+                                onExpression.filterExpr.getLineNumber(), onExpression.filterExpr.getColumnNumber()
+                        )
+                )
+            }
+
             onExpression.filterExpr.visit(new CodeVisitorSupport() {
                 @Override
                 void visitBinaryExpression(BinaryExpression expression) {
-                    if (Types.COMPARE_EQUAL == expression.operation.type) {
+                    if (Types.LOGICAL_AND == expression.operation.type) {
+                        super.visitBinaryExpression(expression)
+                        return
+                    } else if (Types.COMPARE_EQUAL == expression.operation.type) {
                         equalExpressionList << expression
                         return
                     }
-                    super.visitBinaryExpression(expression)
+
+                    GinqAstWalker.this.collectSyntaxError(
+                            new GinqSyntaxError(
+                                    "`" + expression.operation.text + "` is not allowed in `on` clause of hash join",
+                                    expression.getLineNumber(), expression.getColumnNumber()
+                            )
+                    )
                 }
             })
 
             equalExpressionList.forEach((BinaryExpression expression) -> {
-                collectHashJoinFields(expression.leftExpression, otherParamName, leftExpressionList, rightExpressionList, joinExpression)
-                collectHashJoinFields(expression.rightExpression, otherParamName, leftExpressionList, rightExpressionList, joinExpression)
+                collectHashJoinFields([expression.leftExpression, expression.rightExpression], joinExpression.aliasExpr.text, leftExpressionList, rightExpressionList)
             })
 
+            statementList.add(stmt(listX(leftExpressionList)))
             argumentExpressionList << lambdaX(
                     params(
                             param(ClassHelper.DYNAMIC_TYPE, otherParamName)
                     ),
-                    block(stmt(listX(leftExpressionList)))
+                    block(statementList as Statement[])
             )
+
             argumentExpressionList << lambdaX(
                     params(
                             param(ClassHelper.DYNAMIC_TYPE, joinExpression.aliasExpr.text)
@@ -341,6 +361,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                     block(stmt(listX(rightExpressionList)))
             )
         } else {
+            statementList.add(stmt(filterExpr))
             argumentExpressionList << (null == onExpression ? EmptyExpression.INSTANCE : lambdaX(
                     params(
                             param(ClassHelper.DYNAMIC_TYPE, otherParamName),
@@ -369,20 +390,41 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return resultMethodCallExpression
     }
 
-    private void collectHashJoinFields(Expression expression, String otherParamName, List<Expression> leftExpressionList, List<Expression> rightExpressionList, JoinExpression joinExpression) {
-        List<Expression> foundVariableExpressionList = []
-        expression.visit(new CodeVisitorSupport() {
-            @Override
-            void visitVariableExpression(VariableExpression expr) {
-                foundVariableExpressionList << expr
-                super.visitVariableExpression(expr)
+    private void collectHashJoinFields(List<Expression> expressionList, String joinAliasName, List<Expression> leftExpressionList, List<Expression> rightExpressionList) {
+        expressionList.each {expression ->
+            List<Expression> foundVariableExpressionList = []
+            expression.visit(new CodeVisitorSupport() {
+                @Override
+                void visitVariableExpression(VariableExpression expr) {
+                    if (expr.text.charAt(0).isLowerCase()) {
+                        foundVariableExpressionList << expr
+                    }
+                    super.visitVariableExpression(expr)
+                }
+            })
+            def variableNameList = foundVariableExpressionList.collect { it.text }
+            if (1 != variableNameList.size()) {
+                this.collectSyntaxError(
+                        new GinqSyntaxError(
+                                "Only one alias expected at each side of `==`, but found: ${variableNameList}",
+                                expression.getLineNumber(), expression.getColumnNumber()
+                        )
+                )
             }
-        })
-        def variableNameList = foundVariableExpressionList.collect { it.text }
-        if (variableNameList.contains(otherParamName)) {
-            leftExpressionList << expression
-        } else if (variableNameList.contains(joinExpression.aliasExpr.text)) {
-            rightExpressionList << expression
+
+            String aliasName = variableNameList[0]
+            if (aliasName == joinAliasName) {
+                rightExpressionList << expression
+            } else if (dataSourceAliasList.contains(aliasName)) {
+                leftExpressionList << expression
+            } else {
+                this.collectSyntaxError(
+                        new GinqSyntaxError(
+                                "Unknown alias: ${aliasName}",
+                                expression.getLineNumber(), expression.getColumnNumber()
+                        )
+                )
+            }
         }
     }
 

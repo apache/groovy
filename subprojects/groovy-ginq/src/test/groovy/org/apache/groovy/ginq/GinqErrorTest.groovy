@@ -376,6 +376,58 @@ class GinqErrorTest {
             }
         '''
 
-        assert err.toString().concat('Unknown clause: hello @ line 3, column 17.')
+        assert err.toString().contains('Unknown clause: hello @ line 3, column 17.')
+    }
+
+    @Test
+    void "testGinq - from innerhashjoin select - 1"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 2, 3]
+                innerhashjoin m in [1, 2, 3] on m == n || m != n
+                select n, m
+            }
+        '''
+
+        assert err.toString().contains('`||` is not allowed in `on` clause of hash join @ line 3, column 49.')
+    }
+
+    @Test
+    void "testGinq - from innerhashjoin select - 2"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 2, 3]
+                innerhashjoin m in [1, 2, 3] on m + n == m + n
+                select n, m
+            }
+        '''
+
+        assert err.toString().contains('Only one alias expected at each side of `==`, but found: [m, n] @ line 3, column 49.')
+    }
+
+    @Test
+    void "testGinq - from innerhashjoin select - 3"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 2, 3]
+                innerhashjoin m in [1, 2, 3] on m == v
+                select n, m
+            }
+        '''
+
+        assert err.toString().contains('Unknown alias: v @ line 3, column 54.')
+    }
+
+    @Test
+    void "testGinq - from innerhashjoin select - 4"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 2, 3]
+                innerhashjoin m in [1, 2, 3] on Objects.equals(n, m)
+                select n, m
+            }
+        '''
+
+        assert err.toString().contains('Only binary expressions(`==`, `&&`) are allowed in `on` clause of hash join @ line 3, column 49.')
     }
 }

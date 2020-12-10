@@ -20,6 +20,7 @@ package org.apache.groovy.ginq.provider.collection.runtime;
 
 import groovy.lang.Tuple2;
 import groovy.transform.Internal;
+import org.apache.groovy.internal.util.Supplier;
 import org.apache.groovy.util.ObjectHolder;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -94,24 +95,25 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public <U> Queryable<Tuple2<T, U>> innerHashJoin(Queryable<? extends U> queryable, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
-        ObjectHolder<Map<Integer, List<U>>> objectHolder = new ObjectHolder<>();
+        final ObjectHolder<Map<Integer, List<U>>> objectHolder = new ObjectHolder<>();
+        final Supplier<Map<Integer, List<U>>> hashTableSupplier = () -> queryable.stream().parallel()
+                .collect(
+                        Collectors.toMap(
+                                c -> hash(fieldsExtractor2.apply(c)),
+                                c -> {
+                                    List<U> list = new ArrayList<>();
+                                    list.add(c);
+                                    return list;
+                                },
+                                (oldList, newList) -> {
+                                    oldList.addAll(newList);
+                                    return oldList;
+                                }
+                        ));
         Stream<Tuple2<T, U>> stream = this.stream().flatMap(p -> {
             // build hash table
             Map<Integer, List<U>> hashTable =
-                    objectHolder.getObject(() -> queryable.stream()
-                            .collect(
-                                    Collectors.toMap(
-                                            c -> hash(fieldsExtractor2.apply(c)),
-                                            c -> {
-                                                List<U> list = new ArrayList<>();
-                                                list.add(c);
-                                                return list;
-                                            },
-                                            (oldList, newList) -> {
-                                                oldList.addAll(newList);
-                                                return oldList;
-                                            }
-                                    )));
+                    objectHolder.getObject(hashTableSupplier);
 
             // probe the hash table
             final Object otherFields = fieldsExtractor1.apply(p);

@@ -168,6 +168,14 @@ More data sources for GINQ could be specified by join clauses.
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_joining_01,indent=0]
 ----
 
+hash join is especially efficient when data sources contain lots of objects:
+[source, sql]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_joining_06,indent=0]
+----
+[NOTE]
+Only binary expressions(`==`, `&&`) are allowed in the `on` clause of hash join
+
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_joining_02,indent=0]
