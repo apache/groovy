@@ -98,6 +98,19 @@ public interface Queryable<T> {
     <U> Queryable<Tuple2<T, U>> innerJoin(Queryable<? extends U> queryable, BiPredicate<? super T, ? super U> joiner);
 
     /**
+     * Inner hash join another {@link Queryable} instance, similar to SQL's {@code inner hash join}.
+     * Note: Inner hash join requires equijoin predicate, e.g. {@code on a == b}
+     *
+     * @param queryable another {@link Queryable} instance
+     * @param fieldsExtractor1 extract fields
+     * @param fieldsExtractor2 extract fields
+     * @param <U> the type of element from another {@link Queryable} instance
+     * @return the join result
+     * @since 4.0.0
+     */
+    <U> Queryable<Tuple2<T, U>> innerHashJoin(Queryable<? extends U> queryable, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2);
+
+    /**
      * Left join another {@link Queryable} instance, similar to SQL's {@code left join}
      *
      * @param queryable another {@link Queryable} instance

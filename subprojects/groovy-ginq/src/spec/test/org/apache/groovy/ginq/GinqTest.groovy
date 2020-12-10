@@ -3767,9 +3767,23 @@ class GinqTest {
         assert '3' == contructedFilterExpr2.rightExpression.text
     }
 
+    @Test
+    void "testGinq - from innerhashjoin select - 1"() {
+        assertGinqScript '''
+            def nums1 = [1, 2, 3]
+            def nums2 = [1, 2, 3]
+            assert [[1, 1], [2, 2], [3, 3]] == GQ {
+                from n1 in nums1
+                innerhashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
     private static void assertGinqScript(String script) {
         String newScript = script.replaceAll(/\bGQ\s*[{]/, 'GQ(optimize:false) {')
-        [newScript, script].each { String c ->
+        List<String> scriptList = [newScript, script]
+        scriptList.each { String c ->
             assertScript(c)
         }
     }

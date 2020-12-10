@@ -20,6 +20,8 @@ package org.apache.groovy.ginq.provider.collection.runtime;
 
 import groovy.lang.Tuple2;
 import groovy.transform.Internal;
+import org.apache.groovy.util.ObjectHolder;
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
@@ -32,6 +34,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiPredicate;
@@ -87,6 +90,48 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                         });
 
         return from(stream);
+    }
+
+    @Override
+    public <U> Queryable<Tuple2<T, U>> innerHashJoin(Queryable<? extends U> queryable, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
+        ObjectHolder<Map<Integer, List<U>>> objectHolder = new ObjectHolder<>();
+        Stream<Tuple2<T, U>> stream = this.stream().flatMap(p -> {
+            // build hash table
+            Map<Integer, List<U>> hashTable =
+                    objectHolder.getObject(() -> queryable.stream()
+                            .collect(
+                                    Collectors.toMap(
+                                            c -> hash(fieldsExtractor2.apply(c)),
+                                            c -> {
+                                                List<U> list = new ArrayList<>();
+                                                list.add(c);
+                                                return list;
+                                            },
+                                            (oldList, newList) -> {
+                                                oldList.addAll(newList);
+                                                return oldList;
+                                            }
+                                    )));
+
+            // probe the hash table
+            final Object otherFields = fieldsExtractor1.apply(p);
+            return hashTable.entrySet().stream()
+                    .filter(entry -> hash(otherFields).equals(entry.getKey()))
+                    .flatMap(entry -> {
+                        List<U> candidateList = entry.getValue();
+                        return candidateList.stream()
+                                .filter(c -> otherFields.equals(fieldsExtractor2.apply(c)))
+                                .map(c -> tuple(p, c));
+                    });
+
+        });
+
+        return from(stream);
+    }
+
+    private static final int HASHTABLE_SIZE = SystemUtil.getIntegerSafe("groovy.ginq.hashtable.size", 128);
+    private static Integer hash(Object obj) {
+        return Objects.hash(obj) % HASHTABLE_SIZE; // mod 100 to limit the size of hash table
     }
 
     @Override

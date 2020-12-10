@@ -387,6 +387,6 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
     private static final String KW_LIMIT = "limit";
     private static final String KW_SELECT = "select";
     private static final Set<String> KEYWORD_SET = new HashSet<>(Arrays.asList(
-            KW_FROM, "innerjoin", "leftjoin", "rightjoin", "fulljoin", "crossjoin",
+            KW_FROM, "innerjoin", "innerhashjoin", "leftjoin", "rightjoin", "fulljoin", "crossjoin",
             KW_WHERE, KW_ON, KW_HAVING, KW_EXISTS, KW_GROUPBY, KW_ORDERBY, KW_LIMIT, KW_SELECT));
 }

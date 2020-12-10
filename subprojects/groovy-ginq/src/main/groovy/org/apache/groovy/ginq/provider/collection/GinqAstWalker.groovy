@@ -42,6 +42,7 @@ import org.apache.groovy.util.Maps
 import org.codehaus.groovy.GroovyBugError
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.CodeVisitorSupport
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.CastExpression
@@ -77,6 +78,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.lambdaX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.listX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params
@@ -304,19 +306,56 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         statementList.addAll(declarationExpressionList.stream().map(e -> stmt(e)).collect(Collectors.toList()))
         statementList.add(stmt(filterExpr))
 
+        List<Expression> argumentExpressionList = []
+        argumentExpressionList << constructFromMethodCallExpression(joinExpression.dataSourceExpr)
+        if (joinExpression.joinName.toLowerCase().contains('hash')) {
+            List<Expression> leftExpressionList = []
+            List<Expression> rightExpressionList = []
+            List<BinaryExpression> equalExpressionList = []
+            onExpression.filterExpr.visit(new CodeVisitorSupport() {
+                @Override
+                void visitBinaryExpression(BinaryExpression expression) {
+                    if (Types.COMPARE_EQUAL == expression.operation.type) {
+                        equalExpressionList << expression
+                        return
+                    }
+                    super.visitBinaryExpression(expression)
+                }
+            })
+
+            equalExpressionList.forEach((BinaryExpression expression) -> {
+                collectHashJoinFields(expression.leftExpression, otherParamName, leftExpressionList, rightExpressionList, joinExpression)
+                collectHashJoinFields(expression.rightExpression, otherParamName, leftExpressionList, rightExpressionList, joinExpression)
+            })
+
+            argumentExpressionList << lambdaX(
+                    params(
+                            param(ClassHelper.DYNAMIC_TYPE, otherParamName)
+                    ),
+                    block(stmt(listX(leftExpressionList)))
+            )
+            argumentExpressionList << lambdaX(
+                    params(
+                            param(ClassHelper.DYNAMIC_TYPE, joinExpression.aliasExpr.text)
+                    ),
+                    block(stmt(listX(rightExpressionList)))
+            )
+        } else {
+            argumentExpressionList << (null == onExpression ? EmptyExpression.INSTANCE : lambdaX(
+                    params(
+                            param(ClassHelper.DYNAMIC_TYPE, otherParamName),
+                            param(ClassHelper.DYNAMIC_TYPE, joinExpression.aliasExpr.text)
+                    ),
+                    block(statementList as Statement[])))
+        }
+
         MethodCallExpression resultMethodCallExpression
-        MethodCallExpression joinMethodCallExpression = callX(receiver, joinExpression.joinName.replace('join', 'Join'),
-                args(
-                        constructFromMethodCallExpression(joinExpression.dataSourceExpr),
-                        null == onExpression ? EmptyExpression.INSTANCE : lambdaX(
-                                params(
-                                        param(ClassHelper.DYNAMIC_TYPE, otherParamName),
-                                        param(ClassHelper.DYNAMIC_TYPE, joinExpression.aliasExpr.text)
-                                ),
-                                block(statementList as Statement[])
-                        )
-                )
-        )
+        MethodCallExpression joinMethodCallExpression =
+                callX(receiver,
+                        joinExpression.joinName
+                                .replace('join', 'Join')
+                                .replace('hash', 'Hash'),
+                        args(argumentExpressionList))
         resultMethodCallExpression = joinMethodCallExpression
 
         if (joinExpression.crossJoin) {
@@ -328,6 +367,23 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         }
 
         return resultMethodCallExpression
+    }
+
+    private void collectHashJoinFields(Expression expression, String otherParamName, List<Expression> leftExpressionList, List<Expression> rightExpressionList, JoinExpression joinExpression) {
+        List<Expression> foundVariableExpressionList = []
+        expression.visit(new CodeVisitorSupport() {
+            @Override
+            void visitVariableExpression(VariableExpression expr) {
+                foundVariableExpressionList << expr
+                super.visitVariableExpression(expr)
+            }
+        })
+        def variableNameList = foundVariableExpressionList.collect { it.text }
+        if (variableNameList.contains(otherParamName)) {
+            leftExpressionList << expression
+        } else if (variableNameList.contains(joinExpression.aliasExpr.text)) {
+            rightExpressionList << expression
+        }
     }
 
     @Override

@@ -19,6 +19,8 @@
 
 package org.apache.groovy.util;
 
+import org.apache.groovy.internal.util.Supplier;
+
 /**
  * Just hold an object
  * @param <T> the type of object
@@ -33,6 +35,13 @@ public class ObjectHolder<T> {
     }
 
     public T getObject() {
+        return object;
+    }
+
+    public T getObject(Supplier<? extends T> def) {
+        if (null == object) {
+            object = def.get();
+        }
         return object;
     }
 
