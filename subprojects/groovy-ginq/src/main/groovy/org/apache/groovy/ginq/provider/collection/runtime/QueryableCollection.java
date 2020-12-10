@@ -122,7 +122,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                     .flatMap(entry -> {
                         List<U> candidateList = entry.getValue();
                         return candidateList.stream()
-                                .filter(c -> otherFields.equals(fieldsExtractor2.apply(c)))
+                                .filter(c -> Objects.equals(otherFields, fieldsExtractor2.apply(c)))
                                 .map(c -> tuple(p, c));
                     });
 

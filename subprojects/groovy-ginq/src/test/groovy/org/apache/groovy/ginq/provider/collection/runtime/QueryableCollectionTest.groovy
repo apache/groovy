@@ -88,6 +88,30 @@ class QueryableCollectionTest {
     }
 
     @Test
+    void testInnerHashJoin3() {
+        def nums1 = [1, 2, 3]
+        def nums2 = [2, 3, 4, null]
+        def result = from(nums1).innerHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[2, 2], [3, 3]] == result
+    }
+
+    @Test
+    void testInnerHashJoin4() {
+        def nums1 = [1, 2, 3, null]
+        def nums2 = [2, 3, 4]
+        def result = from(nums1).innerHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[2, 2], [3, 3]] == result
+    }
+
+    @Test
+    void testInnerHashJoin5() {
+        def nums1 = [1, 2, 3, null]
+        def nums2 = [2, 3, 4, null]
+        def result = from(nums1).innerHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[2, 2], [3, 3], [null, null]] == result
+    }
+
+    @Test
     void testLeftJoin0() {
         def nums1 = [1, 2, 3]
         def nums2 = [1, 2, 3]
