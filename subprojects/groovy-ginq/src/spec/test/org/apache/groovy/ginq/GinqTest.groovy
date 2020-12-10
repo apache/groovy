@@ -3255,6 +3255,24 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - lazy - 11"() {
+        assertGinqScript '''
+            int cnt = 0
+            def result = GQ {
+                from n in [1, 2, 3]
+                innerhashjoin m in [2, 3, 4] on m == n
+                where n > 1 && m < 5
+                select n, m, cnt++
+            }
+            assert 0 == cnt
+            def stream = result.stream()
+            assert 0 == cnt
+            assert [[2, 2, 0], [3, 3, 1]] == stream.toList()
+            assert cnt > 0
+        '''
+    }
+
+    @Test
     void "testGinq - agg function - 1"() {
         assertGinqScript '''
 // tag::ginq_aggfunction_01[]
