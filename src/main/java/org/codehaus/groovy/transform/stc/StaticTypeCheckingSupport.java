@@ -903,28 +903,25 @@ public abstract class StaticTypeCheckingSupport {
         if (isPrimitiveType(receiver) ^ isPrimitiveType(compare)) {
             dist = (dist + 1) << 1;
         }
-        if (unwrapCompare.equals(unwrapReceiver)) return dist;
-        if (receiver.isArray() && !compare.isArray()) {
-            // Object[] vs Object
-            dist += 256;
-        }
-
-        if (receiver == UNKNOWN_PARAMETER_TYPE) {
+        if (unwrapCompare.equals(unwrapReceiver)
+                || receiver == UNKNOWN_PARAMETER_TYPE) {
             return dist;
         }
-
-        ClassNode ref = isPrimitiveType(receiver) && !isPrimitiveType(compare) ? ClassHelper.getWrapper(receiver) : receiver;
-        while (ref != null) {
-            if (compare.equals(ref)) {
-                break;
+        if (receiver.isArray()) {
+            dist += 256; // GROOVY-5114: Object[] vs Object
+        }
+        if (compare.isInterface()) {
+            if (receiver.implementsInterface(compare)) {
+                return dist + getMaximumInterfaceDistance(receiver, compare);
+            } else if (receiver.equals(CLOSURE_TYPE) && isSAMType(compare)) {
+                return dist + 13; // GROOVY-9852: @FunctionalInterface vs Object
             }
-            if (compare.isInterface() && ref.implementsInterface(compare)) {
-                dist += getMaximumInterfaceDistance(ref, compare);
-                break;
-            }
-            ref = ref.getSuperClass();
+        }
+        ClassNode cn = isPrimitiveType(receiver) && !isPrimitiveType(compare) ? ClassHelper.getWrapper(receiver) : receiver;
+        while (cn != null && !cn.equals(compare)) {
+            cn = cn.getSuperClass();
             dist += 1;
-            if (OBJECT_TYPE.equals(ref))
+            if (OBJECT_TYPE.equals(cn))
                 dist += 1;
             dist = (dist + 1) << 1;
         }

@@ -352,27 +352,38 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method'
     }
 
-    // GROOVY-6189
+    // GROOVY-6189, GROOVY-9852
     void testSAMsInMethodSelection() {
         // simple direct case
-        assertScript """
+        assertScript '''
             interface MySAM {
                 def someMethod()
             }
             def foo(MySAM sam) {sam.someMethod()}
             assert foo {1} == 1
-        """
+        '''
 
         // overloads with classes implemented by Closure
-        ["java.util.concurrent.Callable", "Object", "Closure", "GroovyObjectSupport", "Cloneable", "Runnable", "GroovyCallable", "Serializable", "GroovyObject"].each {
-            className ->
+        [
+            'groovy.lang.Closure'            : 'not',
+            'groovy.lang.GroovyCallable'     : 'not',
+            'groovy.lang.GroovyObject'       : 'not',
+            'groovy.lang.GroovyObjectSupport': 'not',
+
+            'java.lang.Object'               : 'sam',
+            'java.lang.Runnable'             : 'not',
+            'java.lang.Cloneable'            : 'not',
+            'java.io.Serializable'           : 'not',
+            'java.util.concurrent.Callable'  : 'not',
+        ].each { type, which ->
             assertScript """
                 interface MySAM {
                     def someMethod()
                 }
-                def foo(MySAM sam) {sam.someMethod()}
-                def foo($className x) {2}
-                assert foo {1} == 2
+                def foo($type ref) { 'not' }
+                def foo(MySAM sam) { sam.someMethod() }
+                assert foo { 'sam' } == '$which' : '$type'
+                assert foo(() -> 'sam') == '$which' : '$type'
             """
         }
     }

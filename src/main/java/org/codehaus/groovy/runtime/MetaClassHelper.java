@@ -43,6 +43,8 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.codehaus.groovy.reflection.stdclasses.CachedSAMClass.getSAMMethod;
+
 public class MetaClassHelper {
 
     public static final Object[] EMPTY_ARRAY = {};
@@ -290,56 +292,57 @@ public class MetaClassHelper {
         return Math.max(max, superClassMax);
     }
 
-    private static long calculateParameterDistance(Class argument, CachedClass parameter) {
-        /**
+    private static long calculateParameterDistance(final Class<?> argument, final CachedClass parameter) {
+        /*
          * note: when shifting with 32 bit, you should only shift on a long. If you do
          *       that with an int, then i==(i<<32), which means you loose the shift
          *       information
          */
 
-        if (parameter.getTheClass() == argument) return 0;
+        Class<?> parameterClass = parameter.getTheClass();
+        if (parameterClass == argument) return 0;
 
         if (parameter.isInterface()) {
-            int dist = getMaximumInterfaceDistance(argument, parameter.getTheClass()) << INTERFACE_SHIFT;
-            if (dist>-1 || !(argument!=null && Closure.class.isAssignableFrom(argument))) {
-                return dist;
-            } // else go to object case
+            long dist = getMaximumInterfaceDistance(argument, parameterClass);
+            if (dist >= 0 || argument == null || !Closure.class.isAssignableFrom(argument)) {
+                return dist << INTERFACE_SHIFT;
+            }
         }
 
         long objectDistance = 0;
         if (argument != null) {
-            long pd = getPrimitiveDistance(parameter.getTheClass(), argument);
-            if (pd != -1) return pd << PRIMITIVE_SHIFT;
+            long dist = getPrimitiveDistance(parameterClass, argument);
+            if (dist >= 0) {
+                return dist << PRIMITIVE_SHIFT;
+            }
 
             // add one to dist to be sure interfaces are preferred
-            objectDistance += PRIMITIVES.length + 1;
+            objectDistance += (PRIMITIVES.length + 1);
 
-            // GROOVY-5114 : if we have to choose between two methods
-            // foo(Object[]) and foo(Object) and that the argument is an array type
-            // then the array version should be preferred
+            // GROOVY-5114: if choosing between foo(Object[]) and foo(Object)
+            // and the argument is an array, then array version is preferable
             if (argument.isArray() && !parameter.isArray) {
-                objectDistance+=4;
+                objectDistance += 4;
             }
-            Class clazz = ReflectionCache.autoboxType(argument);
-            while (clazz != null) {
-                if (clazz == parameter.getTheClass()) break;
-                if (clazz == GString.class && parameter.getTheClass() == String.class) {
+
+            for (Class<?> c = ReflectionCache.autoboxType(argument); c != null && c != parameterClass; c = c.getSuperclass()) {
+                if (c == Closure.class && parameterClass.isInterface() && getSAMMethod(parameterClass) != null) {
+                    objectDistance += 5; // ahead of Object but behind GroovyObjectSupport
+                    break;
+                }
+                if (c == GString.class && parameterClass == String.class) {
                     objectDistance += 2;
                     break;
                 }
-                clazz = clazz.getSuperclass();
                 objectDistance += 3;
             }
         } else {
-            // choose the distance to Object if a parameter is null
-            // this will mean that Object is preferred over a more
-            // specific type
-            Class clazz = parameter.getTheClass();
-            if (clazz.isPrimitive()) {
+            // choose the distance to Object if an argument is null, which means
+            // that Object is preferred over a more specific type
+            if (parameterClass.isPrimitive()) {
                 objectDistance += 2;
             } else {
-                while (clazz != Object.class && clazz != null) {
-                    clazz = clazz.getSuperclass();
+                for (Class<?> c = parameterClass; c != null && c != Object.class; c = c.getSuperclass()) {
                     objectDistance += 2;
                 }
             }
