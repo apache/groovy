@@ -102,8 +102,8 @@ public interface Queryable<T> {
      * Note: Inner hash join requires equijoin predicate, e.g. {@code on a == b}
      *
      * @param queryable another {@link Queryable} instance
-     * @param fieldsExtractor1 extract fields
-     * @param fieldsExtractor2 extract fields
+     * @param fieldsExtractor1 extract fields of one data source
+     * @param fieldsExtractor2 extract fields of the other data source
      * @param <U> the type of element from another {@link Queryable} instance
      * @return the join result
      * @since 4.0.0
