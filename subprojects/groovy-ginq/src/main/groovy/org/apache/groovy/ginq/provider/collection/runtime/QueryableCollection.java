@@ -96,7 +96,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public <U> Queryable<Tuple2<T, U>> innerHashJoin(Queryable<? extends U> queryable, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
-        final ObjectHolder<Map<Integer, List<U>>> objectHolder = new ObjectHolder<>();
+        final ObjectHolder<Map<Integer, List<U>>> hashTableHolder = new ObjectHolder<>();
         final Supplier<Map<Integer, List<U>>> hashTableSupplier = () -> queryable.stream().parallel()
                 .collect(
                         Collectors.toMap(
@@ -116,7 +116,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         Stream<Tuple2<T, U>> stream = this.stream().flatMap(p -> {
             // build hash table
             Map<Integer, List<U>> hashTable =
-                    objectHolder.getObject(hashTableSupplier);
+                    hashTableHolder.getObject(hashTableSupplier);
 
             // probe the hash table
             final Object otherFields = fieldsExtractor1.apply(p);
