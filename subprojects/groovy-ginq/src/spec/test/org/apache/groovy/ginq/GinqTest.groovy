@@ -1155,7 +1155,7 @@ class GinqTest {
         assertGinqScript '''
             def nums1 = [1, 2, 3, null, null]
             def nums2 = [2, 3, 4, null, null]
-            assert [[1, null], [2, 2], [3, 3], [null, null], [null, null]] == GQ {
+            assert [[1, null], [2, 2], [3, 3], [null, null], [null, null], [null, null], [null, null]] == GQ {
                 from n1 in nums1
                 leftjoin n2 in nums2 on n1 == n2
                 select n1, n2
@@ -1168,7 +1168,7 @@ class GinqTest {
         assertGinqScript '''
             def nums1 = [1, 2, 3, null]
             def nums2 = [2, 3, 4, null, null]
-            assert [[1, null], [2, 2], [3, 3], [null, null]] == GQ {
+            assert [[1, null], [2, 2], [3, 3], [null, null], [null, null]] == GQ {
                 from n1 in nums1
                 leftjoin n2 in nums2 on n1 == n2
                 select n1, n2
@@ -1326,7 +1326,7 @@ class GinqTest {
         assertGinqScript '''
             def nums2 = [1, 2, 3, null, null]
             def nums1 = [2, 3, 4, null, null]
-            assert [[null, 1], [2, 2], [3, 3], [null, null], [null, null]] == GQ {
+            assert [[null, 1], [2, 2], [3, 3], [null, null], [null, null], [null, null], [null, null]] == GQ {
                 from n1 in nums1
                 rightjoin n2 in nums2 on n1 == n2
                 select n1, n2
@@ -1339,7 +1339,7 @@ class GinqTest {
         assertGinqScript '''
             def nums2 = [1, 2, 3, null]
             def nums1 = [2, 3, 4, null, null]
-            assert [[null, 1], [2, 2], [3, 3], [null, null]] == GQ {
+            assert [[null, 1], [2, 2], [3, 3], [null, null], [null, null]] == GQ {
                 from n1 in nums1
                 rightjoin n2 in nums2 on n1 == n2
                 select n1, n2
@@ -1484,7 +1484,7 @@ class GinqTest {
         assertGinqScript '''
             def nums1 = [1, 2, 3, null, null]
             def nums2 = [2, 3, 4, null, null]
-            assert [[1, null], [2, 2], [3, 3], [null, null], [null, null]] == GQ {
+            assert [[1, null], [2, 2], [3, 3], [null, null], [null, null], [null, null], [null, null]] == GQ {
                 from n1 in nums1
                 lefthashjoin n2 in nums2 on n1 == n2
                 select n1, n2
@@ -1497,7 +1497,7 @@ class GinqTest {
         assertGinqScript '''
             def nums1 = [1, 2, 3, null]
             def nums2 = [2, 3, 4, null, null]
-            assert [[1, null], [2, 2], [3, 3], [null, null]] == GQ {
+            assert [[1, null], [2, 2], [3, 3], [null, null], [null, null]] == GQ {
                 from n1 in nums1
                 lefthashjoin n2 in nums2 on n1 == n2
                 select n1, n2
@@ -1655,7 +1655,7 @@ class GinqTest {
         assertGinqScript '''
             def nums2 = [1, 2, 3, null, null]
             def nums1 = [2, 3, 4, null, null]
-            assert [[null, 1], [2, 2], [3, 3], [null, null], [null, null]] == GQ {
+            assert [[null, 1], [2, 2], [3, 3], [null, null], [null, null], [null, null], [null, null]] == GQ {
                 from n1 in nums1
                 righthashjoin n2 in nums2 on n1 == n2
                 select n1, n2
@@ -1668,7 +1668,7 @@ class GinqTest {
         assertGinqScript '''
             def nums2 = [1, 2, 3, null]
             def nums1 = [2, 3, 4, null, null]
-            assert [[null, 1], [2, 2], [3, 3], [null, null]] == GQ {
+            assert [[null, 1], [2, 2], [3, 3], [null, null], [null, null]] == GQ {
                 from n1 in nums1
                 righthashjoin n2 in nums2 on n1 == n2
                 select n1, n2

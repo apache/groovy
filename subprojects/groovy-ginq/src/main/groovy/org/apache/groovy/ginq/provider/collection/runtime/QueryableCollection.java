@@ -359,11 +359,10 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                             }
 
                             List<Tuple2<T, U>> joinResultList =
-                                    null == p ? Collections.emptyList()
-                                                : queryable2.stream()
-                                                            .filter(c -> joiner.test(p, c))
-                                                            .map(c -> tuple((T) p, (U) c))
-                                                            .collect(Collectors.toList());
+                                    queryable2.stream()
+                                            .filter(c -> joiner.test(p, c))
+                                            .map(c -> tuple((T) p, (U) c))
+                                            .collect(Collectors.toList());
 
                             return joinResultList.isEmpty() ? Stream.of(tuple(p, null)) : joinResultList.stream();
                         });
@@ -381,8 +380,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
             // probe the hash table
             List<Tuple2<T, U>> joinResultList =
-                    null == p ? Collections.emptyList()
-                                : probeHashTable(hashTable, (T) p, fieldsExtractor1, fieldsExtractor2).collect(Collectors.toList());
+                    probeHashTable(hashTable, (T) p, fieldsExtractor1, fieldsExtractor2).collect(Collectors.toList());
 
             return joinResultList.isEmpty() ? Stream.of(tuple(p, null)) : joinResultList.stream();
         });

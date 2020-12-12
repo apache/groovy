@@ -64,6 +64,46 @@ class QueryableCollectionTest {
     }
 
     @Test
+    void testInnerJoin3() {
+        def nums1 = [1, 2, 3, null].stream()
+        def nums2 = [2, 3, 4].stream()
+        def result = from(nums1).innerJoin(from(nums2), (a, b) -> a == b).toList()
+        assert [[2, 2], [3, 3]] == result
+    }
+
+    @Test
+    void testInnerJoin4() {
+        def nums1 = [1, 2, 3].stream()
+        def nums2 = [2, 3, 4, null].stream()
+        def result = from(nums1).innerJoin(from(nums2), (a, b) -> a == b).toList()
+        assert [[2, 2], [3, 3]] == result
+    }
+
+    @Test
+    void testInnerJoin5() {
+        def nums1 = [1, 2, 3, null].stream()
+        def nums2 = [2, 3, 4, null].stream()
+        def result = from(nums1).innerJoin(from(nums2), (a, b) -> a == b).toList()
+        assert [[2, 2], [3, 3], [null, null]] == result
+    }
+
+    @Test
+    void testInnerJoin6() {
+        def nums1 = [1, 2, 3, null].stream()
+        def nums2 = [2, 3, 4, null, null].stream()
+        def result = from(nums1).innerJoin(from(nums2), (a, b) -> a == b).toList()
+        assert [[2, 2], [3, 3], [null, null], [null, null]] == result
+    }
+
+    @Test
+    void testInnerJoin7() {
+        def nums1 = [1, 2, 3, null, null].stream()
+        def nums2 = [2, 3, 4, null, null].stream()
+        def result = from(nums1).innerJoin(from(nums2), (a, b) -> a == b).toList()
+        assert [[2, 2], [3, 3], [null, null], [null, null], [null, null], [null, null]] == result
+    }
+
+    @Test
     void testInnerHashJoin0() {
         def nums1 = [1, 2, 3]
         def nums2 = [1, 2, 3]
@@ -109,6 +149,22 @@ class QueryableCollectionTest {
         def nums2 = [2, 3, 4, null]
         def result = from(nums1).innerHashJoin(from(nums2), a -> a, b -> b).toList()
         assert [[2, 2], [3, 3], [null, null]] == result
+    }
+
+    @Test
+    void testInnerHashJoin6() {
+        def nums1 = [1, 2, 3, null]
+        def nums2 = [2, 3, 4, null, null]
+        def result = from(nums1).innerHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[2, 2], [3, 3], [null, null], [null, null]] == result
+    }
+
+    @Test
+    void testInnerHashJoin7() {
+        def nums1 = [1, 2, 3, null, null]
+        def nums2 = [2, 3, 4, null, null]
+        def result = from(nums1).innerHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[2, 2], [3, 3], [null, null], [null, null], [null, null], [null, null]] == result
     }
 
     @Test
@@ -228,7 +284,7 @@ class QueryableCollectionTest {
         def nums1 = [1, 2, 3, null, null]
         def nums2 = [2, 3, 4, null, null]
         def result = from(nums1).leftJoin(from(nums2), (a, b) -> a == b).toList()
-        assert [[1, null], [2, 2], [3, 3], [null, null], [null, null]] == result
+        assert [[1, null], [2, 2], [3, 3], [null, null], [null, null], [null, null], [null, null]] == result
     }
 
     @Test
@@ -236,7 +292,7 @@ class QueryableCollectionTest {
         def nums2 = [1, 2, 3, null, null]
         def nums1 = [2, 3, 4, null, null]
         def result = from(nums1).rightJoin(from(nums2), (a, b) -> a == b).toList()
-        assert [[null, 1], [2, 2], [3, 3], [null, null], [null, null]] == result
+        assert [[null, 1], [2, 2], [3, 3], [null, null], [null, null], [null, null], [null, null]] == result
     }
 
     @Test
@@ -244,7 +300,7 @@ class QueryableCollectionTest {
         def nums1 = [1, 2, 3, null]
         def nums2 = [2, 3, 4, null, null]
         def result = from(nums1).leftJoin(from(nums2), (a, b) -> a == b).toList()
-        assert [[1, null], [2, 2], [3, 3], [null, null]] == result
+        assert [[1, null], [2, 2], [3, 3], [null, null], [null, null]] == result
     }
 
     @Test
@@ -252,7 +308,7 @@ class QueryableCollectionTest {
         def nums2 = [1, 2, 3, null]
         def nums1 = [2, 3, 4, null, null]
         def result = from(nums1).rightJoin(from(nums2), (a, b) -> a == b).toList()
-        assert [[null, 1], [2, 2], [3, 3], [null, null]] == result
+        assert [[null, 1], [2, 2], [3, 3], [null, null], [null, null]] == result
     }
 
     @Test
@@ -405,7 +461,7 @@ class QueryableCollectionTest {
         def nums1 = [1, 2, 3, null, null]
         def nums2 = [2, 3, 4, null, null]
         def result = from(nums1).leftHashJoin(from(nums2), a -> a, b -> b).toList()
-        assert [[1, null], [2, 2], [3, 3], [null, null], [null, null]] == result
+        assert [[1, null], [2, 2], [3, 3], [null, null], [null, null], [null, null], [null, null]] == result
     }
 
     @Test
@@ -413,7 +469,7 @@ class QueryableCollectionTest {
         def nums2 = [1, 2, 3, null, null]
         def nums1 = [2, 3, 4, null, null]
         def result = from(nums1).rightHashJoin(from(nums2), a -> a, b -> b).toList()
-        assert [[null, 1], [2, 2], [3, 3], [null, null], [null, null]] == result
+        assert [[null, 1], [2, 2], [3, 3], [null, null], [null, null], [null, null], [null, null]] == result
     }
 
     @Test
@@ -421,7 +477,7 @@ class QueryableCollectionTest {
         def nums1 = [1, 2, 3, null]
         def nums2 = [2, 3, 4, null, null]
         def result = from(nums1).leftHashJoin(from(nums2), a -> a, b -> b).toList()
-        assert [[1, null], [2, 2], [3, 3], [null, null]] == result
+        assert [[1, null], [2, 2], [3, 3], [null, null], [null, null]] == result
     }
 
     @Test
@@ -429,7 +485,7 @@ class QueryableCollectionTest {
         def nums2 = [1, 2, 3, null]
         def nums1 = [2, 3, 4, null, null]
         def result = from(nums1).rightHashJoin(from(nums2), a -> a, b -> b).toList()
-        assert [[null, 1], [2, 2], [3, 3], [null, null]] == result
+        assert [[null, 1], [2, 2], [3, 3], [null, null], [null, null]] == result
     }
 
     @Test
@@ -469,7 +525,7 @@ class QueryableCollectionTest {
         def nums1 = [1, 2, null, 3]
         def nums2 = [2, null, 3, null, 4]
         def result = from(nums1).leftHashJoin(from(nums2), a -> a, b -> b).toList()
-        assert [[1, null], [2, 2], [null, null], [3, 3]] == result
+        assert [[1, null], [2, 2], [null, null], [null, null], [3, 3]] == result
     }
 
     @Test
@@ -477,7 +533,7 @@ class QueryableCollectionTest {
         def nums2 = [1, 2, null, 3]
         def nums1 = [2, null, 3, null, 4]
         def result = from(nums1).rightHashJoin(from(nums2), a -> a, b -> b).toList()
-        assert [[null, 1], [2, 2], [null, null], [3, 3]] == result
+        assert [[null, 1], [2, 2], [null, null], [null, null], [3, 3]] == result
     }
 
     @Test
