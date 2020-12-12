@@ -165,6 +165,14 @@ More data sources for GINQ could be specified by join clauses.
 
 [source, sql]
 ----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_joining_10,indent=0]
+----
+[NOTE]
+`join` is preferred over `innerjoin` and `innerhashjoin` as it has better readability,
+and it is smart enough to choose the correct concrete join(i.e. `innerjoin` or `innerhashjoin`) by its `on` clause.
+
+[source, sql]
+----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_joining_01,indent=0]
 ----
 

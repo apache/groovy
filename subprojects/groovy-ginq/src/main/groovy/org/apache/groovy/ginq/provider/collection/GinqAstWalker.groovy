@@ -67,6 +67,7 @@ import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
 import org.objectweb.asm.Opcodes
 
+import java.util.function.Consumer
 import java.util.stream.Collectors
 
 import static groovy.lang.Tuple.tuple
@@ -308,10 +309,16 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
         List<Expression> argumentExpressionList = []
         argumentExpressionList << constructFromMethodCallExpression(joinExpression.dataSourceExpr)
-        if (joinExpression.joinName.toLowerCase().contains('hash')) {
+        def joinName = joinExpression.joinName
+
+        List<BinaryExpression> equalExpressionList = collectEqualExpressionForHashJoin(onExpression)
+        if (joinExpression.smartInnerJoin) {
+            joinName = equalExpressionList ? JoinExpression.INNER_HASH_JOIN : JoinExpression.INNER_JOIN
+        }
+
+        if (joinName.toLowerCase().contains('hash')) {
             List<Expression> leftExpressionList = []
             List<Expression> rightExpressionList = []
-            List<BinaryExpression> equalExpressionList = []
 
             if (onExpression.filterExpr !instanceof BinaryExpression) {
                 this.collectSyntaxError(
@@ -322,25 +329,15 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                 )
             }
 
-            onExpression.filterExpr.visit(new CodeVisitorSupport() {
-                @Override
-                void visitBinaryExpression(BinaryExpression expression) {
-                    if (Types.LOGICAL_AND == expression.operation.type) {
-                        super.visitBinaryExpression(expression)
-                        return
-                    } else if (Types.COMPARE_EQUAL == expression.operation.type) {
-                        equalExpressionList << expression
-                        return
-                    }
-
-                    GinqAstWalker.this.collectSyntaxError(
-                            new GinqSyntaxError(
-                                    "`" + expression.operation.text + "` is not allowed in `on` clause of hash join",
-                                    expression.getLineNumber(), expression.getColumnNumber()
-                            )
-                    )
-                }
-            })
+            if (!equalExpressionList) {
+                collectEqualExpressionForHashJoin(onExpression,
+                        expression -> collectSyntaxError(
+                                new GinqSyntaxError(
+                                        "`" + expression.operation.text + "` is not allowed in `on` clause of hash join",
+                                        expression.getLineNumber(), expression.getColumnNumber()
+                                )
+                        ))
+            }
 
             equalExpressionList.forEach((BinaryExpression expression) -> {
                 collectHashJoinFields([expression.leftExpression, expression.rightExpression], joinExpression.aliasExpr.text, leftExpressionList, rightExpressionList)
@@ -373,7 +370,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         MethodCallExpression resultMethodCallExpression
         MethodCallExpression joinMethodCallExpression =
                 callX(receiver,
-                        joinExpression.joinName
+                        joinName
                                 .replace('join', 'Join')
                                 .replace('hash', 'Hash'),
                         args(argumentExpressionList))
@@ -388,6 +385,37 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         }
 
         return resultMethodCallExpression
+    }
+
+    private List<BinaryExpression> collectEqualExpressionForHashJoin(OnExpression onExpression, Consumer<BinaryExpression> errorCollector=null) {
+        if (!onExpression) return Collections.emptyList()
+
+        List<BinaryExpression> equalExpressionList = []
+        boolean valid = true
+
+        onExpression.filterExpr.visit(new CodeVisitorSupport() {
+            @Override
+            void visitBinaryExpression(BinaryExpression expression) {
+                if (Types.LOGICAL_AND == expression.operation.type) {
+                    super.visitBinaryExpression(expression)
+                    return
+                } else if (Types.COMPARE_EQUAL == expression.operation.type) {
+                    equalExpressionList << expression
+                    return
+                }
+
+                valid = false
+                if (errorCollector) {
+                    errorCollector.accept(expression)
+                }
+            }
+        })
+
+        if (!valid) {
+            equalExpressionList.clear()
+        }
+
+        return equalExpressionList
     }
 
     private void collectHashJoinFields(List<Expression> expressionList, String joinAliasName, List<Expression> leftExpressionList, List<Expression> rightExpressionList) {

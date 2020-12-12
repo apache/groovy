@@ -257,6 +257,30 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from smartinnerjoin select - 1"() {
+        assertGinqScript '''
+            assert [[1, 1], [3, 3]] == GQ {
+// tag::ginq_joining_10[]
+                from n1 in [1, 2, 3]
+                join n2 in [1, 3] on n1 == n2
+                select n1, n2
+// end::ginq_joining_10[]
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from smartinnerjoin select - 2"() {
+        assertGinqScript '''
+            assert [[1, 3], [2, 3]] == GQ {
+                from n1 in [1, 2, 3]
+                join n2 in [1, 3] on n2 > n1
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - from innerjoin select - 1"() {
         assertGinqScript '''
             def nums1 = [1, 2, 3]
@@ -4260,8 +4284,14 @@ class GinqTest {
     }
 
     private static void assertGinqScript(String script) {
-        String newScript = script.replaceAll(/\bGQ\s*[{]/, 'GQ(optimize:false) {')
-        List<String> scriptList = [newScript, script]
+        String deoptimizedScript = script.replaceAll(/\bGQ\s*[{]/, 'GQ(optimize:false) {')
+        List<String> scriptList = [deoptimizedScript, script]
+
+        if (-1 != deoptimizedScript.indexOf('innerjoin') || -1 != deoptimizedScript.indexOf('innerhashjoin')) {
+            String smartJoinScript = deoptimizedScript.replaceAll('innerjoin|innerhashjoin', 'join')
+            scriptList << smartJoinScript
+        }
+
         scriptList.each { String c ->
             assertScript(c)
         }
