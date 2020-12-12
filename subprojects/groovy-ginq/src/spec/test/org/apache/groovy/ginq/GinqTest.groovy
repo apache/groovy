@@ -3095,7 +3095,9 @@ class GinqTest {
                 String nickname
             }
             
-            def persons = [new Person('Daniel', 'ShanFengXiaoZi'), new Person('Linda', null), new Person('David', null)]
+            def linda = new Person('Linda', null)
+            def david = new Person('David', null)
+            def persons = [new Person('Daniel', 'ShanFengXiaoZi'), linda, david]
             def result = GQ {
                 from p in persons
                 where p.nickname == null
@@ -3106,6 +3108,7 @@ class GinqTest {
             
             def expected = [new Person('Linda', 'Unknown'), new Person('David', 'Unknown')]
             assert expected == result
+            assert ['Unknown', 'Unknown'] == [linda, david]*.nickname // ensure the original objects are updated
 // end::ginq_tips_07[]
         '''
     }
