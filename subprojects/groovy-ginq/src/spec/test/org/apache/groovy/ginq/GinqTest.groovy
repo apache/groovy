@@ -1387,6 +1387,335 @@ class GinqTest {
         '''
     }
 
+
+    @Test
+    void "testGinq - from lefthashjoin select - 1"() {
+        assertGinqScript '''
+            def nums1 = [1, 2, 3]
+            def nums2 = [1, 2, 3]
+            assert [[1, 1], [2, 2], [3, 3]] == GQ {
+                from n1 in nums1
+                lefthashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from lefthashjoin select - 2"() {
+        assertGinqScript '''
+            def nums1 = [1, 2, 3]
+            def nums2 = [2, 3, 4]
+            assert [[1, null], [2, 2], [3, 3]] == GQ {
+                from n1 in nums1
+                lefthashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from lefthashjoin select - 3"() {
+        assertGinqScript '''
+            def nums1 = [1, 2, 3, null]
+            def nums2 = [2, 3, 4]
+            assert [[1, null], [2, 2], [3, 3], [null, null]] == GQ {
+                from n1 in nums1
+                lefthashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from lefthashjoin select - 4"() {
+        assertGinqScript '''
+            def nums1 = [1, 2, 3, null]
+            def nums2 = [2, 3, 4, null]
+            assert [[1, null], [2, 2], [3, 3], [null, null]] == GQ {
+                from n1 in nums1
+                lefthashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from lefthashjoin select - 5"() {
+        assertGinqScript '''
+            def nums1 = [1, 2, 3]
+            def nums2 = [2, 3, 4, null]
+            assert [[1, null], [2, 2], [3, 3]] == GQ {
+                from n1 in nums1
+                lefthashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from lefthashjoin select - 6"() {
+        assertGinqScript '''
+            def nums1 = [1, 2, 3, null, null]
+            def nums2 = [2, 3, 4]
+            assert [[1, null], [2, 2], [3, 3], [null, null], [null, null]] == GQ {
+                from n1 in nums1
+                lefthashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from lefthashjoin select - 7"() {
+        assertGinqScript '''
+            def nums1 = [1, 2, 3, null, null]
+            def nums2 = [2, 3, 4, null]
+            assert [[1, null], [2, 2], [3, 3], [null, null], [null, null]] == GQ {
+                from n1 in nums1
+                lefthashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from lefthashjoin select - 8"() {
+        assertGinqScript '''
+            def nums1 = [1, 2, 3, null, null]
+            def nums2 = [2, 3, 4, null, null]
+            assert [[1, null], [2, 2], [3, 3], [null, null], [null, null]] == GQ {
+                from n1 in nums1
+                lefthashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from lefthashjoin select - 9"() {
+        assertGinqScript '''
+            def nums1 = [1, 2, 3, null]
+            def nums2 = [2, 3, 4, null, null]
+            assert [[1, null], [2, 2], [3, 3], [null, null]] == GQ {
+                from n1 in nums1
+                lefthashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from lefthashjoin select - 10"() {
+        assertGinqScript '''
+            def nums1 = [1, 2, 3]
+            def nums2 = [2, 3, 4, null, null]
+            assert [[1, null], [2, 2], [3, 3]] == GQ {
+                from n1 in nums1
+                lefthashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from lefthashjoin select - 11"() {
+        assertGinqScript '''
+            assert [[1, null], [2, 2], [3, 3]] == GQ {
+// tag::ginq_joining_07[]
+                from n1 in [1, 2, 3]
+                lefthashjoin n2 in [2, 3, 4] on n1 == n2
+                select n1, n2
+// end::ginq_joining_07[]
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from lefthashjoin where select - 1"() {
+        assertGinqScript '''
+            def nums1 = [1, 2, 3]
+            def nums2 = [2, 3, 4, null, null]
+            assert [[2, 2], [3, 3]] == GQ {
+                from n1 in nums1
+                lefthashjoin n2 in nums2 on n1 == n2
+                where n2 != null
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from lefthashjoin where select - 2"() {
+        assertGinqScript '''
+            def nums1 = [1, 2, 3, null]
+            def nums2 = [2, 3, 4, null]
+            assert [[2, 2], [3, 3]] == GQ {
+                from n1 in nums1
+                lefthashjoin n2 in nums2 on n1 == n2
+                where n1 != null && n2 != null
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from righthashjoin select - 1"() {
+        assertGinqScript '''
+            def nums1 = [1, 2, 3]
+            def nums2 = [1, 2, 3]
+            assert [[1, 1], [2, 2], [3, 3]] == GQ {
+                from n1 in nums1
+                righthashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from righthashjoin select - 2"() {
+        assertGinqScript '''
+            def nums2 = [1, 2, 3]
+            def nums1 = [2, 3, 4]
+            assert [[null, 1], [2, 2], [3, 3]] == GQ {
+                from n1 in nums1
+                righthashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from righthashjoin select - 3"() {
+        assertGinqScript '''
+            def nums2 = [1, 2, 3, null]
+            def nums1 = [2, 3, 4]
+            assert [[null, 1], [2, 2], [3, 3], [null, null]] == GQ {
+                from n1 in nums1
+                righthashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from righthashjoin select - 4"() {
+        assertGinqScript '''
+            def nums2 = [1, 2, 3, null]
+            def nums1 = [2, 3, 4, null]
+            assert [[null, 1], [2, 2], [3, 3], [null, null]] == GQ {
+                from n1 in nums1
+                righthashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from righthashjoin select - 5"() {
+        assertGinqScript '''
+            def nums2 = [1, 2, 3]
+            def nums1 = [2, 3, 4, null]
+            assert [[null, 1], [2, 2], [3, 3]] == GQ {
+                from n1 in nums1
+                righthashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from righthashjoin select - 6"() {
+        assertGinqScript '''
+            def nums2 = [1, 2, 3, null, null]
+            def nums1 = [2, 3, 4]
+            assert [[null, 1], [2, 2], [3, 3], [null, null], [null, null]] == GQ {
+                from n1 in nums1
+                righthashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from righthashjoin select - 7"() {
+        assertGinqScript '''
+            def nums2 = [1, 2, 3, null, null]
+            def nums1 = [2, 3, 4, null]
+            assert [[null, 1], [2, 2], [3, 3], [null, null], [null, null]] == GQ {
+                from n1 in nums1
+                righthashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from righthashjoin select - 8"() {
+        assertGinqScript '''
+            def nums2 = [1, 2, 3, null, null]
+            def nums1 = [2, 3, 4, null, null]
+            assert [[null, 1], [2, 2], [3, 3], [null, null], [null, null]] == GQ {
+                from n1 in nums1
+                righthashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from righthashjoin select - 9"() {
+        assertGinqScript '''
+            def nums2 = [1, 2, 3, null]
+            def nums1 = [2, 3, 4, null, null]
+            assert [[null, 1], [2, 2], [3, 3], [null, null]] == GQ {
+                from n1 in nums1
+                righthashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from righthashjoin select - 10"() {
+        assertGinqScript '''
+            def nums2 = [1, 2, 3]
+            def nums1 = [2, 3, 4, null, null]
+            assert [[null, 1], [2, 2], [3, 3]] == GQ {
+                from n1 in nums1
+                righthashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from righthashjoin select - 11"() {
+        assertGinqScript '''
+            assert [[null, 1], [2, 2], [3, 3]] == GQ {
+// tag::ginq_joining_08[]
+                from n1 in [2, 3, 4]
+                righthashjoin n2 in [1, 2, 3] on n1 == n2
+                select n1, n2
+// end::ginq_joining_08[]
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from righthashjoin where select - 1"() {
+        assertGinqScript '''
+            def nums2 = [1, 2, 3]
+            def nums1 = [2, 3, 4, null, null]
+            assert [[2, 2], [3, 3]] == GQ {
+                from n1 in nums1
+                righthashjoin n2 in nums2 on n1 == n2
+                where n1 != null
+                select n1, n2
+            }.toList()
+        '''
+    }
+
     @Test
     void "testGinq - from fulljoin select - 1"() {
         assertGinqScript '''
@@ -1421,6 +1750,46 @@ class GinqTest {
             assert [[2, 2], [3, 3]] == GQ {
                 from n1 in nums1
                 fulljoin n2 in nums2 on n1 == n2
+                where n1 != null && n2 != null 
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from fullhashjoin select - 1"() {
+        assertGinqScript '''
+            def nums1 = [1, 2, 3]
+            def nums2 = [2, 3, 4]
+            assert [[1, null], [2, 2], [3, 3], [null, 4]] == GQ {
+                from n1 in nums1
+                fullhashjoin n2 in nums2 on n1 == n2
+                select n1, n2
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from fullhashjoin select - 2"() {
+        assertGinqScript '''
+            assert [[1, null], [2, 2], [3, 3], [null, 4]] == GQ {
+// tag::ginq_joining_09[]
+                from n1 in [1, 2, 3]
+                fullhashjoin n2 in [2, 3, 4] on n1 == n2
+                select n1, n2
+// end::ginq_joining_09[]
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from fullhashjoin where select - 1"() {
+        assertGinqScript '''
+            def nums1 = [1, 2, 3]
+            def nums2 = [2, 3, 4]
+            assert [[2, 2], [3, 3]] == GQ {
+                from n1 in nums1
+                fullhashjoin n2 in nums2 on n1 == n2
                 where n1 != null && n2 != null 
                 select n1, n2
             }.toList()

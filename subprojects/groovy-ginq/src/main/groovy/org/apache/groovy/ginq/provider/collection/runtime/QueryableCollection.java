@@ -97,22 +97,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     @Override
     public <U> Queryable<Tuple2<T, U>> innerHashJoin(Queryable<? extends U> queryable, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
         final ObjectHolder<Map<Integer, List<U>>> hashTableHolder = new ObjectHolder<>();
-        final Supplier<Map<Integer, List<U>>> hashTableSupplier = () -> queryable.stream().parallel()
-                .collect(
-                        Collectors.toMap(
-                                c -> hash(fieldsExtractor2.apply(c)),
-                                Collections::singletonList,
-                                (oldList, newList) -> {
-                                    if (!(oldList instanceof ArrayList)) {
-                                        List<U> tmpList = new ArrayList<>(HASHTABLE_BUCKET_INITIAL_SIZE);
-                                        tmpList.addAll(oldList);
-                                        oldList = tmpList;
-                                    }
-
-                                    oldList.addAll(newList);
-                                    return oldList;
-                                }
-                        ));
+        final Supplier<Map<Integer, List<U>>> hashTableSupplier = createHashTableSupplier(queryable, fieldsExtractor2);
         Stream<Tuple2<T, U>> stream = this.stream().flatMap(p -> {
             // build hash table
             Map<Integer, List<U>> hashTable =
@@ -134,6 +119,25 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(stream);
     }
 
+    private static <U> Supplier<Map<Integer, List<U>>> createHashTableSupplier(Queryable<? extends U> queryable, Function<? super U, ?> fieldsExtractor2) {
+        return () -> queryable.stream().parallel()
+                .collect(
+                        Collectors.toMap(
+                                c -> hash(fieldsExtractor2.apply(c)),
+                                Collections::singletonList,
+                                (oldList, newList) -> {
+                                    if (!(oldList instanceof ArrayList)) {
+                                        List<U> tmpList = new ArrayList<>(HASHTABLE_BUCKET_INITIAL_SIZE);
+                                        tmpList.addAll(oldList);
+                                        oldList = tmpList;
+                                    }
+
+                                    oldList.addAll(newList);
+                                    return oldList;
+                                }
+                        ));
+    }
+
     private static final int HASHTABLE_MAX_SIZE = SystemUtil.getIntegerSafe("groovy.ginq.hashtable.max.size", 128);
     private static final int HASHTABLE_BUCKET_INITIAL_SIZE = SystemUtil.getIntegerSafe("groovy.ginq.hashtable.bucket.initial.size", 16);
     private static Integer hash(Object obj) {
@@ -146,8 +150,18 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     @Override
+    public <U> Queryable<Tuple2<T, U>> leftHashJoin(Queryable<? extends U> queryable, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
+        return outerHashJoin(this, queryable, fieldsExtractor1, fieldsExtractor2);
+    }
+
+    @Override
     public <U> Queryable<Tuple2<T, U>> rightJoin(Queryable<? extends U> queryable, BiPredicate<? super T, ? super U> joiner) {
         return outerJoin(queryable, this, (a, b) -> joiner.test(b, a)).select(e -> tuple(e.getV2(), e.getV1()));
+    }
+
+    @Override
+    public <U> Queryable<Tuple2<T, U>> rightHashJoin(Queryable<? extends U> queryable, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
+        return outerHashJoin(queryable, this, fieldsExtractor2, fieldsExtractor1).select(e -> tuple(e.getV2(), e.getV1()));
     }
 
     @Override
@@ -159,6 +173,18 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
         Queryable<Tuple2<T, U>> lj = this.leftJoin(queryable, joiner);
         Queryable<Tuple2<T, U>> rj = this.rightJoin(queryable, joiner);
+        return lj.union(rj);
+    }
+
+    @Override
+    public <U> Queryable<Tuple2<T, U>> fullHashJoin(Queryable<? extends U> queryable, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
+        if (queryable instanceof QueryableCollection) {
+            ((QueryableCollection) queryable).makeReusable();
+        }
+        this.makeReusable();
+
+        Queryable<Tuple2<T, U>> lj = this.leftHashJoin(queryable, fieldsExtractor1, fieldsExtractor2);
+        Queryable<Tuple2<T, U>> rj = this.rightHashJoin(queryable, fieldsExtractor1, fieldsExtractor2);
         return lj.union(rj);
     }
 
@@ -354,6 +380,32 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(stream);
     }
 
+    private static <T, U> Queryable<Tuple2<T, U>> outerHashJoin(Queryable<? extends T> queryable1, Queryable<? extends U> queryable2, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
+        final ObjectHolder<Map<Integer, List<U>>> hashTableHolder = new ObjectHolder<>();
+        final Supplier<Map<Integer, List<U>>> hashTableSupplier = createHashTableSupplier(queryable2, fieldsExtractor2);
+        Stream<Tuple2<T, U>> stream = queryable1.stream().flatMap(p -> {
+            // build hash table
+            Map<Integer, List<U>> hashTable =
+                    hashTableHolder.getObject(hashTableSupplier);
+
+            // probe the hash table
+            final Object otherFields = fieldsExtractor1.apply(p);
+            List<Tuple2<T, U>> joinResultList =
+                    null == p ? Collections.emptyList()
+                                : hashTable.entrySet().stream()
+                                            .filter(entry -> hash(otherFields).equals(entry.getKey()))
+                                            .flatMap(entry -> {
+                                                List<U> candidateList = entry.getValue();
+                                                return candidateList.stream()
+                                                        .filter(c -> Objects.equals(otherFields, fieldsExtractor2.apply(c)))
+                                                        .map(c -> tuple((T) p, (U) c));
+                                            }).collect(Collectors.toList());
+
+            return joinResultList.isEmpty() ? Stream.of(tuple(p, null)) : joinResultList.stream();
+        });
+
+        return from(stream);
+    }
 
     @Override
     public List<T> toList() {

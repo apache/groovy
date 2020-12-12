@@ -287,6 +287,199 @@ class QueryableCollectionTest {
         assert [[1, 1], [2, 2], [3, 3]] == result
     }
 
+
+    @Test
+    void testLeftHashJoin0() {
+        def nums1 = [1, 2, 3]
+        def nums2 = [1, 2, 3]
+        def result = from(nums1).leftHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[1, 1], [2, 2], [3, 3]] == result
+    }
+
+    @Test
+    void testRightHashJoin0() {
+        def nums2 = [1, 2, 3]
+        def nums1 = [1, 2, 3]
+        def result = from(nums1).rightHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[1, 1], [2, 2], [3, 3]] == result
+    }
+
+    @Test
+    void testLeftHashJoin1() {
+        def nums1 = [1, 2, 3]
+        def nums2 = [2, 3, 4]
+        def result = from(nums1).leftHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[1, null], [2, 2], [3, 3]] == result
+    }
+
+    @Test
+    void testRightHashJoin1() {
+        def nums2 = [1, 2, 3]
+        def nums1 = [2, 3, 4]
+        def result = from(nums1).rightHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[null, 1], [2, 2], [3, 3]] == result
+    }
+
+    @Test
+    void testLeftHashJoin2() {
+        def nums1 = [1, 2, 3, null]
+        def nums2 = [2, 3, 4]
+        def result = from(nums1).leftHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[1, null], [2, 2], [3, 3], [null, null]] == result
+    }
+
+    @Test
+    void testRightHashJoin2() {
+        def nums2 = [1, 2, 3, null]
+        def nums1 = [2, 3, 4]
+        def result = from(nums1).rightHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[null, 1], [2, 2], [3, 3], [null, null]] == result
+    }
+
+    @Test
+    void testLeftHashJoin3() {
+        def nums1 = [1, 2, 3, null]
+        def nums2 = [2, 3, 4, null]
+        def result = from(nums1).leftHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[1, null], [2, 2], [3, 3], [null, null]] == result
+    }
+
+    @Test
+    void testRightHashJoin3() {
+        def nums2 = [1, 2, 3, null]
+        def nums1 = [2, 3, 4, null]
+        def result = from(nums1).rightHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[null, 1], [2, 2], [3, 3], [null, null]] == result
+    }
+
+    @Test
+    void testLeftHashJoin4() {
+        def nums1 = [1, 2, 3]
+        def nums2 = [2, 3, 4, null]
+        def result = from(nums1).leftHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[1, null], [2, 2], [3, 3]] == result
+    }
+
+    @Test
+    void testRightHashJoin4() {
+        def nums2 = [1, 2, 3]
+        def nums1 = [2, 3, 4, null]
+        def result = from(nums1).rightHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[null, 1], [2, 2], [3, 3]] == result
+    }
+
+    @Test
+    void testLeftHashJoin5() {
+        def nums1 = [1, 2, 3, null, null]
+        def nums2 = [2, 3, 4]
+        def result = from(nums1).leftHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[1, null], [2, 2], [3, 3], [null, null], [null, null]] == result
+    }
+
+    @Test
+    void testRightHashJoin5() {
+        def nums2 = [1, 2, 3, null, null]
+        def nums1 = [2, 3, 4]
+        def result = from(nums1).rightHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[null, 1], [2, 2], [3, 3], [null, null], [null, null]] == result
+    }
+
+    @Test
+    void testLeftHashJoin6() {
+        def nums1 = [1, 2, 3, null, null]
+        def nums2 = [2, 3, 4, null]
+        def result = from(nums1).leftHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[1, null], [2, 2], [3, 3], [null, null], [null, null]] == result
+    }
+
+    @Test
+    void testRightHashJoin6() {
+        def nums2 = [1, 2, 3, null, null]
+        def nums1 = [2, 3, 4, null]
+        def result = from(nums1).rightHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[null, 1], [2, 2], [3, 3], [null, null], [null, null]] == result
+    }
+
+    @Test
+    void testLeftHashJoin7() {
+        def nums1 = [1, 2, 3, null, null]
+        def nums2 = [2, 3, 4, null, null]
+        def result = from(nums1).leftHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[1, null], [2, 2], [3, 3], [null, null], [null, null]] == result
+    }
+
+    @Test
+    void testRightHashJoin7() {
+        def nums2 = [1, 2, 3, null, null]
+        def nums1 = [2, 3, 4, null, null]
+        def result = from(nums1).rightHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[null, 1], [2, 2], [3, 3], [null, null], [null, null]] == result
+    }
+
+    @Test
+    void testLeftHashJoin8() {
+        def nums1 = [1, 2, 3, null]
+        def nums2 = [2, 3, 4, null, null]
+        def result = from(nums1).leftHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[1, null], [2, 2], [3, 3], [null, null]] == result
+    }
+
+    @Test
+    void testRightHashJoin8() {
+        def nums2 = [1, 2, 3, null]
+        def nums1 = [2, 3, 4, null, null]
+        def result = from(nums1).rightHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[null, 1], [2, 2], [3, 3], [null, null]] == result
+    }
+
+    @Test
+    void testLeftHashJoin9() {
+        def nums1 = [1, 2, 3]
+        def nums2 = [2, 3, 4, null, null]
+        def result = from(nums1).leftHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[1, null], [2, 2], [3, 3]] == result
+    }
+
+    @Test
+    void testRightHashJoin9() {
+        def nums2 = [1, 2, 3]
+        def nums1 = [2, 3, 4, null, null]
+        def result = from(nums1).rightHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[null, 1], [2, 2], [3, 3]] == result
+    }
+
+    @Test
+    void testLeftHashJoin10() {
+        def nums1 = [1, 2, 3].stream()
+        def nums2 = [1, 2, 3].stream()
+        def result = from(nums1).leftHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[1, 1], [2, 2], [3, 3]] == result
+    }
+
+    @Test
+    void testRightHashJoin10() {
+        def nums2 = [1, 2, 3].stream()
+        def nums1 = [1, 2, 3].stream()
+        def result = from(nums1).rightHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[1, 1], [2, 2], [3, 3]] == result
+    }
+
+    @Test
+    void testLeftHashJoin11() {
+        def nums1 = [1, 2, null, 3]
+        def nums2 = [2, null, 3, null, 4]
+        def result = from(nums1).leftHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[1, null], [2, 2], [null, null], [3, 3]] == result
+    }
+
+    @Test
+    void testRightHashJoin11() {
+        def nums2 = [1, 2, null, 3]
+        def nums1 = [2, null, 3, null, 4]
+        def result = from(nums1).rightHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[null, 1], [2, 2], [null, null], [3, 3]] == result
+    }
+
     @Test
     void testFullJoin() {
         def nums1 = [1, 2, 3]

@@ -33,8 +33,10 @@ public class JoinExpression extends DataSourceExpression implements DataSourceHo
     private static final String INNER_JOIN = "innerjoin";
     private static final String INNER_HASH_JOIN = "innerhashjoin";
     private static final String LEFT_JOIN = "leftjoin";
+    public static final String LEFT_HASH_JOIN = "lefthashjoin";
     private static final String CROSS_JOIN = "crossjoin";
-    private static final List<String> JOIN_NAME_LIST = Arrays.asList(INNER_JOIN, INNER_HASH_JOIN, LEFT_JOIN, "rightjoin", "fulljoin", CROSS_JOIN);
+    private static final List<String> JOIN_NAME_LIST =
+            Arrays.asList(INNER_JOIN, INNER_HASH_JOIN, LEFT_JOIN, LEFT_HASH_JOIN, "rightjoin", "righthashjoin", "fulljoin", "fullhashjoin", CROSS_JOIN);
 
     private final String joinName;
     private OnExpression onExpression;
@@ -63,6 +65,10 @@ public class JoinExpression extends DataSourceExpression implements DataSourceHo
 
     public boolean isLeftJoin() {
         return LEFT_JOIN.equals(joinName);
+    }
+
+    public boolean isLeftHashJoin() {
+        return LEFT_HASH_JOIN.equals(joinName);
     }
 
     @Override

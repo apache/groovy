@@ -122,6 +122,18 @@ public interface Queryable<T> {
     <U> Queryable<Tuple2<T, U>> leftJoin(Queryable<? extends U> queryable, BiPredicate<? super T, ? super U> joiner);
 
     /**
+     * Left hash join another {@link Queryable} instance, similar to SQL's {@code left hash join}
+     *
+     * @param queryable another {@link Queryable} instance
+     * @param fieldsExtractor1 extract fields of one data source
+     * @param fieldsExtractor2 extract fields of the other data source
+     * @param <U> the type of element from another {@link Queryable} instance
+     * @return the join result
+     * @since 4.0.0
+     */
+    <U> Queryable<Tuple2<T, U>> leftHashJoin(Queryable<? extends U> queryable, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2);
+
+    /**
      * Right join another {@link Queryable} instance, similar to SQL's {@code right join}
      *
      * @param queryable another {@link Queryable} instance
@@ -133,6 +145,18 @@ public interface Queryable<T> {
     <U> Queryable<Tuple2<T, U>> rightJoin(Queryable<? extends U> queryable, BiPredicate<? super T, ? super U> joiner);
 
     /**
+     * Right hash join another {@link Queryable} instance, similar to SQL's {@code right join}
+     *
+     * @param queryable another {@link Queryable} instance
+     * @param fieldsExtractor1 extract fields of one data source
+     * @param fieldsExtractor2 extract fields of the other data source
+     * @param <U> the type of element from another {@link Queryable} instance
+     * @return the join result
+     * @since 4.0.0
+     */
+    <U> Queryable<Tuple2<T, U>> rightHashJoin(Queryable<? extends U> queryable, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2);
+
+    /**
      * Full join another {@link Queryable} instance, similar to SQL's {@code full join}
      *
      * @param queryable another {@link Queryable} instance
@@ -142,6 +166,18 @@ public interface Queryable<T> {
      * @since 4.0.0
      */
     <U> Queryable<Tuple2<T, U>> fullJoin(Queryable<? extends U> queryable, BiPredicate<? super T, ? super U> joiner);
+
+    /**
+     * Full hash join another {@link Queryable} instance, similar to SQL's {@code full join}
+     *
+     * @param queryable another {@link Queryable} instance
+     * @param fieldsExtractor1 extract fields of one data source
+     * @param fieldsExtractor2 extract fields of the other data source
+     * @param <U> the type of element from another {@link Queryable} instance
+     * @return the join result
+     * @since 4.0.0
+     */
+    <U> Queryable<Tuple2<T, U>> fullHashJoin(Queryable<? extends U> queryable, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2);
 
     /**
      * Cross join another {@link Queryable} instance, similar to SQL's {@code cross join}

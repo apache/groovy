@@ -118,7 +118,7 @@ class GinqAstOptimizer extends GinqAstBaseVisitor {
         for (JoinExpression joinExpression : ginqExpression.joinExpressionList) {
             if (joinExpression.innerJoin || joinExpression.innerHashJoin) {
                 optimizingDataSourceExpressionList << joinExpression
-            } else if (joinExpression.leftJoin) {
+            } else if (joinExpression.leftJoin || joinExpression.leftHashJoin) {
                 break
             } else {
                 optimizingDataSourceExpressionList.clear()
