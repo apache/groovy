@@ -341,29 +341,14 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                                 ((QueryableCollection) queryable2).makeReusable();
                             }
 
-                            return queryable2.stream()
-                                    .map(c -> joiner.test(p, c) ? c : null)
-                                    .reduce(new ArrayList<U>(), (r, e) -> {
-                                        int size = r.size();
-                                        if (0 == size) {
-                                            r.add(e);
-                                            return r;
-                                        }
+                            List<Tuple2<T, U>> joinResultList =
+                                    null == p ? Collections.emptyList()
+                                                : queryable2.stream()
+                                                            .filter(c -> joiner.test(p, c))
+                                                            .map(c -> tuple((T) p, (U) c))
+                                                            .collect(Collectors.toList());
 
-                                        int lastIndex = size - 1;
-                                        Object lastElement = r.get(lastIndex);
-
-                                        if (null != e) {
-                                            if (null == lastElement) {
-                                                r.set(lastIndex, e);
-                                            } else {
-                                                r.add(e);
-                                            }
-                                        }
-
-                                        return r;
-                                    }, (i, o) -> o).stream()
-                                    .map(c -> null == c ? tuple(p, null) : tuple(p, c));
+                            return joinResultList.isEmpty() ? Stream.of(tuple(p, null)) : joinResultList.stream();
                         });
 
         return from(stream);
