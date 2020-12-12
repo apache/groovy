@@ -314,9 +314,9 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     @Override
     public BigDecimal avg(Function<? super T, ? extends Number> mapper) {
         Object[] result = agg(q -> this.stream()
-                .map(mapper::apply)
+                .map(mapper)
                 .filter(Objects::nonNull)
-                .map(n -> NumberMath.toBigDecimal(n))
+                .map(NumberMath::toBigDecimal)
                 .reduce(new Object[] {0L, BigDecimal.ZERO}, (r, e) -> {
                     r[0] = (Long) r[0] + 1;
                     r[1] = ((BigDecimal) r[1]).add(e);
