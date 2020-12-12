@@ -104,6 +104,32 @@ class QueryableCollectionTest {
     }
 
     @Test
+    void testInnerJoin8() {
+        def nums1 = [].stream()
+        def nums2 = [2, 3, 4].stream()
+        def result = from(nums1).innerJoin(from(nums2), (a, b) -> a == b).toList()
+        assert [] == result
+    }
+
+    @Test
+    @CompileDynamic
+    void testInnerJoin9() {
+        def nums1 = [2, 3, 4].stream()
+        def nums2 = [].stream()
+        def result = from(nums1).innerJoin(from(nums2), (a, b) -> a == b).toList()
+        assert [] == result
+    }
+
+    @Test
+    @CompileDynamic
+    void testInnerJoin10() {
+        def nums1 = [].stream()
+        def nums2 = [].stream()
+        def result = from(nums1).innerJoin(from(nums2), (a, b) -> a == b).toList()
+        assert [] == result
+    }
+
+    @Test
     void testInnerHashJoin0() {
         def nums1 = [1, 2, 3]
         def nums2 = [1, 2, 3]
@@ -165,6 +191,32 @@ class QueryableCollectionTest {
         def nums2 = [2, 3, 4, null, null]
         def result = from(nums1).innerHashJoin(from(nums2), a -> a, b -> b).toList()
         assert [[2, 2], [3, 3], [null, null], [null, null], [null, null], [null, null]] == result
+    }
+
+    @Test
+    void testInnerHashJoin8() {
+        def nums1 = []
+        def nums2 = [2, 3, 4]
+        def result = from(nums1).innerHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [] == result
+    }
+
+    @Test
+    @CompileDynamic
+    void testInnerHashJoin9() {
+        def nums1 = [2, 3, 4]
+        def nums2 = []
+        def result = from(nums1).innerHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [] == result
+    }
+
+    @Test
+    @CompileDynamic
+    void testInnerHashJoin10() {
+        def nums1 = []
+        def nums2 = []
+        def result = from(nums1).innerHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [] == result
     }
 
     @Test
@@ -343,6 +395,41 @@ class QueryableCollectionTest {
         assert [[1, 1], [2, 2], [3, 3]] == result
     }
 
+    @Test
+    @CompileDynamic
+    void testLeftJoin11() {
+        def nums1 = [1, 2, 3]
+        def nums2 = []
+        def result = from(nums1).leftJoin(from(nums2), (a, b) -> a == b).toList()
+        assert [[1, null], [2, null], [3, null]] == result
+    }
+
+    @Test
+    @CompileDynamic
+    void testRightJoin11() {
+        def nums2 = [1, 2, 3].stream()
+        def nums1 = [].stream()
+        def result = from(nums1).rightJoin(from(nums2), (a, b) -> a == b).toList()
+        assert [[null, 1], [null, 2], [null, 3]] == result
+    }
+
+    @Test
+    @CompileDynamic
+    void testLeftJoin12() {
+        def nums1 = []
+        def nums2 = []
+        def result = from(nums1).leftJoin(from(nums2), (a, b) -> a == b).toList()
+        assert [] == result
+    }
+
+    @Test
+    @CompileDynamic
+    void testRightJoin12() {
+        def nums2 = [].stream()
+        def nums1 = [].stream()
+        def result = from(nums1).rightJoin(from(nums2), (a, b) -> a == b).toList()
+        assert [] == result
+    }
 
     @Test
     void testLeftHashJoin0() {
@@ -534,6 +621,42 @@ class QueryableCollectionTest {
         def nums1 = [2, null, 3, null, 4]
         def result = from(nums1).rightHashJoin(from(nums2), a -> a, b -> b).toList()
         assert [[null, 1], [2, 2], [null, null], [null, null], [3, 3]] == result
+    }
+
+    @Test
+    @CompileDynamic
+    void testLeftHashJoin12() {
+        def nums1 = [1, 2, 3]
+        def nums2 = []
+        def result = from(nums1).leftHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[1, null], [2, null], [3, null]] == result
+    }
+
+    @Test
+    @CompileDynamic
+    void testRightHashJoin12() {
+        def nums2 = [1, 2, 3].stream()
+        def nums1 = [].stream()
+        def result = from(nums1).rightHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [[null, 1], [null, 2], [null, 3]] == result
+    }
+
+    @Test
+    @CompileDynamic
+    void testLeftHashJoin13() {
+        def nums1 = []
+        def nums2 = []
+        def result = from(nums1).leftHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [] == result
+    }
+
+    @Test
+    @CompileDynamic
+    void testRightHashJoin13() {
+        def nums2 = [].stream()
+        def nums1 = [].stream()
+        def result = from(nums1).rightHashJoin(from(nums2), a -> a, b -> b).toList()
+        assert [] == result
     }
 
     @Test
