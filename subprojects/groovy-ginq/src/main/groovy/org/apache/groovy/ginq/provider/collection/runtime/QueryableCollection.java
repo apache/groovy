@@ -104,16 +104,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                     hashTableHolder.getObject(hashTableSupplier);
 
             // probe the hash table
-            final Object otherFields = fieldsExtractor1.apply(p);
-            return hashTable.entrySet().stream()
-                    .filter(entry -> hash(otherFields).equals(entry.getKey()))
-                    .flatMap(entry -> {
-                        List<U> candidateList = entry.getValue();
-                        return candidateList.stream()
-                                .filter(c -> Objects.equals(otherFields, fieldsExtractor2.apply(c)))
-                                .map(c -> tuple(p, c));
-                    });
-
+            return probeHashTable(hashTable, p, fieldsExtractor1, fieldsExtractor2);
         });
 
         return from(stream);
@@ -389,22 +380,26 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                     hashTableHolder.getObject(hashTableSupplier);
 
             // probe the hash table
-            final Object otherFields = fieldsExtractor1.apply(p);
             List<Tuple2<T, U>> joinResultList =
                     null == p ? Collections.emptyList()
-                                : hashTable.entrySet().stream()
-                                            .filter(entry -> hash(otherFields).equals(entry.getKey()))
-                                            .flatMap(entry -> {
-                                                List<U> candidateList = entry.getValue();
-                                                return candidateList.stream()
-                                                        .filter(c -> Objects.equals(otherFields, fieldsExtractor2.apply(c)))
-                                                        .map(c -> tuple((T) p, (U) c));
-                                            }).collect(Collectors.toList());
+                                : probeHashTable(hashTable, (T) p, fieldsExtractor1, fieldsExtractor2).collect(Collectors.toList());
 
             return joinResultList.isEmpty() ? Stream.of(tuple(p, null)) : joinResultList.stream();
         });
 
         return from(stream);
+    }
+
+    private static <T, U> Stream<Tuple2<T, U>> probeHashTable(Map<Integer, List<U>> hashTable, T p, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
+        final Object otherFields = fieldsExtractor1.apply(p);
+        return hashTable.entrySet().stream()
+                .filter(entry -> hash(otherFields).equals(entry.getKey()))
+                .flatMap(entry -> {
+                    List<U> candidateList = entry.getValue();
+                    return candidateList.stream()
+                            .filter(c -> Objects.equals(otherFields, fieldsExtractor2.apply(c)))
+                            .map(c -> tuple(p, c));
+                });
     }
 
     @Override
