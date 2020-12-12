@@ -3083,6 +3083,34 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - GINQ tips - 3"() {
+        assertGinqScript '''
+// tag::ginq_tips_07[]
+            import groovy.transform.*
+            @TupleConstructor
+            @EqualsAndHashCode
+            @ToString
+            class Person {
+                String name
+                String nickname
+            }
+            
+            def persons = [new Person('Daniel', 'ShanFengXiaoZi'), new Person('Linda', null), new Person('David', null)]
+            def result = GQ {
+                from p in persons
+                where p.nickname == null
+                select p
+            }.stream()
+                .peek(p -> { p.nickname = 'Unknown' }) // update `nickname`
+                .toList()
+            
+            def expected = [new Person('Linda', 'Unknown'), new Person('David', 'Unknown')]
+            assert expected == result
+// end::ginq_tips_07[]
+        '''
+    }
+
+    @Test
     void "testGinq - GINQ examples - 1"() {
         assertGinqScript '''
             def expected = 
