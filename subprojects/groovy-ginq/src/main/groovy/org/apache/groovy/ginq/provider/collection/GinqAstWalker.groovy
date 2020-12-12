@@ -473,7 +473,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                         }
 
                         if (expression instanceof BinaryExpression) {
-                            if (expression.operation.type == Types.KEYWORD_IN) {
+                            if (expression.operation.type in [Types.KEYWORD_IN, Types.COMPARE_NOT_IN]) {
                                 if (expression.rightExpression instanceof AbstractGinqExpression) {
                                     expression.rightExpression =
                                             callX(GinqAstWalker.this.visit((AbstractGinqExpression) expression.rightExpression),

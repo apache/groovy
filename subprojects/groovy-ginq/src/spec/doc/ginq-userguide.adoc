@@ -147,6 +147,37 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_projection_02,
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_01,indent=0]
 ----
 
+===== In
+[source, sql]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_08,indent=0]
+----
+
+[source, sql]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_07,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_09,indent=0]
+----
+
+===== Not In
+[source, sql]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_05,indent=0]
+----
+
+[source, sql]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_06,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_10,indent=0]
+----
 ===== Exists
 [source, sql]
 ----

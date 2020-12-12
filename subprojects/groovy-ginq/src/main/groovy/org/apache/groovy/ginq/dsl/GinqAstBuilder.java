@@ -301,7 +301,8 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
     public void visitBinaryExpression(BinaryExpression expression) {
         super.visitBinaryExpression(expression);
 
-        if (expression.getOperation().getType() == Types.KEYWORD_IN) {
+        final int opType = expression.getOperation().getType();
+        if (opType == Types.KEYWORD_IN || opType == Types.COMPARE_NOT_IN) {
             if (null != latestGinqExpression && isSelectMethodCallExpression(expression.getRightExpression())) {
                 // use the nested ginq and clear it
                 expression.setRightExpression(latestGinqExpression);

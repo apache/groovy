@@ -257,6 +257,32 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from where select - 4"() {
+        assertGinqScript '''
+            assert [0] == GQ {
+// tag::ginq_filtering_05[]
+                from n in [0, 1, 2]
+                where n !in [1, 2]
+                select n
+// end::ginq_filtering_05[]
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from where select - 5"() {
+        assertGinqScript '''
+            assert [1, 2] == GQ {
+// tag::ginq_filtering_08[]
+                from n in [0, 1, 2]
+                where n in [1, 2]
+                select n
+// end::ginq_filtering_08[]
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - from smartinnerjoin select - 1"() {
         assertGinqScript '''
             assert [[1, 1], [3, 3]] == GQ {
@@ -1080,6 +1106,72 @@ class GinqTest {
                 )
                 select s
             }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from select - 26"() {
+        assertGinqScript '''
+            assert [0] == GQ {
+// tag::ginq_filtering_06[]
+                from n in [0, 1, 2]
+                where n !in (
+                    from m in [1, 2]
+                    select m
+                )
+                select n
+// end::ginq_filtering_06[]
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from select - 27"() {
+        assertGinqScript '''
+            assert [1, 2] == GQ {
+// tag::ginq_filtering_07[]
+                from n in [0, 1, 2]
+                where n in (
+                    from m in [1, 2]
+                    select m
+                )
+                select n
+// end::ginq_filtering_07[]
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from select - 28"() {
+        assertGinqScript '''
+// tag::ginq_filtering_09[]
+            import static groovy.lang.Tuple.tuple
+            assert [0, 1] == GQ {
+                from n in [0, 1, 2]
+                where tuple(n, n + 1) in (
+                    from m in [1, 2]
+                    select m - 1, m
+                )
+                select n
+            }.toList()
+// end::ginq_filtering_09[]
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from select - 29"() {
+        assertGinqScript '''
+// tag::ginq_filtering_10[]
+            import static groovy.lang.Tuple.tuple
+            assert [2] == GQ {
+                from n in [0, 1, 2]
+                where tuple(n, n + 1) !in (
+                    from m in [1, 2]
+                    select m - 1, m
+                )
+                select n
+            }.toList()
+// end::ginq_filtering_10[]
         '''
     }
 
