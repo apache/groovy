@@ -2793,6 +2793,19 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from groupby select - 30"() {
+        assertGinqScript '''
+            assert [[1, 1], [3, 3], [6, 6]] == GQ {
+// tag::ginq_grouping_12[]
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                groupby n
+                select n, median(n)
+// end::ginq_grouping_12[]
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - from where groupby select - 1"() {
         assertGinqScript '''
             assert [[1, 2], [6, 3]] == GQ {
@@ -3792,9 +3805,9 @@ class GinqTest {
     void "testGinq - agg function - 1"() {
         assertGinqScript '''
 // tag::ginq_aggfunction_01[]
-            assert [[1, 3, 2, 6, 3, 3, 6]] == GQ {
+            assert [[1, 3, 2, 2, 6, 3, 3, 6]] == GQ {
                 from n in [1, 2, 3]
-                select min(n), max(n), avg(n), sum(n), count(n), count(), 
+                select min(n), max(n), avg(n), median(n), sum(n), count(n), count(), 
                         agg(_g.stream().map(r -> r.n).reduce(BigDecimal.ZERO, BigDecimal::add))
             }.toList()
 // end::ginq_aggfunction_01[]

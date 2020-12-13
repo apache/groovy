@@ -1077,8 +1077,9 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final String FUNCTION_MAX = 'max'
     private static final String FUNCTION_SUM = 'sum'
     private static final String FUNCTION_AVG = 'avg'
+    private static final String FUNCTION_MEDIAN = 'median'
     private static final String FUNCTION_AGG = 'agg'
-    private static final List<String> AGG_FUNCTION_NAME_LIST = [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_AGG]
+    private static final List<String> AGG_FUNCTION_NAME_LIST = [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_MEDIAN, FUNCTION_AGG]
 
     private static final String NAMEDRECORD_CLASS_NAME = NamedRecord.class.name
 

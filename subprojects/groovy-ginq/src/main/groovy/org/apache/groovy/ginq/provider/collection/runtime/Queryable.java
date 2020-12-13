@@ -375,6 +375,15 @@ public interface Queryable<T> {
     <U extends Comparable<? super U>> U max(Function<? super T, ? extends U> mapper);
 
     /**
+     * Aggregate function {@code median}, similar to SQL's {@code median}
+     *
+     * @param mapper choose the field to median
+     * @return median result
+     * @since 4.0.0
+     */
+    BigDecimal median(Function<? super T, ? extends Number> mapper);
+
+    /**
      * The most powerful aggregate function in GINQ, it will receive the grouped result({@link Queryable} instance) and apply any processing
      *
      * @param mapper map the grouped result({@link Queryable} instance) to aggregate result

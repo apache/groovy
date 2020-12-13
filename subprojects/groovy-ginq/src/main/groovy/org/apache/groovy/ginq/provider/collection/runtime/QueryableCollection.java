@@ -58,6 +58,7 @@ import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from;
 @Internal
 class QueryableCollection<T> implements Queryable<T>, Serializable {
     private static final long serialVersionUID = -5067092453136522893L;
+    public static final BigDecimal BD_TWO = BigDecimal.valueOf(2);
     private Iterable<T> sourceIterable;
     private Stream<T> sourceStream;
 
@@ -314,7 +315,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public BigDecimal avg(Function<? super T, ? extends Number> mapper) {
-        Object[] result = agg(q -> this.stream()
+        Object[] result = agg(q -> q.stream()
                 .map(mapper)
                 .filter(Objects::nonNull)
                 .map(NumberMath::toBigDecimal)
@@ -344,6 +345,31 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                 .filter(Objects::nonNull)
                 .max(Comparator.comparing(Function.identity()))
                 .orElse(null));
+    }
+
+    @Override
+    public BigDecimal median(Function<? super T, ? extends Number> mapper) {
+        List<BigDecimal> sortedNumList = agg(q -> q.stream()
+                .map(mapper)
+                .filter(Objects::nonNull)
+                .map(NumberMath::toBigDecimal)
+                .sorted()
+                .collect(Collectors.toList())
+        );
+
+        int size = sortedNumList.size();
+        if (0 == size) {
+            return null;
+        }
+
+        int index = size / 2;
+        BigDecimal num = sortedNumList.get(index);
+
+        if (0 == size % 2) {
+            return num.add(sortedNumList.get(index - 1)).divide(BD_TWO);
+        }
+
+        return num;
     }
 
     @Override
