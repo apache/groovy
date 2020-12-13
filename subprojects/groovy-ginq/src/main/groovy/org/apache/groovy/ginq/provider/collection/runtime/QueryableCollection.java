@@ -58,7 +58,6 @@ import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from;
 @Internal
 class QueryableCollection<T> implements Queryable<T>, Serializable {
     private static final long serialVersionUID = -5067092453136522893L;
-    public static final BigDecimal BD_TWO = BigDecimal.valueOf(2);
     private Iterable<T> sourceIterable;
     private Stream<T> sourceStream;
 
@@ -509,4 +508,6 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     public String toString() {
         return AsciiTableMaker.makeAsciiTable(this);
     }
+
+    private static final BigDecimal BD_TWO = BigDecimal.valueOf(2);
 }
