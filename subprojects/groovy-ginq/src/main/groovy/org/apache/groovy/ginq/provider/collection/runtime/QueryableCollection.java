@@ -287,6 +287,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(stream);
     }
 
+    // ------------------------------ BEGIN AGGREGATE FUNCTIONS --------------------------------
     @Override
     public Long count() {
         return agg(q -> q.stream().count());
@@ -349,6 +350,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     public <U> U agg(Function<? super Queryable<? extends T>, ? extends U> mapper) {
         return mapper.apply(this);
     }
+    // ------------------------------ END AGGREGATE FUNCTIONS --------------------------------
 
     private static <T, U> Queryable<Tuple2<T, U>> outerJoin(Queryable<? extends T> queryable1, Queryable<? extends U> queryable2, BiPredicate<? super T, ? super U> joiner) {
         Stream<Tuple2<T, U>> stream =
