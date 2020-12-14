@@ -32,6 +32,7 @@ import org.codehaus.groovy.classgen.asm.util.LoggableClassVisitor;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -389,12 +390,25 @@ public class WriterController {
         return lineNumber;
     }
 
+    public void resetLineNumber() {
+        setLineNumber(-1);
+    }
+
     public void setLineNumber(final int lineNumber) {
         this.lineNumber = lineNumber;
     }
 
-    public void resetLineNumber() {
-        setLineNumber(-1);
+    public void visitLineNumber(final int lineNumber) {
+        if (lineNumber > 0 && lineNumber != this.lineNumber) {
+            setLineNumber(lineNumber);
+
+            MethodVisitor mv = getMethodVisitor();
+            if (mv != null) {
+                Label label = new Label();
+                mv.visitLabel(label);
+                mv.visitLineNumber(lineNumber, label);
+            }
+        }
     }
 
     public int getBytecodeVersion() {

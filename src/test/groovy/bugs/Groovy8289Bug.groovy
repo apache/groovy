@@ -21,8 +21,8 @@ package groovy.bugs
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 
 class Groovy8289Bug extends AbstractBytecodeTestCase {
-    void testConstructorLineIndex() {
-        def bytecode= compile(method:'<init>', '''
+    void testNoArgCtorLines() {
+        def bytecode = compile '''\
             @groovy.transform.CompileStatic
             class C {
                 String string
@@ -32,12 +32,35 @@ class Groovy8289Bug extends AbstractBytecodeTestCase {
                     println c
                 }
             }
-        ''')
+        ''', method:'<init>'
 
         assert bytecode.hasStrictSequence([
                 'L0',
+                'LINENUMBER 4 L0',
                 'ALOAD 0',
                 'INVOKESPECIAL java/lang/Object.<init> ()V'
+        ])
+    }
+
+    // GROOVY-9199
+    void testTryFinallyLines() {
+        def bytecode = compile '''\
+            def m(p) {
+            }
+            void test() {
+                try {
+                    m(true)
+                } finally {
+                    m(false)
+                }
+            }
+        ''', method:'test'
+
+        assert bytecode.hasStrictSequence([
+                'L0',
+                'LINENUMBER 5 L0',
+                'ALOAD 0',
+                'ICONST_1'
         ])
     }
 }

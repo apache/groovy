@@ -20,7 +20,6 @@ package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClosureListExpression;
@@ -94,23 +93,7 @@ public class StatementWriter {
         }
         compileStack.pop();
 
-        // GROOVY-7647, GROOVY-9126
-        if (block.getLastLineNumber() > 0 && !isMethodOrConstructorNonEmptyBlock(block)) {
-            MethodVisitor mv = controller.getMethodVisitor();
-            Label blockEnd = new Label();
-            mv.visitLabel(blockEnd);
-            mv.visitLineNumber(block.getLastLineNumber(), blockEnd);
-        }
-
         controller.getOperandStack().popDownTo(mark);
-    }
-
-    private boolean isMethodOrConstructorNonEmptyBlock(final BlockStatement block) {
-        MethodNode methodNode = controller.getMethodNode();
-        if (methodNode == null) {
-            methodNode = controller.getConstructorNode();
-        }
-        return (methodNode != null && methodNode.getCode() == block && !block.isEmpty());
     }
 
     public void writeForStatement(final ForStatement statement) {
@@ -293,15 +276,13 @@ public class StatementWriter {
     }
 
     public void writeDoWhileLoop(final DoWhileStatement statement) {
-        controller.getAcg().onLineNumber(statement, "visitDoWhileLoop");
         writeStatementLabel(statement);
-
-        MethodVisitor mv = controller.getMethodVisitor();
 
         controller.getCompileStack().pushLoop(statement.getStatementLabels());
         Label continueLabel = controller.getCompileStack().getContinueLabel();
         Label breakLabel = controller.getCompileStack().getBreakLabel();
 
+        MethodVisitor mv = controller.getMethodVisitor();
         mv.visitLabel(continueLabel);
 
         statement.getLoopBlock().visit(controller.getAcg());
@@ -335,7 +316,6 @@ public class StatementWriter {
     }
 
     public void writeTryCatchFinally(final TryCatchStatement statement) {
-        controller.getAcg().onLineNumber(statement, "visitTryCatchFinally");
         writeStatementLabel(statement);
 
         MethodVisitor mv = controller.getMethodVisitor();
@@ -402,11 +382,6 @@ public class StatementWriter {
         mv.visitLabel(catchAll);
         operandStack.push(ClassHelper.make(Throwable.class));
         int anyThrowableIndex = compileStack.defineTemporaryVariable("throwable", true);
-
-        // GROOVY-9199
-        controller.resetLineNumber();
-        int line = finallyStatement.getLineNumber();
-        if (line > 0) mv.visitLineNumber(line, catchAll);
 
         finallyStatement.visit(controller.getAcg());
 
