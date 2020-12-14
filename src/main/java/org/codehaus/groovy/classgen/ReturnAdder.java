@@ -100,11 +100,11 @@ public class ReturnAdder {
 
     private Statement addReturnsIfNeeded(final Statement statement, final VariableScope scope) {
         if (statement instanceof ReturnStatement || statement instanceof ThrowStatement
-                || statement instanceof BytecodeSequence) {
+                || statement instanceof EmptyStatement || statement instanceof BytecodeSequence) {
             return statement;
         }
 
-        if (statement instanceof EmptyStatement || statement == null) {
+        if (statement == null) {
             ReturnStatement returnStatement = new ReturnStatement(nullX());
             listener.returnStatementAdded(returnStatement);
             return returnStatement;
