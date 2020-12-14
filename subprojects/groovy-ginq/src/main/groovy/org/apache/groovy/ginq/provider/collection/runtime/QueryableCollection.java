@@ -430,7 +430,9 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         Map<Integer, List<U>> hashTable = hashTableHolder.getObject();
         if (null == hashTable) {
             synchronized (hashTableHolder) {
-                hashTable = hashTableHolder.getObject(hashTableSupplier);
+                if (null == hashTable) {
+                    hashTable = hashTableHolder.getObject(hashTableSupplier);
+                }
             }
         }
         return hashTable;
