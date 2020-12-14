@@ -19,7 +19,9 @@
 package org.apache.groovy.ginq.provider.collection
 
 import groovy.transform.CompileStatic
+import org.apache.groovy.ginq.GinqGroovyMethods
 import org.apache.groovy.ginq.dsl.GinqAstBaseVisitor
+import org.apache.groovy.ginq.dsl.GinqAstBuilder
 import org.apache.groovy.ginq.dsl.GinqAstVisitor
 import org.apache.groovy.ginq.dsl.GinqSyntaxError
 import org.apache.groovy.ginq.dsl.SyntaxErrorReportable
@@ -84,8 +86,10 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
+
 /**
  * Visit AST of GINQ to generate target method calls for GINQ
  *
@@ -166,6 +170,13 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         MethodCallExpression selectMethodCallExpression = this.visitSelectExpression(selectExpression)
 
         List<Statement> statementList = []
+
+        boolean isRootGinqExpression = ginqExpression === ginqExpression.getNodeMetaData(GinqAstBuilder.ROOT_GINQ_EXPRESSION)
+        boolean parallelEnabled = isRootGinqExpression && TRUE_STR == configuration.get(GinqGroovyMethods.CONF_PARALLEL)
+        if (parallelEnabled) {
+            statementList << stmt(callX(QUERYABLE_HELPER_TYPE, 'setVar', args(new ConstantExpression(PARALLEL), new ConstantExpression(TRUE_STR))))
+        }
+
         statementList << declS(
                 localVarX(metaDataMapName).tap {it.modifiers |= Opcodes.ACC_FINAL},
                 callX(MAPS_TYPE, "of", args(
@@ -177,7 +188,14 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         if (rowNumberUsed) {
             statementList << declS(localVarX(rowNumberName), new ConstantExpression(0L))
         }
-        statementList << stmt(selectMethodCallExpression)
+
+        final resultName = "__r${System.nanoTime()}"
+        statementList << declS(localVarX(resultName).tap {it.modifiers |= Opcodes.ACC_FINAL}, selectMethodCallExpression)
+
+        if (parallelEnabled) {
+            statementList << stmt(callX(QUERYABLE_HELPER_TYPE, 'removeVar', args(new ConstantExpression(PARALLEL))))
+        }
+        statementList << returnS(varX(resultName))
 
         def result = callX(lambdaX(block(statementList as Statement[])), "call")
 
@@ -1084,6 +1102,8 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final String NAMEDRECORD_CLASS_NAME = NamedRecord.class.name
 
     private static final String EMPTY_STRING = ''
+    private static final String PARALLEL = 'parallel'
+    private static final String TRUE_STR = 'true'
 
     private static final String __METHOD_CALL_RECEIVER = "__METHOD_CALL_RECEIVER"
     private static final String __GROUPBY_VISITED = "__GROUPBY_VISITED"

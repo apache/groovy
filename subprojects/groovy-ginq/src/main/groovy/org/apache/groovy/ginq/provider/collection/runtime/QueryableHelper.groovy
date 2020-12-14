@@ -22,7 +22,7 @@ import groovy.transform.CompileStatic
 
 import java.util.stream.Collectors
 
-import static Queryable.from
+import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from
 
 /**
  * Helper for {@link Queryable}
@@ -70,5 +70,18 @@ class QueryableHelper {
         throw new TooManyValuesException("subquery returns more than one value: $list")
     }
 
+    static void setVar(String name, Object value) {
+        VAR_HOLDER.get().put(name, value)
+    }
+
+    static Object getVar(String name) {
+        VAR_HOLDER.get().get(name)
+    }
+
+    static Object removeVar(String name) {
+        VAR_HOLDER.get().remove(name)
+    }
+
+    private static final ThreadLocal<Map<String, Object>> VAR_HOLDER = ThreadLocal.<Map<String, Object>>withInitial(() -> new LinkedHashMap<>())
     private QueryableHelper() {}
 }

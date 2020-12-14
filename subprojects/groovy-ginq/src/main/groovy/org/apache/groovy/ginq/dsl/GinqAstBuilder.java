@@ -57,6 +57,7 @@ import java.util.Set;
  * @since 4.0.0
  */
 public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorReportable {
+    public static final String ROOT_GINQ_EXPRESSION = "__ROOT_GINQ_EXPRESSION";
     private final Deque<GinqExpression> ginqExpressionStack = new ArrayDeque<>();
     private GinqExpression latestGinqExpression;
     private final SourceUnit sourceUnit;
@@ -87,6 +88,8 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
             this.collectSyntaxError(new GinqSyntaxError("Unknown clause: " + methodCallExpression.getMethodAsString(),
                     methodCallExpression.getLineNumber(), methodCallExpression.getColumnNumber()));
         }
+
+        latestGinqExpression.putNodeMetaData(ROOT_GINQ_EXPRESSION, latestGinqExpression);
 
         return latestGinqExpression;
     }

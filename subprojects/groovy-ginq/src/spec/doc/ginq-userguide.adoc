@@ -456,6 +456,13 @@ This is like `update` in SQL
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_07,indent=0]
 ----
 
+==== Parallel Querying
+Parallel querying is useful when querying big data sources. It is disabled by default, but we could enable it by hand:
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_08,indent=0]
+----
+
 ==== Customize GINQ
 
 For advanced users, you could customize GINQ behaviour by specifying your own target code generator.

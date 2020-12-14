@@ -39,6 +39,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -58,6 +61,11 @@ import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from;
 @Internal
 class QueryableCollection<T> implements Queryable<T>, Serializable {
     private static final long serialVersionUID = -5067092453136522893L;
+    public static final String PARALLEL = "parallel";
+    public static final String TRUE_STR = "true";
+    private final ReadWriteLock rwl = new ReentrantReadWriteLock();
+    private final Lock readLock = rwl.readLock();
+    private final Lock writeLock = rwl.writeLock();
     private Iterable<T> sourceIterable;
     private Stream<T> sourceStream;
 
@@ -70,11 +78,16 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     public Iterator<T> iterator() {
-        if (null != sourceIterable) {
-            return sourceIterable.iterator();
-        }
+        readLock.lock();
+        try {
+            if (null != sourceIterable) {
+                return sourceIterable.iterator();
+            }
 
-        return sourceStream.iterator();
+            return sourceStream.iterator();
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override
@@ -100,8 +113,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         final Supplier<Map<Integer, List<U>>> hashTableSupplier = createHashTableSupplier(queryable, fieldsExtractor2);
         Stream<Tuple2<T, U>> stream = this.stream().flatMap(p -> {
             // build hash table
-            Map<Integer, List<U>> hashTable =
-                    hashTableHolder.getObject(hashTableSupplier);
+            Map<Integer, List<U>> hashTable = buildHashTable(hashTableHolder, hashTableSupplier);
 
             // probe the hash table
             return probeHashTable(hashTable, p, fieldsExtractor1, fieldsExtractor2);
@@ -111,7 +123,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     private static <U> Supplier<Map<Integer, List<U>>> createHashTableSupplier(Queryable<? extends U> queryable, Function<? super U, ?> fieldsExtractor2) {
-        return () -> queryable.stream().parallel()
+        return () -> queryable.stream()
                 .collect(
                         Collectors.toMap(
                                 c -> hash(fieldsExtractor2.apply(c)),
@@ -402,8 +414,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         final Supplier<Map<Integer, List<U>>> hashTableSupplier = createHashTableSupplier(queryable2, fieldsExtractor2);
         Stream<Tuple2<T, U>> stream = queryable1.stream().flatMap(p -> {
             // build hash table
-            Map<Integer, List<U>> hashTable =
-                    hashTableHolder.getObject(hashTableSupplier);
+            Map<Integer, List<U>> hashTable = buildHashTable(hashTableHolder, hashTableSupplier);
 
             // probe the hash table
             List<Tuple2<T, U>> joinResultList =
@@ -413,6 +424,16 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         });
 
         return from(stream);
+    }
+
+    private static <U> Map<Integer, List<U>> buildHashTable(final ObjectHolder<Map<Integer, List<U>>> hashTableHolder, final Supplier<Map<Integer, List<U>>> hashTableSupplier) {
+        Map<Integer, List<U>> hashTable = hashTableHolder.getObject();
+        if (null == hashTable) {
+            synchronized (hashTableHolder) {
+                hashTable = hashTableHolder.getObject(hashTableSupplier);
+            }
+        }
+        return hashTable;
     }
 
     private static <T, U> Stream<Tuple2<T, U>> probeHashTable(Map<Integer, List<U>> hashTable, T p, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
@@ -429,14 +450,19 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public List<T> toList() {
-        if (sourceIterable instanceof List) {
-            return (List<T>) sourceIterable;
+        writeLock.lock();
+        try {
+            if (sourceIterable instanceof List) {
+                return (List<T>) sourceIterable;
+            }
+
+            final List<T> result = stream().collect(Collectors.toList());
+            sourceIterable = result;
+
+            return result;
+        } finally {
+            writeLock.unlock();
         }
-
-        final List<T> result = stream().collect(Collectors.toList());
-        sourceIterable = result;
-
-        return result;
     }
 
     @Override
@@ -446,11 +472,20 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public Stream<T> stream() {
-        if (isReusable()) {
-            sourceStream = toStream(sourceIterable);  // we have to create new stream every time because Java stream can not be reused
-        }
+        writeLock.lock();
+        try {
+            if (isReusable()) {
+                sourceStream = toStream(sourceIterable);  // we have to create new stream every time because Java stream can not be reused
+            }
 
-        return sourceStream;
+            if (!sourceStream.isParallel() && TRUE_STR.equals(QueryableHelper.getVar(PARALLEL))) {
+                sourceStream = sourceStream.parallel();
+            }
+
+            return sourceStream;
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     private static <T> Stream<T> toStream(Iterable<T> sourceIterable) {
@@ -458,13 +493,23 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     private boolean isReusable() {
-        return null != sourceIterable;
+        readLock.lock();
+        try {
+            return null != sourceIterable;
+        } finally {
+            readLock.unlock();
+        }
     }
 
     private void makeReusable() {
-        if (null != this.sourceIterable) return;
+        writeLock.lock();
+        try {
+            if (null != this.sourceIterable) return;
 
-        this.sourceIterable = this.sourceStream.collect(Collectors.toList());
+            this.sourceIterable = this.sourceStream.collect(Collectors.toList());
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     public Object asType(Class<?> clazz) {

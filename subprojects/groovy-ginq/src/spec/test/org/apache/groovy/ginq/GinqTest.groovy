@@ -4419,6 +4419,32 @@ class GinqTest {
         '''
     }
 
+    @Test
+    void "testGinq - parallel - 1"() {
+        assertGinqScript '''
+// tag::ginq_tips_08[]
+            assert [[1, 1], [2, 2], [3, 3]] == GQ(parallel: true) {
+                from n1 in 1..1000
+                innerhashjoin n2 in 1..10000 on n2 == n1
+                where n1 <= 3 && n2 <= 5
+                select n1, n2
+            }.toList()
+// end::ginq_tips_08[]
+        '''
+    }
+
+    @Test
+    void "testGinq - parallel - 2"() {
+        assertGinqScript '''
+            assert [[1, 1], [2, 2], [3, 3]] == GQ(optimize: false, parallel: true) {
+                from n1 in 1..1000
+                innerhashjoin n2 in 1..10000 on n2 == n1
+                where n1 <= 3 && n2 <= 5
+                select n1, n2
+            }.toList()
+        '''
+    }
+
     private static void assertGinqScript(String script) {
         String deoptimizedScript = script.replaceAll(/\bGQ\s*[{]/, 'GQ(optimize:false) {')
         List<String> scriptList = [deoptimizedScript, script]

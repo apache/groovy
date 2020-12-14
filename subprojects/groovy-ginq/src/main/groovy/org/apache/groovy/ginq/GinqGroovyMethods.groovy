@@ -75,7 +75,7 @@ class GinqGroovyMethods {
      * Transform GINQ code to target method invocation
      *
      * @param ctx the macro context
-     * @param ginqConfigurationMapExpression specify the configuration for GINQ, e.g. {@code astWalker}, {@code optimize}
+     * @param ginqConfigurationMapExpression specify the configuration for GINQ, e.g. {@code astWalker}, {@code optimize}, {@code parallel}
      * @param ginqClosureExpression hold the GINQ code
      * @return target method invocation
      * @since 4.0.0
@@ -92,7 +92,7 @@ class GinqGroovyMethods {
 
         Map<String, String> configuration = createConfiguration(ginqConfigurationMapExpression)
 
-        if (TRUE == configuration.get(CONF_OPTIMIZE, TRUE)) {
+        if (TRUE_STR == configuration.get(CONF_OPTIMIZE, TRUE_STR)) {
             GinqAstOptimizer ginqAstOptimizer = new GinqAstOptimizer()
             ginqAstOptimizer.visitGinqExpression(ginqExpression)
         }
@@ -116,8 +116,9 @@ class GinqGroovyMethods {
 
     private GinqGroovyMethods() {}
 
-    private static final String CONF_OPTIMIZE = 'optimize'
+    public static final String CONF_PARALLEL = 'parallel'
     private static final String CONF_AST_WALKER = 'astWalker'
+    private static final String CONF_OPTIMIZE = 'optimize'
     private static final String DEFAULT_AST_WALKER_CLASS_NAME = GinqAstWalker.class.name
-    private static final String TRUE = 'true'
+    private static final String TRUE_STR = 'true'
 }
