@@ -59,6 +59,7 @@ import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.NEW;
+import static org.objectweb.asm.Opcodes.NOP;
 import static org.objectweb.asm.Opcodes.PUTSTATIC;
 import static org.objectweb.asm.Opcodes.RETURN;
 
@@ -88,7 +89,7 @@ public class CallSiteWriter {
     private static final int
         MOD_PRIVSS = ACC_PRIVATE+ACC_STATIC+ACC_SYNTHETIC,
         MOD_PUBSS  = ACC_PUBLIC+ACC_STATIC+ACC_SYNTHETIC;
-    private static final ClassNode CALLSITE_ARRAY_NODE = ClassHelper.make(CallSite[].class);
+    private static final ClassNode CALLSITE_ARRAY_TYPE = ClassHelper.make(CallSite[].class);
     private static final String
         GET_CALLSITE_METHOD     = "$getCallSiteArray",
         CALLSITE_CLASS          = "org/codehaus/groovy/runtime/callsite/CallSite",
@@ -117,9 +118,11 @@ public class CallSiteWriter {
     
     public void makeSiteEntry() {
         if (controller.isNotClinit()) {
-            controller.getMethodVisitor().visitMethodInsn(INVOKESTATIC, controller.getInternalClassName(), GET_CALLSITE_METHOD, GET_CALLSITE_DESC, false);
-            controller.getOperandStack().push(CALLSITE_ARRAY_NODE);
-            callSiteArrayVarIndex = controller.getCompileStack().defineTemporaryVariable("$local$callSiteArray", CALLSITE_ARRAY_NODE, true);
+            MethodVisitor mv = controller.getMethodVisitor();
+            mv.visitInsn(NOP); // GROOVY-9076: need this for debugger to support step into
+            mv.visitMethodInsn(INVOKESTATIC, controller.getInternalClassName(), GET_CALLSITE_METHOD, GET_CALLSITE_DESC, false);
+            controller.getOperandStack().push(CALLSITE_ARRAY_TYPE);
+            callSiteArrayVarIndex = controller.getCompileStack().defineTemporaryVariable("$local$callSiteArray", CALLSITE_ARRAY_TYPE, true);
         }
     }
     
