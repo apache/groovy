@@ -59,14 +59,6 @@ import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from;
  */
 @Internal
 class QueryableCollection<T> implements Queryable<T>, Serializable {
-    private static final long serialVersionUID = -5067092453136522893L;
-    public static final String PARALLEL = "parallel";
-    public static final String TRUE_STR = "true";
-    private final ReadWriteLock rwl = new ReentrantReadWriteLock();
-    private final Lock readLock = rwl.readLock();
-    private final Lock writeLock = rwl.writeLock();
-    private volatile Iterable<T> sourceIterable;
-    private Stream<T> sourceStream;
 
     QueryableCollection(Iterable<T> sourceIterable) {
         this.sourceIterable = sourceIterable;
@@ -549,5 +541,13 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return AsciiTableMaker.makeAsciiTable(this);
     }
 
+    private Stream<T> sourceStream;
+    private volatile Iterable<T> sourceIterable;
+    private final ReadWriteLock rwl = new ReentrantReadWriteLock();
+    private final Lock readLock = rwl.readLock();
+    private final Lock writeLock = rwl.writeLock();
     private static final BigDecimal BD_TWO = BigDecimal.valueOf(2);
+    private static final String PARALLEL = "parallel";
+    private static final String TRUE_STR = "true";
+    private static final long serialVersionUID = -5067092453136522893L;
 }
