@@ -21,7 +21,6 @@ package org.apache.groovy.ginq.provider.collection.runtime;
 import groovy.lang.Tuple2;
 import groovy.transform.Internal;
 import org.apache.groovy.internal.util.Supplier;
-import org.apache.groovy.util.ObjectHolder;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
@@ -66,7 +65,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     private final ReadWriteLock rwl = new ReentrantReadWriteLock();
     private final Lock readLock = rwl.readLock();
     private final Lock writeLock = rwl.writeLock();
-    private Iterable<T> sourceIterable;
+    private volatile Iterable<T> sourceIterable;
     private Stream<T> sourceStream;
 
     QueryableCollection(Iterable<T> sourceIterable) {
@@ -109,7 +108,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public <U> Queryable<Tuple2<T, U>> innerHashJoin(Queryable<? extends U> queryable, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
-        final ObjectHolder<Map<Integer, List<U>>> hashTableHolder = new ObjectHolder<>();
+        final ConcurrentObjectHolder<Map<Integer, List<U>>> hashTableHolder = new ConcurrentObjectHolder<>();
         final Supplier<Map<Integer, List<U>>> hashTableSupplier = createHashTableSupplier(queryable, fieldsExtractor2);
         Stream<Tuple2<T, U>> stream = this.stream().flatMap(p -> {
             // build hash table
@@ -410,7 +409,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     private static <T, U> Queryable<Tuple2<T, U>> outerHashJoin(Queryable<? extends T> queryable1, Queryable<? extends U> queryable2, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
-        final ObjectHolder<Map<Integer, List<U>>> hashTableHolder = new ObjectHolder<>();
+        final ConcurrentObjectHolder<Map<Integer, List<U>>> hashTableHolder = new ConcurrentObjectHolder<>();
         final Supplier<Map<Integer, List<U>>> hashTableSupplier = createHashTableSupplier(queryable2, fieldsExtractor2);
         Stream<Tuple2<T, U>> stream = queryable1.stream().flatMap(p -> {
             // build hash table
@@ -426,16 +425,8 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(stream);
     }
 
-    private static <U> Map<Integer, List<U>> buildHashTable(final ObjectHolder<Map<Integer, List<U>>> hashTableHolder, final Supplier<Map<Integer, List<U>>> hashTableSupplier) {
-        Map<Integer, List<U>> hashTable = hashTableHolder.getObject();
-        if (null == hashTable) {
-            synchronized (hashTableHolder) {
-                if (null == hashTable) {
-                    hashTable = hashTableHolder.getObject(hashTableSupplier);
-                }
-            }
-        }
-        return hashTable;
+    private static <U> Map<Integer, List<U>> buildHashTable(final ConcurrentObjectHolder<Map<Integer, List<U>>> hashTableHolder, final Supplier<Map<Integer, List<U>>> hashTableSupplier) {
+        return hashTableHolder.getObject(hashTableSupplier);
     }
 
     private static <T, U> Stream<Tuple2<T, U>> probeHashTable(Map<Integer, List<U>> hashTable, T p, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
@@ -504,6 +495,8 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     private void makeReusable() {
+        if (null != this.sourceIterable) return;
+
         writeLock.lock();
         try {
             if (null != this.sourceIterable) return;

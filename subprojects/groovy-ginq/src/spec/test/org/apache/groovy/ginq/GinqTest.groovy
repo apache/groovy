@@ -4445,6 +4445,21 @@ class GinqTest {
         '''
     }
 
+    @Test
+    void "testGinq - parallel - 3"() {
+        assertGinqScript '''
+            assert [[6, 9]] == GQ(optimize: false, parallel: true) {
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                innerjoin m in [1, 1, 3, 3, 6, 6, 6] on n == m
+                where n != 3
+                groupby n
+                having count() > 4
+                orderby count(n) in asc
+                select n, count(n)
+            }.toList()
+        '''
+    }
+
     private static void assertGinqScript(String script) {
         String deoptimizedScript = script.replaceAll(/\bGQ\s*[{]/, 'GQ(optimize:false) {')
         List<String> scriptList = [deoptimizedScript, script]
