@@ -240,6 +240,7 @@ public class ClosureWriter {
                                     VariableExpression.THIS_EXPRESSION,
                                     "doCall",
                                     new ArgumentListExpression(parameters))));
+            markAsGenerated(answer, call, true);
             call.setSourcePosition(expression);
         }
 
