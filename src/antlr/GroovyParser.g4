@@ -267,7 +267,7 @@ memberDeclaration[int t]
  *  ct  9: script, other see the comment of classDeclaration
  */
 methodDeclaration[int t, int ct]
-    :   modifiersOpt typeParameters? returnType[$ct]?
+    :   modifiersOpt typeParameters? (returnType[$ct] nls)?
         methodName formalParameters
         (
             DEFAULT nls elementValue
