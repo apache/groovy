@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -87,25 +88,29 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         );
         doCall1arg.setImplicitThis(true);
         doCall1arg.setMethodTarget(doCallMethod);
-        closureClass.addMethod(
+        closureClass.addMethod(AnnotatedNodeUtils.markAsGenerated(closureClass,
                 new MethodNode("call",
                         Opcodes.ACC_PUBLIC,
                         ClassHelper.OBJECT_TYPE,
                         new Parameter[]{args},
                         ClassNode.EMPTY_ARRAY,
-                        new ReturnStatement(doCall1arg)));
+                        new ReturnStatement(doCall1arg)),
+                true
+        ));
 
         // call()
         MethodCallExpression doCallNoArgs = new MethodCallExpression(new VariableExpression("this", closureClass), "doCall", new ArgumentListExpression(new ConstantExpression(null)));
         doCallNoArgs.setImplicitThis(true);
         doCallNoArgs.setMethodTarget(doCallMethod);
-        closureClass.addMethod(
+        closureClass.addMethod(AnnotatedNodeUtils.markAsGenerated(closureClass,
                 new MethodNode("call",
                         Opcodes.ACC_PUBLIC,
                         ClassHelper.OBJECT_TYPE,
                         Parameter.EMPTY_ARRAY,
                         ClassNode.EMPTY_ARRAY,
-                        new ReturnStatement(doCallNoArgs)));
+                        new ReturnStatement(doCallNoArgs)),
+                true
+        ));
     }
 
     private static final class MethodTargetCompletionVisitor extends ClassCodeVisitorSupport {
