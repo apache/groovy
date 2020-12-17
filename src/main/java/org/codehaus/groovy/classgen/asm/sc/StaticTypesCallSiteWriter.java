@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -606,10 +607,9 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         // now try with flow type instead of declaration type
         rType = receiver.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
         if (receiver instanceof VariableExpression && rType == null) {
-            // TODO: can STCV be made smarter to avoid this check?
-            Variable accessedVariable = ((VariableExpression)receiver).getAccessedVariable();
-            VariableExpression ve = (VariableExpression) accessedVariable;
-            rType = ve.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+            Variable variable = ((VariableExpression) receiver).getAccessedVariable();
+            ASTNode node = (ASTNode) variable;
+            rType = node.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
         }
         if (rType!=null && trySubscript(receiver, message, arguments, rType, aType)) {
             return;
