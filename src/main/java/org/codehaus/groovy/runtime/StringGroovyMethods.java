@@ -145,7 +145,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         } else if (Number.class.isAssignableFrom(c) || c.isPrimitive()) {
             return asType(self.toString(), c);
         }
-        return DefaultGroovyMethods.asType((Object) self, c);
+        return DefaultGroovyMethods.asType(self, c);
     }
 
     /**
@@ -181,31 +181,31 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     @SuppressWarnings("unchecked")
     public static <T> T asType(final String self, final Class<T> c) {
         if (c == List.class) {
-            return (T) toList((CharSequence)self);
+            return (T) toList(self);
         } else if (c == BigDecimal.class) {
-            return (T) toBigDecimal((CharSequence)self);
+            return (T) toBigDecimal(self);
         } else if (c == BigInteger.class) {
-            return (T) toBigInteger((CharSequence)self);
+            return (T) toBigInteger(self);
         } else if (c == Long.class || c == Long.TYPE) {
-            return (T) toLong((CharSequence)self);
+            return (T) toLong(self);
         } else if (c == Integer.class || c == Integer.TYPE) {
-            return (T) toInteger((CharSequence)self);
+            return (T) toInteger(self);
         } else if (c == Short.class || c == Short.TYPE) {
-            return (T) toShort((CharSequence)self);
+            return (T) toShort(self);
         } else if (c == Byte.class || c == Byte.TYPE) {
             return (T) Byte.valueOf(self.trim());
         } else if (c == Character.class || c == Character.TYPE) {
             return (T) toCharacter(self);
         } else if (c == Double.class || c == Double.TYPE) {
-            return (T) toDouble((CharSequence)self);
+            return (T) toDouble(self);
         } else if (c == Float.class || c == Float.TYPE) {
-            return (T) toFloat((CharSequence)self);
+            return (T) toFloat(self);
         } else if (c == File.class) {
             return (T) new File(self);
         } else if (c.isEnum()) {
             return (T) InvokerHelper.invokeMethod(c, "valueOf", new Object[]{ self });
         }
-        return DefaultGroovyMethods.asType((Object) self, c);
+        return DefaultGroovyMethods.asType(self, c);
     }
 
     /**

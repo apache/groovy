@@ -23,14 +23,16 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * Allow an array to be used where an Iterator is expected.
+ * Allow a double array to be used where an Iterator is expected.
+ *
+ * @since 3.0.8
  */
-public class ArrayIterator<T> implements Iterator<T> {
-    private final T[] array;
+public class DoubleArrayIterator implements Iterator<Double> {
+    private final double[] array;
     private final int length;
     private int index;
 
-    public ArrayIterator(T[] array) {
+    public DoubleArrayIterator(double[] array) {
         this.array = array;
         length = Array.getLength(array);
     }
@@ -41,12 +43,11 @@ public class ArrayIterator<T> implements Iterator<T> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public T next() {
+    public Double next() {
         if (!hasNext()) {
             throw new NoSuchElementException();
         }
-        return (T) Array.get(array, index++);
+        return array[index++];
     }
 
     @Override

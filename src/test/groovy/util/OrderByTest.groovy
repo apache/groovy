@@ -30,18 +30,18 @@ class OrderByTest extends GroovyTestCase {
         def people = buildPeople()
 
         def order = new OrderBy({it.get('@cheese')})
-        def sorted = DefaultGroovyMethods.sort(people,order)
+        def sorted = people.sort(false, order)
         assert (0..3).collect{ sorted.get(it).get('@name') } == ['Joe', 'Bob', 'James', 'Chris']
 
         order = new OrderBy({it.get('@name')})
-        sorted = DefaultGroovyMethods.sort(people,order)
+        sorted = people.sort(false, order)
         assert (0..3).collect{ sorted.get(it).get('@name') } == ['Bob', 'Chris', 'James', 'Joe']
     }
 
     void testSortByMultipleFields() {
         def people = buildPeople()
         def order = new OrderBy([{it.get('@location')}, {it.get('@cheese')}])
-        def sorted = DefaultGroovyMethods.sort(people,order)
+        def sorted = people.sort(false, order)
         assert (0..3).collect{ sorted.get(it).get('@name') } == ['Bob', 'Joe', 'James', 'Chris']
     }
 
@@ -63,7 +63,7 @@ class OrderByTest extends GroovyTestCase {
 
         def people = [bobby, bob, raul]
         def order = new OrderBy([{it}, {it.age}])
-        def sorted = DefaultGroovyMethods.sort(people,order)
+        def sorted = people.sort(false, order)
 
         assert sorted[0].first == 'Bob'
         assert sorted[0].age == '10'

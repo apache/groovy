@@ -654,6 +654,19 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns a sequential {@link IntStream} with the specified array as its
+     * source.
+     *
+     * @param self The array, assumed to be unmodified during use
+     * @return a {@code Stream} for the array
+     *
+     * @since 3.0.8
+     */
+    public static IntStream intStream(final int[] self) {
+        return Arrays.stream(self);
+    }
+
+    /**
      * Returns a sequential {@link Stream} with the specified array as its
      * source.
      *
@@ -667,6 +680,19 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns a sequential {@link LongStream} with the specified array as its
+     * source.
+     *
+     * @param self The array, assumed to be unmodified during use
+     * @return a {@code Stream} for the array
+     *
+     * @since 3.0.8
+     */
+    public static LongStream longStream(final long[] self) {
+        return Arrays.stream(self);
+    }
+
+    /**
      * Returns a sequential {@link Stream} with the specified array as its
      * source.
      *
@@ -677,6 +703,19 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Stream<Double> stream(final double[] self) {
         return Arrays.stream(self).boxed();
+    }
+
+    /**
+     * Returns a sequential {@link DoubleStream} with the specified array as its
+     * source.
+     *
+     * @param self The array, assumed to be unmodified during use
+     * @return a {@code Stream} for the array
+     *
+     * @since 3.0.8
+     */
+    public static DoubleStream doubleStream(final double[] self) {
+        return Arrays.stream(self);
     }
 
     /**
