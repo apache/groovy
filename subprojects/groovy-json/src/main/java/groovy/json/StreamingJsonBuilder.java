@@ -237,15 +237,15 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
      * @param coll a collection
      * @param c a closure used to convert the objects of coll
      */
-    public Object call(Iterable coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
+    public Object call(Iterable coll, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c) throws IOException {
         return StreamingJsonDelegate.writeCollectionWithClosure(writer, coll, c, generator);
     }
 
     /**
      * Delegates to {@link #call(Iterable, Closure)}
      */
-    public Object call(Collection coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
-        return call((Iterable)coll, c);
+    public Object call(Collection coll, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c) throws IOException {
+        return call((Iterable) coll, c);
     }
 
     /**
@@ -266,7 +266,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
      *
      * @param c a closure whose method call statements represent key / values of a JSON object
      */
-    public Object call(@DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
+    public Object call(@DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c) throws IOException {
         writer.write(JsonOutput.OPEN_BRACE);
         StreamingJsonDelegate.cloneDelegateAndGetContent(writer, c, true, generator);
         writer.write(JsonOutput.CLOSE_BRACE);
@@ -293,7 +293,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
      * @param name The key for the JSON object
      * @param c a closure whose method call statements represent key / values of a JSON object
      */
-    public void call(String name, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
+    public void call(String name, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c) throws IOException {
         writer.write(JsonOutput.OPEN_BRACE);
         writer.write(generator.toJson(name));
         writer.write(JsonOutput.COLON);
@@ -324,7 +324,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
      * @param coll a collection
      * @param c a closure used to convert the objects of coll
      */
-    public void call(String name, Iterable coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
+    public void call(String name, Iterable coll, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c) throws IOException {
         writer.write(JsonOutput.OPEN_BRACE);
         writer.write(generator.toJson(name));
         writer.write(JsonOutput.COLON);
@@ -335,8 +335,8 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
     /**
      * Delegates to {@link #call(String, Iterable, Closure)}
      */
-    public void call(String name, Collection coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
-        call(name, (Iterable)coll, c);
+    public void call(String name, Collection coll, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c) throws IOException {
+        call(name, (Iterable) coll, c);
     }
 
     /**
@@ -361,7 +361,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
      * @param callable Additional attributes of the JSON object represented by the closure
      * @throws IOException
      */
-    public void call(String name, Map map, @DelegatesTo(StreamingJsonDelegate.class) Closure callable) throws IOException {
+    public void call(String name, Map map, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure callable) throws IOException {
         writer.write(JsonOutput.OPEN_BRACE);
         writer.write(generator.toJson(name));
         writer.write(COLON_WITH_OPEN_BRACE);
@@ -612,7 +612,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
          * @param array The list representing the array
          * @throws IOException
          */
-        public void call(String name, Object...array) throws IOException {
+        public void call(String name, Object... array) throws IOException {
             if (generator.isExcludingFieldsNamed(name)) {
                 return;
             }
@@ -645,7 +645,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
          * @param coll a collection
          * @param c a closure used to convert the objects of coll
          */
-        public void call(String name, Iterable coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
+        public void call(String name, Iterable coll, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c) throws IOException {
             if (generator.isExcludingFieldsNamed(name)) {
                 return;
             }
@@ -656,7 +656,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
         /**
          * Delegates to {@link #call(String, Iterable, Closure)}
          */
-        public void call(String name, Collection coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
+        public void call(String name, Collection coll, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c) throws IOException {
             call(name, (Iterable)coll, c);
         }
 
@@ -682,7 +682,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
          * @param value The value
          * @throws IOException
          */
-        public void call(String name, Object value, @DelegatesTo(StreamingJsonDelegate.class) Closure callable) throws IOException {
+        public void call(String name, Object value, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure callable) throws IOException {
             if (generator.isExcludingFieldsNamed(name)) {
                 return;
             }
@@ -690,6 +690,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             verifyValue();
             writeObject(writer, value, callable, generator);
         }
+
         /**
          * Writes the name and another JSON object
          *
@@ -697,7 +698,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
          * @param value The value
          * @throws IOException
          */
-        public void call(String name,@DelegatesTo(StreamingJsonDelegate.class) Closure value) throws IOException {
+        public void call(String name, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure value) throws IOException {
             if (generator.isExcludingFieldsNamed(name)) {
                 return;
             }
@@ -706,8 +707,8 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             writer.write(JsonOutput.OPEN_BRACE);
             StreamingJsonDelegate.cloneDelegateAndGetContent(writer, value, true, generator);
             writer.write(JsonOutput.CLOSE_BRACE);
-
         }
+
         /**
          * Writes an unescaped value. Note: can cause invalid JSON if passed JSON is invalid
          *
@@ -727,7 +728,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
         /**
          * Writes the given Writable as the value of the given attribute name
          *
-         * @param name The attribute name 
+         * @param name The attribute name
          * @param json The writable value
          * @throws IOException
          */
@@ -742,7 +743,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             }
         }
 
-        private void writeObjects(Iterable coll, @DelegatesTo(StreamingJsonDelegate.class) Closure c) throws IOException {
+        private void writeObjects(Iterable coll, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c) throws IOException {
             verifyValue();
             writeCollectionWithClosure(writer, coll, c, generator);
         }
@@ -755,7 +756,6 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
                 state = State.VALUE;
             }
         }
-
 
         protected void writeName(String name) throws IOException {
             if (generator.isExcludingFieldsNamed(name)) {
@@ -793,12 +793,11 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             return args.length == 2 && args[0] instanceof Iterable && args[1] instanceof Closure;
         }
 
-        public static Object writeCollectionWithClosure(Writer writer, Collection coll, @DelegatesTo(StreamingJsonDelegate.class) Closure closure) throws IOException {
-            return writeCollectionWithClosure(writer, (Iterable)coll, closure, JsonOutput.DEFAULT_GENERATOR);
+        public static Object writeCollectionWithClosure(Writer writer, Collection coll, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure closure) throws IOException {
+            return writeCollectionWithClosure(writer, (Iterable) coll, closure, JsonOutput.DEFAULT_GENERATOR);
         }
 
-        private static Object writeCollectionWithClosure(Writer writer, Iterable coll, @DelegatesTo(StreamingJsonDelegate.class) Closure closure, JsonGenerator generator)
-                throws IOException {
+        private static Object writeCollectionWithClosure(Writer writer, Iterable coll, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure closure, JsonGenerator generator) throws IOException {
             writer.write(JsonOutput.OPEN_BRACKET);
             boolean first = true;
             for (Object it : coll) {
@@ -815,22 +814,21 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             return writer;
         }
 
-        private static void writeObject(Writer writer, Object object, Closure closure, JsonGenerator generator) throws IOException {
+        private static void writeObject(Writer writer, Object object, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure closure, JsonGenerator generator) throws IOException {
             writer.write(JsonOutput.OPEN_BRACE);
             curryDelegateAndGetContent(writer, closure, object, true, generator);
             writer.write(JsonOutput.CLOSE_BRACE);
         }
 
-        public static void cloneDelegateAndGetContent(Writer w, @DelegatesTo(StreamingJsonDelegate.class) Closure c)
-        {
+        public static void cloneDelegateAndGetContent(Writer w, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c) {
             cloneDelegateAndGetContent(w, c, true);
         }
 
-        public static void cloneDelegateAndGetContent(Writer w, @DelegatesTo(StreamingJsonDelegate.class) Closure c, boolean first) {
+        public static void cloneDelegateAndGetContent(Writer w, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c, boolean first) {
             cloneDelegateAndGetContent(w, c, first, JsonOutput.DEFAULT_GENERATOR);
         }
 
-        private static void cloneDelegateAndGetContent(Writer w, @DelegatesTo(StreamingJsonDelegate.class) Closure c, boolean first, JsonGenerator generator) {
+        private static void cloneDelegateAndGetContent(Writer w, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c, boolean first, JsonGenerator generator) {
             StreamingJsonDelegate delegate = new StreamingJsonDelegate(w, first, generator);
             Closure cloned = (Closure) c.clone();
             cloned.setDelegate(delegate);
@@ -838,15 +836,15 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             cloned.call();
         }
 
-        public static void curryDelegateAndGetContent(Writer w, @DelegatesTo(StreamingJsonDelegate.class) Closure c, Object o) {
+        public static void curryDelegateAndGetContent(Writer w, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c, Object o) {
             curryDelegateAndGetContent(w, c, o, true);
         }
 
-        public static void curryDelegateAndGetContent(Writer w, @DelegatesTo(StreamingJsonDelegate.class) Closure c, Object o, boolean first) {
+        public static void curryDelegateAndGetContent(Writer w, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c, Object o, boolean first) {
             curryDelegateAndGetContent(w, c, o, first, JsonOutput.DEFAULT_GENERATOR);
         }
 
-        private static void curryDelegateAndGetContent(Writer w, @DelegatesTo(StreamingJsonDelegate.class) Closure c, Object o, boolean first, JsonGenerator generator) {
+        private static void curryDelegateAndGetContent(Writer w, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c, Object o, boolean first, JsonGenerator generator) {
             StreamingJsonDelegate delegate = new StreamingJsonDelegate(w, first, generator);
             Closure curried = c.curry(o);
             curried.setDelegate(delegate);
