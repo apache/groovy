@@ -24,7 +24,6 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -38,10 +37,10 @@ public class GroovyCollections {
      *
      * @param collections the given collections
      * @return a List of the combinations found
-     * @see #combinations(Collection)
+     * @see #combinations(Iterable)
      */
     public static List combinations(Object[] collections) {
-        return combinations((Iterable)Arrays.asList(collections));
+        return combinations(Arrays.asList(collections));
     }
 
     /**
@@ -54,30 +53,21 @@ public class GroovyCollections {
      */
     public static <T> Set<List<T>> subsequences(List<T> items) {
         // items.inject([]){ ss, h -> ss.collect { it + [h] }  + ss + [[h]] }
-        Set<List<T>> ans = new HashSet<List<T>>();
+        Set<List<T>> ans = new HashSet<>();
         for (T h : items) {
-            Set<List<T>> next = new HashSet<List<T>>();
+            Set<List<T>> next = new HashSet<>();
             for (List<T> it : ans) {
-                List<T> sublist = new ArrayList<T>(it);
+                List<T> sublist = new ArrayList<>(it);
                 sublist.add(h);
                 next.add(sublist);
             }
             next.addAll(ans);
-            List<T> hlist = new ArrayList<T>();
+            List<T> hlist = new ArrayList<>();
             hlist.add(h);
             next.add(hlist);
             ans = next;
         }
         return ans;
-    }
-
-    /**
-     * @param collections the given collections
-     * @deprecated use combinations(Iterable)
-     */
-    @Deprecated
-    public static List combinations(Collection collections) {
-        return combinations((Iterable)collections);
     }
 
     /**
@@ -125,7 +115,7 @@ public class GroovyCollections {
 
     public static <T> List<List<T>> inits(Iterable<T> collections) {
         List<T> copy = DefaultGroovyMethods.toList(collections);
-        List<List<T>> result = new ArrayList<List<T>>();
+        List<List<T>> result = new ArrayList<>();
         for (int i = copy.size(); i >= 0; i--) {
             List<T> next = copy.subList(0, i);
             result.add(next);
@@ -135,7 +125,7 @@ public class GroovyCollections {
 
     public static <T> List<List<T>> tails(Iterable<T> collections) {
         List<T> copy = DefaultGroovyMethods.toList(collections);
-        List<List<T>> result = new ArrayList<List<T>>();
+        List<List<T>> result = new ArrayList<>();
         for (int i = 0; i <= copy.size(); i++) {
             List<T> next = copy.subList(i, copy.size());
             result.add(next);
@@ -194,15 +184,7 @@ public class GroovyCollections {
      * @return the minimum value
      */
     public static <T> T min(T[] items) {
-        return min((Iterable<T>)Arrays.asList(items));
-    }
-
-    /**
-     * @deprecated use min(Iterable)
-     */
-    @Deprecated
-    public static <T> T min(Collection<T> items) {
-        return min((Iterable<T>)items);
+        return min(Arrays.asList(items));
     }
 
     /**
@@ -232,15 +214,7 @@ public class GroovyCollections {
      * @return the maximum value
      */
     public static <T> T max(T[] items) {
-        return max((Iterable<T>)Arrays.asList(items));
-    }
-
-    /**
-     * @deprecated use max(Iterable)
-     */
-    @Deprecated
-    public static <T> T max(Collection<T> items) {
-        return max((Iterable<T>)items);
+        return max(Arrays.asList(items));
     }
 
     /**
@@ -269,15 +243,7 @@ public class GroovyCollections {
      * @return the sum of the items
      */
     public static Object sum(Object[] items) {
-        return sum((Iterable)Arrays.asList(items));
-    }
-
-    /**
-     * @deprecated use sum(Iterable)
-     */
-    @Deprecated
-    public static Object sum(Collection items) {
-        return sum((Iterable)items);
+        return sum(Arrays.asList(items));
     }
 
     /**
