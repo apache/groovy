@@ -23,30 +23,34 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * Allow an array to be used where an Iterator is expected.
+ * Allow a float array to be used where an Iterator is expected.
+ *
+ * @since 3.0.8
  */
-public class ArrayIterator<T> implements Iterator<T> {
-    private final T[] array;
+public class FloatArrayIterator implements Iterator<Float> {
+    private final float[] array;
     private final int length;
     private int index;
 
-    public ArrayIterator(T[] array) {
+    public FloatArrayIterator(float[] array) {
         this.array = array;
         length = Array.getLength(array);
     }
 
+    @Override
     public boolean hasNext() {
         return index < length;
     }
 
-    @SuppressWarnings("unchecked")
-    public T next() {
+    @Override
+    public Float next() {
         if (!hasNext()) {
             throw new NoSuchElementException();
         }
-        return (T) Array.get(array, index++);
+        return array[index++];
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException("Remove not supported for arrays");
     }

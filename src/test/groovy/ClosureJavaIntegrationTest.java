@@ -60,7 +60,7 @@ public class ClosureJavaIntegrationTest extends TestCase {
     }
 
     public void testJoinListNonClosureCase() {
-        assertEquals(join(animals, ", "), "ant, bear, camel");
+        assertEquals(join((Iterable)animals, ", "), "ant, bear, camel");
     }
 
     public void testEachList() {

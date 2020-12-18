@@ -187,7 +187,7 @@ public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
     private String genericTypesAsString(NodeList<TypeParameter> typeParameters) {
         if (typeParameters == null || typeParameters.size() == 0)
             return "";
-        return "<" + DefaultGroovyMethods.join(typeParameters, ", ") + ">";
+        return "<" + DefaultGroovyMethods.join((Iterable)typeParameters, ", ") + ">";
     }
 
     private SimpleGroovyClassDoc visit(TypeDeclaration<?> n) {

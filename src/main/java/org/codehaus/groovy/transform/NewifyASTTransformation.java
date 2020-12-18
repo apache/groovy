@@ -478,7 +478,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
             final NewifyClassData innerTypeClassData = nameToInnerClassesNodesMap.get(methodName);
             if (innerTypeClassData != null) {
                 if (innerTypeClassData.types != null) {
-                    addError("Inner class name lookup is ambiguous between the following classes: " + DefaultGroovyMethods.join(innerTypeClassData.types, ", ") + ". Use new keyword and qualify name to break ambiguity.", mce);
+                    addError("Inner class name lookup is ambiguous between the following classes: " + DefaultGroovyMethods.join((Iterable)innerTypeClassData.types, ", ") + ". Use new keyword and qualify name to break ambiguity.", mce);
                     return null;
                 }
                 return innerTypeClassData.type;

@@ -18,36 +18,22 @@
  */
 package org.codehaus.groovy.util;
 
-import java.lang.reflect.Array;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 
 /**
- * Allow an array to be used where an Iterator is expected.
+ * Allow an array to be used where an Iterable is expected.
+ *
+ * @since 3.0.8
  */
-public class ArrayIterator<T> implements Iterator<T> {
+public class ArrayIterable<T> implements Iterable<T> {
     private final T[] array;
-    private final int length;
-    private int index;
 
-    public ArrayIterator(T[] array) {
+    public ArrayIterable(T[] array) {
         this.array = array;
-        length = Array.getLength(array);
     }
 
-    public boolean hasNext() {
-        return index < length;
-    }
-
-    @SuppressWarnings("unchecked")
-    public T next() {
-        if (!hasNext()) {
-            throw new NoSuchElementException();
-        }
-        return (T) Array.get(array, index++);
-    }
-
-    public void remove() {
-        throw new UnsupportedOperationException("Remove not supported for arrays");
+    @Override
+    public Iterator<T> iterator() {
+        return new ArrayIterator<>(array);
     }
 }
