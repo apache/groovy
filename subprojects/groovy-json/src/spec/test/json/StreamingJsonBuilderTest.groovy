@@ -18,48 +18,51 @@
  */
 package json
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class StreamingJsonBuilderTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
 
+final class StreamingJsonBuilderTest {
+
+    @Test
     void testStreamingJsonBuilder() {
-        assertScript """
+        assertScript '''
             import groovy.json.*
             import net.javacrumbs.jsonunit.JsonAssert
 
             // tag::json_string[]
-            String carRecords = '''
+            String carRecords = """
                 {
-                    "records": {
+                  "records": {
                     "car": {
-                        "name": "HSV Maloo",
-                        "make": "Holden",
-                        "year": 2006,
-                        "country": "Australia",
-                        "record": {
-                          "type": "speed",
-                          "description": "production pickup truck with speed of 271kph"
-                        }
+                      "name": "HSV Maloo",
+                      "make": "Holden",
+                      "year": 2006,
+                      "country": "Australia",
+                      "record": {
+                        "type": "speed",
+                        "description": "production pickup truck with speed of 271kph"
                       }
+                    }
                   }
                 }
-            '''
+            """
             // end::json_string[]
             
             // tag::streaming_json_builder[]
             StringWriter writer = new StringWriter()
             StreamingJsonBuilder builder = new StreamingJsonBuilder(writer)
             builder.records {
-              car {
+                car {
                     name 'HSV Maloo'
                     make 'Holden'
-                    year 2006 
+                    year 2006
                     country 'Australia'
                     record {
                         type 'speed'
                         description 'production pickup truck with speed of 271kph'
                     }
-              }
+                }
             }
             String json = JsonOutput.prettyPrint(writer.toString())
             // end::streaming_json_builder[]
@@ -67,9 +70,10 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
             // tag::json_assert[]
             JsonAssert.assertJsonEquals(json, carRecords)
             // end::json_assert[]
-       """
+       '''
     }
 
+    @Test
     void testStreamingJsonBuilderWithGenerator() {
         assertScript '''
             import groovy.json.*
@@ -85,7 +89,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
             StreamingJsonBuilder builder = new StreamingJsonBuilder(writer, generator)
 
             builder.records {
-              car {
+                car {
                     name 'HSV Maloo'
                     make 'Holden'
                     year 2006
@@ -95,11 +99,53 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
                         type 'speed'
                         description 'production pickup truck with speed of 271kph'
                     }
-              }
+                }
             }
 
             assert writer.toString() == '{"records":{"car":{"name":"HSV Maloo","homepage":"http://groovy-lang.org"}}}'
             // end::streaming_json_builder_generator[]
+        '''
+    }
+
+    @Test // GROOVY-9662
+    void testStreamingJsonBuilderDelegationMetadata() {
+        assertScript '''
+            import groovy.json.*
+            import net.javacrumbs.jsonunit.JsonAssert
+
+            @groovy.transform.CompileStatic
+            class JsonRenderer {
+                final Writer writer = new StringWriter()
+
+                String render() {
+                    new StreamingJsonBuilder(writer).call {
+                        call('logref', 'ref')
+                        call('message', 'msg')
+                        call('path', 'http://localhost:8080')
+                        call('_links') {
+                            // no comma here if delegate used
+                            call('resource') {
+                                // no comma here if delegate used
+                                call('href', 'path')
+                            }
+                        }
+                    }
+                    writer.flush()
+                    writer.toString()
+                }
+            }
+
+            String json = JsonOutput.prettyPrint(new JsonRenderer().render())
+            JsonAssert.assertJsonEquals(json, """{
+                |  "logref": "ref",
+                |  "message": "msg",
+                |  "path": "http://localhost:8080",
+                |  "_links": {
+                |    "resource": {
+                |      "href": "path"
+                |    }
+                |  }
+                |}""".stripMargin())
         '''
     }
 }
