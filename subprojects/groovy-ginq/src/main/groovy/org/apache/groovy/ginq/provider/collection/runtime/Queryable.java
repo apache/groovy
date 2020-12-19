@@ -39,6 +39,12 @@ import java.util.stream.Stream;
 @Internal
 public interface Queryable<T> {
     /**
+     * Represents null of GINQ, it could be used as the default group field
+     * @since 4.0.0
+     */
+    Object NULL = new Object();
+
+    /**
      * Factory method to create {@link Queryable} instance
      *
      * @param iterable iterable object, e.g. {@link List}

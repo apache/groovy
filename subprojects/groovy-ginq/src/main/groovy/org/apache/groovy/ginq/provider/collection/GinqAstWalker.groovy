@@ -80,6 +80,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.lambdaX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX
@@ -89,7 +90,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
-
 /**
  * Visit AST of GINQ to generate target method calls for GINQ
  *
@@ -254,7 +254,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                     new GroupExpression(
                             new ArgumentListExpression(
                                     Collections.singletonList(
-                                            (Expression) new ConstantExpression(EMPTY_STRING))))
+                                            (Expression) fieldX(QUERYABLE_TYPE, "NULL"))))
         }
     }
 
@@ -1134,7 +1134,6 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     private static final String NAMEDRECORD_CLASS_NAME = NamedRecord.class.name
 
-    private static final String EMPTY_STRING = ''
     private static final String PARALLEL = 'parallel'
     private static final String TRUE_STR = 'true'
 
