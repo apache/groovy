@@ -840,7 +840,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         }
 
         // (1) correct itself
-        expr = correctVars(dataSourceExpression, lambdaParamName, expr)
+        expr = correctVars(dataSourceExpression, lambdaParamName, expr) ?: expr
 
         // (2) correct its children nodes
         // The synthetic lambda parameter `__t` represents the element from the result datasource of joining, e.g. `n1` innerJoin `n2`
@@ -850,6 +850,9 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             @Override
             Expression transform(Expression expression) {
                 Expression transformedExpression = correctVars(dataSourceExpression, lambdaParamName, expression)
+                if (null == transformedExpression) {
+                    return expression
+                }
                 if (transformedExpression !== expression) {
                     return transformedExpression
                 }
@@ -863,9 +866,13 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     private Expression correctVars(DataSourceExpression dataSourceExpression, String lambdaParamName, Expression expression) {
         boolean groupByVisited = isGroupByVisited()
-
         Expression transformedExpression = null
-        if (expression instanceof VariableExpression) {
+
+        if (expression instanceof PropertyExpression) {
+            if (Character.isUpperCase(expression.propertyAsString.charAt(0))) {
+                return null
+            }
+        } else if (expression instanceof VariableExpression) {
             if (expression.isThisExpression()) return expression
             if (expression.text in [__SOURCE_RECORD, __GROUP]) return expression
             if (expression.text && Character.isUpperCase(expression.text.charAt(0))) return expression // type should not be transformed
