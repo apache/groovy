@@ -82,7 +82,7 @@ class DocGenerator {
             }
 
             def firstParam = method.parameters[0]
-            def firstParamType = firstParam.resolvedValue.isEmpty() ? firstParam.type : new Type(firstParam.resolvedValue, 0, firstParam.parentClass)
+            def firstParamType = firstParam.type
             docSource.add(firstParamType, method)
         }
         docSource.populateInheritedMethods()
@@ -286,7 +286,7 @@ class DocGenerator {
         void populateInheritedMethods() {
             def allTypes = allDocTypes.collectEntries{ [it.fullyQualifiedClassName, it] }
             allTypes.each { name, docType ->
-                if (name.endsWith('[]') || name.startsWith('primitive-types')) return
+                if (name.startsWith('primitives-and-primitive-arrays')) return
                 Type next = docType.javaClass.superClass
                 while (next != null) {
                     if (allTypes.keySet().contains(next.value)) {
@@ -313,7 +313,7 @@ class DocGenerator {
     }
 
     private static class DocPackage {
-        static final String PRIMITIVE_TYPE_PSEUDO_PACKAGE = 'primitive-types'
+        static final String PRIMITIVE_TYPE_PSEUDO_PACKAGE = 'primitives-and-primitive-arrays'
         String name
         SortedSet<DocType> docTypes = new TreeSet<DocType>(SORT_KEY_COMPARATOR)
 
