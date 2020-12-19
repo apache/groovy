@@ -1061,7 +1061,7 @@ class QueryableCollectionTest {
             }
         }
 
-        assert from(nums).over(n31, windowDefinition).lag(e -> e).isEmpty()
+        assert !from(nums).over(n31, windowDefinition).lag(e -> e).isPresent()
         assert 3 == from(nums).over(n32, windowDefinition).lag(e -> e).get()
         assert 3 == from(nums).over(n6, windowDefinition).lag(e -> e).get()
         assert 6 == from(nums).over(n9, windowDefinition).lag(e -> e).get()
@@ -1069,7 +1069,7 @@ class QueryableCollectionTest {
         assert 3 == from(nums).over(n31, windowDefinition).lead(e -> e).get()
         assert 6 == from(nums).over(n32, windowDefinition).lead(e -> e).get()
         assert 9 == from(nums).over(n6, windowDefinition).lead(e -> e).get()
-        assert from(nums).over(n9, windowDefinition).lead(e -> e).isEmpty()
+        assert !from(nums).over(n9, windowDefinition).lead(e -> e).isPresent()
     }
 
     @ToString
