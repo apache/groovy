@@ -426,6 +426,17 @@ public interface Queryable<T> {
         return toList().stream();
     }
 
+    default <U extends Comparable<? super U>> Window<T> over(T currentRecord, WindowDefinition<T, U> windowDefinition) {
+        Queryable<T> partition =
+                this.groupBy(windowDefinition.partitionBy()) // TODO cache the group result
+                        .where(e -> new Identity<>(e.getV1()).equals(new Identity<>(windowDefinition.partitionBy().apply(currentRecord))))
+                        .select(e -> e.getV2())
+                        .toList()
+                        .get(0);
+
+        return new WindowCollection<>(currentRecord, partition, windowDefinition);
+    }
+
     /**
      * Represents an order rule
      *

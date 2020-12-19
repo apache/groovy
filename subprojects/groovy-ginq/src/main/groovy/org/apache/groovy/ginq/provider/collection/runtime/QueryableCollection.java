@@ -218,6 +218,10 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public <U extends Comparable<? super U>> Queryable<T> orderBy(Order<? super T, ? extends U>... orders) {
+        if (null == orders || 0 == orders.length) {
+            return this;
+        }
+
         Comparator<T> comparator = null;
         for (int i = 0, n = orders.length; i < n; i++) {
             Order<? super T, ? extends U> order = orders[i];
