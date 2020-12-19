@@ -839,14 +839,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                             .collect(Collectors.toList())
         }
 
-        // (1) correct itself
-        expr = correctVars(dataSourceExpression, lambdaParamName, expr) ?: expr
-
-        // (2) correct its children nodes
+        // correct itself and its children nodes
         // The synthetic lambda parameter `__t` represents the element from the result datasource of joining, e.g. `n1` innerJoin `n2`
         // The element from first datasource(`n1`) is referenced via `_t.v1`
         // and the element from second datasource(`n2`) is referenced via `_t.v2`
-        expr = expr.transformExpression(new ExpressionTransformer() {
+        expr = ((ListExpression) (new ListExpression(Collections.singletonList(expr)).transformExpression(new ExpressionTransformer() {
             @Override
             Expression transform(Expression expression) {
                 Expression transformedExpression = correctVars(dataSourceExpression, lambdaParamName, expression)
@@ -859,7 +856,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
                 return expression.transformExpression(this)
             }
-        })
+        }))).getExpression(0)
 
         return tuple(declarationExpressionList, expr)
     }
