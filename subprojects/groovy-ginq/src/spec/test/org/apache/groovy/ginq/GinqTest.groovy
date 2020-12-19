@@ -4481,6 +4481,41 @@ class GinqTest {
     @Test
     void "testGinq - aggregate function - 5"() {
         assertGinqScript '''
+            class MyMath {
+                def abs(n) {
+                    Math.abs(n)
+                }
+            }
+            assert [3, 2, 1] == GQ {
+                from n in [-1, -2, -3]
+                groupby n
+                select new MyMath().abs(max(n))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - aggregate function - 6"() {
+        assertGinqScript '''
+            class MyMath {
+                def abs(n) {
+                    Math.abs(n)
+                }
+            }
+            class MyMathHolder {
+                def mm = new MyMath()
+            }
+            assert [3, 2, 1] == GQ {
+                from n in [-1, -2, -3]
+                groupby n
+                select new MyMathHolder().mm.abs(max(n))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - aggregate function - 7"() {
+        assertGinqScript '''
             assert [3, 2, 1] == GQ {
                 from n in [-1, -2, -3]
                 groupby n
@@ -4490,7 +4525,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - aggregate function - 6"() {
+    void "testGinq - aggregate function - 8"() {
         assertGinqScript '''
             assert [3, 2, 1] == GQ {
                 from n in [-1, -2, -3]
@@ -4501,7 +4536,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - aggregate function - 7"() {
+    void "testGinq - aggregate function - 9"() {
         assertGinqScript '''
             class MyMath {
                 def abs(n) {
@@ -4518,7 +4553,7 @@ class GinqTest {
     }
 
     @Test
-    void "testGinq - aggregate function - 8"() {
+    void "testGinq - aggregate function - 10"() {
         assertGinqScript '''
             class MyMath {
                 def abs(n) {
@@ -4533,6 +4568,41 @@ class GinqTest {
                 from n in [-1, -2, -3]
                 groupby n
                 select max(mmHolder.mm.abs(n))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - aggregate function - 11"() {
+        assertGinqScript '''
+            class MyMath {
+                def abs(n) {
+                    Math.abs(n)
+                }
+            }
+            assert [3, 2, 1] == GQ {
+                from n in [-1, -2, -3]
+                groupby n
+                select max(new MyMath().abs(n))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - aggregate function - 12"() {
+        assertGinqScript '''
+            class MyMath {
+                def abs(n) {
+                    Math.abs(n)
+                }
+            }
+            class MyMathHolder {
+                def mm = new MyMath()
+            }
+            assert [3, 2, 1] == GQ {
+                from n in [-1, -2, -3]
+                groupby n
+                select max(new MyMathHolder().mm.abs(n))
             }.toList()
         '''
     }
