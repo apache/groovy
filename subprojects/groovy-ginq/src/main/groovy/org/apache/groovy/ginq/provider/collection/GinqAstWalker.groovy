@@ -651,7 +651,6 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     private void validateGroupCols(List<Expression> expressionList) {
         if (groupByVisited) {
-            final groupNameList = groupNameListExpression.getExpressions().stream().map(e -> e.text).collect(Collectors.toList())
             for (Expression expression : expressionList) {
                 new ListExpression(Collections.singletonList(expression)).transformExpression(new ExpressionTransformer() {
                     @Override
@@ -664,24 +663,24 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                             if (Character.isUpperCase(text.charAt(0))) {
                                 return expr
                             }
-                            GinqAstWalker.this.collectSyntaxError(new GinqSyntaxError(
-                                    "`${expr.text}` is not in the `groupby` clause",
-                                    expr.getLineNumber(), expr.getColumnNumber()
-                            ))
+
+                            Expression rootObjectExpression = findRootObjectExpression(expr)
+                            if (rootObjectExpression.text !in groupNameList && rootObjectExpression.text in aliasNameList) {
+                                GinqAstWalker.this.collectSyntaxError(new GinqSyntaxError(
+                                        "`${expr.text}` is not in the `groupby` clause",
+                                        expr.getLineNumber(), expr.getColumnNumber()
+                                ))
+                            }
                         } else if (isExpression(expr, MethodCallExpression)) {
                             if (isAggregateFunction(expr)) {
                                 return expr
-                            } else {
-                                def mce = (MethodCallExpression) expr
-                                def objectExpression = mce.objectExpression
-                                def objectExpressionText = objectExpression instanceof PropertyExpression ? ((PropertyExpression) objectExpression).propertyAsString : objectExpression.text
-                                def staticMethodCall = !mce.implicitThis && Character.isUpperCase(objectExpressionText.charAt(0))
-                                if (!staticMethodCall) {
-                                    GinqAstWalker.this.collectSyntaxError(new GinqSyntaxError(
-                                            "`${expr instanceof CastExpression ? expr.expression.text : expr.text}` is not an aggregate function",
-                                            expr.getLineNumber(), expr.getColumnNumber()
-                                    ))
-                                }
+                            }
+
+                            if (((MethodCallExpression) expr).implicitThis) {
+                                GinqAstWalker.this.collectSyntaxError(new GinqSyntaxError(
+                                        "`${expr instanceof CastExpression ? expr.expression.text : expr.text}` is not an aggregate function",
+                                        expr.getLineNumber(), expr.getColumnNumber()
+                                ))
                             }
                         } else if (isExpression(expr, AbstractGinqExpression)) {
                             GinqAstWalker.this.collectSyntaxError(new GinqSyntaxError(
@@ -785,8 +784,16 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return (ListExpression) (currentGinqExpression.getNodeMetaData(MD_GROUP_NAME_LIST) ?: [])
     }
 
+    private List<String> getGroupNameList() {
+        return groupNameListExpression.getExpressions().stream().map(e -> e.text).collect(Collectors.toList())
+    }
+
     private ListExpression getAliasNameListExpression() {
         return new ListExpression(aliasExpressionList)
+    }
+
+    private List<String> getAliasNameList() {
+        return aliasNameListExpression.getExpressions().stream().map(e -> e.text).collect(Collectors.toList())
     }
 
     private List<Expression> getAliasExpressionList() {
@@ -861,13 +868,21 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return tuple(declarationExpressionList, expr)
     }
 
+    private boolean isExternalVariable(Expression rootObjectExpression) {
+        rootObjectExpression.text != _G  && rootObjectExpression.text !in groupNameList && rootObjectExpression.text !in aliasNameList
+    }
+
     private Expression correctVars(DataSourceExpression dataSourceExpression, String lambdaParamName, Expression expression) {
         boolean groupByVisited = isGroupByVisited()
         Expression transformedExpression = null
 
         if (expression instanceof PropertyExpression) {
             if (Character.isUpperCase(expression.propertyAsString.charAt(0))) {
-                return null
+                return transformedExpression
+            }
+
+            if (isExternalVariable(findRootObjectExpression(expression))) {
+                return transformedExpression
             }
         } else if (expression instanceof VariableExpression) {
             if (expression.isThisExpression()) return expression
@@ -876,6 +891,10 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             if (expression.text.startsWith(__META_DATA_MAP_NAME_PREFIX)) return expression
 
             if (groupByVisited) { //  groupby
+                if (isExternalVariable(expression)) {
+                    return expression
+                }
+
                 // in #1, we will correct receiver of built-in aggregate functions
                 // the correct receiver is `__t.v2`, so we should not replace `__t` here
                 if (lambdaParamName != expression.text) {
