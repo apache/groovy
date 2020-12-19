@@ -48,7 +48,7 @@
 
 <% if (docPackage.docTypes.any { !it.interface }) { %>
 <div class="indexContainer">
-    <h2 title="Classes">Classes</h2>
+    <h2 title="Classes">${docPackage.name.startsWith('primitives-and-') ? 'Primitives' : 'Classes'}</h2>
     <ul>
         <% docPackage.docTypes.findAll { !it.interface }.each { docType -> %>
         <li><a href="${docType.simpleClassName}.html" title="class in ${docType.packageName}" target="classFrame">${docType.simpleClassName}</a></li>
