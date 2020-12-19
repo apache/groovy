@@ -4420,6 +4420,28 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - aggregate function - 1"() {
+        assertGinqScript '''
+            assert [3, 2, 1] == GQ {
+                from n in [-1, -2, -3]
+                groupby n
+                select Math.abs(max(n))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - aggregate function - 2"() {
+        assertGinqScript '''
+            assert [3, 2, 1] == GQ {
+                from n in [-1, -2, -3]
+                groupby n
+                select java.lang.Math.abs(max(n))
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - parallel - 1"() {
         assertGinqScript '''
 // tag::ginq_tips_08[]

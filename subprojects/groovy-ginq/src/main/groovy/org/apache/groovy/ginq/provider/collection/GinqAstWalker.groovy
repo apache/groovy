@@ -660,6 +660,10 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                             return expr
                         }
                         if (isExpression(expr, VariableExpression, PropertyExpression)) {
+                            def text = expr instanceof PropertyExpression ? ((PropertyExpression) expr).propertyAsString : expr.text
+                            if (Character.isUpperCase(text.charAt(0))) {
+                                return expr
+                            }
                             GinqAstWalker.this.collectSyntaxError(new GinqSyntaxError(
                                     "`${expr.text}` is not in the `groupby` clause",
                                     expr.getLineNumber(), expr.getColumnNumber()
@@ -668,10 +672,16 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                             if (isAggregateFunction(expr)) {
                                 return expr
                             } else {
-                                GinqAstWalker.this.collectSyntaxError(new GinqSyntaxError(
-                                        "`${expr instanceof CastExpression ? expr.expression.text : expr.text}` is not an aggregate function",
-                                        expr.getLineNumber(), expr.getColumnNumber()
-                                ))
+                                def mce = (MethodCallExpression) expr
+                                def objectExpression = mce.objectExpression
+                                def objectExpressionText = objectExpression instanceof PropertyExpression ? ((PropertyExpression) objectExpression).propertyAsString : objectExpression.text
+                                def staticMethodCall = !mce.implicitThis && Character.isUpperCase(objectExpressionText.charAt(0))
+                                if (!staticMethodCall) {
+                                    GinqAstWalker.this.collectSyntaxError(new GinqSyntaxError(
+                                            "`${expr instanceof CastExpression ? expr.expression.text : expr.text}` is not an aggregate function",
+                                            expr.getLineNumber(), expr.getColumnNumber()
+                                    ))
+                                }
                             }
                         } else if (isExpression(expr, AbstractGinqExpression)) {
                             GinqAstWalker.this.collectSyntaxError(new GinqSyntaxError(
