@@ -23,9 +23,10 @@ import groovy.transform.stc.BugsSTCTest
 /**
  * Unit tests for static type checking : bugs.
  */
-class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilationTestSupport {
+final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilationTestSupport {
 
-    void testGroovy5498PropertyAccess() {
+    // GROOVY-5498
+    void testPropertyAccess() {
         assertScript '''
             class Test {
 
@@ -114,6 +115,24 @@ class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilationTest
                     if (pluginDir?.exists()) { true } else { false }
                 }
                 assert getDescriptorForPlugin(null) == false
+        '''
+    }
+
+    // GROOVY-9863
+    void testPlusShouldNotThrowGroovyBugError() {
+        assertScript '''
+            import static org.junit.Assert.assertEquals
+
+            class C {
+                double getSomeValue() {
+                    0.0d
+                }
+                double test() {
+                    1.0d + someValue
+                }
+            }
+
+            assertEquals(1.0d, new C().test(), 0.00000001d)
         '''
     }
 
