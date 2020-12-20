@@ -876,6 +876,8 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Provide similar functionality to JDK9 {@code or} on JDK8.
+     *
+     * @since 3.0.6
      */
     public static <T> Optional<T> orOptional(Optional<T> self, Supplier<? extends Optional<? extends T>> supplier) {
         if (self.isPresent()) {
