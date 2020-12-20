@@ -80,6 +80,7 @@ class QueryableHelper {
      */
     static boolean isIdentical(Object obj1, Object obj2) {
         if (obj1 === obj2) return true
+        if (null === obj1 || null === obj2) return false
         if (obj1.getClass() !== obj2.getClass()) return false
 
         if (obj1 instanceof NamedTuple && obj2 instanceof NamedTuple) {
