@@ -23,6 +23,7 @@ import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.tools.GroovyStarter
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
@@ -991,23 +992,26 @@ final class InnerClassTest {
     void testThis0() {
         assertScript '''
             class A {
-                static def field = 10
-                void main (a) {
-                    new C ().r ()
+                static field = 10
+
+                void main(a) {
+                    assert new C().m() == [10,12,14,16]
                 }
 
                 class C {
-                    def r () {
-                        4.times {
-                            new B(it).u (it)
+                    def m() {
+                        def x = []
+                        4.times { n ->
+                            x << new D(n).f(n)
                         }
+                        x
                     }
                 }
 
-                class B {
-                    def s
-                    B (s) { this.s = s}
-                    def u (i) { println i + s + field }
+                class D {
+                    def p
+                    D(p) { this.p = p }
+                    def f(i) { i + p + field }
                 }
             }
         '''
@@ -1055,7 +1059,7 @@ final class InnerClassTest {
                 static class Inner extends C {}
             }
 
-            print I.C
+            new Outer.Inner()
         '''
     }
 
@@ -1300,7 +1304,7 @@ final class InnerClassTest {
         try {
             new File(parentDir, 'p').mkdir()
 
-            def a = new File(parentDir, 'p/A.Java')
+            def a = new File(parentDir, 'p/A.java')
             a.write '''
                 package p;
                 public abstract class A {
@@ -1325,6 +1329,67 @@ final class InnerClassTest {
         } finally {
             config.targetDirectory.deleteDir()
             parentDir.deleteDir()
+        }
+    }
+
+    @org.junit.Ignore @Test // GROOVY-9866
+    void testResolveInnerTypeOfSuperType11() {
+        assertScript '''
+            class X {                   // System
+                interface Y {           // Logger
+                    enum Z { ONE, TWO } // Level
+                }
+            }
+
+            interface I extends X.Y { }
+
+            class C implements I {
+                def m(Z z) {
+                    z.name()
+                }
+            }
+
+            assert new C().m(X.Y.Z.ONE) == 'ONE'
+        '''
+
+        //
+
+        def tmpDir = File.createTempDir()
+        try {
+            new File(tmpDir, 'p').mkdir()
+
+            new File(tmpDir, 'p/I.groovy').write '''
+                package p
+                interface I extends System.Logger {
+                }
+            '''
+
+            new File(tmpDir, 'p/C.groovy').write '''
+                package p
+                class C implements I {
+                    @Override
+                    String getName() {
+                    }
+                    @Override
+                    boolean isLoggable(Level level) {
+                    }
+                    @Override
+                    void log(Level level, ResourceBundle bundle, String msg, Throwable throwable) {
+                    }
+                    @Override
+                    void log(Level level, ResourceBundle bundle, String format, Object... params) {
+                    }
+                }
+            '''
+
+            new File(tmpDir, 'script.groovy').write '''
+                new p.C()
+            '''
+
+            GroovyStarter.main('--classpath', tmpDir.absolutePath,
+                '--main', 'groovy.ui.GroovyMain', new File(tmpDir, 'script.groovy').absolutePath)
+        } finally {
+            tmpDir.deleteDir()
         }
     }
 

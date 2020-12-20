@@ -75,7 +75,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -366,10 +365,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return false;
     }
 
-    // GROOVY-7812(#1): Static inner classes cannot be accessed from other files when running by 'groovy' command
-    // if the type to resolve is an inner class and it is in an outer class which is not resolved,
-    // we set the resolved type to a placeholder class node, i.e. a ConstructedOuterNestedClass instance
-    // when resolving the outer class later, we set the resolved type of ConstructedOuterNestedClass instance to the actual inner class node(SEE GROOVY-7812(#2))
+    // GROOVY-7812(#1): Static inner classes cannot be accessed from other files
+    // when running by 'groovy' command if the type to resolve is an inner class
+    // and it is in an outer class which is not resolved, we set resolved type to
+    // a placeholder class node, i.e. a ConstructedOuterNestedClass instance when
+    // resolving the outer class later, we set the resolved type of ConstructedOuterNestedClass
+    // instance to the actual inner class node (see GROOVY-7812(#2))
     private boolean resolveToOuterNested(final ClassNode type) {
         CompileUnit compileUnit = currentClass.getCompileUnit();
         if (compileUnit == null) return false;
@@ -384,17 +385,18 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
             if (!typeName.equals(importAlias)) continue;
 
-            ConstructedOuterNestedClassNode constructedOuterNestedClassNode = tryToConstructOuterNestedClassNodeViaStaticImport(compileUnit, importNode, importFieldName, setRedirectListener);
-            if (null != constructedOuterNestedClassNode) {
+            ConstructedOuterNestedClassNode constructedOuterNestedClassNode =
+                    tryToConstructOuterNestedClassNodeViaStaticImport(compileUnit, importNode, importFieldName, setRedirectListener);
+            if (constructedOuterNestedClassNode != null) {
                 compileUnit.addClassNodeToResolve(constructedOuterNestedClassNode);
                 return true;
             }
         }
 
-        for (Map.Entry<String, ClassNode> entry : compileUnit.getClassesToCompile().entrySet()) {
-            ClassNode outerClassNode = entry.getValue();
-            ConstructedOuterNestedClassNode constructedOuterNestedClassNode = tryToConstructOuterNestedClassNode(type, outerClassNode, setRedirectListener);
-            if (null != constructedOuterNestedClassNode) {
+        for (ClassNode outerClassNode : compileUnit.getClassesToCompile().values()) {
+            ConstructedOuterNestedClassNode constructedOuterNestedClassNode =
+                    tryToConstructOuterNestedClassNode(type, outerClassNode, setRedirectListener);
+            if (constructedOuterNestedClassNode != null) {
                 compileUnit.addClassNodeToResolve(constructedOuterNestedClassNode);
                 return true;
             }
@@ -402,10 +404,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         boolean toResolveFurther = false;
         for (ImportNode importNode : module.getStaticStarImports().values()) {
-            ConstructedOuterNestedClassNode constructedOuterNestedClassNode = tryToConstructOuterNestedClassNodeViaStaticImport(compileUnit, importNode, typeName, setRedirectListener);
-            if (null != constructedOuterNestedClassNode) {
+            ConstructedOuterNestedClassNode constructedOuterNestedClassNode =
+                    tryToConstructOuterNestedClassNodeViaStaticImport(compileUnit, importNode, typeName, setRedirectListener);
+            if (constructedOuterNestedClassNode != null) {
                 compileUnit.addClassNodeToResolve(constructedOuterNestedClassNode);
-                toResolveFurther = true; // do not return here to try all static star imports because currently we do not know which outer class the class to resolve is declared in.
+                toResolveFurther = true; // try all static star imports because we do not know which outer class the class is declared in
             }
         }
         if (toResolveFurther) return true;
@@ -413,10 +416,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // GROOVY-9243
         toResolveFurther = false;
         if (typeName.indexOf('.') == -1) {
-            Map<String, ClassNode> hierClasses = findHierClasses(currentClass);
-            for (ClassNode cn : hierClasses.values()) {
-                ConstructedOuterNestedClassNode constructedOuterNestedClassNode = tryToConstructOuterNestedClassNodeForBaseType(compileUnit, typeName, cn, setRedirectListener);
-                if (null != constructedOuterNestedClassNode) {
+            for (ClassNode cn = currentClass; cn != null && !cn.equals(ClassHelper.OBJECT_TYPE); cn = cn.getSuperClass()) {
+                ConstructedOuterNestedClassNode constructedOuterNestedClassNode =
+                        tryToConstructOuterNestedClassNodeForBaseType(compileUnit, typeName, cn, setRedirectListener);
+                if (constructedOuterNestedClassNode != null) {
                     compileUnit.addClassNodeToResolve(constructedOuterNestedClassNode);
                     toResolveFurther = true;
                 }
@@ -509,20 +512,16 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     protected boolean resolveNestedClass(final ClassNode type) {
         if (type instanceof ConstructedNestedClass || type instanceof ConstructedClassWithPackage) return false;
 
-        // We have for example a class name A, are in class X
-        // and there is a nested class A$X. we want to be able
-        // to access that class directly, so A becomes a valid
-        // name in X.
-        // GROOVY-4043: Do this check up the hierarchy, if needed.
-        for (ClassNode classToCheck : findHierClasses(currentClass).values()) {
-            if (setRedirect(type, classToCheck)) return true;
+        ClassNode cn = currentClass; Set<ClassNode> cycleCheck = new HashSet<>();
+        // GROOVY-4043: for type "X", try "A$X" with each type in the class hierarchy (except for Object)
+        for (; cn != null && cycleCheck.add(cn) && !cn.equals(ClassHelper.OBJECT_TYPE); cn = cn.getSuperClass()) {
+            if (setRedirect(type, cn)) return true;
+            // GROOVY-9866: interfaces not resolved
         }
 
-        // GROOVY-8947: Resolve non-static inner class outside of outer class.
-        ClassNode possibleOuterClassNode = possibleOuterClassNodeMap.get(type);
-        if (possibleOuterClassNode != null) {
-            if (setRedirect(type, possibleOuterClassNode)) return true;
-        }
+        // GROOVY-8947: non-static inner class outside of outer class
+        cn = possibleOuterClassNodeMap.get(type);
+        if (cn != null && setRedirect(type, cn)) return true;
 
         // Another case we want to check here is if we are in a
         // nested class A$B$C and want to access B without
@@ -539,9 +538,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             // A.B.C.D.E.F and accessing E from F we test A$E=failed,
             // A$B$E=failed, A$B$C$E=fail, A$B$C$D$E=success.
 
-            for (ListIterator<ClassNode> it = outerClasses.listIterator(outerClasses.size()); it.hasPrevious();) {
-                ClassNode outerClass = it.previous();
-                if (setRedirect(type, outerClass)) return true;
+            for (ListIterator<ClassNode> it = outerClasses.listIterator(outerClasses.size()); it.hasPrevious(); ) {
+                cn = it.previous();
+                if (setRedirect(type, cn)) return true;
             }
         }
 
@@ -1679,14 +1678,5 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
         return genericsType.isResolved();
 
-    }
-
-    private static Map<String, ClassNode> findHierClasses(final ClassNode currentClass) {
-        Map<String, ClassNode> hierClasses = new LinkedHashMap<>();
-        for (ClassNode classToCheck = currentClass; classToCheck != ClassHelper.OBJECT_TYPE; classToCheck = classToCheck.getSuperClass()) {
-            if (classToCheck == null || hierClasses.containsKey(classToCheck.getName())) break;
-            hierClasses.put(classToCheck.getName(), classToCheck);
-        }
-        return hierClasses;
     }
 }
