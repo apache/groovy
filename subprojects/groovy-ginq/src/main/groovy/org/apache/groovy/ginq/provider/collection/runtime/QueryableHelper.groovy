@@ -87,7 +87,7 @@ class QueryableHelper {
             def obj1Size = obj1.size()
             if (obj1Size == obj2.size()) {
                 for (int i = 0; i < obj1Size; i++) {
-                    if (obj1.get(i) !== obj2.get(i)) {
+                    if (!isIdentical(obj1.get(i), obj2.get(i))) {
                         return false
                     }
                 }
@@ -112,6 +112,7 @@ class QueryableHelper {
         VAR_HOLDER.get().remove(name)
     }
 
-    private static final ThreadLocal<Map<String, Object>> VAR_HOLDER = ThreadLocal.<Map<String, Object>>withInitial(() -> new LinkedHashMap<>())
+    private static final ThreadLocal<Map<String, Object>> VAR_HOLDER = ThreadLocal.<Map<String, Object>> withInitial(() -> new LinkedHashMap<>())
+
     private QueryableHelper() {}
 }
