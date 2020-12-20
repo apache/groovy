@@ -4261,8 +4261,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (accessedVariable != exp && accessedVariable instanceof VariableExpression) {
                 storeType((VariableExpression) accessedVariable, cn);
             }
-            if (accessedVariable instanceof Parameter) {
-                ((Parameter) accessedVariable).putNodeMetaData(INFERRED_TYPE, cn);
+            if (accessedVariable instanceof Parameter
+                    || (accessedVariable instanceof PropertyNode
+                        && ((PropertyNode) accessedVariable).getField().isSynthetic())) {
+                ((ASTNode) accessedVariable).putNodeMetaData(INFERRED_TYPE, cn);
             }
             if (var.isClosureSharedVariable() && cn != null) {
                 List<ClassNode> assignedTypes = typeCheckingContext.closureSharedVariablesAssignmentTypes.computeIfAbsent(var, k -> new LinkedList<ClassNode>());

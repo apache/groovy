@@ -45,17 +45,16 @@ public class StatementMetaTypeChooser implements TypeChooser {
         if (type != null) return type;
 
         if (exp instanceof VariableExpression) {
-            VariableExpression ve = (VariableExpression) exp;
-            if (ve.isClosureSharedVariable()) return ve.getType();
-            if (ve.isSuperExpression()) return current.getSuperClass();
+            VariableExpression vexp = (VariableExpression) exp;
+            if (vexp.isClosureSharedVariable()) return vexp.getType();
+            if (vexp.isSuperExpression()) return current.getSuperClass();
 
-            type = ve.getOriginType();
-        } else if (exp instanceof Variable) {
-            Variable v = (Variable) exp;
-            type = v.getOriginType();
+            Variable var = vexp.getAccessedVariable();
+            if (var == null) var = vexp;
+            type = var.getOriginType();
         } else {
             type = exp.getType();
         }
-        return type.redirect();
+        return type;
     }
 }
