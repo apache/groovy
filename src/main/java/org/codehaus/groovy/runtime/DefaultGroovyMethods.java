@@ -5512,7 +5512,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * A transpose method for 2D int arrays.
      * <p>
      * Example usage:
-     * <pre class="FIXME_groovyTestCase">
+     * <pre class="groovyTestCase">
      * int[][] nums = [[10, 15, 20], [30, 35, 40]]
      * int[][] expected = [[10, 30], [15, 35], [20, 40]]
      * assert nums.transpose() == expected

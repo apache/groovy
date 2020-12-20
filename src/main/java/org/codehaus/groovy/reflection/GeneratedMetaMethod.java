@@ -121,6 +121,7 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
 
                 boolean[].class, char[].class, byte[].class, short[].class,
                 int[].class, long[].class, double[].class, float[].class,
+                int[][].class, long[][].class, double[][].class,
 
                 Object[].class, String[].class, Class[].class, Byte[].class, CharSequence[].class,
         };
