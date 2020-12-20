@@ -52,9 +52,9 @@ public class MBeanTest extends GroovyTestCase {
         // now let's look up the name via JMX to check
         assertEquals("JMX value of Name", "Bob", mbeanServer.getAttribute(name, "Name"));
 
-        assertEquals("Location : London|Name : Bob|Size : 12", join(sort(object.listAttributeValues()), "|"));
-        assertEquals("start|stop", join(sort(object.listOperationNames()), "|"));
-        assertEquals("void start()", join(sort(object.describeOperation("start")), "|"));
+        assertEquals("Location : London|Name : Bob|Size : 12", join((Iterable)sort(object.listAttributeValues()), "|"));
+        assertEquals("start|stop", join((Iterable)sort(object.listOperationNames()), "|"));
+        assertEquals("void start()", join((Iterable)sort(object.describeOperation("start")), "|"));
         assertEquals("(rw) java.lang.String Location", object.describeAttribute("Location"));
     }
 }
