@@ -41,35 +41,23 @@ class WindowCollection<T, U extends Comparable<? super U>> extends QueryableColl
         this.currentRecord = currentRecord;
         this.windowDefinition = windowDefinition;
 
+        List<T> sortedList = this.toList();
         final Order<? super T, ? extends U> order = windowDefinition.orderBy();
         if (null != order) {
             this.value = order.getKeyExtractor().apply(currentRecord);
-
-            List<Identity<U>> list =
-                    this.select(e -> new Identity<>((U) order.getKeyExtractor().apply(e)))
-                            .toList();
-            final Identity<U> uIdentity = new Identity<>(this.value);
-            int tmpIndex = -1;
-            for (int i = 0, n = list.size(); i < n; i++) {
-                if (uIdentity.equals(list.get(i))) {
-                    tmpIndex = i;
-                    break;
-                }
-            }
-            this.index = tmpIndex;
         } else {
             this.value = null;
-
-            List<T> list = this.toList();
-            int tmpIndex = -1;
-            for (int i = 0, n = list.size(); i < n; i++) {
-                if (currentRecord == list.get(i)) {
-                    tmpIndex = i;
-                    break;
-                }
-            }
-            this.index = tmpIndex;
         }
+
+        int tmpIndex = -1;
+        for (int i = 0, n = sortedList.size(); i < n; i++) {
+            if (currentRecord == sortedList.get(i)) {
+                tmpIndex = i;
+                break;
+            }
+        }
+
+        this.index = tmpIndex;
     }
 
     @Override
