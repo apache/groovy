@@ -1304,7 +1304,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      *                which can be used to control subsequent processing
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory or illegal filter combinations are supplied
-     * @see DefaultGroovyMethods#sort(java.util.Collection, groovy.lang.Closure)
+     * @see DefaultGroovyMethods#sort(Iterable, groovy.lang.Closure)
      * @see groovy.io.FileVisitResult
      * @see groovy.io.FileType
      * @since 1.7.1
