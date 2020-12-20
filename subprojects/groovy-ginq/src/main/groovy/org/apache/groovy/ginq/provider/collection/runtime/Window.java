@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime;
 
-import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -44,20 +43,20 @@ public interface Window<T> extends Queryable<T> {
      * @return the next value
      * @since 4.0.0
      */
-    default <V> Optional<V> lead(Function<? super T, ? extends V> extractor) {
-        return lead(1, extractor);
+    default <V> V lead(Function<? super T, ? extends V> extractor) {
+        return lead(extractor, 1);
     }
 
     /**
      * Returns the next value by {@code lead} in the window, similar to SQL's {@code lead()}
      *
-     * @param lead the offset
-     * @param extractor field extractor
      * @param <V> the type of field
+     * @param extractor field extractor
+     * @param lead the offset
      * @return the next value by {@code lead}
      * @since 4.0.0
      */
-    <V> Optional<V> lead(long lead, Function<? super T, ? extends V> extractor);
+    <V> V lead(Function<? super T, ? extends V> extractor, long lead);
 
     /**
      * Returns the previous value in the window, similar to SQL's {@code lag()}
@@ -67,18 +66,18 @@ public interface Window<T> extends Queryable<T> {
      * @return the previous value
      * @since 4.0.0
      */
-    default <V> Optional<V> lag(Function<? super T, ? extends V> extractor) {
-        return lag(1, extractor);
+    default <V> V lag(Function<? super T, ? extends V> extractor) {
+        return lag(extractor, 1);
     }
 
     /**
      * Returns the previous value by {@code lag} in the window, similar to SQL's {@code lag()}
      *
-     * @param lag the offset
-     * @param extractor field extractor
      * @param <V> the type of field
+     * @param extractor field extractor
+     * @param lag the offset
      * @return the previous value by {@code lag}
      * @since 4.0.0
      */
-    <V> Optional<V> lag(long lag, Function<? super T, ? extends V> extractor);
+    <V> V lag(Function<? super T, ? extends V> extractor, long lag);
 }

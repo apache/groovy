@@ -1061,15 +1061,27 @@ class QueryableCollectionTest {
             }
         }
 
-        assert !from(nums).over(n31, windowDefinition).lag(e -> e).isPresent()
-        assert 3 == from(nums).over(n32, windowDefinition).lag(e -> e).get()
-        assert 3 == from(nums).over(n6, windowDefinition).lag(e -> e).get()
-        assert 6 == from(nums).over(n9, windowDefinition).lag(e -> e).get()
+        assert !from(nums).over(n31, windowDefinition).lag(e -> e)
+        assert 3 == from(nums).over(n32, windowDefinition).lag(e -> e)
+        assert 3 == from(nums).over(n6, windowDefinition).lag(e -> e)
+        assert 6 == from(nums).over(n9, windowDefinition).lag(e -> e)
 
-        assert 3 == from(nums).over(n31, windowDefinition).lead(e -> e).get()
-        assert 6 == from(nums).over(n32, windowDefinition).lead(e -> e).get()
-        assert 9 == from(nums).over(n6, windowDefinition).lead(e -> e).get()
-        assert !from(nums).over(n9, windowDefinition).lead(e -> e).isPresent()
+        assert 3 == from(nums).over(n31, windowDefinition).lead(e -> e)
+        assert 6 == from(nums).over(n32, windowDefinition).lead(e -> e)
+        assert 9 == from(nums).over(n6, windowDefinition).lead(e -> e)
+        assert !from(nums).over(n9, windowDefinition).lead(e -> e)
+    }
+
+    @Test
+    void testWindow4() {
+        def n9 = new Integer(9)
+        def n31 = new Integer(3)
+        def n32 = new Integer(3)
+        def n6 = new Integer(6)
+        def nums = [n9, n31, n32, n6]
+
+        WindowDefinition<Integer, Integer> windowDefinition = WindowDefinition.of(new Queryable.Order<Integer, Integer>(e -> new NamedTuple<>([e], ['e']), true))
+        assert 2 == from(nums).over(n6, windowDefinition).rowNumber()
     }
 
     @ToString

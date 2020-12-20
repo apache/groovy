@@ -434,7 +434,7 @@ public interface Queryable<T> {
                         .toList()
                         .get(0);
 
-        return new WindowCollection<>(currentRecord, partition, windowDefinition);
+        return new WindowImpl<>(currentRecord, partition, windowDefinition);
     }
 
     /**

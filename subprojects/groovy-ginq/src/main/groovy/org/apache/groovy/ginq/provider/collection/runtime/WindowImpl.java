@@ -19,7 +19,6 @@
 package org.apache.groovy.ginq.provider.collection.runtime;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -29,14 +28,14 @@ import java.util.function.Function;
  * @param <U> the type of field to sort
  * @since 4.0.0
  */
-class WindowCollection<T, U extends Comparable<? super U>> extends QueryableCollection<T> implements Window<T> {
+class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection<T> implements Window<T> {
     private static final long serialVersionUID = -3458969297047398621L;
     private final T currentRecord;
     private final int index;
     private final U value;
     private final WindowDefinition<T, U> windowDefinition;
 
-    WindowCollection(T currentRecord, Queryable<T> partition, WindowDefinition<T, U> windowDefinition) {
+    WindowImpl(T currentRecord, Queryable<T> partition, WindowDefinition<T, U> windowDefinition) {
         super(partition.orderBy(windowDefinition.orderBy()).toList());
         this.currentRecord = currentRecord;
         this.windowDefinition = windowDefinition;
@@ -66,7 +65,7 @@ class WindowCollection<T, U extends Comparable<? super U>> extends QueryableColl
     }
 
     @Override
-    public <V> Optional<V> lead(long lead, Function<? super T, ? extends V> extractor) {
+    public <V> V lead(Function<? super T, ? extends V> extractor, long lead) {
         V field = null;
         if (0 == lead) {
             field = extractor.apply(currentRecord);
@@ -74,11 +73,11 @@ class WindowCollection<T, U extends Comparable<? super U>> extends QueryableColl
             field = extractor.apply(this.toList().get(index + (int) lead));
         }
 
-        return Optional.ofNullable(field);
+        return field;
     }
 
     @Override
-    public <V> Optional<V> lag(long lag, Function<? super T, ? extends V> extractor) {
-        return lead(-lag, extractor);
+    public <V> V lag(Function<? super T, ? extends V> extractor, long lag) {
+        return lead(extractor, -lag);
     }
 }

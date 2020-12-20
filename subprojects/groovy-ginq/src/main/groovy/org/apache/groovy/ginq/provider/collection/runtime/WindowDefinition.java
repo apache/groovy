@@ -34,6 +34,61 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
     Tuple2<Long, Long> DEFAULT_ROWS = Tuple.tuple(Long.MIN_VALUE, Long.MAX_VALUE);
 
     /**
+     * Factory method to create {@link WindowDefinition} instance
+     *
+     * @param partitionBy partition definition
+     * @param <T> the type of {@link Queryable} element
+     * @param <U> the type of field to sort
+     * @return the {@link WindowDefinition} instance
+     * @since 4.0.0
+     */
+    static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Function<? super T, ?> partitionBy) {
+        return new WindowDefinitionImpl<>(partitionBy);
+    }
+
+    /**
+     * Factory method to create {@link WindowDefinition} instance
+     *
+     * @param orderBy order definition
+     * @param <T> the type of {@link Queryable} element
+     * @param <U> the type of field to sort
+     * @return the {@link WindowDefinition} instance
+     * @since 4.0.0
+     */
+    static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Queryable.Order<? super T, ? extends U> orderBy) {
+        return new WindowDefinitionImpl<>(orderBy);
+    }
+
+    /**
+     * Factory method to create {@link WindowDefinition} instance
+     *
+     * @param partitionBy partition definition
+     * @param orderBy order definition
+     * @param <T> the type of {@link Queryable} element
+     * @param <U> the type of field to sort
+     * @return the {@link WindowDefinition} instance
+     * @since 4.0.0
+     */
+    static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Function<? super T, ?> partitionBy, Queryable.Order<? super T, ? extends U> orderBy) {
+        return new WindowDefinitionImpl<>(partitionBy, orderBy);
+    }
+
+    /**
+     * Factory method to create {@link WindowDefinition} instance
+     *
+     * @param partitionBy partition definition
+     * @param orderBy order definition
+     * @param rows the window bounds
+     * @param <T> the type of {@link Queryable} element
+     * @param <U> the type of field to sort
+     * @return the {@link WindowDefinition} instance
+     * @since 4.0.0
+     */
+    static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Function<? super T, ?> partitionBy, Queryable.Order<? super T, ? extends U> orderBy, Tuple2<Long, Long> rows) {
+        return new WindowDefinitionImpl<>(partitionBy, orderBy, rows);
+    }
+
+    /**
      * Define partition, similar to SQL's {@code partition by} of window definition
      *
      * @return partition definition
@@ -63,11 +118,10 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
     /**
      * Define the window bounds by values, similar to MySQL's {@code range between 1.0 preceding and 1.0 following } of window definition
      *
-     * @param <V> the type of field to compare
      * @return range definition
      * @since 4.0.0
      */
-    default <V extends Comparable<? super V>> Tuple2<? extends V, ? extends V> range() {
+    default Tuple2<? extends U, ? extends U> range() {
         return null;
     }
 }
