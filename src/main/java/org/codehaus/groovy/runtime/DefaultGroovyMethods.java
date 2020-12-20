@@ -6757,10 +6757,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Averages the items in an Iterable. This is equivalent to invoking the
      * "plus" method on all items in the Iterable and then dividing by the
      * total count using the "div" method for the resulting sum.
-     * <pre class="groovyTestCase">assert 3 == [1, 2, 6].average()</pre>
+     * <pre class="groovyTestCase">
+     * assert 3 == [1, 2, 6].average()
+     * </pre>
      *
      * @param self Iterable of values to average
      * @return The average of all of the items
+     * @see #average(Iterator)
      * @since 3.0.0
      */
     public static Object average(Iterable<?> self) {
@@ -6771,7 +6774,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Averages the items in an array. This is equivalent to invoking the
      * "plus" method on all items in the array and then dividing by the
      * total count using the "div" method for the resulting sum.
-     * <pre class="groovyTestCase">assert 3 == ([1, 2, 6] as Integer[]).average()</pre>
+     * <pre class="groovyTestCase">
+     * assert 3 == ([1, 2, 6] as Integer[]).average()
+     * </pre>
      *
      * @param self The array of values to average
      * @return The average of all of the items
@@ -6790,6 +6795,27 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * "plus" method on all items in the array and then dividing by the
      * total count using the "div" method for the resulting sum.
      * The iterator will become exhausted of elements after determining the average value.
+     * While most frequently used with aggregates of numbers,
+     * {@code average} will work with any class supporting {@code plus} and {@code div}, e.g.:
+     * <pre class="groovyTestCase">
+     * class Stars {
+     *     int numStars = 0
+     *     String toString() {
+     *         '*' * numStars
+     *     }
+     *     Stars plus(Stars other) {
+     *         new Stars(numStars: numStars + other.numStars)
+     *     }
+     *     Stars div(Number divisor) {
+     *         int newSize = numStars.intdiv(divisor)
+     *         new Stars(numStars: newSize)
+     *     }
+     * }
+     *
+     * def stars = [new Stars(numStars: 1), new Stars(numStars: 3)]
+     * assert stars*.toString() == ['*', '***']
+     * assert stars.average().toString() == '**'
+     * </pre>
      *
      * @param self an Iterator for the values to average
      * @return The average of all of the items
