@@ -310,8 +310,15 @@ public final class ExpressionUtils {
             }
         } else if (exp instanceof BinaryExpression) {
             BinaryExpression be = (BinaryExpression) exp;
-            be.setLeftExpression(transformInlineConstants(be.getLeftExpression()));
-            be.setRightExpression(transformInlineConstants(be.getRightExpression()));
+            Expression lhs = transformInlineConstants(be.getLeftExpression());
+            Expression rhs = transformInlineConstants(be.getRightExpression());
+            if (be.getOperation().getType() == PLUS && lhs instanceof ConstantExpression && rhs instanceof ConstantExpression &&
+                    lhs.getType().equals(ClassHelper.STRING_TYPE) && rhs.getType().equals(ClassHelper.STRING_TYPE)) {
+                // GROOVY-9855: inline string concat
+                return configure(be, new ConstantExpression(lhs.getText() + rhs.getText()));
+            }
+            be.setLeftExpression(lhs);
+            be.setRightExpression(rhs);
             return be;
         } else if (exp instanceof ListExpression) {
             ListExpression origList = (ListExpression) exp;
