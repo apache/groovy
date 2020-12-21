@@ -325,6 +325,19 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9860
+    void testGenericTypeArgumentInCtorCall() {
+        assertScript '''
+            def <T> void test() {
+                def bind = { T a, T b ->
+                    new Tuple2<T, T>(a, b)
+                }
+                assert bind('foo', 'bar').toString() == '[foo, bar]'
+            }
+            test()
+        '''
+    }
+
     void testReturnAnntationClass() {
         assertScript '''
             import java.lang.annotation.Documented
