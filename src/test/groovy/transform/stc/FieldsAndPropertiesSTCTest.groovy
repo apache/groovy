@@ -898,6 +898,17 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
         '''
     }
 
+    // GROOVY-9855
+    void testShouldInlineStringConcatInTypeAnnotation() {
+        assertScript '''
+            @SuppressWarnings(C.PREFIX + 'checked') // not 'un'.plus('checked')
+            class C {
+                public static final String PREFIX = 'un'
+            }
+            new C()
+        '''
+    }
+
     void testImplicitPropertyOfDelegateShouldNotPreferField() {
         assertScript '''
             Calendar.instance.with {
