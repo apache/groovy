@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime;
 
-import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Tuple2;
 import groovy.transform.Internal;
 import org.apache.groovy.internal.util.Supplier;
@@ -39,10 +38,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -71,13 +70,16 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     public Iterator<T> iterator() {
-        return readLock(() -> {
+        readLock.lock();
+        try {
             if (null != sourceIterable) {
                 return sourceIterable.iterator();
             }
 
             return sourceStream.iterator();
-        });
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override
@@ -149,12 +151,12 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public <U> Queryable<Tuple2<T, U>> rightJoin(Queryable<? extends U> queryable, BiPredicate<? super T, ? super U> joiner) {
-        return outerJoin(queryable, this, (a, b) -> joiner.test(b, a)).select(e -> tuple(e.getV2(), e.getV1()));
+        return outerJoin(queryable, this, (a, b) -> joiner.test(b, a)).select((e, q) -> tuple(e.getV2(), e.getV1()));
     }
 
     @Override
     public <U> Queryable<Tuple2<T, U>> rightHashJoin(Queryable<? extends U> queryable, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
-        return outerHashJoin(queryable, this, fieldsExtractor2, fieldsExtractor1).select(e -> tuple(e.getV2(), e.getV1()));
+        return outerHashJoin(queryable, this, fieldsExtractor2, fieldsExtractor1).select((e, q) -> tuple(e.getV2(), e.getV1()));
     }
 
     @Override
@@ -247,8 +249,12 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     @Override
-    public <U> Queryable<U> select(Function<? super T, ? extends U> mapper) {
-        Stream<U> stream = this.stream().map(mapper);
+    public <U> Queryable<U> select(BiFunction<? super T, ? super Queryable<? extends T>, ? extends U> mapper) {
+        if (TRUE_STR.equals(QueryableHelper.getVar(USE_WINDOW_FUNCTION))) {
+            this.makeReusable();
+        }
+
+        Stream<U> stream = this.stream().map((T t) -> mapper.apply(t, this));
 
         return from(stream);
     }
@@ -438,7 +444,8 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public List<T> toList() {
-        return writeLock(() -> {
+        writeLock.lock();
+        try {
             if (sourceIterable instanceof List) {
                 return (List<T>) sourceIterable;
             }
@@ -447,7 +454,9 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
             sourceIterable = result;
 
             return result;
-        });
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     @Override
@@ -457,17 +466,33 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public Stream<T> stream() {
-        return writeLock(() -> {
+        writeLock.lock();
+        try {
             if (isReusable()) {
                 sourceStream = toStream(sourceIterable);  // we have to create new stream every time because Java stream can not be reused
             }
 
-            if (!sourceStream.isParallel() && isParallelEnabled()) {
+            if (!sourceStream.isParallel() && TRUE_STR.equals(QueryableHelper.getVar(PARALLEL))) {
                 sourceStream = sourceStream.parallel();
             }
 
             return sourceStream;
-        });
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    @Override
+    public <U extends Comparable<? super U>> Window<T> over(T currentRecord, WindowDefinition<T, U> windowDefinition) {
+        this.makeReusable();
+        Queryable<T> partition =
+                this.groupBy(windowDefinition.partitionBy()) // TODO cache the group result
+                        .where(e -> QueryableHelper.isIdentical(e.getV1(), windowDefinition.partitionBy().apply(currentRecord)))
+                        .select((e, q) -> e.getV2())
+                        .toList()
+                        .get(0);
+
+        return new WindowImpl<>(currentRecord, partition, windowDefinition);
     }
 
     private static <T> Stream<T> toStream(Iterable<T> sourceIterable) {
@@ -475,19 +500,25 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     private boolean isReusable() {
-        return readLock(() -> {
+        readLock.lock();
+        try {
             return null != sourceIterable;
-        });
+        } finally {
+            readLock.unlock();
+        }
     }
 
     private void makeReusable() {
         if (null != this.sourceIterable) return;
 
-        writeLock(() -> {
+        writeLock.lock();
+        try {
             if (null != this.sourceIterable) return;
 
             this.sourceIterable = this.sourceStream.collect(Collectors.toList());
-        });
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     public Object asType(Class<?> clazz) {
@@ -514,58 +545,6 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return DefaultGroovyMethods.asType(this, clazz);
     }
 
-    private void readLock(Runnable runnable) {
-        final boolean parallel = isParallelEnabled();
-
-        if (parallel) rl.lock();
-        try {
-            runnable.run();
-        } finally {
-            if (parallel) rl.unlock();
-        }
-    }
-
-    private <R> R readLock(Callable<R> callable) {
-        final boolean parallel = isParallelEnabled();
-
-        if (parallel) rl.lock();
-        try {
-            return callable.call();
-        } catch (Exception e) {
-            throw new GroovyRuntimeException(e);
-        } finally {
-            if (parallel) rl.unlock();
-        }
-    }
-
-    private void writeLock(Runnable runnable) {
-        final boolean parallel = isParallelEnabled();
-
-        if (parallel) wl.lock();
-        try {
-            runnable.run();
-        } finally {
-            if (parallel) wl.unlock();
-        }
-    }
-
-    private <R> R writeLock(Callable<R> callable) {
-        final boolean parallel = isParallelEnabled();
-
-        if (parallel) wl.lock();
-        try {
-            return callable.call();
-        } catch (Exception e) {
-            throw new GroovyRuntimeException(e);
-        } finally {
-            if (parallel) wl.unlock();
-        }
-    }
-
-    private static boolean isParallelEnabled() {
-        return TRUE_STR.equals(QueryableHelper.getVar(PARALLEL));
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -587,9 +566,10 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     private Stream<T> sourceStream;
     private volatile Iterable<T> sourceIterable;
     private final ReadWriteLock rwl = new ReentrantReadWriteLock();
-    private final Lock rl = rwl.readLock();
-    private final Lock wl = rwl.writeLock();
+    private final Lock readLock = rwl.readLock();
+    private final Lock writeLock = rwl.writeLock();
     private static final BigDecimal BD_TWO = BigDecimal.valueOf(2);
+    private static final String USE_WINDOW_FUNCTION = "useWindowFunction";
     private static final String PARALLEL = "parallel";
     private static final String TRUE_STR = "true";
     private static final long serialVersionUID = -5067092453136522893L;

@@ -40,11 +40,13 @@ import org.apache.groovy.ginq.dsl.expression.WhereExpression
 import org.apache.groovy.ginq.provider.collection.runtime.NamedRecord
 import org.apache.groovy.ginq.provider.collection.runtime.Queryable
 import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper
+import org.apache.groovy.ginq.provider.collection.runtime.WindowDefinition
 import org.apache.groovy.util.Maps
 import org.codehaus.groovy.GroovyBugError
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.CodeVisitorSupport
+import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.CastExpression
@@ -166,10 +168,13 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         SelectExpression selectExpression = currentGinqExpression.selectExpression
         selectExpression.putNodeMetaData(__METHOD_CALL_RECEIVER, resultMethodCallReceiver)
         selectExpression.dataSourceExpression = resultDataSourceExpression
-
         MethodCallExpression selectMethodCallExpression = this.visitSelectExpression(selectExpression)
 
         List<Statement> statementList = []
+        boolean useWindowFunction = isUseWindowFunction(selectExpression)
+        if (useWindowFunction) {
+            statementList << stmt(callX(QUERYABLE_HELPER_TYPE, 'setVar', args(new ConstantExpression(USE_WINDOW_FUNCTION), new ConstantExpression(TRUE_STR))))
+        }
 
         boolean isRootGinqExpression = ginqExpression === ginqExpression.getNodeMetaData(GinqAstBuilder.ROOT_GINQ_EXPRESSION)
         boolean parallelEnabled = isRootGinqExpression && TRUE_STR == configuration.get(GinqGroovyMethods.CONF_PARALLEL)
@@ -195,12 +200,31 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         if (parallelEnabled) {
             statementList << stmt(callX(QUERYABLE_HELPER_TYPE, 'removeVar', args(new ConstantExpression(PARALLEL))))
         }
+        if (useWindowFunction) {
+            statementList << stmt(callX(QUERYABLE_HELPER_TYPE, 'removeVar', args(new ConstantExpression(USE_WINDOW_FUNCTION))))
+        }
         statementList << returnS(varX(resultName))
 
         def result = callX(lambdaX(block(statementList as Statement[])), "call")
 
         ginqExpressionStack.pop()
         return result
+    }
+
+    private boolean isUseWindowFunction(SelectExpression selectExpression) {
+        boolean useWindowFunction = false
+        selectExpression.projectionExpr.visit(new GinqAstBaseVisitor() {
+            @Override
+            void visitMethodCallExpression(MethodCallExpression call) {
+                if (call.methodAsString == 'over') {
+                    useWindowFunction = true
+                    return
+                }
+
+                super.visitMethodCallExpression(call)
+            }
+        })
+        return useWindowFunction
     }
 
     private static boolean isAggregateFunction(Expression expression) {
@@ -552,6 +576,15 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         Expression orderMethodCallReceiver = orderExpression.getNodeMetaData(__METHOD_CALL_RECEIVER)
         Expression ordersExpr = orderExpression.ordersExpr
 
+        List<Expression> orderCtorCallExpressions = constructOrderCtorCallExpressions(ordersExpr, dataSourceExpression)
+
+        def orderMethodCallExpression = callX(orderMethodCallReceiver, "orderBy", args(orderCtorCallExpressions))
+        orderMethodCallExpression.setSourcePosition(orderExpression)
+
+        return orderMethodCallExpression
+    }
+
+    private List<Expression> constructOrderCtorCallExpressions(Expression ordersExpr, DataSourceExpression dataSourceExpression) {
         List<Expression> argumentExpressionList = ((ArgumentListExpression) ordersExpr).getExpressions()
         List<Expression> orderCtorCallExpressions = argumentExpressionList.stream().map(e -> {
             Expression target = e
@@ -576,11 +609,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
             return ctorX(ORDER_TYPE, args(lambdaExpression, new ConstantExpression(asc)))
         }).collect(Collectors.toList())
-
-        def orderMethodCallExpression = callX(orderMethodCallReceiver, "orderBy", args(orderCtorCallExpressions))
-        orderMethodCallExpression.setSourcePosition(orderExpression)
-
-        return orderMethodCallExpression
+        return orderCtorCallExpressions
     }
 
     @Override
@@ -628,15 +657,90 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                     )
                 }
 
+                if (expression instanceof MethodCallExpression) {
+                    if ('over' == expression.methodAsString) {
+                        if (expression.objectExpression instanceof MethodCallExpression) {
+                            VariableExpression wqVar = varX(getWindowQueryableName())
+
+                            String lambdaParamName = getLambdaParamName(dataSourceExpression, lambdaCode)
+                            VariableExpression currentRecordVar = varX(lambdaParamName)
+
+                            currentGinqExpression.putNodeMetaData(__VISITING_WINDOW_FUNCTION, true)
+                            def windowDefinitionFactoryMethodCallExpression = constructWindowDefinitionFactoryMethodCallExpression(expression, dataSourceExpression)
+                            Expression newObjectExpression = callX(wqVar, 'over', args(
+                                    currentRecordVar,
+                                    windowDefinitionFactoryMethodCallExpression
+                            ))
+
+                            def windowFunctionMethodCallExpression = (MethodCallExpression) expression.objectExpression
+                            def windowFunctionLambdaCode = ((ArgumentListExpression) windowFunctionMethodCallExpression.arguments).getExpression(0)
+                            def windowFunctionLambdaName = findRootObjectExpression(windowFunctionLambdaCode).text
+                            def newWindowFunctionLambdaName = '__wfp'
+
+                            windowFunctionLambdaCode = ((ListExpression) (new ListExpression(Collections.singletonList(windowFunctionLambdaCode)).transformExpression(new ExpressionTransformer() {
+                                @Override
+                                Expression transform(Expression expr) {
+                                    if (expr instanceof VariableExpression) {
+                                        if (windowFunctionLambdaName == expr.text) {
+                                            if (dataSourceExpression instanceof JoinExpression) {
+                                                return correctVars(dataSourceExpression, newWindowFunctionLambdaName=getLambdaParamName(dataSourceExpression, expr), expr)
+                                            } else {
+                                                return new VariableExpression(newWindowFunctionLambdaName)
+                                            }
+                                        }
+                                    }
+                                    return expr.transformExpression(this)
+                                }
+                            }))).getExpression(0)
+
+                            def result = callX(
+                                    newObjectExpression,
+                                    windowFunctionMethodCallExpression.methodAsString,
+                                    lambdaX(
+                                            params(param(ClassHelper.DYNAMIC_TYPE, newWindowFunctionLambdaName)),
+                                            block(stmt(windowFunctionLambdaCode))
+                                    )
+                            )
+                            currentGinqExpression.putNodeMetaData(__VISITING_WINDOW_FUNCTION, false)
+
+                            return result
+                        }
+                    }
+                }
+
                 return expression.transformExpression(this)
             }
         })).getExpression(0)
 
-        def selectMethodCallExpression = callXWithLambda(selectMethodReceiver, "select", dataSourceExpression, lambdaCode)
+        def selectMethodCallExpression = callXWithLambda(selectMethodReceiver, "select", dataSourceExpression, lambdaCode, param(ClassHelper.DYNAMIC_TYPE, getWindowQueryableName()))
 
         currentGinqExpression.putNodeMetaData(__VISITING_SELECT, false)
 
         return selectMethodCallExpression
+    }
+
+    private MethodCallExpression constructWindowDefinitionFactoryMethodCallExpression(MethodCallExpression methodCallExpression, DataSourceExpression dataSourceExpression) {
+        Expression orderExpr = null
+        ArgumentListExpression argumentListExpression = (ArgumentListExpression) methodCallExpression.arguments
+        if (!argumentListExpression.getExpressions().isEmpty()) {
+            MethodCallExpression windowMce = (MethodCallExpression) argumentListExpression.getExpression(0)
+            if ('orderby' == windowMce.methodAsString) {
+                orderExpr = windowMce.arguments
+            }
+        }
+        callX(new ClassExpression(WINDOW_DEFINITION_TYPE), 'of', constructOrderCtorCallExpressions(orderExpr, dataSourceExpression).get(0))
+    }
+
+    private int windowQueryableNameSeq = 0
+    private String getWindowQueryableName() {
+        String name = (String) currentGinqExpression.getNodeMetaData(__WINDOW_QUERYABLE_NAME)
+
+        if (!name) {
+            name = "${__WINDOW_QUERYABLE_NAME}${windowQueryableNameSeq++}"
+            currentGinqExpression.putNodeMetaData(__WINDOW_QUERYABLE_NAME, name)
+        }
+
+        return name
     }
 
     private static boolean isExpression(final Expression expr, final Class... expressionTypes) {
@@ -918,6 +1022,14 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                         }
                     }
                 }
+            } else {
+                if (visitingWindowFunction) {
+                    boolean isJoin = dataSourceExpression instanceof JoinExpression
+                    if (isJoin) {
+                        Map<String, Expression>  aliasAccessPathMap = findAliasAccessPath(dataSourceExpression, new VariableExpression(lambdaParamName))
+                        transformedExpression = aliasAccessPathMap.get(expression.text)
+                    }
+                }
             }
         } else if (expression instanceof MethodCallExpression) {
             // #1
@@ -1005,22 +1117,29 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return expression.accept(this)
     }
 
-    private MethodCallExpression callXWithLambda(Expression receiver, String methodName, DataSourceExpression dataSourceExpression, Expression lambdaCode) {
-        LambdaExpression lambdaExpression = constructLambdaExpression(dataSourceExpression, lambdaCode)
+    private MethodCallExpression callXWithLambda(Expression receiver, String methodName, DataSourceExpression dataSourceExpression, Expression lambdaCode, Parameter... extraParams) {
+        LambdaExpression lambdaExpression = constructLambdaExpression(dataSourceExpression, lambdaCode, extraParams)
 
         callXWithLambda(receiver, methodName, lambdaExpression)
     }
 
-    private LambdaExpression constructLambdaExpression(DataSourceExpression dataSourceExpression, Expression lambdaCode) {
+    private LambdaExpression constructLambdaExpression(DataSourceExpression dataSourceExpression, Expression lambdaCode, Parameter... extraParams) {
         Tuple3<String, List<DeclarationExpression>, Expression> paramNameAndLambdaCode = correctVariablesOfLambdaExpression(dataSourceExpression, lambdaCode)
 
         List<DeclarationExpression> declarationExpressionList = paramNameAndLambdaCode.v2
         List<Statement> statementList = []
-        statementList.addAll(declarationExpressionList.stream().map(e -> stmt(e)).collect(Collectors.toList()))
+        if (!visitingWindowFunction) {
+            statementList.addAll(declarationExpressionList.stream().map(e -> stmt(e)).collect(Collectors.toList()))
+        }
         statementList.add(stmt(paramNameAndLambdaCode.v3))
 
+        def paramList = [param(ClassHelper.DYNAMIC_TYPE, paramNameAndLambdaCode.v1)]
+        if (extraParams) {
+            paramList.addAll(Arrays.asList(extraParams))
+        }
+
         lambdaX(
-                params(param(ClassHelper.DYNAMIC_TYPE, paramNameAndLambdaCode.v1)),
+                params(paramList as Parameter[]),
                 block(statementList as Statement[])
         )
     }
@@ -1030,18 +1149,29 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         "__t_${lambdaParamSeq++}"
     }
 
-    private Tuple3<String, List<DeclarationExpression>, Expression> correctVariablesOfLambdaExpression(DataSourceExpression dataSourceExpression, Expression lambdaCode) {
+    private String getLambdaParamName(DataSourceExpression dataSourceExpression, Expression lambdaCode) {
         boolean groupByVisited = isGroupByVisited()
-
-        List<DeclarationExpression> declarationExpressionList = Collections.emptyList()
         String lambdaParamName
-        if (dataSourceExpression instanceof JoinExpression || groupByVisited) {
+        if (dataSourceExpression instanceof JoinExpression || groupByVisited || visitingWindowFunction) {
             lambdaParamName = lambdaCode.getNodeMetaData(__LAMBDA_PARAM_NAME)
-            if (!lambdaParamName || visitingAggregateFunctionStack) {
+            if (!lambdaParamName || visitingAggregateFunctionStack || visitingWindowFunction) {
                 lambdaParamName = generateLambdaParamName()
             }
 
             lambdaCode.putNodeMetaData(__LAMBDA_PARAM_NAME, lambdaParamName)
+        } else {
+            lambdaParamName = dataSourceExpression.aliasExpr.text
+            lambdaCode.putNodeMetaData(__LAMBDA_PARAM_NAME, lambdaParamName)
+        }
+
+        return lambdaParamName
+    }
+
+    private Tuple3<String, List<DeclarationExpression>, Expression> correctVariablesOfLambdaExpression(DataSourceExpression dataSourceExpression, Expression lambdaCode) {
+        boolean groupByVisited = isGroupByVisited()
+        List<DeclarationExpression> declarationExpressionList = Collections.emptyList()
+        String lambdaParamName = getLambdaParamName(dataSourceExpression, lambdaCode)
+        if (dataSourceExpression instanceof JoinExpression || groupByVisited) {
             Tuple2<List<DeclarationExpression>, Expression> declarationAndLambdaCode = correctVariablesOfGinqExpression(dataSourceExpression, lambdaCode)
             if (!visitingAggregateFunctionStack) {
                 declarationExpressionList = declarationAndLambdaCode.v1
@@ -1060,9 +1190,21 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             }
             lambdaCode = declarationAndLambdaCode.v2
         } else {
-            lambdaParamName = dataSourceExpression.aliasExpr.text
-            lambdaCode.putNodeMetaData(__LAMBDA_PARAM_NAME, lambdaParamName)
+            if (visitingWindowFunction) {
+                lambdaCode = ((ListExpression) (new ListExpression(Collections.singletonList(lambdaCode)).transformExpression(new ExpressionTransformer() {
+                    @Override
+                    Expression transform(Expression expr) {
+                        if (expr instanceof VariableExpression) {
+                            if (dataSourceExpression.aliasExpr.text == expr.text) {
+                                return new VariableExpression(lambdaParamName)
+                            }
+                        }
+                        return expr.transformExpression(this)
+                    }
+                }))).getExpression(0)
+            }
         }
+
 
         if (lambdaCode instanceof ConstructorCallExpression) {
             if (NAMEDRECORD_CLASS_NAME == lambdaCode.type.redirect().name) {
@@ -1080,6 +1222,10 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     private boolean isVisitingSelect() {
         return currentGinqExpression.getNodeMetaData(__VISITING_SELECT) ?: false
+    }
+
+    private boolean isVisitingWindowFunction() {
+        return currentGinqExpression.getNodeMetaData(__VISITING_WINDOW_FUNCTION) ?: false
     }
 
     private boolean isRowNumberUsed() {
@@ -1121,6 +1267,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final ClassNode ORDER_TYPE = makeWithoutCaching(Queryable.Order.class)
     private static final ClassNode NAMED_RECORD_TYPE = makeWithoutCaching(NamedRecord.class)
     private static final ClassNode QUERYABLE_HELPER_TYPE = makeWithoutCaching(QueryableHelper.class)
+    private static final ClassNode WINDOW_DEFINITION_TYPE = makeWithoutCaching(WindowDefinition.class)
 
     private static final List<String> ORDER_OPTION_LIST = Arrays.asList('asc', 'desc')
     private static final String FUNCTION_COUNT = 'count'
@@ -1134,15 +1281,18 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     private static final String NAMEDRECORD_CLASS_NAME = NamedRecord.class.name
 
+    private static final String USE_WINDOW_FUNCTION = 'useWindowFunction'
     private static final String PARALLEL = 'parallel'
     private static final String TRUE_STR = 'true'
 
     private static final String __METHOD_CALL_RECEIVER = "__METHOD_CALL_RECEIVER"
     private static final String __GROUPBY_VISITED = "__GROUPBY_VISITED"
     private static final String __VISITING_SELECT = "__VISITING_SELECT"
+    private static final String __VISITING_WINDOW_FUNCTION = "__VISITING_WINDOW_FUNCTION"
     private static final String __LAMBDA_PARAM_NAME = "__LAMBDA_PARAM_NAME"
     private static final String  __RN_USED = '__RN_USED'
     private static final String __META_DATA_MAP_NAME_PREFIX = '__metaDataMap_'
+    private static final String __WINDOW_QUERYABLE_NAME = '__wq_'
     private static final String __ROW_NUMBER_NAME_PREFIX = '__rowNumber_'
     private static final String __SOURCE_RECORD = "__sourceRecord"
     private static final String __GROUP = "__group"

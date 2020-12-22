@@ -25,6 +25,7 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -266,7 +267,7 @@ public interface Queryable<T> {
      * @return the result of projecting
      * @since 4.0.0
      */
-    <U> Queryable<U> select(Function<? super T, ? extends U> mapper);
+    <U> Queryable<U> select(BiFunction<? super T, ? super Queryable<? extends T>, ? extends U> mapper);
 
     /**
      * Check if the result is empty, similar to SQL's {@code exists}
@@ -426,16 +427,15 @@ public interface Queryable<T> {
         return toList().stream();
     }
 
-    default <U extends Comparable<? super U>> Window<T> over(T currentRecord, WindowDefinition<T, U> windowDefinition) {
-        Queryable<T> partition =
-                this.groupBy(windowDefinition.partitionBy()) // TODO cache the group result
-                        .where(e -> QueryableHelper.isIdentical(e.getV1(), windowDefinition.partitionBy().apply(currentRecord)))
-                        .select(e -> e.getV2())
-                        .toList()
-                        .get(0);
-
-        return new WindowImpl<>(currentRecord, partition, windowDefinition);
-    }
+    /**
+     * Open window for current record
+     *
+     * @param currentRecord current record
+     * @param windowDefinition window definition
+     * @param <U> the type of window value
+     * @return the window
+     */
+    <U extends Comparable<? super U>> Window<T> over(T currentRecord, WindowDefinition<T, U> windowDefinition);
 
     /**
      * Represents an order rule

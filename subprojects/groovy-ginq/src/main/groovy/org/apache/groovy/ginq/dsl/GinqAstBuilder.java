@@ -108,10 +108,18 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
         return ginqExpression.getNodeMetaData(__LATEST_GINQ_EXPRESSION_CLAUSE);
     }
 
+    private boolean visitingOverClause;
+
     @Override
     public void visitMethodCallExpression(MethodCallExpression call) {
-        super.visitMethodCallExpression(call);
         final String methodName = call.getMethodAsString();
+        if ("over".equals(methodName)) {
+            visitingOverClause = true;
+        }
+        super.visitMethodCallExpression(call);
+        if ("over".equals(methodName)) {
+            visitingOverClause = false;
+        }
 
         if (!KEYWORD_SET.contains(methodName)) {
             ignoredMethodCallExpressionList.add(call);
@@ -247,7 +255,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
             return;
         }
 
-        if (KW_ORDERBY.equals(methodName)) {
+        if (KW_ORDERBY.equals(methodName) && !visitingOverClause) {
             OrderExpression orderExpression = new OrderExpression(call.getArguments());
             orderExpression.setSourcePosition(call.getMethod());
 

@@ -701,14 +701,14 @@ class QueryableCollectionTest {
     @Test
     void testGroupBySelect0() {
         def nums = [1, 2, 2, 3, 3, 4, 4, 5]
-        def result = from(nums).groupBy(e -> e).select(e -> Tuple.tuple(e.v1, e.v2.toList())).toList()
+        def result = from(nums).groupBy(e -> e).select((e, q) -> Tuple.tuple(e.v1, e.v2.toList())).toList()
         assert [[1, [1]], [2, [2, 2]], [3, [3, 3]], [4, [4, 4]], [5, [5]]] == result
     }
 
     @Test
     void testGroupBySelect1() {
         def nums = [1, 2, 2, 3, 3, 4, 4, 5]
-        def result = from(nums).groupBy(e -> e).select(e -> Tuple.tuple(e.v1, e.v2.count())).toList()
+        def result = from(nums).groupBy(e -> e).select((e, q) -> Tuple.tuple(e.v1, e.v2.count())).toList()
         assert [[1, 1], [2, 2], [3, 2], [4, 2], [5, 1]] == result
     }
 
@@ -718,7 +718,7 @@ class QueryableCollectionTest {
         def nums = [1, 2, 2, 3, 3, 4, 4, 5]
         def result =
                 from(nums).groupBy(e -> e)
-                        .select(e ->
+                        .select((e, q) ->
                                 Tuple.tuple(
                                         e.v1,
                                         e.v2.count(),
@@ -734,7 +734,7 @@ class QueryableCollectionTest {
         def nums = [1, 2, 2, 3, 3, 4, 4, 5]
         def result =
                 from(nums).groupBy(e -> e, g -> g.v1 > 2)
-                        .select(e ->
+                        .select((e, q) ->
                                 Tuple.tuple(
                                         e.v1,
                                         e.v2.count(),
@@ -751,7 +751,7 @@ class QueryableCollectionTest {
                        new Person2('David', 121, 'Male')]
 
         def result = from(persons).groupBy(p -> p.gender)
-                .select(e -> Tuple.tuple(e.v1, e.v2.count())).toList()
+                .select((e, q) -> Tuple.tuple(e.v1, e.v2.count())).toList()
 
         assert [['Male', 2], ['Female', 1]] == result
     }
@@ -764,7 +764,7 @@ class QueryableCollectionTest {
                        new Person2('David', 121, 'Male')]
 
         def result = from(persons).groupBy(p -> new NamedTuple<>([p.gender], ['gender']))
-                .select(e -> Tuple.tuple(e.v1.gender, e.v2.min(p -> p.weight), e.v2.max(p -> p.weight))).toList()
+                .select((e, q) -> Tuple.tuple(e.v1.gender, e.v2.min(p -> p.weight), e.v2.max(p -> p.weight))).toList()
 
         assert [['Male', 121, 135], ['Female', 100, 100]] == result
     }
@@ -775,7 +775,7 @@ class QueryableCollectionTest {
         def nums = [1, 2, 2, 3, 3, 4, 4, 5]
         def result =
                 from(nums).groupBy(e -> e)
-                        .select(e ->
+                        .select((e, q) ->
                                 Tuple.tuple(
                                         e.v1,
                                         e.v2.count(),
@@ -791,7 +791,7 @@ class QueryableCollectionTest {
         def nums = [null, 2, 3]
         def result =
                 from(nums).groupBy(e -> 1)
-                        .select(e ->
+                        .select((e, q) ->
                                 e.v2.sum(n -> n)
                                 )
                         .toList()
@@ -804,7 +804,7 @@ class QueryableCollectionTest {
         def nums = [null, 2, 3]
         def result =
                 from(nums).groupBy(e -> 1)
-                        .select(e ->
+                        .select((e, q) ->
                                 e.v2.count(n -> n)
                         )
                         .toList()
@@ -817,7 +817,7 @@ class QueryableCollectionTest {
         def nums = [null, 2, 3]
         def result =
                 from(nums).groupBy(e -> 1)
-                        .select(e ->
+                        .select((e, q) ->
                                 e.v2.avg(n -> n)
                         )
                         .toList()
@@ -830,7 +830,7 @@ class QueryableCollectionTest {
         def nums = [1, 3, 2]
         def result =
                 from(nums).groupBy(e -> 1)
-                        .select(e ->
+                        .select((e, q) ->
                                 e.v2.median(n -> n)
                         )
                         .toList()
@@ -843,7 +843,7 @@ class QueryableCollectionTest {
         def nums = [1, 3, 2, 4]
         def result =
                 from(nums).groupBy(e -> 1)
-                        .select(e ->
+                        .select((e, q) ->
                                 e.v2.median(n -> n)
                         )
                         .toList()
@@ -856,7 +856,7 @@ class QueryableCollectionTest {
         def nums = [1]
         def result =
                 from(nums).groupBy(e -> 1)
-                        .select(e ->
+                        .select((e, q) ->
                                 e.v2.median(n -> n)
                         )
                         .toList()
@@ -922,7 +922,7 @@ class QueryableCollectionTest {
     @Test
     void testSelect() {
         def nums = [1, 2, 3, 4, 5]
-        def result = from(nums).select(e -> e + 1).toList()
+        def result = from(nums).select((e, q) -> e + 1).toList()
         assert [2, 3, 4, 5, 6] == result
     }
 
@@ -990,7 +990,7 @@ class QueryableCollectionTest {
                         .innerJoin(from(nums2), (a, b) -> a == b)
                         .where(t -> t.v1 > 1)
                         .limit(1, 2)
-                        .select(t -> t.v1 + 1)
+                        .select((t, q) -> t.v1 + 1)
                         .toList()
         assert [4, 5] == result
     }
