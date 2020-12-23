@@ -430,4 +430,16 @@ class GinqErrorTest {
 
         assert err.toString().contains('Only binary expressions(`==`, `&&`) are allowed in `on` clause of hash join @ line 3, column 49.')
     }
+
+    @Test
+    void "testGinq - window - 0"() {
+        def err = shouldFail  '''\
+            GQ {
+                from n in [2, 1, 3]
+                select n, (xxx(n) over(orderby n))
+            }.toList()
+        '''
+
+        assert err.toString().contains('Unsupported window function: `xxx` @ line 3, column 28.')
+    }
 }

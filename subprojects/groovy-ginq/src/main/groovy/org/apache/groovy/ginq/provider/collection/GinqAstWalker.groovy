@@ -666,41 +666,53 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                             VariableExpression currentRecordVar = varX(lambdaParamName)
 
                             currentGinqExpression.putNodeMetaData(__VISITING_WINDOW_FUNCTION, true)
-                            def windowDefinitionFactoryMethodCallExpression = constructWindowDefinitionFactoryMethodCallExpression(expression, dataSourceExpression)
-                            Expression newObjectExpression = callX(wqVar, 'over', args(
-                                    currentRecordVar,
-                                    windowDefinitionFactoryMethodCallExpression
-                            ))
-
                             def windowFunctionMethodCallExpression = (MethodCallExpression) expression.objectExpression
-                            def windowFunctionLambdaCode = ((ArgumentListExpression) windowFunctionMethodCallExpression.arguments).getExpression(0)
-                            def windowFunctionLambdaName = findRootObjectExpression(windowFunctionLambdaCode).text
-                            def newWindowFunctionLambdaName = '__wfp'
 
-                            windowFunctionLambdaCode = ((ListExpression) (new ListExpression(Collections.singletonList(windowFunctionLambdaCode)).transformExpression(new ExpressionTransformer() {
-                                @Override
-                                Expression transform(Expression expr) {
-                                    if (expr instanceof VariableExpression) {
-                                        if (windowFunctionLambdaName == expr.text) {
-                                            if (dataSourceExpression instanceof JoinExpression) {
-                                                return correctVars(dataSourceExpression, newWindowFunctionLambdaName=getLambdaParamName(dataSourceExpression, expr), expr)
-                                            } else {
-                                                return new VariableExpression(newWindowFunctionLambdaName)
+                            Expression result = null
+                            if (windowFunctionMethodCallExpression.methodAsString in ['lead', 'lag']) {
+                                def windowFunctionLambdaCode = ((ArgumentListExpression) windowFunctionMethodCallExpression.arguments).getExpression(0)
+                                def windowFunctionLambdaName = '__wfp'
+                                def rootObjectExpression = findRootObjectExpression(windowFunctionLambdaCode)
+
+                                windowFunctionLambdaCode = ((ListExpression) (new ListExpression(Collections.singletonList(windowFunctionLambdaCode)).transformExpression(new ExpressionTransformer() {
+                                    @Override
+                                    Expression transform(Expression expr) {
+                                        if (expr instanceof VariableExpression) {
+                                            if (rootObjectExpression.text == expr.text) {
+                                                if (dataSourceExpression instanceof JoinExpression) {
+                                                    return correctVars(dataSourceExpression, windowFunctionLambdaName=getLambdaParamName(dataSourceExpression, expr), expr)
+                                                } else {
+                                                    return new VariableExpression(windowFunctionLambdaName)
+                                                }
                                             }
                                         }
+                                        return expr.transformExpression(this)
                                     }
-                                    return expr.transformExpression(this)
-                                }
-                            }))).getExpression(0)
+                                }))).getExpression(0)
 
-                            def result = callX(
-                                    newObjectExpression,
-                                    windowFunctionMethodCallExpression.methodAsString,
-                                    lambdaX(
-                                            params(param(ClassHelper.DYNAMIC_TYPE, newWindowFunctionLambdaName)),
-                                            block(stmt(windowFunctionLambdaCode))
-                                    )
-                            )
+                                def argumentExpressionList = []
+                                argumentExpressionList << lambdaX(
+                                        params(param(ClassHelper.DYNAMIC_TYPE, windowFunctionLambdaName)),
+                                        block(stmt(windowFunctionLambdaCode))
+                                )
+
+                                def windowDefinitionFactoryMethodCallExpression = constructWindowDefinitionFactoryMethodCallExpression(expression, dataSourceExpression)
+                                Expression newObjectExpression = callX(wqVar, 'over', args(
+                                        currentRecordVar,
+                                        windowDefinitionFactoryMethodCallExpression
+                                ))
+                                result = callX(
+                                        newObjectExpression,
+                                        windowFunctionMethodCallExpression.methodAsString,
+                                        args(argumentExpressionList)
+                                )
+                            } else {
+                                GinqAstWalker.this.collectSyntaxError(new GinqSyntaxError(
+                                        "Unsupported window function: `${windowFunctionMethodCallExpression.methodAsString}`",
+                                        windowFunctionMethodCallExpression.getLineNumber(), windowFunctionMethodCallExpression.getColumnNumber()
+                                ))
+                            }
+
                             currentGinqExpression.putNodeMetaData(__VISITING_WINDOW_FUNCTION, false)
 
                             return result
