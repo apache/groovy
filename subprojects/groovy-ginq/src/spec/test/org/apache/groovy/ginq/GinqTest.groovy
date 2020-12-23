@@ -4690,6 +4690,91 @@ class GinqTest {
         '''
     }
 
+    @Test
+    void "testGinq - window - 4"() {
+        assertGinqScript '''
+            assert [[2, 3], [1, 2], [3, null]] == GQ {
+                from n in [2, 1, 3]
+                select n, (lag(n) over(orderby n in desc))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 5"() {
+        assertGinqScript '''
+            assert [[2, 3], [1, 2], [3, null]] == GQ {
+                from n in [2, 1, 3]
+                join m in [2, 1, 3] on m == n
+                select n, (lag(n) over(orderby n in desc))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 6"() {
+        assertGinqScript '''
+            assert [[2, 1], [1, null], [3, 2]] == GQ {
+                from n in [2, 1, 3]
+                select n, (lead(n) over(orderby n in desc))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 7"() {
+        assertGinqScript '''
+            assert [[2, 1], [1, null], [3, 2]] == GQ {
+                from n in [2, 1, 3]
+                join m in [2, 1, 3] on m == n
+                select n, (lead(n) over(orderby n in desc))
+            }.toList()
+        '''
+    }
+
+
+    @Test
+    void "testGinq - window - 8"() {
+        assertGinqScript '''
+            assert [[2, 1], [1, null], [3, 2]] == GQ {
+                from n in [2, 1, 3]
+                select n, (lag(n) over(orderby n in asc))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 9"() {
+        assertGinqScript '''
+            assert [[2, 1], [1, null], [3, 2]] == GQ {
+                from n in [2, 1, 3]
+                join m in [2, 1, 3] on m == n
+                select n, (lag(n) over(orderby n in asc))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 10"() {
+        assertGinqScript '''
+            assert [[2, 3], [1, 2], [3, null]] == GQ {
+                from n in [2, 1, 3]
+                select n, (lead(n) over(orderby n in asc))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 11"() {
+        assertGinqScript '''
+            assert [[2, 3], [1, 2], [3, null]] == GQ {
+                from n in [2, 1, 3]
+                join m in [2, 1, 3] on m == n
+                select n, (lead(n) over(orderby n in asc))
+            }.toList()
+        '''
+    }
+
     private static void assertGinqScript(String script) {
         String deoptimizedScript = script.replaceAll(/\bGQ\s*[{]/, 'GQ(optimize:false) {')
         List<String> scriptList = [deoptimizedScript, script]
