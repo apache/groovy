@@ -342,6 +342,8 @@ GINQ supports some built-in window functions, e.g.
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_02,indent=0]
 ----
+[NOTE]
+The parentheses around the window function is required.
 
 [source, groovy]
 ----
