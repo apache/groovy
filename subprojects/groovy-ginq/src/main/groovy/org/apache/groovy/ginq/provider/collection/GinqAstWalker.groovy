@@ -760,8 +760,8 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         }
 
         if (orderExpr) {
-            def orderCtorCallExpression = constructOrderCtorCallExpressions(orderExpr, dataSourceExpression).get(0)
-            argumentExpressionList << orderCtorCallExpression
+            def orderCtorCallExpressions = constructOrderCtorCallExpressions(orderExpr, dataSourceExpression)
+            argumentExpressionList << new ListExpression(orderCtorCallExpressions)
         }
 
         callX(

@@ -18,6 +18,8 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -52,6 +54,19 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @since 4.0.0
      */
     static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Queryable.Order<? super T, ? extends U> orderBy) {
+        return new WindowDefinitionImpl<T, U>(Collections.singletonList(orderBy));
+    }
+
+    /**
+     * Factory method to create {@link WindowDefinition} instance
+     *
+     * @param orderBy order definition
+     * @param <T> the type of {@link Queryable} element
+     * @param <U> the type of field to sort
+     * @return the {@link WindowDefinition} instance
+     * @since 4.0.0
+     */
+    static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(List<Queryable.Order<? super T, ? extends U>> orderBy) {
         return new WindowDefinitionImpl<>(orderBy);
     }
 
@@ -65,7 +80,7 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return the {@link WindowDefinition} instance
      * @since 4.0.0
      */
-    static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Function<? super T, ?> partitionBy, Queryable.Order<? super T, ? extends U> orderBy) {
+    static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Function<? super T, ?> partitionBy, List<Queryable.Order<? super T, ? extends U>> orderBy) {
         return new WindowDefinitionImpl<>(partitionBy, orderBy);
     }
 
@@ -80,7 +95,7 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return the {@link WindowDefinition} instance
      * @since 4.0.0
      */
-    static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Function<? super T, ?> partitionBy, Queryable.Order<? super T, ? extends U> orderBy, RowBound rows) {
+    static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Function<? super T, ?> partitionBy, List<Queryable.Order<? super T, ? extends U>> orderBy, RowBound rows) {
         return new WindowDefinitionImpl<>(partitionBy, orderBy, rows);
     }
 
@@ -95,7 +110,7 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return the {@link WindowDefinition} instance
      * @since 4.0.0
      */
-    static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Function<? super T, ?> partitionBy, Queryable.Order<? super T, ? extends U> orderBy, ValueBound<? extends U, ? extends U> range) {
+    static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Function<? super T, ?> partitionBy, List<Queryable.Order<? super T, ? extends U>> orderBy, ValueBound<? extends U, ? extends U> range) {
         return new WindowDefinitionImpl<>(partitionBy, orderBy, range);
     }
 
@@ -114,7 +129,7 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return order definition
      * @since 4.0.0
      */
-    Queryable.Order<? super T, ? extends U> orderBy();
+    List<Queryable.Order<? super T, ? extends U>> orderBy();
 
     /**
      * Define the window bounds by offsets, similar to MySQL's {@code rows between 1 preceding and 1 following } of window definition

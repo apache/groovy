@@ -36,14 +36,14 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
     private final WindowDefinition<T, U> windowDefinition;
 
     WindowImpl(T currentRecord, Queryable<T> partition, WindowDefinition<T, U> windowDefinition) {
-        super(partition.orderBy(windowDefinition.orderBy()).toList());
+        super(partition.orderBy(windowDefinition.orderBy().toArray(Order.EMPTY_ARRAY)).toList());
         this.currentRecord = currentRecord;
         this.windowDefinition = windowDefinition;
 
         List<T> sortedList = this.toList();
-        final Order<? super T, ? extends U> order = windowDefinition.orderBy();
-        if (null != order) {
-            this.value = order.getKeyExtractor().apply(currentRecord);
+        final List<Order<? super T, ? extends U>> order = windowDefinition.orderBy();
+        if (null != order && 1 == order.size()) {
+            this.value = order.get(0).getKeyExtractor().apply(currentRecord);
         } else {
             this.value = null;
         }

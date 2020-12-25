@@ -462,6 +462,7 @@ public interface Queryable<T> {
     class Order<T, U extends Comparable<? super U>> {
         private final Function<? super T, ? extends U> keyExtractor;
         private final boolean asc;
+        public static final Order[] EMPTY_ARRAY = new Order[0];
 
         public Order(Function<? super T, ? extends U> keyExtractor, boolean asc) {
             this.keyExtractor = keyExtractor;

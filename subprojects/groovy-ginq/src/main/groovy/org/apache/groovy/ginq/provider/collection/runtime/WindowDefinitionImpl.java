@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -30,11 +31,11 @@ import java.util.function.Function;
  */
 class WindowDefinitionImpl<T, U extends Comparable<? super U>> implements WindowDefinition<T, U> {
     private final Function<? super T, ?> partitionBy;
-    private final Queryable.Order<? super T, ? extends U> orderBy;
+    private final List<Queryable.Order<? super T, ? extends U>> orderBy;
     private final RowBound rows;
     private final ValueBound<? extends U, ? extends U> range;
 
-    public WindowDefinitionImpl(Function<? super T, ?> partitionBy, Queryable.Order<? super T, ? extends U> orderBy,
+    public WindowDefinitionImpl(Function<? super T, ?> partitionBy, List<Queryable.Order<? super T, ? extends U>> orderBy,
                                 RowBound rows, ValueBound<? extends U, ? extends U> range) {
         this.partitionBy = partitionBy;
         this.orderBy = orderBy;
@@ -46,20 +47,20 @@ class WindowDefinitionImpl<T, U extends Comparable<? super U>> implements Window
         this(partitionBy, null, RowBound.DEFAULT, null);
     }
 
-    public WindowDefinitionImpl(Queryable.Order<? super T, ? extends U> orderBy) {
+    public WindowDefinitionImpl(List<Queryable.Order<? super T, ? extends U>> orderBy) {
         this((T t) -> Queryable.NULL, orderBy, RowBound.DEFAULT, null);
     }
 
-    public WindowDefinitionImpl(Function<? super T, ?> partitionBy, Queryable.Order<? super T, ? extends U> orderBy) {
+    public WindowDefinitionImpl(Function<? super T, ?> partitionBy, List<Queryable.Order<? super T, ? extends U>> orderBy) {
         this(partitionBy, orderBy, RowBound.DEFAULT, null);
     }
 
-    public WindowDefinitionImpl(Function<? super T, ?> partitionBy, Queryable.Order<? super T, ? extends U> orderBy,
+    public WindowDefinitionImpl(Function<? super T, ?> partitionBy, List<Queryable.Order<? super T, ? extends U>> orderBy,
                                 RowBound rows) {
         this(partitionBy, orderBy, rows, null);
     }
 
-    public WindowDefinitionImpl(Function<? super T, ?> partitionBy, Queryable.Order<? super T, ? extends U> orderBy,
+    public WindowDefinitionImpl(Function<? super T, ?> partitionBy, List<Queryable.Order<? super T, ? extends U>> orderBy,
                                 ValueBound<? extends U, ? extends U> range) {
         this(partitionBy, orderBy, RowBound.DEFAULT, range);
     }
@@ -70,7 +71,7 @@ class WindowDefinitionImpl<T, U extends Comparable<? super U>> implements Window
     }
 
     @Override
-    public Queryable.Order<? super T, ? extends U> orderBy() {
+    public List<Queryable.Order<? super T, ? extends U>> orderBy() {
         return orderBy;
     }
 
