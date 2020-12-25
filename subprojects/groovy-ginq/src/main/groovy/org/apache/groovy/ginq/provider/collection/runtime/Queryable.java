@@ -47,6 +47,7 @@ public interface Queryable<T> {
 
     /**
      * Represents the empty Queryable instance
+     * @since 4.0.0
      */
     Queryable EMPTY_QUERYABLE = from(new Object[0]);
 
@@ -55,6 +56,7 @@ public interface Queryable<T> {
      *
      * @param <T> the type of element
      * @return the empty Queryable instance
+     * @since 4.0.0
      */
     static <T> Queryable<T> emptyQueryable() {
         return (Queryable<T>) EMPTY_QUERYABLE;
