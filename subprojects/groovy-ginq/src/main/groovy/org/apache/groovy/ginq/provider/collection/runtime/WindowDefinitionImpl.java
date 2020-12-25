@@ -20,6 +20,7 @@ package org.apache.groovy.ginq.provider.collection.runtime;
 
 import groovy.lang.Tuple2;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -79,4 +80,30 @@ class WindowDefinitionImpl<T, U extends Comparable<? super U>> implements Window
     public Tuple2<? extends U, ? extends U> range() {
         return range;
     }
+
+    @Override
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public WindowDefinition<T, U> setId(String id) {
+        this.id = id;
+        return this;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof WindowDefinitionImpl)) return false;
+        WindowDefinitionImpl<?, ?> that = (WindowDefinitionImpl<?, ?>) o;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    private String id;
 }

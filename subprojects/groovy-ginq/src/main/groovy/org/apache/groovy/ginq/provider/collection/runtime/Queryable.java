@@ -46,6 +46,21 @@ public interface Queryable<T> {
     Object NULL = new Object();
 
     /**
+     * Represents the empty Queryable instance
+     */
+    Queryable EMPTY_QUERYABLE = from(new Object[0]);
+
+    /**
+     * Returns the empty Queryable instance
+     *
+     * @param <T> the type of element
+     * @return the empty Queryable instance
+     */
+    static <T> Queryable<T> emptyQueryable() {
+        return (Queryable<T>) EMPTY_QUERYABLE;
+    }
+
+    /**
      * Factory method to create {@link Queryable} instance
      *
      * @param iterable iterable object, e.g. {@link List}
@@ -210,21 +225,19 @@ public interface Queryable<T> {
      *
      * @param classifier the classifier for group by
      * @param having the filter condition
-     * @param <K> the type of group key
      * @return the result of group by
      * @since 4.0.0
      */
-    <K> Queryable<Tuple2<K, Queryable<T>>> groupBy(Function<? super T, ? extends K> classifier, Predicate<? super Tuple2<? extends K, Queryable<? extends T>>> having);
+    Queryable<Tuple2<?, Queryable<T>>> groupBy(Function<? super T, ?> classifier, Predicate<? super Tuple2<?, Queryable<? extends T>>> having);
 
     /**
      * Group by {@link Queryable} instance without {@code having} clause, similar to SQL's {@code group by}
      *
      * @param classifier the classifier for group by
-     * @param <K> the type of group key
      * @return the result of group by
      * @since 4.0.0
      */
-    default <K> Queryable<Tuple2<K, Queryable<T>>> groupBy(Function<? super T, ? extends K> classifier) {
+    default Queryable<Tuple2<?, Queryable<T>>> groupBy(Function<? super T, ?> classifier) {
         return groupBy(classifier, null);
     }
 

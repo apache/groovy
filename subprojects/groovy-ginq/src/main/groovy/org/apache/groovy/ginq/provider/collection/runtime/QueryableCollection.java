@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -207,8 +208,8 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     @Override
-    public <K> Queryable<Tuple2<K, Queryable<T>>> groupBy(Function<? super T, ? extends K> classifier, Predicate<? super Tuple2<? extends K, Queryable<? extends T>>> having) {
-        Stream<Tuple2<K, Queryable<T>>> stream =
+    public Queryable<Tuple2<?, Queryable<T>>> groupBy(Function<? super T, ?> classifier, Predicate<? super Tuple2<?, Queryable<? extends T>>> having) {
+        Stream<Tuple2<?, Queryable<T>>> stream =
                 this.stream()
                         .collect(Collectors.groupingBy(classifier, Collectors.toList()))
                         .entrySet().stream()
@@ -486,11 +487,18 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     public <U extends Comparable<? super U>> Window<T> over(T currentRecord, WindowDefinition<T, U> windowDefinition) {
         this.makeReusable();
         Queryable<T> partition =
-                this.groupBy(windowDefinition.partitionBy()) // TODO cache the group result
+                partitionCache.computeIfAbsent(windowDefinition, wd -> {
+                    final Queryable<Tuple2<?, Queryable<T>>> q = this.groupBy(wd.partitionBy());
+                    if (q instanceof QueryableCollection) {
+                        ((QueryableCollection) q).makeReusable();
+                    }
+                    return q;
+                })
                         .where(e -> QueryableHelper.isEqual(e.getV1(), windowDefinition.partitionBy().apply(currentRecord)))
                         .select((e, q) -> e.getV2())
-                        .toList()
-                        .get(0);
+                        .stream()
+                        .findFirst()
+                        .orElse(Queryable.emptyQueryable());
 
         return new WindowImpl<>(currentRecord, partition, windowDefinition);
     }
@@ -563,6 +571,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return AsciiTableMaker.makeAsciiTable(this);
     }
 
+    private final Map<WindowDefinition<T, ?>, Queryable<Tuple2<?, Queryable<T>>>> partitionCache = new ConcurrentHashMap<>(4);
     private Stream<T> sourceStream;
     private volatile Iterable<T> sourceIterable;
     private final ReadWriteLock rwl = new ReentrantReadWriteLock();

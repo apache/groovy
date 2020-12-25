@@ -124,4 +124,18 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
     default Tuple2<? extends U, ? extends U> range() {
         return null;
     }
+
+    /**
+     * Get the id of window definition
+     *
+     * @return the id of window definition
+     */
+    String getId();
+
+    /**
+     * Set the id of window definition
+     *
+     * @param id the id of window definition
+     */
+    WindowDefinition<T, U> setId(String id);
 }

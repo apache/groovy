@@ -1010,33 +1010,25 @@ class QueryableCollectionTest {
     }
 
     @Test
+    @CompileDynamic
     void testWindow1() {
         def nums = [9, 3, 6]
-        def windowDefinition = new WindowDefinition<Integer, Integer>() {
-            @Override
-            Queryable.Order<? super Integer, ? extends Integer> orderBy() {
-                return new Queryable.Order<Integer, Integer>(e -> e, true)
-            }
-        }
 
+        def windowDefinition = WindowDefinition.of(new Queryable.Order<Integer, Integer>(e -> e, true))
         def result = from(nums).over(6, windowDefinition).rowNumber()
 
         assert 1 == result
     }
 
     @Test
+    @CompileDynamic
     void testWindow2() {
         def n9 = new Integer(9)
         def n31 = new Integer(3)
         def n32 = new Integer(3)
         def n6 = new Integer(6)
         def nums = [n9, n31, n32, n6]
-        def windowDefinition = new WindowDefinition<Integer, Integer>() {
-            @Override
-            Queryable.Order<? super Integer, ? extends Integer> orderBy() {
-                return new Queryable.Order<Integer, Integer>(e -> new NamedTuple<>([e, e + 1], ['e', 'e + 1']), true)
-            }
-        }
+        def windowDefinition = WindowDefinition.of(new Queryable.Order<Integer, Integer>(e -> new NamedTuple<>([e, e + 1], ['e', 'e + 1']), true))
 
         assert 0 == from(nums).over(n31, windowDefinition).rowNumber()
         assert 1 == from(nums).over(n32, windowDefinition).rowNumber()
@@ -1048,18 +1040,14 @@ class QueryableCollectionTest {
     }
 
     @Test
+    @CompileDynamic
     void testWindow3() {
         def n9 = new Integer(9)
         def n31 = new Integer(3)
         def n32 = new Integer(3)
         def n6 = new Integer(6)
         def nums = [n9, n31, n32, n6]
-        def windowDefinition = new WindowDefinition<Integer, Integer>() {
-            @Override
-            Queryable.Order<? super Integer, ? extends Integer> orderBy() {
-                return new Queryable.Order<Integer, Integer>(e -> new NamedTuple<>([e, e + 1], ['e', 'e + 1']), true)
-            }
-        }
+        def windowDefinition = WindowDefinition.of(new Queryable.Order<Integer, Integer>(e -> new NamedTuple<>([e, e + 1], ['e', 'e + 1']), true))
 
         assert !from(nums).over(n31, windowDefinition).lag(e -> e)
         assert 3 == from(nums).over(n32, windowDefinition).lag(e -> e)
@@ -1073,6 +1061,7 @@ class QueryableCollectionTest {
     }
 
     @Test
+    @CompileDynamic
     void testWindow4() {
         def n9 = new Integer(9)
         def n31 = new Integer(3)

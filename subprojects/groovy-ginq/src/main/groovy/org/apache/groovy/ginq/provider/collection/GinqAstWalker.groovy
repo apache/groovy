@@ -764,7 +764,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             argumentExpressionList << orderCtorCallExpression
         }
 
-        callX(new ClassExpression(WINDOW_DEFINITION_TYPE), 'of', args(argumentExpressionList))
+        callX(
+                callX(new ClassExpression(WINDOW_DEFINITION_TYPE), 'of', args(argumentExpressionList)),
+                'setId',
+                new ConstantExpression(argumentListExpression.text)
+        )
     }
 
     private int windowQueryableNameSeq = 0
