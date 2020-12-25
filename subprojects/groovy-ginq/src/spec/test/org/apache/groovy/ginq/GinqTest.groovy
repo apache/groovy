@@ -4651,10 +4651,12 @@ class GinqTest {
     @Test
     void "testGinq - window - 0"() {
         assertGinqScript '''
+// tag::ginq_winfunction_01[]
             assert [[2, 1], [1, null], [3, 2]] == GQ {
                 from n in [2, 1, 3]
                 select n, (lag(n) over(orderby n))
             }.toList()
+// end::ginq_winfunction_01[]
         '''
     }
 
@@ -4672,10 +4674,12 @@ class GinqTest {
     @Test
     void "testGinq - window - 2"() {
         assertGinqScript '''
+// tag::ginq_winfunction_02[]
             assert [[2, 3], [1, 2], [3, null]] == GQ {
                 from n in [2, 1, 3]
                 select n, (lead(n) over(orderby n))
             }.toList()
+// end::ginq_winfunction_02[]
         '''
     }
 
@@ -4693,10 +4697,12 @@ class GinqTest {
     @Test
     void "testGinq - window - 4"() {
         assertGinqScript '''
+// tag::ginq_winfunction_03[]
             assert [[2, 3], [1, 2], [3, null]] == GQ {
                 from n in [2, 1, 3]
                 select n, (lag(n) over(orderby n in desc))
             }.toList()
+// end::ginq_winfunction_03[]
         '''
     }
 
@@ -4757,10 +4763,12 @@ class GinqTest {
     @Test
     void "testGinq - window - 10"() {
         assertGinqScript '''
+// tag::ginq_winfunction_04[]
             assert [[2, 3], [1, 2], [3, null]] == GQ {
                 from n in [2, 1, 3]
                 select n, (lead(n) over(orderby n in asc))
             }.toList()
+// end::ginq_winfunction_04[]
         '''
     }
 
@@ -4811,10 +4819,12 @@ class GinqTest {
     @Test
     void "testGinq - window - 15"() {
         assertGinqScript '''
+// tag::ginq_winfunction_05[]
             assert [['a', null], ['b', 'a'], ['aa', null], ['bb', 'aa']] == GQ {
                 from s in ['a', 'b', 'aa', 'bb']
                 select s, (lag(s) over(partitionby s.length() orderby s))
             }.toList()
+// end::ginq_winfunction_05[]
         '''
     }
 
@@ -4898,30 +4908,36 @@ class GinqTest {
     @Test
     void "testGinq - window - 23"() {
         assertGinqScript '''
+// tag::ginq_winfunction_06[]
             assert [[2, 3, 1], [1, 2, null], [3, null, 2]] == GQ {
                 from n in [2, 1, 3]
                 select n, (lead(n) over(orderby n)), (lag(n) over(orderby n))
             }.toList()
+// end::ginq_winfunction_06[]
         '''
     }
 
     @Test
     void "testGinq - window - 24"() {
         assertGinqScript '''
+// tag::ginq_winfunction_07[]
             assert [['a', 'bc'], ['ab', null], ['b', 'a'], ['bc', 'ab']] == GQ {
                 from s in ['a', 'ab', 'b', 'bc']
                 select s, (lead(s) over(orderby s.length(), s in desc))
             }.toList()
+// end::ginq_winfunction_07[]
         '''
     }
 
     @Test
     void "testGinq - window - 25"() {
         assertGinqScript '''
+// tag::ginq_winfunction_08[]
             assert [['a', null], ['ab', null], ['b', 'a'], ['bc', 'ab']] == GQ {
                 from s in ['a', 'ab', 'b', 'bc']
                 select s, (lead(s) over(partitionby s.length() orderby s.length(), s in desc))
             }.toList()
+// end::ginq_winfunction_08[]
         '''
     }
 
