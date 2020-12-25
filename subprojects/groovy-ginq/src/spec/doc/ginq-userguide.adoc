@@ -334,53 +334,6 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_aggfunction_02
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_aggfunction_01,indent=0]
 ----
 
-===== Window Functions
-GINQ supports some built-in window functions, e.g.
-`lead`, `lag`, etc.
-
-[source, groovy]
-----
-include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_02,indent=0]
-----
-[NOTE]
-The parentheses around the window function is required.
-
-[source, groovy]
-----
-include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_04,indent=0]
-----
-
-[source, groovy]
-----
-include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_07,indent=0]
-----
-
-[source, groovy]
-----
-include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_08,indent=0]
-----
-
-[source, groovy]
-----
-include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_01,indent=0]
-----
-
-[source, groovy]
-----
-include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_03,indent=0]
-----
-
-[source, groovy]
-----
-include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_05,indent=0]
-----
-
-[source, groovy]
-----
-include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_06,indent=0]
-----
-
-
 ==== Sorting
 [source, sql]
 ----
@@ -454,6 +407,52 @@ We could use `as` clause to name the sub-query result
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_nested_04,indent=0]
+----
+
+==== Window Functions
+GINQ supports some built-in window functions, e.g.
+`lead`, `lag`, etc.
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_02,indent=0]
+----
+[NOTE]
+The parentheses around the window function is required.
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_04,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_07,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_08,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_01,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_03,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_05,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_06,indent=0]
 ----
 
 === GINQ Tips
