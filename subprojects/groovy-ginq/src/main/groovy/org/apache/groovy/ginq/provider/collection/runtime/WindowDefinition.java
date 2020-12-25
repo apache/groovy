@@ -18,9 +18,6 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime;
 
-import groovy.lang.Tuple;
-import groovy.lang.Tuple2;
-
 import java.util.function.Function;
 
 /**
@@ -31,7 +28,6 @@ import java.util.function.Function;
  * @since 4.0.0
  */
 public interface WindowDefinition<T, U extends Comparable<? super U>> {
-    Tuple2<Long, Long> DEFAULT_ROWS = Tuple.tuple(Long.MIN_VALUE, Long.MAX_VALUE);
 
     /**
      * Factory method to create {@link WindowDefinition} instance
@@ -84,8 +80,23 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return the {@link WindowDefinition} instance
      * @since 4.0.0
      */
-    static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Function<? super T, ?> partitionBy, Queryable.Order<? super T, ? extends U> orderBy, Tuple2<Long, Long> rows) {
+    static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Function<? super T, ?> partitionBy, Queryable.Order<? super T, ? extends U> orderBy, RowBound rows) {
         return new WindowDefinitionImpl<>(partitionBy, orderBy, rows);
+    }
+
+    /**
+     * Factory method to create {@link WindowDefinition} instance
+     *
+     * @param partitionBy partition definition
+     * @param orderBy order definition
+     * @param range the window bounds
+     * @param <T> the type of {@link Queryable} element
+     * @param <U> the type of field to sort
+     * @return the {@link WindowDefinition} instance
+     * @since 4.0.0
+     */
+    static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Function<? super T, ?> partitionBy, Queryable.Order<? super T, ? extends U> orderBy, ValueBound<? extends U, ? extends U> range) {
+        return new WindowDefinitionImpl<>(partitionBy, orderBy, range);
     }
 
     /**
@@ -111,8 +122,8 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return rows definition
      * @since 4.0.0
      */
-    default Tuple2<Long, Long> rows() {
-        return DEFAULT_ROWS;
+    default RowBound rows() {
+        return RowBound.DEFAULT;
     }
 
     /**
@@ -121,7 +132,7 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return range definition
      * @since 4.0.0
      */
-    default Tuple2<? extends U, ? extends U> range() {
+    default ValueBound<? extends U, ? extends U> range() {
         return null;
     }
 
