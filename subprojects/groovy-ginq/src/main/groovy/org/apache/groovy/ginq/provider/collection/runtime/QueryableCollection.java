@@ -487,7 +487,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         this.makeReusable();
         Queryable<T> partition =
                 this.groupBy(windowDefinition.partitionBy()) // TODO cache the group result
-                        .where(e -> QueryableHelper.isIdentical(e.getV1(), windowDefinition.partitionBy().apply(currentRecord)))
+                        .where(e -> QueryableHelper.isEqual(e.getV1(), windowDefinition.partitionBy().apply(currentRecord)))
                         .select((e, q) -> e.getV2())
                         .toList()
                         .get(0);

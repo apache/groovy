@@ -4775,6 +4775,126 @@ class GinqTest {
         '''
     }
 
+    @Test
+    void "testGinq - window - 12"() {
+        assertGinqScript '''
+            assert [[2, 2, 3], [1, 1, 2], [3, 3, null]] == GQ {
+                from n in [2, 1, 3]
+                join m in [2, 1, 3] on m == n
+                select n, m, (lead(n) over(orderby m in asc))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 13"() {
+        assertGinqScript '''
+            assert [[2, 2, 3], [1, 1, 2], [3, 3, null]] == GQ {
+                from n in [2, 1, 3]
+                join m in [2, 1, 3] on m == n
+                select n, m, (lead(m) over(orderby n in asc))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 14"() {
+        assertGinqScript '''
+            assert [[2, 2, 3], [1, 1, 2], [3, 3, null]] == GQ {
+                from n in [2, 1, 3]
+                join m in [2, 1, 3] on m == n
+                select n, m, (lead(m) over(orderby m in asc))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 15"() {
+        assertGinqScript '''
+            assert [['a', null], ['b', 'a'], ['aa', null], ['bb', 'aa']] == GQ {
+                from s in ['a', 'b', 'aa', 'bb']
+                select s, (lag(s) over(partitionby s.length() orderby s))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 16"() {
+        assertGinqScript '''
+            assert [['a', null], ['b', 'a'], ['aa', null], ['bb', 'aa']] == GQ {
+                from s in ['a', 'b', 'aa', 'bb']
+                join t in ['a', 'b', 'aa', 'bb'] on t == s
+                select s, (lag(s) over(partitionby s.length() orderby s))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 17"() {
+        assertGinqScript '''
+            assert [['a', 'a', null], ['b', 'b', 'a'], ['aa', 'aa', null], ['bb', 'bb', 'aa']] == GQ {
+                from s in ['a', 'b', 'aa', 'bb']
+                join t in ['a', 'b', 'aa', 'bb'] on t == s
+                select s, t, (lag(t) over(partitionby t.length() orderby t))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 18"() {
+        assertGinqScript '''
+            assert [['a', 'a', null], ['b', 'b', 'a'], ['aa', 'aa', null], ['bb', 'bb', 'aa']] == GQ {
+                from s in ['a', 'b', 'aa', 'bb']
+                join t in ['a', 'b', 'aa', 'bb'] on t == s
+                select s, t, (lag(s) over(partitionby t.length() orderby t))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 19"() {
+        assertGinqScript '''
+            assert [['a', 'a', null], ['b', 'b', 'a'], ['aa', 'aa', null], ['bb', 'bb', 'aa']] == GQ {
+                from s in ['a', 'b', 'aa', 'bb']
+                join t in ['a', 'b', 'aa', 'bb'] on t == s
+                select s, t, (lag(s) over(partitionby s.length() orderby t))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 20"() {
+        assertGinqScript '''
+            assert [['a', 'a', null], ['b', 'b', 'a'], ['aa', 'aa', null], ['bb', 'bb', 'aa']] == GQ {
+                from s in ['a', 'b', 'aa', 'bb']
+                join t in ['a', 'b', 'aa', 'bb'] on t == s
+                select s, t, (lag(s) over(partitionby t.length() orderby s))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 21"() {
+        assertGinqScript '''
+            assert [['a', 'a', null], ['b', 'b', 'a'], ['aa', 'aa', null], ['bb', 'bb', 'aa']] == GQ {
+                from s in ['a', 'b', 'aa', 'bb']
+                join t in ['a', 'b', 'aa', 'bb'] on t == s
+                select s, t, (lag(t) over(partitionby t.length() orderby s))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 22"() {
+        assertGinqScript '''
+            assert [['a', 'a', null], ['b', 'b', 'a'], ['aa', 'aa', null], ['bb', 'bb', 'aa']] == GQ {
+                from s in ['a', 'b', 'aa', 'bb']
+                join t in ['a', 'b', 'aa', 'bb'] on t == s
+                select s, t, (lag(t) over(partitionby s.length() orderby s))
+            }.toList()
+        '''
+    }
+
     private static void assertGinqScript(String script) {
         String deoptimizedScript = script.replaceAll(/\bGQ\s*[{]/, 'GQ(optimize:false) {')
         List<String> scriptList = [deoptimizedScript, script]

@@ -71,33 +71,19 @@ class QueryableHelper {
     }
 
     /**
-     * Check if two objects are identical
+     * Check if two objects are equal
      *
      * @param obj1 object to check
      * @param obj2 the other object to check
      * @return the result
      * @since 4.0.0
      */
-    static boolean isIdentical(Object obj1, Object obj2) {
+    static boolean isEqual(Object obj1, Object obj2) {
         if (obj1 === obj2) return true
         if (null === obj1 || null === obj2) return false
         if (obj1.getClass() !== obj2.getClass()) return false
 
-        if (obj1 instanceof NamedTuple && obj2 instanceof NamedTuple) {
-            def obj1Size = obj1.size()
-            if (obj1Size == obj2.size()) {
-                for (int i = 0; i < obj1Size; i++) {
-                    if (!isIdentical(obj1.get(i), obj2.get(i))) {
-                        return false
-                    }
-                }
-                return true
-            }
-
-            return false
-        }
-
-        return obj1 === obj2
+        return obj1 == obj2
     }
 
     static void setVar(String name, Object value) {

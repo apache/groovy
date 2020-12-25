@@ -732,15 +732,39 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     }
 
     private MethodCallExpression constructWindowDefinitionFactoryMethodCallExpression(MethodCallExpression methodCallExpression, DataSourceExpression dataSourceExpression) {
+        Expression classifierExpr = null
         Expression orderExpr = null
         ArgumentListExpression argumentListExpression = (ArgumentListExpression) methodCallExpression.arguments
-        if (!argumentListExpression.getExpressions().isEmpty()) {
-            MethodCallExpression windowMce = (MethodCallExpression) argumentListExpression.getExpression(0)
-            if ('orderby' == windowMce.methodAsString) {
-                orderExpr = windowMce.arguments
-            }
+        if (1 == argumentListExpression.getExpressions().size()) {
+
+            argumentListExpression.visit(new CodeVisitorSupport() {
+                @Override
+                void visitMethodCallExpression(MethodCallExpression call) {
+                    super.visitMethodCallExpression(call)
+                    if ('partitionby' == call.methodAsString) {
+                        classifierExpr = call.arguments
+                    } else if ('orderby' == call.methodAsString) {
+                        orderExpr = call.arguments
+                    }
+                }
+            })
+
         }
-        callX(new ClassExpression(WINDOW_DEFINITION_TYPE), 'of', constructOrderCtorCallExpressions(orderExpr, dataSourceExpression).get(0))
+
+        def argumentExpressionList = []
+
+        if (classifierExpr) {
+            List<Expression> expressionList = ((ArgumentListExpression) classifierExpr).getExpressions()
+            LambdaExpression classifierLambdaExpression = constructLambdaExpression(dataSourceExpression, new ListExpression(expressionList))
+            argumentExpressionList << classifierLambdaExpression
+        }
+
+        if (orderExpr) {
+            def orderCtorCallExpression = constructOrderCtorCallExpressions(orderExpr, dataSourceExpression).get(0)
+            argumentExpressionList << orderCtorCallExpression
+        }
+
+        callX(new ClassExpression(WINDOW_DEFINITION_TYPE), 'of', args(argumentExpressionList))
     }
 
     private int windowQueryableNameSeq = 0

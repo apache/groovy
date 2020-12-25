@@ -20,7 +20,7 @@ package org.apache.groovy.ginq.provider.collection.runtime
 
 import org.junit.Test
 
-import static org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper.isIdentical
+import static org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper.isEqual
 
 class QueryableHelperTest {
     @Test
@@ -28,12 +28,12 @@ class QueryableHelperTest {
         def n1 = 1
         def n2 = 2
         def n3 = 3
-        assert isIdentical(n1, n1)
-        assert !isIdentical(n1, new Integer(1))
-        assert !isIdentical(new Integer(1), n1)
-        assert isIdentical(new NamedTuple([n1, n2], ['n1', 'n2']), new NamedTuple([n1, n2], ['n1', 'n2']))
-        assert !isIdentical(new NamedTuple([new Integer(1), n2], ['n1', 'n2']), new NamedTuple([n1, n2], ['n1', 'n2']))
-        assert isIdentical(new NamedTuple([new NamedTuple([n1, n2], ['n1', 'n2']), n3], ['(n1, n2)', 'n3']), new NamedTuple([new NamedTuple([n1, n2], ['n1', 'n2']), n3], ['(n1, n2)', 'n3']))
-        assert !isIdentical(new NamedTuple([new NamedTuple([new Integer(1), n2], ['n1', 'n2']), n3], ['(n1, n2)', 'n3']), new NamedTuple([new NamedTuple([n1, n2], ['n1', 'n2']), n3], ['(n1, n2)', 'n3']))
+        assert isEqual(n1, n1)
+        assert !isEqual(n1, new Integer(1))
+        assert !isEqual(new Integer(1), n1)
+        assert isEqual(new NamedTuple([n1, n2], ['n1', 'n2']), new NamedTuple([n1, n2], ['n1', 'n2']))
+        assert !isEqual(new NamedTuple([new Integer(1), n2], ['n1', 'n2']), new NamedTuple([n1, n2], ['n1', 'n2']))
+        assert isEqual(new NamedTuple([new NamedTuple([n1, n2], ['n1', 'n2']), n3], ['(n1, n2)', 'n3']), new NamedTuple([new NamedTuple([n1, n2], ['n1', 'n2']), n3], ['(n1, n2)', 'n3']))
+        assert !isEqual(new NamedTuple([new NamedTuple([new Integer(1), n2], ['n1', 'n2']), n3], ['(n1, n2)', 'n3']), new NamedTuple([new NamedTuple([n1, n2], ['n1', 'n2']), n3], ['(n1, n2)', 'n3']))
     }
 }
