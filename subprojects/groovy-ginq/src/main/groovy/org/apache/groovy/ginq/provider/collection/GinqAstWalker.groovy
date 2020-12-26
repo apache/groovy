@@ -262,6 +262,10 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                     hasAggFunctionInSelect = true
                     return
                 }
+                if ('over' == call.methodAsString) {
+                    return
+                }
+
                 super.visitMethodCallExpression(call)
             }
 
@@ -671,7 +675,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                             def windowFunctionMethodCallExpression = (MethodCallExpression) expression.objectExpression
 
                             Expression result = null
-                            if (windowFunctionMethodCallExpression.methodAsString in ['lead', 'lag', 'firstValue', 'lastValue']) {
+                            if (windowFunctionMethodCallExpression.methodAsString in WINDOW_FUNCTION_LIST) {
                                 def argumentListExpression = (ArgumentListExpression) windowFunctionMethodCallExpression.arguments
                                 def windowFunctionLambdaCode = argumentListExpression.getExpression(0)
                                 def windowFunctionLambdaName = '__wfp'
@@ -699,7 +703,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                                         block(stmt(windowFunctionLambdaCode))
                                 )
 
-                                if (windowFunctionMethodCallExpression.methodAsString in ['lead', 'lag']) {
+                                if (windowFunctionMethodCallExpression.methodAsString in [FUNCTION_LEAD, FUNCTION_LAG]) {
                                     List<Expression> exprList = argumentListExpression.getExpressions()
                                     if (exprList.size() > 1) {
                                         argumentExpressionList.addAll(exprList.subList(1, exprList.size()))
@@ -1337,6 +1341,13 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final String FUNCTION_MEDIAN = 'median'
     private static final String FUNCTION_AGG = 'agg'
     private static final List<String> AGG_FUNCTION_NAME_LIST = [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_MEDIAN, FUNCTION_AGG]
+
+    private static final String FUNCTION_LEAD = 'lead'
+    private static final String FUNCTION_LAG = 'lag'
+    private static final String FUNCTION_FIRST_VALUE = 'firstValue'
+    private static final String FUNCTION_LAST_VALUE = 'lastValue'
+    private static final List<String> WINDOW_FUNCTION_LIST = [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_MEDIAN,
+                                                              FUNCTION_LEAD, FUNCTION_LAG, FUNCTION_FIRST_VALUE, FUNCTION_LAST_VALUE]
 
     private static final String NAMEDRECORD_CLASS_NAME = NamedRecord.class.name
 

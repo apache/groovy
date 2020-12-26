@@ -413,7 +413,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_nested_04,inde
 GINQ supports some built-in window functions, e.g.
 `lead`, `lag`, `firstValue`, `lastValue`, etc.
 
-==== `lead` & `lag`
+===== `lead` and `lag`
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_02,indent=0]
@@ -467,7 +467,7 @@ The default value can be returned when the index specified by offset is out of w
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_21,indent=0]
 ----
-==== `firstValue` & `lastValue`
+===== `firstValue` and `lastValue`
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_09,indent=0]
@@ -529,6 +529,18 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_15
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_11,indent=0]
+----
+
+===== `min` and `max`
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_22,indent=0]
+----
+
+===== `count`, `sum`, `avg` and `median`
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_23,indent=0]
 ----
 
 === GINQ Tips

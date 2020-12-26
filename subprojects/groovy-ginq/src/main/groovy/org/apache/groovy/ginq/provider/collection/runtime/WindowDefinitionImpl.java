@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -44,7 +45,7 @@ class WindowDefinitionImpl<T, U extends Comparable<? super U>> implements Window
     }
 
     public WindowDefinitionImpl(Function<? super T, ?> partitionBy) {
-        this(partitionBy, null, RowBound.DEFAULT, null);
+        this(partitionBy, Collections.emptyList(), RowBound.DEFAULT, null);
     }
 
     public WindowDefinitionImpl(List<Queryable.Order<? super T, ? extends U>> orderBy) {

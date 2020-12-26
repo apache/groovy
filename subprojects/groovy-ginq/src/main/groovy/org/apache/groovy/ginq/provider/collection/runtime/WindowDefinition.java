@@ -143,7 +143,9 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return order definition
      * @since 4.0.0
      */
-    List<Queryable.Order<? super T, ? extends U>> orderBy();
+    default List<Queryable.Order<? super T, ? extends U>> orderBy() {
+        return Collections.emptyList();
+    }
 
     /**
      * Define the window bounds by offsets, similar to MySQL's {@code rows between 1 preceding and 1 following } of window definition

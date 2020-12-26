@@ -5118,6 +5118,35 @@ class GinqTest {
         '''
     }
 
+    @Test
+    void "testGinq - window - 41"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_22[]
+            assert [['a', 'a', 'b'], ['b', 'a', 'b'], ['aa', 'aa', 'bb'], ['bb', 'aa', 'bb']] == GQ {
+                from s in ['a', 'b', 'aa', 'bb']
+                select s, (min(s) over(partitionby s.length())), (max(s) over(partitionby s.length()))
+            }.toList()
+// end::ginq_winfunction_22[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 42"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_23[]
+            assert [[1, 2, 2, 1, 1], [1, 2, 2, 1, 1], 
+                    [2, 2, 4, 2, 2], [2, 2, 4, 2, 2], 
+                    [3, 2, 6, 3, 3], [3, 2, 6, 3, 3]] == GQ {
+                from n in [1, 1, 2, 2, 3, 3]
+                select n, (count(n) over(partitionby n)),
+                          (sum(n) over(partitionby n)), 
+                          (avg(n) over(partitionby n)),
+                          (median(n) over(partitionby n))
+            }.toList()
+// end::ginq_winfunction_23[]
+        '''
+    }
+
     private static void assertGinqScript(String script) {
         String deoptimizedScript = script.replaceAll(/\bGQ\s*[{]/, 'GQ(optimize:false) {')
         List<String> scriptList = [deoptimizedScript, script]
