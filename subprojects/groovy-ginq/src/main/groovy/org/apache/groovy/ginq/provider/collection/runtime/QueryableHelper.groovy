@@ -70,22 +70,6 @@ class QueryableHelper {
         throw new TooManyValuesException("subquery returns more than one value: $list")
     }
 
-    /**
-     * Check if two objects are equal
-     *
-     * @param obj1 object to check
-     * @param obj2 the other object to check
-     * @return the result
-     * @since 4.0.0
-     */
-    static boolean isEqual(Object obj1, Object obj2) {
-        if (obj1 === obj2) return true
-        if (null === obj1 || null === obj2) return false
-        if (obj1.getClass() !== obj2.getClass()) return false
-
-        return obj1 == obj2
-    }
-
     static void setVar(String name, Object value) {
         VAR_HOLDER.get().put(name, value)
     }

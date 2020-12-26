@@ -494,7 +494,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                     }
                     return q;
                 })
-                        .where(e -> QueryableHelper.isEqual(e.getV1(), windowDefinition.partitionBy().apply(currentRecord)))
+                        .where(e -> Objects.equals(e.getV1(), windowDefinition.partitionBy().apply(currentRecord)))
                         .select((e, q) -> e.getV2())
                         .stream()
                         .findFirst()
