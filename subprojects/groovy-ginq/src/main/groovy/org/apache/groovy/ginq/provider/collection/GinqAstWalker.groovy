@@ -677,36 +677,38 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                             Expression result = null
                             if (windowFunctionMethodCallExpression.methodAsString in WINDOW_FUNCTION_LIST) {
                                 def argumentListExpression = (ArgumentListExpression) windowFunctionMethodCallExpression.arguments
-                                def windowFunctionLambdaCode = argumentListExpression.getExpression(0)
-                                def windowFunctionLambdaName = '__wfp'
-                                def rootObjectExpression = findRootObjectExpression(windowFunctionLambdaCode)
+                                List<Expression> argumentExpressionList = []
+                                if (windowFunctionMethodCallExpression.methodAsString !in [FUNCTION_ROW_NUMBER]) {
+                                    def windowFunctionLambdaCode = argumentListExpression.getExpression(0)
+                                    def windowFunctionLambdaName = '__wfp'
+                                    def rootObjectExpression = findRootObjectExpression(windowFunctionLambdaCode)
 
-                                windowFunctionLambdaCode = ((ListExpression) (new ListExpression(Collections.singletonList(windowFunctionLambdaCode)).transformExpression(new ExpressionTransformer() {
-                                    @Override
-                                    Expression transform(Expression expr) {
-                                        if (expr instanceof VariableExpression) {
-                                            if (rootObjectExpression.text == expr.text) {
-                                                if (dataSourceExpression instanceof JoinExpression) {
-                                                    return correctVars(dataSourceExpression, windowFunctionLambdaName=getLambdaParamName(dataSourceExpression, expr), expr)
-                                                } else {
-                                                    return new VariableExpression(windowFunctionLambdaName)
+                                    windowFunctionLambdaCode = ((ListExpression) (new ListExpression(Collections.singletonList(windowFunctionLambdaCode)).transformExpression(new ExpressionTransformer() {
+                                        @Override
+                                        Expression transform(Expression expr) {
+                                            if (expr instanceof VariableExpression) {
+                                                if (rootObjectExpression.text == expr.text) {
+                                                    if (dataSourceExpression instanceof JoinExpression) {
+                                                        return correctVars(dataSourceExpression, windowFunctionLambdaName=getLambdaParamName(dataSourceExpression, expr), expr)
+                                                    } else {
+                                                        return new VariableExpression(windowFunctionLambdaName)
+                                                    }
                                                 }
                                             }
+                                            return expr.transformExpression(this)
                                         }
-                                        return expr.transformExpression(this)
-                                    }
-                                }))).getExpression(0)
+                                    }))).getExpression(0)
 
-                                def argumentExpressionList = []
-                                argumentExpressionList << lambdaX(
-                                        params(param(ClassHelper.DYNAMIC_TYPE, windowFunctionLambdaName)),
-                                        block(stmt(windowFunctionLambdaCode))
-                                )
+                                    argumentExpressionList << lambdaX(
+                                            params(param(ClassHelper.DYNAMIC_TYPE, windowFunctionLambdaName)),
+                                            block(stmt(windowFunctionLambdaCode))
+                                    )
 
-                                if (windowFunctionMethodCallExpression.methodAsString in [FUNCTION_LEAD, FUNCTION_LAG]) {
-                                    List<Expression> exprList = argumentListExpression.getExpressions()
-                                    if (exprList.size() > 1) {
-                                        argumentExpressionList.addAll(exprList.subList(1, exprList.size()))
+                                    if (windowFunctionMethodCallExpression.methodAsString in [FUNCTION_LEAD, FUNCTION_LAG]) {
+                                        List<Expression> exprList = argumentListExpression.getExpressions()
+                                        if (exprList.size() > 1) {
+                                            argumentExpressionList.addAll(exprList.subList(1, exprList.size()))
+                                        }
                                     }
                                 }
 
@@ -1342,12 +1344,13 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final String FUNCTION_AGG = 'agg'
     private static final List<String> AGG_FUNCTION_NAME_LIST = [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_MEDIAN, FUNCTION_AGG]
 
+    private static final String FUNCTION_ROW_NUMBER = 'rowNumber'
     private static final String FUNCTION_LEAD = 'lead'
     private static final String FUNCTION_LAG = 'lag'
     private static final String FUNCTION_FIRST_VALUE = 'firstValue'
     private static final String FUNCTION_LAST_VALUE = 'lastValue'
     private static final List<String> WINDOW_FUNCTION_LIST = [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_MEDIAN,
-                                                              FUNCTION_LEAD, FUNCTION_LAG, FUNCTION_FIRST_VALUE, FUNCTION_LAST_VALUE]
+                                                              FUNCTION_ROW_NUMBER, FUNCTION_LEAD, FUNCTION_LAG, FUNCTION_FIRST_VALUE, FUNCTION_LAST_VALUE]
 
     private static final String NAMEDRECORD_CLASS_NAME = NamedRecord.class.name
 

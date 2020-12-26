@@ -411,15 +411,21 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_nested_04,inde
 
 ==== Window Functions
 GINQ supports some built-in window functions, e.g.
-`lead`, `lag`, `firstValue`, `lastValue`, `min`, `max`, `count`, `sum`, `avg`, `median`, etc.
+`rowNumber`, `lead`, `lag`, `firstValue`, `lastValue`, `min`, `max`, `count`, `sum`, `avg`, `median`, etc.
+
+===== `rowNumber`
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_24,indent=0]
+----
+[NOTE]
+The parentheses around the window function is required.
 
 ===== `lead` and `lag`
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_02,indent=0]
 ----
-[NOTE]
-The parentheses around the window function is required.
 
 [source, groovy]
 ----
