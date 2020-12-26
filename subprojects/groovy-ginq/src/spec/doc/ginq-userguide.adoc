@@ -486,15 +486,14 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_12
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_14,indent=0]
 ----
 [NOTE]
-`Long.MIN_VALUE` in the `rows` clause is equivalent to SQL's `UNBOUNDED PRECEDING`
+`null` used as the lower bound of `rows` clause is equivalent to SQL's `UNBOUNDED PRECEDING`
 
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_15,indent=0]
 ----
 [NOTE]
-`Long.MAX_VALUE` in the `rows` clause is equivalent to SQL's `UNBOUNDED FOLLOWING`
-
+`null` used as the upper bound of `rows` clause is equivalent to SQL's `UNBOUNDED FOLLOWING`
 
 [source, groovy]
 ----

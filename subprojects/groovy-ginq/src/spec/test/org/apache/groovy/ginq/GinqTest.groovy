@@ -5005,22 +5005,42 @@ class GinqTest {
     @Test
     void "testGinq - window - 31"() {
         assertGinqScript '''
-// tag::ginq_winfunction_14[]
             assert [[2, 1], [1, 1], [3, 1]] == GQ {
                 from n in [2, 1, 3]
                 select n, (firstValue(n) over(orderby n rows Long.MIN_VALUE, 1))
             }.toList()
-// end::ginq_winfunction_14[]
         '''
     }
 
     @Test
     void "testGinq - window - 32"() {
         assertGinqScript '''
-// tag::ginq_winfunction_15[]
             assert [[2, 3], [1, 3], [3, 3]] == GQ {
                 from n in [2, 1, 3]
                 select n, (lastValue(n) over(orderby n rows -1, Long.MAX_VALUE))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 33"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_14[]
+            assert [[2, 1], [1, 1], [3, 1]] == GQ {
+                from n in [2, 1, 3]
+                select n, (firstValue(n) over(orderby n rows null, 1))
+            }.toList()
+// end::ginq_winfunction_14[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 34"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_15[]
+            assert [[2, 3], [1, 3], [3, 3]] == GQ {
+                from n in [2, 1, 3]
+                select n, (lastValue(n) over(orderby n rows -1, null))
             }.toList()
 // end::ginq_winfunction_15[]
         '''

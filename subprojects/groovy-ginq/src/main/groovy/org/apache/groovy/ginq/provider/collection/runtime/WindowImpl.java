@@ -96,11 +96,11 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
     private long getFirstIndex() {
         RowBound rowBound = windowDefinition.rows();
         long firstRowIndex;
-        if (Long.MIN_VALUE == rowBound.getLower()) {
+        final Long lower = rowBound.getLower();
+        if (null == lower || Long.MIN_VALUE == lower) {
             firstRowIndex = 0;
         } else {
-            final Long lower = rowBound.getLower();
-            firstRowIndex = index + (null == lower ? 0 : lower);
+            firstRowIndex = index + lower;
             firstRowIndex = Math.max(firstRowIndex, 0);
         }
         return firstRowIndex;
@@ -110,11 +110,11 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         RowBound rowBound = windowDefinition.rows();
         long lastRowIndex;
         long size = this.size();
-        if (Long.MAX_VALUE == rowBound.getUpper()) {
+        final Long upper = rowBound.getUpper();
+        if (null == upper || Long.MAX_VALUE == upper) {
             lastRowIndex = size - 1;
         } else {
-            final Long upper = rowBound.getUpper();
-            lastRowIndex = index + (null == upper ? 0 : upper);
+            lastRowIndex = index + upper;
             lastRowIndex = Math.min(lastRowIndex, size - 1);
         }
         return lastRowIndex;
