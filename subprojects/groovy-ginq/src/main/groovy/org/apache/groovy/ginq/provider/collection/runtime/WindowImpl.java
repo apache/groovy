@@ -83,14 +83,31 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
 
     @Override
     public <V> V firstValue(Function<? super T, ? extends V> extractor) {
+        long lastIndex = getLastIndex();
+        if (lastIndex < 0) {
+            return null;
+        }
         long firstIndex = getFirstIndex();
-        return extractor.apply(this.toList().get((int) firstIndex));
+        if (firstIndex >= this.size()) {
+            return null;
+        }
+        int resultIndex = (int) Math.max(0, firstIndex);
+        return extractor.apply(this.toList().get(resultIndex));
     }
 
     @Override
     public <V> V lastValue(Function<? super T, ? extends V> extractor) {
+        long firstIndex = getFirstIndex();
+        long size = this.size();
+        if (firstIndex >= size) {
+            return null;
+        }
         long lastIndex = getLastIndex();
-        return extractor.apply(this.toList().get((int) lastIndex));
+        if (lastIndex < 0) {
+            return null;
+        }
+        int resultIndex = (int) Math.min(size - 1, lastIndex);
+        return extractor.apply(this.toList().get(resultIndex));
     }
 
     private long getFirstIndex() {
@@ -101,7 +118,6 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
             firstRowIndex = 0;
         } else {
             firstRowIndex = index + lower;
-            firstRowIndex = Math.max(firstRowIndex, 0);
         }
         return firstRowIndex;
     }
@@ -115,7 +131,6 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
             lastRowIndex = size - 1;
         } else {
             lastRowIndex = index + upper;
-            lastRowIndex = Math.min(lastRowIndex, size - 1);
         }
         return lastRowIndex;
     }

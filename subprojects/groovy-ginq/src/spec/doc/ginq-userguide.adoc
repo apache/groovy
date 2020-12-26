@@ -471,6 +471,26 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_10
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_13,indent=0]
 ----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_16,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_17,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_18,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_19,indent=0]
+----
 [NOTE]
 `0` in the `rows` clause is equivalent to SQL's `CURRENT ROW`,
 negative means `PRECEDING`,
