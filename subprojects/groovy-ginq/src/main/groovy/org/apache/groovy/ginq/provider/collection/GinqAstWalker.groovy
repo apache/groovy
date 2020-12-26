@@ -672,7 +672,8 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
                             Expression result = null
                             if (windowFunctionMethodCallExpression.methodAsString in ['lead', 'lag', 'firstValue', 'lastValue']) {
-                                def windowFunctionLambdaCode = ((ArgumentListExpression) windowFunctionMethodCallExpression.arguments).getExpression(0)
+                                def argumentListExpression = (ArgumentListExpression) windowFunctionMethodCallExpression.arguments
+                                def windowFunctionLambdaCode = argumentListExpression.getExpression(0)
                                 def windowFunctionLambdaName = '__wfp'
                                 def rootObjectExpression = findRootObjectExpression(windowFunctionLambdaCode)
 
@@ -697,6 +698,13 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                                         params(param(ClassHelper.DYNAMIC_TYPE, windowFunctionLambdaName)),
                                         block(stmt(windowFunctionLambdaCode))
                                 )
+
+                                if (windowFunctionMethodCallExpression.methodAsString in ['lead', 'lag']) {
+                                    List<Expression> exprList = argumentListExpression.getExpressions()
+                                    if (exprList.size() > 1) {
+                                        argumentExpressionList.addAll(exprList.subList(1, exprList.size()))
+                                    }
+                                }
 
                                 def windowDefinitionFactoryMethodCallExpression = constructWindowDefinitionFactoryMethodCallExpression(expression, dataSourceExpression)
                                 Expression newObjectExpression = callX(wqVar, 'over', args(

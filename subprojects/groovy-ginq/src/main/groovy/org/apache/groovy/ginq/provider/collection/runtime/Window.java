@@ -44,7 +44,20 @@ public interface Window<T> extends Queryable<T> {
      * @since 4.0.0
      */
     default <V> V lead(Function<? super T, ? extends V> extractor) {
-        return lead(extractor, 1);
+        return lead(extractor, 1, null);
+    }
+
+    /**
+     * Returns the next value in the window, similar to SQL's {@code lead()}
+     *
+     * @param extractor field extractor
+     * @param lead the offset
+     * @param <V> the type of field
+     * @return the next value
+     * @since 4.0.0
+     */
+    default <V> V lead(Function<? super T, ? extends V> extractor, long lead) {
+        return lead(extractor, lead, null);
     }
 
     /**
@@ -53,10 +66,11 @@ public interface Window<T> extends Queryable<T> {
      * @param <V> the type of field
      * @param extractor field extractor
      * @param lead the offset
+     * @param def the default value
      * @return the next value by {@code lead}
      * @since 4.0.0
      */
-    <V> V lead(Function<? super T, ? extends V> extractor, long lead);
+    <V> V lead(Function<? super T, ? extends V> extractor, long lead, V def);
 
     /**
      * Returns the previous value in the window, similar to SQL's {@code lag()}
@@ -67,7 +81,20 @@ public interface Window<T> extends Queryable<T> {
      * @since 4.0.0
      */
     default <V> V lag(Function<? super T, ? extends V> extractor) {
-        return lag(extractor, 1);
+        return lag(extractor, 1, null);
+    }
+
+    /**
+     * Returns the previous value in the window, similar to SQL's {@code lag()}
+     *
+     * @param extractor field extractor
+     * @param lag the offset
+     * @param <V> the type of field
+     * @return the previous value
+     * @since 4.0.0
+     */
+    default <V> V lag(Function<? super T, ? extends V> extractor, long lag) {
+        return lag(extractor, lag, null);
     }
 
     /**
@@ -76,10 +103,11 @@ public interface Window<T> extends Queryable<T> {
      * @param <V> the type of field
      * @param extractor field extractor
      * @param lag the offset
+     * @param def the default value
      * @return the previous value by {@code lag}
      * @since 4.0.0
      */
-    <V> V lag(Function<? super T, ? extends V> extractor, long lag);
+    <V> V lag(Function<? super T, ? extends V> extractor, long lag, V def);
 
     /**
      * Returns the first value in the window

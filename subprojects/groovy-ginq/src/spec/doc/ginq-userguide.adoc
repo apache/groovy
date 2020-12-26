@@ -456,6 +456,17 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_05
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_06,indent=0]
 ----
 
+The offset can be specified other than the default offset `1`:
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_20,indent=0]
+----
+
+The default value can be returned when the index specified by offset is out of window, e.g. `'NONE'`:
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_21,indent=0]
+----
 ==== `firstValue` & `lastValue`
 [source, groovy]
 ----

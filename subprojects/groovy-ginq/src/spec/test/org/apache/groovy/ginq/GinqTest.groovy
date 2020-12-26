@@ -5094,6 +5094,30 @@ class GinqTest {
         '''
     }
 
+    @Test
+    void "testGinq - window - 39"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_20[]
+            assert [[2, null, null], [1, 3, null], [3, null, 1]] == GQ {
+                from n in [2, 1, 3]
+                select n, (lead(n, 2) over(orderby n)), (lag(n, 2) over(orderby n))
+            }.toList()
+// end::ginq_winfunction_20[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 40"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_21[]
+            assert [[2, 'NONE', 'NONE'], [1, 3, 'NONE'], [3, 'NONE', 1]] == GQ {
+                from n in [2, 1, 3]
+                select n, (lead(n, 2, 'NONE') over(orderby n)), (lag(n, 2, 'NONE') over(orderby n))
+            }.toList()
+// end::ginq_winfunction_21[]
+        '''
+    }
+
     private static void assertGinqScript(String script) {
         String deoptimizedScript = script.replaceAll(/\bGQ\s*[{]/, 'GQ(optimize:false) {')
         List<String> scriptList = [deoptimizedScript, script]

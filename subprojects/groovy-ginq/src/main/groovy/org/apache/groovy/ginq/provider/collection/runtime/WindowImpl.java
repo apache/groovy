@@ -65,20 +65,21 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
     }
 
     @Override
-    public <V> V lead(Function<? super T, ? extends V> extractor, long lead) {
-        V field = null;
+    public <V> V lead(Function<? super T, ? extends V> extractor, long lead, V def) {
+        V field;
         if (0 == lead) {
             field = extractor.apply(currentRecord);
         } else if (0 <= index + lead && index + lead < this.size()) {
             field = extractor.apply(this.toList().get((int) index + (int) lead));
+        } else {
+            field = def;
         }
-
         return field;
     }
 
     @Override
-    public <V> V lag(Function<? super T, ? extends V> extractor, long lag) {
-        return lead(extractor, -lag);
+    public <V> V lag(Function<? super T, ? extends V> extractor, long lag, V def) {
+        return lead(extractor, -lag, def);
     }
 
     @Override
