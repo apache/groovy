@@ -4941,6 +4941,91 @@ class GinqTest {
         '''
     }
 
+    @Test
+    void "testGinq - window - 26"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_09[]
+            assert [[2, 1], [1, 1], [3, 2]] == GQ {
+                from n in [2, 1, 3]
+                select n, (firstValue(n) over(orderby n rows -1, 1))
+            }.toList()
+// end::ginq_winfunction_09[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 27"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_10[]
+            assert [[2, 3], [1, 2], [3, 3]] == GQ {
+                from n in [2, 1, 3]
+                select n, (lastValue(n) over(orderby n rows -1, 1))
+            }.toList()
+// end::ginq_winfunction_10[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 28"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_13[]
+            assert [[2, 2], [1, 1], [3, 3]] == GQ {
+                from n in [2, 1, 3]
+                select n, (firstValue(n) over(orderby n rows 0, 1))
+            }.toList()
+// end::ginq_winfunction_13[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 29"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_12[]
+            assert [[2, 2], [1, 1], [3, 3]] == GQ {
+                from n in [2, 1, 3]
+                select n, (lastValue(n) over(orderby n rows -1, 0))
+            }.toList()
+// end::ginq_winfunction_12[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 30"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_11[]
+            assert [['a', 'a', 'b'], ['aa', 'aa', 'bb'], ['b', 'a', 'b'], ['bb', 'aa', 'bb']] == GQ {
+                from s in ['a', 'aa', 'b', 'bb']
+                select s, (firstValue(s) over(partitionby s.length() orderby s)),
+                        (lastValue(s) over(partitionby s.length() orderby s))
+            }.toList()
+// end::ginq_winfunction_11[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 31"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_14[]
+            assert [[2, 1], [1, 1], [3, 1]] == GQ {
+                from n in [2, 1, 3]
+                select n, (firstValue(n) over(orderby n rows Long.MIN_VALUE, 1))
+            }.toList()
+// end::ginq_winfunction_14[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 32"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_15[]
+            assert [[2, 3], [1, 3], [3, 3]] == GQ {
+                from n in [2, 1, 3]
+                select n, (lastValue(n) over(orderby n rows -1, Long.MAX_VALUE))
+            }.toList()
+// end::ginq_winfunction_15[]
+        '''
+    }
+
     private static void assertGinqScript(String script) {
         String deoptimizedScript = script.replaceAll(/\bGQ\s*[{]/, 'GQ(optimize:false) {')
         List<String> scriptList = [deoptimizedScript, script]

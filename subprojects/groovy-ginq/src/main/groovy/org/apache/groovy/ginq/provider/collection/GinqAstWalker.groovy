@@ -40,6 +40,7 @@ import org.apache.groovy.ginq.dsl.expression.WhereExpression
 import org.apache.groovy.ginq.provider.collection.runtime.NamedRecord
 import org.apache.groovy.ginq.provider.collection.runtime.Queryable
 import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper
+import org.apache.groovy.ginq.provider.collection.runtime.RowBound
 import org.apache.groovy.ginq.provider.collection.runtime.WindowDefinition
 import org.apache.groovy.util.Maps
 import org.codehaus.groovy.GroovyBugError
@@ -75,6 +76,7 @@ import java.util.function.Consumer
 import java.util.stream.Collectors
 
 import static groovy.lang.Tuple.tuple
+import static org.codehaus.groovy.ast.ClassHelper.makeCached
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block
@@ -669,7 +671,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                             def windowFunctionMethodCallExpression = (MethodCallExpression) expression.objectExpression
 
                             Expression result = null
-                            if (windowFunctionMethodCallExpression.methodAsString in ['lead', 'lag']) {
+                            if (windowFunctionMethodCallExpression.methodAsString in ['lead', 'lag', 'firstValue', 'lastValue']) {
                                 def windowFunctionLambdaCode = ((ArgumentListExpression) windowFunctionMethodCallExpression.arguments).getExpression(0)
                                 def windowFunctionLambdaName = '__wfp'
                                 def rootObjectExpression = findRootObjectExpression(windowFunctionLambdaCode)
@@ -734,6 +736,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private MethodCallExpression constructWindowDefinitionFactoryMethodCallExpression(MethodCallExpression methodCallExpression, DataSourceExpression dataSourceExpression) {
         Expression classifierExpr = null
         Expression orderExpr = null
+        Expression rowsExpr = null
         ArgumentListExpression argumentListExpression = (ArgumentListExpression) methodCallExpression.arguments
         if (1 == argumentListExpression.getExpressions().size()) {
 
@@ -745,6 +748,8 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                         classifierExpr = call.arguments
                     } else if ('orderby' == call.methodAsString) {
                         orderExpr = call.arguments
+                    } else if ('rows' == call.methodAsString) {
+                        rowsExpr = call.arguments
                     }
                 }
             })
@@ -762,6 +767,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         if (orderExpr) {
             def orderCtorCallExpressions = constructOrderCtorCallExpressions(orderExpr, dataSourceExpression)
             argumentExpressionList << new ListExpression(orderCtorCallExpressions)
+        }
+
+        if (rowsExpr) {
+            def rowBoundCtorCallExpression = ctorX(ROWBOUND_TYPE, rowsExpr)
+            argumentExpressionList << rowBoundCtorCallExpression
         }
 
         callX(
@@ -1308,6 +1318,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final ClassNode NAMED_RECORD_TYPE = makeWithoutCaching(NamedRecord.class)
     private static final ClassNode QUERYABLE_HELPER_TYPE = makeWithoutCaching(QueryableHelper.class)
     private static final ClassNode WINDOW_DEFINITION_TYPE = makeWithoutCaching(WindowDefinition.class)
+    private static final ClassNode ROWBOUND_TYPE = makeCached(RowBound.class)
 
     private static final List<String> ORDER_OPTION_LIST = Arrays.asList('asc', 'desc')
     private static final String FUNCTION_COUNT = 'count'

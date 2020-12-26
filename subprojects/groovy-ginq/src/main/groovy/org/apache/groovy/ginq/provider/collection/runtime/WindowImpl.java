@@ -31,7 +31,7 @@ import java.util.function.Function;
 class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection<T> implements Window<T> {
     private static final long serialVersionUID = -3458969297047398621L;
     private final T currentRecord;
-    private final int index;
+    private final long index;
     private final U value;
     private final WindowDefinition<T, U> windowDefinition;
 
@@ -70,7 +70,7 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         if (0 == lead) {
             field = extractor.apply(currentRecord);
         } else if (0 <= index + lead && index + lead < this.size()) {
-            field = extractor.apply(this.toList().get(index + (int) lead));
+            field = extractor.apply(this.toList().get((int) index + (int) lead));
         }
 
         return field;
@@ -79,5 +79,44 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
     @Override
     public <V> V lag(Function<? super T, ? extends V> extractor, long lag) {
         return lead(extractor, -lag);
+    }
+
+    @Override
+    public <V> V firstValue(Function<? super T, ? extends V> extractor) {
+        long firstIndex = getFirstIndex();
+        return extractor.apply(this.toList().get((int) firstIndex));
+    }
+
+    @Override
+    public <V> V lastValue(Function<? super T, ? extends V> extractor) {
+        long lastIndex = getLastIndex();
+        return extractor.apply(this.toList().get((int) lastIndex));
+    }
+
+    private long getFirstIndex() {
+        RowBound rowBound = windowDefinition.rows();
+        long firstRowIndex;
+        if (Long.MIN_VALUE == rowBound.getLower()) {
+            firstRowIndex = 0;
+        } else {
+            final Long lower = rowBound.getLower();
+            firstRowIndex = index + (null == lower ? 0 : lower);
+            firstRowIndex = Math.max(firstRowIndex, 0);
+        }
+        return firstRowIndex;
+    }
+
+    private long getLastIndex() {
+        RowBound rowBound = windowDefinition.rows();
+        long lastRowIndex;
+        long size = this.size();
+        if (Long.MAX_VALUE == rowBound.getUpper()) {
+            lastRowIndex = size - 1;
+        } else {
+            final Long upper = rowBound.getUpper();
+            lastRowIndex = index + (null == upper ? 0 : upper);
+            lastRowIndex = Math.min(lastRowIndex, size - 1);
+        }
+        return lastRowIndex;
     }
 }

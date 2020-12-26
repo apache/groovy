@@ -80,4 +80,24 @@ public interface Window<T> extends Queryable<T> {
      * @since 4.0.0
      */
     <V> V lag(Function<? super T, ? extends V> extractor, long lag);
+
+    /**
+     * Returns the first value in the window
+     *
+     * @param <V> the type of field
+     * @param extractor field extractor
+     * @return the first value
+     * @since 4.0.0
+     */
+    <V> V firstValue(Function<? super T, ? extends V> extractor);
+
+    /**
+     * Returns the last value in the window
+     *
+     * @param <V> the type of field
+     * @param extractor field extractor
+     * @return the last value
+     * @since 4.0.0
+     */
+    <V> V lastValue(Function<? super T, ? extends V> extractor);
 }

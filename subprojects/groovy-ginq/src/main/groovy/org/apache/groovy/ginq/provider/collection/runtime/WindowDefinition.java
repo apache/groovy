@@ -102,6 +102,20 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
     /**
      * Factory method to create {@link WindowDefinition} instance
      *
+     * @param orderBy order definition
+     * @param rows the window bounds
+     * @param <T> the type of {@link Queryable} element
+     * @param <U> the type of field to sort
+     * @return the {@link WindowDefinition} instance
+     * @since 4.0.0
+     */
+    static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(List<Queryable.Order<? super T, ? extends U>> orderBy, RowBound rows) {
+        return new WindowDefinitionImpl<>((T t) -> Queryable.NULL, orderBy, rows);
+    }
+
+    /**
+     * Factory method to create {@link WindowDefinition} instance
+     *
      * @param partitionBy partition definition
      * @param orderBy order definition
      * @param range the window bounds

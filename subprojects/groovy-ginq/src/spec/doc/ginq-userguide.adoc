@@ -411,8 +411,9 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_nested_04,inde
 
 ==== Window Functions
 GINQ supports some built-in window functions, e.g.
-`lead`, `lag`, etc.
+`lead`, `lag`, `firstValue`, `lastValue`, etc.
 
+==== `lead` & `lag`
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_02,indent=0]
@@ -453,6 +454,51 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_05
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_06,indent=0]
+----
+
+==== `firstValue` & `lastValue`
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_09,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_10,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_13,indent=0]
+----
+[NOTE]
+`0` in the `rows` clause is equivalent to SQL's `CURRENT ROW`,
+negative means `PRECEDING`,
+positive means `FOLLOWING`
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_12,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_14,indent=0]
+----
+[NOTE]
+`Long.MIN_VALUE` in the `rows` clause is equivalent to SQL's `UNBOUNDED PRECEDING`
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_15,indent=0]
+----
+[NOTE]
+`Long.MAX_VALUE` in the `rows` clause is equivalent to SQL's `UNBOUNDED FOLLOWING`
+
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_11,indent=0]
 ----
 
 === GINQ Tips
