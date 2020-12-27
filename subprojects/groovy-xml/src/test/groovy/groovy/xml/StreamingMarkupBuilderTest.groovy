@@ -48,6 +48,45 @@ class StreamingMarkupBuilderTest extends BuilderTestSupport {
         assert result.contains("<one xml:lang='en'>First</one>")
     }
 
+    // GROOVY-8850
+    void testStreamingMarkupBuilderAddingNamespaceCorrectly() {
+
+        def topics = ['<TOPIC>topic1</TOPIC>', '<TOPIC>topic2</TOPIC>', '<TOPIC>topic3</TOPIC>']
+
+        def addTrnUID = { b -> b.TRNUID('01234') }
+
+        def xml = new StreamingMarkupBuilder().bind { builder ->
+            mkp.xmlDeclaration()
+            mkp.declareNamespace('': 'http://www.dnb.com/GSRL/Vers7/Rls24',
+                    'xsi': 'http://www.w3.org/2001/XMLSchema-instance')
+            GSRL {
+                GSRLMSGSRQV1 {
+                    SUBJUPDTRNRQ {
+                        addTrnUID(builder)
+                        SUBJUPDRQ {
+                            topics.each{ topic -> mkp.yieldUnescaped topic }
+                        }
+                    }
+                }
+            }
+        }
+
+        assert XmlUtil.serialize(xml.toString()).normalize() == '''\
+<?xml version="1.0" encoding="UTF-8"?><GSRL xmlns="http://www.dnb.com/GSRL/Vers7/Rls24" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <GSRLMSGSRQV1>
+    <SUBJUPDTRNRQ>
+      <TRNUID>01234</TRNUID>
+      <SUBJUPDRQ>
+        <TOPIC>topic1</TOPIC>
+        <TOPIC>topic2</TOPIC>
+        <TOPIC>topic3</TOPIC>
+      </SUBJUPDRQ>
+    </SUBJUPDTRNRQ>
+  </GSRLMSGSRQV1>
+</GSRL>
+'''
+    }
+
     protected assertExpectedXml(Closure markup, String expectedXml) {
         assertExpectedXml markup, null, expectedXml
     }

@@ -171,7 +171,7 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
         } else {
             out << ">"
 
-            pendingStack.add pendingNamespaces.clone()
+            pendingStack.push pendingNamespaces.clone()
             pendingNamespaces.clear()
 
             body.each {
