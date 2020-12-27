@@ -65,6 +65,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.syntax.Types
@@ -638,6 +639,29 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         List<Expression> expressionList = ((TupleExpression) projectionExpr).getExpressions()
         validateGroupCols(expressionList)
 
+        boolean hasRnVariable = false
+        boolean hasOverMethodCallExpression = false
+        projectionExpr.visit(new GinqAstBaseVisitor() {
+            @Override
+            void visitVariableExpression(VariableExpression expression) {
+                if (_RN == expression.text) {
+                    hasRnVariable = true
+                }
+                super.visitVariableExpression(expression)
+            }
+
+            @Override
+            void visitMethodCallExpression(MethodCallExpression call) {
+                if ('over' == call.methodAsString) {
+                    hasOverMethodCallExpression = true
+                    return
+                }
+                super.visitMethodCallExpression(call)
+            }
+        })
+
+        final enableCount = !hasRnVariable && hasOverMethodCallExpression
+
         Expression lambdaCode = expressionList.get(0)
         def expressionListSize = expressionList.size()
         if (expressionListSize > 1 || (expressionListSize == 1 && lambdaCode instanceof CastExpression)) {
@@ -739,7 +763,13 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             }
         })).getExpression(0)
 
-        def selectMethodCallExpression = callXWithLambda(selectMethodReceiver, "select", dataSourceExpression, lambdaCode, param(ClassHelper.DYNAMIC_TYPE, getWindowQueryableName()))
+        def extra = []
+        if (enableCount) {
+            currentGinqExpression.putNodeMetaData(__RN_USED, true)
+            extra << callX(varX(rowNumberName), 'getAndIncrement')
+        }
+
+        def selectMethodCallExpression = callXWithLambda(selectMethodReceiver, "select", dataSourceExpression, lambdaCode, extra, param(ClassHelper.DYNAMIC_TYPE, getWindowQueryableName()))
 
         currentGinqExpression.putNodeMetaData(__VISITING_SELECT, false)
 
@@ -1181,7 +1211,15 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     }
 
     private MethodCallExpression callXWithLambda(Expression receiver, String methodName, DataSourceExpression dataSourceExpression, Expression lambdaCode, Parameter... extraParams) {
+        this.callXWithLambda(receiver, methodName, dataSourceExpression, lambdaCode, Collections.emptyList(), extraParams)
+    }
+
+    private MethodCallExpression callXWithLambda(Expression receiver, String methodName, DataSourceExpression dataSourceExpression, Expression lambdaCode, List<Expression> extraLambdaCode, Parameter... extraParams) {
         LambdaExpression lambdaExpression = constructLambdaExpression(dataSourceExpression, lambdaCode, extraParams)
+
+        if (extraLambdaCode) {
+            ((BlockStatement) lambdaExpression.code).getStatements().addAll(0, extraLambdaCode.collect { stmt(it) })
+        }
 
         callXWithLambda(receiver, methodName, lambdaExpression)
     }
