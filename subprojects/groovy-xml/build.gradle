@@ -27,10 +27,19 @@ dependencies {
     testImplementation ("org.spockframework:spock-core:${versions.spock}") {
         exclude group: 'org.codehaus.groovy'
     }
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:${versions.junit5}") {
+        because 'for JUnit 3/4 tests as well as JUnit 5'
+    }
+    testRuntimeOnly project(':groovy-ant') // for JavadocAssertionTests
+    testRuntimeOnly("org.apache.ivy:ivy:${versions.ivy}") {
+        transitive = false
+        because 'JavadocAssertionTests use @Grab'
+    }
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+    systemProperty 'spock.iKnowWhatImDoing.disableGroovyVersionCheck', 'true'
 }
 
 groovyLibrary {
