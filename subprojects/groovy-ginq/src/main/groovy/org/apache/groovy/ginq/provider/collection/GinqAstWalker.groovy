@@ -678,7 +678,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                             if (windowFunctionMethodCallExpression.methodAsString in WINDOW_FUNCTION_LIST) {
                                 def argumentListExpression = (ArgumentListExpression) windowFunctionMethodCallExpression.arguments
                                 List<Expression> argumentExpressionList = []
-                                if (windowFunctionMethodCallExpression.methodAsString !in [FUNCTION_ROW_NUMBER]) {
+                                if (windowFunctionMethodCallExpression.methodAsString !in [FUNCTION_ROW_NUMBER, FUNCTION_RANK, FUNCTION_DENSE_RANK]) {
                                     def windowFunctionLambdaCode = argumentListExpression.getExpression(0)
                                     def windowFunctionLambdaName = '__wfp'
                                     def rootObjectExpression = findRootObjectExpression(windowFunctionLambdaCode)
@@ -1349,8 +1349,10 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final String FUNCTION_LAG = 'lag'
     private static final String FUNCTION_FIRST_VALUE = 'firstValue'
     private static final String FUNCTION_LAST_VALUE = 'lastValue'
+    private static final String FUNCTION_RANK = 'rank'
+    private static final String FUNCTION_DENSE_RANK = 'denseRank'
     private static final List<String> WINDOW_FUNCTION_LIST = [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_MEDIAN,
-                                                              FUNCTION_ROW_NUMBER, FUNCTION_LEAD, FUNCTION_LAG, FUNCTION_FIRST_VALUE, FUNCTION_LAST_VALUE]
+                                                              FUNCTION_ROW_NUMBER, FUNCTION_LEAD, FUNCTION_LAG, FUNCTION_FIRST_VALUE, FUNCTION_LAST_VALUE, FUNCTION_RANK, FUNCTION_DENSE_RANK]
 
     private static final String NAMEDRECORD_CLASS_NAME = NamedRecord.class.name
 

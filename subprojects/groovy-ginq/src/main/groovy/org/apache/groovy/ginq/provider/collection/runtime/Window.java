@@ -128,4 +128,20 @@ public interface Window<T> extends Queryable<T> {
      * @since 4.0.0
      */
     <V> V lastValue(Function<? super T, ? extends V> extractor);
+
+    /**
+     * Returns the rank in the window
+     *
+     * @return the rank
+     * @since 4.0.0
+     */
+    long rank();
+
+    /**
+     * Returns the dense rank in the window
+     *
+     * @return the dense rank
+     * @since 4.0.0
+     */
+    long denseRank();
 }

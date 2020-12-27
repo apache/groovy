@@ -410,8 +410,17 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_nested_04,inde
 ----
 
 ==== Window Functions
-GINQ supports some built-in window functions, e.g.
-`rowNumber`, `lead`, `lag`, `firstValue`, `lastValue`, `min`, `max`, `count`, `sum`, `avg`, `median`, etc.
+
+Window can be defined by `partitionby`, `orderby` and `rows`:
+```sql
+over(
+    [partitionby <expression> (, <expression>)*]
+    [orderby <expression> (, <expression>)*]
+    [rows <expression>, <expression>]
+)
+```
+Also, GINQ supports some built-in window functions, e.g.
+`rowNumber`, `rank`, `denseRank`, `lead`, `lag`, `firstValue`, `lastValue`, `min`, `max`, `count`, `sum`, `avg`, `median`, etc.
 
 ===== `rowNumber`
 [source, groovy]
@@ -420,6 +429,12 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_24
 ----
 [NOTE]
 The parentheses around the window function is required.
+
+===== `rank` and `denseRank`
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_25,indent=0]
+----
 
 ===== `lead` and `lag`
 [source, groovy]

@@ -32,8 +32,9 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
     private static final long serialVersionUID = -3458969297047398621L;
     private final T currentRecord;
     private final long index;
-    private final U value;
     private final WindowDefinition<T, U> windowDefinition;
+    private final U value;
+    private final Function<? super T, ? extends U> keyExtractor;
 
     WindowImpl(T currentRecord, Queryable<T> partition, WindowDefinition<T, U> windowDefinition) {
         super(partition.orderBy(windowDefinition.orderBy().toArray(Order.EMPTY_ARRAY)).toList());
@@ -43,8 +44,10 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         List<T> sortedList = this.toList();
         final List<Order<? super T, ? extends U>> order = windowDefinition.orderBy();
         if (null != order && 1 == order.size()) {
-            this.value = order.get(0).getKeyExtractor().apply(currentRecord);
+            this.keyExtractor = order.get(0).getKeyExtractor();
+            this.value = keyExtractor.apply(currentRecord);
         } else {
+            this.keyExtractor = null;
             this.value = null;
         }
 
@@ -109,6 +112,38 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         }
         int resultIndex = (int) Math.min(size - 1, lastIndex);
         return extractor.apply(this.toList().get(resultIndex));
+    }
+
+    @Override
+    public long rank() {
+        long result = 1L;
+        if (null == value || null == keyExtractor) {
+            return -1;
+        }
+        for (T t : this.toList()) {
+            U v = keyExtractor.apply(t);
+            if (value.compareTo(v) > 0) {
+                result++;
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public long denseRank() {
+        long result = 1L;
+        if (null == value || null == keyExtractor) {
+            return -1;
+        }
+        U latestV = null;
+        for (T t : this.toList()) {
+            U v = keyExtractor.apply(t);
+            if (null != v && value.compareTo(v) > 0 && (null == latestV || v.compareTo(latestV) != 0)) {
+                result++;
+            }
+            latestV = v;
+        }
+        return result;
     }
 
     private long getFirstIndex() {
