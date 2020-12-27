@@ -5134,11 +5134,12 @@ class GinqTest {
     void "testGinq - window - 42"() {
         assertGinqScript '''
 // tag::ginq_winfunction_23[]
-            assert [[1, 2, 2, 1, 1], [1, 2, 2, 1, 1], 
-                    [2, 2, 4, 2, 2], [2, 2, 4, 2, 2], 
-                    [3, 2, 6, 3, 3], [3, 2, 6, 3, 3]] == GQ {
+            assert [[1, 2, 2, 2, 1, 1], [1, 2, 2, 2, 1, 1], 
+                    [2, 2, 2, 4, 2, 2], [2, 2, 2, 4, 2, 2], 
+                    [3, 2, 2, 6, 3, 3], [3, 2, 2, 6, 3, 3]] == GQ {
                 from n in [1, 1, 2, 2, 3, 3]
-                select n, (count(n) over(partitionby n)),
+                select n, (count() over(partitionby n)),
+                          (count(n) over(partitionby n)),
                           (sum(n) over(partitionby n)), 
                           (avg(n) over(partitionby n)),
                           (median(n) over(partitionby n))
@@ -5179,12 +5180,13 @@ class GinqTest {
     void "testGinq - window - 45"() {
         assertGinqScript '''
 // tag::ginq_winfunction_26[]
-            assert [[2, 6, 3, 1, 3], [1, 6, 3, 1, 3], [3, 6, 3, 1, 3]] == GQ {
-                from n in [2, 1, 3]
+            assert [[2, 6, 3, 1, 3, 4], [1, 6, 3, 1, 3, 4], [3, 6, 3, 1, 3, 4], [null, 6, 3, 1, 3, 4]] == GQ {
+                from n in [2, 1, 3, null]
                 select n, (sum(n) over()), 
                           (max(n) over()), 
                           (min(n) over()),
-                          (count(n) over())
+                          (count(n) over()),
+                          (count() over())
             }.toList()
 // end::ginq_winfunction_26[]
         '''

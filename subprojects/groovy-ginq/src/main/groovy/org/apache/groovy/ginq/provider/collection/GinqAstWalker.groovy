@@ -677,7 +677,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                             if (windowFunctionMethodCallExpression.methodAsString in WINDOW_FUNCTION_LIST) {
                                 def argumentListExpression = (ArgumentListExpression) windowFunctionMethodCallExpression.arguments
                                 List<Expression> argumentExpressionList = []
-                                if (windowFunctionMethodCallExpression.methodAsString !in [FUNCTION_ROW_NUMBER, FUNCTION_RANK, FUNCTION_DENSE_RANK]) {
+                                if (windowFunctionMethodCallExpression.methodAsString !in [FUNCTION_ROW_NUMBER, FUNCTION_RANK, FUNCTION_DENSE_RANK] && argumentListExpression.expressions) {
                                     def windowFunctionLambdaCode = argumentListExpression.getExpression(0)
                                     def windowFunctionLambdaName = '__wfp'
                                     def rootObjectExpression = findRootObjectExpression(windowFunctionLambdaCode)
