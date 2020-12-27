@@ -5175,6 +5175,21 @@ class GinqTest {
         '''
     }
 
+    @Test
+    void "testGinq - window - 45"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_26[]
+            assert [[2, 6, 3, 1, 3], [1, 6, 3, 1, 3], [3, 6, 3, 1, 3]] == GQ {
+                from n in [2, 1, 3]
+                select n, (sum(n) over()), 
+                          (max(n) over()), 
+                          (min(n) over()),
+                          (count(n) over())
+            }.toList()
+// end::ginq_winfunction_26[]
+        '''
+    }
+
     private static void assertGinqScript(String script) {
         String deoptimizedScript = script.replaceAll(/\bGQ\s*[{]/, 'GQ(optimize:false) {')
         List<String> scriptList = [deoptimizedScript, script]

@@ -44,6 +44,10 @@ class WindowDefinitionImpl<T, U extends Comparable<? super U>> implements Window
         this.range = range;
     }
 
+    public WindowDefinitionImpl() {
+        this((T t) -> Queryable.NULL, Collections.emptyList(), RowBound.DEFAULT, null);
+    }
+
     public WindowDefinitionImpl(Function<? super T, ?> partitionBy) {
         this(partitionBy, Collections.emptyList(), RowBound.DEFAULT, null);
     }
@@ -54,6 +58,11 @@ class WindowDefinitionImpl<T, U extends Comparable<? super U>> implements Window
 
     public WindowDefinitionImpl(Function<? super T, ?> partitionBy, List<Queryable.Order<? super T, ? extends U>> orderBy) {
         this(partitionBy, orderBy, RowBound.DEFAULT, null);
+    }
+
+    public WindowDefinitionImpl(List<Queryable.Order<? super T, ? extends U>> orderBy,
+                                RowBound rows) {
+        this((T t) -> Queryable.NULL, orderBy, rows, null);
     }
 
     public WindowDefinitionImpl(Function<? super T, ?> partitionBy, List<Queryable.Order<? super T, ? extends U>> orderBy,

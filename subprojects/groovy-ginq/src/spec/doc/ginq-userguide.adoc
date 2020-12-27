@@ -280,7 +280,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_09,in
 ----
 
 ===== Aggregate Functions
-GINQ supports some built-in aggregate functions, e.g.
+GINQ provides some built-in aggregate functions, e.g.
 `count`, `min`, `max`, `sum`, `avg`, `median` and the most powerful function `agg`.
 [NOTE]
 `count(...)`, `min(...)`, `max(...)`, `avg(...)` and `median(...)` just operate on non-`null` values,
@@ -415,11 +415,11 @@ Window can be defined by `partitionby`, `orderby` and `rows`:
 ```sql
 over(
     [partitionby <expression> (, <expression>)*]
-    [orderby <expression> (, <expression>)*]
-    [rows <expression>, <expression>]
+    [orderby <expression> (, <expression>)*
+       [rows <expression>, <expression>]]
 )
 ```
-Also, GINQ supports some built-in window functions, e.g.
+Also, GINQ provides some built-in window functions, e.g.
 `rowNumber`, `rank`, `denseRank`, `lead`, `lag`, `firstValue`, `lastValue`, `min`, `max`, `count`, `sum`, `avg`, `median`, etc.
 
 ===== `rowNumber`
@@ -552,16 +552,20 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_15
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_11,indent=0]
 ----
 
-===== `min` and `max`
+===== `min`, `max`, `count`, `sum`, `avg` and `median`
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_22,indent=0]
 ----
 
-===== `count`, `sum`, `avg` and `median`
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_23,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_26,indent=0]
 ----
 
 === GINQ Tips
