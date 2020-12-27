@@ -62,16 +62,15 @@ import org.codehaus.groovy.ast.expr.GStringExpression
 import org.codehaus.groovy.ast.expr.LambdaExpression
 import org.codehaus.groovy.ast.expr.ListExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
-import org.codehaus.groovy.ast.expr.PostfixExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
 import org.objectweb.asm.Opcodes
 
+import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
 import java.util.stream.Collectors
 
@@ -193,7 +192,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                 ))
         )
         if (rowNumberUsed) {
-            statementList << declS(localVarX(rowNumberName), new ConstantExpression(0L))
+            statementList << declS(localVarX(rowNumberName), ctorX(ATOMIC_LONG_TYPE, new ConstantExpression(0L)))
         }
 
         final resultName = "__r${System.nanoTime()}"
@@ -652,7 +651,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                 if (expression instanceof VariableExpression) {
                     if (_RN == expression.text) {
                         currentGinqExpression.putNodeMetaData(__RN_USED, true)
-                        return new PostfixExpression(varX(rowNumberName), new Token(Types.PLUS_PLUS, '++', -1, -1))
+                        return callX(varX(rowNumberName), 'getAndIncrement')
                     }
                 }
 
@@ -1333,6 +1332,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final ClassNode QUERYABLE_HELPER_TYPE = makeWithoutCaching(QueryableHelper.class)
     private static final ClassNode WINDOW_DEFINITION_TYPE = makeWithoutCaching(WindowDefinition.class)
     private static final ClassNode ROWBOUND_TYPE = makeCached(RowBound.class)
+    private static final ClassNode ATOMIC_LONG_TYPE = makeCached(AtomicLong.class)
 
     private static final List<String> ORDER_OPTION_LIST = Arrays.asList('asc', 'desc')
     private static final String FUNCTION_COUNT = 'count'
