@@ -47,7 +47,6 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         this.currentRecord = currentRecord;
         this.windowDefinition = windowDefinition;
 
-        List<Tuple2<T, Long>> sortedList = listWithIndex;
         final List<Order<? super T, ? extends U>> order = windowDefinition.orderBy();
         if (null != order && 1 == order.size()) {
             this.keyExtractor = order.get(0).getKeyExtractor();
@@ -59,8 +58,8 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
 
         List<Queryable.Order<? super T, ? extends U>> orderList = windowDefinition.orderBy();
         int tmpIndex = null == orderList || orderList.isEmpty()
-                        ? binarySearch(sortedList, currentRecord, comparing(Tuple2::getV2))
-                        : binarySearch(sortedList, currentRecord, makeComparator(composeOrders(orderList)).thenComparing(Tuple2::getV2));
+                        ? binarySearch(listWithIndex, currentRecord, comparing(Tuple2::getV2))
+                        : binarySearch(listWithIndex, currentRecord, makeComparator(composeOrders(orderList)).thenComparing(Tuple2::getV2));
 
         this.index = tmpIndex >= 0 ? tmpIndex : -tmpIndex - 1;
     }
