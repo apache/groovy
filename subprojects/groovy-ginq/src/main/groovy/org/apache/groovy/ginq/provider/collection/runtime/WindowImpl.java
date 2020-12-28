@@ -18,8 +18,11 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime;
 
+import groovy.lang.Tuple2;
+
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Represents window which stores elements used by window functions
@@ -30,22 +33,22 @@ import java.util.function.Function;
  */
 class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection<T> implements Window<T> {
     private static final long serialVersionUID = -3458969297047398621L;
-    private final T currentRecord;
+    private final Tuple2<T, Long> currentRecord;
     private final long index;
     private final WindowDefinition<T, U> windowDefinition;
     private final U value;
     private final Function<? super T, ? extends U> keyExtractor;
 
-    WindowImpl(T currentRecord, Queryable<T> partition, WindowDefinition<T, U> windowDefinition) {
-        super(partition.orderBy(windowDefinition.orderBy().toArray(Order.EMPTY_ARRAY)).toList());
+    WindowImpl(Tuple2<T, Long> currentRecord, Queryable<Tuple2<T, Long>> partition, WindowDefinition<T, U> windowDefinition) {
+        super(partition.orderBy(composeOrders(windowDefinition)));
         this.currentRecord = currentRecord;
         this.windowDefinition = windowDefinition;
 
-        List<T> sortedList = this.toList();
+        List<Tuple2<T, Long>> sortedList = listWithIndex;
         final List<Order<? super T, ? extends U>> order = windowDefinition.orderBy();
         if (null != order && 1 == order.size()) {
             this.keyExtractor = order.get(0).getKeyExtractor();
-            this.value = keyExtractor.apply(currentRecord);
+            this.value = keyExtractor.apply(currentRecord.getV1());
         } else {
             this.keyExtractor = null;
             this.value = null;
@@ -53,13 +56,21 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
 
         int tmpIndex = -1;
         for (int i = 0, n = sortedList.size(); i < n; i++) {
-            if (currentRecord == sortedList.get(i)) {
+            final Tuple2<T, Long> record = sortedList.get(i);
+            if (currentRecord.getV1() == record.getV1() && currentRecord.getV2().equals(record.getV2())) {
                 tmpIndex = i;
                 break;
             }
         }
 
         this.index = tmpIndex;
+    }
+
+    private static <T, U extends Comparable<? super U>> List<Order<? super Tuple2<T, Long>, ? extends U>> composeOrders(WindowDefinition<T, U> windowDefinition) {
+        List<Order<? super Tuple2<T, Long>, ? extends U>> result = windowDefinition.orderBy().stream()
+                .map(order -> new Order<Tuple2<T, Long>, U>(t -> order.getKeyExtractor().apply(t.getV1()), order.isAsc()))
+                .collect(Collectors.toList());
+        return result;
     }
 
     @Override
@@ -71,7 +82,7 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
     public <V> V lead(Function<? super T, ? extends V> extractor, long lead, V def) {
         V field;
         if (0 == lead) {
-            field = extractor.apply(currentRecord);
+            field = extractor.apply(currentRecord.getV1());
         } else if (0 <= index + lead && index + lead < this.size()) {
             field = extractor.apply(this.toList().get((int) index + (int) lead));
         } else {

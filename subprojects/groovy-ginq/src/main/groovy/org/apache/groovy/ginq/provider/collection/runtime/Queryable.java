@@ -254,6 +254,18 @@ public interface Queryable<T> {
     <U extends Comparable<? super U>> Queryable<T> orderBy(Order<? super T, ? extends U>... orders);
 
     /**
+     * Sort {@link Queryable} instance, similar to SQL's {@code order by}
+     *
+     * @param orders the order rules for sorting
+     * @param <U> the type of field to sort
+     * @return the result of order by
+     * @since 4.0.0
+     */
+    default <U extends Comparable<? super U>> Queryable<T> orderBy(List<? extends Order<? super T, ? extends U>> orders) {
+        return orderBy(orders.toArray(Order.EMPTY_ARRAY));
+    }
+
+    /**
      * Paginate {@link Queryable} instance, similar to MySQL's {@code limit}
      *
      * @param offset the start position
@@ -450,7 +462,7 @@ public interface Queryable<T> {
      * @param <U> the type of window value
      * @return the window
      */
-    <U extends Comparable<? super U>> Window<T> over(T currentRecord, WindowDefinition<T, U> windowDefinition);
+    <U extends Comparable<? super U>> Window<T> over(Tuple2<T, Long> currentRecord, WindowDefinition<T, U> windowDefinition);
 
     /**
      * Represents an order rule

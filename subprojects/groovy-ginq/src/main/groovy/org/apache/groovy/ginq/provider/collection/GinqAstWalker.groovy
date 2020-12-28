@@ -737,7 +737,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
                                 def windowDefinitionFactoryMethodCallExpression = constructWindowDefinitionFactoryMethodCallExpression(expression, dataSourceExpression)
                                 Expression newObjectExpression = callX(wqVar, 'over', args(
-                                        currentRecordVar,
+                                        callX(TUPLE_TYPE, 'tuple', args(currentRecordVar, callX(varX(rowNumberName), 'get'))),
                                         windowDefinitionFactoryMethodCallExpression
                                 ))
                                 result = callX(
@@ -1371,6 +1371,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final ClassNode WINDOW_DEFINITION_TYPE = makeWithoutCaching(WindowDefinition.class)
     private static final ClassNode ROWBOUND_TYPE = makeCached(RowBound.class)
     private static final ClassNode ATOMIC_LONG_TYPE = makeCached(AtomicLong.class)
+    private static final ClassNode TUPLE_TYPE = makeWithoutCaching(Tuple.class)
 
     private static final List<String> ORDER_OPTION_LIST = Arrays.asList('asc', 'desc')
     private static final String FUNCTION_COUNT = 'count'

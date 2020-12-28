@@ -5203,6 +5203,26 @@ class GinqTest {
         '''
     }
 
+    @Test
+    void "testGinq - window - 47"() {
+        assertGinqScript '''
+            assert [[1, 0], [1, 1], [2, 2], [2, 3]] == GQ {
+                from n in [1, 1, 2, 2]
+                select n, (rowNumber() over(orderby n))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 48"() {
+        assertGinqScript '''
+            assert [['aa', 0], ['aa', 1], ['bb', 2], ['bb', 3]] == GQ {
+                from s in ['aa', 'aa', 'bb', 'bb']
+                select s, (rowNumber() over(orderby s))
+            }.toList()
+        '''
+    }
+
     private static void assertGinqScript(String script) {
         String deoptimizedScript = script.replaceAll(/\bGQ\s*[{]/, 'GQ(optimize:false) {')
         List<String> scriptList = [deoptimizedScript, script]

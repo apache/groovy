@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime;
 
+import groovy.lang.Tuple;
 import groovy.lang.Tuple2;
 import groovy.transform.Internal;
 import org.apache.groovy.internal.util.Supplier;
@@ -68,6 +69,12 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     QueryableCollection(Stream<T> sourceStream) {
         this.sourceStream = sourceStream;
+    }
+
+    protected List<Tuple2<T, Long>> listWithIndex;
+    QueryableCollection(Queryable<Tuple2<T, Long>> queryableWithIndex) {
+        this(queryableWithIndex.toList().stream().map(e -> e.getV1()).collect(Collectors.toList()));
+        this.listWithIndex = queryableWithIndex.toList();
     }
 
     public Iterator<T> iterator() {
@@ -484,17 +491,23 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     @Override
-    public <U extends Comparable<? super U>> Window<T> over(T currentRecord, WindowDefinition<T, U> windowDefinition) {
+    public <U extends Comparable<? super U>> Window<T> over(Tuple2<T, Long> currentRecord, WindowDefinition<T, U> windowDefinition) {
         this.makeReusable();
-        Queryable<T> partition =
+        Queryable<Tuple2<T, Long>> partition =
                 partitionCache.computeIfAbsent(windowDefinition, wd -> {
-                    final Queryable<Tuple2<?, Queryable<T>>> q = this.groupBy(wd.partitionBy());
+                    long[] rn = new long[] { 1L };
+                    List<Tuple2<T, Long>> listWithIndex =
+                            this.toList().stream()
+                                    .map(e -> Tuple.tuple(e, rn[0]++))
+                                    .collect(Collectors.toList());
+
+                    final Queryable<Tuple2<?, Queryable<Tuple2<T, Long>>>> q = from(listWithIndex).groupBy(wd.partitionBy().compose(e -> e.getV1()));
                     if (q instanceof QueryableCollection) {
                         ((QueryableCollection) q).makeReusable();
                     }
                     return q;
                 })
-                        .where(e -> Objects.equals(e.getV1(), windowDefinition.partitionBy().apply(currentRecord)))
+                        .where(e -> Objects.equals(e.getV1(), windowDefinition.partitionBy().apply(currentRecord.getV1())))
                         .select((e, q) -> e.getV2())
                         .stream()
                         .findFirst()
@@ -571,7 +584,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return AsciiTableMaker.makeAsciiTable(this);
     }
 
-    private final Map<WindowDefinition<T, ?>, Queryable<Tuple2<?, Queryable<T>>>> partitionCache = new ConcurrentHashMap<>(4);
+    private final Map<WindowDefinition<T, ?>, Queryable<Tuple2<?, Queryable<Tuple2<T, Long>>>>> partitionCache = new ConcurrentHashMap<>(4);
     private Stream<T> sourceStream;
     private volatile Iterable<T> sourceIterable;
     private final ReadWriteLock rwl = new ReentrantReadWriteLock();
