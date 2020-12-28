@@ -73,7 +73,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     protected List<Tuple2<T, Long>> listWithIndex;
     QueryableCollection(Queryable<Tuple2<T, Long>> queryableWithIndex) {
-        this(queryableWithIndex.toList().stream().map(e -> e.getV1()).collect(Collectors.toList()));
+        this(queryableWithIndex.toList().stream().map(Tuple2::getV1).collect(Collectors.toList()));
         this.listWithIndex = queryableWithIndex.toList();
     }
 
@@ -508,7 +508,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                                     .map(e -> Tuple.tuple(e, rn[0]++))
                                     .collect(Collectors.toList());
 
-                    final Queryable<Tuple2<?, Queryable<Tuple2<T, Long>>>> q = from(listWithIndex).groupBy(wd.partitionBy().compose(e -> e.getV1()));
+                    final Queryable<Tuple2<?, Queryable<Tuple2<T, Long>>>> q = from(listWithIndex).groupBy(wd.partitionBy().compose(Tuple2::getV1));
                     if (q instanceof QueryableCollection) {
                         ((QueryableCollection) q).makeReusable();
                     }
