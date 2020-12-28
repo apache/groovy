@@ -1035,9 +1035,9 @@ class QueryableCollectionTest {
         assert 1 == from(nums).over(tuple(n32, 3L), windowDefinition).rowNumber()
         assert 2 == from(nums).over(tuple(n6, 4L), windowDefinition).rowNumber()
         assert 3 == from(nums).over(tuple(n9, 1L), windowDefinition).rowNumber()
-        assert -1 == from(nums).over(tuple(3, 2L), windowDefinition).rowNumber()
-        assert -1 == from(nums).over(tuple(6, 4L), windowDefinition).rowNumber()
-        assert -1 == from(nums).over(tuple(9, 1L), windowDefinition).rowNumber()
+        assert 0 == from(nums).over(tuple(3, 2L), windowDefinition).rowNumber()
+        assert 2 == from(nums).over(tuple(6, 4L), windowDefinition).rowNumber()
+        assert 3 == from(nums).over(tuple(9, 1L), windowDefinition).rowNumber()
     }
 
     @Test
