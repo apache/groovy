@@ -236,7 +236,11 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(this.stream().sorted(comparator));
     }
 
-    protected <U extends Comparable<? super U>> Comparator<T> makeComparator(Order<? super T, ? extends U>... orders) {
+    protected static <T, U extends Comparable<? super U>> Comparator<T> makeComparator(List<? extends Order<? super T, ? extends U>> orders) {
+        return makeComparator(orders.toArray(Order.EMPTY_ARRAY));
+    }
+
+    protected static <T, U extends Comparable<? super U>> Comparator<T> makeComparator(Order<? super T, ? extends U>... orders) {
         if (null == orders || 0 == orders.length) {
             return null;
         }

@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.binarySearch;
+import static java.util.Comparator.comparing;
+
 /**
  * Represents window which stores elements used by window functions
  *
@@ -34,7 +37,7 @@ import java.util.stream.Collectors;
 class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection<T> implements Window<T> {
     private static final long serialVersionUID = -3458969297047398621L;
     private final Tuple2<T, Long> currentRecord;
-    private final long index;
+    private final int index;
     private final WindowDefinition<T, U> windowDefinition;
     private final U value;
     private final Function<? super T, ? extends U> keyExtractor;
@@ -54,23 +57,12 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
             this.value = null;
         }
 
-        int tmpIndex = -1;
-        for (int i = 0, n = sortedList.size(); i < n; i++) {
-            final Tuple2<T, Long> record = sortedList.get(i);
-            if (currentRecord.getV1() == record.getV1() && currentRecord.getV2().equals(record.getV2())) {
-                tmpIndex = i;
-                break;
-            }
-        }
+        List<Queryable.Order<? super T, ? extends U>> orderList = windowDefinition.orderBy();
+        int tmpIndex = null == orderList || orderList.isEmpty()
+                        ? binarySearch(sortedList, currentRecord, comparing(Tuple2::getV2))
+                        : binarySearch(sortedList, currentRecord, makeComparator(composeOrders(orderList)).thenComparing(Tuple2::getV2));
 
-        this.index = tmpIndex;
-    }
-
-    private static <T, U extends Comparable<? super U>> List<Order<? super Tuple2<T, Long>, ? extends U>> composeOrders(WindowDefinition<T, U> windowDefinition) {
-        List<Order<? super Tuple2<T, Long>, ? extends U>> result = windowDefinition.orderBy().stream()
-                .map(order -> new Order<Tuple2<T, Long>, U>(t -> order.getKeyExtractor().apply(t.getV1()), order.isAsc()))
-                .collect(Collectors.toList());
-        return result;
+        this.index = tmpIndex >= 0 ? tmpIndex : -tmpIndex - 1;
     }
 
     @Override
@@ -84,7 +76,7 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         if (0 == lead) {
             field = extractor.apply(currentRecord.getV1());
         } else if (0 <= index + lead && index + lead < this.size()) {
-            field = extractor.apply(this.toList().get((int) index + (int) lead));
+            field = extractor.apply(this.toList().get(index + (int) lead));
         } else {
             field = def;
         }
@@ -180,5 +172,15 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
             lastRowIndex = index + upper;
         }
         return lastRowIndex;
+    }
+
+    private static <T, U extends Comparable<? super U>> List<Order<Tuple2<T, Long>, U>> composeOrders(List<Queryable.Order<? super T, ? extends U>> orderList) {
+        return orderList.stream()
+                .map(order -> new Order<Tuple2<T, Long>, U>(t -> order.getKeyExtractor().apply(t.getV1()), order.isAsc()))
+                .collect(Collectors.toList());
+    }
+
+    private static <T, U extends Comparable<? super U>> List<Order<Tuple2<T, Long>, U>> composeOrders(WindowDefinition<T, U> windowDefinition) {
+        return composeOrders(windowDefinition.orderBy());
     }
 }
