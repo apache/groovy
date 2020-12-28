@@ -228,10 +228,18 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public <U extends Comparable<? super U>> Queryable<T> orderBy(Order<? super T, ? extends U>... orders) {
-        if (null == orders || 0 == orders.length) {
+        Comparator<T> comparator = makeComparator(orders);
+        if (null == comparator) {
             return this;
         }
 
+        return from(this.stream().sorted(comparator));
+    }
+
+    protected <U extends Comparable<? super U>> Comparator<T> makeComparator(Order<? super T, ? extends U>... orders) {
+        if (null == orders || 0 == orders.length) {
+            return null;
+        }
         Comparator<T> comparator = null;
         for (int i = 0, n = orders.length; i < n; i++) {
             Order<? super T, ? extends U> order = orders[i];
@@ -241,12 +249,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                             ? Comparator.comparing(order.getKeyExtractor(), ascOrDesc)
                             : comparator.thenComparing(order.getKeyExtractor(), ascOrDesc);
         }
-
-        if (null == comparator) {
-            return this;
-        }
-
-        return from(this.stream().sorted(comparator));
+        return comparator;
     }
 
     @Override
