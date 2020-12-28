@@ -28,6 +28,7 @@ import org.junit.Test
 import java.util.stream.Collectors
 import java.util.stream.Stream
 
+import static groovy.lang.Tuple.tuple
 import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from
 
 @CompileStatic
@@ -1015,7 +1016,7 @@ class QueryableCollectionTest {
         def nums = [9, 3, 6]
 
         def windowDefinition = WindowDefinition.of(new Queryable.Order<Integer, Integer>(e -> e, true))
-        def result = from(nums).over(6, windowDefinition).rowNumber()
+        def result = from(nums).over(tuple(6, 3L), windowDefinition).rowNumber()
 
         assert 1 == result
     }
@@ -1030,13 +1031,13 @@ class QueryableCollectionTest {
         def nums = [n9, n31, n32, n6]
         def windowDefinition = WindowDefinition.of(new Queryable.Order<Integer, Integer>(e -> new NamedTuple<>([e, e + 1], ['e', 'e + 1']), true))
 
-        assert 0 == from(nums).over(n31, windowDefinition).rowNumber()
-        assert 1 == from(nums).over(n32, windowDefinition).rowNumber()
-        assert 2 == from(nums).over(n6, windowDefinition).rowNumber()
-        assert 3 == from(nums).over(n9, windowDefinition).rowNumber()
-        assert -1 == from(nums).over(3, windowDefinition).rowNumber()
-        assert -1 == from(nums).over(6, windowDefinition).rowNumber()
-        assert -1 == from(nums).over(9, windowDefinition).rowNumber()
+        assert 0 == from(nums).over(tuple(n31, 2L), windowDefinition).rowNumber()
+        assert 1 == from(nums).over(tuple(n32, 3L), windowDefinition).rowNumber()
+        assert 2 == from(nums).over(tuple(n6, 4L), windowDefinition).rowNumber()
+        assert 3 == from(nums).over(tuple(n9, 1L), windowDefinition).rowNumber()
+        assert -1 == from(nums).over(tuple(3, 2L), windowDefinition).rowNumber()
+        assert -1 == from(nums).over(tuple(6, 4L), windowDefinition).rowNumber()
+        assert -1 == from(nums).over(tuple(9, 1L), windowDefinition).rowNumber()
     }
 
     @Test
@@ -1049,15 +1050,15 @@ class QueryableCollectionTest {
         def nums = [n9, n31, n32, n6]
         def windowDefinition = WindowDefinition.of(new Queryable.Order<Integer, Integer>(e -> new NamedTuple<>([e, e + 1], ['e', 'e + 1']), true))
 
-        assert !from(nums).over(n31, windowDefinition).lag(e -> e)
-        assert 3 == from(nums).over(n32, windowDefinition).lag(e -> e)
-        assert 3 == from(nums).over(n6, windowDefinition).lag(e -> e)
-        assert 6 == from(nums).over(n9, windowDefinition).lag(e -> e)
+        assert !from(nums).over(tuple(n31, 2L), windowDefinition).lag(e -> e)
+        assert 3 == from(nums).over(tuple(n32, 3L), windowDefinition).lag(e -> e)
+        assert 3 == from(nums).over(tuple(n6, 4L), windowDefinition).lag(e -> e)
+        assert 6 == from(nums).over(tuple(n9, 1L), windowDefinition).lag(e -> e)
 
-        assert 3 == from(nums).over(n31, windowDefinition).lead(e -> e)
-        assert 6 == from(nums).over(n32, windowDefinition).lead(e -> e)
-        assert 9 == from(nums).over(n6, windowDefinition).lead(e -> e)
-        assert !from(nums).over(n9, windowDefinition).lead(e -> e)
+        assert 3 == from(nums).over(tuple(n31, 2L), windowDefinition).lead(e -> e)
+        assert 6 == from(nums).over(tuple(n32, 3L), windowDefinition).lead(e -> e)
+        assert 9 == from(nums).over(tuple(n6, 4L), windowDefinition).lead(e -> e)
+        assert !from(nums).over(tuple(n9, 1L), windowDefinition).lead(e -> e)
     }
 
     @Test
@@ -1070,7 +1071,7 @@ class QueryableCollectionTest {
         def nums = [n9, n31, n32, n6]
 
         WindowDefinition<Integer, Integer> windowDefinition = WindowDefinition.of(new Queryable.Order<Integer, Integer>(e -> new NamedTuple<>([e], ['e']), true))
-        assert 2 == from(nums).over(n6, windowDefinition).rowNumber()
+        assert 2 == from(nums).over(tuple(n6, 4L), windowDefinition).rowNumber()
     }
 
     @ToString
