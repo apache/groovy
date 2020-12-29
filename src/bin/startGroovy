@@ -61,6 +61,7 @@ cygwin=false
 msys=false
 darwin=false
 nonstop=false
+linux=false
 case "$(uname)" in
   CYGWIN* )
     cygwin=true
@@ -73,6 +74,9 @@ case "$(uname)" in
     ;;
   NONSTOP* )
     nonstop=true
+    ;;
+  Linux* )
+    linux=true
     ;;
 esac
 
@@ -108,6 +112,11 @@ if [ -z "$JAVA_HOME" ] ; then
     fi
 
     export JAVA_HOME
+fi
+
+# GROOVY-9875: backspace does not work in the SecureCRT connecting Linux
+if $linux ; then
+    export TERM=linux
 fi
 
 # For Cygwin, ensure paths are in UNIX format before anything is touched.
