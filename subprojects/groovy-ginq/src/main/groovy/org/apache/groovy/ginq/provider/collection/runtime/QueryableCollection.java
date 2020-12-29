@@ -501,7 +501,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     public <U extends Comparable<? super U>> Window<T> over(Tuple2<T, Long> currentRecord, WindowDefinition<T, U> windowDefinition) {
         this.makeReusable();
         Queryable<Tuple2<T, Long>> partition =
-                partitionCache.computeIfAbsent(windowDefinition, wd -> {
+                from(Collections.singletonList(currentRecord)).innerHashJoin(partitionCache.computeIfAbsent(windowDefinition, wd -> {
                     long[] rn = new long[] { 1L };
                     List<Tuple2<T, Long>> listWithIndex =
                             this.toList().stream()
@@ -513,9 +513,8 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                         ((QueryableCollection) q).makeReusable();
                     }
                     return q;
-                })
-                        .where(e -> Objects.equals(e.getV1(), windowDefinition.partitionBy().apply(currentRecord.getV1())))
-                        .select((e, q) -> e.getV2())
+                }), a -> windowDefinition.partitionBy().apply(a.getV1()), Tuple2::getV1)
+                        .select((e, q) -> e.getV2().getV2())
                         .stream()
                         .findFirst()
                         .orElse(Queryable.emptyQueryable());
