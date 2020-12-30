@@ -136,7 +136,7 @@ ext {
     antVersion = '1.10.9'
     asmVersion = '9.0'
     antlrVersion = '2.7.7'
-    antlr4Version = '4.7.4'
+    antlr4Version = '4.9.0'
     bridgerVersion = '1.5.Final'
     coberturaVersion = '1.9.4.1'
     commonsCliVersion = '1.4'
