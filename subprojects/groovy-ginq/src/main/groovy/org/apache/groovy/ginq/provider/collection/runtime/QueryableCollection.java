@@ -487,7 +487,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                 sourceStream = toStream(sourceIterable);  // we have to create new stream every time because Java stream can not be reused
             }
 
-            if (!sourceStream.isParallel() && TRUE_STR.equals(QueryableHelper.getVar(PARALLEL))) {
+            if (!sourceStream.isParallel() && isParallel()) {
                 sourceStream = sourceStream.parallel();
             }
 
@@ -523,7 +523,11 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     private static <T> Stream<T> toStream(Iterable<T> sourceIterable) {
-        return StreamSupport.stream(sourceIterable.spliterator(), false);
+        return StreamSupport.stream(sourceIterable.spliterator(), isParallel());
+    }
+
+    private static boolean isParallel() {
+        return TRUE_STR.equals(QueryableHelper.getVar(PARALLEL));
     }
 
     private boolean isReusable() {
