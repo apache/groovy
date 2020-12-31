@@ -70,16 +70,16 @@ class QueryableHelper {
         throw new TooManyValuesException("subquery returns more than one value: $list")
     }
 
-    static void setVar(String name, Object value) {
+    static <T> void setVar(String name, T value) {
         VAR_HOLDER.get().put(name, value)
     }
 
-    static Object getVar(String name) {
-        VAR_HOLDER.get().get(name)
+    static <T> T getVar(String name) {
+        (T) VAR_HOLDER.get().get(name)
     }
 
-    static Object removeVar(String name) {
-        VAR_HOLDER.get().remove(name)
+    static <T> T  removeVar(String name) {
+        (T) VAR_HOLDER.get().remove(name)
     }
 
     private static final ThreadLocal<Map<String, Object>> VAR_HOLDER = ThreadLocal.<Map<String, Object>> withInitial(() -> new LinkedHashMap<>())

@@ -265,11 +265,20 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public <U> Queryable<U> select(BiFunction<? super T, ? super Queryable<? extends T>, ? extends U> mapper) {
-        if (TRUE_STR.equals(QueryableHelper.getVar(USE_WINDOW_FUNCTION))) {
+        String originalParallel = null;
+        boolean useWindowFunction = TRUE_STR.equals(QueryableHelper.getVar(USE_WINDOW_FUNCTION));
+
+        if (useWindowFunction) {
+            originalParallel = QueryableHelper.getVar(PARALLEL);
+            QueryableHelper.setVar(PARALLEL, FALSE_STR); // ensure the row number is generated sequentially
             this.makeReusable();
         }
 
         Stream<U> stream = this.stream().map((T t) -> mapper.apply(t, this));
+
+        if (useWindowFunction) {
+            QueryableHelper.setVar(PARALLEL, originalParallel);
+        }
 
         return from(stream);
     }
@@ -501,20 +510,23 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     public <U extends Comparable<? super U>> Window<T> over(Tuple2<T, Long> currentRecord, WindowDefinition<T, U> windowDefinition) {
         this.makeReusable();
         Queryable<Tuple2<T, Long>> partition =
-                from(Collections.singletonList(currentRecord)).innerHashJoin(partitionCache.computeIfAbsent(windowDefinition, wd -> {
-                    long[] rn = new long[] { 1L };
-                    List<Tuple2<T, Long>> listWithIndex =
-                            this.toList().stream()
-                                    .map(e -> Tuple.tuple(e, rn[0]++))
-                                    .collect(Collectors.toList());
+                from(Collections.singletonList(currentRecord)).innerHashJoin(
+                        partitionCache.computeIfAbsent(windowDefinition, wd -> {
+                            long[] rn = new long[] { 1L };
+                            List<Tuple2<T, Long>> listWithIndex =
+                                    this.toList().stream()
+                                            .map(e -> Tuple.tuple(e, rn[0]++))
+                                            .collect(Collectors.toList());
 
-                    final Queryable<Tuple2<?, Queryable<Tuple2<T, Long>>>> q = from(listWithIndex).groupBy(wd.partitionBy().compose(Tuple2::getV1));
-                    if (q instanceof QueryableCollection) {
-                        ((QueryableCollection) q).makeReusable();
-                    }
-                    return q;
-                }), a -> windowDefinition.partitionBy().apply(a.getV1()), Tuple2::getV1)
-                        .select((e, q) -> e.getV2().getV2())
+                            final Queryable<Tuple2<?, Queryable<Tuple2<T, Long>>>> q =
+                                    from(listWithIndex)
+                                            .groupBy(wd.partitionBy().compose(Tuple2::getV1));
+                            if (q instanceof QueryableCollection) {
+                                ((QueryableCollection) q).makeReusable();
+                            }
+                            return q;
+                        }), a -> windowDefinition.partitionBy().apply(a.getV1()), Tuple2::getV1
+                ).select((e, q) -> e.getV2().getV2())
                         .stream()
                         .findFirst()
                         .orElse(Queryable.emptyQueryable());
@@ -604,5 +616,6 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     private static final String USE_WINDOW_FUNCTION = "useWindowFunction";
     private static final String PARALLEL = "parallel";
     private static final String TRUE_STR = "true";
+    private static final String FALSE_STR = "false";
     private static final long serialVersionUID = -5067092453136522893L;
 }
