@@ -71,12 +71,6 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         this.sourceStream = sourceStream;
     }
 
-    protected List<Tuple2<T, Long>> listWithIndex;
-    QueryableCollection(Queryable<Tuple2<T, Long>> queryableWithIndex) {
-        this(queryableWithIndex.toList().stream().map(Tuple2::getV1).collect(Collectors.toList()));
-        this.listWithIndex = queryableWithIndex.toList();
-    }
-
     public Iterator<T> iterator() {
         readLock.lock();
         try {
@@ -531,7 +525,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                         .findFirst()
                         .orElse(Queryable.emptyQueryable());
 
-        return new WindowImpl<>(currentRecord, partition, windowDefinition);
+        return WindowImpl.newInstance(currentRecord, partition, windowDefinition);
     }
 
     private static <T> Stream<T> toStream(Iterable<T> sourceIterable) {

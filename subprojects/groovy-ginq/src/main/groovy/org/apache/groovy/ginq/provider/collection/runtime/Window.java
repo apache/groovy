@@ -27,6 +27,7 @@ import java.util.function.Function;
  * @since 4.0.0
  */
 public interface Window<T> extends Queryable<T> {
+
     /**
      * Returns row number in the window, similar to SQL's {@code row_number()}
      *
