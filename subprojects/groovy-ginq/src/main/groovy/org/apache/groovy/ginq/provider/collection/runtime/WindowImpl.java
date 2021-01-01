@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime;
 
-import groovy.lang.Tuple;
 import groovy.lang.Tuple2;
 
 import java.util.Collections;
@@ -41,9 +40,9 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
     private static final long serialVersionUID = -3458969297047398621L;
     private final Tuple2<T, Long> currentRecord;
     private final Function<? super T, ? extends U> keyExtractor;
-    private final long size;
     private final int index;
     private final U value;
+    private final List<T> list;
 
     static <T, U extends Comparable<? super U>> Window<T> newInstance(Tuple2<T, Long> currentRecord, Queryable<Tuple2<T, Long>> partition, WindowDefinition<T, U> windowDefinition) {
         Function<? super T, ? extends U> keyExtractor;
@@ -62,10 +61,10 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         int index = tmpIndex >= 0 ? tmpIndex : -tmpIndex - 1;
 
         long size = partition.size();
-        Tuple2<Long, Long> indexTuple = getValidFirstAndLastIndex(windowDefinition, index, size);
-        List<T> list = null == indexTuple ? Collections.emptyList()
+        RowBound validRowBound = getValidRowBound(windowDefinition, index, size);
+        List<T> list = null == validRowBound ? Collections.emptyList()
                                   : from(listWithIndex.stream().map(Tuple2::getV1).collect(Collectors.toList()))
-                                      .limit(indexTuple.getV1(), indexTuple.getV2() - indexTuple.getV1() + 1)
+                                      .limit(validRowBound.getLower(), validRowBound.getUpper() - validRowBound.getLower() + 1)
                                       .toList();
 
         return new WindowImpl<>(currentRecord, index, list, keyExtractor);
@@ -77,7 +76,7 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         this.keyExtractor = keyExtractor;
         this.index = index;
         this.value = null == keyExtractor ? null : keyExtractor.apply(currentRecord.getV1());
-        this.size = list.size();
+        this.list = list;
     }
 
     @Override
@@ -90,8 +89,8 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         V field;
         if (0 == lead) {
             field = extractor.apply(currentRecord.getV1());
-        } else if (0 <= index + lead && index + lead < size) {
-            field = extractor.apply(this.toList().get(index + (int) lead));
+        } else if (0 <= index + lead && index + lead < this.size()) {
+            field = extractor.apply(list.get(index + (int) lead));
         } else {
             field = def;
         }
@@ -105,8 +104,6 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
 
     @Override
     public <V> V firstValue(Function<? super T, ? extends V> extractor) {
-        List<T> list = this.toList();
-
         if (list.isEmpty()) {
             return null;
         }
@@ -116,8 +113,6 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
 
     @Override
     public <V> V lastValue(Function<? super T, ? extends V> extractor) {
-        List<T> list = this.toList();
-
         if (list.isEmpty()) {
             return null;
         }
@@ -131,7 +126,7 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         if (null == value || null == keyExtractor) {
             return -1;
         }
-        for (T t : this.toList()) {
+        for (T t : list) {
             U v = keyExtractor.apply(t);
             if (value.compareTo(v) > 0) {
                 result++;
@@ -147,7 +142,7 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
             return -1;
         }
         U latestV = null;
-        for (T t : this.toList()) {
+        for (T t : list) {
             U v = keyExtractor.apply(t);
             if (null != v && value.compareTo(v) > 0 && (null == latestV || v.compareTo(latestV) != 0)) {
                 result++;
@@ -169,13 +164,13 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         return null == upper || Long.MAX_VALUE == upper ? size - 1 : index + upper;
     }
 
-    private static <T, U extends Comparable<? super U>> Tuple2<Long, Long> getValidFirstAndLastIndex(WindowDefinition<T, U> windowDefinition, int index, long size) {
+    private static <T, U extends Comparable<? super U>> RowBound getValidRowBound(WindowDefinition<T, U> windowDefinition, int index, long size) {
         long firstIndex = getFirstIndex(windowDefinition, index);
         long lastIndex = getLastIndex(windowDefinition, index, size);
         if ((firstIndex < 0 && lastIndex < 0) || (firstIndex >= size && lastIndex >= size)) {
             return null;
         }
-        return Tuple.tuple(Math.max(firstIndex, 0), Math.min(lastIndex, size - 1));
+        return new RowBound(Math.max(firstIndex, 0), Math.min(lastIndex, size - 1));
     }
 
     private static <T, U extends Comparable<? super U>> List<Order<Tuple2<T, Long>, U>> composeOrders(List<Queryable.Order<? super T, ? extends U>> orderList) {
