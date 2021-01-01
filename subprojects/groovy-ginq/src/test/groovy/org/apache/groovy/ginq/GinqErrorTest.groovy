@@ -442,4 +442,16 @@ class GinqErrorTest {
 
         assert err.toString().contains('Unsupported window function: `xxx` @ line 3, column 28.')
     }
+
+    @Test
+    void "testGinq - window - 47"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 1, 2, 2]
+                select n, (rowNumber() over(order by n))
+            }.toList()
+        '''
+
+        assert err.toString().contains('Unknown window clause: `order` @ line 3, column 51.')
+    }
 }

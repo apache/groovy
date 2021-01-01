@@ -782,6 +782,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         Expression rowsExpr = null
         ArgumentListExpression argumentListExpression = (ArgumentListExpression) methodCallExpression.arguments
         if (1 == argumentListExpression.getExpressions().size()) {
+            final List<MethodCallExpression> ignoredMethodCallExpressionList = []
 
             argumentListExpression.visit(new CodeVisitorSupport() {
                 @Override
@@ -793,10 +794,13 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                         orderExpr = call.arguments
                     } else if ('rows' == call.methodAsString) {
                         rowsExpr = call.arguments
+                    } else {
+                        ignoredMethodCallExpressionList << call
                     }
                 }
             })
 
+            validateWindowClause(classifierExpr, orderExpr, rowsExpr, ignoredMethodCallExpressionList)
         }
 
         def argumentExpressionList = []
@@ -822,6 +826,23 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                 'setId',
                 new ConstantExpression(argumentListExpression.text)
         )
+    }
+
+    private void validateWindowClause(Expression classifierExpr, Expression orderExpr, Expression rowsExpr, List<? extends MethodCallExpression> ignoredMethodCallExpressionList) {
+        new ListExpression(Arrays.asList(classifierExpr, orderExpr, rowsExpr).grep(e -> null != e)).visit(new GinqAstBaseVisitor() {
+            @Override
+            void visitMethodCallExpression(MethodCallExpression call) {
+                ignoredMethodCallExpressionList.remove(call)
+            }
+        })
+
+        if (ignoredMethodCallExpressionList) {
+            MethodCallExpression ignoredMce = ignoredMethodCallExpressionList.get(0)
+            this.collectSyntaxError(new GinqSyntaxError(
+                    "Unknown window clause: `${ignoredMce.methodAsString}`",
+                    ignoredMce.getLineNumber(), ignoredMce.getColumnNumber()
+            ))
+        }
     }
 
     private int windowQueryableNameSeq = 0
