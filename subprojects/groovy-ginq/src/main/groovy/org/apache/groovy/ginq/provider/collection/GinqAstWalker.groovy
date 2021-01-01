@@ -218,13 +218,14 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         selectExpression.projectionExpr.visit(new GinqAstBaseVisitor() {
             @Override
             void visitMethodCallExpression(MethodCallExpression call) {
-                if (call.methodAsString == 'over') {
+                if (isOverMethodCall(call)) {
                     useWindowFunction = true
                     return
                 }
 
                 super.visitMethodCallExpression(call)
             }
+
         })
         return useWindowFunction
     }
@@ -248,6 +249,16 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return false
     }
 
+    private static boolean isOverMethodCall(Expression expression) {
+        if (expression instanceof MethodCallExpression) {
+            return expression.methodAsString == 'over'
+                    && expression.objectExpression instanceof MethodCallExpression
+                    && ((ArgumentListExpression) expression.arguments).getExpressions().size() < 2
+        }
+
+        return false
+    }
+
     private void addDummyGroupExpressionIfNecessary() {
         if (currentGinqExpression.groupExpression) {
             return
@@ -262,7 +273,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                     hasAggFunctionInSelect = true
                     return
                 }
-                if ('over' == call.methodAsString) {
+                if (isOverMethodCall(call)) {
                     return
                 }
 
@@ -652,7 +663,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
             @Override
             void visitMethodCallExpression(MethodCallExpression call) {
-                if ('over' == call.methodAsString) {
+                if (isOverMethodCall(call)) {
                     hasOverMethodCallExpression = true
                     return
                 }
@@ -687,7 +698,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                 }
 
                 if (expression instanceof MethodCallExpression) {
-                    if ('over' == expression.methodAsString) {
+                    if (isOverMethodCall(expression)) {
                         if (expression.objectExpression instanceof MethodCallExpression) {
                             VariableExpression wqVar = varX(getWindowQueryableName())
 
@@ -833,6 +844,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             @Override
             void visitMethodCallExpression(MethodCallExpression call) {
                 ignoredMethodCallExpressionList.remove(call)
+                super.visitMethodCallExpression(call)
             }
         })
 
