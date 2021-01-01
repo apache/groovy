@@ -18,22 +18,28 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime;
 
+import java.util.AbstractList;
+import java.util.List;
+
 /**
- * Represents value bounds of window frame
+ * Represents view of reversed list
  *
  * @since 4.0.0
  */
-public class ValueBound<U extends Comparable<? super U>> extends AbstractBound<U, U> {
-    private static final long serialVersionUID = -8240086260919353012L;
+class ReversedList<E> extends AbstractList<E> {
+    private final List<E> delegate;
 
-    /**
-     * Construct a new ValueBound instance with lower and upper frame bounds
-     *
-     * @param lower the lower frame bound
-     * @param upper the upper frame bound
-     * @since 4.0.0
-     */
-    public ValueBound(U lower, U upper) {
-        super(lower, upper);
+    ReversedList(List<E> list) {
+        this.delegate = list;
+    }
+
+    @Override
+    public E get(int index) {
+        return delegate.get(delegate.size() - 1 - index);
+    }
+
+    @Override
+    public int size() {
+        return delegate.size();
     }
 }

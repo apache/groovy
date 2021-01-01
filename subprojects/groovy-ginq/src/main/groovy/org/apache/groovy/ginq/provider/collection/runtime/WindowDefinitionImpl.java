@@ -34,10 +34,10 @@ class WindowDefinitionImpl<T, U extends Comparable<? super U>> implements Window
     private final Function<? super T, ?> partitionBy;
     private final List<Queryable.Order<? super T, ? extends U>> orderBy;
     private final RowBound rows;
-    private final ValueBound<? extends U, ? extends U> range;
+    private final ValueBound<? extends U> range;
 
     public WindowDefinitionImpl(Function<? super T, ?> partitionBy, List<Queryable.Order<? super T, ? extends U>> orderBy,
-                                RowBound rows, ValueBound<? extends U, ? extends U> range) {
+                                RowBound rows, ValueBound<? extends U> range) {
         this.partitionBy = partitionBy;
         this.orderBy = orderBy;
         this.rows = rows;
@@ -71,8 +71,13 @@ class WindowDefinitionImpl<T, U extends Comparable<? super U>> implements Window
     }
 
     public WindowDefinitionImpl(Function<? super T, ?> partitionBy, List<Queryable.Order<? super T, ? extends U>> orderBy,
-                                ValueBound<? extends U, ? extends U> range) {
+                                ValueBound<? extends U> range) {
         this(partitionBy, orderBy, RowBound.DEFAULT, range);
+    }
+
+    public WindowDefinitionImpl(List<Queryable.Order<? super T, ? extends U>> orderBy,
+                                ValueBound<? extends U> range) {
+        this((T t) -> Queryable.NULL, orderBy, RowBound.DEFAULT, range);
     }
 
     @Override
@@ -91,7 +96,7 @@ class WindowDefinitionImpl<T, U extends Comparable<? super U>> implements Window
     }
 
     @Override
-    public ValueBound<? extends U, ? extends U> range() {
+    public ValueBound<? extends U> range() {
         return range;
     }
 

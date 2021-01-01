@@ -19,8 +19,11 @@
 package org.apache.groovy.ginq.provider.collection.runtime;
 
 import groovy.lang.Tuple2;
+import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
+import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -28,6 +31,7 @@ import java.util.stream.Collectors;
 import static java.util.Collections.binarySearch;
 import static java.util.Comparator.comparing;
 import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from;
+import static org.codehaus.groovy.runtime.dgmimpl.NumberNumberPlus.plus;
 
 /**
  * Represents window which stores elements used by window functions
@@ -37,12 +41,6 @@ import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from;
  * @since 4.0.0
  */
 class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection<T> implements Window<T> {
-    private static final long serialVersionUID = -3458969297047398621L;
-    private final Tuple2<T, Long> currentRecord;
-    private final Function<? super T, ? extends U> keyExtractor;
-    private final int index;
-    private final U value;
-    private final List<T> list;
 
     static <T, U extends Comparable<? super U>> Window<T> newInstance(Tuple2<T, Long> currentRecord, Queryable<Tuple2<T, Long>> partition, WindowDefinition<T, U> windowDefinition) {
         Function<? super T, ? extends U> keyExtractor;
@@ -59,23 +57,23 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
                 ? binarySearch(listWithIndex, currentRecord, comparing(Tuple2::getV2))
                 : binarySearch(listWithIndex, currentRecord, makeComparator(composeOrders(orderList)).thenComparing(Tuple2::getV2));
         int index = tmpIndex >= 0 ? tmpIndex : -tmpIndex - 1;
+        U value = null == keyExtractor ? null : keyExtractor.apply(currentRecord.getV1());
 
-        long size = partition.size();
-        RowBound validRowBound = getValidRowBound(windowDefinition, index, size);
+        RowBound validRowBound = getValidRowBound(windowDefinition, index, value, listWithIndex);
         List<T> list = null == validRowBound ? Collections.emptyList()
                                   : from(listWithIndex.stream().map(Tuple2::getV1).collect(Collectors.toList()))
                                       .limit(validRowBound.getLower(), validRowBound.getUpper() - validRowBound.getLower() + 1)
                                       .toList();
 
-        return new WindowImpl<>(currentRecord, index, list, keyExtractor);
+        return new WindowImpl<>(currentRecord, index, value, list, keyExtractor);
     }
 
-    private WindowImpl(Tuple2<T, Long> currentRecord, int index, List<T> list, Function<? super T, ? extends U> keyExtractor) {
+    private WindowImpl(Tuple2<T, Long> currentRecord, int index, U value, List<T> list, Function<? super T, ? extends U> keyExtractor) {
         super(list);
         this.currentRecord = currentRecord;
         this.keyExtractor = keyExtractor;
         this.index = index;
-        this.value = null == keyExtractor ? null : keyExtractor.apply(currentRecord.getV1());
+        this.value = value;
         this.list = list;
     }
 
@@ -164,13 +162,92 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         return null == upper || Long.MAX_VALUE == upper ? size - 1 : index + upper;
     }
 
-    private static <T, U extends Comparable<? super U>> RowBound getValidRowBound(WindowDefinition<T, U> windowDefinition, int index, long size) {
-        long firstIndex = getFirstIndex(windowDefinition, index);
-        long lastIndex = getLastIndex(windowDefinition, index, size);
+    private static <T, U extends Comparable<? super U>> RowBound getValidRowBound(WindowDefinition<T, U> windowDefinition, int index, U value, List<Tuple2<T, Long>> listWithIndex) {
+        int size = listWithIndex.size();
+        long firstIndex = 0;
+        long lastIndex = size - 1;
+        if (null != windowDefinition.rows() && RowBound.DEFAULT != windowDefinition.rows()) {
+            firstIndex = getFirstIndex(windowDefinition, index);
+            lastIndex = getLastIndex(windowDefinition, index, size);
+        } else if (null != windowDefinition.range() && null != windowDefinition.orderBy()) {
+            ValueBound<? extends U> valueBound = windowDefinition.range();
+            U lower = valueBound.getLower();
+            U upper = valueBound.getUpper();
+            if (value instanceof Number && (lower instanceof Number || null == lower) && (upper instanceof Number || null == upper)) {
+                final List<Order<? super T, ? extends U>> orderList = windowDefinition.orderBy();
+                if (orderList.size() == 1) {
+                    Order<? super T, ? extends U> order = orderList.get(0);
+
+                    if (listWithIndex.isEmpty()) {
+                        return null;
+                    }
+                    int flag = order.isAsc() ? 1 : -1;
+                    BigDecimal firstElement = NumberMath.toBigDecimal((Number) order.getKeyExtractor().apply(listWithIndex.get(0).getV1()));
+                    BigDecimal lastElement = NumberMath.toBigDecimal((Number) order.getKeyExtractor().apply(listWithIndex.get(size - 1).getV1()));
+
+                    BigDecimal lowerValue = null == lower ? MIN_VALUE : NumberMath.toBigDecimal(plus((Number) value, (Number) lower));
+                    BigDecimal upperValue = null == upper ? MAX_VALUE : NumberMath.toBigDecimal(plus((Number) value, (Number) upper));
+                    if ((flag * lowerValue.compareTo(firstElement) < 0 && flag * upperValue.compareTo(firstElement) < 0)
+                            || (flag * lowerValue.compareTo(lastElement) > 0 && flag * upperValue.compareTo(lastElement) > 0)) {
+                        return null;
+                    }
+
+                    List<BigDecimal> list =
+                            listWithIndex.stream()
+                                    .map(e -> NumberMath.toBigDecimal((Number) order.getKeyExtractor().apply(e.getV1())))
+                                    .collect(Collectors.toList());
+                    if (order.isAsc()) {
+                        firstIndex = getIndexByValue(lowerValue, true, list);
+                        lastIndex = getIndexByValue(upperValue, false, list);
+                    } else {
+                        final List<BigDecimal> reversedList = new ReversedList<>(list);
+                        lastIndex = size - 1 - getIndexByValue(lowerValue, true, reversedList);
+                        firstIndex = size - 1 - getIndexByValue(upperValue, false, reversedList);
+                    }
+                }
+            }
+        }
+
         if ((firstIndex < 0 && lastIndex < 0) || (firstIndex >= size && lastIndex >= size)) {
             return null;
         }
         return new RowBound(Math.max(firstIndex, 0), Math.min(lastIndex, size - 1));
+    }
+
+    private static <T, U extends Comparable<? super U>> long getIndexByValue(BigDecimal value, boolean isLower, List<BigDecimal> list) {
+        int tmpIndex = binarySearch(list, value, Comparator.comparing(u -> u));
+        int valueIndex;
+        if (tmpIndex >= 0) {
+            valueIndex = tmpIndex;
+        } else {
+            valueIndex = -tmpIndex - 1;
+            if (!isLower) {
+                valueIndex = valueIndex - 1;
+                if (valueIndex < 0) {
+                    valueIndex = 0;
+                }
+            }
+        }
+
+        if (isLower) {
+            int i = valueIndex - 1;
+            for (; i >= 0; i--) {
+                if (!value.equals(list.get(i))) {
+                    break;
+                }
+            }
+            valueIndex = i + 1;
+        } else {
+            int i = valueIndex + 1;
+            for (int n = list.size(); i < n; i++) {
+                if (!value.equals(list.get(i))) {
+                    break;
+                }
+            }
+            valueIndex = i - 1;
+        }
+
+        return valueIndex;
     }
 
     private static <T, U extends Comparable<? super U>> List<Order<Tuple2<T, Long>, U>> composeOrders(List<Queryable.Order<? super T, ? extends U>> orderList) {
@@ -182,4 +259,13 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
     private static <T, U extends Comparable<? super U>> List<Order<Tuple2<T, Long>, U>> composeOrders(WindowDefinition<T, U> windowDefinition) {
         return composeOrders(windowDefinition.orderBy());
     }
+
+    private final Tuple2<T, Long> currentRecord;
+    private final Function<? super T, ? extends U> keyExtractor;
+    private final int index;
+    private final U value;
+    private final List<T> list;
+    private static final BigDecimal MIN_VALUE = NumberMath.toBigDecimal(Long.MIN_VALUE);
+    private static final BigDecimal MAX_VALUE = NumberMath.toBigDecimal(Long.MAX_VALUE);
+    private static final long serialVersionUID = -3458969297047398621L;
 }

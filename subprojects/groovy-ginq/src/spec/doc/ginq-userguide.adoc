@@ -411,14 +411,18 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_nested_04,inde
 
 ==== Window Functions
 
-Window can be defined by `partitionby`, `orderby` and `rows`:
+Window can be defined by `partitionby`, `orderby`, `rows` and `range`:
 ```sql
 over(
     [partitionby <expression> (, <expression>)*]
     [orderby <expression> (, <expression>)*
-       [rows <expression>, <expression>]]
+       [rows <expression>, <expression> | range <expression>, <expression>]]
 )
 ```
+* `0` used as bound of `rows` and `range` clause is equivalent to SQL's `CURRENT ROW`, and negative means `PRECEDING`, positive means `FOLLOWING`
+* `null` used as the lower bound of `rows` and `range` clause is equivalent to SQL's `UNBOUNDED PRECEDING`
+* `null` used as the upper bound of `rows` and `range` clause is equivalent to SQL's `UNBOUNDED FOLLOWING`
+
 Also, GINQ provides some built-in window functions, e.g.
 `rowNumber`, `rank`, `denseRank`, `lead`, `lag`, `firstValue`, `lastValue`, `min`, `max`, `count`, `sum`, `avg`, `median`, etc.
 
@@ -523,10 +527,6 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_18
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_19,indent=0]
 ----
-[NOTE]
-`0` in the `rows` clause is equivalent to SQL's `CURRENT ROW`,
-negative means `PRECEDING`,
-positive means `FOLLOWING`
 
 [source, groovy]
 ----
@@ -537,15 +537,11 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_12
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_14,indent=0]
 ----
-[NOTE]
-`null` used as the lower bound of `rows` clause is equivalent to SQL's `UNBOUNDED PRECEDING`
 
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_15,indent=0]
 ----
-[NOTE]
-`null` used as the upper bound of `rows` clause is equivalent to SQL's `UNBOUNDED FOLLOWING`
 
 [source, groovy]
 ----
@@ -566,6 +562,41 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_23
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_26,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_27,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_28,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_33,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_31,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_32,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_29,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_30,indent=0]
 ----
 
 === GINQ Tips

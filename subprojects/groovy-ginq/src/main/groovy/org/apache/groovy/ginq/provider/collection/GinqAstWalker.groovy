@@ -41,6 +41,7 @@ import org.apache.groovy.ginq.provider.collection.runtime.NamedRecord
 import org.apache.groovy.ginq.provider.collection.runtime.Queryable
 import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper
 import org.apache.groovy.ginq.provider.collection.runtime.RowBound
+import org.apache.groovy.ginq.provider.collection.runtime.ValueBound
 import org.apache.groovy.ginq.provider.collection.runtime.WindowDefinition
 import org.apache.groovy.util.Maps
 import org.codehaus.groovy.GroovyBugError
@@ -791,6 +792,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         Expression classifierExpr = null
         Expression orderExpr = null
         Expression rowsExpr = null
+        Expression rangeExpr = null
         ArgumentListExpression argumentListExpression = (ArgumentListExpression) methodCallExpression.arguments
         if (1 == argumentListExpression.getExpressions().size()) {
             final List<MethodCallExpression> ignoredMethodCallExpressionList = []
@@ -805,13 +807,15 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                         orderExpr = call.arguments
                     } else if ('rows' == call.methodAsString) {
                         rowsExpr = call.arguments
+                    } else if ('range' == call.methodAsString) {
+                        rangeExpr = call.arguments
                     } else {
                         ignoredMethodCallExpressionList << call
                     }
                 }
             })
 
-            validateWindowClause(classifierExpr, orderExpr, rowsExpr, ignoredMethodCallExpressionList)
+            validateWindowClause(classifierExpr, orderExpr, rowsExpr, rangeExpr, ignoredMethodCallExpressionList)
         }
 
         def argumentExpressionList = []
@@ -832,6 +836,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             argumentExpressionList << rowBoundCtorCallExpression
         }
 
+        if (rangeExpr) {
+            def valueBoundCtorCallExpression = ctorX(VALUEBOUND_TYPE, rangeExpr)
+            argumentExpressionList << valueBoundCtorCallExpression
+        }
+
         callX(
                 callX(new ClassExpression(WINDOW_DEFINITION_TYPE), 'of', args(argumentExpressionList)),
                 'setId',
@@ -839,8 +848,8 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         )
     }
 
-    private void validateWindowClause(Expression classifierExpr, Expression orderExpr, Expression rowsExpr, List<? extends MethodCallExpression> ignoredMethodCallExpressionList) {
-        new ListExpression(Arrays.asList(classifierExpr, orderExpr, rowsExpr).grep(e -> null != e)).visit(new GinqAstBaseVisitor() {
+    private void validateWindowClause(Expression classifierExpr, Expression orderExpr, Expression rowsExpr, Expression rangeExpr, List<? extends MethodCallExpression> ignoredMethodCallExpressionList) {
+        new ListExpression(Arrays.asList(classifierExpr, orderExpr, rowsExpr, rangeExpr).grep(e -> null != e)).visit(new GinqAstBaseVisitor() {
             @Override
             void visitMethodCallExpression(MethodCallExpression call) {
                 ignoredMethodCallExpressionList.remove(call)
@@ -1403,6 +1412,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final ClassNode QUERYABLE_HELPER_TYPE = makeWithoutCaching(QueryableHelper.class)
     private static final ClassNode WINDOW_DEFINITION_TYPE = makeWithoutCaching(WindowDefinition.class)
     private static final ClassNode ROWBOUND_TYPE = makeCached(RowBound.class)
+    private static final ClassNode VALUEBOUND_TYPE = makeWithoutCaching(ValueBound.class)
     private static final ClassNode ATOMIC_LONG_TYPE = makeCached(AtomicLong.class)
     private static final ClassNode TUPLE_TYPE = makeWithoutCaching(Tuple.class)
 

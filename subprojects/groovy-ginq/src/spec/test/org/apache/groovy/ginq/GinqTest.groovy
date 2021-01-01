@@ -5249,6 +5249,196 @@ class GinqTest {
         '''
     }
 
+    @Test
+    void "testGinq - window - 51"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_27[]
+            assert [[1, 1, 1], [2, 2, 3], [5, 2, 10], [5, 2, 10]] == GQ {
+                from n in [1, 2, 5, 5]
+                select n, (count() over(orderby n range -2, 0)),
+                          (sum(n) over(orderby n range -2, 0))
+            }.toList()
+// end::ginq_winfunction_27[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 52"() {
+        assertGinqScript '''
+            assert [[1, 1, 1], [2, 2, 3], [5, 2, 10], [5, 2, 10]] == GQ {
+                from n in [1, 2, 5, 5]
+                select n, (count() over(orderby n in desc range -2, 0)),
+                          (sum(n) over(orderby n in desc range -2, 0))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 53"() {
+        assertGinqScript '''
+            assert [[1, 0, 0], [2, 1, 1], [5, 0, 0], [5, 0, 0]] == GQ {
+                from n in [1, 2, 5, 5]
+                select n, (count() over(orderby n range -2, -1)),
+                          (sum(n) over(orderby n range -2, -1))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 54"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_32[]
+            assert [[1, 0, 0], [2, 1, 1], [5, 0, 0], [5, 0, 0]] == GQ {
+                from n in [1, 2, 5, 5]
+                select n, (count() over(orderby n in desc range -2, -1)), 
+                          (sum(n) over(orderby n in desc range -2, -1))
+            }.toList()
+// end::ginq_winfunction_32[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 55"() {
+        assertGinqScript '''
+            assert [[1, 1, 2], [2, 0, 0], [5, 0, 0], [5, 0, 0]] == GQ {
+                from n in [1, 2, 5, 5]
+                select n, (count() over(orderby n range 1, 2)),
+                          (sum(n) over(orderby n range 1, 2))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 56"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_31[]
+            assert [[1, 1, 2], [2, 0, 0], [5, 0, 0], [5, 0, 0]] == GQ {
+                from n in [1, 2, 5, 5]
+                select n, (count() over(orderby n in desc range 1, 2)), 
+                          (sum(n) over(orderby n in desc range 1, 2))
+            }.toList()
+// end::ginq_winfunction_31[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 57"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_29[]
+            assert [[1, 3, 12], [2, 2, 10], [5, 0, 0], [5, 0, 0]] == GQ {
+                from n in [1, 2, 5, 5]
+                select n, (count() over(orderby n range 1, null)), 
+                          (sum(n) over(orderby n range 1, null))
+            }.toList()
+// end::ginq_winfunction_29[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 58"() {
+        assertGinqScript '''
+            assert [[1, 3, 12], [2, 2, 10], [5, 0, 0], [5, 0, 0]] == GQ {
+                from n in [1, 2, 5, 5]
+                select n, (count() over(orderby n in desc range 1, null)), 
+                          (sum(n) over(orderby n in desc range 1, null))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 59"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_30[]
+            assert [[1, 2, 3], [2, 2, 3], [5, 4, 13], [5, 4, 13]] == GQ {
+                from n in [1, 2, 5, 5]
+                select n, (count() over(orderby n range null, 1)), 
+                          (sum(n) over(orderby n range null, 1))
+            }.toList()
+// end::ginq_winfunction_30[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 60"() {
+        assertGinqScript '''
+            assert [[1, 2, 3], [2, 2, 3], [5, 4, 13], [5, 4, 13]] == GQ {
+                from n in [1, 2, 5, 5]
+                select n, (count() over(orderby n in desc range null, 1)), 
+                          (sum(n) over(orderby n in desc range null, 1))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 61"() {
+        assertGinqScript '''
+            assert [[1, 4, 13], [2, 4, 13], [5, 4, 13], [5, 4, 13]] == GQ {
+                from n in [1, 2, 5, 5]
+                select n, (count() over(orderby n range null, null)), 
+                          (sum(n) over(orderby n range null, null))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 62"() {
+        assertGinqScript '''
+            assert [[1, 4, 13], [2, 4, 13], [5, 4, 13], [5, 4, 13]] == GQ {
+                from n in [1, 2, 5, 5]
+                select n, (count() over(orderby n in desc range null, null)), 
+                          (sum(n) over(orderby n in desc range null, null))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 63"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_28[]
+            assert [[1, 2, 3], [2, 1, 2], [5, 2, 10], [5, 2, 10]] == GQ {
+                from n in [1, 2, 5, 5]
+                select n, (count() over(orderby n range 0, 1)),
+                          (sum(n) over(orderby n range 0, 1))
+            }.toList()
+// end::ginq_winfunction_28[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 64"() {
+        assertGinqScript '''
+            assert [[1, 2, 3], [2, 1, 2], [5, 2, 10], [5, 2, 10]] == GQ {
+                from n in [1, 2, 5, 5]
+                select n, (count() over(orderby n in desc range 0, 1)),
+                          (sum(n) over(orderby n in desc range 0, 1))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 65"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_33[]
+            assert [[1, 2, 3], [2, 2, 3], [5, 2, 10], [5, 2, 10]] == GQ {
+                from n in [1, 2, 5, 5]
+                select n, (count() over(orderby n range -1, 1)), 
+                          (sum(n) over(orderby n range -1, 1))
+            }.toList()
+// end::ginq_winfunction_33[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 66"() {
+        assertGinqScript '''
+            assert [[1, 2, 3], [2, 2, 3], [5, 2, 10], [5, 2, 10]] == GQ {
+                from n in [1, 2, 5, 5]
+                select n, (count() over(orderby n in desc range -1, 1)), 
+                          (sum(n) over(orderby n in desc range -1, 1))
+            }.toList()
+        '''
+    }
+
     private static void assertGinqScript(String script) {
         String deoptimizedScript = script.replaceAll(/\bGQ\s*[{]/, 'GQ(optimize:false) {')
         List<String> scriptList = [deoptimizedScript, script]

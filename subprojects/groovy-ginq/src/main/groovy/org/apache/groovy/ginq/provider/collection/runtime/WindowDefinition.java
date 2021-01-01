@@ -136,8 +136,22 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return the {@link WindowDefinition} instance
      * @since 4.0.0
      */
-    static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Function<? super T, ?> partitionBy, List<Queryable.Order<? super T, ? extends U>> orderBy, ValueBound<? extends U, ? extends U> range) {
+    static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Function<? super T, ?> partitionBy, List<Queryable.Order<? super T, ? extends U>> orderBy, ValueBound<? extends U> range) {
         return new WindowDefinitionImpl<>(partitionBy, orderBy, range);
+    }
+
+    /**
+     * Factory method to create {@link WindowDefinition} instance
+     *
+     * @param orderBy order definition
+     * @param range the window bounds
+     * @param <T> the type of {@link Queryable} element
+     * @param <U> the type of field to sort
+     * @return the {@link WindowDefinition} instance
+     * @since 4.0.0
+     */
+    static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(List<Queryable.Order<? super T, ? extends U>> orderBy, ValueBound<? extends U> range) {
+        return new WindowDefinitionImpl<>(orderBy, range);
     }
 
     /**
@@ -175,7 +189,7 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return range definition
      * @since 4.0.0
      */
-    default ValueBound<? extends U, ? extends U> range() {
+    default ValueBound<? extends U> range() {
         return null;
     }
 
