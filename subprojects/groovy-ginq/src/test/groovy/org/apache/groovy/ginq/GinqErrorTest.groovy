@@ -478,4 +478,40 @@ class GinqErrorTest {
 
         assert err.toString().contains('Only one field is expected in the `orderby` clause when using `range` @ line 3, column 48.')
     }
+
+    @Test
+    void "testGinq - window - 62"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 1, 2, 2]
+                select n, (sum(n) over(orderby n rows -1, 1 range 1, 2))
+            }.toList()
+        '''
+
+        assert err.toString().contains('`rows` and `range` cannot be used in the same time @ line 3, column 67.')
+    }
+
+    @Test
+    void "testGinq - window - 63"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 1, 2, 2]
+                select n, (sum(n) over(orderby n rows -1))
+            }.toList()
+        '''
+
+        assert err.toString().contains('Both lower bound and upper bound are expected for `rows` @ line 3, column 55.')
+    }
+
+    @Test
+    void "testGinq - window - 64"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 1, 2, 2]
+                select n, (sum(n) over(orderby n range -1))
+            }.toList()
+        '''
+
+        assert err.toString().contains('Both lower bound and upper bound are expected for `range` @ line 3, column 56.')
+    }
 }

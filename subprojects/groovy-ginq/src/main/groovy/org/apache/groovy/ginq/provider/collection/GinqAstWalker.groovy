@@ -831,12 +831,33 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             argumentExpressionList << new ListExpression(orderCtorCallExpressions)
         }
 
+        if (rowsExpr && rangeExpr) {
+            this.collectSyntaxError(new GinqSyntaxError(
+                    "`rows` and `range` cannot be used in the same time",
+                    rangeExpr.getLineNumber(), rangeExpr.getColumnNumber()
+            ))
+        }
+
         if (rowsExpr) {
+            if (2 != ((ArgumentListExpression) rowsExpr).getExpressions().size()) {
+                this.collectSyntaxError(new GinqSyntaxError(
+                        "Both lower bound and upper bound are expected for `rows`",
+                        rowsExpr.getLineNumber(), rowsExpr.getColumnNumber()
+                ))
+            }
+
             def rowBoundCtorCallExpression = ctorX(ROWBOUND_TYPE, rowsExpr)
             argumentExpressionList << rowBoundCtorCallExpression
         }
 
         if (rangeExpr) {
+            if (2 != ((ArgumentListExpression) rangeExpr).getExpressions().size()) {
+                this.collectSyntaxError(new GinqSyntaxError(
+                        "Both lower bound and upper bound are expected for `range`",
+                        rangeExpr.getLineNumber(), rangeExpr.getColumnNumber()
+                ))
+            }
+
             if (!orderExpr) {
                 this.collectSyntaxError(new GinqSyntaxError(
                         "`orderby` is expected when using `range`",
