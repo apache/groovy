@@ -5439,6 +5439,28 @@ class GinqTest {
         '''
     }
 
+    @Test
+    void "testGinq - window - 67"() {
+        assertGinqScript '''
+            assert [[1, 3, 4], [1, 3, 4], [2, 3, 4], [5, 2, 10], [5, 2, 10]] == GQ {
+                from n in [1, 1, 2, 5, 5]
+                select n, (count() over(orderby n range -1, 1)), 
+                          (sum(n) over(orderby n range -1, 1))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 68"() {
+        assertGinqScript '''
+            assert [[1, 3, 4], [1, 3, 4], [2, 3, 4], [5, 2, 10], [5, 2, 10]] == GQ {
+                from n in [1, 1, 2, 5, 5]
+                select n, (count() over(orderby n in desc range -1, 1)), 
+                          (sum(n) over(orderby n in desc range -1, 1))
+            }.toList()
+        '''
+    }
+
     private static void assertGinqScript(String script) {
         String deoptimizedScript = script.replaceAll(/\bGQ\s*[{]/, 'GQ(optimize:false) {')
         List<String> scriptList = [deoptimizedScript, script]

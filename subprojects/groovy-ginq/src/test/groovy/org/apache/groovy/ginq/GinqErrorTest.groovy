@@ -454,4 +454,28 @@ class GinqErrorTest {
 
         assert err.toString().contains('Unknown window clause: `order` @ line 3, column 51.')
     }
+
+    @Test
+    void "testGinq - window - 60"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 1, 2, 2]
+                select n, (sum(n) over(range 1, 2))
+            }.toList()
+        '''
+
+        assert err.toString().contains('`orderby` is expected when using `range` @ line 3, column 46.')
+    }
+
+    @Test
+    void "testGinq - window - 61"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 1, 2, 2]
+                select n, (sum(n) over(orderby n, n + 1 range 1, 2))
+            }.toList()
+        '''
+
+        assert err.toString().contains('Only one field is expected in the `orderby` clause when using `range` @ line 3, column 48.')
+    }
 }

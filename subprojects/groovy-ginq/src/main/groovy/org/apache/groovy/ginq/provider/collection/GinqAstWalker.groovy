@@ -837,6 +837,19 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         }
 
         if (rangeExpr) {
+            if (!orderExpr) {
+                this.collectSyntaxError(new GinqSyntaxError(
+                        "`orderby` is expected when using `range`",
+                        rangeExpr.getLineNumber(), rangeExpr.getColumnNumber()
+                ))
+            }
+            if (((ArgumentListExpression) orderExpr).getExpressions().size() != 1) {
+                this.collectSyntaxError(new GinqSyntaxError(
+                        "Only one field is expected in the `orderby` clause when using `range`",
+                        orderExpr.getLineNumber(), orderExpr.getColumnNumber()
+                ))
+            }
+
             def valueBoundCtorCallExpression = ctorX(VALUEBOUND_TYPE, rangeExpr)
             argumentExpressionList << valueBoundCtorCallExpression
         }
