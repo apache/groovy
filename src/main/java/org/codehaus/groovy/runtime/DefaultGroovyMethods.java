@@ -55,6 +55,7 @@ import groovy.util.OrderBy;
 import groovy.util.PermutationGenerator;
 import groovy.util.ProxyGenerator;
 import org.apache.groovy.io.StringBuilderWriter;
+import org.apache.groovy.util.ReversedList;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
@@ -12072,6 +12073,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         Collections.shuffle(items, rnd);
         System.arraycopy(items.toArray(), 0, result, 0, items.size());
         return result;
+    }
+
+    /**
+     * Creates a view list with reversed order, and the order of original list will not change.
+     * <pre class="groovyTestCase">
+     * def list = ["a", 6, true]
+     * assert list.asReversed() == [true, 6, "a"]
+     * assert list == ["a", 6, true]
+     * </pre>
+     *
+     * @param self a list
+     * @param <T> the type of element
+     * @return the reversed list
+     * @since 4.0.0
+     */
+    public static <T> List<T> asReversed(List<T> self) {
+        return new ReversedList<>(self);
     }
 
     /**
