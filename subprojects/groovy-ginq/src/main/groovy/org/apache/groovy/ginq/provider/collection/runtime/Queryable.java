@@ -472,13 +472,19 @@ public interface Queryable<T> {
      * @since 4.0.0
      */
     class Order<T, U extends Comparable<? super U>> {
+        public static final Order[] EMPTY_ARRAY = new Order[0];
         private final Function<? super T, ? extends U> keyExtractor;
         private final boolean asc;
-        public static final Order[] EMPTY_ARRAY = new Order[0];
+        private final boolean nullsLast;
 
         public Order(Function<? super T, ? extends U> keyExtractor, boolean asc) {
+            this(keyExtractor, asc, true);
+        }
+
+        public Order(Function<? super T, ? extends U> keyExtractor, boolean asc, boolean nullsLast) {
             this.keyExtractor = keyExtractor;
             this.asc = asc;
+            this.nullsLast = nullsLast;
         }
 
         public Function<? super T, ? extends U> getKeyExtractor() {
@@ -487,6 +493,10 @@ public interface Queryable<T> {
 
         public boolean isAsc() {
             return asc;
+        }
+
+        public boolean isNullsLast() {
+            return nullsLast;
         }
 
         @Override

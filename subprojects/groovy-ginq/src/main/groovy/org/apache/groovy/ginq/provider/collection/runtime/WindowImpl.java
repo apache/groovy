@@ -252,7 +252,7 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
 
     private static <T, U extends Comparable<? super U>> List<Order<Tuple2<T, Long>, U>> composeOrders(List<Queryable.Order<? super T, ? extends U>> orderList) {
         return orderList.stream()
-                .map(order -> new Order<Tuple2<T, Long>, U>(t -> order.getKeyExtractor().apply(t.getV1()), order.isAsc()))
+                .map(order -> new Order<Tuple2<T, Long>, U>(t -> order.getKeyExtractor().apply(t.getV1()), order.isAsc(), order.isNullsLast()))
                 .collect(Collectors.toList());
     }
 

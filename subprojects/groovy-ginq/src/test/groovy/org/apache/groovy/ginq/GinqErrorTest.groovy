@@ -514,4 +514,43 @@ class GinqErrorTest {
 
         assert err.toString().contains('Both lower bound and upper bound are expected for `range` @ line 3, column 56.')
     }
+
+    @Test
+    void "testGinq - window - 65"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 1, 2, 2]
+                orderby n in asc(nl)
+                select n
+            }.toList()
+        '''
+
+        assert err.toString().contains('Invalid nulls order: nl, `nullslast`/`nullsfirst` is expected @ line 3, column 34.')
+    }
+
+    @Test
+    void "testGinq - window - 66"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 1, 2, 2]
+                orderby n in asc(nullslast, nullsfirst)
+                select n
+            }.toList()
+        '''
+
+        assert err.toString().contains('Only `nullslast`/`nullsfirst` is expected @ line 3, column 33.')
+    }
+
+    @Test
+    void "testGinq - window - 67"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 1, 2, 2]
+                orderby n in asc()
+                select n
+            }.toList()
+        '''
+
+        assert err.toString().contains('Only `nullslast`/`nullsfirst` is expected @ line 3, column 33.')
+    }
 }

@@ -607,10 +607,14 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         List<Expression> orderCtorCallExpressions = argumentExpressionList.stream().map(e -> {
             Expression target = e
             boolean asc = true
+            boolean nullsLast = true
             if (e instanceof BinaryExpression && e.operation.type == Types.KEYWORD_IN) {
                 target = e.leftExpression
 
-                String orderOption = e.rightExpression.text
+                String orderOption =
+                        e.rightExpression instanceof MethodCallExpression
+                                ? ((MethodCallExpression) e.rightExpression).methodAsString
+                                : e.rightExpression.text
                 if (!ORDER_OPTION_LIST.contains(orderOption)) {
                     this.collectSyntaxError(
                             new GinqSyntaxError(
@@ -621,11 +625,40 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                 }
 
                 asc = 'asc' == orderOption
+                if (e.rightExpression instanceof MethodCallExpression) {
+                    MethodCallExpression mce = (MethodCallExpression) e.rightExpression
+                    String nullsOption = null
+                    List<Expression> argList = ((ArgumentListExpression) mce.arguments).getExpressions()
+                    if (1 == argList.size()) {
+                        Expression nullsOptionExpression = argList[0]
+                        if (nullsOptionExpression instanceof VariableExpression) {
+                            nullsOption = nullsOptionExpression.text
+                            if (!NULLS_OPTION_LIST.contains(nullsOption)) {
+                                this.collectSyntaxError(
+                                        new GinqSyntaxError(
+                                                "Invalid nulls order: " + nullsOption + ", `nullslast`/`nullsfirst` is expected",
+                                                nullsOptionExpression.getLineNumber(), nullsOptionExpression.getColumnNumber()
+                                        )
+                                )
+                            }
+                        }
+                    } else {
+                        this.collectSyntaxError(
+                                new GinqSyntaxError(
+                                        "Only `nullslast`/`nullsfirst` is expected",
+                                        mce.arguments.getLineNumber(), mce.arguments.getColumnNumber()
+                                )
+                        )
+                    }
+                    if (nullsOption) {
+                        nullsLast = 'nullslast' == nullsOption
+                    }
+                }
             }
 
             LambdaExpression lambdaExpression = constructLambdaExpression(dataSourceExpression, target)
 
-            return ctorX(ORDER_TYPE, args(lambdaExpression, new ConstantExpression(asc)))
+            return ctorX(ORDER_TYPE, args(lambdaExpression, new ConstantExpression(asc), new ConstantExpression(nullsLast)))
         }).collect(Collectors.toList())
         return orderCtorCallExpressions
     }
@@ -1451,6 +1484,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final ClassNode TUPLE_TYPE = makeWithoutCaching(Tuple.class)
 
     private static final List<String> ORDER_OPTION_LIST = Arrays.asList('asc', 'desc')
+    private static final List<String> NULLS_OPTION_LIST = Arrays.asList('nullslast', 'nullsfirst')
     private static final String FUNCTION_COUNT = 'count'
     private static final String FUNCTION_MIN = 'min'
     private static final String FUNCTION_MAX = 'max'

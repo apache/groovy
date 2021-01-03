@@ -362,6 +362,29 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_sorting_04,ind
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_sorting_05,indent=0]
 ----
 
+[source, sql]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_sorting_06,indent=0]
+----
+[NOTE]
+`nullslast` is equivalent to SQL's `NULLS LAST` and applied by default.
+`nullsfirst` is equivalent to SQL's `NULLS FIRST`.
+
+[source, sql]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_sorting_07,indent=0]
+----
+
+[source, sql]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_sorting_08,indent=0]
+----
+
+[source, sql]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_sorting_09,indent=0]
+----
+
 ==== Pagination
 `limit` is similar to the `limit` clause of MySQL, which could specify the `offset`(first argument) and `size`(second argument) for paginating,
 or just specify the only one argument as `size`
@@ -416,7 +439,7 @@ Window can be defined by `partitionby`, `orderby`, `rows` and `range`:
 over(
     [partitionby <expression> (, <expression>)*]
     [orderby <expression> (, <expression>)*
-       [rows <expression>, <expression> | range <expression>, <expression>]]
+       [rows <lower>, <upper> | range <lower>, <upper>]]
 )
 ```
 * `0` used as bound of `rows` and `range` clause is equivalent to SQL's `CURRENT ROW`, and negative means `PRECEDING`, positive means `FOLLOWING`
@@ -430,6 +453,11 @@ Also, GINQ provides some built-in window functions, e.g.
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_24,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_34,indent=0]
 ----
 [NOTE]
 The parentheses around the window function is required.

@@ -2172,6 +2172,58 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from orderby select - 14"() {
+        assertGinqScript '''
+            assert [1, 2, 5, 6, null, null] == GQ {
+// tag::ginq_sorting_06[]
+                from n in [1, null, 5, null, 2, 6]
+                orderby n in asc(nullslast)
+                select n
+// end::ginq_sorting_06[]
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from orderby select - 15"() {
+        assertGinqScript '''
+            assert [null, null, 1, 2, 5, 6] == GQ {
+// tag::ginq_sorting_07[]
+                from n in [1, null, 5, null, 2, 6]
+                orderby n in asc(nullsfirst)
+                select n
+// end::ginq_sorting_07[]
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from orderby select - 16"() {
+        assertGinqScript '''
+            assert [6, 5, 2, 1, null, null] == GQ {
+// tag::ginq_sorting_08[]
+                from n in [1, null, 5, null, 2, 6]
+                orderby n in desc(nullslast)
+                select n
+// end::ginq_sorting_08[]
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from orderby select - 17"() {
+        assertGinqScript '''
+            assert [null, null, 6, 5, 2, 1] == GQ {
+// tag::ginq_sorting_09[]
+                from n in [1, null, 5, null, 2, 6]
+                orderby n in desc(nullsfirst)
+                select n
+// end::ginq_sorting_09[]
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - from innerjoin orderby select - 1"() {
         assertGinqScript '''
             assert [2, 3] == GQ {
@@ -5152,9 +5204,11 @@ class GinqTest {
     void "testGinq - window - 43"() {
         assertGinqScript '''
 // tag::ginq_winfunction_24[]
-            assert [[2, 1], [1, 0], [3, 2]] == GQ {
-                from n in [2, 1, 3]
-                select n, (rowNumber() over(orderby n))
+            assert [[2, 1, 1, 1], [1, 0, 0, 2], [null, 3, 3, 3], [3, 2, 2, 0]] == GQ {
+                from n in [2, 1, null, 3]
+                select n, (rowNumber() over(orderby n)),
+                          (rowNumber() over(orderby n in asc)),
+                          (rowNumber() over(orderby n in desc))
             }.toList()
 // end::ginq_winfunction_24[]
         '''
@@ -5458,6 +5512,65 @@ class GinqTest {
                 select n, (count() over(orderby n in desc range -1, 1)), 
                           (sum(n) over(orderby n in desc range -1, 1))
             }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 69"() {
+        assertGinqScript '''
+            assert [[1, null, 0], [2, 1, 1], [null, 3, 3], [3, 2, 2]] == GQ {
+                from n in [1, 2, null, 3]
+                select n, (lag(n) over(orderby n in asc(nullslast))),
+                          (rowNumber() over(orderby n in asc(nullslast)))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 70"() {
+        assertGinqScript '''
+            assert [[1, null, 1], [2, 1, 2], [null, null, 0], [3, 2, 3]] == GQ {
+                from n in [1, 2, null, 3]
+                select n, (lag(n) over(orderby n in asc(nullsfirst))),
+                          (rowNumber() over(orderby n in asc(nullsfirst)))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 71"() {
+        assertGinqScript '''
+            assert [[1, 2, 2], [2, 3, 1], [null, 1, 3], [3, null, 0]] == GQ {
+                from n in [1, 2, null, 3]
+                select n, (lag(n) over(orderby n in desc(nullslast))),
+                          (rowNumber() over(orderby n in desc(nullslast)))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 72"() {
+        assertGinqScript '''
+            assert [[1, 2, 3], [2, 3, 2], [null, null, 0], [3, null, 1]] == GQ {
+                from n in [1, 2, null, 3]
+                select n, (lag(n) over(orderby n in desc(nullsfirst))),
+                          (rowNumber() over(orderby n in desc(nullsfirst)))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 73"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_34[]
+            assert [[1, 0, 1, 2, 3], [2, 1, 2, 1, 2], [null, 3, 0, 3, 0], [3, 2, 3, 0, 1]] == GQ {
+                from n in [1, 2, null, 3]
+                select n, (rowNumber() over(orderby n in asc(nullslast))),
+                          (rowNumber() over(orderby n in asc(nullsfirst))),
+                          (rowNumber() over(orderby n in desc(nullslast))),
+                          (rowNumber() over(orderby n in desc(nullsfirst)))
+            }.toList()
+// end::ginq_winfunction_34[]
         '''
     }
 

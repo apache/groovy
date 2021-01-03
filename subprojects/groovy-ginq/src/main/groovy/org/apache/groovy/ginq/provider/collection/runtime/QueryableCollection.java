@@ -52,6 +52,10 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static groovy.lang.Tuple.tuple;
+import static java.util.Comparator.naturalOrder;
+import static java.util.Comparator.nullsFirst;
+import static java.util.Comparator.nullsLast;
+import static java.util.Comparator.reverseOrder;
 import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from;
 
 /**
@@ -241,11 +245,12 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         Comparator<T> comparator = null;
         for (int i = 0, n = orders.length; i < n; i++) {
             Order<? super T, ? extends U> order = orders[i];
-            Comparator<U> ascOrDesc = order.isAsc() ? Comparator.naturalOrder() : Comparator.reverseOrder();
+            Comparator<U> ascOrDesc = order.isAsc() ? naturalOrder() : reverseOrder();
+            Comparator<U> nullsLastOrFirst = order.isNullsLast() ? nullsLast(ascOrDesc) : nullsFirst(ascOrDesc);
             comparator =
                     0 == i
-                            ? Comparator.comparing(order.getKeyExtractor(), ascOrDesc)
-                            : comparator.thenComparing(order.getKeyExtractor(), ascOrDesc);
+                            ? Comparator.comparing(order.getKeyExtractor(), nullsLastOrFirst)
+                            : comparator.thenComparing(order.getKeyExtractor(), nullsLastOrFirst);
         }
         return comparator;
     }
