@@ -19,10 +19,10 @@
 
 //////////////////////////////////////////
 
-= Querying collections in a SQL-like style
+= Querying collections in SQL-like style
 
 Groovy's `groovy-ginq` module provides a higher-level abstraction over collections.
-It could perform queries against in-memory collections of objects in a SQL-like style.
+It could perform queries against in-memory collections of objects in SQL-like style.
 Also, querying XML, JSON, YAML, etc. could also be supported because they can be parsed into collections.
 As GORM and jOOQ are powerful enough to support querying DB, we will cover collections first.
 
