@@ -89,7 +89,7 @@ Currently GINQ can not work well when STC is enabled.
 
 === GINQ Syntax
 ==== Data Source
-The data source for GINQ could be specified by `from` clause.
+The data source for GINQ could be specified by `from` clause, which is equivalent to SQL's `FROM`.
 Currently GINQ supports `Iterable`, `Stream`, array and GINQ result set as its data source:
 
 ===== `Iterable` Data Source
@@ -142,6 +142,8 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_projection_02,
 ----
 
 ==== Filtering
+`where` is equivalent to SQL's `WHERE`
+
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_01,indent=0]
@@ -253,6 +255,7 @@ Only binary expressions(`==`, `&&`) are allowed in the `on` clause of hash join
 
 
 ==== Grouping
+`groupby` is equivalent to SQL's `GROUP BY`, and `having` is equivalent to SQL's `HAVING`
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_01,indent=0]
@@ -335,6 +338,8 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_aggfunction_01
 ----
 
 ==== Sorting
+`orderby` is equivalent to SQL's `ORDER BY`
+
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_sorting_01,indent=0]
