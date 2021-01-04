@@ -938,22 +938,27 @@ public class GroovyClassLoader extends URLClassLoader {
         } catch(URISyntaxException e) {
             path = new File(decodeFileName(ret.getFile()));
         }
-        path = path.getParentFile();
-        if (path.exists() && path.isDirectory()) {
+            path = path.getParentFile();
+        
             File file = new File(path, fileWithoutPackage);
             if (file.exists()) {
                 // file.exists() might be case insensitive. Let's do
                 // case sensitive match for the filename
-                String caseSensitiveName = file.getCanonicalPath();
-                int index = caseSensitiveName.lastIndexOf(File.separator);
-                if(index != -1) {
-                    caseSensitiveName = caseSensitiveName.substring(index + 1);
+                try {
+                    String caseSensitiveName = file.getCanonicalPath();
+                    int index = caseSensitiveName.lastIndexOf(File.separator);
+                    if(index != -1) {
+                        caseSensitiveName = caseSensitiveName.substring(index + 1);
+                    }
+                    if(fileWithoutPackage.equals(caseSensitiveName)) {
+                        return file;
+                    }
+                } catch(IOException ioe) {
+                    //ignore it as it obviously cant read the file
                 }
-                if(fileWithoutPackage.equals(caseSensitiveName)) {
-                    return file;
-                }
+                
             }
-        }
+        
         //file does not exist!
         return null;
     }
