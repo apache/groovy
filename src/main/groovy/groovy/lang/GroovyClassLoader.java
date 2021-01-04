@@ -944,9 +944,13 @@ public class GroovyClassLoader extends URLClassLoader {
             if (file.exists()) {
                 // file.exists() might be case insensitive. Let's do
                 // case sensitive match for the filename
-                File parent = file.getParentFile();
-                for (String child : parent.list()) {
-                    if (child.equals(fileWithoutPackage)) return file;
+                String caseSensitiveName = file.getCanonicalPath();
+                int index = canonicalPath.lastIndexOf(File.separator);
+                if(index != -1) {
+                    caseSensitiveName = caseSensitiveName.substring(index + 1);
+                }
+                if(fileWithoutPackage.equals(caseSensitiveName)) {
+                    return file;
                 }
             }
         }
