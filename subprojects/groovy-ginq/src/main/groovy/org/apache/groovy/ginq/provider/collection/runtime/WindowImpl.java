@@ -19,6 +19,7 @@
 package org.apache.groovy.ginq.provider.collection.runtime;
 
 import groovy.lang.Tuple2;
+import org.apache.groovy.util.ReversedList;
 
 import java.math.BigDecimal;
 import java.util.Collections;
