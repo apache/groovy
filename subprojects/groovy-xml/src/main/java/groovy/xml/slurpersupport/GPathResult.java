@@ -206,6 +206,13 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
         return this;
     }
 
+    // GROOVY-9852: so that XmlSlurper plus (shorthand for replaceNode)
+    // is preferred ahead of the DGM plus(Iterable, Iterable) method
+    // since GPathResult is Iterable
+    public Object plus(final Closure newValue) {
+        return plus((Object) newValue);
+    }
+
     protected abstract void replaceNode(Closure newValue);
 
     protected abstract void replaceBody(Object newValue);

@@ -90,8 +90,7 @@ class XmlSlurperTest extends GroovyTestCase {
     void testReplacementsAndAdditions() {
         GpathSyntaxTestSupport.checkReplaceNode(getRoot)
         GpathSyntaxTestSupport.checkReplaceMultipleNodes(getRoot)
-        // TODO re-enable next test
-        //GpathSyntaxTestSupport.checkPlus(getRoot)
+        GpathSyntaxTestSupport.checkPlus(getRoot)
     }
 
     void testMixedMarkup() {
