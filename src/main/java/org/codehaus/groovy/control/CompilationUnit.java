@@ -74,7 +74,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
@@ -622,14 +621,14 @@ public class CompilationUnit extends ProcessingUnit {
         throughPhase = Math.min(throughPhase, Phases.ALL);
 
         while (throughPhase >= phase && phase <= Phases.ALL) {
-
             if (phase == Phases.SEMANTIC_ANALYSIS) {
                 resolve.doPhaseOperation(this);
                 if (dequeued()) continue;
-            }
-
-            if (phase == Phases.CONVERSION) {
-                buildASTs();
+            } else if (phase == Phases.CONVERSION) {
+                Collection<SourceUnit> sourceUnits = sources.values();
+                (sourceUnits.size() > 1 && Boolean.TRUE.equals(configuration.getOptimizationOptions().get(CompilerConfiguration.PARALLEL_PARSE))
+                        ? sourceUnits.parallelStream() : sourceUnits.stream()
+                ).forEach(SourceUnit::buildAST);
             }
 
             processPhaseOperations(phase);
@@ -651,19 +650,6 @@ public class CompilationUnit extends ProcessingUnit {
         }
 
         getErrorCollector().failIfErrors();
-    }
-
-    private void buildASTs() {
-        Boolean bpe = configuration.getOptimizationOptions().get(CompilerConfiguration.PARALLEL_PARSE);
-        boolean parallelParseEnabled = null != bpe && bpe;
-
-        Collection<SourceUnit> sourceUnits = sources.values();
-        Stream<SourceUnit> sourceUnitStream =
-                (!parallelParseEnabled || sourceUnits.size() < 2)
-                        ? sourceUnits.stream() // no need to build AST with parallel stream when we just have one/no source unit
-                        : sourceUnits.parallelStream();
-
-        sourceUnitStream.forEach(SourceUnit::buildAST);
     }
 
     private void processPhaseOperations(final int phase) {

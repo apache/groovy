@@ -129,8 +129,8 @@ public class CompilerConfiguration {
     public static final String[] ALLOWED_JDKS = JDK_TO_BYTECODE_VERSION_MAP.keySet().toArray(new String[JDK_TO_BYTECODE_VERSION_MAP.size()]);
 
     /**
-    * The ASM api version to use when loading/parsing classes, and generating proxy adapter classes.
-    */
+     * The ASM API version used when loading/parsing classes and generating proxy adapter classes.
+     */
     public static final int ASM_API_VERSION = Opcodes.ASM8;
 
     /**
@@ -442,25 +442,13 @@ public class CompilerConfiguration {
         defaultScriptExtension = getSystemPropertySafe("groovy.default.scriptExtension", ".groovy");
 
         optimizationOptions = new HashMap<>(4);
-        handleOptimizationOption(optimizationOptions, INVOKEDYNAMIC, "groovy.target.indy", "true");
-        handleOptimizationOption(optimizationOptions, GROOVYDOC, "groovy.attach.groovydoc");
-        handleOptimizationOption(optimizationOptions, RUNTIME_GROOVYDOC, "groovy.attach.runtime.groovydoc");
-        handleOptimizationOption(optimizationOptions, PARALLEL_PARSE, "groovy.parallel.parse", "true");
-    }
-
-    private void handleOptimizationOption(final Map<String, Boolean> options, final String optionName, final String sysOptionName) {
-        handleOptimizationOption(options, optionName, sysOptionName, null);
-    }
-
-    private void handleOptimizationOption(final Map<String, Boolean> options, final String optionName, final String sysOptionName, String def) {
-        String propValue = getSystemPropertySafe(sysOptionName, def);
-        boolean optionEnabled = propValue == null
-                ? (DEFAULT != null && Boolean.TRUE.equals(DEFAULT.getOptimizationOptions().get(optionName)))
-                : Boolean.parseBoolean(propValue);
-
-        if (optionEnabled) {
-            options.put(optionName, Boolean.TRUE);
-        }
+        java.util.function.BiConsumer<String, String> mapper = (key, val) -> {
+            if (val != null) optimizationOptions.put(key, Boolean.valueOf(val));
+        };
+        mapper.accept(INVOKEDYNAMIC,     getSystemPropertySafe("groovy.target.indy", "true"));
+        mapper.accept(GROOVYDOC,         getSystemPropertySafe("groovy.attach.groovydoc"));
+        mapper.accept(RUNTIME_GROOVYDOC, getSystemPropertySafe("groovy.attach.runtime.groovydoc"));
+        mapper.accept(PARALLEL_PARSE,    getSystemPropertySafe("groovy.parallel.parse", "true"));
     }
 
     /**
@@ -1075,7 +1063,7 @@ public class CompilerConfiguration {
      */
     public boolean isIndyEnabled() {
         Boolean indyEnabled = getOptimizationOptions().get(INVOKEDYNAMIC);
-        return indyEnabled != Boolean.FALSE;
+        return Optional.ofNullable(indyEnabled).orElse(Boolean.TRUE).booleanValue();
     }
 
     /**
@@ -1083,7 +1071,7 @@ public class CompilerConfiguration {
      */
     public boolean isGroovydocEnabled() {
         Boolean groovydocEnabled = getOptimizationOptions().get(GROOVYDOC);
-        return Optional.ofNullable(groovydocEnabled).orElse(Boolean.FALSE);
+        return Optional.ofNullable(groovydocEnabled).orElse(Boolean.FALSE).booleanValue();
     }
 
     /**
@@ -1091,6 +1079,6 @@ public class CompilerConfiguration {
      */
     public boolean isRuntimeGroovydocEnabled() {
         Boolean runtimeGroovydocEnabled = getOptimizationOptions().get(RUNTIME_GROOVYDOC);
-        return Optional.ofNullable(runtimeGroovydocEnabled).orElse(Boolean.FALSE);
+        return Optional.ofNullable(runtimeGroovydocEnabled).orElse(Boolean.FALSE).booleanValue();
     }
 }
