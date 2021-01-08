@@ -378,15 +378,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         while (iter.hasNext()) {
             c = iter.next();
 
-            CachedMethod[] cachedMethods = c.getMethods();
-            for (CachedMethod metaMethod : cachedMethods) {
+            for (final CachedMethod metaMethod : c.getMethods()) {
                 addToAllMethodsIfPublic(metaMethod);
                 if (!metaMethod.isPrivate() || c == firstGroovySuper)
                     addMetaMethodToIndex(metaMethod, header);
             }
 
-            MetaMethod[] cachedMethods1 = getNewMetaMethods(c);
-            for (final MetaMethod method : cachedMethods1) {
+            for (final MetaMethod method : getNewMetaMethods(c)) {
                 if (!newGroovyMethodsSet.contains(method)) {
                     newGroovyMethodsSet.add(method);
                     addMetaMethodToIndex(method, header);
@@ -407,7 +405,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
             last = header;
 
-            for (CachedMethod metaMethod : c.getMethods()) {
+            for (final CachedMethod metaMethod : c.getMethods()) {
                 addToAllMethodsIfPublic(metaMethod);
                 addMetaMethodToIndex(metaMethod, header);
             }
