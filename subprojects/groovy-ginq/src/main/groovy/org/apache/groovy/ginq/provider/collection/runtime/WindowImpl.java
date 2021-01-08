@@ -43,7 +43,7 @@ import static org.codehaus.groovy.runtime.typehandling.NumberMath.toBigDecimal;
  */
 class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection<T> implements Window<T> {
 
-    static <T, U extends Comparable<? super U>> Window<T> newInstance(Tuple2<T, Long> currentRecord, Queryable<Tuple2<T, Long>> partition, WindowDefinition<T, U> windowDefinition) {
+    static <T, U extends Comparable<? super U>> Window<T> newInstance(Tuple2<T, Long> currentRecord, Partition<Tuple2<T, Long>> partition, WindowDefinition<T, U> windowDefinition) {
         Function<? super T, ? extends U> keyExtractor;
         final List<Order<? super T, ? extends U>> orderList = windowDefinition.orderBy();
         if (null != orderList && 1 == orderList.size()) {
@@ -52,7 +52,7 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
             keyExtractor = null;
         }
 
-        List<Tuple2<T, Long>> listWithIndex = partition.orderBy(composeOrders(windowDefinition)).toList();
+        List<Tuple2<T, Long>> listWithIndex = partition.toList();
 
         int tmpIndex = null == orderList || orderList.isEmpty()
                 ? binarySearch(listWithIndex, currentRecord, comparing(Tuple2::getV2))
@@ -257,7 +257,7 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
                 .collect(Collectors.toList());
     }
 
-    private static <T, U extends Comparable<? super U>> List<Order<Tuple2<T, Long>, U>> composeOrders(WindowDefinition<T, U> windowDefinition) {
+    static <T, U extends Comparable<? super U>> List<Order<Tuple2<T, Long>, U>> composeOrders(WindowDefinition<T, U> windowDefinition) {
         return composeOrders(windowDefinition.orderBy());
     }
 

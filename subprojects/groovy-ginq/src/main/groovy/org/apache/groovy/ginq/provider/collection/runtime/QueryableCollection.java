@@ -508,7 +508,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     @Override
     public <U extends Comparable<? super U>> Window<T> over(Tuple2<T, Long> currentRecord, WindowDefinition<T, U> windowDefinition) {
         this.makeReusable();
-        Queryable<Tuple2<T, Long>> partition =
+        Partition<Tuple2<T, Long>> partition =
                 from(Collections.singletonList(currentRecord)).innerHashJoin(
                         partitionCache.computeIfAbsent(windowDefinition, wd -> {
                             long[] rn = new long[] { 1L };
@@ -517,9 +517,10 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                                             .map(e -> Tuple.tuple(e, rn[0]++))
                                             .collect(Collectors.toList());
 
-                            final Queryable<Tuple2<?, Queryable<Tuple2<T, Long>>>> q =
+                            final Queryable<Tuple2<?, Partition<Tuple2<T, Long>>>> q =
                                     from(listWithIndex)
-                                            .groupBy(wd.partitionBy().compose(Tuple2::getV1));
+                                            .groupBy(wd.partitionBy().compose(Tuple2::getV1))
+                                            .select((e, x) -> Tuple.tuple(e.getV1(), PartitionImpl.newInstance(e.getV2(), windowDefinition)));
                             if (q instanceof QueryableCollection) {
                                 ((QueryableCollection) q).makeReusable();
                             }
@@ -528,7 +529,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                 ).select((e, q) -> e.getV2().getV2())
                         .stream()
                         .findFirst()
-                        .orElse(Queryable.emptyQueryable());
+                        .orElse(Partition.emptyPartition());
 
         return WindowImpl.newInstance(currentRecord, partition, windowDefinition);
     }
@@ -605,7 +606,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return AsciiTableMaker.makeAsciiTable(this);
     }
 
-    private final Map<WindowDefinition<T, ?>, Queryable<Tuple2<?, Queryable<Tuple2<T, Long>>>>> partitionCache = new ConcurrentHashMap<>(4);
+    private final Map<WindowDefinition<T, ?>, Queryable<Tuple2<?, Partition<Tuple2<T, Long>>>>> partitionCache = new ConcurrentHashMap<>(4);
     private Stream<T> sourceStream;
     private volatile Iterable<T> sourceIterable;
     private final ReadWriteLock rwl = new ReentrantReadWriteLock();
