@@ -436,19 +436,20 @@ public class CompilerConfiguration {
         parameters = getBooleanSafe("groovy.parameters");
         previewFeatures = getBooleanSafe("groovy.preview.features");
         sourceEncoding = getSystemPropertySafe("groovy.source.encoding",
-            getSystemPropertySafe("file.encoding", DEFAULT_SOURCE_ENCODING));
+                getSystemPropertySafe("file.encoding", DEFAULT_SOURCE_ENCODING));
         setTargetDirectorySafe(getSystemPropertySafe("groovy.target.directory"));
         setTargetBytecodeIfValid(getSystemPropertySafe("groovy.target.bytecode", JDK8));
         defaultScriptExtension = getSystemPropertySafe("groovy.default.scriptExtension", ".groovy");
 
         optimizationOptions = new HashMap<>(4);
-        java.util.function.BiConsumer<String, String> mapper = (key, val) -> {
-            if (val != null) optimizationOptions.put(key, Boolean.valueOf(val));
-        };
-        mapper.accept(INVOKEDYNAMIC,     getSystemPropertySafe("groovy.target.indy", "true"));
-        mapper.accept(GROOVYDOC,         getSystemPropertySafe("groovy.attach.groovydoc"));
-        mapper.accept(RUNTIME_GROOVYDOC, getSystemPropertySafe("groovy.attach.runtime.groovydoc"));
-        mapper.accept(PARALLEL_PARSE,    getSystemPropertySafe("groovy.parallel.parse", "true"));
+        handleOptimizationOption(INVOKEDYNAMIC, getSystemPropertySafe("groovy.target.indy", "true"));
+        handleOptimizationOption(GROOVYDOC, getSystemPropertySafe("groovy.attach.groovydoc"));
+        handleOptimizationOption(RUNTIME_GROOVYDOC, getSystemPropertySafe("groovy.attach.runtime.groovydoc"));
+        handleOptimizationOption(PARALLEL_PARSE, getSystemPropertySafe("groovy.parallel.parse", "true"));
+    }
+
+    private void handleOptimizationOption(String key, String val) {
+        if (val != null) optimizationOptions.put(key, Boolean.valueOf(val));
     }
 
     /**
