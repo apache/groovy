@@ -20,6 +20,7 @@ package org.apache.groovy.ginq.provider.collection.runtime;
 
 import groovy.lang.Tuple;
 import groovy.lang.Tuple2;
+import groovy.lang.Tuple3;
 import groovy.transform.Internal;
 import org.apache.groovy.internal.util.Supplier;
 import org.apache.groovy.util.SystemUtil;
@@ -57,6 +58,7 @@ import static java.util.Comparator.nullsFirst;
 import static java.util.Comparator.nullsLast;
 import static java.util.Comparator.reverseOrder;
 import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from;
+import static org.apache.groovy.ginq.provider.collection.runtime.WindowImpl.composeOrders;
 
 /**
  * Represents the queryable collections
@@ -508,9 +510,10 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     @Override
     public <U extends Comparable<? super U>> Window<T> over(Tuple2<T, Long> currentRecord, WindowDefinition<T, U> windowDefinition) {
         this.makeReusable();
+        final Tuple3<String, String, String> idTuple = (Tuple3<String, String, String>) windowDefinition.getId(); // (partitionId, orderId, windowDefinitionId)
         Partition<Tuple2<T, Long>> partition =
                 from(Collections.singletonList(currentRecord)).innerHashJoin(
-                        partitionCache.computeIfAbsent(windowDefinition, wd -> {
+                        partitionCache.computeIfAbsent(idTuple.getV1(), partitionId -> {
                             long[] rn = new long[] { 1L };
                             List<Tuple2<T, Long>> listWithIndex =
                                     this.toList().stream()
@@ -519,8 +522,8 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
                             final Queryable<Tuple2<?, Partition<Tuple2<T, Long>>>> q =
                                     from(listWithIndex)
-                                            .groupBy(wd.partitionBy().compose(Tuple2::getV1))
-                                            .select((e, x) -> Tuple.tuple(e.getV1(), PartitionImpl.newInstance(e.getV2(), windowDefinition)));
+                                            .groupBy(windowDefinition.partitionBy().compose(Tuple2::getV1))
+                                            .select((e, x) -> Tuple.tuple(e.getV1(), PartitionImpl.newInstance(e.getV2().toList())));
                             if (q instanceof QueryableCollection) {
                                 ((QueryableCollection) q).makeReusable();
                             }
@@ -531,7 +534,37 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                         .findFirst()
                         .orElse(Partition.emptyPartition());
 
-        return WindowImpl.newInstance(currentRecord, partition, windowDefinition);
+        final String orderId = idTuple.getV2();
+        final SortedPartitionCacheKey<T> sortedPartitionCacheKey = new SortedPartitionCacheKey<>(partition, orderId);
+        Partition<Tuple2<T, Long>> sortedPartition = sortedPartitionCache.computeIfAbsent(
+                sortedPartitionCacheKey,
+                sortedPartitionId -> PartitionImpl.newInstance(partition.orderBy(composeOrders(windowDefinition)).toList())
+        );
+        
+        return WindowImpl.newInstance(currentRecord, sortedPartition, windowDefinition);
+    }
+
+    private static class SortedPartitionCacheKey<T> {
+        private final Partition<Tuple2<T, Long>> partition;
+        private final String orderId;
+
+        public SortedPartitionCacheKey(Partition<Tuple2<T, Long>> partition, String orderId) {
+            this.partition = partition;
+            this.orderId = orderId;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof SortedPartitionCacheKey)) return false;
+            SortedPartitionCacheKey that = (SortedPartitionCacheKey) o;
+            return partition == that.partition && orderId.equals(that.orderId);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(partition.size(), orderId);
+        }
     }
 
     private static <T> Stream<T> toStream(Iterable<T> sourceIterable) {
@@ -606,7 +639,8 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return AsciiTableMaker.makeAsciiTable(this);
     }
 
-    private final Map<WindowDefinition<T, ?>, Queryable<Tuple2<?, Partition<Tuple2<T, Long>>>>> partitionCache = new ConcurrentHashMap<>(4);
+    private final Map<String, Queryable<Tuple2<?, Partition<Tuple2<T, Long>>>>> partitionCache = new ConcurrentHashMap<>(4);
+    private final Map<SortedPartitionCacheKey<T>, Partition<Tuple2<T, Long>>> sortedPartitionCache = new ConcurrentHashMap<>(4);
     private Stream<T> sourceStream;
     private volatile Iterable<T> sourceIterable;
     private final ReadWriteLock rwl = new ReentrantReadWriteLock();

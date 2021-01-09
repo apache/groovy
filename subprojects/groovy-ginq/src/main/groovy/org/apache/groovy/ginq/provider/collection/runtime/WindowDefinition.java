@@ -199,7 +199,7 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return the id of window definition
      * @since 4.0.0
      */
-    String getId();
+    Object getId();
 
     /**
      * Set the id of window definition
@@ -208,5 +208,5 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return self, i.e. current {@link WindowDefinition} instance
      * @since 4.0.0
      */
-    WindowDefinition<T, U> setId(String id);
+    WindowDefinition<T, U> setId(Object id);
 }

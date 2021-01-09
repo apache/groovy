@@ -22,8 +22,6 @@ import groovy.lang.Tuple2;
 
 import java.util.List;
 
-import static org.apache.groovy.ginq.provider.collection.runtime.WindowImpl.composeOrders;
-
 /**
  * Represents partition
  *
@@ -31,8 +29,7 @@ import static org.apache.groovy.ginq.provider.collection.runtime.WindowImpl.comp
  * @since 4.0.0
  */
 class PartitionImpl<T> extends QueryableCollection<T> implements Partition<T> {
-    public static <T, U extends Comparable<? super U>> Partition<Tuple2<T, Long>> newInstance(Queryable<Tuple2<T, Long>> partitionData, WindowDefinition<T, U> windowDefinition) {
-        List<Tuple2<T, Long>> listWithIndex = partitionData.orderBy(composeOrders(windowDefinition)).toList();
+    public static <T, U extends Comparable<? super U>> Partition<Tuple2<T, Long>> newInstance(List<Tuple2<T, Long>> listWithIndex) {
         return new PartitionImpl<>(listWithIndex);
     }
 

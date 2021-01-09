@@ -908,10 +908,29 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             argumentExpressionList << valueBoundCtorCallExpression
         }
 
+        String partitionByClauseText = ""
+        String orderByClauseText = ""
+        argumentListExpression.visit(new GinqAstBaseVisitor() {
+            @Override
+            void visitMethodCallExpression(MethodCallExpression call) {
+                if ('partitionby' == call.methodAsString) {
+                    partitionByClauseText = call.text
+                } else if ('orderby' == call.methodAsString) {
+                    orderByClauseText = call.text
+                }
+
+                super.visitMethodCallExpression(call)
+            }
+        })
+
         callX(
                 callX(new ClassExpression(WINDOW_DEFINITION_TYPE), 'of', args(argumentExpressionList)),
                 'setId',
-                new ConstantExpression(argumentListExpression.text)
+                callX(TUPLE_TYPE, 'tuple', args(
+                        new ConstantExpression(partitionByClauseText),
+                        new ConstantExpression(orderByClauseText),
+                        new ConstantExpression(argumentListExpression.text)
+                ))
         )
     }
 

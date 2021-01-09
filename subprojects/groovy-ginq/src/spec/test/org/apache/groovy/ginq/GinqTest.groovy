@@ -4870,7 +4870,7 @@ class GinqTest {
 
     @Test
     void "testGinq - window - 15"() {
-        assertGinqScript '''
+        assertScript '''
 // tag::ginq_winfunction_05[]
             assert [['a', null], ['b', 'a'], ['aa', null], ['bb', 'aa']] == GQ {
                 from s in ['a', 'b', 'aa', 'bb']
@@ -5571,6 +5571,20 @@ class GinqTest {
                           (rowNumber() over(orderby n in desc(nullsfirst)))
             }.toList()
 // end::ginq_winfunction_34[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 74"() {
+        assertGinqScript '''
+            assert [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4],
+                    [5, 5], [6, 6], [7, 7], [8, 8], [9, 9]] == GQ(parallel:true) {
+                from n in (
+                    from m in 0..<10
+                    select m
+                )
+                select n, (rowNumber() over(orderby n))
+            }.toList()
         '''
     }
 

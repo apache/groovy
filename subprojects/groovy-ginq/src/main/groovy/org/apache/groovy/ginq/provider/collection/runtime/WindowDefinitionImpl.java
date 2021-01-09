@@ -101,12 +101,12 @@ class WindowDefinitionImpl<T, U extends Comparable<? super U>> implements Window
     }
 
     @Override
-    public String getId() {
+    public Object getId() {
         return id;
     }
 
     @Override
-    public WindowDefinition<T, U> setId(String id) {
+    public WindowDefinition<T, U> setId(Object id) {
         this.id = id;
         return this;
     }
@@ -124,5 +124,5 @@ class WindowDefinitionImpl<T, U extends Comparable<? super U>> implements Window
         return Objects.hash(id);
     }
 
-    private String id;
+    private Object id;
 }
