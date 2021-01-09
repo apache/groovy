@@ -23,10 +23,11 @@ import groovy.transform.CompileStatic
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.function.Supplier
+import java.util.function.Function
 import java.util.stream.Collectors
 
 import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from
+
 /**
  * Helper for {@link Queryable}
  *
@@ -73,8 +74,8 @@ class QueryableHelper {
         throw new TooManyValuesException("subquery returns more than one value: $list")
     }
 
-    static <U> CompletableFuture<U> supplyAsync(Supplier<U> supplier) {
-        return CompletableFuture.supplyAsync(supplier, THREAD_POOL)
+    static <T, U> CompletableFuture<U> supplyAsync(Function<? super T, ? extends U> function, T param) {
+        return CompletableFuture.supplyAsync(() -> { function.apply(param) }, THREAD_POOL)
     }
 
     static boolean isParallel() {
