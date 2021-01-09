@@ -25,6 +25,7 @@ import groovy.transform.Internal;
 import org.apache.groovy.internal.util.Supplier;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
 import java.io.Serializable;
@@ -53,12 +54,15 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static groovy.lang.Tuple.tuple;
+import static java.lang.Math.pow;
+import static java.lang.Math.sqrt;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.nullsFirst;
 import static java.util.Comparator.nullsLast;
 import static java.util.Comparator.reverseOrder;
 import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from;
 import static org.apache.groovy.ginq.provider.collection.runtime.WindowImpl.composeOrders;
+import static org.codehaus.groovy.runtime.typehandling.NumberMath.toBigDecimal;
 
 /**
  * Represents the queryable collections
@@ -345,7 +349,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                     Number n = mapper.apply(e);
                     if (null == n) return BigDecimal.ZERO;
 
-                    return NumberMath.toBigDecimal(n);
+                    return toBigDecimal(n);
                 }).reduce(BigDecimal.ZERO, BigDecimal::add));
     }
 
@@ -362,7 +366,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                 }, (o1, o2) -> o1)
         );
 
-        return ((BigDecimal) result[1]).divide(BigDecimal.valueOf((Long) result[0]), 16, RoundingMode.HALF_UP);
+        return ((BigDecimal) result[1]).divide(toBigDecimal((Long) result[0]), 16, RoundingMode.HALF_UP);
     }
 
     @Override
@@ -406,6 +410,22 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         }
 
         return num;
+    }
+
+    @Override
+    public BigDecimal stdev(Function<? super T, ? extends Number> mapper) {
+        BigDecimal avg = this.avg(mapper);
+        Object[] result = agg(q -> q.stream()
+                .map(mapper)
+                .filter(Objects::nonNull)
+                .map(e -> toBigDecimal(pow(NumberNumberMinus.minus(e, avg).doubleValue(), 2)))
+                .reduce(new Object[]{0L, BigDecimal.ZERO}, (r, e) -> {
+                    r[0] = (Long) r[0] + 1;
+                    r[1] = ((BigDecimal) r[1]).add(e);
+                    return r;
+                }, (o1, o2) -> o1));
+
+        return toBigDecimal(sqrt(((BigDecimal) result[1]).divide(toBigDecimal((Long) result[0]), 16, RoundingMode.HALF_UP).doubleValue()));
     }
 
     @Override
