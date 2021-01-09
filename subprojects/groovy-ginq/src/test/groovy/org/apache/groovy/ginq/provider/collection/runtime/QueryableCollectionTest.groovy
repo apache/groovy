@@ -1015,7 +1015,7 @@ class QueryableCollectionTest {
     void testWindow1() {
         def nums = [9, 3, 6]
 
-        def windowDefinition = WindowDefinition.of(new Queryable.Order<Integer, Integer>(e -> e, true))
+        def windowDefinition = WindowDefinition.of(new Queryable.Order<Integer, Integer>(e -> e, true)).setId(tuple("", "orderby e", "orderby e"))
         def result = from(nums).over(tuple(6, 3L), windowDefinition).rowNumber()
 
         assert 1 == result
@@ -1029,7 +1029,7 @@ class QueryableCollectionTest {
         def n32 = new Integer(3)
         def n6 = new Integer(6)
         def nums = [n9, n31, n32, n6]
-        def windowDefinition = WindowDefinition.of(new Queryable.Order<Integer, Integer>(e -> new NamedTuple<>([e, e + 1], ['e', 'e + 1']), true))
+        def windowDefinition = WindowDefinition.of(new Queryable.Order<Integer, Integer>(e -> new NamedTuple<>([e, e + 1], ['e', 'e + 1']), true)).setId(Tuple.tuple("", "orderby e, e + 1", "orderby e, e + 1"))
 
         assert 0 == from(nums).over(tuple(n31, 2L), windowDefinition).rowNumber()
         assert 1 == from(nums).over(tuple(n32, 3L), windowDefinition).rowNumber()
@@ -1048,7 +1048,7 @@ class QueryableCollectionTest {
         def n32 = new Integer(3)
         def n6 = new Integer(6)
         def nums = [n9, n31, n32, n6]
-        def windowDefinition = WindowDefinition.of(new Queryable.Order<Integer, Integer>(e -> new NamedTuple<>([e, e + 1], ['e', 'e + 1']), true))
+        def windowDefinition = WindowDefinition.of(new Queryable.Order<Integer, Integer>(e -> new NamedTuple<>([e, e + 1], ['e', 'e + 1']), true)).setId(Tuple.tuple("", "orderby e, e + 1", "orderby e, e + 1"))
 
         assert !from(nums).over(tuple(n31, 2L), windowDefinition).lag(e -> e)
         assert 3 == from(nums).over(tuple(n32, 3L), windowDefinition).lag(e -> e)
@@ -1070,7 +1070,7 @@ class QueryableCollectionTest {
         def n6 = new Integer(6)
         def nums = [n9, n31, n32, n6]
 
-        WindowDefinition<Integer, Integer> windowDefinition = WindowDefinition.of(new Queryable.Order<Integer, Integer>(e -> new NamedTuple<>([e], ['e']), true))
+        WindowDefinition<Integer, Integer> windowDefinition = WindowDefinition.of(new Queryable.Order<Integer, Integer>(e -> new NamedTuple<>([e], ['e']), true)).setId(Tuple.tuple("", "orderby e", "orderby e"))
         assert 2 == from(nums).over(tuple(n6, 4L), windowDefinition).rowNumber()
     }
 
