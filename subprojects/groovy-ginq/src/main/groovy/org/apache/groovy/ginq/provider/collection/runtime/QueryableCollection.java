@@ -54,7 +54,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static groovy.lang.Tuple.tuple;
-import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.nullsFirst;
@@ -418,13 +417,14 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         Object[] result = agg(q -> q.stream()
                 .map(mapper)
                 .filter(Objects::nonNull)
-                .map(e -> toBigDecimal(pow(NumberNumberMinus.minus(e, avg).doubleValue(), 2)))
+                .map(e -> toBigDecimal(NumberNumberMinus.minus(e, avg)).pow(2))
                 .reduce(new Object[]{0L, BigDecimal.ZERO}, (r, e) -> {
                     r[0] = (Long) r[0] + 1;
                     r[1] = ((BigDecimal) r[1]).add(e);
                     return r;
                 }, (o1, o2) -> o1));
 
+        // `BigDecimal.sqrt` is introduced since Java9, so we can not use it for now.
         return toBigDecimal(sqrt(((BigDecimal) result[1]).divide(toBigDecimal((Long) result[0]), 16, RoundingMode.HALF_UP).doubleValue()));
     }
 
