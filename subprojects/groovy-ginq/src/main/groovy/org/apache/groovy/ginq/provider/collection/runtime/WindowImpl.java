@@ -88,7 +88,7 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         V field;
         if (0 == lead) {
             field = extractor.apply(currentRecord.getV1());
-        } else if (0 <= index + lead && index + lead < this.size()) {
+        } else if (0 <= index + lead && index + lead < list.size()) {
             field = extractor.apply(list.get(index + (int) lead));
         } else {
             field = def;
