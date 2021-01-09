@@ -47,6 +47,10 @@ class NamedRecord<E, T> extends NamedTuple<E> {
         return sourceRecord.get(name)
     }
 
+    List<String> getAliasList() {
+        return Collections.unmodifiableList(aliasList)
+    }
+
     NamedRecord<E, T> sourceRecord(T sr) {
         this.sourceRecord = new SourceRecord<>(sr, aliasList)
         return this

@@ -174,13 +174,13 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         MethodCallExpression selectMethodCallExpression = this.visitSelectExpression(selectExpression)
 
         List<Statement> statementList = []
-        boolean useWindowFunction = isUseWindowFunction(selectExpression)
+        boolean isRootGinqExpression = ginqExpression === ginqExpression.getNodeMetaData(GinqAstBuilder.ROOT_GINQ_EXPRESSION)
+        boolean useWindowFunction = isRootGinqExpression && isUseWindowFunction(ginqExpression)
         if (useWindowFunction) {
             statementList << stmt(callX(QUERYABLE_HELPER_TYPE, 'setVar', args(new ConstantExpression(USE_WINDOW_FUNCTION), new ConstantExpression(TRUE_STR))))
         }
 
-        boolean isRootGinqExpression = ginqExpression === ginqExpression.getNodeMetaData(GinqAstBuilder.ROOT_GINQ_EXPRESSION)
-        boolean parallelEnabled = isRootGinqExpression && TRUE_STR == configuration.get(GinqGroovyMethods.CONF_PARALLEL)
+        boolean parallelEnabled = isRootGinqExpression && isParallel()
         if (parallelEnabled) {
             statementList << stmt(callX(QUERYABLE_HELPER_TYPE, 'setVar', args(new ConstantExpression(PARALLEL), new ConstantExpression(TRUE_STR))))
         }
@@ -214,9 +214,13 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return result
     }
 
-    private boolean isUseWindowFunction(SelectExpression selectExpression) {
+    private boolean isParallel() {
+        return TRUE_STR == configuration.get(GinqGroovyMethods.CONF_PARALLEL)
+    }
+
+    private boolean isUseWindowFunction(GinqExpression ginqExpression) {
         boolean useWindowFunction = false
-        selectExpression.projectionExpr.visit(new GinqAstBaseVisitor() {
+        ginqExpression.visit(new GinqAstBaseVisitor() {
             @Override
             void visitMethodCallExpression(MethodCallExpression call) {
                 if (isOverMethodCall(call)) {
@@ -790,6 +794,14 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                                         windowFunctionMethodCallExpression.methodAsString,
                                         args(argumentExpressionList)
                                 )
+
+                                if (isParallel()) {
+                                    result = callX(
+                                            new ClassExpression(QUERYABLE_HELPER_TYPE),
+                                            "supplyAsync",
+                                            lambdaX(stmt(result))
+                                    )
+                                }
                             } else {
                                 GinqAstWalker.this.collectSyntaxError(new GinqSyntaxError(
                                         "Unsupported window function: `${windowFunctionMethodCallExpression.methodAsString}`",

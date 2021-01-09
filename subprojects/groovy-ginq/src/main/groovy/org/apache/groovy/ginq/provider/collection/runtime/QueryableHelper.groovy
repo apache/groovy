@@ -20,10 +20,13 @@ package org.apache.groovy.ginq.provider.collection.runtime
 
 import groovy.transform.CompileStatic
 
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.function.Supplier
 import java.util.stream.Collectors
 
 import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from
-
 /**
  * Helper for {@link Queryable}
  *
@@ -70,6 +73,14 @@ class QueryableHelper {
         throw new TooManyValuesException("subquery returns more than one value: $list")
     }
 
+    static <U> CompletableFuture<U> supplyAsync(Supplier<U> supplier) {
+        return CompletableFuture.supplyAsync(supplier, THREAD_POOL)
+    }
+
+    static boolean isParallel() {
+        return TRUE_STR == getVar(PARALLEL)
+    }
+
     static <T> void setVar(String name, T value) {
         VAR_HOLDER.get().put(name, value)
     }
@@ -83,6 +94,9 @@ class QueryableHelper {
     }
 
     private static final ThreadLocal<Map<String, Object>> VAR_HOLDER = ThreadLocal.<Map<String, Object>> withInitial(() -> new LinkedHashMap<>())
+    private static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
+    private static final String PARALLEL = "parallel"
+    private static final String TRUE_STR = "true"
 
     private QueryableHelper() {}
 }

@@ -59,13 +59,13 @@ class NamedTuple<E> extends Tuple<E> {
         return data.containsKey(name)
     }
 
-    Set<String> getNameSet() {
-        return Collections.unmodifiableSet(data.keySet())
+    List<String> getNameList() {
+        return Collections.unmodifiableList(data.keySet().toList())
     }
 
     @Override
     String toString() {
-        '(' + nameSet.withIndex()
+        '(' + nameList.withIndex()
                 .collect((String n, int i) -> { "${n}:${this[i]}" })
                 .join(', ') + ')'
     }

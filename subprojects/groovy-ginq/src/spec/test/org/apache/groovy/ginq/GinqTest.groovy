@@ -5603,6 +5603,54 @@ class GinqTest {
     @Test
     void "testGinq - window - 75"() {
         assertGinqScript '''
+            assert [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4],
+                    [5, 5], [6, 6], [7, 7], [8, 8], [9, 9]] == GQ {
+                from n in (
+                    from m in 0..<10
+                    select m
+                )
+                select n, (rowNumber() over(orderby n))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 76"() {
+        assertGinqScript '''
+            assert [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4],
+                    [5, 5], [6, 6], [7, 7], [8, 8], [9, 9]] == GQ(parallel:true) {
+                from v in (
+                    from n in (
+                        from m in 0..<10
+                        select m
+                    )
+                    select n, (rowNumber() over(orderby n)) as rn
+                )
+                select v.n, v.rn
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 77"() {
+        assertGinqScript '''
+            assert [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4],
+                    [5, 5], [6, 6], [7, 7], [8, 8], [9, 9]] == GQ {
+                from v in (
+                    from n in (
+                        from m in 0..<10
+                        select m
+                    )
+                    select n, (rowNumber() over(orderby n)) as rn
+                )
+                select v.n, v.rn
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 78"() {
+        assertGinqScript '''
 // tag::ginq_winfunction_35[]
             assert [[1, 0.816496580927726], 
                     [2, 0.816496580927726], 
