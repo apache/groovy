@@ -49,6 +49,7 @@ import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -219,9 +220,13 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public Queryable<Tuple2<?, Queryable<T>>> groupBy(Function<? super T, ?> classifier, Predicate<? super Tuple2<?, Queryable<? extends T>>> having) {
+        Collector<T, ?, ? extends Map<?, List<T>>> groupingBy =
+                isParallel() ? Collectors.groupingByConcurrent(classifier, Collectors.toList())
+                             : Collectors.groupingBy(classifier, Collectors.toList());
+
         Stream<Tuple2<?, Queryable<T>>> stream =
                 this.stream()
-                        .collect(Collectors.groupingBy(classifier, Collectors.toList()))
+                        .collect(groupingBy)
                         .entrySet().stream()
                         .filter(m -> null == having || having.test(tuple(m.getKey(), from(m.getValue()))))
                         .map(m -> tuple(m.getKey(), from(m.getValue())));
