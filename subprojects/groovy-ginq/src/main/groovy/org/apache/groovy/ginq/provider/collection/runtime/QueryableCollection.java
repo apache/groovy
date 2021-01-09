@@ -291,7 +291,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         Stream<U> stream = this.stream().map((T t) -> mapper.apply(t, this));
         if (useWindowFunction && TRUE_STR.equals(originalParallel)) {
             // invoke `collect` to trigger the intermediate operator, which will create `CompletableFuture` instances
-            stream = stream.collect(Collectors.toList()).stream().map((U u) -> {
+            stream = stream.collect(Collectors.toList()).parallelStream().map((U u) -> {
                 Function<? super U, ?> transform = e -> {
                     try {
                         return e instanceof CompletableFuture ? ((CompletableFuture) e).get() : e;
