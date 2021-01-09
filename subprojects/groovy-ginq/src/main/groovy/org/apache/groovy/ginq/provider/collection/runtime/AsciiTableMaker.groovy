@@ -47,7 +47,7 @@ class AsciiTableMaker {
             List<String[]> list = new ArrayList<>(tableData.size() + 1)
             def firstRecord = tableData.get(0)
             if (firstRecord instanceof NamedRecord) {
-                list.add(((NamedRecord) firstRecord).nameList.toArray(String[]::new))
+                list.add(((NamedRecord) firstRecord).nameList as String[])
                 tableData.stream().forEach(e -> {
                     if (e instanceof NamedRecord) {
                         String[] record = ((List) e).stream().map(c -> c?.toString()).toArray(String[]::new)
