@@ -4870,7 +4870,7 @@ class GinqTest {
 
     @Test
     void "testGinq - window - 15"() {
-        assertScript '''
+        assertGinqScript '''
 // tag::ginq_winfunction_05[]
             assert [['a', null], ['b', 'a'], ['aa', null], ['bb', 'aa']] == GQ {
                 from s in ['a', 'b', 'aa', 'bb']
