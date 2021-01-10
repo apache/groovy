@@ -195,7 +195,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                 ))
         )
         if (rowNumberUsed) {
-            statementList << declS(localVarX(rowNumberName), ctorX(ATOMIC_LONG_TYPE, new ConstantExpression(0L)))
+            statementList << declS(localVarX(rowNumberName), ctorX(ATOMIC_LONG_TYPE, new ConstantExpression(-1L)))
         }
 
         final resultName = "__r${System.nanoTime()}"
@@ -720,13 +720,14 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         }
 
         final boolean parallel = isParallel()
+        final VariableExpression supplyAsyncLambdaParam = varX(supplyAsyncLambdaParamName)
         lambdaCode = ((ListExpression) new ListExpression(Collections.singletonList(lambdaCode)).transformExpression(new ExpressionTransformer() {
             @Override
             Expression transform(Expression expression) {
                 if (expression instanceof VariableExpression) {
                     if (_RN == expression.text) {
                         currentGinqExpression.putNodeMetaData(__RN_USED, true)
-                        return callX(varX(rowNumberName), 'getAndIncrement')
+                        return parallel ? supplyAsyncLambdaParam : callX(varX(rowNumberName), 'get')
                     }
                 }
 
@@ -788,7 +789,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
                                 def windowDefinitionFactoryMethodCallExpression = constructWindowDefinitionFactoryMethodCallExpression(expression, dataSourceExpression)
                                 Expression newObjectExpression = callX(wqVar, 'over', args(
-                                        callX(TUPLE_TYPE, 'tuple', args(currentRecordVar, parallel ? varX(supplyAsyncLambdaParamName) : getRowNumberMethodCall())),
+                                        callX(TUPLE_TYPE, 'tuple', args(currentRecordVar, parallel ? supplyAsyncLambdaParam : getRowNumberMethodCall())),
                                         windowDefinitionFactoryMethodCallExpression
                                 ))
                                 result = callX(
@@ -815,7 +816,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         })).getExpression(0)
 
         def extra = []
-        if (enableCount) {
+        if (enableCount || rowNumberUsed) {
             currentGinqExpression.putNodeMetaData(__RN_USED, true)
             extra << callX(varX(rowNumberName), 'getAndIncrement')
         }

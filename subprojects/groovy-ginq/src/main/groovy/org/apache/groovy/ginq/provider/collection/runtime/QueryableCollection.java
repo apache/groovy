@@ -552,7 +552,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                 new PartitionCacheKey(windowDefinition.partitionBy().apply(currentRecord.getV1()), partitionId),
                 partitionCacheKey -> from(Collections.singletonList(currentRecord)).innerHashJoin(
                         allPartitionCache.computeIfAbsent(partitionId, pid -> {
-                            long[] rn = new long[]{1L};
+                            long[] rn = new long[]{0L};
                             List<Tuple2<T, Long>> listWithIndex =
                                     this.toList().stream()
                                             .map(e -> Tuple.tuple(e, rn[0]++))
