@@ -544,7 +544,6 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public <U extends Comparable<? super U>> Window<T> over(Tuple2<T, Long> currentRecord, WindowDefinition<T, U> windowDefinition) {
-        this.makeReusable();
         final Tuple3<String, String, String> idTuple = (Tuple3<String, String, String>) windowDefinition.getId(); // (partitionId, orderId, windowDefinitionId)
         final String partitionId = idTuple.getV1();
 
