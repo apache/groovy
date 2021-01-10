@@ -30,8 +30,6 @@ import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
 import java.io.Serializable;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -279,53 +277,29 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public <U> Queryable<U> select(BiFunction<? super T, ? super Queryable<? extends T>, ? extends U> mapper) {
-        String originalParallel = null;
+        final String originalParallel = QueryableHelper.getVar(PARALLEL);
+        QueryableHelper.setVar(PARALLEL, FALSE_STR); // ensure the row number is generated sequentially
         boolean useWindowFunction = TRUE_STR.equals(QueryableHelper.getVar(USE_WINDOW_FUNCTION));
 
         if (useWindowFunction) {
-            originalParallel = QueryableHelper.getVar(PARALLEL);
-            QueryableHelper.setVar(PARALLEL, FALSE_STR); // ensure the row number is generated sequentially
             this.makeReusable();
         }
 
         Stream<U> stream = this.stream().map((T t) -> mapper.apply(t, this));
-        if (useWindowFunction && TRUE_STR.equals(originalParallel)) {
+        if (TRUE_STR.equals(originalParallel)) {
             // invoke `collect` to trigger the intermediate operator, which will create `CompletableFuture` instances
             stream = stream.collect(Collectors.toList()).parallelStream().map((U u) -> {
-                Function<? super U, ?> transform = e -> {
-                    try {
-                        return e instanceof CompletableFuture ? ((CompletableFuture) e).get() : e;
-                    } catch (InterruptedException | ExecutionException ex) {
-                        throw new GroovyRuntimeException(ex);
-                    }
-                };
-
-                if (instanceOfNamedRecord(u)) {
-                    Tuple record = (Tuple) u;
-                    List<?> transformed = (List<?>) record.stream().map(transform).collect(Collectors.toList());
-                    try {
-                        List<String> nameList = (List<String>) GET_NAME_SET_METHOD.invoke(record);
-                        List<String> aliasList = (List<String>) GET_ALIAS_LIST_METHOD.invoke(record);
-                        return (U) NAMED_RECORD_CONSTRUCTOR.newInstance(transformed, nameList, aliasList);
-                    } catch (ReflectiveOperationException ex) {
-                        throw new GroovyRuntimeException(ex);
-                    }
+                try {
+                    return (U) ((CompletableFuture) u).get();
+                } catch (InterruptedException | ExecutionException ex) {
+                    throw new GroovyRuntimeException(ex);
                 }
-
-                return (U) transform.apply(u);
             });
         }
 
-        if (useWindowFunction) {
-            QueryableHelper.setVar(PARALLEL, originalParallel);
-        }
+        QueryableHelper.setVar(PARALLEL, originalParallel);
 
         return from(stream);
-    }
-
-    private static <U> boolean instanceOfNamedRecord(U u) {
-        // workaround joint compilation issue
-        return (u instanceof Tuple) && NAMED_RECORD_CLASS_NAME.equals(u.getClass().getName());
     }
 
     @Override
@@ -736,24 +710,9 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     private final Lock readLock = rwl.readLock();
     private final Lock writeLock = rwl.writeLock();
     private static final BigDecimal BD_TWO = BigDecimal.valueOf(2);
-    private static final String NAMED_RECORD_CLASS_NAME = "org.apache.groovy.ginq.provider.collection.runtime.NamedRecord";
-    private static final Constructor<?> NAMED_RECORD_CONSTRUCTOR;
-    private static final Method GET_ALIAS_LIST_METHOD;
-    private static final Method GET_NAME_SET_METHOD;
     private static final String USE_WINDOW_FUNCTION = "useWindowFunction";
     private static final String PARALLEL = "parallel";
     private static final String TRUE_STR = "true";
     private static final String FALSE_STR = "false";
     private static final long serialVersionUID = -5067092453136522893L;
-
-    static {
-        try {
-            final Class<?> namedRecordClass = Class.forName(NAMED_RECORD_CLASS_NAME);
-            NAMED_RECORD_CONSTRUCTOR = namedRecordClass.getConstructor(List.class, List.class, List.class);
-            GET_ALIAS_LIST_METHOD = namedRecordClass.getDeclaredMethod("getAliasList");
-            GET_NAME_SET_METHOD = namedRecordClass.getMethod("getNameList");
-        } catch (NoSuchMethodException | ClassNotFoundException ex) {
-            throw new GroovyRuntimeException(ex);
-        }
-    }
 }

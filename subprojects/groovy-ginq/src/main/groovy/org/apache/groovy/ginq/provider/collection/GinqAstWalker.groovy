@@ -89,13 +89,13 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.lambdaX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
-
 /**
  * Visit AST of GINQ to generate target method calls for GINQ
  *
@@ -719,6 +719,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             lambdaCode = namedListCtorCallExpression
         }
 
+        final boolean parallel = isParallel()
         lambdaCode = ((ListExpression) new ListExpression(Collections.singletonList(lambdaCode)).transformExpression(new ExpressionTransformer() {
             @Override
             Expression transform(Expression expression) {
@@ -785,13 +786,9 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                                     }
                                 }
 
-                                def parallel = isParallel()
-                                final supplyAsyncLambdaParamName = "__salp${System.nanoTime()}"
-
                                 def windowDefinitionFactoryMethodCallExpression = constructWindowDefinitionFactoryMethodCallExpression(expression, dataSourceExpression)
-                                def rowNumberGetMethodCall = callX(varX(rowNumberName), 'get')
                                 Expression newObjectExpression = callX(wqVar, 'over', args(
-                                        callX(TUPLE_TYPE, 'tuple', args(currentRecordVar, parallel ? varX(supplyAsyncLambdaParamName) : rowNumberGetMethodCall)),
+                                        callX(TUPLE_TYPE, 'tuple', args(currentRecordVar, parallel ? varX(supplyAsyncLambdaParamName) : getRowNumberMethodCall())),
                                         windowDefinitionFactoryMethodCallExpression
                                 ))
                                 result = callX(
@@ -799,22 +796,6 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                                         windowFunctionMethodCallExpression.methodAsString,
                                         args(argumentExpressionList)
                                 )
-
-                                if (parallel) {
-                                    result = callX(
-                                            new ClassExpression(QUERYABLE_HELPER_TYPE),
-                                            "supplyAsync",
-                                            args(
-                                                    lambdaX(
-                                                            params(
-                                                                    param(DYNAMIC_TYPE, supplyAsyncLambdaParamName)
-                                                            ),
-                                                            stmt(result)
-                                                    ),
-                                                    rowNumberGetMethodCall
-                                            )
-                                    )
-                                }
                             } else {
                                 GinqAstWalker.this.collectSyntaxError(new GinqSyntaxError(
                                         "Unsupported window function: `${windowFunctionMethodCallExpression.methodAsString}`",
@@ -839,11 +820,16 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             extra << callX(varX(rowNumberName), 'getAndIncrement')
         }
 
-        def selectMethodCallExpression = callXWithLambda(selectMethodReceiver, "select", dataSourceExpression, lambdaCode, extra, param(DYNAMIC_TYPE, getWindowQueryableName()))
+        def selectMethodCallExpression = callXWithLambda(selectMethodReceiver, "select", dataSourceExpression, parallel, lambdaCode, extra, param(DYNAMIC_TYPE, getWindowQueryableName()))
 
         currentGinqExpression.putNodeMetaData(__VISITING_SELECT, false)
 
         return selectMethodCallExpression
+    }
+
+    private MethodCallExpression getRowNumberMethodCall() {
+        final rowNumberGetMethodCall = callX(varX(rowNumberName), 'get')
+        return rowNumberGetMethodCall
     }
 
     private MethodCallExpression constructWindowDefinitionFactoryMethodCallExpression(MethodCallExpression methodCallExpression, DataSourceExpression dataSourceExpression) {
@@ -1118,6 +1104,18 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return name
     }
 
+    private int supplyAsyncLambdaParamNameSeq = 0
+    private String getSupplyAsyncLambdaParamName() {
+        String name = (String) currentGinqExpression.getNodeMetaData(SUPPLY_ASYNC_LAMBDA_PARAM_NAME_PREFIX)
+
+        if (!name) {
+            name = "${SUPPLY_ASYNC_LAMBDA_PARAM_NAME_PREFIX}${supplyAsyncLambdaParamNameSeq++}"
+            currentGinqExpression.putNodeMetaData(SUPPLY_ASYNC_LAMBDA_PARAM_NAME_PREFIX, name)
+        }
+
+        return name
+    }
+
     private MethodCallExpression getMetaDataMethodCall(String key) {
         callX(varX(metaDataMapName), "get", new ConstantExpression(key))
     }
@@ -1367,8 +1365,8 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         this.callXWithLambda(receiver, methodName, dataSourceExpression, lambdaCode, Collections.emptyList(), extraParams)
     }
 
-    private MethodCallExpression callXWithLambda(Expression receiver, String methodName, DataSourceExpression dataSourceExpression, Expression lambdaCode, List<Expression> extraLambdaCode, Parameter... extraParams) {
-        LambdaExpression lambdaExpression = constructLambdaExpression(dataSourceExpression, lambdaCode, extraParams)
+    private MethodCallExpression callXWithLambda(Expression receiver, String methodName, DataSourceExpression dataSourceExpression, boolean async = false, Expression lambdaCode, List<Expression> extraLambdaCode, Parameter... extraParams) {
+        LambdaExpression lambdaExpression = constructLambdaExpression(dataSourceExpression, async, lambdaCode, extraParams)
 
         if (extraLambdaCode) {
             ((BlockStatement) lambdaExpression.code).getStatements().addAll(0, extraLambdaCode.collect { stmt(it) })
@@ -1377,7 +1375,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         callXWithLambda(receiver, methodName, lambdaExpression)
     }
 
-    private LambdaExpression constructLambdaExpression(DataSourceExpression dataSourceExpression, Expression lambdaCode, Parameter... extraParams) {
+    private LambdaExpression constructLambdaExpression(DataSourceExpression dataSourceExpression, boolean async = false, Expression lambdaCode, Parameter... extraParams) {
         Tuple3<String, List<DeclarationExpression>, Expression> paramNameAndLambdaCode = correctVariablesOfLambdaExpression(dataSourceExpression, lambdaCode)
 
         List<DeclarationExpression> declarationExpressionList = paramNameAndLambdaCode.v2
@@ -1385,7 +1383,23 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         if (!visitingWindowFunction) {
             statementList.addAll(declarationExpressionList.stream().map(e -> stmt(e)).collect(Collectors.toList()))
         }
-        statementList.add(stmt(paramNameAndLambdaCode.v3))
+
+        def transformedLambdCode = paramNameAndLambdaCode.v3
+        if (async) {
+            ArgumentListExpression  argumentListExpression
+            argumentListExpression = rowNumberUsed
+                                        ? args(lambdaX(params(param(DYNAMIC_TYPE, supplyAsyncLambdaParamName)),
+                                                        stmt(transformedLambdCode)),
+                                                rowNumberUsed ? getRowNumberMethodCall() : nullX())
+                                        : args(lambdaX(stmt(transformedLambdCode)))
+
+            transformedLambdCode = callX(
+                    new ClassExpression(QUERYABLE_HELPER_TYPE),
+                    "supplyAsync",
+                    argumentListExpression
+            )
+        }
+        statementList.add(stmt(transformedLambdCode))
 
         def paramList = [param(DYNAMIC_TYPE, paramNameAndLambdaCode.v1)]
         if (extraParams) {
@@ -1564,6 +1578,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final String __META_DATA_MAP_NAME_PREFIX = '__metaDataMap_'
     private static final String __WINDOW_QUERYABLE_NAME = '__wq_'
     private static final String __ROW_NUMBER_NAME_PREFIX = '__rowNumber_'
+    private static final String SUPPLY_ASYNC_LAMBDA_PARAM_NAME_PREFIX = "__salp_"
     private static final String __SOURCE_RECORD = "__sourceRecord"
     private static final String __GROUP = "__group"
     private static final String MD_GROUP_NAME_LIST = "groupNameList"
