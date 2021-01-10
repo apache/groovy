@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime
 
-
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
@@ -28,7 +27,6 @@ import org.junit.Test
 import java.util.stream.Collectors
 import java.util.stream.Stream
 
-import static groovy.lang.Tuple.tuple
 import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from
 
 @CompileStatic
@@ -1008,70 +1006,6 @@ class QueryableCollectionTest {
         def nums = [1, 2, 3]
         def result = from(nums).exists()
         assert result
-    }
-
-    @Test
-    @CompileDynamic
-    void testWindow1() {
-        def nums = [9, 3, 6]
-
-        def windowDefinition = WindowDefinition.of(new Queryable.Order<Integer, Integer>(e -> e, true)).setId(tuple("", "orderby e", "orderby e"))
-        def result = from(nums).over(tuple(6, 3L), windowDefinition).rowNumber()
-
-        assert 1 == result
-    }
-
-    @Test
-    @CompileDynamic
-    void testWindow2() {
-        def n9 = new Integer(9)
-        def n31 = new Integer(3)
-        def n32 = new Integer(3)
-        def n6 = new Integer(6)
-        def nums = [n9, n31, n32, n6]
-        def windowDefinition = WindowDefinition.of(new Queryable.Order<Integer, Integer>(e -> new NamedTuple<>([e, e + 1], ['e', 'e + 1']), true)).setId(Tuple.tuple("", "orderby e, e + 1", "orderby e, e + 1"))
-
-        assert 0 == from(nums).over(tuple(n31, 2L), windowDefinition).rowNumber()
-        assert 1 == from(nums).over(tuple(n32, 3L), windowDefinition).rowNumber()
-        assert 2 == from(nums).over(tuple(n6, 4L), windowDefinition).rowNumber()
-        assert 3 == from(nums).over(tuple(n9, 1L), windowDefinition).rowNumber()
-        assert 0 == from(nums).over(tuple(3, 2L), windowDefinition).rowNumber()
-        assert 2 == from(nums).over(tuple(6, 4L), windowDefinition).rowNumber()
-        assert 3 == from(nums).over(tuple(9, 1L), windowDefinition).rowNumber()
-    }
-
-    @Test
-    @CompileDynamic
-    void testWindow3() {
-        def n9 = new Integer(9)
-        def n31 = new Integer(3)
-        def n32 = new Integer(3)
-        def n6 = new Integer(6)
-        def nums = [n9, n31, n32, n6]
-        def windowDefinition = WindowDefinition.of(new Queryable.Order<Integer, Integer>(e -> new NamedTuple<>([e, e + 1], ['e', 'e + 1']), true)).setId(Tuple.tuple("", "orderby e, e + 1", "orderby e, e + 1"))
-
-        assert !from(nums).over(tuple(n31, 2L), windowDefinition).lag(e -> e)
-        assert 3 == from(nums).over(tuple(n32, 3L), windowDefinition).lag(e -> e)
-        assert 3 == from(nums).over(tuple(n6, 4L), windowDefinition).lag(e -> e)
-        assert 6 == from(nums).over(tuple(n9, 1L), windowDefinition).lag(e -> e)
-
-        assert 3 == from(nums).over(tuple(n31, 2L), windowDefinition).lead(e -> e)
-        assert 6 == from(nums).over(tuple(n32, 3L), windowDefinition).lead(e -> e)
-        assert 9 == from(nums).over(tuple(n6, 4L), windowDefinition).lead(e -> e)
-        assert !from(nums).over(tuple(n9, 1L), windowDefinition).lead(e -> e)
-    }
-
-    @Test
-    @CompileDynamic
-    void testWindow4() {
-        def n9 = new Integer(9)
-        def n31 = new Integer(3)
-        def n32 = new Integer(3)
-        def n6 = new Integer(6)
-        def nums = [n9, n31, n32, n6]
-
-        WindowDefinition<Integer, Integer> windowDefinition = WindowDefinition.of(new Queryable.Order<Integer, Integer>(e -> new NamedTuple<>([e], ['e']), true)).setId(Tuple.tuple("", "orderby e", "orderby e"))
-        assert 2 == from(nums).over(tuple(n6, 4L), windowDefinition).rowNumber()
     }
 
     @ToString
