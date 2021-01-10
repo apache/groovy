@@ -553,4 +553,16 @@ class GinqErrorTest {
 
         assert err.toString().contains('Only `nullslast`/`nullsfirst` is expected @ line 3, column 33.')
     }
+
+    @Test
+    void "testGinq - invalid option - 1"() {
+        def err = shouldFail '''\
+            GQ(xxx:true) {
+                from n in [1, 2, 3]
+                select n
+            }
+        '''
+
+        assert err.toString().contains('Invalid option: xxx. (supported options: [parallel, astWalker, optimize]) @ line 1, column 16.')
+    }
 }

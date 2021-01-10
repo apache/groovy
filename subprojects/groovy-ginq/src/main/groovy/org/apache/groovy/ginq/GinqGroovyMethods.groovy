@@ -25,6 +25,7 @@ import org.apache.groovy.ginq.dsl.GinqAstVisitor
 import org.apache.groovy.ginq.dsl.expression.GinqExpression
 import org.apache.groovy.ginq.provider.collection.GinqAstWalker
 import org.apache.groovy.lang.annotation.Incubating
+import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.Expression
@@ -32,8 +33,10 @@ import org.codehaus.groovy.ast.expr.MapEntryExpression
 import org.codehaus.groovy.ast.expr.MapExpression
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage
 import org.codehaus.groovy.macro.runtime.Macro
 import org.codehaus.groovy.macro.runtime.MacroContext
+import org.codehaus.groovy.syntax.SyntaxException
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.asX
 
@@ -90,7 +93,7 @@ class GinqGroovyMethods {
         code.visit(ginqAstBuilder)
         GinqExpression ginqExpression = ginqAstBuilder.getGinqExpression()
 
-        Map<String, String> configuration = createConfiguration(ginqConfigurationMapExpression)
+        Map<String, String> configuration = createConfiguration(sourceUnit, ginqConfigurationMapExpression)
 
         if (TRUE_STR == configuration.get(CONF_OPTIMIZE, TRUE_STR)) {
             GinqAstOptimizer ginqAstOptimizer = new GinqAstOptimizer()
@@ -104,14 +107,28 @@ class GinqGroovyMethods {
         return (Expression) ginqAstWalker.visitGinqExpression(ginqExpression)
     }
 
-    private static Map<String, String> createConfiguration(MapExpression ginqConfigurationMapExpression) {
+    private static Map<String, String> createConfiguration(SourceUnit sourceUnit, MapExpression ginqConfigurationMapExpression) {
         Map<String, String> configuration = [:]
         if (!ginqConfigurationMapExpression) return configuration
 
         for (MapEntryExpression mapEntryExpression : ginqConfigurationMapExpression.getMapEntryExpressions()) {
-            configuration.put(mapEntryExpression.keyExpression.text, mapEntryExpression.valueExpression.text)
+            def conf = mapEntryExpression.keyExpression.text
+            if (conf !in CONF_LIST) {
+                collectErrors("Invalid option: ${conf}. (supported options: ${CONF_LIST})", mapEntryExpression.keyExpression, sourceUnit)
+            }
+            configuration.put(conf, mapEntryExpression.valueExpression.text)
         }
         return configuration
+    }
+
+    private static void collectErrors(String message, ASTNode astNode, SourceUnit sourceUnit) {
+        InvalidOptionException invalidOptionException = new InvalidOptionException(message)
+        SyntaxException e = new SyntaxException(
+                invalidOptionException.getMessage(),
+                invalidOptionException,
+                astNode.lineNumber,
+                astNode.columnNumber)
+        sourceUnit.getErrorCollector().addFatalError(new SyntaxErrorMessage(e, sourceUnit))
     }
 
     private GinqGroovyMethods() {}
@@ -119,6 +136,7 @@ class GinqGroovyMethods {
     public static final String CONF_PARALLEL = 'parallel'
     private static final String CONF_AST_WALKER = 'astWalker'
     private static final String CONF_OPTIMIZE = 'optimize'
+    private static final List<String> CONF_LIST = [CONF_PARALLEL, CONF_AST_WALKER, CONF_OPTIMIZE]
     private static final String DEFAULT_AST_WALKER_CLASS_NAME = GinqAstWalker.class.name
     private static final String TRUE_STR = 'true'
 }
