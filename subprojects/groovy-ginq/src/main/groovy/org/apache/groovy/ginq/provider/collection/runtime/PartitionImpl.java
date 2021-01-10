@@ -29,6 +29,8 @@ import java.util.List;
  * @since 4.0.0
  */
 class PartitionImpl<T> extends QueryableCollection<T> implements Partition<T> {
+    private static final long serialVersionUID = -3650144225768070117L;
+
     public static <T, U extends Comparable<? super U>> Partition<Tuple2<T, Long>> newInstance(List<Tuple2<T, Long>> listWithIndex) {
         return new PartitionImpl<>(listWithIndex);
     }
