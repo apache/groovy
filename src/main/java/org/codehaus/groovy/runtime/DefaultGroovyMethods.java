@@ -9834,6 +9834,29 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return true;
     }
 
+
+     /**
+     * Returns the last item from the LinkedList.
+     * <pre class="groovyTestCase">
+     * def list = [3, 4, 2]
+     * assert list.last() == 2
+     * // check original is unaltered
+     * assert list == [3, 4, 2]
+     * </pre>
+     *
+     * @param self a List
+     * @return the last item from the List
+     * @throws NoSuchElementException if the list is empty and you try to access the last() item.
+     * @since 1.5.5
+     */
+    public static <T> T last(LinkedList<T> self) {
+
+        if (self.isEmpty()) {
+            throw new NoSuchElementException("Cannot access last() element from an empty List");
+        }
+        return self.getLast();
+    }
+
     /**
      * Returns the last item from the List.
      * <pre class="groovyTestCase">
@@ -9849,6 +9872,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static <T> T last(List<T> self) {
+
         if (self.isEmpty()) {
             throw new NoSuchElementException("Cannot access last() element from an empty List");
         }
