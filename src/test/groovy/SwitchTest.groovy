@@ -19,7 +19,6 @@
 package groovy
 
 import groovy.test.GroovyTestCase
-import groovy.test.NotYetImplemented
 
 class SwitchTest extends GroovyTestCase {
 
@@ -273,7 +272,7 @@ class SwitchTest extends GroovyTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-9880
+    // GROOVY-9880
     void testSwitchReturn4() {
         assertScript '''
             def test(sb) {
