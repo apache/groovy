@@ -38,11 +38,13 @@ import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
  * Utility class to add return statements.
- * Extracted from Verifier as it can be useful for some AST transformations
+ * <p>
+ * Extracted from Verifier as it can be useful for some AST transformations.
  */
 public class ReturnAdder {
 
@@ -60,11 +62,11 @@ public class ReturnAdder {
     private final ReturnStatementListener listener;
 
     public ReturnAdder() {
-        doAdd = true;
-        listener = DEFAULT_LISTENER;
+        this.listener = DEFAULT_LISTENER;
+        this.doAdd = true;
     }
 
-    public ReturnAdder(ReturnStatementListener listener) {
+    public ReturnAdder(final ReturnStatementListener listener) {
         this.listener = listener;
         this.doAdd = false;
     }
@@ -152,14 +154,19 @@ public class ReturnAdder {
         }
 
         if (statement instanceof SwitchStatement) {
-            SwitchStatement swi = (SwitchStatement) statement;
-            for (CaseStatement caseStatement : swi.getCaseStatements()) {
-                final Statement code = adjustSwitchCaseCode(caseStatement.getCode(), scope, false);
+            SwitchStatement switchStatement = (SwitchStatement) statement;
+            Statement defaultStatement = switchStatement.getDefaultStatement();
+            List<CaseStatement> caseStatements = switchStatement.getCaseStatements();
+            for (Iterator<CaseStatement> it = caseStatements.iterator(); it.hasNext(); ) {
+                CaseStatement caseStatement = it.next();
+                Statement code = adjustSwitchCaseCode(caseStatement.getCode(), scope,
+                        // GROOVY-9896: return if no default and last case lacks break
+                        defaultStatement == EmptyStatement.INSTANCE && !it.hasNext());
                 if (doAdd) caseStatement.setCode(code);
             }
-            final Statement defaultStatement = adjustSwitchCaseCode(swi.getDefaultStatement(), scope, true);
-            if (doAdd) swi.setDefaultStatement(defaultStatement);
-            return swi;
+            defaultStatement = adjustSwitchCaseCode(defaultStatement, scope, true);
+            if (doAdd) switchStatement.setDefaultStatement(defaultStatement);
+            return switchStatement;
         }
 
         if (statement instanceof TryCatchStatement) {
@@ -231,26 +238,19 @@ public class ReturnAdder {
         }
     }
 
-    private Statement adjustSwitchCaseCode(Statement statement, VariableScope scope, boolean defaultCase) {
-        if(statement instanceof BlockStatement) {
-            final List list = ((BlockStatement)statement).getStatements();
-            if (!list.isEmpty()) {
-                int idx = list.size() - 1;
-                Statement last = (Statement) list.get(idx);
-                if(last instanceof BreakStatement) {
-                    if (doAdd) {
-                        list.remove(idx);
-                        return addReturnsIfNeeded(statement, scope);
-                    } else {
-                        BlockStatement newStmt = new BlockStatement();
-                        for (int i=0;i<idx; i++) {
-                            newStmt.addStatement((Statement) list.get(i));
-                        }
-                        return addReturnsIfNeeded(newStmt, scope);
-                    }
-                } else if(defaultCase) {
-                    return addReturnsIfNeeded(statement, scope);
+    private Statement adjustSwitchCaseCode(final Statement statement, final VariableScope scope, final boolean lastCase) {
+        if (!statement.isEmpty() && statement instanceof BlockStatement) {
+            BlockStatement block = (BlockStatement) statement;
+            int breakIndex = block.getStatements().size() - 1;
+            if (block.getStatements().get(breakIndex) instanceof BreakStatement) {
+                if (doAdd) {
+                    block.getStatements().remove(breakIndex);
+                    return addReturnsIfNeeded(block, scope);
+                } else {
+                    addReturnsIfNeeded(new BlockStatement(block.getStatements().subList(0, breakIndex), null), scope);
                 }
+            } else if (lastCase) {
+                return addReturnsIfNeeded(statement, scope);
             }
         }
         return statement;
