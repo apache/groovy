@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
 
 /**
  * Utility class to add return statements.
@@ -215,8 +216,15 @@ public class ReturnAdder {
             int breakIndex = block.getStatements().size() - 1;
             if (block.getStatements().get(breakIndex) instanceof BreakStatement) {
                 if (doAdd) {
-                    block.getStatements().remove(breakIndex);
-                    return addReturnsIfNeeded(block, scope);
+                    Statement breakStatement = block.getStatements().remove(breakIndex);
+                    if (breakIndex == 0) block.addStatement(EmptyStatement.INSTANCE);
+                    addReturnsIfNeeded(block, scope);
+                    // GROOVY-9880: some code structures will fall through
+                    Statement lastStatement = last(block.getStatements());
+                    if (!(lastStatement instanceof ReturnStatement
+                            || lastStatement instanceof ThrowStatement)) {
+                        block.addStatement(breakStatement);
+                    }
                 } else {
                     addReturnsIfNeeded(new BlockStatement(block.getStatements().subList(0, breakIndex), null), scope);
                 }
