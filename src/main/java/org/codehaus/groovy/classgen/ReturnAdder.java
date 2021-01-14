@@ -185,15 +185,9 @@ public class ReturnAdder {
                 listener.returnStatementAdded(returnStatement);
                 return returnStatement;
             } else {
-                List<Statement> statements = blockStatement.getStatements();
-                int lastIndex = statements.size() - 1;
+                List<Statement> statements = blockStatement.getStatements(); int lastIndex = statements.size() - 1;
                 Statement last = addReturnsIfNeeded(statements.get(lastIndex), blockStatement.getVariableScope());
                 if (doAdd) statements.set(lastIndex, last);
-                if (!returns(last)) {
-                    ReturnStatement returnStatement = new ReturnStatement(nullX());
-                    listener.returnStatementAdded(returnStatement);
-                    if (doAdd) statements.add(returnStatement);
-                }
                 return blockStatement;
             }
         }
@@ -233,17 +227,5 @@ public class ReturnAdder {
             }
         }
         return statement;
-    }
-
-    private static boolean returns(final Statement statement) {
-        return statement instanceof ReturnStatement
-            || statement instanceof BlockStatement
-            || statement instanceof IfStatement
-            || statement instanceof ExpressionStatement
-            || statement instanceof EmptyStatement
-            || statement instanceof TryCatchStatement
-            || statement instanceof ThrowStatement
-            || statement instanceof SynchronizedStatement
-            || statement instanceof BytecodeSequence;
     }
 }
