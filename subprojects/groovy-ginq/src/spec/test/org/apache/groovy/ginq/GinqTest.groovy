@@ -5694,6 +5694,45 @@ class GinqTest {
         '''
     }
 
+    @Test
+    void "testGinq - shutdown - 0"() {
+        assertScript '''
+            import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper
+// tag::ginq_tips_09[]
+            GQ {
+                shutdown
+            }
+// end::ginq_tips_09[]
+            assert QueryableHelper.THREAD_POOL.isShutdown() && QueryableHelper.THREAD_POOL.isTerminated()
+        '''
+    }
+
+    @Test
+    void "testGinq - shutdown - 1"() {
+        assertScript '''
+            import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper
+// tag::ginq_tips_10[]
+            GQ {
+                shutdown immediate
+            }
+// end::ginq_tips_10[]
+            assert QueryableHelper.THREAD_POOL.isShutdown() && QueryableHelper.THREAD_POOL.isTerminated()
+        '''
+    }
+
+    @Test
+    void "testGinq - shutdown - 2"() {
+        assertScript '''
+            import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper
+// tag::ginq_tips_11[]
+            GQ {
+                shutdown abort
+            }
+// end::ginq_tips_11[]
+            assert QueryableHelper.THREAD_POOL.isShutdown()
+        '''
+    }
+
     private static void assertGinqScript(String script) {
         String deoptimizedScript = script.replaceAll(/\bGQ\s*[{]/, 'GQ(optimize:false) {')
         List<String> scriptList = [deoptimizedScript, script]

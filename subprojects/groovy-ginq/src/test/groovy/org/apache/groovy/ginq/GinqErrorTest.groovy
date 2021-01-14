@@ -565,4 +565,15 @@ class GinqErrorTest {
 
         assert err.toString().contains('Invalid option: xxx. (supported options: [parallel, astWalker, optimize]) @ line 1, column 16.')
     }
+
+    @Test
+    void "testGinq - shutdown - 1"() {
+        def err = shouldFail '''\
+            GQ {
+                shutdown zzz
+            }
+        '''
+
+        assert err.toString().contains('Invalid option: zzz. (supported options: [immediate, abort]) @ line 2, column 26.')
+    }
 }

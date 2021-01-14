@@ -24,13 +24,21 @@ import org.apache.groovy.ginq.dsl.GinqAstOptimizer
 import org.apache.groovy.ginq.dsl.GinqAstVisitor
 import org.apache.groovy.ginq.dsl.expression.GinqExpression
 import org.apache.groovy.ginq.provider.collection.GinqAstWalker
+import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper
 import org.apache.groovy.lang.annotation.Incubating
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.ast.expr.ArgumentListExpression
+import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ClosureExpression
+import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MapEntryExpression
 import org.codehaus.groovy.ast.expr.MapExpression
+import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage
@@ -38,7 +46,9 @@ import org.codehaus.groovy.macro.runtime.Macro
 import org.codehaus.groovy.macro.runtime.MacroContext
 import org.codehaus.groovy.syntax.SyntaxException
 
+import static org.codehaus.groovy.ast.ClassHelper.makeCached
 import static org.codehaus.groovy.ast.tools.GeneralUtils.asX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX
 
 /**
  * Declare GINQ macro methods
@@ -90,6 +100,32 @@ class GinqGroovyMethods {
 
     static Expression transformGinqCode(SourceUnit sourceUnit, MapExpression ginqConfigurationMapExpression, Statement code) {
         GinqAstBuilder ginqAstBuilder = new GinqAstBuilder(sourceUnit)
+
+        if (code instanceof BlockStatement) {
+            List<Statement> statementList = code.statements
+            if (1 == statementList.size()) {
+                Statement statement = statementList[0]
+                if (statement instanceof ExpressionStatement) {
+                    def expression = ((ExpressionStatement) statement).expression
+                    if (expression instanceof MethodCallExpression && ((MethodCallExpression) expression).methodAsString == 'shutdown') {
+                        List<Expression> argExpressionList = ((ArgumentListExpression) ((MethodCallExpression) expression).arguments).expressions
+                        if (1 == argExpressionList.size()) {
+                            Expression argExpression = argExpressionList[0]
+                            if (argExpression instanceof VariableExpression) {
+                                int mode = SHUTDOWN_OPTION_LIST.indexOf(argExpression.text)
+                                if (-1 == mode) {
+                                    collectErrors("Invalid option: ${argExpression.text}. (supported options: ${SHUTDOWN_OPTION_LIST})", argExpression, sourceUnit)
+                                }
+                                return shutdownMethodCallExpression(mode)
+                            }
+                        }
+                    } else if (expression instanceof VariableExpression && ((VariableExpression) expression).text == 'shutdown') {
+                        return shutdownMethodCallExpression(SHUTDOWN_OPTION_LIST.indexOf('immediate'))
+                    }
+                }
+            }
+        }
+
         code.visit(ginqAstBuilder)
         GinqExpression ginqExpression = ginqAstBuilder.getGinqExpression()
 
@@ -105,6 +141,10 @@ class GinqGroovyMethods {
         ginqAstWalker.setConfiguration(configuration)
 
         return (Expression) ginqAstWalker.visitGinqExpression(ginqExpression)
+    }
+
+    private static MethodCallExpression shutdownMethodCallExpression(int mode) {
+        return callX(new ClassExpression(makeCached(QueryableHelper)), 'shutdown', new ConstantExpression(mode))
     }
 
     private static Map<String, String> createConfiguration(SourceUnit sourceUnit, MapExpression ginqConfigurationMapExpression) {
@@ -137,6 +177,7 @@ class GinqGroovyMethods {
     private static final String CONF_AST_WALKER = 'astWalker'
     private static final String CONF_OPTIMIZE = 'optimize'
     private static final List<String> CONF_LIST = [CONF_PARALLEL, CONF_AST_WALKER, CONF_OPTIMIZE]
+    private static final List<String> SHUTDOWN_OPTION_LIST = ['immediate', 'abort']
     private static final String DEFAULT_AST_WALKER_CLASS_NAME = GinqAstWalker.class.name
     private static final String TRUE_STR = 'true'
 }

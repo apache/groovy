@@ -23,6 +23,7 @@ import groovy.transform.CompileStatic
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.function.Function
 import java.util.function.Supplier
 import java.util.stream.Collectors
@@ -99,19 +100,28 @@ class QueryableHelper {
         (T) VAR_HOLDER.get().remove(name)
     }
 
+    /**
+     * Shutdown to release resources
+     *
+     * @param mode 0: immediate, 1: abort
+     */
+    static shutdown(int mode) {
+        if (0 == mode) {
+            THREAD_POOL.shutdown()
+            while (!THREAD_POOL.awaitTermination(250, TimeUnit.MILLISECONDS)) {
+                // do nothing, just wait to terminate
+            }
+        } else if (1 == mode) {
+            THREAD_POOL.shutdownNow()
+        } else {
+            throw new IllegalArgumentException("Invalid mode: $mode")
+        }
+    }
+
     private static final ThreadLocal<Map<String, Object>> VAR_HOLDER = ThreadLocal.<Map<String, Object>> withInitial(() -> new LinkedHashMap<>())
     private static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
     private static final String PARALLEL = "parallel"
     private static final String TRUE_STR = "true"
-
-    static {
-        Runtime.addShutdownHook {
-            try {
-                THREAD_POOL.shutdownNow()
-            } catch (ignored) {
-            }
-        }
-    }
 
     private QueryableHelper() {}
 }
