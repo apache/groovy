@@ -19,6 +19,7 @@
 package groovy
 
 import groovy.test.GroovyTestCase
+import groovy.test.NotYetImplemented
 
 class SwitchTest extends GroovyTestCase {
 
@@ -215,16 +216,101 @@ class SwitchTest extends GroovyTestCase {
         }
         assertEquals 1, i
     }
-    
-    void testSwitchReturnFromDefaultCase() {
-        assert m3('a') == 'letter A' && m3('b') == 'letter B' && m3('z') == 'Unknown letter'
+
+    void testSwitchReturn1() {
+        assertScript '''
+            def test(x) {
+               switch (x) {
+                 case 'a': 'letter A'; break
+                 case 'b': 'letter B'; break
+                 default : 'Unknown letter'
+               }
+            }
+            assert test('a') == 'letter A'
+            assert test('b') == 'letter B'
+            assert test('z') == 'Unknown letter'
+        '''
     }
 
-    def m3(s) {
-       switch(s) {
-           case 'a': 'letter A'; break
-           case 'b': 'letter B'; break
-           default: 'Unknown letter'
-       }
+    // GROOVY-3789
+    void testSwitchReturn2() {
+        assertScript '''
+            def test = { ->
+                if ( 0 ) { 10 }
+                else { 20 }
+            }
+            assert test() == 20
+        '''
+        assertScript '''
+            def test = { ->
+                switch ( 0 ) {
+                  case 0 : 10 ; break
+                  default : 20 ; break
+                }
+            }
+            assert test() == 10
+        '''
+    }
+
+    // GROOVY-4727
+    void testSwitchReturn3() {
+        assertScript '''
+            def test(x,y) {
+                switch (x) {
+                  case 'x1':
+                    switch (y) {
+                      case 'y1':
+                        'r1'
+                        break
+                      case 'y2':
+                        'r2'
+                        break
+                    }
+                    // no break
+                }
+            }
+            assert test('x1','y1') == 'r1'
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-9880
+    void testSwitchReturn4() {
+        assertScript '''
+            def test(sb) {
+                switch ('value') {
+                  case 'value':
+                    sb.append('foo')
+                    if (false) sb.append('X')
+                    // implicit "else ;"
+                    break
+                  default:
+                    sb.append('bar')
+                }
+            }
+            def sb = new StringBuilder()
+            test(sb); assert sb.toString() == 'foo'
+        '''
+    }
+
+    // GROOVY-9896
+    void testSwitchReturn5() {
+        assertScript '''
+            def test(x) {
+              switch(x) {
+               case 1:
+                'a'
+                break
+               case 2:
+                'b'
+                break
+               case 3:
+                'c'
+              }
+            }
+            assert test(1) == 'a'
+            assert test(2) == 'b'
+            assert test(3) == 'c'
+            assert test(4) == null
+        '''
     }
 }
