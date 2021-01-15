@@ -106,6 +106,16 @@ public class ClassNodeUtils {
     }
 
     /**
+     * Add a method and mark it as {@code @Generated}.
+     *
+     * @see ClassNode#addMethod(MethodNode)
+     */
+    public static void addGeneratedMethod(final ClassNode cNode, final MethodNode mNode, final boolean skipChecks) {
+        cNode.addMethod(mNode);
+        markAsGenerated(cNode, mNode, skipChecks);
+    }
+
+    /**
      * Add an inner class that is marked as {@code @Generated}.
      *
      * @see org.codehaus.groovy.ast.ModuleNode#addClass(ClassNode)
