@@ -71,8 +71,8 @@ class StaticCompileClosureGeneratedAnnotationTest extends TestCase {
         callMethodCollection.each { Method method ->
             assert method.getAnnotation(Generated)
         }
-        assert callMethodCollection.find { it.getParameterTypes() == new Class[] {} }
-        assert callMethodCollection.find { it.getParameterTypes() == new Class[] {Object} }
+        assert callMethodCollection.find { it.getParameterTypes() == [] as Class[] }
+        assert callMethodCollection.find { it.getParameterTypes() == [Object] as Class[] }
     }
 
     /**
@@ -97,7 +97,7 @@ class StaticCompileClosureGeneratedAnnotationTest extends TestCase {
 
         assert callMethodCollection.size() == 1
         assert callMethodCollection[0].getAnnotation(Generated)
-        assert callMethodCollection[0].getParameterTypes() == new Class[] {IntRange}
+        assert callMethodCollection[0].getParameterTypes() == [IntRange] as Class[]
     }
 
     /**
@@ -122,6 +122,6 @@ class StaticCompileClosureGeneratedAnnotationTest extends TestCase {
 
         assert callMethodCollection.size() == 1
         assert callMethodCollection[0].getAnnotation(Generated)
-        assert callMethodCollection[0].getParameterTypes() == new Class[] {IntRange, Integer}
+        assert callMethodCollection[0].getParameterTypes() == [IntRange, Integer] as Class[]
     }
 }

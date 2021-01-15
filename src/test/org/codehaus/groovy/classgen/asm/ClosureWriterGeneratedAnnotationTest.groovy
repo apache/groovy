@@ -88,7 +88,7 @@ class ClosureWriterGeneratedAnnotationTest extends TestCase {
 
         assert callMethodCollection.size() == 1
         assert callMethodCollection[0].getAnnotation(Generated)
-        assert callMethodCollection[0].getParameterTypes() == new Class[] {Integer}
+        assert callMethodCollection[0].getParameterTypes() == [Integer] as Class[]
     }
 
     /**
@@ -112,6 +112,6 @@ class ClosureWriterGeneratedAnnotationTest extends TestCase {
 
         assert callMethodCollection.size() == 1
         assert callMethodCollection[0].getAnnotation(Generated)
-        assert callMethodCollection[0].getParameterTypes() == new Class[] {IntRange, Integer}
+        assert callMethodCollection[0].getParameterTypes() == [IntRange, Integer] as Class[]
     }
 }
