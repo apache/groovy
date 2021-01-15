@@ -18,19 +18,15 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
-import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.classgen.asm.ClosureWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.control.SourceUnit;
@@ -39,6 +35,14 @@ import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Opcodes;
 
 import java.util.List;
+
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Writer responsible for generating closure classes in statically compiled mode.
@@ -80,37 +84,24 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         // is too complex!
 
         // call(Object)
-        Parameter args = new Parameter(ClassHelper.OBJECT_TYPE, "args");
-        MethodCallExpression doCall1arg = new MethodCallExpression(
-                new VariableExpression("this", closureClass),
-                "doCall",
-                new ArgumentListExpression(new VariableExpression(args))
-        );
-        doCall1arg.setImplicitThis(true);
-        doCall1arg.setMethodTarget(doCallMethod);
-        closureClass.addMethod(AnnotatedNodeUtils.markAsGenerated(closureClass,
-                new MethodNode("call",
-                        Opcodes.ACC_PUBLIC,
-                        ClassHelper.OBJECT_TYPE,
-                        new Parameter[]{args},
-                        ClassNode.EMPTY_ARRAY,
-                        new ReturnStatement(doCall1arg)),
-                true
-        ));
+        Parameter args = param(ClassHelper.OBJECT_TYPE, "args");
+        addGeneratedCallMethod(closureClass, doCallMethod, varX(args), new Parameter[]{args});
 
         // call()
-        MethodCallExpression doCallNoArgs = new MethodCallExpression(new VariableExpression("this", closureClass), "doCall", new ArgumentListExpression(new ConstantExpression(null)));
-        doCallNoArgs.setImplicitThis(true);
-        doCallNoArgs.setMethodTarget(doCallMethod);
-        closureClass.addMethod(AnnotatedNodeUtils.markAsGenerated(closureClass,
-                new MethodNode("call",
-                        Opcodes.ACC_PUBLIC,
-                        ClassHelper.OBJECT_TYPE,
-                        Parameter.EMPTY_ARRAY,
-                        ClassNode.EMPTY_ARRAY,
-                        new ReturnStatement(doCallNoArgs)),
-                true
-        ));
+        addGeneratedCallMethod(closureClass, doCallMethod, constX(null), Parameter.EMPTY_ARRAY);
+    }
+
+    private static void addGeneratedCallMethod(ClassNode closureClass, MethodNode doCallMethod, Expression expression, Parameter[] params) {
+        MethodCallExpression doCallarg = callX(varX("this", closureClass), "doCall", args(expression));
+        doCallarg.setImplicitThis(true);
+        doCallarg.setMethodTarget(doCallMethod);
+        MethodNode call = new MethodNode("call",
+                Opcodes.ACC_PUBLIC,
+                ClassHelper.OBJECT_TYPE,
+                params,
+                ClassNode.EMPTY_ARRAY,
+                returnS(doCallarg));
+        addGeneratedMethod(closureClass, call, true);
     }
 
     private static final class MethodTargetCompletionVisitor extends ClassCodeVisitorSupport {
