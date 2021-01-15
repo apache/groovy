@@ -135,6 +135,7 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -10271,25 +10272,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return true;
     }
 
-
-     /**
-     * Returns the last item from the LinkedList.
-     * <pre class="groovyTestCase">
-     * def list = [3, 4, 2]
-     * assert list.last() == 2
-     * // check original is unaltered
-     * assert list == [3, 4, 2]
-     * </pre>
+    /**
+     * An optimized version of {@link #last(List)}.
      *
-     * @param self a List
-     * @return the last item from the List
-     * @throws NoSuchElementException if the list is empty and you try to access the last() item.
-     * @since 1.5.5
+     * @since 2.5.15
      */
-    public static <T> T last(LinkedList<T> self) {
-
+    public static <T> T last(Deque<T> self) {
         if (self.isEmpty()) {
-            throw new NoSuchElementException("Cannot access last() element from an empty List");
+            throw new NoSuchElementException("Cannot access last() element from an empty Deque");
         }
         return self.getLast();
     }
@@ -10309,7 +10299,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static <T> T last(List<T> self) {
-
         if (self.isEmpty()) {
             throw new NoSuchElementException("Cannot access last() element from an empty List");
         }
