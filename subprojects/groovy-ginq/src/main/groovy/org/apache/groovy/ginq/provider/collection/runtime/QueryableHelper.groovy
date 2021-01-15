@@ -23,7 +23,9 @@ import groovy.transform.CompileStatic
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.ThreadFactory
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Function
 import java.util.function.Supplier
 import java.util.stream.Collectors
@@ -77,11 +79,11 @@ class QueryableHelper {
     }
 
     static <U> CompletableFuture<U> supplyAsync(Supplier<U> supplier) {
-        return CompletableFuture.supplyAsync(supplier, THREAD_POOL)
+        return CompletableFuture.supplyAsync(supplier, ThreadPoolHolder.THREAD_POOL)
     }
 
     static <T, U> CompletableFuture<U> supplyAsync(Function<? super T, ? extends U> function, T param) {
-        return CompletableFuture.supplyAsync(() -> { function.apply(param) }, THREAD_POOL)
+        return CompletableFuture.supplyAsync(() -> { function.apply(param) }, ThreadPoolHolder.THREAD_POOL)
     }
 
     static boolean isParallel() {
@@ -104,24 +106,39 @@ class QueryableHelper {
      * Shutdown to release resources
      *
      * @param mode 0: immediate, 1: abort
+     * @return list of tasks that never commenced execution
      */
-    static shutdown(int mode) {
+    static List<Runnable> shutdown(int mode) {
         if (0 == mode) {
-            THREAD_POOL.shutdown()
-            while (!THREAD_POOL.awaitTermination(250, TimeUnit.MILLISECONDS)) {
+            ThreadPoolHolder.THREAD_POOL.shutdown()
+            while (!ThreadPoolHolder.THREAD_POOL.awaitTermination(250, TimeUnit.MILLISECONDS)) {
                 // do nothing, just wait to terminate
             }
+            return Collections.emptyList()
         } else if (1 == mode) {
-            THREAD_POOL.shutdownNow()
+            return ThreadPoolHolder.THREAD_POOL.shutdownNow()
         } else {
             throw new IllegalArgumentException("Invalid mode: $mode")
         }
     }
 
     private static final ThreadLocal<Map<String, Object>> VAR_HOLDER = ThreadLocal.<Map<String, Object>> withInitial(() -> new LinkedHashMap<>())
-    private static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
     private static final String PARALLEL = "parallel"
     private static final String TRUE_STR = "true"
 
     private QueryableHelper() {}
+
+    private static class ThreadPoolHolder {
+        static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+            private static final String THREAD_NAME_PREFIX = 'Thread-GINQ-'
+            private static final AtomicInteger SEQ = new AtomicInteger(0)
+
+            @Override
+            Thread newThread(Runnable r) {
+                return new Thread(r, "${THREAD_NAME_PREFIX}${SEQ.getAndIncrement()}")
+            }
+        })
+
+        private ThreadPoolHolder() {}
+    }
 }

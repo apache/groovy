@@ -5703,7 +5703,7 @@ class GinqTest {
                 shutdown
             }
 // end::ginq_tips_09[]
-            assert QueryableHelper.THREAD_POOL.isShutdown() && QueryableHelper.THREAD_POOL.isTerminated()
+            assert QueryableHelper.ThreadPoolHolder.THREAD_POOL.isShutdown() && QueryableHelper.ThreadPoolHolder.THREAD_POOL.isTerminated()
         '''
     }
 
@@ -5716,7 +5716,7 @@ class GinqTest {
                 shutdown immediate
             }
 // end::ginq_tips_10[]
-            assert QueryableHelper.THREAD_POOL.isShutdown() && QueryableHelper.THREAD_POOL.isTerminated()
+            assert QueryableHelper.ThreadPoolHolder.THREAD_POOL.isShutdown() && QueryableHelper.ThreadPoolHolder.THREAD_POOL.isTerminated()
         '''
     }
 
@@ -5729,7 +5729,7 @@ class GinqTest {
                 shutdown abort
             }
 // end::ginq_tips_11[]
-            assert QueryableHelper.THREAD_POOL.isShutdown()
+            assert QueryableHelper.ThreadPoolHolder.THREAD_POOL.isShutdown()
         '''
     }
 
