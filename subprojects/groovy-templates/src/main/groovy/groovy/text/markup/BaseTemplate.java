@@ -314,7 +314,7 @@ public abstract class BaseTemplate implements Writable {
      */
     public void includeEscaped(String templatePath) throws IOException {
         URL resource = engine.resolveTemplate(templatePath);
-        yield(ResourceGroovyMethods.getText(resource, engine.getCompilerConfiguration().getSourceEncoding()));
+        this.yield(ResourceGroovyMethods.getText(resource, engine.getCompilerConfiguration().getSourceEncoding()));
     }
 
     /**
