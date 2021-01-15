@@ -275,9 +275,9 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     void testFieldInitShouldPass() {
         assertScript '''
             class Foo {
-                int x = 1
+                int bar = 1
             }
-            1
+            new Foo()
         '''
     }
 
@@ -285,9 +285,9 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     void testFieldInitShouldNotPassBecauseOfIncompatibleTypes() {
         shouldFailWithMessages '''
             class Foo {
-                int x = new Date()
+                int bar = new Date()
             }
-            1
+            new Foo()
         ''', 'Cannot assign value of type java.util.Date to variable of type int'
     }
 
@@ -295,10 +295,38 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     void testFieldInitShouldNotPassBecauseOfIncompatibleTypesWithClosure() {
         shouldFailWithMessages '''
             class Foo {
-                Closure<List> cls = { Date aDate ->  aDate.getTime() }
+                Closure<List> bar = { Date date -> date.getTime() }
             }
-            1
+            new Foo()
         ''', 'Incompatible generic argument types. Cannot assign groovy.lang.Closure <java.lang.Long> to: groovy.lang.Closure <List>'
+    }
+
+    void testFieldInitShouldNotPassBecauseOfIncompatibleTypesWithClosure2() {
+        shouldFailWithMessages '''
+            class Foo {
+                java.util.function.Supplier<String> bar = { 123 }
+            }
+            new Foo()
+        ''', 'Incompatible generic argument types. Cannot assign java.util.function.Supplier <java.lang.Integer> to: java.util.function.Supplier <String>'
+    }
+
+    // GROOVY-9882
+    void testFieldInitShouldPassForCcompatibleTypesWithClosure() {
+        assertScript '''
+            class Foo {
+                java.util.function.Supplier<String> bar = { 'abc' }
+            }
+            assert new Foo().bar.get() == 'abc'
+        '''
+    }
+
+    void testFieldInitClosureParameterMismatch() {
+        shouldFailWithMessages '''
+            class Foo {
+                java.util.function.Supplier<String> bar = { a -> '' }
+            }
+            new Foo()
+        ''', 'Wrong number of parameters'
     }
 
     // GROOVY-5517
