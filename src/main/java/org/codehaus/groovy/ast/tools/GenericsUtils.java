@@ -974,13 +974,19 @@ public class GenericsUtils {
      */
     public static ClassNode findActualTypeByGenericsPlaceholderName(String placeholderName, Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap) {
         for (Map.Entry<GenericsType, GenericsType> entry : genericsPlaceholderAndTypeMap.entrySet()) {
-            GenericsType declaringGenericsType = entry.getKey();
-
-            if (placeholderName.equals(declaringGenericsType.getName())) {
-                return entry.getValue().getType().redirect();
+            if (placeholderName.equals(entry.getKey().getName())) {
+                GenericsType gt = entry.getValue();
+                if (gt.isWildcard()) {
+                    if (gt.getLowerBound() != null) {
+                        return gt.getLowerBound();
+                    }
+                    if (gt.getUpperBounds() != null) {
+                        return gt.getUpperBounds()[0];
+                    }
+                }
+                return gt.getType();
             }
         }
-
         return null;
     }
 

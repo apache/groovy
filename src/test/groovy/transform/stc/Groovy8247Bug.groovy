@@ -21,7 +21,7 @@ package groovy.transform.stc
 
 class Groovy8247Bug extends StaticTypeCheckingTestCase {
     void testClosureWithExplicitParamNoInferrableArguments() {
-        assertScript '''
+        shouldFailWithMessages '''
             def runnable(Runnable r) {
                 r.run()
             }
@@ -31,6 +31,7 @@ class Groovy8247Bug extends StaticTypeCheckingTestCase {
                 }
             }
             foo()
-        '''
+        ''',
+        'Wrong number of parameters for method target run()'
     }
 }

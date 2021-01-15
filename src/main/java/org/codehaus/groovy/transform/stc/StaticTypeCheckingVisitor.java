@@ -174,6 +174,7 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
+import static org.codehaus.groovy.ast.tools.ClosureUtils.hasImplicitParameter;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -798,9 +799,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     return;
                 }
             } else {
-                if (op == ASSIGN) { // GROOVY-9971
+                if (op == ASSIGN) {
                     ClassNode lType = getOriginalDeclarationType(leftExpression);
-                    if (isClosureWithType(lType) && rightExpression instanceof ClosureExpression) {
+                    if (isFunctionalInterface(lType)) {
+                        processFunctionalInterfaceAssignment(lType, rightExpression);
+                    } else if (isClosureWithType(lType) && rightExpression instanceof ClosureExpression) {
                         storeInferredReturnType(rightExpression, getCombinedBoundType(lType.getGenericsTypes()[0]));
                     }
                 }
@@ -1005,6 +1008,44 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private static boolean isClosureWithType(final ClassNode type) {
         return type.equals(CLOSURE_TYPE) && type.getGenericsTypes() != null && type.getGenericsTypes().length == 1;
+    }
+
+    private static boolean isFunctionalInterface(final ClassNode type) {
+        return type.isInterface() && isSAMType(type);
+    }
+
+    private void processFunctionalInterfaceAssignment(final ClassNode lhsType, final Expression rhsExpression) {
+        if (rhsExpression instanceof ClosureExpression) {
+            MethodNode abstractMethod = findSAM(lhsType);
+            Map<GenericsType, GenericsType> mappings = GenericsUtils.makeDeclaringAndActualGenericsTypeMapOfExactType(abstractMethod.getDeclaringClass(), lhsType);
+
+            ClassNode[] samParameterTypes = extractTypesFromParameters(abstractMethod.getParameters());
+            for (int i = 0; i < samParameterTypes.length; i += 1) {
+                if (samParameterTypes[i].isGenericsPlaceHolder()) {
+                    samParameterTypes[i] = GenericsUtils.findActualTypeByGenericsPlaceholderName(samParameterTypes[i].getUnresolvedName(), mappings);
+                }
+            }
+
+            Parameter[] closureParameters = getParametersSafe((ClosureExpression) rhsExpression);
+            if (closureParameters.length == samParameterTypes.length || (1 == samParameterTypes.length && hasImplicitParameter((ClosureExpression) rhsExpression))) {
+                for (int i = 0; i < closureParameters.length; i += 1) {
+                    Parameter parameter = closureParameters[i];
+                    if (parameter.isDynamicTyped()) {
+                        parameter.setType(samParameterTypes[i]);
+                        parameter.setOriginType(samParameterTypes[i]);
+                    }
+                }
+            } else {
+                String descriptor = toMethodParametersString(findSAM(lhsType).getName(), samParameterTypes);
+                addStaticTypeError("Wrong number of parameters for method target " + descriptor, rhsExpression);
+            }
+
+            ClassNode returnType = abstractMethod.getReturnType();
+            if (returnType.isGenericsPlaceHolder()) {
+                returnType = GenericsUtils.findActualTypeByGenericsPlaceholderName(returnType.getUnresolvedName(), mappings);
+            }
+            storeInferredReturnType(rhsExpression, returnType);
+        }
     }
 
     private static boolean isCompoundAssignment(final Expression exp) {
@@ -1876,7 +1917,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private void visitInitialExpression(final Expression value, final Expression target, final ASTNode position) {
         if (value != null) {
             ClassNode lType = target.getType();
-            if (isClosureWithType(lType) && value instanceof ClosureExpression) {
+            if (isFunctionalInterface(lType)) {
+                processFunctionalInterfaceAssignment(lType, value);
+            } else if (isClosureWithType(lType) && value instanceof ClosureExpression) {
                 storeInferredReturnType(value, getCombinedBoundType(lType.getGenericsTypes()[0]));
             }
 
@@ -2780,7 +2823,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         inferClosureParameterTypes(receiver, arguments, (ClosureExpression) expression, param, selectedMethod);
                     }
                     ClassNode targetType = param.getType();
-                    if (isClosureWithType(targetType)) { // GROOVY-9971
+                    if (isFunctionalInterface(targetType)) {
+                        processFunctionalInterfaceAssignment(targetType, expression);
+                    } else if (isClosureWithType(targetType)) { // GROOVY-9971
                         storeInferredReturnType(expression, getCombinedBoundType(targetType.getGenericsTypes()[0]));
                     }
                 }
@@ -4008,16 +4053,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitCastExpression(final CastExpression expression) {
-        super.visitCastExpression(expression);
-        if (!expression.isCoerce()) {
-            ClassNode targetType = expression.getType();
-            Expression source = expression.getExpression();
-            ClassNode expressionType = getType(source);
-            if (!checkCast(targetType, source) && !isDelegateOrOwnerInClosure(source)) {
-                addStaticTypeError("Inconvertible types: cannot cast " + expressionType.toString(false) + " to " + targetType.toString(false), expression);
-            }
+        ClassNode type = expression.getType();
+        Expression target = expression.getExpression();
+        if (isFunctionalInterface(type)) { // GROOVY-9997
+            processFunctionalInterfaceAssignment(type, target);
         }
-        storeType(expression, expression.getType());
+
+        target.visit(this);
+
+        if (!expression.isCoerce() && !checkCast(type, target) && !isDelegateOrOwnerInClosure(target)) {
+            addStaticTypeError("Inconvertible types: cannot cast " + prettyPrintType(getType(target)) + " to " + prettyPrintType(type), expression);
+        }
     }
 
     private boolean isDelegateOrOwnerInClosure(Expression exp) {
