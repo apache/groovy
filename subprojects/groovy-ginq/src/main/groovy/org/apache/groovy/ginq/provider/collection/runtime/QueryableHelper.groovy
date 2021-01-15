@@ -23,15 +23,12 @@ import groovy.transform.CompileStatic
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.ThreadFactory
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Function
 import java.util.function.Supplier
 import java.util.stream.Collectors
 
 import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from
-
 /**
  * Helper for {@link Queryable}
  *
@@ -129,16 +126,7 @@ class QueryableHelper {
     private QueryableHelper() {}
 
     private static class ThreadPoolHolder {
-        static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-            private static final String THREAD_NAME_PREFIX = 'Thread-GINQ-'
-            private static final AtomicInteger SEQ = new AtomicInteger(0)
-
-            @Override
-            Thread newThread(Runnable r) {
-                return new Thread(r, "${THREAD_NAME_PREFIX}${SEQ.getAndIncrement()}")
-            }
-        })
-
+        static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
         private ThreadPoolHolder() {}
     }
 }
