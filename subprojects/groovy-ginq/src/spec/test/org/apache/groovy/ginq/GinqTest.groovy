@@ -3179,6 +3179,21 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - GINQ tips - 4"() {
+        assertGinqScript '''
+// tag::ginq_tips_12[]
+            def v = GQ { from n in [1, 2, 3] where n < 3 select n }
+            def result = GQ {
+                from n in v
+                where n > 1
+                select n
+            }
+            assert [2] == result.toList()
+// end::ginq_tips_12[]
+        '''
+    }
+
+    @Test
     void "testGinq - GINQ examples - 1"() {
         assertGinqScript '''
             def expected = 

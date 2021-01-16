@@ -677,17 +677,24 @@ GINQ could be used as list comprehension in the loops directly:
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_03,indent=0]
 ----
 
+==== Query & Update
+This is like `update` statement in SQL
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_07,indent=0]
+----
+
+==== Alternative for `with` clause
+GINQ does not support `with` clause for now. We could define a temporary variable to workaround:
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_12,indent=0]
+----
+
 ==== Query JSON
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_04,indent=0]
-----
-
-==== Query & Update
-This is like `update` in SQL
-[source, groovy]
-----
-include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_07,indent=0]
 ----
 
 ==== Parallel Querying
