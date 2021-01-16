@@ -1426,13 +1426,10 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             if (!lambdaParamName || visitingAggregateFunctionStack || visitingWindowFunction) {
                 lambdaParamName = generateLambdaParamName()
             }
-
-            lambdaCode.putNodeMetaData(__LAMBDA_PARAM_NAME, lambdaParamName)
         } else {
             lambdaParamName = dataSourceExpression.aliasExpr.text
-            lambdaCode.putNodeMetaData(__LAMBDA_PARAM_NAME, lambdaParamName)
         }
-
+        lambdaCode.putNodeMetaData(__LAMBDA_PARAM_NAME, lambdaParamName)
         return lambdaParamName
     }
 
