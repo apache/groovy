@@ -4699,6 +4699,30 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - aggregate function - 15"() {
+        assertGinqScript '''
+// tag::ginq_aggfunction_05[]
+            assert [0.6666666666666667] == GQ {
+                from n in [1, 2, 3]
+                select var(n)
+            }.toList()
+// end::ginq_aggfunction_05[]
+        '''
+    }
+
+    @Test
+    void "testGinq - aggregate function - 16"() {
+        assertGinqScript '''
+// tag::ginq_aggfunction_06[]
+            assert [1] == GQ {
+                from n in [1, 2, 3]
+                select varp(n)
+            }.toList()
+// end::ginq_aggfunction_06[]
+        '''
+    }
+
+    @Test
     void "testGinq - parallel - 1"() {
         assertGinqScript '''
 // tag::ginq_tips_08[]
@@ -5730,6 +5754,32 @@ class GinqTest {
                 select n, (stdevp(n) over())
             }.toList()
 // end::ginq_winfunction_36[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 80"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_37[]
+            assert [[1, 0.6666666666666667], 
+                    [2, 0.6666666666666667], 
+                    [3, 0.6666666666666667]] == GQ {
+                from n in [1, 2, 3]
+                select n, (var(n) over())
+            }.toList()
+// end::ginq_winfunction_37[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 81"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_38[]
+            assert [[1, 1], [2, 1], [3, 1]] == GQ {
+                from n in [1, 2, 3]
+                select n, (varp(n) over())
+            }.toList()
+// end::ginq_winfunction_38[]
         '''
     }
 

@@ -436,6 +436,24 @@ public interface Queryable<T> {
     BigDecimal stdevp(Function<? super T, ? extends Number> mapper);
 
     /**
+     * Aggregate function {@code var}, similar to SQL's {@code var}
+     *
+     * @param mapper choose the field to calculate the statistical variance
+     * @return statistical variance
+     * @since 4.0.0
+     */
+    BigDecimal var(Function<? super T, ? extends Number> mapper);
+
+    /**
+     * Aggregate function {@code varp}, similar to SQL's {@code varp}
+     *
+     * @param mapper choose the field to calculate the statistical variance for the population
+     * @return statistical variance for the population
+     * @since 4.0.0
+     */
+    BigDecimal varp(Function<? super T, ? extends Number> mapper);
+
+    /**
      * The most powerful aggregate function in GINQ, it will receive the grouped result({@link Queryable} instance) and apply any processing
      *
      * @param mapper map the grouped result({@link Queryable} instance) to aggregate result

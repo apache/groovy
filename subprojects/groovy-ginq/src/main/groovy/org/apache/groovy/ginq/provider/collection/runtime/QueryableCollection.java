@@ -436,7 +436,17 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return sd(mapper, 1);
     }
 
-    private BigDecimal sd(Function<? super T, ? extends Number> mapper, int diff) {
+    @Override
+    public BigDecimal var(Function<? super T, ? extends Number> mapper) {
+        return vr(mapper, 0);
+    }
+
+    @Override
+    public BigDecimal varp(Function<? super T, ? extends Number> mapper) {
+        return vr(mapper, 1);
+    }
+
+    private BigDecimal vr(Function<? super T, ? extends Number> mapper, int diff) {
         BigDecimal avg = this.avg(mapper);
         Object[] result = agg(q -> q.stream()
                 .map(mapper)
@@ -448,8 +458,12 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                     return r;
                 }, (o1, o2) -> o1));
 
+        return ((BigDecimal) result[1]).divide(toBigDecimal((Long) result[0] - diff), 16, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal sd(Function<? super T, ? extends Number> mapper, int diff) {
         // `BigDecimal.sqrt` is introduced since Java9, so we can not use it for now.
-        return toBigDecimal(sqrt(((BigDecimal) result[1]).divide(toBigDecimal((Long) result[0] - diff), 16, RoundingMode.HALF_UP).doubleValue()));
+        return toBigDecimal(sqrt(vr(mapper, diff).doubleValue()));
     }
 
     @Override
