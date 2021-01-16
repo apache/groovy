@@ -318,6 +318,22 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9885
+    void testUseGStringTernaryInNamedParameter() {
+        assertScript '''
+            @groovy.transform.ToString
+            class Pogo {
+                String value
+            }
+            def make(String string, whatever) {
+                new Pogo(value: string.trim() ?: "$whatever")
+            }
+            assert make('x','y').toString() == 'Pogo(x)'
+            assert make(' ','y').toString() == 'Pogo(y)'
+            assert make(' ',123).toString() == 'Pogo(123)'
+        '''
+    }
+
     // GROOVY-5578
     void testConstructJavaBeanFromMap() {
         assertScript '''import groovy.transform.stc.MyBean
