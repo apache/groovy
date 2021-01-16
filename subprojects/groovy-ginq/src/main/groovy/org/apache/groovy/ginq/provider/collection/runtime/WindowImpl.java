@@ -151,6 +151,11 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         return result;
     }
 
+    @Override
+    public long ntile(long bucketCnt) {
+        return (bucketCnt * rowNumber() / list.size());
+    }
+
     private static <T, U extends Comparable<? super U>> long getFirstIndex(WindowDefinition<T, U> windowDefinition, int index) {
         RowBound rowBound = windowDefinition.rows();
         final Long lower = rowBound.getLower();

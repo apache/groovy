@@ -5784,6 +5784,21 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - window - 82"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_39[]
+            assert [[1, 0], [2, 0], [3, 0],
+                    [4, 1], [5, 1], 
+                    [6, 2], [7, 2],[8, 2], 
+                    [9, 3], [10, 3]] == GQ {
+                from n in 1..10
+                select n, (ntile(4) over(orderby n))
+            }.toList()
+// end::ginq_winfunction_39[]
+        '''
+    }
+
+    @Test
     void "testGinq - shutdown - 0"() {
         assertScript '''
             import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper

@@ -488,10 +488,15 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_34
 [NOTE]
 The parentheses around the window function is required.
 
-===== `rank` and `denseRank`
+===== `rank`, `denseRank` and `ntile`
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_25,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_39,indent=0]
 ----
 
 ===== `lead` and `lag`
