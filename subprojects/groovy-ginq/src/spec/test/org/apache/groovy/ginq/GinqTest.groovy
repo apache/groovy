@@ -4687,6 +4687,18 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - aggregate function - 14"() {
+        assertGinqScript '''
+// tag::ginq_aggfunction_04[]
+            assert [1] == GQ {
+                from n in [1, 2, 3]
+                select stdevp(n)
+            }.toList()
+// end::ginq_aggfunction_04[]
+        '''
+    }
+
+    @Test
     void "testGinq - parallel - 1"() {
         assertGinqScript '''
 // tag::ginq_tips_08[]
@@ -5706,6 +5718,18 @@ class GinqTest {
                 select n, (stdev(n) over())
             }.toList()
 // end::ginq_winfunction_35[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 79"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_36[]
+            assert [[1, 1], [2, 1], [3, 1]] == GQ {
+                from n in [1, 2, 3]
+                select n, (stdevp(n) over())
+            }.toList()
+// end::ginq_winfunction_36[]
         '''
     }
 

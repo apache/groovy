@@ -421,10 +421,19 @@ public interface Queryable<T> {
      * Aggregate function {@code stdev}, similar to SQL's {@code stdev}
      *
      * @param mapper choose the field to calculate the statistical standard deviation
-     * @return statistical standard deviation result
+     * @return statistical standard deviation
      * @since 4.0.0
      */
     BigDecimal stdev(Function<? super T, ? extends Number> mapper);
+
+    /**
+     * Aggregate function {@code stdevp}, similar to SQL's {@code stdevp}
+     *
+     * @param mapper choose the field to calculate the statistical standard deviation for the population
+     * @return statistical standard deviation for the population
+     * @since 4.0.0
+     */
+    BigDecimal stdevp(Function<? super T, ? extends Number> mapper);
 
     /**
      * The most powerful aggregate function in GINQ, it will receive the grouped result({@link Queryable} instance) and apply any processing

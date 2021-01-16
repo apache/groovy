@@ -284,7 +284,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_09,in
 
 ===== Aggregate Functions
 GINQ provides some built-in aggregate functions, e.g.
-`count`, `min`, `max`, `sum`, `avg`, `median`, `stdev` and the most powerful function `agg`.
+`count`, `min`, `max`, `sum`, `avg`, `median`, `stdev`, `stdevp` and the most powerful function `agg`.
 [NOTE]
 `count(...)`, `min(...)`, `max(...)`, `avg(...)`, `median(...)` and `stdev(...)` just operate on non-`null` values,
 and `count()` is similar to `count(*)` in SQL.
@@ -341,6 +341,11 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_aggfunction_01
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_aggfunction_03,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_aggfunction_04,indent=0]
 ----
 
 ==== Sorting
@@ -587,7 +592,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_15
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_11,indent=0]
 ----
 
-===== `min`, `max`, `count`, `sum`, `avg`, `median` and `stdev`
+===== `min`, `max`, `count`, `sum`, `avg`, `median`, `stdev` and `stdevp`
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_22,indent=0]
@@ -641,6 +646,11 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_30
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_35,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_36,indent=0]
 ----
 
 === GINQ Tips
