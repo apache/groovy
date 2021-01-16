@@ -33,7 +33,7 @@ GINQ is a DSL for querying with SQL-like syntax, which consists of the following
 GQ, i.e. abbreviation for GINQ
 |__ from
 |   |__ <data_source_alias> in <data_source>
-|__ [innerjoin/leftjoin/rightjoin/fulljoin/crossjoin]*
+|__ [join/innerjoin/leftjoin/rightjoin/fulljoin/crossjoin]*
 |   |__ <data_source_alias> in <data_source>
 |   |__ on <condition> ((&& | ||) <condition>)* (NOTE: `crossjoin` does not need `on` clause)
 |__ [where]

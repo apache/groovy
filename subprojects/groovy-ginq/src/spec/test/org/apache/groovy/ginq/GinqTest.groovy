@@ -3041,7 +3041,7 @@ class GinqTest {
     
             assert expected == GQ {
                 from p in json.persons
-                innerjoin t in json.tasks on t.assignee == p.id
+                join t in json.tasks on t.assignee == p.id
                 where t.id in [1, 3, 4]
                 orderby t.manDay in desc
                 select (taskId: t.id, taskContent: t.content, assignee: p.name, manDay: t.manDay)
@@ -3210,7 +3210,7 @@ class GinqTest {
 // tag::ginq_examples_01[]
                 from v in (
                     from a in 1..9
-                    innerjoin b in 1..9 on a <= b
+                    join b in 1..9 on a <= b
                     select a as f, b as s, "$a * $b = ${a * b}".toString() as r
                 )
                 groupby v.s
@@ -4204,7 +4204,7 @@ class GinqTest {
 // tag::ginq_optimize_01[]
             assert [[2, 2]] == GQ(optimize: false) {
                 from n1 in [1, 2, 3]
-                innerjoin n2 in [1, 2, 3] on n1 == n2
+                join n2 in [1, 2, 3] on n1 == n2
                 where n1 > 1 &&  n2 < 3
                 select n1, n2
             }.toList()
@@ -4728,7 +4728,7 @@ class GinqTest {
 // tag::ginq_tips_08[]
             assert [[1, 1], [2, 2], [3, 3]] == GQ(parallel: true) {
                 from n1 in 1..1000
-                innerhashjoin n2 in 1..10000 on n2 == n1
+                join n2 in 1..10000 on n2 == n1
                 where n1 <= 3 && n2 <= 5
                 select n1, n2
             }.toList()
