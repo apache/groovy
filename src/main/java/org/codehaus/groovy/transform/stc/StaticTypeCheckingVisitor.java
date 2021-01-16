@@ -95,6 +95,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.ReturnAdder;
@@ -1270,10 +1271,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode wrappedRHS = adjustTypeForSpreading(inferredRightExpressionType, leftExpression);
 
         // check types are compatible for assignment
-        boolean compatible = checkCompatibleAssignmentTypes(leftRedirect, wrappedRHS, rightExpression);
-
-
-        if (!compatible) {
+        if (!checkCompatibleAssignmentTypes(leftRedirect, wrappedRHS, rightExpression)) {
             if (!extension.handleIncompatibleAssignment(leftExpressionType, inferredRightExpressionType, assignmentExpression)) {
                 addAssignmentError(leftExpressionType, inferredRightExpressionType, assignmentExpression.getRightExpression());
             }
@@ -1290,23 +1288,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // workaround for map-style checks putting setter info on wrong AST nodes
         typeCheckingContext.pushEnclosingBinaryExpression(null);
         for (MapEntryExpression entryExpression : mapExpression.getMapEntryExpressions()) {
-            Expression keyExpr = entryExpression.getKeyExpression();
-            if (!(keyExpr instanceof ConstantExpression)) {
-                addStaticTypeError("Dynamic keys in map-style constructors are unsupported in static type checking", keyExpr);
+            Expression keyExpression = entryExpression.getKeyExpression();
+            if (!(keyExpression instanceof ConstantExpression)) {
+                addStaticTypeError("Dynamic keys in map-style constructors are unsupported in static type checking", keyExpression);
             } else {
-                AtomicReference<ClassNode> lookup = new AtomicReference<>();
-                PropertyExpression pexp = new PropertyExpression(varX("_", receiverType), keyExpr.getText());
-                boolean hasProperty = existsProperty(pexp, false, new PropertyLookupVisitor(lookup));
-                if (!hasProperty) {
-                    addStaticTypeError("No such property: " + keyExpr.getText() +
-                            " for class: " + receiverType.getName(), receiver);
+                String pName = keyExpression.getText();
+                AtomicReference<ClassNode> pType = new AtomicReference<>();
+                if (!existsProperty(propX(varX("_", receiverType), pName), false, new PropertyLookupVisitor(pType))) {
+                    addStaticTypeError("No such property: " + pName + " for class: " + receiverType.getText(), receiver);
                 } else {
-                    ClassNode valueType = getType(entryExpression.getValueExpression());
-                    MethodNode setter = receiverType.getSetterMethod(getSetterName(pexp.getPropertyAsString()), false);
-                    ClassNode toBeAssignedTo = setter == null ? lookup.get() : setter.getParameters()[0].getType();
-                    if (!isAssignableTo(valueType, toBeAssignedTo)
-                            && !extension.handleIncompatibleAssignment(toBeAssignedTo, valueType, entryExpression)) {
-                        addAssignmentError(toBeAssignedTo, valueType, entryExpression);
+                    ClassNode targetType = Optional.ofNullable(receiverType.getSetterMethod(getSetterName(pName), false))
+                            .map(setter -> setter.getParameters()[0].getType()).orElseGet(pType::get);
+                    Expression valueExpression = entryExpression.getValueExpression();
+                    ClassNode valueType = getType(valueExpression);
+
+                    ClassNode resultType = getResultType(targetType, ASSIGN, valueType,
+                                assignX(keyExpression, valueExpression, entryExpression));
+                    if (!checkCompatibleAssignmentTypes(targetType, resultType, valueExpression)
+                            && !extension.handleIncompatibleAssignment(targetType, valueType, entryExpression)) {
+                        addAssignmentError(targetType, valueType, entryExpression);
                     }
                 }
             }
@@ -1833,13 +1833,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             Expression init = node.getInitialExpression();
             if (init != null) {
                 FieldExpression left = new FieldExpression(node);
-                BinaryExpression bexp = binX(
-                        left,
-                        Token.newSymbol("=", node.getLineNumber(), node.getColumnNumber()),
-                        init
-                );
-                bexp.setSourcePosition(init);
-                typeCheckAssignment(bexp, left, node.getOriginType(), init, getType(init));
+                BinaryExpression bexp = assignX(left, init, node);
+                ClassNode lType = getType(node), rType = getType(init);
+                typeCheckAssignment(bexp, left, lType, init, getResultType(lType, ASSIGN, rType, bexp));
+
                 if (init instanceof ConstructorCallExpression) {
                     inferDiamondType((ConstructorCallExpression) init, node.getOriginType());
                 }
@@ -5707,6 +5704,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return isClassInnerClassOrEqualTo(toBeChecked, outer);
         }
         return false;
+    }
+
+    private static BinaryExpression assignX(final Expression lhs, final Expression rhs, final ASTNode pos) {
+        BinaryExpression exp = (BinaryExpression) GeneralUtils.assignX(lhs, rhs);
+        exp.setSourcePosition(pos);
+        return exp;
     }
 
     //--------------------------------------------------------------------------
