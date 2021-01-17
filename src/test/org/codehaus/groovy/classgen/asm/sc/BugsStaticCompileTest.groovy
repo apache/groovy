@@ -1488,15 +1488,11 @@ println someInt
     void testGenericsArrayPlaceholder() {
         assertScript '''
             import static java.nio.file.AccessMode.*
-
-            class Dummy {
-                static main() {
-                    // more than 5 to match `of(E first, E[] rest)` variant
-                    EnumSet.of(READ, WRITE, EXECUTE, READ, WRITE, EXECUTE)
-                }
+            def test() {
+                // more than 5 to match of(E first, E[] rest) variant
+                EnumSet.of(READ, WRITE, EXECUTE, READ, WRITE, EXECUTE)
             }
-
-            assert Dummy.main() == [READ, WRITE, EXECUTE].toSet()
+            assert test() == [READ, WRITE, EXECUTE].toSet()
         '''
     }
 

@@ -22,6 +22,7 @@ package groovy.transform.stc
  * Unit tests for static type checking : bug fixes.
  */
 class BugsSTCTest extends StaticTypeCheckingTestCase {
+
     // GROOVY-5456
     void testShouldNotAllowDivOnUntypedVariable() {
         shouldFailWithMessages '''
@@ -352,7 +353,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         execute()'''
     }
 
-    // GROOVY-5874-part-1
+    // GROOVY-5874 (pt.1)
     void testClosureSharedVariableInBinExp() {
         shouldFailWithMessages '''
             def sum = 0
@@ -610,7 +611,7 @@ Printer
     }
 
     // GROOVY-6970
-    void testShouldBeAbleToChooseBetweenTwoEquivalentInterfaceMethods() {
+    void testShouldBeAbleToChooseBetweenTwoEquivalentInterfaceMethods1() {
         assertScript '''
             interface A { void m() }
             interface B { void m() }
@@ -628,7 +629,8 @@ Printer
             new D(new CImpl())
         '''
     }
-    void testShouldBeAbleToChooseBetweenTwoEquivalentInterfaceMethodsVariant() {
+
+    void testShouldBeAbleToChooseBetweenTwoEquivalentInterfaceMethods2() {
         assertScript '''
             interface A { void m() }
             interface B { void m() }
@@ -645,7 +647,7 @@ Printer
         '''
     }
 
-    void testShouldBeAbleToChooseBetweenTwoEquivalentInterfaceMethodsVariant2() {
+    void testShouldBeAbleToChooseBetweenTwoEquivalentInterfaceMethods3() {
         assertScript '''
             interface A { void m() }
             interface B { void m() }
@@ -663,7 +665,8 @@ Printer
         '''
     }
 
-    void testAmbiguousMethodResolutionGroovy6849() {
+    // GROOVY-6849
+    void testAmbiguousMethodResolution() {
         assertScript '''
             interface ObservableList<E> extends List<E> {
                 public boolean addAll(E... elements)
@@ -674,13 +677,27 @@ Printer
         '''
     }
 
-    void testAmbiguousMethodResolutionGroovy7710NoArgsOverloaded() {
+    // GROOVY-7160
+    void _FIXME_testAmbiguousMethodResolutionObjectVsEnums() {
+        assertScript '''
+            import static java.nio.file.AccessMode.*
+            def test() {
+                // more than 5 to match of(E first, E[] rest) variant
+                EnumSet.of(READ, WRITE, EXECUTE, READ, WRITE, EXECUTE)
+            }
+            assert test() == [READ, WRITE, EXECUTE].toSet()
+        '''
+    }
+
+    // GROOVY-7710
+    void testAmbiguousMethodResolutionNoArgsOverload() {
         shouldFailWithMessages '''
             Arrays.sort()
         ''', 'Reference to method is ambiguous. Cannot choose between '
     }
 
-    void testAmbiguousMethodResolutionGroovy7711NoArgsCovariantOverride() {
+    // GROOVY-7711
+    void testAmbiguousMethodResolutionNoArgsCovariantOverride() {
         assertScript '''
             class A {}
             class B {
@@ -773,7 +790,7 @@ Printer
         '''
     }
 
-    // GROOVY-8255 and GROOVY-8382
+    // GROOVY-8255, GROOVY-8382
     void testTargetTypingEmptyCollectionLiterals() {
         assertScript '''
             class Foo {
