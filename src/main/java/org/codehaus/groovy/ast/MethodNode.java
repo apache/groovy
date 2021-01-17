@@ -148,6 +148,11 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         return (modifiers & ACC_ABSTRACT) != 0;
     }
 
+    public boolean isDefault() {
+        return (modifiers & (ACC_ABSTRACT | ACC_PUBLIC | ACC_STATIC)) == ACC_PUBLIC
+                && getDeclaringClass() != null && getDeclaringClass().isInterface();
+    }
+
     public boolean isStatic() {
         return (modifiers & ACC_STATIC) != 0;
     }
@@ -260,7 +265,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
 
     /**
      * Provides a nicely formatted string of the method definition. For simplicity, generic types on some of the elements
-     * are not displayed. 
+     * are not displayed.
      * @return
      *      string form of node with some generic elements suppressed
      */

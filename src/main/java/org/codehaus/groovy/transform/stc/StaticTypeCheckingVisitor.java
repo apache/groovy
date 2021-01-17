@@ -2409,7 +2409,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode receiverType = wrapTypeIfNecessary(currentReceiver.getType());
 
                 candidates = findMethodsWithGenerated(receiverType, nameText);
-                collectAllInterfaceMethodsByName(receiverType, nameText, candidates);
                 if (isBeingCompiled(receiverType)) candidates.addAll(GROOVY_OBJECT_TYPE.getMethods(nameText));
                 candidates.addAll(findDGMMethodsForClassNode(getTransformLoader(), receiverType, nameText));
                 candidates = filterMethodsByVisibility(candidates);
@@ -4462,10 +4461,23 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      */
     protected List<MethodNode> findMethodsWithGenerated(ClassNode receiver, String name) {
         List<MethodNode> methods = receiver.getMethods(name);
-        if (methods.isEmpty() || receiver.isResolved()) return methods;
-        List<MethodNode> result = addGeneratedMethods(receiver, methods);
+        if (receiver.isAbstract()) {
+            collectAllInterfaceMethodsByName(receiver, name, methods);
+        } else { // GROOVY-9890: always search for default methods
+            List<MethodNode> interfaceMethods = new ArrayList<>();
+            collectAllInterfaceMethodsByName(receiver, name, interfaceMethods);
+            for (MethodNode method : interfaceMethods) {
+                if (method.isDefault()) methods.add(method);
+            }
+        }
+        if (receiver.isInterface()) {
+            methods.addAll(OBJECT_TYPE.getMethods(name));
+        }
 
-        return result;
+        if (methods.isEmpty() || receiver.isResolved()) {
+            return methods;
+        }
+        return addGeneratedMethods(receiver, methods);
     }
 
     private static List<MethodNode> addGeneratedMethods(final ClassNode receiver, final List<MethodNode> methods) {
@@ -4543,10 +4555,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         } else {
             methods = findMethodsWithGenerated(receiver, name);
-            if (receiver.isInterface()) {
-                collectAllInterfaceMethodsByName(receiver, name, methods);
-                methods.addAll(OBJECT_TYPE.getMethods(name));
-            }
             // TODO: investigate the trait exclusion a bit further, needed otherwise
             // CallMethodOfTraitInsideClosureAndClosureParamTypeInference fails saying
             // not static method can't be called from a static context
@@ -4612,12 +4620,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
             }
-        }
-
-        if (methods.isEmpty()) {
-            // look at the interfaces, there's a chance that a method is not implemented and we should not hide the
-            // error from the compiler
-            collectAllInterfaceMethodsByName(receiver, name, methods);
         }
 
         if (!"<init>".equals(name) && !"<clinit>".equals(name)) {

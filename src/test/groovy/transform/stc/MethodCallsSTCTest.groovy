@@ -18,8 +18,8 @@
  */
 package groovy.transform.stc
 
-import org.codehaus.groovy.control.customizers.ImportCustomizer;
-import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
+import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 
 /**
  * Unit tests for static type checking : method calls.
@@ -34,7 +34,6 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         } catch (ClassNotFoundException e) {
             IS_PRE_8 = true
         }
-
     }
 
     @Override
@@ -439,7 +438,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
                 1.with { obj ->
                     if (obj instanceof String) {
-                        obj.toUpperCase() 
+                        obj.toUpperCase()
                     }
                 }
             '''
@@ -450,11 +449,11 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             public interface SAM {
                 boolean run(String var1, Thread th);
             }
-            
+
             static boolean foo(SAM sam) {
                sam.run("foo",  new Thread())
             }
-            
+
             static def callSAM() {
                 foo { str, th ->
                     str.toUpperCase().equals(th.getName())
@@ -468,11 +467,11 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
 
         assertScript '''
             import java.util.function.Predicate
-            
+
             static boolean foo(Predicate<? super String> p) {
                 p.test("foo")
             }
-            
+
             static def testPredicate() {
                 foo { it ->
                     it.toUpperCase()
@@ -501,9 +500,9 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                     filter { s -> s.length() < 10 }.
                     toArray()
             }
-            
-            final words = ["orange", "sit", "test", "flabbergasted", "honorific"] 
-            
+
+            final words = ["orange", "sit", "test", "flabbergasted", "honorific"]
+
             println doIt(words)
             '''
     }
@@ -552,7 +551,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 }
             '''
     }
-    
+
     void testOneDefaultParam() {
         assertScript '''
             String m(String val = 'hello') {
@@ -590,7 +589,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             m('test', new Object())
         ''', 'm(java.lang.String, java.lang.Object)'
     }
-    
+
     void testMultipleDefaultArgs() {
         assertScript '''
             String m(String first = 'first', String second, String third = 'third') {
@@ -996,15 +995,120 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             Test.test(null)
         '''
     }
+
     void testShouldFindInheritedInterfaceMethod() {
         assertScript '''
-            interface Top { void close() }
+            interface Top { void foo() }
             interface Middle extends Top {}
             interface Bottom extends Middle {}
-            void foo(Bottom obj) {
-               obj.close()
+
+            void test(Bottom b) {
+               b.foo()
             }
         '''
+    }
+
+    void testShouldFindInheritedInterfaceMethod2() {
+        assertScript '''
+            interface Top { int foo(int i) }
+            interface Middle extends Top { int foo(String s) }
+            interface Bottom extends Middle {}
+
+            void test(Bottom b) {
+                b.foo(123)
+            }
+        '''
+    }
+
+    void testShouldFindInheritedInterfaceMethod3() {
+        assertScript '''
+            interface Top { int foo(int i) }
+            interface Middle extends Top { }
+            interface Bottom extends Middle { int foo(String s) }
+
+            void test(Bottom b) {
+                b.foo(123)
+            }
+        '''
+    }
+
+    void testShouldFindInheritedInterfaceMethod4() {
+        assertScript '''
+            interface Top { int foo(int i) }
+            interface Middle extends Top { int foo(String s) }
+            abstract class Bottom implements Middle {}
+
+            int test(Bottom b) {
+                b.foo(123)
+            }
+            def bot = new Bottom() {
+                int foo(int i) { 1 }
+                int foo(String s) { 2 }
+            }
+            assert test(bot) == 1
+        '''
+    }
+
+    void testShouldFindInheritedInterfaceMethod5() {
+        assertScript '''
+            interface Top { int foo(int i) }
+            interface Middle extends Top { }
+            abstract class Bottom implements Middle { abstract int foo(String s) }
+
+            int test(Bottom b) {
+                b.foo(123)
+            }
+            def bot = new Bottom() {
+                int foo(int i) { 1 }
+                int foo(String s) { 2 }
+            }
+            assert test(bot) == 1
+        '''
+    }
+
+    // GROOVY-9890
+    void testShouldFindInheritedInterfaceDefaultMethod() {
+        if (IS_PRE_8) return
+
+        def parentDir = File.createTempDir()
+        config.targetDirectory = File.createTempDir()
+        config.jointCompilationOptions = [stubDir: File.createTempDir()]
+        try {
+            def a = new File(parentDir, 'Face.java')
+            a.write '''
+                public interface Face {
+                    default Object foo(long n) {
+                        return n;
+                    }
+                    Object foo(String s);
+                }
+            '''
+            def b = new File(parentDir, 'Impl.groovy')
+            b.write '''
+                class Impl implements Face {
+                    @Override def foo(String s) {
+                        return s
+                    }
+                    // def foo(long n)
+                }
+            '''
+            def c = new File(parentDir, 'Main.groovy')
+            c.write '''
+                def result = new Impl().foo(42L)
+                assert result.class == Long.class
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b, c)
+            cu.compile()
+
+            loader.loadClass('Main').main()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+            config.jointCompilationOptions.stubDir.deleteDir()
+        }
     }
 
     // GROOVY-5743
@@ -1115,7 +1219,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             assert b.overload('a','b') == 2
         '''
     }
-    
+
     // GROOVY-5883 and GROOVY-6270
     void testClosureUpperBound() {
         assertScript '''
@@ -1148,7 +1252,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             String.doSomething()
         ''', 'Cannot find matching method java.lang.String#doSomething()'
     }
-    
+
     // GROOVY-6646
     void testNPlusVargsCallInOverloadSituation() {
         assertScript '''
@@ -1166,7 +1270,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             assert foo("2","1") == "Strings"
         '''
     }
-    
+
     //GROOVY-6776
     void testPrimtiveParameterAndNullArgument() {
         shouldFailWithMessages '''
@@ -1252,13 +1356,13 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
         import java.util.stream.Stream
-        
+
         @CompileStatic
         public class Test1 {
             public static void main(String[] args) {
                 p();
             }
-            
+
             public static void p() {
                 assert 13 == [1, 2, 3].stream().reduce(7, {Integer r, Integer e -> r + e});
             }
@@ -1272,9 +1376,9 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
 
         assertScript '''
         import groovy.transform.CompileStatic
-        
+
         import static java.util.stream.Collectors.toList
-        
+
         @CompileStatic
         class Test {
             static void main(String[] args) {
