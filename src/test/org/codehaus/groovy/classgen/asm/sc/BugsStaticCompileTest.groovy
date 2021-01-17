@@ -1484,18 +1484,6 @@ println someInt
         '''
     }
 
-    // GROOVY-7160
-    void testGenericsArrayPlaceholder() {
-        assertScript '''
-            import static java.nio.file.AccessMode.*
-            def test() {
-                // more than 5 to match of(E first, E[] rest) variant
-                EnumSet.of(READ, WRITE, EXECUTE, READ, WRITE, EXECUTE)
-            }
-            assert test() == [READ, WRITE, EXECUTE].toSet()
-        '''
-    }
-
     void testNumberWrapperMultiAssign() {
         assertScript '''
             import org.codehaus.groovy.ast.CodeVisitorSupport
