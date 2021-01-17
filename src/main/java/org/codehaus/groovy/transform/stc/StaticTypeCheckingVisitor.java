@@ -2683,7 +2683,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         ArgumentListExpression newArgs = args(expressions);
 
-        for (int i = 0, expressionsSize = expressions.size(); i < expressionsSize; i++) {
+        int nExpressions = expressions.size();
+        for (int i = 0; i < nExpressions; i += 1) {
             Expression expression = expressions.get(i);
             if (visitClosures && expression instanceof ClosureExpression
                     || !visitClosures && !(expression instanceof ClosureExpression)) {
@@ -2702,7 +2703,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 expression.removeNodeMetaData(DELEGATION_METADATA);
             }
         }
-        if (expressions.size() > 0 && expressions.get(0) instanceof MapExpression && params.length > 0) {
+        if (nExpressions > 0 && expressions.get(0) instanceof MapExpression && params.length > 0) {
             checkNamedParamsAnnotation(params[0], (MapExpression) expressions.get(0));
         }
     }
@@ -3991,19 +3992,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return instanceOfExpression;
     }
 
-    private boolean notReturningBlock(final Statement block) {
-        if (!(block instanceof BlockStatement)) {
-            return true;
-        }
-        BlockStatement bs = (BlockStatement) block;
-        if (bs.getStatements().size() == 0) {
-            return true;
-        }
-        Statement last = DefaultGroovyMethods.last(bs.getStatements());
-        if (!(last instanceof ReturnStatement)) {
-            return true;
-        }
-        return false;
+    private static boolean notReturningBlock(final Statement statement) {
+        return statement.isEmpty() || !(statement instanceof BlockStatement)
+            || !(DefaultGroovyMethods.last(((BlockStatement) statement).getStatements()) instanceof ReturnStatement);
     }
 
     @Override
@@ -4222,6 +4213,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void storeType(final Expression exp, ClassNode cn) {
+        if (cn == UNKNOWN_PARAMETER_TYPE) {
+            // this can happen for example when "null" is used in an assignment or a method parameter.
+            // In that case, instead of storing the virtual type, we must "reset" type information
+            // by determining the declaration type of the expression
+            cn = getOriginalDeclarationType(exp);
+        }
         if (cn != null && isPrimitiveType(cn)) {
             if (exp instanceof VariableExpression && ((VariableExpression) exp).isClosureSharedVariable()) {
                 cn = getWrapper(cn);
@@ -4231,13 +4228,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 cn = getWrapper(cn);
             }
         }
-        if (cn == UNKNOWN_PARAMETER_TYPE) {
-            // this can happen for example when "null" is used in an assignment or a method parameter.
-            // In that case, instead of storing the virtual type, we must "reset" type information
-            // by determining the declaration type of the expression
-            storeType(exp, getOriginalDeclarationType(exp));
-            return;
-        }
+
         ClassNode oldValue = (ClassNode) exp.putNodeMetaData(INFERRED_TYPE, cn);
         if (oldValue != null) {
             // this may happen when a variable declaration type is wider than the subsequent assignment values
@@ -4254,6 +4245,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 exp.putNodeMetaData(DECLARATION_INFERRED_TYPE, cn == null ? null : lowestUpperBound(oldValue, cn));
             }
         }
+
         if (exp instanceof VariableExpression) {
             VariableExpression var = (VariableExpression) exp;
             Variable accessedVariable = var.getAccessedVariable();
@@ -4442,7 +4434,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         // extract the generics from the return type
         Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
-        extractGenericsConnections(connections, getInferredReturnType(closureExpression), abstractMethod.getReturnType());
+        extractGenericsConnections(connections, wrapTypeIfNecessary(getInferredReturnType(closureExpression)), abstractMethod.getReturnType());
 
         // next we get the block parameter types and set the generics
         // information just like before
@@ -4592,10 +4584,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * This method returns the list of methods named against the supplied parameter that
-     * are defined on the specified receiver, but it will also add "non existing" methods
-     * that will be generated afterwards by the compiler, for example if a method is using
-     * default values and that the specified class node isn't compiled yet.
+     * Returns methods defined for the specified receiver and adds "non-existing"
+     * methods that will be generated afterwards by the compiler; for example if
+     * a method is using default values and the class node isn't compiled yet.
      *
      * @param receiver the receiver where to find methods
      * @param name     the name of the methods to return
@@ -4697,11 +4688,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (receiver.isInterface()) {
                 if ("call".equals(name) && isFunctionalInterface(receiver)) {
                     MethodNode sam = findSAM(receiver);
-                    MethodNode callMethodNode = new MethodNode("call", sam.getModifiers(), sam.getReturnType(), sam.getParameters(), sam.getExceptions(), sam.getCode());
-                    callMethodNode.setDeclaringClass(sam.getDeclaringClass());
-                    callMethodNode.setSourcePosition(sam);
-
-                    methods.addAll(Collections.singletonList(callMethodNode));
+                    MethodNode callMethod = new MethodNode("call", sam.getModifiers(), sam.getReturnType(), sam.getParameters(), sam.getExceptions(), sam.getCode());
+                    callMethod.setDeclaringClass(sam.getDeclaringClass());
+                    callMethod.setSourcePosition(sam);
+                    methods.add(callMethod);
                 }
             }
             // TODO: investigate the trait exclusion a bit further, needed otherwise

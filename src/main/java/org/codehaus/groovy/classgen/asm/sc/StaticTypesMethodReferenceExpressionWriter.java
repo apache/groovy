@@ -178,7 +178,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                     + Arrays.stream(parametersWithExactType)
                             .map(e -> e.getType().getText())
                             .collect(Collectors.joining(","))
-                    + ")] in the type[" + typeOrTargetRefType.getName() + "]", methodReferenceExpression);
+                    + ")] in the type[" + typeOrTargetRefType.getText() + "]", methodReferenceExpression);
         } else if (parametersWithExactType.length > 0 && isTypeReferingInstanceMethod(typeOrTargetRef, methodRefMethod)) {
             ClassNode firstParameterType = parametersWithExactType[0].getType();
             if (!isAssignableTo(firstParameterType, typeOrTargetRefType)) {

@@ -1373,16 +1373,16 @@ public abstract class StaticTypeCheckingSupport {
         if (isUsingUncheckedGenerics(receiver)) {
             return true;
         }
-        if (CLASS_Type.equals(receiver)
+        boolean isExtensionMethod = candidateMethod instanceof ExtensionMethodNode;
+        if (!isExtensionMethod
                 && receiver.isUsingGenerics()
-                && !candidateMethod.getDeclaringClass().equals(receiver)
-                && !(candidateMethod instanceof ExtensionMethodNode)) {
+                && receiver.equals(CLASS_Type)
+                && !candidateMethod.getDeclaringClass().equals(receiver)) {
             return typeCheckMethodsWithGenerics(receiver.getGenericsTypes()[0].getType(), argumentTypes, candidateMethod);
         }
         // both candidate method and receiver have generic information so a check is possible
         GenericsType[] genericsTypes = candidateMethod.getGenericsTypes();
         boolean methodUsesGenerics = (genericsTypes != null && genericsTypes.length > 0);
-        boolean isExtensionMethod = candidateMethod instanceof ExtensionMethodNode;
         if (isExtensionMethod && methodUsesGenerics) {
             ClassNode[] dgmArgs = new ClassNode[argumentTypes.length + 1];
             dgmArgs[0] = receiver;
