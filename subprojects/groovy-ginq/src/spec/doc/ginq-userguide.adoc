@@ -283,11 +283,72 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_09,in
 ----
 
 ===== Aggregate Functions
-GINQ provides some built-in aggregate functions, e.g.
-`count`, `min`, `max`, `sum`, `avg`, `median`, `stdev`, `stdevp`, `var`, `varp` and the most powerful function `agg`.
-[NOTE]
-`count(...)`, `min(...)`, `max(...)`, `avg(...)`, `median(...)`, `stdev(...)`, `stdevp(...)`, `var(...)` and `varp(...)` just operate on non-`null` values,
-and `count()` is similar to `count(*)` in SQL.
+GINQ provides some built-in aggregate functions:
+|===
+|Function|Argument Type(s)|Return Type|Description
+
+|count()
+|
+|java.lang.Long
+|number of rows, similar to `count(*)` in SQL
+
+|count(_expression_)
+|any
+|java.lang.Long
+|number of rows for which the value of _expression_ is not `null`
+
+|min(_expression_)
+|java.lang.Comparable
+|same as argument type
+|minimum value of expression across all non-null values
+
+|max(_expression_)
+|java.lang.Comparable
+|same as argument type
+|maximum value of expression across all non-null values
+
+|sum(_expression_)
+|java.lang.Number
+|java.math.BigDecimal
+|sum of expression across all non-null values
+
+|avg(_expression_)
+|java.lang.Number
+|java.math.BigDecimal
+|the average (arithmetic mean) of all non-null values
+
+|median(_expression_)
+|java.lang.Number
+|java.math.BigDecimal
+|value such that the number of non-null values above and below it is the same ("middle" value, not necessarily same as average or mean)
+
+|stdev(_expression_)
+|java.lang.Number
+|java.math.BigDecimal
+|the statistical standard deviation of all non-null values
+
+|stdevp(_expression_)
+|java.lang.Number
+|java.math.BigDecimal
+|the statistical standard deviation for the population for all non-null values
+
+|var(_expression_)
+|java.lang.Number
+|java.math.BigDecimal
+|the statistical variance of all non-null values
+
+|varp(_expression_)
+|java.lang.Number
+|java.math.BigDecimal
+|the statistical variance for the population for all non-null values
+
+|agg(_expression_)
+|any
+|any
+|customizes the aggregation logic in _expression_ and returns single value
+
+|===
+
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_07,indent=0]
@@ -739,7 +800,7 @@ Parallel querying is especially efficient when querying big data sources. It is 
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_08,indent=0]
 ----
 
-As parallel querying will use a shared thread pool, the following code should be executed to release resources before all GINQ statements are completed, otherwise JVM will not exit. The code will wait util all tasks of theads are completed.
+As parallel querying will use a shared thread pool, the following code should be executed to release resources after all GINQ statements execution are completed, otherwise JVM will not exit. The code will wait util all tasks of theads are completed.
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_09,indent=0]
