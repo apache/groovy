@@ -290,7 +290,7 @@ GINQ provides some built-in aggregate functions:
 |count()
 |
 |java.lang.Long
-|number of rows, similar to _count(*)_ in SQL
+|number of rows, similar to `count(*)` in SQL
 
 |count(_expression_)
 |any
@@ -540,7 +540,7 @@ Also, GINQ provides some built-in window functions:
 |rowNumber()
 |
 |java.lang.Long
-|number of the current row within its partition, counting from 0
+|number of the current row within its partition, counting from `0`
 
 |rank()
 |
@@ -555,7 +555,7 @@ Also, GINQ provides some built-in window functions:
 |ntile(_expression_)
 |java.lang.Long
 |java.lang.Long
-|bucket index ranging from `0` to _expression - 1_, dividing the partition as equally as possible
+|bucket index ranging from `0` to `expression - 1`, dividing the partition as equally as possible
 
 |lead(_expression_ [, _offset_ [, _default_]])
 |any [, java.lang.Long [, same as _expression_ type]]
@@ -581,7 +581,7 @@ Also, GINQ provides some built-in window functions:
 |count()
 |
 |java.lang.Long
-|number of rows, similar to _count(*)_ in SQL
+|number of rows, similar to `count(*)` in SQL
 
 |count(_expression_)
 |any
