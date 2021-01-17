@@ -989,14 +989,91 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             Test.test(null)
         '''
     }
+
     void testShouldFindInheritedInterfaceMethod() {
         assertScript '''
-            interface Top { void close() }
+            interface Top { void foo() }
             interface Middle extends Top {}
             interface Bottom extends Middle {}
-            void foo(Bottom obj) {
-               obj.close()
+
+            void test(Bottom b) {
+               b.foo()
             }
+        '''
+    }
+
+    void testShouldFindInheritedInterfaceMethod2() {
+        assertScript '''
+            interface Top { int foo(int i) }
+            interface Middle extends Top { int foo(String s) }
+            interface Bottom extends Middle {}
+
+            void test(Bottom b) {
+                b.foo(123)
+            }
+        '''
+    }
+
+    void testShouldFindInheritedInterfaceMethod3() {
+        assertScript '''
+            interface Top { int foo(int i) }
+            interface Middle extends Top { }
+            interface Bottom extends Middle { int foo(String s) }
+
+            void test(Bottom b) {
+                b.foo(123)
+            }
+        '''
+    }
+
+    void testShouldFindInheritedInterfaceMethod4() {
+        assertScript '''
+            interface Top { int foo(int i) }
+            interface Middle extends Top { int foo(String s) }
+            abstract class Bottom implements Middle {}
+
+            int test(Bottom b) {
+                b.foo(123)
+            }
+            def bot = new Bottom() {
+                int foo(int i) { 1 }
+                int foo(String s) { 2 }
+            }
+            assert test(bot) == 1
+        '''
+    }
+
+    void testShouldFindInheritedInterfaceMethod5() {
+        assertScript '''
+            interface Top { int foo(int i) }
+            interface Middle extends Top { }
+            abstract class Bottom implements Middle { abstract int foo(String s) }
+
+            int test(Bottom b) {
+                b.foo(123)
+            }
+            def bot = new Bottom() {
+                int foo(int i) { 1 }
+                int foo(String s) { 2 }
+            }
+            assert test(bot) == 1
+        '''
+    }
+
+    // GROOVY-9890
+    void testShouldFindInheritedInterfaceDefaultMethod() {
+        assertScript '''
+            class Impl implements groovy.bugs.groovy9890.Face {
+                @Override def foo(String s) {
+                    return s
+                }
+                // abstract def foo(long n)
+            }
+            void test() {
+                def result = new Impl().foo(42L)
+                assert result.class == Long.class
+            }
+            test()
         '''
     }
 

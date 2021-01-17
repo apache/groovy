@@ -2388,7 +2388,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode receiverType = wrapTypeIfNecessary(currentReceiver.getType());
 
                 candidates = findMethodsWithGenerated(receiverType, nameText);
-                collectAllInterfaceMethodsByName(receiverType, nameText, candidates);
                 if (isBeingCompiled(receiverType)) candidates.addAll(GROOVY_OBJECT_TYPE.getMethods(nameText));
                 candidates.addAll(findDGMMethodsForClassNode(getTransformLoader(), receiverType, nameText));
                 candidates = filterMethodsByVisibility(candidates, typeCheckingContext.getEnclosingClassNode());
@@ -4604,7 +4603,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      */
     protected List<MethodNode> findMethodsWithGenerated(final ClassNode receiver, final String name) {
         List<MethodNode> methods = receiver.getMethods(name);
-        if (methods.isEmpty() || receiver.isResolved()) return methods;
+        if (receiver.isAbstract()) {
+            collectAllInterfaceMethodsByName(receiver, name, methods);
+        } else { // GROOVY-9890: always search for default methods
+            List<MethodNode> interfaceMethods = new ArrayList<>();
+            collectAllInterfaceMethodsByName(receiver, name, interfaceMethods);
+            interfaceMethods.stream().filter(MethodNode::isDefault).forEach(methods::add);
+        }
+        if (receiver.isInterface()) {
+            methods.addAll(OBJECT_TYPE.getMethods(name));
+        }
+
+        if (methods.isEmpty() || receiver.isResolved()) {
+            return methods;
+        }
         return addGeneratedMethods(receiver, methods);
     }
 
@@ -4683,9 +4695,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else {
             methods = findMethodsWithGenerated(receiver, name);
             if (receiver.isInterface()) {
-                collectAllInterfaceMethodsByName(receiver, name, methods);
-                methods.addAll(OBJECT_TYPE.getMethods(name));
-
                 if ("call".equals(name) && isFunctionalInterface(receiver)) {
                     MethodNode sam = findSAM(receiver);
                     MethodNode callMethodNode = new MethodNode("call", sam.getModifiers(), sam.getReturnType(), sam.getParameters(), sam.getExceptions(), sam.getCode());
@@ -4760,12 +4769,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
             }
-        }
-
-        if (methods.isEmpty()) {
-            // look at the interfaces, there's a chance that a method is not implemented and we should not hide the
-            // error from the compiler
-            collectAllInterfaceMethodsByName(receiver, name, methods);
         }
 
         if (!"<init>".equals(name) && !"<clinit>".equals(name)) {
