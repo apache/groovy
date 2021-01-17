@@ -150,7 +150,7 @@ public interface Window<T> extends Queryable<T> {
      * Distributes rows of an ordered window into a pre-defined number of roughly equal buckets
      *
      * @param bucketCnt bucket count
-     * @return bucket number starting with {@code 0}
+     * @return bucket index starting with {@code 0}
      * @since 4.0.0
      */
     long ntile(long bucketCnt);

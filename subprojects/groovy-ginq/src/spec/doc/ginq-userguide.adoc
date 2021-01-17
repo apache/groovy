@@ -290,7 +290,7 @@ GINQ provides some built-in aggregate functions:
 |count()
 |
 |java.lang.Long
-|number of rows, similar to `count(*)` in SQL
+|number of rows, similar to _count(*)_ in SQL
 
 |count(_expression_)
 |any
@@ -533,8 +533,108 @@ over(
 * `null` used as the lower bound of `rows` and `range` clause is equivalent to SQL's `UNBOUNDED PRECEDING`
 * `null` used as the upper bound of `rows` and `range` clause is equivalent to SQL's `UNBOUNDED FOLLOWING`
 
-Also, GINQ provides some built-in window functions, e.g.
-`rowNumber`, `rank`, `denseRank`, `lead`, `lag`, `firstValue`, `lastValue`, `min`, `max`, `count`, `sum`, `avg`, `median`, etc.
+Also, GINQ provides some built-in window functions:
+|===
+|Function|Argument Type(s)|Return Type|Description
+
+|rowNumber()
+|
+|java.lang.Long
+|number of the current row within its partition, counting from 0
+
+|rank()
+|
+|java.lang.Long
+|rank of the current row with gaps
+
+|denseRank()
+|
+|java.lang.Long
+|rank of the current row without gaps
+
+|ntile(_expression_)
+|java.lang.Long
+|java.lang.Long
+|bucket index ranging from `0` to _expression - 1_, dividing the partition as equally as possible
+
+|lead(_expression_ [, _offset_ [, _default_]])
+|any [, java.lang.Long [, same as _expression_ type]]
+|same as _expression_ type
+|returns _expression_ evaluated at the row that is _offset_ rows after the current row within the partition; if there is no such row, instead return _default_ (which must be of the same type as _expression_). Both _offset_ and _default_ are evaluated with respect to the current row. If omitted, _offset_ defaults to `1` and _default_ to `null`
+
+|lag(_expression_ [, _offset_ [, _default_]])
+|any [, java.lang.Long [, same as _expression_ type]]
+|same as _expression_ type
+|returns _expression_ evaluated at the row that is _offset_ rows before the current row within the partition; if there is no such row, instead return _default_ (which must be of the same type as _expression_). Both _offset_ and _default_ are evaluated with respect to the current row. If omitted, _offset_ defaults to `1` and _default_ to `null`
+
+|firstValue(_expression_)
+|any
+|same type as _expression_
+|returns _expression_ evaluated at the row that is the first row of the window frame
+
+|lastValue(_expression_)
+|any
+|same type as _expression_
+|returns _expression_ evaluated at the row that is the last row of the window frame
+
+
+|count()
+|
+|java.lang.Long
+|number of rows, similar to _count(*)_ in SQL
+
+|count(_expression_)
+|any
+|java.lang.Long
+|number of rows for which the value of _expression_ is not `null`
+
+|min(_expression_)
+|java.lang.Comparable
+|same as argument type
+|minimum value of expression across all non-null values
+
+|max(_expression_)
+|java.lang.Comparable
+|same as argument type
+|maximum value of expression across all non-null values
+
+|sum(_expression_)
+|java.lang.Number
+|java.math.BigDecimal
+|sum of expression across all non-null values
+
+|avg(_expression_)
+|java.lang.Number
+|java.math.BigDecimal
+|the average (arithmetic mean) of all non-null values
+
+|median(_expression_)
+|java.lang.Number
+|java.math.BigDecimal
+|value such that the number of non-null values above and below it is the same ("middle" value, not necessarily same as average or mean)
+
+|stdev(_expression_)
+|java.lang.Number
+|java.math.BigDecimal
+|the statistical standard deviation of all non-null values
+
+|stdevp(_expression_)
+|java.lang.Number
+|java.math.BigDecimal
+|the statistical standard deviation for the population for all non-null values
+
+|var(_expression_)
+|java.lang.Number
+|java.math.BigDecimal
+|the statistical variance of all non-null values
+
+|varp(_expression_)
+|java.lang.Number
+|java.math.BigDecimal
+|the statistical variance for the population for all non-null values
+
+|===
+
 
 ===== `rowNumber`
 [source, groovy]
