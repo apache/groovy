@@ -103,20 +103,28 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
 
     @Override
     public <V> V firstValue(Function<? super T, ? extends V> extractor) {
-        if (list.isEmpty()) {
-            return null;
-        }
-
-        return extractor.apply(list.get(0));
+        return nthValue(extractor, 0);
     }
 
     @Override
     public <V> V lastValue(Function<? super T, ? extends V> extractor) {
-        if (list.isEmpty()) {
+        final int size = list.size();
+        if (0 == size) {
+            return null;
+        }
+        return nthValue(extractor, size - 1);
+    }
+
+    @Override
+    public <V> V nthValue(Function<? super T, ? extends V> extractor, long index) {
+        if (index < 0) {
+            throw new IllegalArgumentException("index cannot be less than 0: " + index);
+        }
+        if (index > list.size() - 1) {
             return null;
         }
 
-        return extractor.apply(list.get(list.size() - 1));
+        return extractor.apply(list.get((int) index));
     }
 
     @Override

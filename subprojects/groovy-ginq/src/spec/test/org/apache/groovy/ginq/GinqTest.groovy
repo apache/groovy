@@ -5799,6 +5799,21 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - window - 83"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_40[]
+            assert [[1, 1, 2, 3, null], [2, 1, 2, 3, null], [3, 1, 2, 3, null]] == GQ {
+                from n in 1..3
+                select n, (nthValue(n, 0) over(orderby n)),
+                          (nthValue(n, 1) over(orderby n)),
+                          (nthValue(n, 2) over(orderby n)),
+                          (nthValue(n, 3) over(orderby n))
+            }.toList()
+// end::ginq_winfunction_40[]
+        '''
+    }
+
+    @Test
     void "testGinq - shutdown - 0"() {
         assertScript '''
             import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper

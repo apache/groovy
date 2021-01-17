@@ -131,6 +131,17 @@ public interface Window<T> extends Queryable<T> {
     <V> V lastValue(Function<? super T, ? extends V> extractor);
 
     /**
+     * Returns the nth value in the window
+     *
+     * @param <V> the type of field
+     * @param extractor field extractor
+     * @param index index for value to fetch, starting with {@code 0}
+     * @return the nth value
+     * @since 4.0.0
+     */
+    <V> V nthValue(Function<? super T, ? extends V> extractor, long index);
+
+    /**
      * Returns the rank in the window
      *
      * @return the rank

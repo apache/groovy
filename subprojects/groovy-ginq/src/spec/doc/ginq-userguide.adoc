@@ -577,6 +577,11 @@ Also, GINQ provides some built-in window functions:
 |same type as _expression_
 |returns _expression_ evaluated at the row that is the last row of the window frame
 
+|nthValue(_expression_, _n_)
+|any, java.lang.Long
+|same type as _expression_
+|returns _expression_ evaluated at the row that is the _nth_ row of the window frame
+
 
 |count()
 |
@@ -712,7 +717,7 @@ The default value can be returned when the index specified by offset is out of w
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_21,indent=0]
 ----
-===== `firstValue` and `lastValue`
+===== `firstValue`, `lastValue` and `nthValue`
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_09,indent=0]
@@ -766,6 +771,11 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_15
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_11,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_40,indent=0]
 ----
 
 ===== `min`, `max`, `count`, `sum`, `avg`, `median`, `stdev`, `stdevp`, `var` and `varp`

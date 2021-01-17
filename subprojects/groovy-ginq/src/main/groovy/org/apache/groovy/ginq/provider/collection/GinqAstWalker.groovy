@@ -783,7 +783,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                                         )
                                     }
 
-                                    if (windowFunctionMethodCallExpression.methodAsString in [FUNCTION_LEAD, FUNCTION_LAG]) {
+                                    if (windowFunctionMethodCallExpression.methodAsString in [FUNCTION_LEAD, FUNCTION_LAG, FUNCTION_NTH_VALUE]) {
                                         List<Expression> exprList = argumentListExpression.getExpressions()
                                         if (exprList.size() > 1) {
                                             argumentExpressionList.addAll(exprList.subList(1, exprList.size()))
@@ -1563,11 +1563,12 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final String FUNCTION_LAG = 'lag'
     private static final String FUNCTION_FIRST_VALUE = 'firstValue'
     private static final String FUNCTION_LAST_VALUE = 'lastValue'
+    private static final String FUNCTION_NTH_VALUE = 'nthValue'
     private static final String FUNCTION_RANK = 'rank'
     private static final String FUNCTION_DENSE_RANK = 'denseRank'
     private static final String FUNCTION_NTILE = 'ntile'
     private static final List<String> WINDOW_FUNCTION_LIST = [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_MEDIAN, FUNCTION_STDEV, FUNCTION_STDEVP, FUNCTION_VAR, FUNCTION_VARP,
-                                                              FUNCTION_ROW_NUMBER, FUNCTION_LEAD, FUNCTION_LAG, FUNCTION_FIRST_VALUE, FUNCTION_LAST_VALUE, FUNCTION_RANK, FUNCTION_DENSE_RANK, FUNCTION_NTILE]
+                                                              FUNCTION_ROW_NUMBER, FUNCTION_LEAD, FUNCTION_LAG, FUNCTION_FIRST_VALUE, FUNCTION_LAST_VALUE, FUNCTION_NTH_VALUE, FUNCTION_RANK, FUNCTION_DENSE_RANK, FUNCTION_NTILE]
 
     private static final String NAMEDRECORD_CLASS_NAME = NamedRecord.class.name
 
