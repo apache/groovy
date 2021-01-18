@@ -823,6 +823,62 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
         '''
     }
 
+    // GROOVY-9893
+    void testPropertyWithMultipleSetters2() {
+        assertScript '''
+            abstract class A { String which
+                void setX(String s) { which = 'String' }
+            }
+            class C extends A {
+                void setX(boolean b) { which = 'boolean' }
+            }
+
+            void test() {
+                def c = new C()
+                c.x = 'value'
+                assert c.which == 'String'
+            }
+            test()
+        '''
+    }
+
+    // GROOVY-9893
+    void testPropertyWithMultipleSetters3() {
+        assertScript '''
+            interface I {
+                void setX(String s)
+            }
+            abstract class A implements I { String which
+                void setX(boolean b) { which = 'boolean' }
+            }
+
+            void test(A a) {
+                a.x = 'value'
+                assert a.which == 'String'
+            }
+            test(new A() { void setX(String s) { which = 'String' } })
+        '''
+    }
+
+    // GROOVY-9893
+    void testPropertyWithMultipleSetters4() {
+        assertScript '''
+            trait T { String which
+                void setX(String s) { which = 'String' }
+            }
+            class C implements T {
+                void setX(boolean b) { which = 'boolean' }
+            }
+
+            void test() {
+                def c = new C()
+                c.x = 'value'
+                assert c.which == 'String'
+            }
+            test()
+        '''
+    }
+
     void testPropertyAssignmentAsExpression() {
         assertScript '''
             class Foo {
@@ -831,7 +887,7 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
             def f = new Foo()
             def v = f.x = 3
             assert v == 3
-'''
+        '''
     }
 
     void testPropertyAssignmentInSubClassAndMultiSetter() {
