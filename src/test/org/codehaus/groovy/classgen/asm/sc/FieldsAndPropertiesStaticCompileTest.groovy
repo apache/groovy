@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import groovy.transform.NotYetImplemented
 import groovy.transform.stc.FieldsAndPropertiesSTCTest
 
 final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest implements StaticCompilationTestSupport {
@@ -40,16 +39,6 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             String foo = 'key'
             Foo.CLASSES[foo]
         '''
-    }
-
-    @NotYetImplemented
-    void testPropertyWithMultipleSetters2() {
-        super.testPropertyWithMultipleSetters2()
-    }
-
-    @NotYetImplemented
-    void testPropertyWithMultipleSetters3() {
-        super.testPropertyWithMultipleSetters3()
     }
 
     // GROOVY-5561
