@@ -2207,25 +2207,22 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     public static List<MethodNode> findSetters(final ClassNode cn, final String setterName, final boolean voidOnly) {
-        List<MethodNode> result = null;
-        for (MethodNode method : cn.getDeclaredMethods(setterName)) {
-            if (setterName.equals(method.getName())
-                    && (!voidOnly || VOID_TYPE == method.getReturnType())
-                    && method.getParameters().length == 1) {
-                if (result == null) {
-                    result = new LinkedList<>();
-                }
-                result.add(method);
+        List<MethodNode> result = new ArrayList<>();
+        if (!cn.isInterface()) {
+            for (MethodNode method : cn.getMethods(setterName)) {
+                if (isSetter(method, voidOnly)) result.add(method);
             }
         }
-        if (result == null) {
-            ClassNode parent = cn.getSuperClass();
-            if (parent != null) {
-                return findSetters(parent, setterName, voidOnly);
+        for (ClassNode in : cn.getAllInterfaces()) {
+            for (MethodNode method : in.getDeclaredMethods(setterName)) {
+                if (isSetter(method, voidOnly)) result.add(method);
             }
-            return Collections.emptyList();
         }
         return result;
+    }
+
+    private static boolean isSetter(final MethodNode mn, final boolean voidOnly) {
+        return (!voidOnly || mn.isVoidMethod()) && mn.getParameters().length == 1;
     }
 
     public static ClassNode isTraitSelf(final VariableExpression vexp) {
