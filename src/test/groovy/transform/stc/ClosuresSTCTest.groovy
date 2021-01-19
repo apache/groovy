@@ -388,6 +388,55 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    void testSAMsInMethodSelection2() {
+        shouldFailWithMessages '''
+            interface One { void m() }
+            interface Two { void m() }
+            def foo(One one) { one.m() }
+            def foo(Two two) { two.m() }
+            foo {
+                print 'bar'
+            }
+        ''', 'Reference to method is ambiguous. Cannot choose between'
+
+        ['', 'x, y ->'].each { params ->
+            shouldFailWithMessages """
+                import java.util.function.Function
+                import java.util.function.Supplier
+                def foo(Function f) { f.apply(0) }
+                def foo(Supplier s) { s.get() }
+                foo { $params 'bar' }
+            """, 'Reference to method is ambiguous. Cannot choose between'
+        }
+    }
+
+    // GROOVY-9881
+    void testSAMsInMethodSelection3() {
+        // Closure implements both and Runnable is "closer"
+        assertScript '''
+            import java.util.concurrent.Callable
+            def foo(Callable c) { 'call' }
+            def foo(Runnable r) { 'run'  }
+            def which = foo {
+                print 'bar'
+            }
+            assert which == 'run'
+        '''
+
+        ['->', 'x ->'].each { params ->
+            assertScript """
+                import java.util.function.Function
+                import java.util.function.Supplier
+                def foo(Function f) { f.apply(0) }
+                def foo(Supplier s) { s.get() }
+                def ret = foo { $params
+                    'bar'
+                }
+                assert ret == 'bar'
+            """
+        }
+    }
+
     void testSAMVariable() {
         assertScript """
             interface SAM { def foo(); }
@@ -489,18 +538,6 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             method({println 'a'}, {called=true;println 'b'})
             assert !called
         '''
-    }
-
-    void testAmbiguousSAMOverload() {
-        shouldFailWithMessages '''
-            interface Sammy { def sammy() }
-            interface Sam { def sam() }
-            def method(Sam sam) { sam.sam() }
-            def method(Sammy sammy) { sammy.sammy() }
-            method {
-                println 'foo'
-            }
-        ''', 'Reference to method is ambiguous. Cannot choose between'
     }
 
     void testSAMType() {

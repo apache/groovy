@@ -33,6 +33,7 @@ import org.codehaus.groovy.util.FastArray;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -292,6 +293,23 @@ public class MetaClassHelper {
         return Math.max(max, superClassMax);
     }
 
+    private static int getParameterCount(final Class<?> closureOrLambdaClass) {
+        int parameterCount = -2;
+        if (GeneratedClosure.class.isAssignableFrom(closureOrLambdaClass)) {
+            // determine parameter count from generated "doCall" method(s)
+            for (Method m : closureOrLambdaClass.getDeclaredMethods()) {
+                if (m.getName().equals("doCall")) {
+                    if (parameterCount != -2) {
+                        parameterCount = -1; // 0 or 1
+                    } else {
+                        parameterCount = m.getParameterCount();
+                    }
+                }
+            }
+        }
+        return parameterCount;
+    }
+
     private static long calculateParameterDistance(final Class<?> argument, final CachedClass parameter) {
         /*
          * note: when shifting with 32 bit, you should only shift on a long. If you do
@@ -325,8 +343,10 @@ public class MetaClassHelper {
                 objectDistance += 4;
             }
 
+            Method sam;
             for (Class<?> c = ReflectionCache.autoboxType(argument); c != null && c != parameterClass; c = c.getSuperclass()) {
-                if (c == Closure.class && parameterClass.isInterface() && getSAMMethod(parameterClass) != null) {
+                if (c == Closure.class && parameterClass.isInterface() && (sam = getSAMMethod(parameterClass)) != null) {
+                    if (getParameterCount(argument) == sam.getParameterCount()) objectDistance -= 1; // GROOVY-9881
                     objectDistance += 5; // ahead of Object but behind GroovyObjectSupport
                     break;
                 }
