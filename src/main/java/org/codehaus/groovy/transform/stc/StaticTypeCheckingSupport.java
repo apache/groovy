@@ -20,7 +20,6 @@ package org.codehaus.groovy.transform.stc;
 
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
@@ -93,6 +92,7 @@ import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.findSAM;
 import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
@@ -910,14 +910,18 @@ public abstract class StaticTypeCheckingSupport {
         if (receiver.isArray()) {
             dist += 256; // GROOVY-5114: Object[] vs Object
         }
-        if (compare.isInterface()) {
+        if (compare.isInterface()) { MethodNode sam;
             if (receiver.implementsInterface(compare)) {
                 return dist + getMaximumInterfaceDistance(receiver, compare);
-            } else if (receiver.equals(CLOSURE_TYPE) && isSAMType(compare)) {
+            } else if (receiver.equals(CLOSURE_TYPE) && (sam = findSAM(compare)) != null) {
+                // GROOVY-9881: in case of multiple overloads, give preference to equal parameter count
+                Integer closureParamCount = receiver.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
+                if (closureParamCount != null && closureParamCount == sam.getParameters().length) dist -= 1;
+
                 return dist + 13; // GROOVY-9852: @FunctionalInterface vs Object
             }
         }
-        ClassNode cn = isPrimitiveType(receiver) && !isPrimitiveType(compare) ? ClassHelper.getWrapper(receiver) : receiver;
+        ClassNode cn = isPrimitiveType(receiver) && !isPrimitiveType(compare) ? getWrapper(receiver) : receiver;
         while (cn != null && !cn.equals(compare)) {
             cn = cn.getSuperClass();
             dist += 1;

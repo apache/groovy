@@ -336,6 +336,7 @@ final class LambdaTest {
         '''
     }
 
+    @Test
     void testFunctionWithLocalVariables4() {
         assertScript '''
             import groovy.transform.CompileStatic
@@ -830,6 +831,36 @@ final class LambdaTest {
             abstract class SamCallable {
                 abstract int call(int p);
             }
+        '''
+    }
+
+    @Test // GROOVY-9881
+    void testFunctionalInterface4() {
+        assertScript '''
+            import java.util.function.*
+
+            class Value<V> {
+                final V val
+                Value(V v) {
+                    this.val = v
+                }
+                String toString() {
+                    val as String
+                }
+                def <T> Value<T> replace(Supplier<T> supplier) {
+                    new Value<>(supplier.get())
+                }
+                def <T> Value<T> replace(Function<? super V, ? extends T> function) {
+                    new Value(function.apply(val))
+                }
+            }
+
+            @groovy.transform.CompileStatic
+            void test() {
+                assert new Value(123).replace(() -> 'foo').toString() == 'foo'
+                assert new Value(123).replace((Integer v) -> 'bar').toString() == 'bar'
+            }
+            test()
         '''
     }
 
@@ -1813,8 +1844,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test
-    void testScriptWithExistingMainCS() { // GROOVY-9146
+    @Test // GROOVY-9146
+    void testScriptWithExistingMainCS() {
         assertScript '''
             @groovy.transform.CompileStatic
             static void main(args) {
