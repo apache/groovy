@@ -280,24 +280,21 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testShouldFailDelegateToParameterIfNoTargetSpecified() {
-        shouldFailWithMessages '''
-        class Foo {
-            boolean called = false
-            def foo() { called = true }
-        }
+        shouldFailWithMessages '''\
+            class Foo {
+                boolean called = false
+                def bar() { called = true }
+            }
 
-        def with(Object target, @DelegatesTo Closure arg) {
-            arg.delegate = target
-            arg()
-        }
+            def m(Object o, @DelegatesTo Closure c) {
+                c.delegate = o
+                c.call()
+            }
 
-        def test() {
-            def obj = new Foo()
-            with(obj) { foo() }
-            assert obj.called
-        }
-        test()
-        ''', 'Not enough arguments found for a @DelegatesTo method call', 'Cannot find matching method'
+            def foo = new Foo()
+            m(foo) { -> bar() }
+            assert foo.called
+        ''', 'Not enough arguments found for a @DelegatesTo method call', '@ line 6, column 29', 'Cannot find matching method'
     }
 
     void testDelegatesToWithSetter() {

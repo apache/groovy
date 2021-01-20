@@ -84,14 +84,13 @@ abstract class StaticTypeCheckingTestCase extends GroovyTestCase {
                     it instanceof SyntaxErrorMessage && it.cause.message.contains(message)
                 }
             }
-            if (success && mce.errorCollector.errorCount!=messages.length) {
-                throw new AssertionError("Expected error messages were found, but compiler threw additional errors : " + mce.toString())
+            if (success && mce.errorCollector.errorCount > messages.length) {
+                throw new AssertionError("Expected error messages were found, but compiler threw additional errors : $mce")
             }
             if (!success) {
-                throw new AssertionError("Not all expected error messages were found, compiler threw these errors : " + mce.toString())
+                throw new AssertionError("Not all expected error messages were found, compiler threw these errors : $mce")
             }
         }
         if (!success) throw new AssertionError("Test passed but should have failed with messages [$messages]")
     }
-
 }
