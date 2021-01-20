@@ -208,6 +208,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
             GroovyClassVisitor visitor = new ASTTransformationCollectorCodeVisitor(source, compilationUnit.getTransformLoader());
             visitor.visitClass(classNode);
         }, Phases.SEMANTIC_ANALYSIS);
+
         for (CompilePhase phase : CompilePhase.values()) {
             switch (phase) {
                 case INITIALIZATION:
@@ -226,6 +227,29 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
 
             }
         }
+    }
+
+    /**
+     * Enables transforms for class that was added during current phase.
+     */
+    public static void addNewPhaseOperation(final CompilationUnit compilationUnit, final SourceUnit sourceUnit, final ClassNode classNode) {
+        int phase = compilationUnit.getPhase();
+        if (phase < Phases.SEMANTIC_ANALYSIS) {
+            return;
+        }
+
+        {
+            GroovyClassVisitor visitor = new ASTTransformationCollectorCodeVisitor(sourceUnit, compilationUnit.getTransformLoader());
+            visitor.visitClass(classNode);
+        }
+
+        compilationUnit.addNewPhaseOperation(source -> {
+            if (source == sourceUnit) {
+                ASTTransformationVisitor visitor = new ASTTransformationVisitor(CompilePhase.fromPhaseNumber(phase), compilationUnit.getASTTransformationsContext());
+                visitor.source = source;
+                visitor.visitClass(classNode);
+            }
+        }, phase);
     }
 
     public static void addGlobalTransformsAfterGrab(ASTTransformationsContext context) {

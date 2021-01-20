@@ -1791,6 +1791,31 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    @Test // GROOVY-9901
+    void testTraitWithMemozied() {
+        assertScript '''
+            trait Foo {
+                @groovy.transform.Memoized
+                double method() {
+                    Math.random()
+                }
+            }
+            class Bar implements Foo {}
+            class Baz implements Foo {}
+
+            def bar = new Bar()
+            def a = bar.method()
+            def b = bar.method()
+            def c = new Bar().method()
+            def d = new Baz().method()
+
+            assert a == b
+            assert a != c
+            assert a != d
+            assert c != d
+        '''
+    }
+
     @Test
     void testAnnotationShouldBeCarriedOver() {
         assertScript '''
