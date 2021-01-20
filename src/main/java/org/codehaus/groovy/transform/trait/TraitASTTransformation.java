@@ -48,7 +48,7 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
-import org.codehaus.groovy.transform.ASTTransformationCollectorCodeVisitor;
+import org.codehaus.groovy.transform.ASTTransformationVisitor;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
@@ -346,16 +346,13 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     }
 
     private void registerASTTransformations(final ClassNode helper) {
-        {
-            GroovyClassVisitor visitor = new ASTTransformationCollectorCodeVisitor(sourceUnit, compilationUnit.getTransformLoader());
-            visitor.visitClass(helper);
-        }
-        // Perform an additional phase which has to be done *after* type checking
+        ASTTransformationVisitor.addNewPhaseOperation(compilationUnit, sourceUnit, helper);
+        // perform an additional operation which has to be done *after* static type checking
         compilationUnit.addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
-            if (classNode != helper) return;
-
-            GroovyClassVisitor visitor = new PostTypeCheckingExpressionReplacer(source);
-            visitor.visitClass(helper);
+            if (classNode == helper) {
+                GroovyClassVisitor visitor = new PostTypeCheckingExpressionReplacer(source);
+                visitor.visitClass(helper);
+            }
         }, CompilePhase.INSTRUCTION_SELECTION.getPhaseNumber());
     }
 
