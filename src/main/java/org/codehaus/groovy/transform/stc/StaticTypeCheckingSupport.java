@@ -842,11 +842,23 @@ public abstract class StaticTypeCheckingSupport {
         return sb.toString();
     }
 
-    static String prettyPrintType(ClassNode type) {
-        if (type.isArray()) {
-            return prettyPrintType(type.getComponentType()) + "[]";
-        }
+    /**
+     * Returns string representation of type with generics. Arrays are indicated
+     * with trailing "[]".
+     */
+    static String prettyPrintType(final ClassNode type) {
         return type.toString(false);
+    }
+
+    /**
+     * Returns string representation of type *no* generics. Arrays are indicated
+     * with trailing "[]".
+     */
+    static String prettyPrintTypeName(final ClassNode type) {
+        if (type.isArray()) {
+            return prettyPrintTypeName(type.getComponentType()) + "[]";
+        }
+        return type.getText();
     }
 
     public static boolean implementsInterfaceOrIsSubclassOf(final ClassNode type, final ClassNode superOrInterface) {

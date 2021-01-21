@@ -273,6 +273,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isWild
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.lastArgMatchesVarg;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.missesGenericsTypes;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.prettyPrintType;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.prettyPrintTypeName;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.resolveClassNodeGenerics;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.toMethodParametersString;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeCheckMethodArgumentWithGenerics;
@@ -687,7 +688,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (!extension.handleUnresolvedProperty(expression)) {
             Expression objectExpression = expression.getObjectExpression();
             addStaticTypeError("No such property: " + expression.getPropertyAsString() + " for class: " +
-                    findCurrentInstanceOfClass(objectExpression, getType(objectExpression)).toString(false), expression);
+                    prettyPrintTypeName(findCurrentInstanceOfClass(objectExpression, getType(objectExpression))), expression);
         }
     }
 
@@ -698,7 +699,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (!extension.handleUnresolvedAttribute(expression)) {
             Expression objectExpression = expression.getObjectExpression();
             addStaticTypeError("No such attribute: " + expression.getPropertyAsString() + " for class: " +
-                    findCurrentInstanceOfClass(objectExpression, getType(objectExpression)).toString(false), expression);
+                    prettyPrintTypeName(findCurrentInstanceOfClass(objectExpression, getType(objectExpression))), expression);
         }
     }
 
@@ -1090,7 +1091,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode elemType = getType(listExpression);
             ClassNode tupleType = getType(tupleExpression);
             if (!isAssignableTo(elemType, tupleType)) {
-                addStaticTypeError("Cannot assign value of type " + elemType.toString(false) + " to variable of type " + tupleType.toString(false), rightExpression);
+                addStaticTypeError("Cannot assign value of type " + prettyPrintType(elemType) + " to variable of type " + prettyPrintType(tupleType), rightExpression);
                 return false; // avoids too many errors
             } else {
                 storeType(tupleExpression, elemType);
@@ -1164,7 +1165,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private void addPrecisionErrors(final ClassNode leftRedirect, final ClassNode lhsType, final ClassNode rhsType, final Expression rightExpression) {
         if (isNumberType(leftRedirect)) {
             if (isNumberType(rhsType) && checkPossibleLossOfPrecision(leftRedirect, rhsType, rightExpression)) {
-                addStaticTypeError("Possible loss of precision from " + rhsType.toString(false) + " to " + lhsType.toString(false), rightExpression);
+                addStaticTypeError("Possible loss of precision from " + prettyPrintType(rhsType) + " to " + prettyPrintType(lhsType), rightExpression);
             }
             return;
         }
@@ -1175,14 +1176,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             for (Expression expression : ((ListExpression) rightExpression).getExpressions()) {
                 ClassNode rightComponentType = getType(expression);
                 if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType) && !(isNullConstant(expression) && !isPrimitiveType(leftComponentType))) {
-                    addStaticTypeError("Cannot assign value of type " + rightComponentType.toString(false) + " into array of type " + lhsType.toString(false), rightExpression);
+                    addStaticTypeError("Cannot assign value of type " + prettyPrintType(rightComponentType) + " into array of type " + prettyPrintType(lhsType), rightExpression);
                 }
             }
         } else if (rhsType.redirect().isArray()) {
             ClassNode leftComponentType = leftRedirect.getComponentType();
             ClassNode rightComponentType = rhsType.redirect().getComponentType();
             if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)) {
-                addStaticTypeError("Cannot assign value of type " + rightComponentType.toString(false) + " into array of type " + lhsType.toString(false), rightExpression);
+                addStaticTypeError("Cannot assign value of type " + prettyPrintType(rightComponentType) + " into array of type " + prettyPrintType(lhsType), rightExpression);
             }
         }
     }
@@ -1234,8 +1235,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 isNullConstant(rightExpression)) return;
 
         addStaticTypeError("Incompatible generic argument types. Cannot assign "
-                + wrappedRHS.toString(false)
-                + " to: " + leftExpressionType.toString(false), rightExpression);
+                + prettyPrintType(wrappedRHS) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
     }
 
     private boolean hasGStringStringError(final ClassNode leftExpressionType, final ClassNode wrappedRHS, final Expression rightExpression) {
@@ -1286,7 +1286,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 String pName = keyExpression.getText();
                 AtomicReference<ClassNode> pType = new AtomicReference<>();
                 if (!existsProperty(propX(varX("_", receiverType), pName), false, new PropertyLookupVisitor(pType))) {
-                    addStaticTypeError("No such property: " + pName + " for class: " + receiverType.getText(), receiver);
+                    addStaticTypeError("No such property: " + pName + " for class: " + prettyPrintTypeName(receiverType), receiver);
                 } else {
                     ClassNode targetType = Optional.ofNullable(receiverType.getSetterMethod(getSetterName(pName), false))
                             .map(setter -> setter.getParameters()[0].getType()).orElseGet(pType::get);
@@ -1862,7 +1862,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 componentType = forLoopVariableType;
             }
             if (!checkCompatibleAssignmentTypes(forLoopVariableType, componentType)) {
-                addStaticTypeError("Cannot loop with element of type " + forLoopVariableType.toString(false) + " with collection of type " + collectionType.toString(false), forLoop);
+                addStaticTypeError("Cannot loop with element of type " + prettyPrintType(forLoopVariableType) + " with collection of type " + prettyPrintType(collectionType), forLoop);
             }
             if (forLoopVariableType != DYNAMIC_TYPE) {
                 // user has specified a type, prefer it over the inferred type
@@ -2132,7 +2132,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     && !checkCompatibleAssignmentTypes(enclosingMethod.getReturnType(), type, null, false)
                     && !(isNullConstant(expression))) {
                 if (!extension.handleIncompatibleReturnType(statement, type)) {
-                    addStaticTypeError("Cannot return value of type " + type.toString(false) + " on method returning type " + enclosingMethod.getReturnType().toString(false), expression);
+                    addStaticTypeError("Cannot return value of type " + prettyPrintType(type) + " on method returning type " + prettyPrintType(enclosingMethod.getReturnType()), expression);
                 }
             } else if (!enclosingMethod.isVoidMethod()) {
                 ClassNode previousType = getInferredReturnType(enclosingMethod);
@@ -2401,7 +2401,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else if (!(expression instanceof MethodReferenceExpression)) {
                 ClassNode type = wrapTypeIfNecessary(getType(expression.getExpression()));
                 if (isClassClassNodeWrappingConcreteType(type)) type = type.getGenericsTypes()[0].getType();
-                addStaticTypeError("Cannot find matching method " + type.getText() + "#" + nameText + ". Please check if the declared type is correct and if the method exists.", nameExpr);
+                addStaticTypeError("Cannot find matching method " + prettyPrintTypeName(type) + "#" + nameText + ". Please check if the declared type is correct and if the method exists.", nameExpr);
             }
         }
     }
@@ -2644,7 +2644,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else if (parameters.length == 1) {
                 Parameter param = parameters[0];
                 if (!param.isDynamicTyped() && !isAssignableTo(receiver, param.getType().redirect())) {
-                    addStaticTypeError("Expected parameter type: " + receiver.toString(false) + " but was: " + param.getType().redirect().toString(false), param);
+                    addStaticTypeError("Expected parameter type: " + prettyPrintType(receiver) + " but was: " + prettyPrintType(param.getType()), param);
                 }
             }
             closure.putNodeMetaData(DELEGATION_METADATA, new DelegationMetadata(
@@ -3037,7 +3037,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     boolean lastArg = i == (n - 1);
 
                     if (!typeCheckMethodArgumentWithGenerics(originType, inferredType, lastArg)) {
-                        addError("Expected parameter of type " + inferredType.toString(false) + " but got " + originType.toString(false), closureParam.getType());
+                        addError("Expected parameter of type " + prettyPrintType(inferredType) + " but got " + prettyPrintType(originType), closureParam.getType());
                     }
 
                     typeCheckingContext.controlStructureVariables.put(closureParam, inferredType);
@@ -3195,7 +3195,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                             if (pTypeGenerics != null && pTypeGenerics.length > gti) {
                                                 actualType = pTypeGenerics[gti].getType();
                                             } else {
-                                                addStaticTypeError("Unable to map actual type [" + actualType.toString(false) + "] onto " + paramType.toString(false), methodParam);
+                                                addStaticTypeError("Unable to map actual type [" + prettyPrintType(actualType) + "] onto " + prettyPrintType(paramType), methodParam);
                                             }
                                         }
                                     }
@@ -4036,7 +4036,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             Expression source = expression.getExpression();
             ClassNode expressionType = getType(source);
             if (!checkCast(targetType, source) && !isDelegateOrOwnerInClosure(source)) {
-                addStaticTypeError("Inconvertible types: cannot cast " + expressionType.toString(false) + " to " + targetType.toString(false), expression);
+                addStaticTypeError("Inconvertible types: cannot cast " + prettyPrintType(expressionType) + " to " + prettyPrintType(targetType), expression);
             }
         }
         storeType(expression, expression.getType());
@@ -4527,9 +4527,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         StringBuilder sb = new StringBuilder("[");
         for (int i = 0, n = nodes.size(); i < n; i += 1) {
             MethodNode node = nodes.get(i);
-            sb.append(node.getReturnType().toString(false));
+            sb.append(prettyPrintType(node.getReturnType()));
             sb.append(" ");
-            sb.append(node.getDeclaringClass().toString(false));
+            sb.append(prettyPrintTypeName(node.getDeclaringClass()));
             sb.append("#");
             sb.append(toMethodParametersString(node.getName(), extractTypesFromParameters(node.getParameters())));
             if (i < n - 1) sb.append(", ");
@@ -5503,7 +5503,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             for (int i = 0, n = parameters.length; i < n; i += 1) {
                 paramTypes[i] = fullyResolveType(parameters[i].getType(), classGTs);
             }
-            addStaticTypeError("Cannot call " + toMethodGenericTypesString(candidateMethod) + receiver.toString(false) + "#" +
+            addStaticTypeError("Cannot call " + toMethodGenericTypesString(candidateMethod) + prettyPrintTypeName(receiver) + "#" +
                     toMethodParametersString(candidateMethod.getName(), paramTypes) + " with arguments " + formatArgumentList(arguments), location);
             return false;
         }
@@ -5566,7 +5566,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (isClassClassNodeWrappingConcreteType(receiver)) {
             receiver = receiver.getGenericsTypes()[0].getType();
         }
-        addStaticTypeError("Cannot find matching method " + receiver.getText() + "#" + toMethodParametersString(name, args) + ". Please check if the declared type is correct and if the method exists.", call);
+        addStaticTypeError("Cannot find matching method " + prettyPrintTypeName(receiver) + "#" + toMethodParametersString(name, args) + ". Please check if the declared type is correct and if the method exists.", call);
     }
 
     protected void addAmbiguousErrorMessage(final List<MethodNode> foundMethods, final String name, final ClassNode[] args, final Expression expr) {
@@ -5578,7 +5578,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void addAssignmentError(final ClassNode leftType, final ClassNode rightType, final Expression assignmentExpression) {
-        addStaticTypeError("Cannot assign value of type " + rightType.toString(false) + " to variable of type " + leftType.toString(false), assignmentExpression);
+        addStaticTypeError("Cannot assign value of type " + prettyPrintType(rightType) + " to variable of type " + prettyPrintType(leftType), assignmentExpression);
     }
 
     protected void addUnsupportedPreOrPostfixExpressionError(final Expression expression) {
@@ -5614,7 +5614,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                     addStaticTypeError("A closure shared variable [" + target.getName() + "] has been assigned with various types and the method" +
                                             " [" + toMethodParametersString(message, getType(((BinaryExpression) expression).getRightExpression())) + "]" +
                                             " does not exist in the lowest upper bound of those types: [" +
-                                            lub.toString(false) + "]. In general, this is a bad practice (variable reuse) because the compiler cannot" +
+                                            prettyPrintType(lub) + "]. In general, this is a bad practice (variable reuse) because the compiler cannot" +
                                             " determine safely what is the type of the variable at the moment of the call in a multithreaded context.", expression);
                                 }
                             }
@@ -5642,7 +5642,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 addStaticTypeError("A closure shared variable [" + target.getName() + "] has been assigned with various types and the method" +
                                         " [" + toMethodParametersString(methodNode.getName(), params) + "]" +
                                         " does not exist in the lowest upper bound of those types: [" +
-                                        lub.toString(false) + "]. In general, this is a bad practice (variable reuse) because the compiler cannot" +
+                                        prettyPrintType(lub) + "]. In general, this is a bad practice (variable reuse) because the compiler cannot" +
                                         " determine safely what is the type of the variable at the moment of the call in a multithreaded context.", call);
                             }
                         }
