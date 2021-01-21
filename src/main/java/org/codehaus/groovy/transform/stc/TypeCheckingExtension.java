@@ -334,7 +334,7 @@ public class TypeCheckingExtension {
         if (generics != null) {
             int expectedLength = generics.length;
             if (expectedLength != genericsTypeArguments.length) {
-                throw new GroovyBugError("Expected number of generic type arguments for " + baseType.toString(false) + " is " + expectedLength + " but you gave " + genericsTypeArguments.length);
+                throw new GroovyBugError("Expected number of generic type arguments for " + StaticTypeCheckingSupport.prettyPrintType(baseType) + " is " + expectedLength + " but you gave " + genericsTypeArguments.length);
             }
             result.setGenericsTypes(Arrays.stream(genericsTypeArguments)
                     .map(StaticTypeCheckingVisitor::wrapTypeIfNecessary)

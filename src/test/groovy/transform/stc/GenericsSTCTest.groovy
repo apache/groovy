@@ -74,7 +74,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<String> list = []
             list << 1
-        ''', '[Static type checking] - Cannot call <T> java.util.List <String>#leftShift(T) with arguments [int] '
+        ''', '[Static type checking] - Cannot call <T> java.util.List#leftShift(T) with arguments [int] '
     }
 
     void testAddOnList2UsingLeftShift() {
@@ -129,7 +129,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<Integer> list = new LinkedList<>()
             list << 'Hello'
-        ''', '[Static type checking] - Cannot call <T> java.util.LinkedList <java.lang.Integer>#leftShift(T) with arguments [java.lang.String]'
+        ''', '[Static type checking] - Cannot call <T> java.util.LinkedList#leftShift(T) with arguments [java.lang.String]'
     }
 
     void testAddOnListWithDiamondAndNullUsingLeftShift() {
@@ -243,7 +243,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testLinkedListWithListArgumentAndWrongElementTypes() {
         shouldFailWithMessages '''
             List<String> list = new LinkedList<String>([1,2,3])
-        ''', 'Cannot call java.util.LinkedList <String>#<init>(java.util.Collection <? extends java.lang.String>) with arguments [java.util.List <java.lang.Integer>]'
+        ''', 'Cannot call java.util.LinkedList#<init>(java.util.Collection <? extends java.lang.String>) with arguments [java.util.List <java.lang.Integer>]'
     }
 
     void testIncompatibleGenericAssignment() {
@@ -637,7 +637,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
         }
         new ClassB()
-        ''', 'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA <Long>#bar(java.lang.Class <Long>) with arguments [java.lang.Class <? extends java.lang.Object>]'
+        ''', 'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA#bar(java.lang.Class <Long>) with arguments [java.lang.Class <? extends java.lang.Object>]'
     }
 
     // GROOVY-8961
@@ -811,7 +811,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<String> list = ['a','b','c']
             Collection<Integer> e = (Collection<Integer>) [1,2,3]
             boolean r = list.addAll(e)
-        ''', 'Cannot call java.util.List <java.lang.String>#addAll(java.util.Collection <? extends java.lang.String>) with arguments [java.util.Collection <Integer>]'
+        ''', 'Cannot call java.util.List#addAll(java.util.Collection <? extends java.lang.String>) with arguments [java.util.Collection <Integer>]'
     }
 
     // GROOVY-5528
@@ -1052,7 +1052,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             })
             Map<Date, Date> map = new HashMap<>()
             map['foo'] = new Date()
-        ''', 'Cannot call <K,V> java.util.HashMap <java.util.Date, java.util.Date>#putAt(java.util.Date, java.util.Date) with arguments [java.lang.String, java.util.Date]'
+        ''', 'Cannot call <K,V> java.util.HashMap#putAt(java.util.Date, java.util.Date) with arguments [java.lang.String, java.util.Date]'
     }
     void testInferDiamondForAssignmentWithDatesAndIllegalValueUsingPut() {
         shouldFailWithMessages '''
@@ -1090,7 +1090,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             })
             Map<Date, Date> map = new HashMap<>()
             map[new Date()] = 'foo'
-        ''', 'Cannot call <K,V> java.util.HashMap <java.util.Date, java.util.Date>#putAt(java.util.Date, java.util.Date) with arguments [java.util.Date, java.lang.String]'
+        ''', 'Cannot call <K,V> java.util.HashMap#putAt(java.util.Date, java.util.Date) with arguments [java.util.Date, java.lang.String]'
     }
 
     void testCallMethodWithParameterizedArrayList() {
@@ -1268,9 +1268,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
             test(new Holder<Object>())
         ''',
-        'Cannot call TypedProperty <String, Object>#eq(java.lang.String) with arguments [groovy.lang.GString]',
-        'Cannot call TypedProperty <String, Unknown>#eq(java.lang.String) with arguments [int]',
-        'Cannot call TypedProperty <Number, Unknown>#eq(java.lang.Number) with arguments [java.lang.String]'
+        'Cannot call TypedProperty#eq(java.lang.String) with arguments [groovy.lang.GString]',
+        'Cannot call TypedProperty#eq(java.lang.String) with arguments [int]',
+        'Cannot call TypedProperty#eq(java.lang.Number) with arguments [java.lang.String]'
     }
 
     void testGroovy5748() {
@@ -1886,7 +1886,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
             GoodCodeRed.foo()
         ''',
-        "Cannot call <T> GoodCodeRed <Long>#attach(GoodCodeRed <Long>) with arguments [GoodCodeRed <Integer>]"
+        "Cannot call <T> GoodCodeRed#attach(GoodCodeRed <Long>) with arguments [GoodCodeRed <Integer>]"
     }
 
     void testHiddenGenerics() {
