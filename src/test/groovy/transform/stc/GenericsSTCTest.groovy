@@ -1113,6 +1113,46 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''', '#printEqual(T, java.util.List <T>) with arguments [int, java.util.List <java.lang.String>]'
     }
 
+    // GROOVY-9902
+    void testIncompatibleArgumentsForGenericArgument_IncludingDelegation() {
+        shouldFailWithMessages '''
+            class Holder<Unknown> {
+                TypedProperty<Number, Unknown> numberProperty = prop(Number)
+                TypedProperty<String, Unknown> stringProperty = prop(String)
+
+                def <T> TypedProperty<T, Unknown> prop(Class<T> clazz) {
+                    return new TypedProperty<T, Unknown>(clazz: clazz)
+                }
+
+                // Note: type argument of Holder cannot be supplied to value attribute of @DelegatesTo
+                def <T> T of(@DelegatesTo(value=Holder, strategy=Closure.DELEGATE_FIRST) Closure<T> c) {
+                    this.with(c)
+                }
+            }
+
+            class TypedProperty<X, Y> {
+                Class<X> clazz
+
+                void eq(X x) {
+                    assert x.class == clazz : "x.class is ${x.class} not ${clazz}"
+                }
+            }
+
+            void test(Holder<Object> h) {
+                h.stringProperty.eq("${0}") // STC error
+                h.of { // <-- 2nd type parameter discarded
+                    stringProperty.eq(1234) // expect STC error
+                    numberProperty.eq("xx") // expect STC error
+                }
+            }
+
+            test(new Holder<Object>())
+        ''',
+        'Cannot call TypedProperty <String, Object>#eq(java.lang.String) with arguments [groovy.lang.GString]',
+        'Cannot call TypedProperty <String, Unknown>#eq(java.lang.String) with arguments [int]',
+        'Cannot call TypedProperty <Number, Unknown>#eq(java.lang.Number) with arguments [java.lang.String]'
+    }
+
     void testGroovy5748() {
         assertScript '''
             interface IStack<T> {
