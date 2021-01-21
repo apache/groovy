@@ -1329,21 +1329,13 @@ public abstract class StaticTypeCheckingSupport {
      * @param argumentType  the type of the argument passed to the method
      */
     protected static boolean typeCheckMethodArgumentWithGenerics(final ClassNode parameterType, final ClassNode argumentType, final boolean lastArg) {
-        if (UNKNOWN_PARAMETER_TYPE == argumentType) {
-            // called with null
+        if (UNKNOWN_PARAMETER_TYPE == argumentType) { // argument is null
             return !isPrimitiveType(parameterType);
         }
-        if (!isAssignableTo(argumentType, parameterType) && !lastArg) {
-            // incompatible assignment
-            return false;
-        }
-        if (!isAssignableTo(argumentType, parameterType) && lastArg) {
-            if (parameterType.isArray()) {
-                if (!isAssignableTo(argumentType, parameterType.getComponentType())) {
-                    return false;
-                }
-            } else {
-                return false;
+        if (!isAssignableTo(argumentType, parameterType)) {
+            if (!lastArg || !parameterType.isArray()
+                    || !isAssignableTo(argumentType, parameterType.getComponentType())) {
+                return false; // incompatible assignment
             }
         }
         if (parameterType.isUsingGenerics() && argumentType.isUsingGenerics()) {
@@ -1429,8 +1421,8 @@ public abstract class StaticTypeCheckingSupport {
         // then use the remaining information to refine the given generics
         applyGenericsConnections(classGTs, resolvedMethodGenerics);
         // and then start our checks with the receiver
-        if (!skipBecauseOfInnerClassNotReceiver) {
-            failure = failure || inferenceCheck(Collections.emptySet(), resolvedMethodGenerics, candidateMethod.getDeclaringClass(), receiver, false);
+        if (!failure && !skipBecauseOfInnerClassNotReceiver) {
+            failure = inferenceCheck(Collections.emptySet(), resolvedMethodGenerics, candidateMethod.getDeclaringClass(), receiver, false);
         }
         // the outside context parts till now define placeholder we are not allowed to
         // generalize, thus we save that for later use...
@@ -1493,8 +1485,7 @@ public abstract class StaticTypeCheckingSupport {
         // into something that can exist in the callsite context
         type = applyGenericsContext(resolvedMethodGenerics, type);
         // there of course transformed parameter type and argument must fit
-        failure = failure || !typeCheckMethodArgumentWithGenerics(type, wrappedArgument, lastArg);
-        return failure;
+        return failure || !typeCheckMethodArgumentWithGenerics(type, wrappedArgument, lastArg);
     }
 
     private static GenericsType buildWildcardType(final GenericsType origin) {
