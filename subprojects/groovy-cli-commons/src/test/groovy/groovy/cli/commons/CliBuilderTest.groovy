@@ -674,6 +674,20 @@ usage: groovy
         assert hello.nums() == [12, 34]
     }
 
+    // GROOVY-9886
+    void testHonorsTypeParameter() {
+        def cli = new CliBuilder(writer : new PrintWriter(System.out))
+        def opt = 'a'
+        def key = 'abc'
+        def type = double.class
+        def desc = 'abc'
+        cli."$opt"(args: 1, longOpt: key, type: type, desc)
+        def options = cli.parse(['--abc', '0.00'])
+        options.getOptions().each {
+            assert(it.getType().toString() == 'double')
+        }
+    }
+
     void testParseFromInstanceFlagEdgeCases() {
         def cli = new CliBuilder()
         def options = cli.parseFromSpec(FlagEdgeCasesI, '-abc -efg true --ijk foo --lmn bar baz'.split())

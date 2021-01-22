@@ -329,13 +329,14 @@ class CliBuilder {
             }
             if (args.size() == 2 && args[0] instanceof Map) {
                 def convert = args[0].remove('convert')
-                def type = args[0].remove('type')
+                def type = args[0]['type']
                 def defaultValue = args[0].remove('defaultValue')
                 if (type && !(type instanceof Class)) {
                     throw new CliBuilderException("'type' must be a Class")
                 }
                 if ((convert || type) && !args[0].containsKey('args') &&
                         type?.simpleName?.toLowerCase() != 'boolean') {
+                    args[0].remove('type')
                     args[0].args = 1
                 }
                 def option = option(name, args[0], args[1])
