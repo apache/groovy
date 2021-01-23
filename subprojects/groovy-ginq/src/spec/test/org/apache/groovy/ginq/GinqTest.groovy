@@ -5852,6 +5852,20 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - window - 87"() {
+        assertGinqScript '''
+            assert [[1, 1, 1, 0, 0.5], [null, 2, 2, 1, 1]] == GQ {
+                from n in [1, null]
+                select n,
+                    (rank() over(orderby n)),
+                    (denseRank() over(orderby n)),
+                    (percentRank() over(orderby n)),
+                    (cumeDist() over(orderby n))
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - shutdown - 0"() {
         assertScript '''
             import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper

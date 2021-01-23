@@ -131,8 +131,8 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
 
     @Override
     public Long rank() {
-        if (null == value || null == order) {
-            return 0L;
+        if (null == order) {
+            return null;
         }
 
         long result = 1L;
@@ -148,8 +148,8 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
 
     @Override
     public Long denseRank() {
-        if (null == value || null == order) {
-            return 0L;
+        if (null == order) {
+            return null;
         }
 
         long result = 1L;
@@ -165,18 +165,18 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
 
     @Override
     public BigDecimal percentRank() {
+        if (null == order) {
+            return null;
+        }
+
         final int size = list.size();
         if (1 == size) {
             return BigDecimal.ONE;
         }
 
-        if (null == value || null == order) {
-            return BigDecimal.ZERO;
-        }
-
         Long r = rank();
         if (null == r) {
-            return BigDecimal.ZERO;
+            return null;
         }
 
         return toBigDecimal(r - 1).divide(toBigDecimal(size - 1), 16, RoundingMode.HALF_UP);
@@ -184,8 +184,8 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
 
     @Override
     public BigDecimal cumeDist() {
-        if (null == value || null == order) {
-            return BigDecimal.ZERO;
+        if (null == order) {
+            return null;
         }
         long cnt = list.stream()
                         .filter(e -> comparator.compare(currentRecord.getV1(), e) >= 0)
