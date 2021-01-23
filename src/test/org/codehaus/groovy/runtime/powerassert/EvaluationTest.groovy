@@ -22,7 +22,7 @@ import groovy.test.GroovyTestCase
 
 import static java.lang.Math.max
 import static java.lang.Math.min
-import static AssertionTestUtil.*
+import static org.codehaus.groovy.runtime.powerassert.AssertionTestUtil.*
 
 /**
  * Checks that:
@@ -32,7 +32,8 @@ import static AssertionTestUtil.*
  * <li>assertion execution has the expected result (checked explicitly)</li>
  * </ul>
  */
-class EvaluationTest extends GroovyTestCase {
+final class EvaluationTest extends GroovyTestCase {
+
     void testPassingAndFailingAsserts() {
         assert true
         fails { assert false }

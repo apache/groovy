@@ -1329,7 +1329,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             assert twoIntegers.getTop() == 2
 
             def oneIntegerAgain = stack.push(1).push(2).pop()
-            assert oneIntegerAgain.getTop() == 1 // BOOM!!!!
+            assert oneIntegerAgain.getTop() == 1 // Cannot find matching method IStack#getTop()
         '''
     }
 
@@ -2201,7 +2201,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testGROOVY5981() {
+    // GROOVY-5981
+    void testCovariantAssignment() {
         assertScript '''
             import javax.swing.*
             import java.awt.*
@@ -2209,16 +2210,12 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             class ComponentFixture<T extends Component> {}
             class JButtonFixture extends ComponentFixture<JButton> {}
             class ContainerFixture<T extends Container> extends ComponentFixture<T> {}
-            abstract class ComponentAdapter<Fixture extends ComponentFixture> {
-                Fixture getFixture() {
-                    return fixture
-                }
-            }
+            abstract class ComponentAdapter<Fixture extends ComponentFixture> { Fixture getFixture() {} }
             abstract class ContainerAdapter<Fixture extends ContainerFixture> extends ComponentAdapter<Fixture> {}
 
             class ButtonComponent extends ComponentAdapter<JButtonFixture> {
-                void setFixtureResolver(final ContainerAdapter<? extends ContainerFixture> containerAdapter) {
-                    final ContainerFixture containerFixture = containerAdapter.getFixture()
+                void setFixtureResolver(ContainerAdapter<? extends ContainerFixture> containerAdapter) {
+                    ContainerFixture containerFixture = containerAdapter.getFixture() // Cannot assign value of type ComponentFixture to variable of type ContainerFixture
                 }
             }
 

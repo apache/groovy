@@ -20,16 +20,13 @@ package groovy.util
 
 import groovy.test.GroovyTestCase
 
-import static GroovyCollections.min
-import static GroovyCollections.max
-import static GroovyCollections.combinations
-import static GroovyCollections.transpose
-import static GroovyCollections.sum
+import static groovy.util.GroovyCollections.combinations
+import static groovy.util.GroovyCollections.max
+import static groovy.util.GroovyCollections.min
+import static groovy.util.GroovyCollections.sum
+import static groovy.util.GroovyCollections.transpose
 
-/**
-* Tests GroovyCollections
-*/
-class GroovyCollectionsTest extends GroovyTestCase {
+final class GroovyCollectionsTest extends GroovyTestCase {
 
     void testCombinations() {
         // use Sets because we don't care about order

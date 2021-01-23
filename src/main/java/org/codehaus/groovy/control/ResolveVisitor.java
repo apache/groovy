@@ -516,7 +516,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // GROOVY-4043: for type "X", try "A$X" with each type in the class hierarchy (except for Object)
         for (; cn != null && cycleCheck.add(cn) && !cn.equals(ClassHelper.OBJECT_TYPE); cn = cn.getSuperClass()) {
             if (setRedirect(type, cn)) return true;
-            // GROOVY-9866: interfaces not resolved
+            // GROOVY-9866: unresolvable interfaces
         }
 
         // GROOVY-8947: non-static inner class outside of outer class

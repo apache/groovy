@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package bugs
+package groovy.bugs
 
 import groovy.transform.CompileStatic
 import org.junit.Test
@@ -30,12 +30,12 @@ final class Groovy9790 {
     void "test GROOVY-9790 - 1"() {
         assertScript '''
             import java.util.stream.IntStream
-            
+
             @groovy.transform.CompileStatic
             def x() {
                 IntStream.range(0, 2).forEach((Integer i) -> { assert 0 <= i && i < 2})
             }
-            
+
             x()
         '''
     }
@@ -44,12 +44,12 @@ final class Groovy9790 {
     void "test GROOVY-9790 - 2"() {
         assertScript '''
             import java.util.stream.IntStream
-            
+
             @groovy.transform.CompileStatic
             def x() {
                 IntStream.range(0, 2).forEach((int i) -> { assert 0 <= i && i < 2})
             }
-            
+
             x()
         '''
     }
@@ -58,12 +58,12 @@ final class Groovy9790 {
     void "test GROOVY-9790 - 3"() {
         def err = shouldFail '''
             import java.util.stream.IntStream
-            
+
             @groovy.transform.CompileStatic
             def x() {
                 IntStream.range(0, 2).forEach((String i) -> { return i })
             }
-            
+
             x()
         '''
 

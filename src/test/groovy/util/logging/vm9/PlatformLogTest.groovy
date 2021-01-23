@@ -26,7 +26,7 @@ import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 
 /**
- * Test to make sure the @Log annotation is working correctly. 
+ * Test to make sure the @Log annotation is working correctly.
  */
 class PlatformLogTest extends GroovyTestCase {
     void testPrivateFinalStaticLogFieldAppears() {
@@ -157,7 +157,7 @@ class PlatformLogTest extends GroovyTestCase {
     }
 
     @PlatformLog
-    class MyClassLogFromStaticMethods {
+    static class MyClassLogFromStaticMethods {
         static loggingMethod() {
             log.info ('info    called')
         }
