@@ -147,7 +147,7 @@ public interface Window<T> extends Queryable<T> {
      * @return the rank
      * @since 4.0.0
      */
-    long rank();
+    Long rank();
 
     /**
      * Returns the dense rank in the window
@@ -155,7 +155,7 @@ public interface Window<T> extends Queryable<T> {
      * @return the dense rank
      * @since 4.0.0
      */
-    long denseRank();
+    Long denseRank();
 
     /**
      * Distributes rows of an ordered window into a pre-defined number of roughly equal buckets

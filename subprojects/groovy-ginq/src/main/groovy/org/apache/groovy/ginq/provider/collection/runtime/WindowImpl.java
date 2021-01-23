@@ -44,12 +44,12 @@ import static org.codehaus.groovy.runtime.typehandling.NumberMath.toBigDecimal;
 class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection<T> implements Window<T> {
 
     static <T, U extends Comparable<? super U>> Window<T> newInstance(Tuple2<T, Long> currentRecord, Partition<Tuple2<T, Long>> partition, WindowDefinition<T, U> windowDefinition) {
-        Function<? super T, ? extends U> keyExtractor;
         final List<Order<? super T, ? extends U>> orderList = windowDefinition.orderBy();
+        Order<? super T, ? extends U> order;
         if (null != orderList && 1 == orderList.size()) {
-            keyExtractor = orderList.get(0).getKeyExtractor();
+            order = orderList.get(0);
         } else {
-            keyExtractor = null;
+            order = null;
         }
 
         List<Tuple2<T, Long>> listWithIndex = partition.toList();
@@ -58,7 +58,7 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
                 ? binarySearch(listWithIndex, currentRecord, comparing(Tuple2::getV2))
                 : binarySearch(listWithIndex, currentRecord, makeComparator(composeOrders(orderList)).thenComparing(Tuple2::getV2));
         int index = tmpIndex >= 0 ? tmpIndex : -tmpIndex - 1;
-        U value = null == keyExtractor ? null : keyExtractor.apply(currentRecord.getV1());
+        U value = null == order ? null : order.getKeyExtractor().apply(currentRecord.getV1());
 
         RowBound validRowBound = getValidRowBound(windowDefinition, index, value, listWithIndex);
         List<T> list = null == validRowBound ? Collections.emptyList()
@@ -66,13 +66,14 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
                                       .limit(validRowBound.getLower(), validRowBound.getUpper() - validRowBound.getLower() + 1)
                                       .toList();
 
-        return new WindowImpl<>(currentRecord, index, value, list, keyExtractor);
+        return new WindowImpl<>(currentRecord, index, value, list, order);
     }
 
-    private WindowImpl(Tuple2<T, Long> currentRecord, int index, U value, List<T> list, Function<? super T, ? extends U> keyExtractor) {
+    private WindowImpl(Tuple2<T, Long> currentRecord, int index, U value, List<T> list, Order<? super T, ? extends U> order) {
         super(list);
         this.currentRecord = currentRecord;
-        this.keyExtractor = keyExtractor;
+        this.order = order;
+        this.comparator = null == order ? null : makeComparator(order);
         this.index = index;
         this.value = value;
         this.list = list;
@@ -128,14 +129,14 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
     }
 
     @Override
-    public long rank() {
-        long result = 1L;
-        if (null == value || null == keyExtractor) {
-            return -1;
+    public Long rank() {
+        if (null == value || null == order) {
+            return null;
         }
+
+        long result = 1L;
         for (T t : list) {
-            U v = keyExtractor.apply(t);
-            if (value.compareTo(v) > 0) {
+            if (comparator.compare(currentRecord.getV1(), t) > 0) {
                 result++;
             }
         }
@@ -143,25 +144,25 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
     }
 
     @Override
-    public long denseRank() {
-        long result = 1L;
-        if (null == value || null == keyExtractor) {
-            return -1;
+    public Long denseRank() {
+        if (null == value || null == order) {
+            return null;
         }
-        U latestV = null;
+
+        long result = 1L;
+        T latest = null;
         for (T t : list) {
-            U v = keyExtractor.apply(t);
-            if (null != v && value.compareTo(v) > 0 && (null == latestV || v.compareTo(latestV) != 0)) {
+            if (comparator.compare(currentRecord.getV1(), t) > 0 && comparator.compare(latest, t) != 0) {
                 result++;
             }
-            latestV = v;
+            latest = t;
         }
         return result;
     }
 
     @Override
     public long ntile(long bucketCnt) {
-        return (bucketCnt * rowNumber() / list.size());
+        return bucketCnt * rowNumber() / list.size();
     }
 
     private static <T, U extends Comparable<? super U>> long getFirstIndex(WindowDefinition<T, U> windowDefinition, int index) {
@@ -275,7 +276,8 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
     }
 
     private final Tuple2<T, Long> currentRecord;
-    private final Function<? super T, ? extends U> keyExtractor;
+    private final Order<? super T, ? extends U> order;
+    private final Comparator<? super T> comparator;
     private final int index;
     private final U value;
     private final List<T> list;

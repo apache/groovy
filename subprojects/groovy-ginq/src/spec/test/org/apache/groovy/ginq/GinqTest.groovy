@@ -5814,6 +5814,18 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - window - 84"() {
+        assertScript '''
+            assert [[3, 1, 1], [3, 1, 1], [2, 3, 2], [2, 3, 2], [1, 5, 3]] == GQ {
+                from n in [3, 3, 2, 2, 1]
+                select n, 
+                    (rank() over(orderby n in desc)),
+                    (denseRank() over(orderby n in desc))
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - shutdown - 0"() {
         assertScript '''
             import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper
