@@ -282,24 +282,21 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
         );
     }
 
-    private void addSyntheticMethod(final InnerClassNode node, final String methodName, final int modifiers,
+    private void addSyntheticMethod(final InnerClassNode innerClass, final String methodName, final int modifiers,
             final ClassNode returnType, final Parameter[] parameters, final BiConsumer<BlockStatement, Parameter[]> consumer) {
-        MethodNode method = node.getMethod(methodName, parameters);
-        if (method != null) {
-            // GROOVY-8914: pre-compiled classes lose synthetic boolean - TODO fix earlier as per GROOVY-4346 then remove extra check here
-            if (isStatic(node) && !method.isSynthetic() && (method.getModifiers() & ACC_SYNTHETIC) == 0) {
-                // if there is a user-defined methodNode, add compiler error and continue
-                addError("\"" + methodName + "\" implementations are not supported on static inner classes as " +
-                    "a synthetic version of \"" + methodName + "\" is added during compilation for the purpose " +
-                    "of outer class delegation.",
-                    method);
-            }
-            return;
-        }
+        MethodNode method = innerClass.getDeclaredMethod(methodName, parameters);
+        if (method == null) {
+            BlockStatement methodBody = block();
+            consumer.accept(methodBody, parameters);
+            innerClass.addSyntheticMethod(methodName, modifiers, returnType, parameters, ClassNode.EMPTY_ARRAY, methodBody);
 
-        BlockStatement methodBody = block();
-        consumer.accept(methodBody, parameters);
-        node.addSyntheticMethod(methodName, modifiers, returnType, parameters, ClassNode.EMPTY_ARRAY, methodBody);
+            // if there is a user-defined method, add compiler error and continue
+        } else if (isStatic(innerClass) && (method.getModifiers() & ACC_SYNTHETIC) == 0) {
+            addError("\"" + methodName + "\" implementations are not supported on static inner classes as " +
+                "a synthetic version of \"" + methodName + "\" is added during compilation for the purpose " +
+                "of outer class delegation.",
+                method);
+        }
     }
 
     private void addThisReference(ConstructorNode node) {
