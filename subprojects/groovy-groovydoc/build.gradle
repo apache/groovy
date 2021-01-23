@@ -23,8 +23,10 @@ plugins {
 dependencies {
     api rootProject // GroovydocVisitor extends ClassCodeVisitorSupport...
     api "com.github.javaparser:javaparser-core:${versions.javaParser}" // GroovydocJavaVisitor extends VoidVisitorAdapter...
+
     implementation project(':groovy-templates')
     implementation project(':groovy-docgenerator')
+
     testImplementation project(':groovy-ant')
     testImplementation project(':groovy-test')
     testImplementation "org.apache.ant:ant-testutil:${versions.ant}"
@@ -43,5 +45,5 @@ plugins.withId('eclipse') {
 }
 
 tasks.named('rat') {
-    excludes << '**/stylesheet.css'  // MIT license as per NOTICE/LICENSE files
+    excludes << '**/stylesheet.css' // MIT license as per NOTICE/LICENSE files
 }

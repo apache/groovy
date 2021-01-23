@@ -37,7 +37,7 @@ if (gradle.startParameter.taskNames.any { it =~ /(?i)eclipse/ }) {
                 if (!prefs.exists()) {
                     append('''\
                         eclipse.preferences.version=1
-                        groovy.compiler.level=30
+                        groovy.compiler.level=40
                         groovy.script.filters=**/*.gradle,n,**/script*.groovy,y,**/*resources/**/*.groovy,y,**/benchmarks/**/*.groovy,y
                         org.codehaus.groovy.eclipse.preferences.compiler.project=true
                         '''.stripIndent()
@@ -115,4 +115,6 @@ if (gradle.startParameter.taskNames.any { it =~ /(?i)eclipse/ }) {
     }
 
     sourceSets.main.java.srcDirs += "${buildDir}/generated/sources/antlr4"
+
+    eclipseClasspath.dependsOn(generateGrammarSource)
 }

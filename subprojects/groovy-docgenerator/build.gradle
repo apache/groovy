@@ -23,8 +23,9 @@ plugins {
 dependencies {
     implementation rootProject
     implementation project(':groovy-templates')
-    testImplementation project(':groovy-test')
     implementation "com.thoughtworks.qdox:qdox:${versions.qdox}"
+
+    testImplementation project(':groovy-test')
 }
 
 plugins.withId('eclipse') {
@@ -34,5 +35,5 @@ plugins.withId('eclipse') {
 }
 
 tasks.named('rat') {
-    excludes << '**/stylesheet.css'  // MIT license as per NOTICE/LICENSE files
+    excludes << '**/stylesheet.css' // MIT license as per NOTICE/LICENSE files
 }

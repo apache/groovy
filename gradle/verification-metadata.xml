@@ -109,6 +109,7 @@
          <trusted-key id="7615ad56144df2376f49d98b1669c4bb543e0445" group="com.google.errorprone"/>
          <trusted-key id="7616eb882daf57a11477aaf559a252fb1199d873" group="com.google.code.findbugs" name="jsr305" version="3.0.2"/>
          <trusted-key id="77993d3295698c46912e83984b2277c6358670ee" group="org.assertj" name="assertj-core" version="3.16.1"/>
+         <trusted-key id="34441e504a937f43eb0daef96a65176a0fb1cd0b" group="org.apache.groovy"/>
          <trusted-key id="7faa0f2206de228f0db01ad741321490758aad6f" group="org.codehaus.groovy"/>
          <trusted-key id="82f833963889d7ed06f1e4dc6525fd70cc303655" group="org.apache.maven.shared" name="maven-filtering" version="1.1"/>
          <trusted-key id="842afb86375d805422835bfd82b5574242c20d6f">
