@@ -699,6 +699,29 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-9905
+    void testUsageOfOuterSuperField3() {
+        assertScript '''
+            abstract class A {
+                protected final f = 'foo'
+                abstract static class B {}
+            }
+
+            class C extends A {
+                private class D extends A.B { // B is static inner
+                    String toString() {
+                        f + 'bar' // No such property: f for class: A
+                    }
+                }
+                def m() {
+                    new D().toString()
+                }
+            }
+
+            assert new C().m() == 'foobar'
+        '''
+    }
+
     @Test
     void testUsageOfOuterField_WrongCallToSuper() {
         shouldFail '''
