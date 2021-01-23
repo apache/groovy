@@ -552,6 +552,16 @@ Also, GINQ provides some built-in window functions:
 |java.lang.Long
 |rank of the current row without gaps
 
+|percentRank()
+|
+|java.math.BigDecimal
+|relative rank of the current row: (rank - 1) / (total rows - 1)
+
+|cumeDist()
+|
+|java.math.BigDecimal
+|relative rank of the current row: (number of rows preceding or peer with current row) / (total rows)
+
 |ntile(_expression_)
 |java.lang.Long
 |java.lang.Long
@@ -654,10 +664,15 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_34
 [NOTE]
 The parentheses around the window function is required.
 
-===== `rank`, `denseRank` and `ntile`
+===== `rank`, `denseRank`, `percentRank`, `cumeDist` and `ntile`
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_25,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_41,indent=0]
 ----
 
 [source, groovy]

@@ -753,7 +753,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                             if (windowFunctionMethodCallExpression.methodAsString in WINDOW_FUNCTION_LIST) {
                                 def argumentListExpression = (ArgumentListExpression) windowFunctionMethodCallExpression.arguments
                                 List<Expression> argumentExpressionList = []
-                                if (windowFunctionMethodCallExpression.methodAsString !in [FUNCTION_ROW_NUMBER, FUNCTION_RANK, FUNCTION_DENSE_RANK] && argumentListExpression.expressions) {
+                                if (windowFunctionMethodCallExpression.methodAsString !in [FUNCTION_ROW_NUMBER, FUNCTION_RANK, FUNCTION_DENSE_RANK, FUNCTION_PERCENT_RANK, FUNCTION_CUME_DIST] && argumentListExpression.expressions) {
                                     def windowFunctionLambdaCode = argumentListExpression.getExpression(0)
                                     def windowFunctionLambdaName = '__wfp'
                                     def rootObjectExpression = findRootObjectExpression(windowFunctionLambdaCode)
@@ -1566,9 +1566,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final String FUNCTION_NTH_VALUE = 'nthValue'
     private static final String FUNCTION_RANK = 'rank'
     private static final String FUNCTION_DENSE_RANK = 'denseRank'
+    private static final String FUNCTION_PERCENT_RANK = 'percentRank'
+    private static final String FUNCTION_CUME_DIST = 'cumeDist'
     private static final String FUNCTION_NTILE = 'ntile'
     private static final List<String> WINDOW_FUNCTION_LIST = [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_MEDIAN, FUNCTION_STDEV, FUNCTION_STDEVP, FUNCTION_VAR, FUNCTION_VARP,
-                                                              FUNCTION_ROW_NUMBER, FUNCTION_LEAD, FUNCTION_LAG, FUNCTION_FIRST_VALUE, FUNCTION_LAST_VALUE, FUNCTION_NTH_VALUE, FUNCTION_RANK, FUNCTION_DENSE_RANK, FUNCTION_NTILE]
+                                                              FUNCTION_ROW_NUMBER, FUNCTION_LEAD, FUNCTION_LAG, FUNCTION_FIRST_VALUE, FUNCTION_LAST_VALUE, FUNCTION_NTH_VALUE, FUNCTION_RANK, FUNCTION_DENSE_RANK, FUNCTION_PERCENT_RANK, FUNCTION_CUME_DIST, FUNCTION_NTILE]
 
     private static final String NAMEDRECORD_CLASS_NAME = NamedRecord.class.name
 

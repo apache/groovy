@@ -5815,12 +5815,38 @@ class GinqTest {
 
     @Test
     void "testGinq - window - 84"() {
-        assertScript '''
+        assertGinqScript '''
             assert [[3, 1, 1], [3, 1, 1], [2, 3, 2], [2, 3, 2], [1, 5, 3]] == GQ {
                 from n in [3, 3, 2, 2, 1]
                 select n, 
                     (rank() over(orderby n in desc)),
                     (denseRank() over(orderby n in desc))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 85"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_41[]
+            assert [[60, 0, 0.4], [60, 0, 0.4], [80, 0.5, 0.8], [80, 0.5, 0.8], [100, 1, 1]] == GQ {
+                from n in [60, 60, 80, 80, 100]
+                select n,
+                    (percentRank() over(orderby n)),
+                    (cumeDist() over(orderby n))
+            }.toList()
+// end::ginq_winfunction_41[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 86"() {
+        assertGinqScript '''
+            assert [[100, 0, 0.2], [80, 0.25, 0.6], [80, 0.25, 0.6], [60, 0.75, 1], [60, 0.75, 1]] == GQ {
+                from n in [100, 80, 80, 60, 60]
+                select n,
+                    (percentRank() over(orderby n in desc)),
+                    (cumeDist() over(orderby n in desc))
             }.toList()
         '''
     }

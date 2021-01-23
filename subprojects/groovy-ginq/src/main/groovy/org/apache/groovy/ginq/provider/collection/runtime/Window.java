@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime;
 
+import java.math.BigDecimal;
 import java.util.function.Function;
 
 /**
@@ -156,6 +157,22 @@ public interface Window<T> extends Queryable<T> {
      * @since 4.0.0
      */
     Long denseRank();
+
+    /**
+     * Returns the percent rank in the window
+     *
+     * @return the percent rank
+     * @since 4.0.0
+     */
+    BigDecimal percentRank();
+
+    /**
+     * Returns the cumulative distribution of a value in the window
+     *
+     * @return the cumulative distribution of a value
+     * @since 4.0.0
+     */
+    BigDecimal cumeDist();
 
     /**
      * Distributes rows of an ordered window into a pre-defined number of roughly equal buckets

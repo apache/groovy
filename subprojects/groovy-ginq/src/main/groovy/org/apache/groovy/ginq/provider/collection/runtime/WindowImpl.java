@@ -22,6 +22,7 @@ import groovy.lang.Tuple2;
 import org.apache.groovy.util.ReversedList;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -131,7 +132,7 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
     @Override
     public Long rank() {
         if (null == value || null == order) {
-            return null;
+            return 0L;
         }
 
         long result = 1L;
@@ -141,12 +142,14 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
             }
         }
         return result;
+
     }
+
 
     @Override
     public Long denseRank() {
         if (null == value || null == order) {
-            return null;
+            return 0L;
         }
 
         long result = 1L;
@@ -158,6 +161,36 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
             latest = t;
         }
         return result;
+    }
+
+    @Override
+    public BigDecimal percentRank() {
+        final int size = list.size();
+        if (1 == size) {
+            return BigDecimal.ONE;
+        }
+
+        if (null == value || null == order) {
+            return BigDecimal.ZERO;
+        }
+
+        Long r = rank();
+        if (null == r) {
+            return BigDecimal.ZERO;
+        }
+
+        return toBigDecimal(r - 1).divide(toBigDecimal(size - 1), 16, RoundingMode.HALF_UP);
+    }
+
+    @Override
+    public BigDecimal cumeDist() {
+        if (null == value || null == order) {
+            return BigDecimal.ZERO;
+        }
+        long cnt = list.stream()
+                        .filter(e -> comparator.compare(currentRecord.getV1(), e) >= 0)
+                        .count();
+        return toBigDecimal(cnt).divide(toBigDecimal(list.size()), 16, RoundingMode.HALF_UP);
     }
 
     @Override
