@@ -32,6 +32,7 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -49,6 +50,8 @@ import java.util.stream.Stream;
 @Deprecated
 public class IndyInterface {
     private static final long INDY_OPTIMIZE_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.optimize.threshold", 100_000L);
+
+    private static final MethodHandleWrapper NULL_METHOD_HANDLE_WRAPPER = new MethodHandleWrapper(null, null, false);
 
     /**
      * flags for method and property calls
@@ -258,12 +261,17 @@ public class IndyInterface {
         MethodHandleWrapper mhw =
                 doWithCallSite(
                         callSite, arguments,
-                        (cs, receiver) ->
-                                cs.getAndPut(
+                        (CacheableCallSite ccs, Object receiver) ->
+                                ccs.getAndPut(
                                         receiver.getClass().getName(),
-                                        c -> fallback(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments)
+                                        c -> Optional.of(fallback(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments))
+                                                .filter(MethodHandleWrapper::isCanSetTarget).orElse(NULL_METHOD_HANDLE_WRAPPER)
                                 )
                 );
+
+        if (mhw == NULL_METHOD_HANDLE_WRAPPER) {
+            mhw = fallback(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
+        }
 
         if (mhw.isCanSetTarget() && (callSite.getTarget() != mhw.getTargetMethodHandle()) && (mhw.getLatestHitCount() > INDY_OPTIMIZE_THRESHOLD)) {
             callSite.setTarget(mhw.getTargetMethodHandle());
