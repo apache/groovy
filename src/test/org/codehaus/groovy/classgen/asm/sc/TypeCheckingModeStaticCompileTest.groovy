@@ -23,11 +23,11 @@ import groovy.transform.stc.TypeCheckingModeTest
 /**
  * Unit tests for static type checking : type checking mode.
  */
-class TypeCheckingModeStaticCompileTest extends TypeCheckingModeTest implements StaticCompilationTestSupport {
+final class TypeCheckingModeStaticCompileTest extends TypeCheckingModeTest implements StaticCompilationTestSupport {
 
     void testEnsureBytecodeIsDifferentWhenSkipped() {
         assertScript '''
-            // transparent @CompileStatic
+            // @CompileStatic is implicit
             String foo() { 'foo'.toUpperCase() }
 
             @groovy.transform.CompileStatic(groovy.transform.TypeCheckingMode.SKIP)
@@ -51,8 +51,7 @@ class TypeCheckingModeStaticCompileTest extends TypeCheckingModeTest implements 
             public interface HibernateCallback<T> {
                 T doInHibernate()
             }
-
-            @CompileStatic
+            // @CompileStatic is implicit
             class Enclosing {
                 @CompileStatic(groovy.transform.TypeCheckingMode.SKIP)
                 def shouldBeSkipped(Closure callable) {
@@ -69,5 +68,17 @@ class TypeCheckingModeStaticCompileTest extends TypeCheckingModeTest implements 
             }
         '''
     }
-}
 
+    // GROOVY-9707: CompileStatic by configuration and TypeChecked by annotation
+    void testTypeCheckedAnnotation() {
+        assertScript '''
+            @groovy.transform.TypeChecked
+            class C {
+                def m() {
+                    'a' + 'b'
+                }
+            }
+            assert new C().m() == 'ab'
+        '''
+    }
+}
