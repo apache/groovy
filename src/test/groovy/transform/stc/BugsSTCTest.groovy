@@ -18,6 +18,9 @@
  */
 package groovy.transform.stc
 
+import static groovy.test.GroovyAssert.isAtLeastJdk
+import static org.junit.Assume.assumeFalse
+
 /**
  * Unit tests for static type checking : bug fixes.
  */
@@ -678,7 +681,10 @@ Printer
     }
 
     // GROOVY-7160
-    void _FIXME_testAmbiguousMethodResolutionObjectVsEnums() {
+    void testAmbiguousMethodResolutionObjectVsEnums() {
+        // Currently preferring JDK9+ Set.of(E, E, E, E, E, E) ahead of EnumSet.of(E, E[])
+        // TODO clarify behavior for this edge case
+        assumeFalse(isAtLeastJdk('9.0'))
         assertScript '''
             import static java.nio.file.AccessMode.*
             def test() {
