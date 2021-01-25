@@ -27,23 +27,58 @@ final class Groovy8964 {
     @Test
     void testInstanceVarargMethodNotMaskedByStaticMethodWithSameNumberOfArgs() {
         assertScript '''
-            class Example {
-
-                def method(String... args) {
+            class C {
+                def m(String... args) {
                     'vararg'
                 }
-
-                static method(List<String> args, File workDirectory, Appendable out, Appendable err) {
+                static m(List<String> args, File workDirectory, Appendable out, Appendable err) {
                     'multi'
                 }
-
-                def execute() {
-                    method("a", "b", "c", "d")
+                def test() {
+                    m('a', 'b', 'c', 'd')
                 }
             }
 
-            Example ex = new Example()
-            assert ex.execute() == 'vararg'
+            assert new C().test() == 'vararg'
         '''
+    }
+
+    @Test // GROOVY-9737
+    void testInstanceMethodNotMaskedByStaticMethodWithSameNumberOfArgs1() {
+        assertScript '''
+            abstract class A {
+                static void m(Integer i) {}
+                protected void m(String s) {}
+            }
+
+            @groovy.transform.CompileStatic
+            class C extends A {
+                void test() {
+                    m('') // ClassCastException: class java.lang.Class cannot be cast to class A
+                }
+            }
+
+            new C().test()
+        '''
+    }
+
+    @Test // GROOVY-9737
+    void testInstanceMethodNotMaskedByStaticMethodWithSameNumberOfArgs2() {
+        assertScript '''
+            import groovy.bugs.Groovy8964.A
+            @groovy.transform.CompileStatic
+            class C extends A {
+                void test() {
+                    m('') // VerifyError: Bad access to protected data in invokevirtual
+                }
+            }
+
+            new C().test()
+        '''
+    }
+
+    static abstract class A {
+        static void m(Integer i) {}
+        protected void m(String s) {}
     }
 }
