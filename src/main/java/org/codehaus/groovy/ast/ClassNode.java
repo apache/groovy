@@ -1251,7 +1251,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
 
         for (ClassNode cn = this; cn != null; cn = cn.getSuperClass()) {
-            for (MethodNode mn : getDeclaredMethods(name)) {
+            for (MethodNode mn : cn.getDeclaredMethods(name)) {
                 if (!mn.isStatic() && hasCompatibleNumberOfArgs(mn, count)) {
                     return true;
                 }
