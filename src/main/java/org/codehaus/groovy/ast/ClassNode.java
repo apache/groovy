@@ -1285,38 +1285,31 @@ public class ClassNode extends AnnotatedNode {
 
         // TODO: this won't strictly be true when using list expansion in argument calls
         TupleExpression args = (TupleExpression) arguments;
-        int count = args.getExpressions().size();
-        MethodNode res = null;
+        int nArgs = args.getExpressions().size();
+        MethodNode method = null;
 
         for (ClassNode cn = this; cn != null; cn = cn.getSuperClass()) {
             for (MethodNode mn : cn.getDeclaredMethods(name)) {
-                if (hasCompatibleNumberOfArgs(mn, count)) {
+                if (hasCompatibleNumberOfArgs(mn, nArgs)) {
                     boolean match = true;
-                    for (int i = 0; i < count; i += 1) {
+                    for (int i = 0; i < nArgs; i += 1) {
                         if (!hasCompatibleType(args, mn, i)) {
                             match = false;
                             break;
                         }
                     }
                     if (match) {
-                        if (res == null) {
-                            res = mn;
+                        if (method == null) {
+                            method = mn;
+                        } else if (cn.equals(this)
+                                || method.getParameters().length != nArgs) {
+                            return null;
                         } else {
-                            if (res.getParameters().length != count)
-                                return null;
-                            if (cn.equals(this))
-                                return null;
-
-                            match = true;
-                            for (int i = 0; i < count; i += 1) {
+                            for (int i = 0; i < nArgs; i += 1) {
                                 // prefer super method if it matches better
-                                if (!hasExactMatchingCompatibleType(res, mn, i)) {
-                                    match = false;
-                                    break;
+                                if (!hasExactMatchingCompatibleType(method, mn, i)) {
+                                    return null;
                                 }
-                            }
-                            if (!match) {
-                                return null;
                             }
                         }
                     }
@@ -1324,28 +1317,28 @@ public class ClassNode extends AnnotatedNode {
             }
         }
 
-        return res;
+        return method;
     }
 
-    private boolean hasExactMatchingCompatibleType(MethodNode current, MethodNode newCandidate, int i) {
-        int lastParamIndex = newCandidate.getParameters().length - 1;
-        return current.getParameters()[i].getType().equals(newCandidate.getParameters()[i].getType())
-                || (isPotentialVarArg(newCandidate, lastParamIndex) && i >= lastParamIndex && current.getParameters()[i].getType().equals(newCandidate.getParameters()[lastParamIndex].getType().componentType));
+    private static boolean hasExactMatchingCompatibleType(final MethodNode match, final MethodNode maybe, final int i) {
+        int lastParamIndex = maybe.getParameters().length - 1;
+        return (i <= lastParamIndex && match.getParameters()[i].getType().equals(maybe.getParameters()[i].getType()))
+                || (i >= lastParamIndex && isPotentialVarArg(maybe, lastParamIndex) && match.getParameters()[i].getType().equals(maybe.getParameters()[lastParamIndex].getType().getComponentType()));
     }
 
-    private boolean hasCompatibleType(TupleExpression args, MethodNode method, int i) {
+    private static boolean hasCompatibleType(final TupleExpression args, final MethodNode method, final int i) {
         int lastParamIndex = method.getParameters().length - 1;
         return (i <= lastParamIndex && args.getExpression(i).getType().isDerivedFrom(method.getParameters()[i].getType()))
-                || (isPotentialVarArg(method, lastParamIndex) && i >= lastParamIndex  && args.getExpression(i).getType().isDerivedFrom(method.getParameters()[lastParamIndex].getType().componentType));
+                || (i >= lastParamIndex && isPotentialVarArg(method, lastParamIndex) && args.getExpression(i).getType().isDerivedFrom(method.getParameters()[lastParamIndex].getType().getComponentType()));
     }
 
-    private boolean hasCompatibleNumberOfArgs(MethodNode method, int count) {
+    private static boolean hasCompatibleNumberOfArgs(final MethodNode method, final int nArgs) {
         int lastParamIndex = method.getParameters().length - 1;
-        return method.getParameters().length == count || (isPotentialVarArg(method, lastParamIndex) && count >= lastParamIndex);
+        return nArgs == method.getParameters().length || (nArgs >= lastParamIndex && isPotentialVarArg(method, lastParamIndex));
     }
 
-    private boolean isPotentialVarArg(MethodNode newCandidate, int lastParamIndex) {
-        return lastParamIndex >= 0 && newCandidate.getParameters()[lastParamIndex].getType().isArray();
+    private static boolean isPotentialVarArg(final MethodNode method, final int lastParamIndex) {
+        return lastParamIndex >= 0 && method.getParameters()[lastParamIndex].getType().isArray();
     }
 
     /**
@@ -1356,7 +1349,7 @@ public class ClassNode extends AnnotatedNode {
      * @param arguments the arguments to match against
      * @return {@code true} if a matching method was found
      */
-    public boolean hasPossibleStaticMethod(String name, Expression arguments) {
+    public boolean hasPossibleStaticMethod(final String name, final Expression arguments) {
         return ClassNodeUtils.hasPossibleStaticMethod(this, name, arguments, false);
     }
 
