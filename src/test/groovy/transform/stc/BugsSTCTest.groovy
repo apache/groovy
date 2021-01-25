@@ -18,6 +18,9 @@
  */
 package groovy.transform.stc
 
+import static groovy.test.GroovyAssert.isAtLeastJdk
+import static org.junit.Assume.assumeFalse
+
 /**
  * Unit tests for static type checking : bug fixes.
  */
@@ -678,15 +681,19 @@ Printer
     }
 
     // GROOVY-7160
-    void _FIXME_testAmbiguousMethodResolutionObjectVsEnums() {
-        assertScript '''
+    void testAmbiguousMethodResolutionObjectVsEnums() {
+        // Currently preferring JDK9+ Set.of(E, E, E, E, E, E) ahead of EnumSet.of(E, E[])
+        // TODO clarify behavior for this edge case
+        if (!isAtLeastJdk('9.0')) {
+            assertScript '''
             import static java.nio.file.AccessMode.*
             def test() {
                 // more than 5 to match of(E first, E[] rest) variant
                 EnumSet.of(READ, WRITE, EXECUTE, READ, WRITE, EXECUTE)
             }
             assert test() == [READ, WRITE, EXECUTE].toSet()
-        '''
+            '''
+        }
     }
 
     // GROOVY-7710
