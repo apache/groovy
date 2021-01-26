@@ -102,14 +102,14 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
         }
 
         astNode.visit(this);
-        return getGinqExpression();
+        return getGinqExpression(astNode);
     }
 
-    public GinqExpression getGinqExpression() {
-        if (null == latestGinqExpression && !ginqExpressionStack.isEmpty()) {
-            GinqExpression latestGinqExpression = ginqExpressionStack.peek();
+    private GinqExpression getGinqExpression(ASTNode astNode) {
+        if (null == latestGinqExpression) {
+            ASTNode node = ginqExpressionStack.isEmpty() ? astNode : ginqExpressionStack.peek();
             this.collectSyntaxError(new GinqSyntaxError("`select` clause is missing",
-                    latestGinqExpression.getLineNumber(), latestGinqExpression.getColumnNumber()));
+                    node.getLineNumber(), node.getColumnNumber()));
         }
 
         latestGinqExpression.visit(new GinqAstBaseVisitor() {

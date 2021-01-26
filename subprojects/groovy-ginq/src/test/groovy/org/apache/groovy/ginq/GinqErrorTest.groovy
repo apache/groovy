@@ -576,4 +576,26 @@ class GinqErrorTest {
 
         assert err.toString().contains('Invalid option: zzz. (supported options: [immediate, abort]) @ line 2, column 26.')
     }
+
+    @Test
+    void "testGinq - unknown statement - 1"() {
+        def err = shouldFail '''\
+            GQ {
+                hello
+            }
+        '''
+
+        assert err.toString().contains('`select` clause is missing @ line 2, column 17.')
+    }
+
+    @Test
+    void "testGinq - unknown statement - 2"() {
+        def err = shouldFail '''\
+            GQ {
+                hello world
+            }
+        '''
+
+        assert err.toString().contains('`select` clause is missing @ line 2, column 17.')
+    }
 }
