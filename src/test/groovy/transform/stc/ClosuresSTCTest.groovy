@@ -70,25 +70,27 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Closure argument types: [int, int] do not match with parameter types: [java.lang.String, int]'
     }
 
-    void testClosureReturnTypeInferrence() {
+    void testClosureReturnTypeInference1() {
         assertScript '''
             def closure = { int x, int y -> return x+y }
             int total = closure(2,3)
         '''
+    }
 
+    void testClosureReturnTypeInference2() {
         shouldFailWithMessages '''
             def closure = { int x, int y -> return x+y }
             int total = closure('2',3)
         ''', 'Closure argument types: [int, int] do not match with parameter types: [java.lang.String, int]'
     }
 
-    void testClosureReturnTypeInferrenceWithoutDef() {
+    void testClosureReturnTypeInference3() {
         assertScript '''
             int total = { int x, int y -> return x+y }(2,3)
         '''
     }
 
-    void testClosureReturnTypeInference() {
+    void testClosureReturnTypeInference4() {
         shouldFailWithMessages '''
             def cl = { int x ->
                 if (x==0) {
@@ -101,9 +103,17 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Possible loss of precision from long to byte'
     }
 
-    void testClosureWithoutParam() {
+    // GROOVY-9907
+    void testClosureReturnTypeInference5() {
         assertScript '''
-            { -> println 'Hello' }()
+            Integer foo(x) {
+                if (x instanceof Integer) {
+                    def bar = { -> return x }
+                    return bar.call()
+                }
+                return 0
+            }
+            assert foo(1) == 1
         '''
     }
 

@@ -334,9 +334,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         @Override
         public void returnStatementAdded(final ReturnStatement returnStatement) {
             if (isNullConstant(returnStatement.getExpression())) return;
-            checkReturnType(returnStatement);
+            ClassNode returnType = checkReturnType(returnStatement);
             if (typeCheckingContext.getEnclosingClosure() != null) {
-                addClosureReturnType(getType(returnStatement.getExpression()));
+                addClosureReturnType(returnType);
             } else if (typeCheckingContext.getEnclosingMethod() == null) {
                 throw new GroovyBugError("Unexpected return statement at " + returnStatement.getLineNumber() + ":" + returnStatement.getColumnNumber() + " " + returnStatement.getText());
             }
@@ -628,7 +628,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
             }
-        } else if (enclosingClosure == null) {
+        } else {
             VariableExpression localVariable;
             if (accessedVariable instanceof Parameter) {
                 Parameter parameter = (Parameter) accessedVariable;
@@ -2116,26 +2116,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected ClassNode checkReturnType(final ReturnStatement statement) {
         Expression expression = statement.getExpression();
-        ClassNode type = getType(expression);
-
+        ClassNode type;
+        if (expression instanceof VariableExpression && hasInferredReturnType(expression)) {
+            type = expression.getNodeMetaData(INFERRED_RETURN_TYPE);
+        } else {
+            type = getType(expression);
+        }
         if (typeCheckingContext.getEnclosingClosure() != null) {
             return type;
         }
-        // handle instanceof cases
-        if ((expression instanceof VariableExpression) && hasInferredReturnType(expression)) {
-            type = expression.getNodeMetaData(INFERRED_RETURN_TYPE);
-        }
         MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
-        if (enclosingMethod != null && typeCheckingContext.getEnclosingClosure() == null) {
-            if (!enclosingMethod.isVoidMethod()
-                    && !type.equals(void_WRAPPER_TYPE)
+        if (enclosingMethod != null && !enclosingMethod.isVoidMethod()) {
+            if (!isNullConstant(expression)
                     && !type.equals(VOID_TYPE)
-                    && !checkCompatibleAssignmentTypes(enclosingMethod.getReturnType(), type, null, false)
-                    && !(isNullConstant(expression))) {
+                    && !type.equals(void_WRAPPER_TYPE)
+                    && !checkCompatibleAssignmentTypes(enclosingMethod.getReturnType(), type, null, false)) {
                 if (!extension.handleIncompatibleReturnType(statement, type)) {
                     addStaticTypeError("Cannot return value of type " + prettyPrintType(type) + " on method returning type " + prettyPrintType(enclosingMethod.getReturnType()), expression);
                 }
-            } else if (!enclosingMethod.isVoidMethod()) {
+            } else {
                 ClassNode previousType = getInferredReturnType(enclosingMethod);
                 ClassNode inferred = previousType == null ? type : lowestUpperBound(type, previousType);
                 if (implementsInterfaceOrIsSubclassOf(inferred, enclosingMethod.getReturnType())) {
@@ -2147,7 +2146,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     } else {
                         checkTypeGenerics(enclosingMethod.getReturnType(), inferred, expression);
                     }
-                    return type;
                 } else {
                     return enclosingMethod.getReturnType();
                 }
