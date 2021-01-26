@@ -684,15 +684,16 @@ Printer
     void testAmbiguousMethodResolutionObjectVsEnums() {
         // Currently preferring JDK9+ Set.of(E, E, E, E, E, E) ahead of EnumSet.of(E, E[])
         // TODO clarify behavior for this edge case
-        assumeFalse(isAtLeastJdk('9.0'))
-        assertScript '''
+        if (!isAtLeastJdk('9.0')) {
+            assertScript '''
             import static java.nio.file.AccessMode.*
             def test() {
                 // more than 5 to match of(E first, E[] rest) variant
                 EnumSet.of(READ, WRITE, EXECUTE, READ, WRITE, EXECUTE)
             }
             assert test() == [READ, WRITE, EXECUTE].toSet()
-        '''
+            '''
+        }
     }
 
     // GROOVY-7710
