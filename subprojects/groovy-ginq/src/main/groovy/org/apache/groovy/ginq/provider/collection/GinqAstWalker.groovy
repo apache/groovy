@@ -36,6 +36,7 @@ import org.apache.groovy.ginq.dsl.expression.LimitExpression
 import org.apache.groovy.ginq.dsl.expression.OnExpression
 import org.apache.groovy.ginq.dsl.expression.OrderExpression
 import org.apache.groovy.ginq.dsl.expression.SelectExpression
+import org.apache.groovy.ginq.dsl.expression.ShutdownExpression
 import org.apache.groovy.ginq.dsl.expression.WhereExpression
 import org.apache.groovy.ginq.provider.collection.runtime.NamedRecord
 import org.apache.groovy.ginq.provider.collection.runtime.Queryable
@@ -830,6 +831,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         currentGinqExpression.putNodeMetaData(__VISITING_SELECT, false)
 
         return selectMethodCallExpression
+    }
+
+    @Override
+    Expression visitShutdownExpression(ShutdownExpression shutdownExpression) {
+        return callX(new ClassExpression(makeCached(QueryableHelper)), 'shutdown', new ConstantExpression(shutdownExpression.mode))
     }
 
     private MethodCallExpression getRowNumberMethodCall() {

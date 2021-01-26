@@ -28,6 +28,7 @@ import org.apache.groovy.ginq.dsl.expression.LimitExpression;
 import org.apache.groovy.ginq.dsl.expression.OnExpression;
 import org.apache.groovy.ginq.dsl.expression.OrderExpression;
 import org.apache.groovy.ginq.dsl.expression.SelectExpression;
+import org.apache.groovy.ginq.dsl.expression.ShutdownExpression;
 import org.apache.groovy.ginq.dsl.expression.WhereExpression;
 
 import java.util.Collections;
@@ -50,6 +51,7 @@ public interface GinqAstVisitor<R> {
     R visitOrderExpression(OrderExpression orderExpression);
     R visitLimitExpression(LimitExpression limitExpression);
     R visitSelectExpression(SelectExpression selectExpression);
+    R visitShutdownExpression(ShutdownExpression shutdownExpression);
     R visit(AbstractGinqExpression expression);
     default void setConfiguration(Map<String, String> configuration) {}
     default Map<String, String> getConfiguration() { return Collections.emptyMap(); }

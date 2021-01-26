@@ -31,7 +31,9 @@ import org.apache.groovy.ginq.dsl.expression.LimitExpression;
 import org.apache.groovy.ginq.dsl.expression.OnExpression;
 import org.apache.groovy.ginq.dsl.expression.OrderExpression;
 import org.apache.groovy.ginq.dsl.expression.SelectExpression;
+import org.apache.groovy.ginq.dsl.expression.ShutdownExpression;
 import org.apache.groovy.ginq.dsl.expression.WhereExpression;
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
@@ -40,6 +42,9 @@ import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
 
@@ -67,6 +72,38 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
     }
 
     private final List<MethodCallExpression> ignoredMethodCallExpressionList = new ArrayList<>();
+
+    private static final List<String> SHUTDOWN_OPTION_LIST = Arrays.asList("immediate", "abort");
+    public AbstractGinqExpression buildAST(ASTNode astNode) {
+        if (astNode instanceof BlockStatement) {
+            List<Statement> statementList = ((BlockStatement) astNode).getStatements();
+            if (1 == statementList.size()) {
+                Statement statement = statementList.get(0);
+                if (statement instanceof ExpressionStatement) {
+                    Expression expression = ((ExpressionStatement) statement).getExpression();
+                    if (expression instanceof MethodCallExpression && KW_SHUTDOWN.equals(((MethodCallExpression) expression).getMethodAsString())) {
+                        List<Expression> argExpressionList = ((ArgumentListExpression) ((MethodCallExpression) expression).getArguments()).getExpressions();
+                        if (1 == argExpressionList.size()) {
+                            Expression argExpression = argExpressionList.get(0);
+                            if (argExpression instanceof VariableExpression) {
+                                int mode = SHUTDOWN_OPTION_LIST.indexOf(argExpression.getText());
+                                if (-1 == mode) {
+                                    this.collectSyntaxError(new GinqSyntaxError("Invalid option: " + argExpression.getText() + ". (supported options: " + SHUTDOWN_OPTION_LIST + ")",
+                                            argExpression.getLineNumber(), argExpression.getColumnNumber()));
+                                }
+                                return new ShutdownExpression(expression, mode);
+                            }
+                        }
+                    } else if (expression instanceof VariableExpression && KW_SHUTDOWN.equals(expression.getText())) {
+                        return new ShutdownExpression(expression, SHUTDOWN_OPTION_LIST.indexOf("immediate"));
+                    }
+                }
+            }
+        }
+
+        astNode.visit(this);
+        return getGinqExpression();
+    }
 
     public GinqExpression getGinqExpression() {
         if (null == latestGinqExpression && !ginqExpressionStack.isEmpty()) {
@@ -398,9 +435,10 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
     private static final String KW_ORDERBY = "orderby";
     private static final String KW_LIMIT = "limit";
     private static final String KW_SELECT = "select";
+    private static final String KW_SHUTDOWN = "shutdown";
     private static final Set<String> KEYWORD_SET = new HashSet<>();
     static {
-        KEYWORD_SET.addAll(Arrays.asList(KW_FROM, KW_WHERE, KW_ON, KW_HAVING, KW_EXISTS, KW_GROUPBY, KW_ORDERBY, KW_LIMIT, KW_SELECT));
+        KEYWORD_SET.addAll(Arrays.asList(KW_FROM, KW_WHERE, KW_ON, KW_HAVING, KW_EXISTS, KW_GROUPBY, KW_ORDERBY, KW_LIMIT, KW_SELECT, KW_SHUTDOWN));
         KEYWORD_SET.addAll(JoinExpression.JOIN_NAME_LIST);
     }
 }
