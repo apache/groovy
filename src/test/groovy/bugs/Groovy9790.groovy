@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package bugs
+package groovy.bugs
 
 import groovy.transform.CompileStatic
 import org.junit.Test
@@ -26,47 +26,48 @@ import static groovy.test.GroovyAssert.shouldFail
 
 @CompileStatic
 final class Groovy9790 {
+
     @Test
-    void "test GROOVY-9790 - 1"() {
+    void testLambdaWithPrimitive() {
         assertScript '''
-            import java.util.stream.IntStream
-            
             @groovy.transform.CompileStatic
-            def x() {
-                IntStream.range(0, 2).forEach((Integer i) -> { assert 0 <= i && i < 2})
+            void test() {
+                java.util.stream.IntStream.range(0, 2).forEach(
+                    (int i) -> { assert i >= 0 && i < 2 }
+                )
             }
-            
-            x()
+
+            test()
         '''
     }
 
     @Test
-    void "test GROOVY-9790 - 2"() {
+    void testLambdaWithWrapperType() {
         assertScript '''
-            import java.util.stream.IntStream
-            
             @groovy.transform.CompileStatic
-            def x() {
-                IntStream.range(0, 2).forEach((int i) -> { assert 0 <= i && i < 2})
+            void test() {
+                java.util.stream.IntStream.range(0, 2).forEach(
+                    (Integer i) -> { assert i >= 0 && i < 2 }
+                )
             }
-            
-            x()
+
+            test()
         '''
     }
 
     @Test
-    void "test GROOVY-9790 - 3"() {
+    void testLambdaWithIncompatibleType() {
         def err = shouldFail '''
-            import java.util.stream.IntStream
-            
             @groovy.transform.CompileStatic
-            def x() {
-                IntStream.range(0, 2).forEach((String i) -> { return i })
+            void test() {
+                java.util.stream.IntStream.range(0, 2).forEach(
+                    (String s) -> { assert s == null }
+                )
             }
-            
-            x()
+
+            test()
         '''
 
-        assert err.toString().contains('The inferred type[int] is not compatible with the parameter type[java.lang.String]\n. At [6:48]')
+        assert err.toString().contains('The inferred type[int] is not compatible with the parameter type[java.lang.String]')
     }
 }
