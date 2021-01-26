@@ -18,8 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.transform.NotYetImplemented
-
 /**
  * Unit tests for static type checking : closures.
  */
@@ -133,7 +131,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         'Possible loss of precision from long to byte'
     }
 
-    @NotYetImplemented // GROOVY-9907
+    // GROOVY-9907
     void testClosureReturnTypeInference4() {
         assertScript '''
             Integer foo(x) {

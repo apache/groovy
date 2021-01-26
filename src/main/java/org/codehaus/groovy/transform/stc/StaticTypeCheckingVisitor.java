@@ -621,7 +621,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 checkOrMarkPrivateAccess(vexp, fieldNode, isLHSOfEnclosingAssignment(vexp));
 
                 ClassNode inferredType = getInferredTypeFromTempInfo(vexp, null);
-                if (inferredType != null && !inferredType.equals(OBJECT_TYPE)) {
+                if (inferredType != null && !inferredType.getName().equals(ClassHelper.OBJECT) && !inferredType.equals(accessedVariable.getType())) {
                     vexp.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, inferredType);
                 } else {
                     storeType(vexp, getType(vexp));
@@ -630,19 +630,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         if (!(accessedVariable instanceof DynamicVariable)) {
-            if (enclosingClosure == null) {
-                VariableExpression variable = null;
-                if (accessedVariable instanceof Parameter) {
-                    Parameter parameter = (Parameter) accessedVariable;
-                    variable = new ParameterVariableExpression(parameter);
-                } else if (accessedVariable instanceof VariableExpression) {
-                    variable = (VariableExpression) accessedVariable;
-                }
-                if (variable != null) {
-                    ClassNode inferredType = getInferredTypeFromTempInfo(variable, (ClassNode) variable.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE));
-                    if (inferredType != null && !inferredType.getName().equals(ClassHelper.OBJECT) && !inferredType.equals(accessedVariable.getType())) {
-                        vexp.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, inferredType);
-                    }
+            VariableExpression variable = null;
+            if (accessedVariable instanceof Parameter) {
+                Parameter parameter = (Parameter) accessedVariable;
+                variable = new ParameterVariableExpression(parameter);
+            } else if (accessedVariable instanceof VariableExpression) {
+                variable = (VariableExpression) accessedVariable;
+            }
+            if (variable != null) {
+                ClassNode inferredType = getInferredTypeFromTempInfo(variable, (ClassNode) variable.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE));
+                if (inferredType != null && !inferredType.getName().equals(ClassHelper.OBJECT) && !inferredType.equals(accessedVariable.getType())) {
+                    vexp.putNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE, inferredType);
                 }
             }
             return;
@@ -2265,7 +2263,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     && !type.equals(void_WRAPPER_TYPE)
                     && !checkCompatibleAssignmentTypes(returnType, type, null, false)) {
                 if (!extension.handleIncompatibleReturnType(statement, type)) {
-                    addStaticTypeError("Cannot return value of type " + type.toString(false) + " on method returning type " + returnType.toString(false), expression);
+                    addStaticTypeError("Cannot return value of type " + prettyPrintType(type) + " on method returning type " + prettyPrintType(returnType), expression);
                 }
             } else {
                 ClassNode previousType = getInferredReturnType(enclosingMethod);
@@ -2273,14 +2271,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (implementsInterfaceOrIsSubclassOf(inferred, enclosingMethod.getReturnType())) {
                     if (missesGenericsTypes(inferred)) {
                         ClassNode newlyInferred = infer(enclosingMethod.getReturnType(), type);
-
-                        if (null != newlyInferred) {
+                        if (newlyInferred != null) {
                             type = newlyInferred;
                         }
                     } else {
                         checkTypeGenerics(enclosingMethod.getReturnType(), inferred, expression);
                     }
-                    return type;
                 } else {
                     return enclosingMethod.getReturnType();
                 }
@@ -2289,7 +2285,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return type;
     }
 
-    protected void addClosureReturnType(ClassNode returnType) {
+    protected void addClosureReturnType(final ClassNode returnType) {
         if (returnType != null && !returnType.equals(VOID_TYPE)) // GROOVY-8202
             typeCheckingContext.getEnclosingClosure().addReturnType(returnType);
     }
@@ -4207,24 +4203,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 typeCheckingContext.controlStructureVariables.remove(catchStatement.getVariable());
             }
         }
-
     }
 
-    protected void storeType(Expression exp, ClassNode cn) {
-        if (exp instanceof VariableExpression && ((VariableExpression) exp).isClosureSharedVariable() && isPrimitiveType(cn)) {
-            cn = getWrapper(cn);
-        } else if (exp instanceof MethodCallExpression && ((MethodCallExpression) exp).isSafe() && isPrimitiveType(cn)) {
-            cn = getWrapper(cn);
-        } else if (exp instanceof PropertyExpression && ((PropertyExpression) exp).isSafe() && isPrimitiveType(cn)) {
-            cn = getWrapper(cn);
-        }
+    protected void storeType(final Expression exp, ClassNode cn) {
         if (cn == UNKNOWN_PARAMETER_TYPE) {
             // this can happen for example when "null" is used in an assignment or a method parameter.
             // In that case, instead of storing the virtual type, we must "reset" type information
             // by determining the declaration type of the expression
-            storeType(exp, getOriginalDeclarationType(exp));
-            return;
+            cn = getOriginalDeclarationType(exp);
         }
+        if (cn != null && isPrimitiveType(cn)) {
+            if (exp instanceof VariableExpression && ((VariableExpression) exp).isClosureSharedVariable()) {
+                cn = getWrapper(cn);
+            } else if (exp instanceof MethodCallExpression && ((MethodCallExpression) exp).isSafe()) {
+                cn = getWrapper(cn);
+            } else if (exp instanceof PropertyExpression && ((PropertyExpression) exp).isSafe()) {
+                cn = getWrapper(cn);
+            }
+        }
+
         ClassNode oldValue = (ClassNode) exp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, cn);
         if (oldValue != null) {
             // this may happen when a variable declaration type is wider than the subsequent assignment values
@@ -4245,7 +4242,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             VariableExpression var = (VariableExpression) exp;
             final Variable accessedVariable = var.getAccessedVariable();
             if (accessedVariable != exp && accessedVariable instanceof VariableExpression) {
-                storeType((Expression) accessedVariable, cn);
+                storeType((VariableExpression) accessedVariable, cn);
             }
             if (accessedVariable instanceof Parameter
                     || (accessedVariable instanceof PropertyNode
@@ -4260,7 +4257,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 assignedTypes.add(cn);
             }
-            if (!typeCheckingContext.temporaryIfBranchTypeInformation.empty()) {
+            if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
                 List<ClassNode> temporaryTypesForExpression = getTemporaryTypesForExpression(exp);
                 if (temporaryTypesForExpression != null && !temporaryTypesForExpression.isEmpty()) {
                     // a type inference has been made on a variable whose type was defined in an instanceof block
