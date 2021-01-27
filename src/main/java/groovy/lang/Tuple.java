@@ -114,9 +114,12 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
                 ? 1
                 : t2 == null
                 ? -1
-                : ((Comparable<T>) t1).compareTo(t2);
+                : t1 instanceof Comparable
+                ? ((Comparable<T>) t1).compareTo(t2)
+                : DefaultTypeTransformation.compareEqual(t1, t2)
+                ? 0
+                : 1;
     }
-
 
     /**
      * Construct a tuple of degree 0.
