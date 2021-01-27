@@ -3862,8 +3862,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collect(Map, Collection, Closure)
      * @since 1.7.9
      */
-    public static <K, V, S, T> Map<K, V> collectEntries(Map<S, T> self, Map<K, V> collector, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> transform) {
-        for (Map.Entry<S, T> entry : self.entrySet()) {
+    public static <K, V, X, Y> Map<K, V> collectEntries(Map<X, Y> self, Map<K, V> collector, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> transform) {
+        for (Map.Entry<X, Y> entry : self.entrySet()) {
             addEntry(collector, callClosureForMapEntry(transform, entry));
         }
         return collector;
@@ -3889,8 +3889,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collect(Map, Collection, Closure)
      * @since 1.7.9
      */
-    public static <K,V> Map<?, ?> collectEntries(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> transform) {
-        return collectEntries(self, createSimilarMap(self), transform);
+    public static <K, V, X, Y> Map<K, V> collectEntries(Map<X, Y> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> transform) {
+        return collectEntries(self, (Map) createSimilarMap(self), transform);
     }
 
     /**
@@ -3928,7 +3928,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collectEntries(Iterator, Closure)
      * @since 1.8.7
      */
-    public static <K,V,E> Map<K, V> collectEntries(Iterable<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<?> transform) {
+    public static <K, V, E> Map<K, V> collectEntries(Iterable<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<?> transform) {
         return collectEntries(self.iterator(), transform);
     }
 

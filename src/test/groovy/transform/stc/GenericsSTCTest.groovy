@@ -280,6 +280,18 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Number'
     }
 
+    // GROOVY-9914
+    void testAssignmentShouldWorkForParameterizedMap() {
+        assertScript '''
+            Map test(Map<String,String> one) {
+              Map<String,Integer> two = one.collectEntries { k,v ->
+                [(k): v.hashCode()]
+              }
+            }
+            assert test(foo:'bar').containsKey('foo')
+        '''
+    }
+
     // GROOVY-9555
     void testAssignmentShouldWorkForProperUpperBound() {
         assertScript '''
