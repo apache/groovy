@@ -574,15 +574,15 @@ public class JavaStubGenerator {
 
     private void printSpecialConstructorArgs(PrintWriter out, ConstructorNode node, ConstructorCallExpression constrCall) {
         // Select a constructor from our class, or super-class which is legal to call,
-        // then write out an invoke w/nulls using casts to avoid ambiguous crapo
+        // then write out an invoke w/nulls using casts to avoid ambiguous calls
 
         Parameter[] params = selectAccessibleConstructorFromSuper(node);
         if (params != null) {
             out.print("super (");
 
-            for (int i = 0; i < params.length; i++) {
+            for (int i = 0, n = params.length; i < n; i += 1) {
                 printDefaultValue(out, params[i].getType());
-                if (i + 1 < params.length) {
+                if (i + 1 < n) {
                     out.print(", ");
                 }
             }
@@ -762,7 +762,7 @@ public class JavaStubGenerator {
     }
 
     private void printDefaultValue(final PrintWriter out, final ClassNode type) {
-        if (!type.equals(ClassHelper.OBJECT_TYPE) && !type.equals(ClassHelper.boolean_TYPE)) {
+        if (!type.equals(ClassHelper.boolean_TYPE)) {
             out.print("(");
             printType(out, type);
             out.print(")");
@@ -869,13 +869,11 @@ public class JavaStubGenerator {
 
     private void printAnnotation(PrintWriter out, AnnotationNode annotation) {
         out.print("@" + annotation.getClassNode().getName().replace('$', '.') + "(");
-        boolean first = true;
+        int i = 0;
         Map<String, Expression> members = annotation.getMembers();
         for (Map.Entry<String, Expression> entry : members.entrySet()) {
-            String key = entry.getKey();
-            if (first) first = false;
-            else out.print(", ");
-            out.print(key + "=" + getAnnotationValue(entry.getValue()));
+            if (i++ != 0) out.print(", ");
+            out.print(entry.getKey() + "=" + getAnnotationValue(entry.getValue()));
         }
         out.print(") ");
     }
