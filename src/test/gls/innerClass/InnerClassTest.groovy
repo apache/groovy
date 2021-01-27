@@ -254,10 +254,29 @@ final class InnerClassTest {
     void testStaticInnerClass2() {
         assertScript '''
             class A {
-                static class B{}
+                static class B {}
             }
-            assert A.declaredClasses.length==1
-            assert A.declaredClasses[0]==A.B
+            assert A.declaredClasses.length == 1
+            assert A.declaredClasses[0] == A.B
+        '''
+    }
+
+    @Test
+    void testStaticInnerClass3() {
+        assertScript '''
+            class A {
+                static class B {
+                    String p
+                }
+                B m() {
+                    return [p:'x'] // calls ScriptBytecodeAdapter.castToType([p:'x'], A$B.class)
+                }
+                static final String q = 'y'
+            }
+
+            o = new A().m()
+            assert o.p == 'x'
+            assert o.q == 'y'
         '''
     }
 
@@ -281,6 +300,25 @@ final class InnerClassTest {
                 class B {}
             }
             def x = new A.B() // requires reference to A
+        '''
+    }
+
+    @Test @NotYetImplemented // GROOVY-9781
+    void testNonStaticInnerClass3() {
+        assertScript '''
+            class A {
+                class B {
+                    String p
+                }
+                B m() {
+                    return [p:'x'] // calls ScriptBytecodeAdapter.castToType([p:'x'], A$B.class)
+                }
+                final String q = 'y'
+            }
+
+            o = new A().m()
+            assert o.p == 'x'
+            assert o.q == 'y'
         '''
     }
 
