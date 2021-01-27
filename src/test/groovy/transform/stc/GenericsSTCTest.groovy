@@ -665,68 +665,72 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA <Long>#bar(java.lang.Class <Long>) with arguments [java.lang.Class <? extends java.lang.Object>]'
     }
 
-    // GROOVY-8961
+    // GROOVY-8961, GROOVY-9915
     void testShouldUseMethodGenericType3() {
-        assertScript '''
-            void setM(List<String> strings) {
-            }
-            void test() {
-              m = Collections.emptyList() // Cannot assign value of type List<T> to variable of List<String>
-            }
-            test()
-        '''
-        assertScript '''
-            void setM(Collection<String> strings) {
-            }
-            void test() {
-              m = Collections.emptyList()
-            }
-            test()
-        '''
-        assertScript '''
-            void setM(Iterable<String> strings) {
-            }
-            void test() {
-              m = Collections.emptyList()
-            }
-            test()
-        '''
+        ['', 'static'].each { mods ->
+            assertScript """
+                $mods void setM(List<String> strings) {
+                }
+                void test() {
+                  m = Collections.emptyList() // Cannot assign value of type List<T> to variable of List<String>
+                }
+                test()
+            """
+            assertScript """
+                $mods void setM(Collection<String> strings) {
+                }
+                void test() {
+                  m = Collections.emptyList()
+                }
+                test()
+            """
+            assertScript """
+                $mods void setM(Iterable<String> strings) {
+                }
+                void test() {
+                  m = Collections.emptyList()
+                }
+                test()
+            """
 
-        shouldFailWithMessages '''
-            void setM(List<String> strings) {
-            }
-            void test() {
-              m = Collections.<Integer>emptyList()
-            }
-        ''', '[Static type checking] - Cannot assign value of type java.util.List <Integer> to variable of type java.util.List <String>'
+            shouldFailWithMessages """
+                $mods void setM(List<String> strings) {
+                }
+                void test() {
+                  m = Collections.<Integer>emptyList()
+                }
+            """, '[Static type checking] - Cannot assign value of type java.util.List <Integer> to variable of type java.util.List <String>'
+        }
     }
 
-    // GROOVY-9734
+    // GROOVY-9734, GROOVY-9915
     void testShouldUseMethodGenericType4() {
-        assertScript '''
-            void m(List<String> strings) {
-            }
-            void test() {
-              m(Collections.emptyList()) // Cannot call m(List<String>) with arguments [List<T>]
-            }
-            test()
-        '''
-        assertScript '''
-            void m(Collection<String> strings) {
-            }
-            void test() {
-              m(Collections.emptyList())
-            }
-            test()
-        '''
-        assertScript '''
-            void m(Iterable<String> strings) {
-            }
-            void test() {
-              m(Collections.emptyList())
-            }
-            test()
-        '''
+        ['', 'static'].each { mods ->
+            assertScript """
+                $mods void m(List<String> strings) {
+                }
+                void test() {
+                  m(Collections.emptyList()) // Cannot call m(List<String>) with arguments [List<T>]
+                }
+                test()
+            """
+            assertScript """
+                $mods void m(Collection<String> strings) {
+                }
+                void test() {
+                  m(Collections.emptyList())
+                }
+                test()
+            """
+            assertScript """
+                $mods void m(Iterable<String> strings) {
+                }
+                void test() {
+                  m(Collections.emptyList())
+                }
+                test()
+            """
+        }
     }
 
     // GROOVY-9751
