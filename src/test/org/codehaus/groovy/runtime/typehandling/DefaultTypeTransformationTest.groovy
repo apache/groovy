@@ -28,6 +28,15 @@ final class DefaultTypeTransformationTest {
     void testCastToType() {
         def input = null, result
 
+        result = DefaultTypeTransformation.castToType(input, int)
+        assert result === null
+
+        result = DefaultTypeTransformation.castToType(input, long)
+        assert result === null
+
+        result = DefaultTypeTransformation.castToType(input, boolean)
+        assert result === false // GROOVY-9916
+
         result = DefaultTypeTransformation.castToType(input, Object)
         assert result === null
 
