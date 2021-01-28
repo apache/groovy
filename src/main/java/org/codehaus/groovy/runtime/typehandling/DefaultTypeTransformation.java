@@ -215,7 +215,7 @@ public class DefaultTypeTransformation {
     }
 
     public static Object castToType(Object object, Class type) {
-        if (object == null) return null;
+        if (object == null) return type == boolean.class ? Boolean.FALSE : null;
         if (type == Object.class) return object;
 
         final Class aClass = object.getClass();
