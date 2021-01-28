@@ -18,76 +18,49 @@
  */
 package org.codehaus.groovy.runtime.typehandling
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-import static org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation.compareTo
+import static groovy.test.GroovyAssert.shouldFail
 
-class DefaultTypeTransformationTest extends GroovyTestCase {
+final class DefaultTypeTransformationTest {
 
-    static class MyNumber extends Number {
-        def n
+    @Test
+    void testCastToType() {
+        def input = null, result
 
-        MyNumber(n) {
-            this.n = n
-        }
+        result = DefaultTypeTransformation.castToType(input, Object)
+        assert result === null
 
-        int intValue() { n }
+        input = new Object()
+        result = DefaultTypeTransformation.castToType(input, Object)
+        assert result === input
 
-        long longValue() { n }
+        input = 'string'
+        result = DefaultTypeTransformation.castToType(input, Object)
+        assert result === input
 
-        float floatValue() { n }
-
-        double doubleValue() { n }
-
-        int hashCode() { -n }
-
-        boolean equals(other) {
-            if (other instanceof MyNumber) {
-                return n == other.n
-            }
-            return false
-        }
-
-        String toString() { n.toString() }
+        input = "$input"
+        result = DefaultTypeTransformation.castToType(input, Object)
+        assert result === input
     }
 
-    static class MyNumberCompareTo extends MyNumber {
-
-        MyNumberCompareTo(Object n) {
-            super(n)
-        }
-
-        int compareTo(MyNumber other) {
-            return n <=> other.n
-        }
-    }
-
-    static class MyNumberComparable extends MyNumberCompareTo implements Comparable<MyNumber> {
-        MyNumberComparable(Object n) {
-            super(n)
-        }
-
-        int compareTo(Object other) {
-            return n <=> (MyNumber) other;
-        }
-    }
-
+    @Test
     void testCompareTo() {
-        def object1 = new Object()
-        def object2 = new Object()
         // objects
-        assert compareTo(null, null) == 0
-        assert compareTo(object1, null) == 1
-        assert compareTo(null, object1) == -1
-        assert compareTo(1, 1) == 0
+        Object object1 = new Object()
+        Object object2 = new Object()
+        assert DefaultTypeTransformation.compareTo(null, null) == 0
+        assert DefaultTypeTransformation.compareTo(object1, null) == 1
+        assert DefaultTypeTransformation.compareTo(null, object1) == -1
+        assert DefaultTypeTransformation.compareTo(1, 1) == 0
 
         shouldFail(IllegalArgumentException) {
-            compareTo(object1, object2)
+            DefaultTypeTransformation.compareTo(object1, object2)
         }
 
         // chars, int values 49 and 50
-        Character char1 = '1' as Character
-        Character char2 = '2' as Character
+        Character char1 = '1'.charAt(0)
+        Character char2 = '2'.charAt(0)
         checkCompareToSymmetricSmallerThan(char1, char2)
 
         MyNumber number1 = new MyNumber(49)
@@ -114,49 +87,40 @@ class DefaultTypeTransformationTest extends GroovyTestCase {
                 char2, '2',
                 number2, numCompTo2, numComp2]
 
-        lowers.each { def lower ->
-            lowers.each { def lower2 ->
-                assert compareTo(lower, lower2) == 0
+        for (lower in lowers) {
+            for (lower2 in lowers) {
+                assert DefaultTypeTransformation.compareTo(lower, lower2) == 0
             }
-            highers.each { def higher ->
+            for (higher in highers) {
                 checkCompareToSymmetricSmallerThan(lower, higher)
             }
         }
 
         shouldFail(IllegalArgumentException) {
-            compareTo(1, "22")
+            DefaultTypeTransformation.compareTo(1, "22")
         }
         shouldFail(IllegalArgumentException) {
-            compareTo("22", 1)
+            DefaultTypeTransformation.compareTo("22", 1)
         }
 
         // [G]Strings and chars
-        assert compareTo('aa1', '2' as Character) > 0
-        assert compareTo('2' as Character, 'aa1') < 0
-        assert compareTo("aa${1}", '2' as Character) > 0
-        assert compareTo('2' as Character, "aa${1}") < 0
+        assert DefaultTypeTransformation.compareTo('aa1', '2'.charAt(0)) > 0
+        assert DefaultTypeTransformation.compareTo('2'.charAt(0), 'aa1') < 0
+        assert DefaultTypeTransformation.compareTo("aa${1}", '2'.charAt(0)) > 0
+        assert DefaultTypeTransformation.compareTo('2'.charAt(0), "aa${1}") < 0
 
         // Strings and GStrings
         List lowers2 = ['aa1', "aa${1}"]
         List highers2 = ['bb2', "b${2}"]
-        lowers2.each { def lower ->
-            assert compareTo(lower, lower) == 0
-            highers2.each { def higher ->
+        for (lower in lowers2) {
+            assert DefaultTypeTransformation.compareTo(lower, lower) == 0
+            for (higher in highers2) {
                 checkCompareToSymmetricSmallerThan(lower, higher)
             }
         }
     }
 
-    static void checkCompareToSymmetricSmallerThan(a, b) {
-        try {
-            assert compareTo(a, b) < 0
-            assert compareTo(b, a) > 0
-        } catch (AssertionError e) {
-            System.err.print(a.class.toString() + ' compared to ' + b.class.toString())
-            throw e
-        }
-    }
-
+    @Test
     void testNumberEqualsCharacterGString() {
         final String S = 'A'
         final GString G = "$S"
@@ -166,6 +130,7 @@ class DefaultTypeTransformationTest extends GroovyTestCase {
         assert N      ==      G
     }
 
+    @Test
     void testCharacterEqualsCharacterGString() {
         final String S = 'A'
         final Character C = 'A'
@@ -175,6 +140,7 @@ class DefaultTypeTransformationTest extends GroovyTestCase {
         assert C      ==      G
     }
 
+    @Test
     void testCharacterGStringsEqualsCharacter() {
         final String S = 'A'
         final Character C = 'A'
@@ -184,6 +150,7 @@ class DefaultTypeTransformationTest extends GroovyTestCase {
         assert      G == C
     }
 
+    @Test
     void testCharacterGStringEqualsNumber() {
         final String S = 'A'
         final GString G = "$S"
@@ -191,5 +158,61 @@ class DefaultTypeTransformationTest extends GroovyTestCase {
 
         assert S == N && G == S
         assert      G == N
+    }
+
+    //--------------------------------------------------------------------------
+
+    private static void checkCompareToSymmetricSmallerThan(a, b) {
+        try {
+            assert DefaultTypeTransformation.compareTo(a, b) < 0
+            assert DefaultTypeTransformation.compareTo(b, a) > 0
+        } catch (AssertionError e) {
+            System.err.print(a.class.toString() + ' compared to ' + b.class.toString())
+            throw e
+        }
+    }
+
+    static class MyNumber extends Number {
+        def n
+        MyNumber(n) {
+            this.n = n
+        }
+        @Override
+        int intValue() { n }
+        @Override
+        long longValue() { n }
+        @Override
+        float floatValue() { n }
+        @Override
+        double doubleValue() { n }
+        @Override
+        int hashCode() { -n }
+        @Override
+        boolean equals(other) {
+            if (other instanceof MyNumber) {
+                return n == other.n
+            }
+            return false
+        }
+        @Override
+        String toString() { n.toString() }
+    }
+
+    static class MyNumberCompareTo extends MyNumber {
+        MyNumberCompareTo(Object n) {
+            super(n)
+        }
+        int compareTo(MyNumber other) {
+            return n <=> other.n
+        }
+    }
+
+    static class MyNumberComparable extends MyNumberCompareTo implements Comparable<MyNumber> {
+        MyNumberComparable(Object n) {
+            super(n)
+        }
+        int compareTo(Object other) {
+            return n <=> (MyNumber) other;
+        }
     }
 }
