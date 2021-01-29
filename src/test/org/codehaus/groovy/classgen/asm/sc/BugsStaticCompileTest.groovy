@@ -895,17 +895,38 @@ import groovy.transform.TypeCheckingMode
 
     // GROOVY-6113
     void testCallObjectVargsMethodWithPrimitiveIntConstant() {
-        try {
-            assertScript '''
-                int sum(Object... elems) {
-                     (Integer)elems.toList().sum()
-                }
-                int x = sum(Closure.DELEGATE_FIRST)
-                assert x == Closure.DELEGATE_FIRST
-            '''
-        } finally {
-//            println astTrees
-        }
+        assertScript '''
+            int sum(... zeroOrMore) {
+                 (Integer) zeroOrMore.toList().sum()
+            }
+            int x = sum(Closure.DELEGATE_FIRST)
+            assert x == Closure.DELEGATE_FIRST
+        '''
+    }
+
+    // GROOVY-9918
+    void testCallObjectObjectVargsMethodWithObjectArray() {
+        assertScript '''
+            def m(one, ... zeroOrMore) {
+            }
+            Object[] array = ['a', 'b']
+            m(array) // NPE in SC
+        '''
+    }
+
+    void testDefaultArgumentAndVargs() {
+        assertScript '''
+            def m(int x=1, int y, String[] z) {
+                [x as String, y as String] + Arrays.asList(z)
+            }
+            assert m(2,'3') == ['1','2','3']
+        '''
+        assertScript '''
+            def m(int x, int y=2, String[] z) {
+                [x as String, y as String] + Arrays.asList(z)
+            }
+            assert m(1,'3') == ['1','2','3']
+        '''
     }
 
     // GROOVY-6095
