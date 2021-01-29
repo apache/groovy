@@ -422,76 +422,87 @@ public class StaticInvocationWriter extends InvocationWriter {
     }
 
     @Override
-    protected void loadArguments(final List<Expression> argumentList, final Parameter[] para) {
-        if (para.length == 0) return;
-        ClassNode lastParaType = para[para.length - 1].getOriginType();
-        AsmClassGenerator acg = controller.getAcg();
+    protected void loadArguments(final List<Expression> argumentList, final Parameter[] parameters) {
+        final int nArgs = argumentList.size(), nPrms = parameters.length; if (nPrms == 0) return;
+
+        ClassNode classNode = controller.getClassNode();
         TypeChooser typeChooser = controller.getTypeChooser();
-        OperandStack operandStack = controller.getOperandStack();
-        int argumentListSize = argumentList.size();
-        ClassNode lastArgType = argumentListSize > 0 ?
-                typeChooser.resolveType(argumentList.get(argumentListSize -1), controller.getClassNode()) : null;
-        if (lastParaType.isArray()
-                && ((argumentListSize > para.length)
-                || ((argumentListSize == (para.length - 1)) && !lastParaType.equals(lastArgType))
-                || ((argumentListSize == para.length && lastArgType!=null && !lastArgType.isArray())
-                    && (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(lastArgType,lastParaType.getComponentType())))
-                        || ClassHelper.GSTRING_TYPE.equals(lastArgType) && ClassHelper.STRING_TYPE.equals(lastParaType.getComponentType()))
-                ) {
-            int stackLen = operandStack.getStackLength() + argumentListSize;
-            MethodVisitor mv = controller.getMethodVisitor();
-            controller.setMethodVisitor(mv);
-            // varg call
-            // first parameters as usual
-            for (int i = 0; i < para.length - 1; i += 1) {
-                visitArgument(argumentList.get(i), para[i].getType());
+        ClassNode lastArgType = nArgs == 0 ? null : typeChooser.resolveType(argumentList.get(nArgs - 1), classNode);
+        ClassNode lastPrmType = parameters[nPrms - 1].getOriginType();
+
+        if (lastPrmType.isArray() && (nArgs > nPrms // too many args
+                || (nArgs == nPrms - 1 && !lastPrmType.equals(lastArgType)) // too few args
+                || (nArgs == nPrms && !lastArgType.isArray() // last fits within array type
+                    && (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(lastArgType, lastPrmType.getComponentType())
+                        || ClassHelper.GSTRING_TYPE.equals(lastArgType) && ClassHelper.STRING_TYPE.equals(lastPrmType.getComponentType())))
+        )) { // variadic call
+            OperandStack operandStack = controller.getOperandStack();
+            int stackLength = operandStack.getStackLength() + nArgs;
+            // first arguments/parameters as usual
+            for (int i = 0; i < nPrms - 1; i += 1) {
+                visitArgument(argumentList.get(i), parameters[i].getType());
             }
-            // last parameters wrapped in an array
-            List<Expression> lastParams = new ArrayList<>();
-            for (int i = para.length - 1; i < argumentListSize; i += 1) {
-                lastParams.add(argumentList.get(i));
+            // wrap remaining arguments in an array for last parameter
+            List<Expression> lastArgs = new ArrayList<>();
+            for (int i = nPrms - 1; i < nArgs; i += 1) {
+                lastArgs.add(argumentList.get(i));
             }
-            ArrayExpression array = new ArrayExpression(lastParaType.getComponentType(), lastParams);
-            array.visit(acg);
+            ArrayExpression array = new ArrayExpression(lastPrmType.getComponentType(), lastArgs);
+            array.visit(controller.getAcg());
             // adjust stack length
-            while (operandStack.getStackLength() < stackLen) {
+            while (operandStack.getStackLength() < stackLength) {
                 operandStack.push(ClassHelper.OBJECT_TYPE);
             }
-            if (argumentListSize == para.length - 1) {
+            if (nArgs == nPrms - 1) {
                 operandStack.remove(1);
             }
-        } else if (argumentListSize == para.length) {
-            for (int i = 0; i < argumentListSize; i++) {
-                visitArgument(argumentList.get(i), para[i].getType());
+        } else if (nArgs == nPrms) {
+            for (int i = 0; i < nArgs; i += 1) {
+                visitArgument(argumentList.get(i), parameters[i].getType());
             }
-        } else {
-            // method call with default arguments
-            ClassNode classNode = controller.getClassNode();
-            Expression[] arguments = new Expression[para.length];
-            for (int i = 0, j = 0, n = para.length; i < n; i += 1) {
-                Parameter curParam = para[i];
-                ClassNode curParamType = curParam.getType();
-                Expression curArg = j < argumentListSize ? argumentList.get(j) : null;
-                Expression initialExpression = curParam.getNodeMetaData(StaticTypesMarker.INITIAL_EXPRESSION);
-                if (initialExpression == null && curParam.hasInitialExpression())
-                    initialExpression = curParam.getInitialExpression();
-                if (initialExpression == null && curParam.getNodeMetaData(Verifier.INITIAL_EXPRESSION) != null) {
-                    initialExpression = curParam.getNodeMetaData(Verifier.INITIAL_EXPRESSION);
-                }
-                ClassNode curArgType = curArg == null ? null : typeChooser.resolveType(curArg, classNode);
+        } else { // method call with default arguments
+            Expression[] arguments = new Expression[nPrms];
+            for (int i = 0, j = 0; i < nPrms; i += 1) {
+                Parameter p = parameters[i];
+                ClassNode pType = p.getType();
+                Expression a = (j < nArgs ? argumentList.get(j) : null);
+                ClassNode aType = (a == null ? null : typeChooser.resolveType(a, classNode));
 
-                if (initialExpression != null && !compatibleArgumentType(curArgType, curParamType)) {
-                    // use default expression
-                    arguments[i] = initialExpression;
+                Expression expression = getInitialExpression(p); // default argument
+                if (expression != null && !isCompatibleArgumentType(aType, pType)) {
+                    arguments[i] = expression;
                 } else {
-                    arguments[i] = curArg;
+                    arguments[i] = a;
                     j += 1;
                 }
             }
-            for (int i = 0, n = arguments.length; i < n; i += 1) {
-                visitArgument(arguments[i], para[i].getType());
+            for (int i = 0; i < nArgs; i += 1) {
+                visitArgument(arguments[i], parameters[i].getType());
             }
         }
+    }
+
+    private static Expression getInitialExpression(final Parameter parameter) {
+        Expression initialExpression = parameter.getNodeMetaData(StaticTypesMarker.INITIAL_EXPRESSION);
+        if (initialExpression == null && parameter.hasInitialExpression()) {
+            initialExpression = parameter.getInitialExpression();
+        }
+        if (initialExpression == null && parameter.getNodeMetaData(Verifier.INITIAL_EXPRESSION) != null) {
+            initialExpression = parameter.getNodeMetaData(Verifier.INITIAL_EXPRESSION);
+        }
+        return initialExpression;
+    }
+
+    private static boolean isCompatibleArgumentType(final ClassNode argumentType, final ClassNode parameterType) {
+        if (argumentType == null)
+            return false;
+        if (ClassHelper.getWrapper(argumentType).equals(ClassHelper.getWrapper(parameterType)))
+            return true;
+        if (parameterType.isInterface())
+            return argumentType.implementsInterface(parameterType);
+        if (parameterType.isArray() && argumentType.isArray())
+            return isCompatibleArgumentType(argumentType.getComponentType(), parameterType.getComponentType());
+        return ClassHelper.getWrapper(argumentType).isDerivedFrom(ClassHelper.getWrapper(parameterType));
     }
 
     private void visitArgument(final Expression argumentExpr, final ClassNode parameterType) {
@@ -500,15 +511,6 @@ public class StaticInvocationWriter extends InvocationWriter {
         if (!isNullConstant(argumentExpr)) {
             controller.getOperandStack().doGroovyCast(parameterType);
         }
-    }
-
-    private boolean compatibleArgumentType(final ClassNode argumentType, final ClassNode paramType) {
-        if (argumentType == null) return false;
-        if (ClassHelper.getWrapper(argumentType).equals(ClassHelper.getWrapper(paramType))) return true;
-        if (paramType.isInterface()) return argumentType.implementsInterface(paramType);
-        if (paramType.isArray() && argumentType.isArray())
-            return compatibleArgumentType(argumentType.getComponentType(), paramType.getComponentType());
-        return ClassHelper.getWrapper(argumentType).isDerivedFrom(ClassHelper.getWrapper(paramType));
     }
 
     @Override
