@@ -3072,7 +3072,7 @@ public class Sql implements AutoCloseable {
      * @see #expand(Object)
      * @see #call(String)
      */
-    public int call(GString gstring) throws Exception {
+    public int call(GString gstring) throws SQLException {
         List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         return call(sql, params);
@@ -3097,7 +3097,7 @@ public class Sql implements AutoCloseable {
      * @throws SQLException if a database access error occurs
      * @see #call(String)
      */
-    public int call(String sql, List<Object> params) throws Exception {
+    public int call(String sql, List<Object> params) throws SQLException {
         Connection connection = createConnection();
         CallableStatement statement = null;
         try {
@@ -3122,7 +3122,7 @@ public class Sql implements AutoCloseable {
      * @throws SQLException if a database access error occurs
      * @see #call(String)
      */
-    public int call(String sql, Object[] params) throws Exception {
+    public int call(String sql, Object[] params) throws SQLException {
         return call(sql, Arrays.asList(params));
     }
 
@@ -3206,7 +3206,7 @@ public class Sql implements AutoCloseable {
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void call(String sql, List<Object> params, @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws Exception {
+    public void call(String sql, List<Object> params, @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
         callWithRows(sql, params, NO_RESULT_SETS, closure);
     }
 
@@ -3243,7 +3243,7 @@ public class Sql implements AutoCloseable {
      * @see #call(String, List, Closure)
      * @see #expand(Object)
      */
-    public void call(GString gstring, @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws Exception {
+    public void call(GString gstring, @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
         List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         call(sql, params, closure);
