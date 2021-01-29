@@ -65,9 +65,11 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
@@ -111,13 +113,10 @@ public class StaticInvocationWriter extends InvocationWriter {
 
     private final AtomicInteger labelCounter = new AtomicInteger();
 
-    final WriterController controller;
-
     private MethodCallExpression currentCall;
 
     public StaticInvocationWriter(final WriterController wc) {
         super(wc);
-        controller = wc;
     }
 
     @Override
@@ -430,12 +429,12 @@ public class StaticInvocationWriter extends InvocationWriter {
         ClassNode lastArgType = nArgs == 0 ? null : typeChooser.resolveType(argumentList.get(nArgs - 1), classNode);
         ClassNode lastPrmType = parameters[nPrms - 1].getOriginType();
 
-        if (lastPrmType.isArray() && (nArgs > nPrms // too many args
-                || (nArgs == nPrms - 1 && !lastPrmType.equals(lastArgType)) // too few args
-                || (nArgs == nPrms && !lastArgType.isArray() // last fits within array type
+        // target is variadic and args are too many or one short or just enough with array compatibility
+        if (lastPrmType.isArray() && (nArgs > nPrms || nArgs == nPrms - 1
+                || (nArgs == nPrms && !lastArgType.isArray()
                     && (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(lastArgType, lastPrmType.getComponentType())
                         || ClassHelper.GSTRING_TYPE.equals(lastArgType) && ClassHelper.STRING_TYPE.equals(lastPrmType.getComponentType())))
-        )) { // variadic call
+        )) {
             OperandStack operandStack = controller.getOperandStack();
             int stackLength = operandStack.getStackLength() + nArgs;
             // first arguments/parameters as usual
@@ -460,7 +459,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             for (int i = 0; i < nArgs; i += 1) {
                 visitArgument(argumentList.get(i), parameters[i].getType());
             }
-        } else { // method call with default arguments
+        } else { // call with default arguments
             Expression[] arguments = new Expression[nPrms];
             for (int i = 0, j = 0; i < nPrms; i += 1) {
                 Parameter p = parameters[i];
@@ -471,9 +470,13 @@ public class StaticInvocationWriter extends InvocationWriter {
                 Expression expression = getInitialExpression(p); // default argument
                 if (expression != null && !isCompatibleArgumentType(aType, pType)) {
                     arguments[i] = expression;
-                } else {
+                } else if (a != null) {
                     arguments[i] = a;
                     j += 1;
+                } else {
+                    controller.getSourceUnit().addFatalError("Binding failed" +
+                            " for arguments [" + argumentList.stream().map(arg -> typeChooser.resolveType(arg, classNode).toString(false)).collect(Collectors.joining(", ")) + "]" +
+                            " and parameters [" + Arrays.stream(parameters).map(prm -> prm.getType().toString(false)).collect(Collectors.joining(", ")) + "]", getCurrentCall());
                 }
             }
             for (int i = 0; i < nArgs; i += 1) {
