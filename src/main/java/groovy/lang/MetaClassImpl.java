@@ -3858,21 +3858,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private abstract class MethodIndexAction {
         public void iterate() {
-            final ComplexKeyHashMap.Entry[] table = metaMethodIndex.methodHeaders.getTable();
-            int len = table.length;
-            for (int i = 0; i != len; ++i) {
-                for (SingleKeyHashMap.Entry classEntry = (SingleKeyHashMap.Entry) table[i];
-                     classEntry != null;
-                     classEntry = (SingleKeyHashMap.Entry) classEntry.next) {
-
-                    Class clazz = (Class) classEntry.getKey();
-
-                    if (skipClass(clazz)) continue;
-
-                    MetaMethodIndex.Header header = (MetaMethodIndex.Header) classEntry.getValue();
-                    for (MetaMethodIndex.Entry nameEntry = header.head; nameEntry != null; nameEntry = nameEntry.nextClassEntry) {
-                        methodNameAction(clazz, nameEntry);
-                    }
+            for (Map.Entry<Class, MetaMethodIndex.Header> classEntry : metaMethodIndex.methodHeaders.entrySet()) {
+                Class clazz = classEntry.getKey();
+                if (skipClass(clazz)) continue;
+                MetaMethodIndex.Header header = classEntry.getValue();
+                for (MetaMethodIndex.Entry nameEntry = header.head; nameEntry != null; nameEntry = nameEntry.nextClassEntry) {
+                    methodNameAction(clazz, nameEntry);
                 }
             }
         }
