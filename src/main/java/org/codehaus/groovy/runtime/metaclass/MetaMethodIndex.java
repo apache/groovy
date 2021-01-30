@@ -22,14 +22,15 @@ import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.util.FastArray;
-import org.codehaus.groovy.util.SingleKeyHashMap;
 
 import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
 public class MetaMethodIndex {
-    public SingleKeyHashMap methodHeaders = new SingleKeyHashMap();
+    public final Map<Class, Header> methodHeaders = new LinkedHashMap<>(32);
 
     public static class Header {
         public Entry head;
@@ -85,13 +86,11 @@ public class MetaMethodIndex {
         CachedClass last = null;
         if (!theCachedClass.isInterface()) {
             for (CachedClass c = theCachedClass; c != null; c = c.getCachedSuperClass()) {
-                final SingleKeyHashMap.Entry e = methodHeaders.getOrPut(c.getTheClass());
-                e.value = new Header(c.getTheClass(), last == null ? null : last.getTheClass());
+                methodHeaders.put(c.getTheClass(), new Header(c.getTheClass(), last == null ? null : last.getTheClass()));
                 last = c;
             }
         } else {
-            final SingleKeyHashMap.Entry e = methodHeaders.getOrPut(Object.class);
-            e.value = new Header(Object.class, theCachedClass.getTheClass());
+            methodHeaders.put(Object.class, new Header(Object.class, theCachedClass.getTheClass()));
         }
     }
 
@@ -237,12 +236,7 @@ public class MetaMethodIndex {
     }
 
     public Header getHeader(final Class cls) {
-        SingleKeyHashMap.Entry head = methodHeaders.getOrPut(cls);
-        if (head.value == null) {
-            head.value = new Header(cls);
-        }
-        Header header = (Header) head.value;
-        return header;
+        return methodHeaders.computeIfAbsent(cls, k -> new Header(cls));
     }
 
     public void copyNonPrivateMethods(final Class from, final Class to) {
