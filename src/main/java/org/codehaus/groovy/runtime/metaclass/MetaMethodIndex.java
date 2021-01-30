@@ -223,7 +223,7 @@ public class MetaMethodIndex {
         Entry entry = new Entry();
         entry.nextHashEntry = t[index];
         entry.hash = h;
-        entry.name = name.intern();
+        entry.name = name;
         entry.cls = cls;
         t[index] = entry;
 
