@@ -709,6 +709,8 @@ public class JavaStubGenerator {
         }
 
         printGenericsBounds(out, methodNode.getGenericsTypes());
+        if (isInterfaceOrTrait(clazz) && !methodNode.isAbstract())
+            out.print(" default");
         out.print(" ");
         printType(out, methodNode.getReturnType());
         out.print(" ");
@@ -719,7 +721,7 @@ public class JavaStubGenerator {
         ClassNode[] exceptions = methodNode.getExceptions();
         printExceptions(out, exceptions);
 
-        if (Traits.isTrait(clazz)) {
+        if (Traits.isTrait(clazz) && methodNode.isAbstract()) {
             out.println(";");
         } else if (isAbstract(methodNode) && !clazz.isEnum()) {
             if (clazz.isAnnotationDefinition() && methodNode.hasAnnotationDefault()) {
