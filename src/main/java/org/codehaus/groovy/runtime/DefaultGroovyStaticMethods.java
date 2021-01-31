@@ -241,20 +241,4 @@ public class DefaultGroovyStaticMethods {
     public static long currentTimeSeconds(System self) {
         return System.currentTimeMillis() / 1000;
     }
-
-    /**
-     * Get the pid of the current Java process
-     *
-     * @param self
-     * @return the pid
-     * @since 4.0.0
-     */
-    public static String getProcessId(Runtime self) {
-        String name = ManagementFactory.getRuntimeMXBean().getName();
-        int index = name.indexOf('@');
-        if (-1 == index) { // should never happen
-            return name;
-        }
-        return name.substring(0, index);
-    }
 }

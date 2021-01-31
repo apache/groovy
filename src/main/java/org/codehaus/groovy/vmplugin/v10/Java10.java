@@ -16,13 +16,30 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package org.codehaus.groovy.vmplugin.v10;
 
-import org.junit.Test
+import org.codehaus.groovy.vmplugin.v9.Java9;
 
-final class Groovy9922 {
-    @Test
-    void testGetPid() {
-        assert "jps".execute().text.contains("${Runtime.getRuntime().getPid()} ")
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * Additional Java 10 based functions will be added here as needed.
+ */
+public class Java10 extends Java9 {
+    private final Class<?>[] PLUGIN_DGM;
+
+    public Java10() {
+        super();
+        List<Class<?>> dgmClasses = new ArrayList<>();
+        Collections.addAll(dgmClasses, super.getPluginDefaultGroovyMethods());
+        dgmClasses.add(PluginDefaultGroovyMethods.class);
+        PLUGIN_DGM = dgmClasses.toArray(new Class<?>[0]);
+    }
+
+    @Override
+    public Class<?>[] getPluginDefaultGroovyMethods() {
+        return PLUGIN_DGM;
     }
 }

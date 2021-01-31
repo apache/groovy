@@ -16,13 +16,25 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package org.codehaus.groovy.vmplugin.v10;
 
-import org.junit.Test
+import java.lang.management.ManagementFactory;
 
-final class Groovy9922 {
-    @Test
-    void testGetPid() {
-        assert "jps".execute().text.contains("${Runtime.getRuntime().getPid()} ")
+/**
+ * Defines new Groovy methods which appear on normal JDK 10
+ * classes inside the Groovy environment.
+ *
+ * @since 4.0.0
+ */
+public class PluginDefaultGroovyMethods {
+    /**
+     * Get the pid of the current Java process
+     *
+     * @param self
+     * @return the pid
+     * @since 4.0.0
+     */
+    public static String getPid(Runtime self) {
+        return String.valueOf(ManagementFactory.getRuntimeMXBean().getPid());
     }
 }

@@ -29,6 +29,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.RangeInfo;
 
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -921,5 +922,21 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return self;
         }
         return (Optional<T>) supplier.get();
+    }
+
+    /**
+     * Get the pid of the current Java process
+     *
+     * @param self
+     * @return the pid
+     * @since 4.0.0
+     */
+    public static String getPid(Runtime self) {
+        String name = ManagementFactory.getRuntimeMXBean().getName();
+        int index = name.indexOf('@');
+        if (-1 == index) { // should never happen
+            return name;
+        }
+        return name.substring(0, index);
     }
 }
