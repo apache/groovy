@@ -3047,7 +3047,7 @@ public class Sql implements AutoCloseable {
      * @return the number of rows updated or 0 for SQL statements that return nothing
      * @throws SQLException if a database access error occurs
      */
-    public int call(String sql) throws Exception {
+    public int call(String sql) throws SQLException {
         return call(sql, EMPTY_LIST);
     }
 
