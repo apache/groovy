@@ -494,8 +494,8 @@ public class JavaStubGenerator {
                 }
                 out.print(field.getName());
             }
+            out.println(";");
         }
-        out.println(";");
     }
 
     private void printField(PrintWriter out, FieldNode fieldNode, boolean isInterface) {
