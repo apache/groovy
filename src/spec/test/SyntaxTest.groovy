@@ -767,6 +767,9 @@ class SyntaxTest extends CompilableTestSupport {
 
         // tag::unknown_key[]
         assert colors.unknown == null
+
+        def emptyMap = [:]
+        assert emptyMap.anyKey == null
         // end::unknown_key[]
 
         // tag::number_key[]
