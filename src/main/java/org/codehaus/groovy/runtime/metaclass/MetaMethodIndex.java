@@ -132,18 +132,15 @@ public class MetaMethodIndex {
 
     public void resize(final int newLength) {
         Entry[] oldTable = table;
-        final int n = table.length;
         Entry[] newTable = new Entry[newLength];
 
-        for (int i = 0; i < n; i += 1) {
-            for (Entry e = oldTable[i]; e != null; ) {
-                Entry next = e.nextHashEntry;
-                int index = e.hash & (newLength - 1);
+        for (Entry entry : oldTable) {
+            for (Entry e = entry, next; e != null; e = next) {
+                next = e.nextHashEntry;
 
+                int index = e.hash & (newLength - 1);
                 e.nextHashEntry = newTable[index];
                 newTable[index] = e;
-
-                e = next;
             }
         }
 
