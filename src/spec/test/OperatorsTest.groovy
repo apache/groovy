@@ -373,6 +373,27 @@ assert user.@name == 'Bob'                   // <1>
             throw new RuntimeException("Should not reach that point!")
         }
         // end::pattern_matcher_strict_op[]
+
+        // tag::pattern_find_vs_matcher[]
+        assert 'two words' ==~ /\S+\s+\S+/
+        assert 'two words' ==~ /^\S+\s+\S+$/         // <1>
+        assert !(' leading space' ==~ /\S+\s+\S+/)   // <2>
+
+        def m1 = 'two words' =~ /^\S+\s+\S+$/
+        assert m1.size() == 1                          // <3>
+        def m2 = 'now three words' =~ /^\S+\s+\S+$/    // <4>
+        assert m2.size() == 0                          // <5>
+        def m3 = 'now three words' =~ /\S+\s+\S+/
+        assert m3.size() == 1                          // <6>
+        assert m3[0] == 'now three'
+        def m4 = ' leading space' =~ /\S+\s+\S+/
+        assert m4.size() == 1                          // <7>
+        assert m4[0] == 'leading space'
+        def m5 = 'and with four words' =~ /\S+\s+\S+/
+        assert m5.size() == 2                          // <8>
+        assert m5[0] == 'and with'
+        assert m5[1] == 'four words'
+        // end::pattern_find_vs_matcher[]
     }
 
     void testSpreadDotOperator() {

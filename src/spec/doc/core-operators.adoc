@@ -516,6 +516,11 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_op_variant
 <3> the dollar-slashy string lets you use slashes and the dollar sign without having to escape them
 <4> you can also use a GString!
 
+[NOTE]
+While you can use most String forms with the Pattern, Find and Match operators,
+we recommend using the slashy string most of the time to save having to
+remember the otherwise needed escaping requirements.
+
 === Find operator
 
 Alternatively to building a pattern, you can use the find operator `=~` to directly create a `java.util.regex.Matcher` instance:
@@ -544,6 +549,23 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_matcher_st
 <1> `==~` matches the subject with the regular expression, but match must be strict
 <2> the return type of `==~` is therefore a `boolean`
 <3> equivalent to calling `if (text ==~ /match/)`
+
+=== Comparing Find vs Match operators
+
+Typically, the match operator is used when the pattern involves a single exact match, otherwise
+the find operator might be more useful.
+[source,groovy]
+----
+include::../test/OperatorsTest.groovy[tags=pattern_find_vs_matcher,indent=0]
+----
+<1> equivalent, but explicit ^ and $ are discouraged since they aren't needed
+<2> no match because of leading space
+<3> one match
+<4> ^ and $ indicate exact match required
+<5> zero matches
+<6> one match, greedily starting at first word
+<7> one match, ignores leading space
+<8> two matches
 
 == Other operators
 
