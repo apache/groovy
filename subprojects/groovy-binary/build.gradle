@@ -47,7 +47,8 @@ distribution {
             'org.codehaus.groovy.runtime.SocketGroovyMethods',
             'org.codehaus.groovy.runtime.StringGroovyMethods',
             'org.codehaus.groovy.vmplugin.v8.PluginDefaultGroovyMethods',
-            'org.codehaus.groovy.vmplugin.v9.PluginDefaultGroovyMethods'
+            'org.codehaus.groovy.vmplugin.v9.PluginDefaultGroovyMethods',
+            'org.codehaus.groovy.vmplugin.v10.PluginDefaultGroovyMethods'
     docs ':groovy-dateutil', 'org.apache.groovy.dateutil.extensions.DateUtilExtensions'
     docs ':groovy-datetime', 'org.apache.groovy.datetime.extensions.DateTimeExtensions',
             'org.apache.groovy.datetime.extensions.DateTimeStaticExtensions'

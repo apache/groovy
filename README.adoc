@@ -132,7 +132,7 @@ the `gradlew` command instead of `gradle`. (On Unix-like systems, use `./gradlew
 
 To build you will need:
 
-* {jdk}[JDK 9+]
+* {jdk}[JDK 10+]
 
 To build everything using Gradle, use the following command (`./gradlew` on Unix-like systems):
 
