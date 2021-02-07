@@ -2389,7 +2389,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                 candidates = findMethodsWithGenerated(receiverType, nameText);
                 if (isBeingCompiled(receiverType)) candidates.addAll(GROOVY_OBJECT_TYPE.getMethods(nameText));
-                candidates.addAll(findDGMMethodsForClassNode(getTransformLoader(), receiverType, nameText));
+                candidates.addAll(findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), receiverType, nameText));
                 candidates = filterMethodsByVisibility(candidates, typeCheckingContext.getEnclosingClassNode());
 
                 if (!candidates.isEmpty()) {
