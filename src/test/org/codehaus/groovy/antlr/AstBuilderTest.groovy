@@ -23,6 +23,8 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.InnerClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.builder.AstBuilder
+import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.Statement
 
 import static org.codehaus.groovy.control.CompilePhase.CONVERSION
@@ -32,23 +34,32 @@ import static org.codehaus.groovy.control.CompilePhase.CONVERSION
  */
 class AstBuilderTest extends GroovyTestCase {
 
-    void testInnerClassLineNumbers() {
+    void testStatementsOnly() {
+        def nodes = new AstBuilder().buildFromString CONVERSION, '''
+            println 'hello world'
+        '''
 
-        def result = new AstBuilder().buildFromString CONVERSION, false, '''
+        assert nodes.size() == 1
+        assert nodes[0] instanceof BlockStatement
+        assert nodes[0].statements[0] instanceof ExpressionStatement
+    }
+
+    void testInnerClassLineNumbers() {
+        def nodes = new AstBuilder().buildFromString CONVERSION, '''
             new Object() {
 
             }
         '''
 
-        assert result[2].getClass() == InnerClassNode
-        assert result[2].lineNumber == 2
-        assert result[2].lastLineNumber == 4
-        assert result[2].columnNumber == 26
-        assert result[2].lastColumnNumber == 14
+        assert nodes[1].getClass() == InnerClassNode
+        assert nodes[1].lineNumber == 2
+        assert nodes[1].lastLineNumber == 4
+        assert nodes[1].columnNumber == 26
+        assert nodes[1].lastColumnNumber == 14
     }
 
     void testEnumLineNumbers() {
-        def result = new AstBuilder().buildFromString CONVERSION, false, '''
+        def result = new AstBuilder().buildFromString CONVERSION, '''
             enum Color {
 
             }
@@ -62,15 +73,15 @@ class AstBuilderTest extends GroovyTestCase {
     }
 
     void testStatementAfterLabel() {
-        def result = new AstBuilder().buildFromString CONVERSION, false, '''
+        def nodes = new AstBuilder().buildFromString CONVERSION, false, '''
             def method() {
                 label:
                     assert i == 9
             }
         '''
 
-        assert result[1].getClass() == ClassNode
-        MethodNode method = result[1].getMethods('method')[0]
+        assert nodes[1].getClass() == ClassNode
+        MethodNode method = nodes[1].getMethods('method')[0]
         Statement statement = method.code.statements[0]
         assert statement.lineNumber == 4
         assert statement.lastLineNumber == 4

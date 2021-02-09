@@ -18,69 +18,74 @@
  */
 package org.codehaus.groovy.ast.builder;
 
-import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyCodeSource;
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.CompilerConfiguration;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
+import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuietly;
 
 /**
  * This class handles converting Strings to ASTNode lists.
  */
 public class AstStringCompiler {
+
     /**
-     * Performs the String source to {@link java.util.List} of {@link ASTNode}.
+     * Compiles the specified source code and returns its statement block and
+     * any declared types.
+     *
+     * @param script
+     *      a Groovy script in String form
+     *
+     * @since 3.0.0
+     */
+    public List<ASTNode> compile(final String script) {
+        return compile(script, CompilePhase.CONVERSION, true);
+    }
+
+    /**
+     * Compiles the specified source code and returns its statement block, the
+     * script class (if desired) and any declared types.
      *
      * @param script
      *      a Groovy script in String form
      * @param compilePhase
-     *      the int based CompilePhase to compile it to.
+     *      the last compilation phase to complete
      * @param statementsOnly
-     * @return {@link java.util.List} of {@link ASTNode}
-     */
-    public List<ASTNode> compile(String script, CompilePhase compilePhase, boolean statementsOnly) {
-        final String scriptClassName = makeScriptClassName();
-        GroovyCodeSource codeSource = new GroovyCodeSource(script, scriptClassName + ".groovy", "/groovy/script");
-        CompilationUnit cu = new CompilationUnit(CompilerConfiguration.DEFAULT, codeSource.getCodeSource(),
-                AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) GroovyClassLoader::new));
-        cu.addSource(codeSource.getName(), script);
-        cu.compile(compilePhase.getPhaseNumber());
-
-        // collect all the ASTNodes into the result, possibly ignoring the script body if desired
-        List<ASTNode> result = cu.getAST().getModules().stream().reduce(new LinkedList<>(), (acc, node) -> {
-            BlockStatement statementBlock = node.getStatementBlock();
-            if (null != statementBlock) {
-                acc.add(statementBlock);
-            }
-            acc.addAll(
-                    node.getClasses().stream()
-                        .filter(c -> !(statementsOnly && scriptClassName.equals(c.getName())))
-                        .collect(Collectors.toList())
-            );
-
-            return acc;
-        }, (o1, o2) -> o1);
-
-        return result;
-    }
-
-    /**
-     * Performs the String source to {@link java.util.List} of statement {@link ASTNode}.
+     *      if {@code true}, exclude the script class from the result
      *
-     * @param script a Groovy script in String form
-     * @return {@link java.util.List} of statement {@link ASTNode}
-     * @since 3.0.0
+     * @since 1.7.0
      */
-    public List<ASTNode> compile(String script) {
-        return this.compile(script, CompilePhase.CONVERSION, true);
+    public List<ASTNode> compile(final String script, final CompilePhase compilePhase, final boolean statementsOnly) {
+        String scriptClassName = makeScriptClassName();
+        GroovyCodeSource codeSource = new GroovyCodeSource(script, scriptClassName + ".groovy", "/groovy/script");
+        CompilationUnit cu = new CompilationUnit(CompilerConfiguration.DEFAULT, codeSource.getCodeSource(), null);
+        try {
+            cu.addSource(codeSource.getName(), script);
+            cu.compile(compilePhase.getPhaseNumber());
+        } finally {
+            closeQuietly(cu.getClassLoader());
+        }
+
+        List<ASTNode> nodes = new ArrayList<>();
+        for (ModuleNode mn : cu.getAST().getModules()) {
+            ASTNode statementBlock = mn.getStatementBlock();
+            if (statementBlock != null) {
+                nodes.add(statementBlock);
+            }
+            for (ClassNode cn : mn.getClasses()) {
+                if (!(statementsOnly && scriptClassName.equals(cn.getName()))) {
+                    nodes.add(cn);
+                }
+            }
+        }
+        return nodes;
     }
 
     private static String makeScriptClassName() {
