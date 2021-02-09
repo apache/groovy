@@ -106,6 +106,7 @@ import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuietly;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND_EQUAL;
 import static org.codehaus.groovy.syntax.Types.BITWISE_OR;
@@ -2150,14 +2151,18 @@ public abstract class StaticTypeCheckingSupport {
         // disable preview features so class can be inspected by this JVM
         copyConf.setPreviewFeatures(false);
         CompilationUnit cu = new CompilationUnit(copyConf);
-        cu.addClassNode(node);
-        cu.compile(Phases.CLASS_GENERATION);
-        List<GroovyClass> classes = cu.getClasses();
-        Class<?> aClass = cu.getClassLoader().defineClass(className, classes.get(0).getBytes());
         try {
-            return aClass.getMethod("eval").invoke(null);
-        } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-            throw new GroovyBugError(e);
+            cu.addClassNode(node);
+            cu.compile(Phases.CLASS_GENERATION);
+            List<GroovyClass> classes = cu.getClasses();
+            Class<?> aClass = cu.getClassLoader().defineClass(className, classes.get(0).getBytes());
+            try {
+                return aClass.getMethod("eval").invoke(null);
+            } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+                throw new GroovyBugError(e);
+            }
+        } finally {
+            closeQuietly(cu.getClassLoader());
         }
     }
 
