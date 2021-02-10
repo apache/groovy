@@ -70,6 +70,7 @@ import java.util.regex.Matcher;
 import static java.lang.Math.min;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.BigInteger_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Boolean_TYPE;
@@ -84,6 +85,7 @@ import static org.codehaus.groovy.ast.ClassHelper.GROOVY_OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.GSTRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Integer_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Long_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.Number_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Short_TYPE;
@@ -655,9 +657,9 @@ public abstract class StaticTypeCheckingSupport {
             return left == VOID_TYPE || left == void_WRAPPER_TYPE;
         }
 
-        if ((isNumberType(rightRedirect) || WideningCategories.isNumberCategory(rightRedirect))) {
-            if (BigDecimal_TYPE == leftRedirect) {
-                // any number can be assigned to a big decimal
+        if (isNumberType(rightRedirect) || WideningCategories.isNumberCategory(rightRedirect)) {
+            if (BigDecimal_TYPE == leftRedirect || Number_TYPE == leftRedirect) {
+                // any number can be assigned to BigDecimal or Number
                 return true;
             }
             if (BigInteger_TYPE == leftRedirect) {
@@ -666,7 +668,7 @@ public abstract class StaticTypeCheckingSupport {
         }
 
         // if rightExpression is null and leftExpression is not a primitive type, it's ok
-        boolean rightExpressionIsNull = (rightExpression instanceof ConstantExpression && ((ConstantExpression) rightExpression).isNullExpression());
+        boolean rightExpressionIsNull = isNullConstant(rightExpression);
         if (rightExpressionIsNull && !isPrimitiveType(left)) {
             return true;
         }
