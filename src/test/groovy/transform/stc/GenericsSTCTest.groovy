@@ -2258,6 +2258,22 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-9934
+    void testBoundedReturnTypeChecking2() {
+        assertScript '''
+            class Bar {
+            }
+            class Foo<T extends Bar> {
+                T method(T t) {
+                    def c = { -> t }
+                    return c() // Cannot return value of type Object on method returning type T
+                }
+            }
+            def bar = new Bar()
+            assert bar.is(new Foo<Bar>().method(bar))
+        '''
+    }
+
     // GROOVY-9981
     void testBoundedReturnTypeChecking3() {
         assertScript '''
