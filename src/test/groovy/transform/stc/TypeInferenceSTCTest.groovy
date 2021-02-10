@@ -41,6 +41,19 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9935
+    void testIntegerToNumber() {
+        ['def', 'int', 'Integer', 'BigInteger'].each { type ->
+            assertScript """
+                Number f() {
+                    $type n = 10
+                    return n
+                }
+                assert f() == 10
+            """
+        }
+    }
+
     void testGStringMethods() {
         assertScript '''
             def myname = 'Cedric'
