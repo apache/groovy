@@ -56,6 +56,7 @@ asciidoctor {
         from("${rootProject.projectDir}/src/spec/doc/assets") {
             include 'css/style.css'
         }
+        from("$buildDir/tmp/asciidoctor-assets")
         into 'assets'
     }
     attributes 'source-highlighter': 'prettify',
@@ -110,7 +111,7 @@ asciidoctor.onlyIf { project.file('src/spec/doc').exists() }
 
 def asciidoctorAssets = tasks.register("asciidoctorAssets", Copy) {
     from project.fileTree('src/spec/doc/assets')
-    into "${asciidoctor.outputDir}/assets"
+    into "$buildDir/tmp/asciidoctor-assets"
 }
 asciidoctor.dependsOn asciidoctorAssets
 

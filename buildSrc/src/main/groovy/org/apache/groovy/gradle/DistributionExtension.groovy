@@ -23,6 +23,7 @@ import org.gradle.api.Project
 import org.gradle.api.file.CopySpec
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.tasks.PathSensitivity
 
 import javax.inject.Inject
 
@@ -48,8 +49,8 @@ class DistributionExtension {
                         def src = project.project(p).layout.projectDirectory.file(
                                 "src/main/java/${className.replace('.', '/')}.java"
                         ).asFile
-                        docgen.inputs.file(src)
-                        src.absolutePath
+                        docgen.inputs.file(src).withPathSensitivity(PathSensitivity.RELATIVE)
+                        project.relativePath(src)
                     }
             )
         }

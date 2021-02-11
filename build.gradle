@@ -87,7 +87,7 @@ groovyLibrary {
             ],
             ['META-INF/NOTICE', 'META-INF/INDEX.LIST'],
             [
-                    (rootProject.file('notices/NOTICE-GROOIDJARJAR').absolutePath): 'META-INF/NOTICE'
+                    (project.relativePath(rootProject.file('notices/NOTICE-GROOIDJARJAR'))): 'META-INF/NOTICE'
             ]
     )
 }
