@@ -55,7 +55,7 @@ tasks.withType(Javadoc).configureEach {
         locale = 'en_US'
         encoding = 'UTF-8'
         version = true
-        overview = rootProject.file('src/main/java/overviewj.html')
+        overview = project.relativePath(rootProject.file('src/main/java/overviewj.html'))
         footer = 'Copyright &copy; 2003-2021 The Apache Software Foundation. All rights reserved.'
         source = sharedConfiguration.targetJavaVersion.get()
         links('https://docs.oracle.com/javase/8/docs/api/',
