@@ -19,25 +19,14 @@
 import org.gradle.util.GradleVersion
 
 plugins {
-    id "com.gradle.enterprise" version "3.5.1"
-    id "com.gradle.common-custom-user-data-gradle-plugin" version "1.1.1"
+    id "com.gradle.enterprise" version "3.5.2"
 }
 
 gradleEnterprise {
     buildScan {
         termsOfServiceUrl = 'https://gradle.com/terms-of-service'
         apply from: 'gradle/build-scans.gradle'
-        captureTaskInputFiles = true
-        tag 'ge-trial'
     }
-
-    server = "https://54.229.163.175"
-    allowUntrustedServer = true
-}
-
-buildCache {
-    local { enabled = true }
-    remote(HttpBuildCache) {enabled = false }
 }
 
 def subprojects = [
