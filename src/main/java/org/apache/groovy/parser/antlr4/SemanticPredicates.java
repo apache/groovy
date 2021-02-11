@@ -179,10 +179,12 @@ public class SemanticPredicates {
         token = ts.LT(index);
         tokenType = token.getType();
         tokenType3 = ts.LT(index + 2).getType();
+        int nextCodePoint = token.getText().codePointAt(0);
 
         return // VOID == tokenType ||
                 !(BuiltInPrimitiveType == tokenType || Arrays.binarySearch(MODIFIER_ARRAY, tokenType) >= 0)
-                        && Character.isLowerCase(token.getText().codePointAt(0))
+                        && !Character.isUpperCase(nextCodePoint)
+                        && nextCodePoint != '@'
                         && !(ASSIGN == tokenType3 || (LT == tokenType2 || LBRACK == tokenType2));
 
     }
