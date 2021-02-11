@@ -368,6 +368,7 @@ final class GroovyParserTest extends GroovyTestCase {
         doTest('core/Command_04.groovy', [ExpressionStatement])
         doTest('core/Command_05.groovy')
         doRunAndTestAntlr4('core/Command_06x.groovy')
+        doRunAndTestAntlr4('core/Command_07x.groovy')
     }
 
     /*
