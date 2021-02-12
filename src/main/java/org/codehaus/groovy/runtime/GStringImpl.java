@@ -139,6 +139,14 @@ public class GStringImpl extends GString {
         return super.getValues();
     }
 
+    public String trim() {
+        return toString().trim();
+    }
+
+    public char charAt(int index) {
+        return toString().charAt(index);
+    }
+
     @Override
     public String toString() {
         if (null != cachedStringLiteral) {
