@@ -2447,6 +2447,60 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9981
+    void testBoundedReturnTypeChecking3() {
+        assertScript '''
+            class Pogo {
+                Map<String, ? extends Number> map
+            }
+            def test(Pogo p) {
+                Collection<? extends Number> c = p.map.values()
+                Iterable<? extends Number> i = p.map.values()
+                i.iterator().next()
+            }
+            def n = test(new Pogo(map:[x:1,y:2.3]))
+            assert n == 1
+        '''
+
+        //
+
+        config.with {
+            targetDirectory = File.createTempDir()
+            jointCompilationOptions = [memStub: true]
+        }
+        File parentDir = File.createTempDir()
+        try {
+            def a = new File(parentDir, 'Pojo.java')
+            a.write '''
+                import java.util.Map;
+                class Pojo {
+                    Map<String, ? extends Number> getMap() {
+                        return map;
+                    }
+                    void setMap(Map<String, ? extends Number> map) {
+                        this.map = map;
+                    }
+                    private Map<String, ? extends Number> map = null;
+                }
+            '''
+            def b = new File(parentDir, 'Script.groovy')
+            b.write '''
+                void test(Pojo p) {
+                    Collection<? extends Number> c = p.map.values()
+                    Iterable<? extends Number> i = p.map.values()
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b)
+            cu.compile()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+        }
+    }
+
     // GROOVY-7804
     void testParameterlessClosureToGenericSAMTypeArgumentCoercion() {
         assertScript '''
