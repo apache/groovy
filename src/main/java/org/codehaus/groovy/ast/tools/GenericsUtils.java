@@ -411,6 +411,11 @@ public class GenericsUtils {
         if (type.isPlaceholder()) {
             String name = type.getName();
             ret = genericsSpec.get(name);
+        } else if (type.isWildcard()) { // GROOVY-9891
+            ret = type.getLowerBound(); // use lower or upper
+            if (ret == null && type.getUpperBounds() != null) {
+                ret = type.getUpperBounds()[0]; // ? supports 1
+            }
         }
         if (ret == null) ret = type.getType();
         return ret;
