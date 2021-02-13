@@ -792,7 +792,7 @@ Printer
         '''
     }
 
-    //GROOVY-8590
+    // GROOVY-8590
     void testNestedMethodCallInferredTypeInReturnStmt() {
         assertScript '''
             class Source {
@@ -805,4 +805,79 @@ Printer
         '''
     }
 
+    // GROOVY-9938
+    void testInnerClassImplementsInterfaceMethod() {
+        assertScript '''
+            class Main {
+                interface I {
+                    def m(@DelegatesTo(value=D, strategy=Closure.DELEGATE_FIRST) Closure c)
+                }
+                static class C implements I {
+                    def m(@DelegatesTo(value=D, strategy=Closure.DELEGATE_FIRST) Closure c) {
+                        new D().with(c)
+                    }
+                }
+                static class D {
+                    def f() {
+                        return 'retval'
+                    }
+                }
+                static main(args) {
+                    def result = new C().m { f() }
+                    assert result == 'retval'
+                }
+            }
+        '''
+    }
+    void testInnerClassImplementsInterfaceMethodWithTrait() {
+        assertScript '''
+            class Main {
+                interface I {
+                    def m(@DelegatesTo(value=D, strategy=Closure.DELEGATE_FIRST) Closure c)
+                }
+                trait T {
+                    def m(@DelegatesTo(value=D, strategy=Closure.DELEGATE_FIRST) Closure c) {
+                        new D().with(c)
+                    }
+                }
+                static class C implements T { // generates m(Closure) that delegates to T#m(Closure)
+                }
+                static class D {
+                    def f() {
+                        return 'retval'
+                    }
+                }
+                static main(args) {
+                    def result = new C().m { f() }
+                    assert result == 'retval'
+                }
+            }
+        '''
+    }
+    void testInnerClassImplementsInterfaceMethodWithDelegate() {
+        assertScript '''
+            class Main {
+                interface I {
+                    def m(@DelegatesTo(value=D, strategy=Closure.DELEGATE_FIRST) Closure c)
+                }
+                static class T implements I {
+                    def m(@DelegatesTo(value=D, strategy=Closure.DELEGATE_FIRST) Closure c) {
+                        new D().with(c)
+                    }
+                }
+                static class C implements I {
+                    @Delegate(parameterAnnotations=true) T t = new T() // generates m(Closure) that delegates to T#m(Closure)
+                }
+                static class D {
+                    def f() {
+                        return 'retval'
+                    }
+                }
+                static main(args) {
+                    def result = new C().m { f() }
+                    assert result == 'retval'
+                }
+            }
+        '''
+    }
 }
