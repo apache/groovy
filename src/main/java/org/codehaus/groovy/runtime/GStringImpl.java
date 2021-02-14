@@ -20,6 +20,9 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.GString;
 
+import java.nio.charset.Charset;
+import java.util.Locale;
+
 /**
  * Default implementation of a GString used by the compiler. A GString
  * consist of a list of values and strings which can be combined to
@@ -59,6 +62,264 @@ public class GStringImpl extends GString {
     @Override
     public String[] getStrings() {
         return strings;
+    }
+
+    public String trim() {
+        return toString().trim();
+    }
+
+    public boolean isEmpty() {
+        return toString().isEmpty();
+    }
+
+    public int codePointAt(int index) {
+        return toString().codePointAt(index);
+    }
+
+    public int codePointBefore(int index) {
+        return toString().codePointBefore(index);
+    }
+
+    public int codePointCount(int beginIndex, int endIndex) {
+        return toString().codePointCount(beginIndex, endIndex);
+    }
+
+    public int offsetByCodePoints(int index, int codePointOffset) {
+        return toString().offsetByCodePoints(index, codePointOffset);
+    }
+
+    public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
+        toString().getChars(srcBegin, srcEnd, dst, dstBegin);
+    }
+
+    public byte[] getBytes(Charset charset) {
+        return toString().getBytes(charset);
+    }
+
+    public boolean contentEquals(StringBuffer sb) {
+        return toString().contentEquals(sb);
+    }
+
+    public boolean contentEquals(CharSequence cs) {
+        return toString().contentEquals(cs);
+    }
+
+    public boolean equalsIgnoreCase(String anotherString) {
+        return toString().equalsIgnoreCase(anotherString);
+    }
+
+    public int compareTo(String anotherString) {
+        return toString().compareTo(anotherString);
+    }
+
+    public int compareToIgnoreCase(String str) {
+        return toString().compareToIgnoreCase(str);
+    }
+
+    public boolean regionMatches(int toffset, String other, int ooffset, int len) {
+        return toString().regionMatches(toffset, other, ooffset, len);
+    }
+
+    public boolean regionMatches(boolean ignoreCase, int toffset, String other, int ooffset, int len) {
+        return toString().regionMatches(ignoreCase, toffset, other, ooffset, len);
+    }
+
+    public boolean startsWith(String prefix, int toffset) {
+        return toString().startsWith(prefix, toffset);
+    }
+
+    public boolean startsWith(String prefix) {
+        return toString().startsWith(prefix);
+    }
+
+    public boolean endsWith(String suffix) {
+        return toString().endsWith(suffix);
+    }
+
+    public int indexOf(int ch) {
+        return toString().indexOf(ch);
+    }
+
+    public int indexOf(int ch, int fromIndex) {
+        return toString().indexOf(ch, fromIndex);
+    }
+
+    public int lastIndexOf(int ch) {
+        return toString().lastIndexOf(ch);
+    }
+
+    public int lastIndexOf(int ch, int fromIndex) {
+        return toString().lastIndexOf(ch, fromIndex);
+    }
+
+    public int indexOf(String str) {
+        return toString().indexOf(str);
+    }
+
+    public int indexOf(String str, int fromIndex) {
+        return toString().indexOf(str, fromIndex);
+    }
+
+    public int lastIndexOf(String str) {
+        return toString().lastIndexOf(str);
+    }
+
+    public int lastIndexOf(String str, int fromIndex) {
+        return toString().lastIndexOf(str, fromIndex);
+    }
+
+    public String substring(int beginIndex) {
+        return toString().substring(beginIndex);
+    }
+
+    public String substring(int beginIndex, int endIndex) {
+        return toString().substring(beginIndex, endIndex);
+    }
+
+    public String concat(String str) {
+        return toString().concat(str);
+    }
+
+    public String replace(char oldChar, char newChar) {
+        return toString().replace(oldChar, newChar);
+    }
+
+    public boolean matches(String regex) {
+        return toString().matches(regex);
+    }
+
+    public boolean contains(CharSequence s) {
+        return toString().contains(s);
+    }
+
+    public String replaceFirst(String regex, String replacement) {
+        return toString().replaceFirst(regex, replacement);
+    }
+
+    public String replaceAll(String regex, String replacement) {
+        return toString().replaceAll(regex, replacement);
+    }
+
+    public String replace(CharSequence target, CharSequence replacement) {
+        return toString().replace(target, replacement);
+    }
+
+    public String[] split(String regex, int limit) {
+        return toString().split(regex, limit);
+    }
+
+    public String[] split(String regex) {
+        return toString().split(regex);
+    }
+
+    public static String join(CharSequence delimiter, CharSequence... elements) {
+        return String.join(delimiter, elements);
+    }
+
+    public static String join(CharSequence delimiter, Iterable<? extends CharSequence> elements) {
+        return String.join(delimiter, elements);
+    }
+
+    public String toLowerCase(Locale locale) {
+        return toString().toLowerCase(locale);
+    }
+
+    public String toLowerCase() {
+        return toString().toLowerCase();
+    }
+
+    public String toUpperCase(Locale locale) {
+        return toString().toUpperCase(locale);
+    }
+
+    public String toUpperCase() {
+        return toString().toUpperCase();
+    }
+
+    /* comment out the Java 11 API for now:
+    public String strip() {
+        return toString().strip();
+    }
+
+    public String stripLeading() {
+        return toString().stripLeading();
+    }
+
+    public String stripTrailing() {
+        return toString().stripTrailing();
+    }
+
+    public boolean isBlank() {
+        return toString().isBlank();
+    }
+
+    public Stream<String> lines() {
+        return toString().lines();
+    }
+
+    public String repeat(int count) {
+        return toString().repeat(count);
+    }
+    */
+
+    public char[] toCharArray() {
+        return toString().toCharArray();
+    }
+
+    public static String format(String format, Object... args) {
+        return String.format(format, args);
+    }
+
+    public static String format(Locale l, String format, Object... args) {
+        return String.format(l, format, args);
+    }
+
+    public static String valueOf(Object obj) {
+        return String.valueOf(obj);
+    }
+
+    public static String valueOf(char[] data) {
+        return String.valueOf(data);
+    }
+
+    public static String valueOf(char[] data, int offset, int count) {
+        return String.valueOf(data, offset, count);
+    }
+
+    public static String copyValueOf(char[] data, int offset, int count) {
+        return String.copyValueOf(data, offset, count);
+    }
+
+    public static String copyValueOf(char[] data) {
+        return String.copyValueOf(data);
+    }
+
+    public static String valueOf(boolean b) {
+        return String.valueOf(b);
+    }
+
+    public static String valueOf(char c) {
+        return String.valueOf(c);
+    }
+
+    public static String valueOf(int i) {
+        return String.valueOf(i);
+    }
+
+    public static String valueOf(long l) {
+        return String.valueOf(l);
+    }
+
+    public static String valueOf(float f) {
+        return String.valueOf(f);
+    }
+
+    public static String valueOf(double d) {
+        return String.valueOf(d);
+    }
+
+    public String intern() {
+        return toString().intern();
     }
 
 }
