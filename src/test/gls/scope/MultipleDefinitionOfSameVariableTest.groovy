@@ -116,11 +116,29 @@ class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
         """
     }
 
+    void testPropertyFieldBothInit() {
+        shouldNotCompile """
+            class A {
+                def foo = 3
+                private foo = 4
+            }
+        """
+    }
+
     void testFieldProperty() {
         shouldCompile """
             class A {
                 private foo
                 def foo
+            }
+        """
+    }
+
+    void testFieldPropertyBothInit() {
+        shouldNotCompile """
+            class A {
+                private foo = 'a'
+                def foo = 'b'
             }
         """
     }
