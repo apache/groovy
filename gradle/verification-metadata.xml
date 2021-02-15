@@ -546,6 +546,11 @@
             <pgp value="ff6e2c001948c5f2f38b0cc385911f425ec61b51"/>
          </artifact>
       </component>
+      <component group="junit" name="junit" version="4.13.2">
+         <artifact name="junit-4.13.2.jar">
+            <pgp value="ff6e2c001948c5f2f38b0cc385911f425ec61b51"/>
+         </artifact>
+      </component>
       <component group="log4j" name="log4j" version="1.2.17">
          <artifact name="log4j-1.2.17.jar">
             <pgp value="9d23533896a9784703585b6286e02c5a42196ca8"/>
