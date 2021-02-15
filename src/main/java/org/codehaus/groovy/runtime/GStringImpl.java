@@ -289,14 +289,6 @@ public class GStringImpl extends GString {
         return toString().split(regex);
     }
 
-    public static String join(CharSequence delimiter, CharSequence... elements) {
-        return String.join(delimiter, elements);
-    }
-
-    public static String join(CharSequence delimiter, Iterable<? extends CharSequence> elements) {
-        return String.join(delimiter, elements);
-    }
-
     public String toLowerCase(Locale locale) {
         return toString().toLowerCase(locale);
     }
@@ -341,58 +333,6 @@ public class GStringImpl extends GString {
 
     public char[] toCharArray() {
         return toString().toCharArray();
-    }
-
-    public static String format(String format, Object... args) {
-        return String.format(format, args);
-    }
-
-    public static String format(Locale l, String format, Object... args) {
-        return String.format(l, format, args);
-    }
-
-    public static String valueOf(Object obj) {
-        return String.valueOf(obj);
-    }
-
-    public static String valueOf(char[] data) {
-        return String.valueOf(data);
-    }
-
-    public static String valueOf(char[] data, int offset, int count) {
-        return String.valueOf(data, offset, count);
-    }
-
-    public static String copyValueOf(char[] data, int offset, int count) {
-        return String.copyValueOf(data, offset, count);
-    }
-
-    public static String copyValueOf(char[] data) {
-        return String.copyValueOf(data);
-    }
-
-    public static String valueOf(boolean b) {
-        return String.valueOf(b);
-    }
-
-    public static String valueOf(char c) {
-        return String.valueOf(c);
-    }
-
-    public static String valueOf(int i) {
-        return String.valueOf(i);
-    }
-
-    public static String valueOf(long l) {
-        return String.valueOf(l);
-    }
-
-    public static String valueOf(float f) {
-        return String.valueOf(f);
-    }
-
-    public static String valueOf(double d) {
-        return String.valueOf(d);
     }
 
     public String intern() {
