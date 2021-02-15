@@ -438,7 +438,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Generates a detailed dump string of an object showing its class,
-     * hashCode and fields.
+     * hashCode and all accessible fields.
      *
      * @param self an object
      * @return the dump representation
@@ -455,10 +455,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         buffer.append(Integer.toHexString(self.hashCode()));
         boolean groovyObject = self instanceof GroovyObject;
 
-        /*jes this may be rewritten to use the new getProperties() stuff
-         * but the original pulls out private variables, whereas getProperties()
-         * does not. What's the real use of dump() here?
-         */
         while (klass != null) {
             for (final Field field : klass.getDeclaredFields()) {
                 if ((field.getModifiers() & Modifier.STATIC) == 0) {
@@ -482,32 +478,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
             klass = klass.getSuperclass();
         }
-
-        /* here is a different implementation that uses getProperties(). I have left
-         * it commented out because it returns a slightly different list of properties;
-         * i.e. it does not return privates. I don't know what dump() really should be doing,
-         * although IMO showing private fields is a no-no
-         */
-        /*
-        List props = getProperties(self);
-            for(Iterator itr = props.keySet().iterator(); itr.hasNext(); ) {
-            String propName = itr.next().toString();
-
-            // the original skipped this, so I will too
-            if(pv.getName().equals("class")) continue;
-            if(pv.getName().equals("metaClass")) continue;
-
-            buffer.append(" ");
-            buffer.append(propName);
-            buffer.append("=");
-            try {
-                buffer.append(InvokerHelper.toString(props.get(propName)));
-            }
-            catch (Exception e) {
-                buffer.append(e);
-            }
-        }
-        */
 
         buffer.append(">");
         return buffer.toString();
