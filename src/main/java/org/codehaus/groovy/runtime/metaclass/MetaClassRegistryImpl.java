@@ -200,7 +200,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
                 for (GeneratedMetaMethod.DgmMethodRecord record : records) {
                     Class[] newParams = new Class[record.parameters.length - 1];
-                    System.arraycopy(record.parameters, 1, newParams, 0, record.parameters.length-1);
+                    System.arraycopy(record.parameters, 1, newParams, 0, newParams.length);
 
                     MetaMethod method = new GeneratedMetaMethod.Proxy(
                             record.className,
