@@ -75,6 +75,7 @@ public class MockProxyMetaClass extends ProxyMetaClass {
         return new MockProxyMetaClass(metaRegistry, theClass, meta, interceptConstruction);
     }
 
+    @Override
     public Object invokeMethod(final Object object, final String methodName, final Object[] arguments) {
         if (null == interceptor && !fallingThrough) {
             throw new RuntimeException("cannot invoke method '" + methodName + "' without interceptor");
@@ -95,6 +96,28 @@ public class MockProxyMetaClass extends ProxyMetaClass {
         return result;
     }
 
+    @Override
+    public Object invokeMethod(final Class sender, final Object object, final String methodName, final Object[] arguments, final boolean isCallToSuper, final boolean fromInsideClass) {
+        if (null == interceptor && !fallingThrough) {
+            throw new RuntimeException("cannot invoke method '" + methodName + "' without interceptor");
+        }
+        Object result = FALL_THROUGH_MARKER;
+        if (interceptor != null) {
+            result = interceptor.beforeInvoke(object, methodName, arguments);
+        }
+        if (result == FALL_THROUGH_MARKER) {
+            Interceptor saved = interceptor;
+            interceptor = null;
+            boolean savedFallingThrough = fallingThrough;
+            fallingThrough = true;
+            result = adaptee.invokeMethod(sender, object, methodName, arguments, isCallToSuper, fromInsideClass);
+            fallingThrough = savedFallingThrough;
+            interceptor = saved;
+        }
+        return result;
+    }
+
+    @Override
     public Object invokeStaticMethod(final Object object, final String methodName, final Object[] arguments) {
         if (null == interceptor && !fallingThrough) {
             throw new RuntimeException("cannot invoke static method '" + methodName + "' without interceptor");
@@ -115,6 +138,7 @@ public class MockProxyMetaClass extends ProxyMetaClass {
         return result;
     }
 
+    @Override
     public Object getProperty(Class aClass, Object object, String property, boolean b, boolean b1) {
         if (null == interceptor && !fallingThrough) {
             throw new RuntimeException("cannot get property '" + property + "' without interceptor");
@@ -135,6 +159,7 @@ public class MockProxyMetaClass extends ProxyMetaClass {
         return result;
     }
 
+    @Override
     public void setProperty(Class aClass, Object object, String property, Object newValue, boolean b, boolean b1) {
         if (null == interceptor && !fallingThrough) {
             throw new RuntimeException("cannot set property '" + property + "' without interceptor");
@@ -162,6 +187,7 @@ public class MockProxyMetaClass extends ProxyMetaClass {
      * Unlike general impl in superclass, ctors are not intercepted but relayed
      * unless interceptConstruction is set.
      */
+    @Override
     public Object invokeConstructor(final Object[] arguments) {
         if (interceptConstruction && null == interceptor)
             throw new RuntimeException("cannot invoke constructor without interceptor");
