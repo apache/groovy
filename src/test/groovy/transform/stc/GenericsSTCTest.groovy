@@ -807,6 +807,23 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9945
+    void testShouldUseMethodGenericType9() {
+        assertScript '''
+            interface I<T> {
+            }
+            class A<T> implements I<String> {
+                def m(T t) { 'works' }
+            }
+            class B<T> extends A<T> {
+            }
+
+            def bee = new B<Float>()
+            def obj = bee.m(3.14f)
+            assert obj == 'works'
+        '''
+    }
+
     // GROOVY-5516
     void testAddAllWithCollectionShouldBeAllowed() {
         assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
