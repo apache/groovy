@@ -308,16 +308,7 @@ public class CallSiteWriter {
         int numberOfArguments = containsSpreadExpression ? -1 : AsmClassGenerator.argumentSize(arguments);
         int operandsToReplace = 1;
         if (numberOfArguments > MethodCallerMultiAdapter.MAX_ARGS || containsSpreadExpression) {
-            ArgumentListExpression ae;
-            if (arguments instanceof ArgumentListExpression) {
-                ae = (ArgumentListExpression) arguments;
-            } else if (arguments instanceof TupleExpression) {
-                TupleExpression te = (TupleExpression) arguments;
-                ae = new ArgumentListExpression(te.getExpressions());
-            } else {
-                ae = new ArgumentListExpression();
-                ae.addExpression(arguments);
-            }
+            ArgumentListExpression ae = InvocationWriter.makeArgumentList(arguments);
             controller.getCompileStack().pushImplicitThis(false);
             if (containsSpreadExpression) {
                 numberOfArguments = -1;
@@ -361,7 +352,7 @@ public class CallSiteWriter {
         }
         operandStack.replace(ClassHelper.OBJECT_TYPE,operandsToReplace);
     }
-    
+
     private static String getDescForParamNum(int numberOfArguments) {
         switch (numberOfArguments) {
             case 0:
