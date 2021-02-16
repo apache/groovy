@@ -648,6 +648,28 @@ class GStringTest extends GroovyTestCase {
         assert gstr14.toString() === gstr14.toString()
     }
 
+    void testGStringLiteral2() {
+        assertScript '''
+            final class Test {
+                @groovy.transform.KnownImmutable
+                private static final class Item {
+                    private int toStringInvocationCount = 0
+                    @Override
+                    synchronized String toString() {
+                        toStringInvocationCount++
+                        return "item"
+                    }
+                }
+                static void main(String[] args) {
+                    Item item = new Item()
+                    new StringBuilder().append("item: ${item}")
+                    assert 1 == item.toStringInvocationCount
+                }
+            }
+        '''
+    }
+
+
     @groovy.transform.Immutable
     static class GroovyImmutableValue {
         private final String v = '123'
