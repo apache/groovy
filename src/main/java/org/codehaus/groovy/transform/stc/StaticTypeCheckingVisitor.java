@@ -1019,20 +1019,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void inferDiamondType(final ConstructorCallExpression cce, final ClassNode lType) {
+        ClassNode cceType = cce.getType(), inferredType = lType;
         // check if constructor call expression makes use of the diamond operator
-        ClassNode node = cce.getType();
-        if (node.isUsingGenerics() && node.getGenericsTypes() != null && node.getGenericsTypes().length == 0) {
-            ArgumentListExpression argumentListExpression = InvocationWriter.makeArgumentList(cce.getArguments());
-            if (argumentListExpression.getExpressions().isEmpty()) {
-                adjustGenerics(lType, node);
-            } else {
-                ClassNode type = getType(argumentListExpression.getExpression(0));
+        if (cceType.getGenericsTypes() != null && cceType.getGenericsTypes().length == 0) {
+            ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(cce.getArguments());
+            ConstructorNode constructor = cce.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+            if (!argumentList.getExpressions().isEmpty() && constructor != null) {
+                ClassNode type = GenericsUtils.parameterizeType(cceType, cceType);
+                type = inferReturnTypeGenerics(type, constructor, argumentList);
                 if (type.isUsingGenerics()) {
-                    adjustGenerics(type, node);
+                    inferredType = type;
                 }
             }
-            // store inferred type on CCE
-            storeType(cce, node);
+            adjustGenerics(inferredType, cceType);
+            storeType(cce, cceType);
         }
     }
 
@@ -5096,7 +5096,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @return parameterized, infered, class node
      */
     protected ClassNode inferReturnTypeGenerics(final ClassNode receiver, final MethodNode method, final Expression arguments, final GenericsType[] explicitTypeHints) {
-        ClassNode returnType = method.getReturnType();
+        ClassNode returnType = method instanceof ConstructorNode ? method.getDeclaringClass() : method.getReturnType();
         if (getGenericsWithoutArray(returnType) == null) {
             return returnType;
         }
