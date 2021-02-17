@@ -1051,19 +1051,33 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void inferDiamondType(final ConstructorCallExpression cce, final ClassNode lType) {
-        ClassNode cceType = cce.getType();
+        ClassNode cceType = cce.getType(), inferredType = lType;
         // check if constructor call expression makes use of the diamond operator
         if (cceType.getGenericsTypes() != null && cceType.getGenericsTypes().length == 0) {
-            ArgumentListExpression argumentListExpression = InvocationWriter.makeArgumentList(cce.getArguments());
-            if (argumentListExpression.getExpressions().isEmpty()) {
-                adjustGenerics(lType, cceType);
-            } else {
-                ClassNode type = getType(argumentListExpression.getExpression(0));
-                if (type.isUsingGenerics()) {
-                    adjustGenerics(type, cceType);
+            ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(cce.getArguments());
+            ConstructorNode constructor = cce.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+            if (!argumentList.getExpressions().isEmpty() && constructor != null) {
+                ClassNode type = GenericsUtils.parameterizeType(cceType, cceType);
+                type = inferReturnTypeGenerics(type, constructor, argumentList);
+                if (lType.getGenericsTypes() != null // GROOVY-10367: nothing to inspect
+                        // GROOVY-6232, GROOVY-9956: if cce not assignment compatible, process target as additional type witness
+                        && checkCompatibleAssignmentTypes(lType, type, cce) && !GenericsUtils.buildWildcardType(lType).isCompatibleWith(type)) {
+                    // allow covariance of each type parameter, but maintain semantics for nested generics
+
+                    ClassNode pType = GenericsUtils.parameterizeType(lType, type);
+                    GenericsType[] lhs = pType.getGenericsTypes(), rhs = type.getGenericsTypes();
+                    if (lhs == null || rhs == null || lhs.length != rhs.length) throw new GroovyBugError(
+                            "Parameterization failed: " + prettyPrintType(pType) + " ~ " + prettyPrintType(type));
+
+                    if (java.util.stream.IntStream.range(0, lhs.length).allMatch(i ->
+                            GenericsUtils.buildWildcardType(getCombinedBoundType(lhs[i])).isCompatibleWith(rhs[i].getType()))) {
+                        type = pType; // lType proved to be a viable type witness
+                    }
                 }
+                inferredType = type;
             }
-            // store inferred type on CCE
+
+            adjustGenerics(inferredType, cceType);
             storeType(cce, cceType);
         }
     }
