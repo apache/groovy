@@ -20,10 +20,12 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.GString;
 import groovy.lang.GroovyObject;
+import groovy.transform.Pure;
 import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.util.Locale;
 
@@ -56,7 +58,7 @@ public class GStringImpl extends GString {
      * @param strings the string parts
      */
     public GStringImpl(Object[] values, String[] strings) {
-        this(values, strings, checkValuesImmutable(values), null, false);
+        this(values, strings, checkValuesStringConstant(values), null, false);
     }
 
     /**
@@ -351,15 +353,26 @@ public class GStringImpl extends GString {
         return str;
     }
 
-    private static boolean checkValuesImmutable(Object[] values) {
+    private static boolean checkValuesStringConstant(Object[] values) {
         for (Object value : values) {
             if (null == value) continue;
-            if (!(ImmutablePropertyUtils.builtinOrMarkedImmutableClass(value.getClass())
+            if (!(toStringMarkedPure(value.getClass())
+                    || ImmutablePropertyUtils.builtinOrMarkedImmutableClass(value.getClass())
                     || (value instanceof GStringImpl && ((GStringImpl) value).cacheable))) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    private static boolean toStringMarkedPure(Class<?> clazz) {
+        Method toStringMethod;
+        try {
+            toStringMethod = clazz.getMethod("toString");
+        } catch (NoSuchMethodException | SecurityException e) {
+            return false;
+        }
+        return toStringMethod.isAnnotationPresent(Pure.class);
     }
 }

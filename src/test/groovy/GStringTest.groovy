@@ -19,6 +19,7 @@
 package groovy
 
 import groovy.test.GroovyTestCase
+import groovy.transform.Pure
 
 class GStringTest extends GroovyTestCase {
 
@@ -646,6 +647,10 @@ class GStringTest extends GroovyTestCase {
         def gstr14 = "a${new JcipImmutableValue()}b"
         assert 'a234b' == gstr14
         assert gstr14.toString() === gstr14.toString()
+
+        def gstr15 = "a${new PureValue()}b"
+        assert 'a345b' == gstr15
+        assert gstr15.toString() === gstr15.toString()
     }
 
     void testGStringLiteral2() {
@@ -669,6 +674,27 @@ class GStringTest extends GroovyTestCase {
         '''
     }
 
+    // GROOVY-9946
+    void testGStringLiteral3() {
+        assertScript '''
+            final class Test {
+                private static final class Item {
+                    private int toStringInvocationCount = 0
+                    @Override
+                    @groovy.transform.Pure
+                    synchronized String toString() {
+                        toStringInvocationCount++
+                        return "item"
+                    }
+                }
+                static void main(String[] args) {
+                    Item item = new Item()
+                    new StringBuilder().append("item: ${item}")
+                    assert 1 == item.toStringInvocationCount
+                }
+            }
+        '''
+    }
 
     @groovy.transform.Immutable
     static class GroovyImmutableValue {
@@ -682,4 +708,9 @@ class GStringTest extends GroovyTestCase {
         String toString() { v }
     }
 
+    static final class PureValue {
+        private final String v = '345'
+        @Pure
+        String toString() { v }
+    }
 }
