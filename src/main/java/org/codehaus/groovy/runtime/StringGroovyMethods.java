@@ -221,6 +221,20 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Append the GString to the StringBuilder using a more efficient
+     * approach than Java's default approach for a CharSequence.
+     *
+     * @param sb a StringBuilder
+     * @param gs a GStringImpl
+     * @return the StringBuilder
+     *
+     * @since 3.0.8
+     */
+    public static StringBuilder append(final StringBuilder sb, GStringImpl gs) {
+        return sb.append(gs.toString());
+    }
+
+    /**
      * Convenience method to uncapitalize the first letter of a CharSequence
      * (typically the first letter of a word). Example usage:
      * <pre class="groovyTestCase">
