@@ -210,27 +210,82 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testDiamondInferrenceFromConstructor() {
+    void testDiamondInferrenceFromConstructor1() {
         assertScript '''
-            Set< Long > s2 = new HashSet<>()
-        '''
-    }
-
-    void testDiamondInferrenceFromConstructorWithoutAssignment() {
-        assertScript '''
-            new HashSet<>(Arrays.asList(0L,0L));
+            Set<Long> set = new HashSet<>()
         '''
     }
 
     void testDiamondInferrenceFromConstructor2() {
-        shouldFailWithMessages '''
-            Set< Number > s3 = new HashSet<>(Arrays.asList(0L,0L));
-        ''', 'Cannot assign java.util.HashSet <java.lang.Long> to: java.util.Set <Number>'
+        assertScript '''
+            new HashSet<>(Arrays.asList(0L))
+        '''
     }
 
     void testDiamondInferrenceFromConstructor3() {
+        shouldFailWithMessages '''
+            Set<Number> set = new HashSet<>(Arrays.asList(0L))
+        ''', 'Cannot assign java.util.HashSet <java.lang.Long> to: java.util.Set <Number>'
+
+        // not diamond inference, but tests compatible assignment
         assertScript '''
-            Set<Number> s4 = new HashSet<Number>(Arrays.asList(0L,0L))
+            Set<Number> set = new HashSet<Number>(Arrays.asList(0L))
+        '''
+    }
+
+    void testDiamondInferrenceFromConstructor4() {
+        assertScript '''
+            Set<? extends Number> set = new HashSet<>(Arrays.asList(0L))
+        '''
+    }
+
+    // GROOVY-6232
+    void testDiamondInferrenceFromConstructor5() {
+        [/*'"a",new Object()',*/ 'new Object(),"b"', /*'"a","b"'*/].each { args ->
+            assertScript """
+                class C<T> {
+                    C(T x, T y) {
+                    }
+                }
+                void test() {
+                    C<Object> c = new C<>($args)
+                }
+                test()
+            """
+        }
+    }
+
+    // GROOVY-9948
+    void testDiamondInferrenceFromConstructor6() {
+        assertScript '''
+            class C<T> {
+                T p
+                C(T p) {
+                    this.p = p
+                }
+            }
+
+            void test() {
+                C<Integer> c = new C<>(1)
+                assert c.p < 10
+            }
+            test()
+        '''
+    }
+
+    // GROOVY-9948
+    void testDiamondInferrenceFromConstructor7() {
+        assertScript '''
+            @groovy.transform.TupleConstructor
+            class C<T> {
+                T p
+            }
+
+            void test() {
+                C<Integer> c = new C<>(1)
+                assert c.p < 10
+            }
+            test()
         '''
     }
 
@@ -1757,17 +1812,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def map = new HashMap<>()
             map.put(1, 'foo')
             map.put('bar', new Date())
-        '''
-    }
-
-    // GROOVY-6232
-    void testDiamond() {
-        assertScript '''
-            class Foo<T>{  Foo(T a, T b){} }
-            def bar() {
-                Foo<Object> f = new Foo<>("a",new Object())
-            }
-            bar()
         '''
     }
 
