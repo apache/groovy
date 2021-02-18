@@ -21,11 +21,11 @@
  * The groovy project uses Gradle for building, and Gradle itself
  * depends on a specific Groovy configuration to build Groovy projects.
  *
- * In this build, we first build a "boostrap compiler", which provides
+ * In this build, we first build a "bootstrap compiler", which provides
  * a minimal Groovy runtime.
  *
  * But because Groovy also repackages some internal libraries, we use
- * internally different jars for compiling Groovy with the boostrapped
+ * internally different jars for compiling Groovy with the bootstrapped
  * Groovy than what is published externally.
  */
 
