@@ -14,3 +14,4 @@
 # limitations under the License.
 
 jdk11 = true
+customTools = [".muse/codenarc.sh"]
