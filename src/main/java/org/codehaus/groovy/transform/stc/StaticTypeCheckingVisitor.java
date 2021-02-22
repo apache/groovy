@@ -264,6 +264,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeCh
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeCheckMethodsWithGenerics;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DECLARATION_INFERRED_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DYNAMIC_RESOLUTION;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.IMPLICIT_RECEIVER;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_FIELDS_ACCESS;
@@ -721,8 +722,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             storeType(vexp, type != null ? type: pexp.getType());
 
             String receiver = vexp.getNodeMetaData(IMPLICIT_RECEIVER);
-            // GROOVY-7701: correct false assumption made by VariableScopeVisitor
-            if (receiver != null && !receiver.endsWith("owner") && !(vexp.getAccessedVariable() instanceof DynamicVariable)) {
+            Boolean dynamic = pexp.getNodeMetaData(DYNAMIC_RESOLUTION);
+            // GROOVY-7701, GROOVY-7996: correct false assumption made by VariableScopeVisitor
+            if (((receiver != null && !receiver.endsWith("owner")) || Boolean.TRUE.equals(dynamic))
+                    && !(vexp.getAccessedVariable() instanceof DynamicVariable)) {
                 vexp.setAccessedVariable(new DynamicVariable(dynName, false));
             }
             return true;
@@ -1602,9 +1605,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (mopMethod == null) mopMethod = receiverType.getMethod("propertyMissing", new Parameter[]{new Parameter(STRING_TYPE, "propertyName")});
 
                 if (mopMethod != null && !mopMethod.isStatic() && !mopMethod.isSynthetic()) {
-                    pexp.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, Boolean.TRUE);
+                    pexp.putNodeMetaData(DYNAMIC_RESOLUTION, Boolean.TRUE);
                     pexp.removeNodeMetaData(DECLARATION_INFERRED_TYPE);
                     pexp.removeNodeMetaData(INFERRED_TYPE);
+                    visitor.visitMethod(mopMethod);
                     return true;
                 }
             }
@@ -3398,7 +3402,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     mn = disambiguateMethods(mn, chosenReceiver != null ? chosenReceiver.getType() : null, args, call);
                     if (mn.size() == 1) {
                         MethodNode directMethodCallCandidate = mn.get(0);
-                        if (call.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) == null &&
+                        if (call.getNodeMetaData(DYNAMIC_RESOLUTION) == null &&
                                 !directMethodCallCandidate.isStatic() && objectExpression instanceof ClassExpression &&
                                 !"java.lang.Class".equals(directMethodCallCandidate.getDeclaringClass().getName())) {
                             ClassNode owner = directMethodCallCandidate.getDeclaringClass();
