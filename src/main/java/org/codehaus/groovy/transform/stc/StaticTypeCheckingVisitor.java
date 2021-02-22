@@ -673,8 +673,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             storeType(vexp, Optional.ofNullable(type).orElseGet(pexp::getType));
 
             String receiver = vexp.getNodeMetaData(IMPLICIT_RECEIVER);
-            // GROOVY-7701: correct false assumption made by VariableScopeVisitor
-            if (receiver != null && !receiver.endsWith("owner") && !(vexp.getAccessedVariable() instanceof DynamicVariable)) {
+            Boolean dynamic = pexp.getNodeMetaData(DYNAMIC_RESOLUTION);
+            // GROOVY-7701, GROOVY-7996: correct false assumption made by VariableScopeVisitor
+            if (((receiver != null && !receiver.endsWith("owner")) || Boolean.TRUE.equals(dynamic))
+                    && !(vexp.getAccessedVariable() instanceof DynamicVariable)) {
                 vexp.setAccessedVariable(new DynamicVariable(dynName, false));
             }
             return true;
@@ -1611,6 +1613,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     pexp.putNodeMetaData(DYNAMIC_RESOLUTION, Boolean.TRUE);
                     pexp.removeNodeMetaData(DECLARATION_INFERRED_TYPE);
                     pexp.removeNodeMetaData(INFERRED_TYPE);
+                    visitor.visitMethod(mopMethod);
                     return true;
                 }
             }

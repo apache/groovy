@@ -171,7 +171,7 @@ final class Groovy7996 {
     }
 
     @Test // GROOVY-8073
-    void testDelegatePropertyAccessFromClosure() {
+    void testDelegatePropertyAccessFromClosure1() {
         assertScript '''
             @groovy.transform.CompileStatic
             class Main {
@@ -182,6 +182,45 @@ final class Groovy7996 {
                     }
                 }
             }
+        '''
+    }
+
+    @Test
+    void testDelegatePropertyAccessFromClosure2() {
+        assertScript '''
+            import groovy.transform.*
+            import org.codehaus.groovy.ast.DynamicVariable
+            import org.codehaus.groovy.ast.expr.VariableExpression
+            import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE
+            import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE
+            import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PROPERTY_OWNER
+
+            class JSON {
+                def get(String name) {
+                    new JSON()
+                }
+            }
+
+            class POGO {
+                Number getAnswer() {
+                    42
+                }
+                @CompileStatic
+                void usage() {
+                    new JSON().with {
+                        @ASTTest(phase=CLASS_GENERATION, value={
+                            def vexp = node.rightExpression
+                            assert vexp instanceof VariableExpression
+                            assert vexp.accessedVariable instanceof DynamicVariable
+                            assert vexp.getNodeMetaData(INFERRED_TYPE) == OBJECT_TYPE
+                            assert vexp.getNodeMetaData(PROPERTY_OWNER).name == 'JSON'
+                        })
+                        def result = answer // "answer" accessed from JSON; "getAnswer()" invoked from POGO
+                    }
+                }
+            }
+
+            new POGO().usage()
         '''
     }
 }
