@@ -19,7 +19,7 @@
 package groovy
 
 import groovy.test.GroovyTestCase
-import groovy.transform.Pure
+import groovy.annotations.Pure
 
 class GStringTest extends GroovyTestCase {
 
@@ -681,7 +681,7 @@ class GStringTest extends GroovyTestCase {
                 private static final class Item {
                     private int toStringInvocationCount = 0
                     @Override
-                    @groovy.transform.Pure
+                    @groovy.annotations.Pure
                     synchronized String toString() {
                         toStringInvocationCount++
                         return "item"

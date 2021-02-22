@@ -22,6 +22,7 @@ import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
@@ -186,6 +187,15 @@ public class ReflectionUtils {
             return VM_PLUGIN.trySetAccessible(ao);
         } catch (Throwable ignore) {
             // swallow for strict security managers, module systems, android or others
+        }
+        return false;
+    }
+
+    public static boolean hasAnnotationWithSimpleName(AccessibleObject obj, String simpleName) {
+        for (Annotation annotation : obj.getAnnotations()) {
+            if (annotation.annotationType().getSimpleName().equals(simpleName)) {
+                return true;
+            }
         }
         return false;
     }

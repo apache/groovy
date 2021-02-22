@@ -17,7 +17,6 @@
  *  under the License.
  */
 import javax.inject.Inject
-import org.apache.groovy.gradle.SharedConfiguration
 import org.apache.groovy.gradle.DistributionExtension
 import org.apache.groovy.gradle.DocGDK
 
@@ -83,7 +82,7 @@ configurations {
 
 dependencies {
     rootProject.allprojects {
-        if (pluginManager.hasPlugin('org.apache.groovy-base')) {
+        if (pluginManager.hasPlugin('org.apache.groovy-java-base')) {
             baseProjects(it)
         }
     }

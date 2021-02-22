@@ -20,7 +20,6 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.GString;
 import groovy.lang.GroovyObject;
-import groovy.transform.Pure;
 import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
 
 import java.io.IOException;
@@ -28,6 +27,8 @@ import java.io.Writer;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.util.Locale;
+
+import static org.codehaus.groovy.reflection.ReflectionUtils.hasAnnotationWithSimpleName;
 
 /**
  * Default implementation of a GString used by the compiler. A GString consists
@@ -373,6 +374,6 @@ public class GStringImpl extends GString {
         } catch (NoSuchMethodException | SecurityException e) {
             return false;
         }
-        return toStringMethod.isAnnotationPresent(Pure.class);
+        return hasAnnotationWithSimpleName(toStringMethod, "Pure");
     }
 }

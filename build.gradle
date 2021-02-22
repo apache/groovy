@@ -113,6 +113,7 @@ dependencies {
     implementation "org.ow2.asm:asm-util:${versions.asm}"
     implementation "com.googlecode:openbeans:${versions.openbeans}"
     implementation "com.tunnelvisionlabs:antlr4-runtime:${versions.antlr4}"
+    api project(':groovy-annotations')
 
     antlr "com.tunnelvisionlabs:antlr4:${versions.antlr4}"
 
