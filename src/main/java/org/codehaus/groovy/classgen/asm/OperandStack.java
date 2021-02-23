@@ -540,7 +540,8 @@ public class OperandStack {
                 mv.visitLdcInsn(value);
             }
         } else if (ClassHelper.float_TYPE.equals(type)) {
-            if ((Float)value==0f) {
+            // GROOVY-9797: Use Float.equals to differentiate between positive and negative zero
+            if (value.equals(0f)) {
                 mv.visitInsn(FCONST_0);
             } else if ((Float)value==1f) {
                 mv.visitInsn(FCONST_1);
