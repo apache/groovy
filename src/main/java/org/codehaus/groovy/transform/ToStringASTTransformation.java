@@ -76,7 +76,7 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class ToStringASTTransformation extends AbstractASTTransformation {
 
-    static final Class MY_CLASS = ToString.class;
+    static final Class<?> MY_CLASS = ToString.class;
     static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode STRINGBUILDER_TYPE = make(StringBuilder.class);
@@ -245,9 +245,8 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
 
         // wrap up
         body.addStatement(appendS(result, constX(")")));
-        MethodCallExpression toString = callX(result, "toString");
-        toString.setImplicitThis(false);
-        return toString;
+
+        return toStringX(result);
     }
 
     private static void appendValue(BlockStatement body, Expression result, VariableExpression first, Expression value, String name, boolean includeNames, boolean ignoreNulls, boolean canBeSelf, boolean pojo) {
@@ -255,17 +254,14 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         final Statement appendValue = ignoreNulls ? ifS(notNullX(value), thenBlock) : thenBlock;
         appendCommaIfNotFirst(thenBlock, result, first);
         appendPrefix(thenBlock, result, name, includeNames);
-        Expression toString = pojo
-                ? callX(value, "toString")
-                : callX(INVOKER_TYPE, "toString", value);
+        Expression toString = pojo ? toStringX(value) : callX(INVOKER_TYPE, "toString", value);
         if (canBeSelf) {
             thenBlock.addStatement(ifElseS(
-                    sameX(value, new VariableExpression("this")),
+                    sameX(value, varX("this")),
                     appendS(result, constX("(this)")),
                     appendS(result, toString)));
         } else {
             thenBlock.addStatement(appendS(result, toString));
-
         }
         body.addStatement(appendValue);
     }
@@ -296,5 +292,11 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         MethodCallExpression append = callX(result, "append", expr);
         append.setImplicitThis(false);
         return stmt(append);
+    }
+
+    private static Expression toStringX(final Expression object) {
+        MethodCallExpression toString = callX(object, "toString");
+        toString.setImplicitThis(false);
+        return toString;
     }
 }
