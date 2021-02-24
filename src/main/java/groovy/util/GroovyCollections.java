@@ -199,7 +199,7 @@ public class GroovyCollections {
 
     /**
      * Selects the maximum value found in an array of items, so
-     * min([2, 4, 6] as Object[]) == 6.
+     * max([2, 4, 6] as Object[]) == 6.
      *
      * @param items an array of items
      * @return the maximum value
