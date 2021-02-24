@@ -1250,31 +1250,32 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return false;
     }
 
-    protected void typeCheckAssignment(final BinaryExpression assignmentExpression, final Expression leftExpression, final ClassNode leftExpressionType, final Expression rightExpression, final ClassNode inferredRightExpressionTypeOrig) {
-        ClassNode inferredRightExpressionType = inferredRightExpressionTypeOrig;
+    protected void typeCheckAssignment(final BinaryExpression assignmentExpression, final Expression leftExpression, final ClassNode leftExpressionType, final Expression rightExpression, final ClassNode rightExpressionType) {
         if (!typeCheckMultipleAssignmentAndContinue(leftExpression, rightExpression)) return;
 
         // TODO: need errors for write-only too!
         if (addedReadOnlyPropertyError(leftExpression)) return;
 
-        ClassNode leftRedirect = leftExpressionType.redirect();
-        // see if instanceof applies
-        if (rightExpression instanceof VariableExpression && hasInferredReturnType(rightExpression) && assignmentExpression.getOperation().getType() == EQUAL) {
-            inferredRightExpressionType = rightExpression.getNodeMetaData(INFERRED_RETURN_TYPE);
+        ClassNode rTypeInferred, rTypeWrapped; // check for instanceof and spreading
+        if (rightExpression instanceof VariableExpression && hasInferredReturnType(rightExpression) && assignmentExpression.getOperation().getType() == ASSIGN) {
+            rTypeInferred = rightExpression.getNodeMetaData(INFERRED_RETURN_TYPE);
+        } else {
+            rTypeInferred = rightExpressionType;
         }
-        ClassNode wrappedRHS = adjustTypeForSpreading(inferredRightExpressionType, leftExpression);
+        rTypeWrapped = adjustTypeForSpreading(rTypeInferred, leftExpression);
 
-        // check types are compatible for assignment
-        if (!checkCompatibleAssignmentTypes(leftRedirect, wrappedRHS, rightExpression)) {
-            if (!extension.handleIncompatibleAssignment(leftExpressionType, inferredRightExpressionType, assignmentExpression)) {
-                addAssignmentError(leftExpressionType, inferredRightExpressionType, assignmentExpression.getRightExpression());
+        if (!checkCompatibleAssignmentTypes(leftExpressionType, rTypeWrapped, rightExpression)) {
+            if (!extension.handleIncompatibleAssignment(leftExpressionType, rTypeInferred, assignmentExpression)) {
+                addAssignmentError(leftExpressionType, rTypeInferred, rightExpression);
             }
         } else {
-            addPrecisionErrors(leftRedirect, leftExpressionType, inferredRightExpressionType, rightExpression);
-            addListAssignmentConstructorErrors(leftRedirect, leftExpressionType, inferredRightExpressionType, rightExpression, assignmentExpression);
-            addMapAssignmentConstructorErrors(leftRedirect, leftExpression, rightExpression);
-            if (hasGStringStringError(leftExpressionType, wrappedRHS, rightExpression)) return;
-            checkTypeGenerics(leftExpressionType, wrappedRHS, rightExpression);
+            ClassNode lTypeRedirect = leftExpressionType.redirect();
+            addPrecisionErrors(lTypeRedirect, leftExpressionType, rTypeInferred, rightExpression);
+            addListAssignmentConstructorErrors(lTypeRedirect, leftExpressionType, rTypeInferred, rightExpression, assignmentExpression);
+            addMapAssignmentConstructorErrors(lTypeRedirect, leftExpression, rightExpression);
+            if (!hasGStringStringError(leftExpressionType, rTypeWrapped, rightExpression)) {
+                checkTypeGenerics(leftExpressionType, rTypeWrapped, rightExpression);
+            }
         }
     }
 
@@ -5582,8 +5583,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         addStaticTypeError("Due to their dynamic nature, usage of categories is not possible with static type checking active", call);
     }
 
-    protected void addAssignmentError(final ClassNode leftType, final ClassNode rightType, final Expression assignmentExpression) {
-        addStaticTypeError("Cannot assign value of type " + prettyPrintType(rightType) + " to variable of type " + prettyPrintType(leftType), assignmentExpression);
+    protected void addAssignmentError(final ClassNode leftType, final ClassNode rightType, final Expression expression) {
+        addStaticTypeError("Cannot assign value of type " + prettyPrintType(rightType) + " to variable of type " + prettyPrintType(leftType), expression);
     }
 
     protected void addUnsupportedPreOrPostfixExpressionError(final Expression expression) {

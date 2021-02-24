@@ -645,6 +645,15 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     public static boolean checkCompatibleAssignmentTypes(final ClassNode left, final ClassNode right, final Expression rightExpression, final boolean allowConstructorCoercion) {
+        // GROOVY-7307, GROOVY-9952, et al.
+        if (left.isGenericsPlaceHolder()) {
+            GenericsType[] genericsTypes = left.getGenericsTypes();
+            // should always be the case, but better safe than sorry
+            if (genericsTypes != null && genericsTypes.length == 1) {
+                return genericsTypes[0].isCompatibleWith(right);
+            }
+        }
+
         ClassNode leftRedirect = left.redirect();
         ClassNode rightRedirect = right.redirect();
         if (leftRedirect == rightRedirect) return true;
@@ -653,9 +662,8 @@ public abstract class StaticTypeCheckingSupport {
             return checkCompatibleAssignmentTypes(leftRedirect.getComponentType(), rightRedirect.getComponentType(), rightExpression, false);
         }
 
-        if (right == VOID_TYPE || right == void_WRAPPER_TYPE) {
-            return left == VOID_TYPE || left == void_WRAPPER_TYPE;
-        }
+        if (rightRedirect == void_WRAPPER_TYPE) return leftRedirect == VOID_TYPE;
+        if (rightRedirect == VOID_TYPE) return leftRedirect == void_WRAPPER_TYPE;
 
         if (isNumberType(rightRedirect) || WideningCategories.isNumberCategory(rightRedirect)) {
             if (BigDecimal_TYPE == leftRedirect || Number_TYPE == leftRedirect) {
@@ -676,7 +684,7 @@ public abstract class StaticTypeCheckingSupport {
         // on an assignment everything that can be done by a GroovyCast is allowed
 
         // anything can be assigned to an Object, String, Boolean or Class typed variable
-        if (isWildcardLeftHandSide(leftRedirect) && !(boolean_TYPE.equals(left) && rightExpressionIsNull)) return true;
+        if (isWildcardLeftHandSide(left) && !(leftRedirect == boolean_TYPE && rightExpressionIsNull)) return true;
 
         // char as left expression
         if (leftRedirect == char_TYPE && rightRedirect == STRING_TYPE) {
@@ -689,17 +697,15 @@ public abstract class StaticTypeCheckingSupport {
             return rightExpressionIsNull || (rightExpression instanceof ConstantExpression && rightExpression.getText().length() == 1);
         }
 
-        // if left is Enum and right is String or GString we do valueOf
-        if (leftRedirect.isDerivedFrom(Enum_Type) && (rightRedirect == GSTRING_TYPE || rightRedirect == STRING_TYPE)) {
+        // if left is an enum and right is String or GString we do valueOf
+        if (leftRedirect.isDerivedFrom(Enum_Type) && (rightRedirect == STRING_TYPE || rightRedirect == GSTRING_TYPE)) {
             return true;
         }
 
         // if right is array, map or collection we try invoking the constructor
         if (allowConstructorCoercion && isGroovyConstructorCompatible(rightExpression)) {
             // TODO: in case of the array we could maybe make a partial check
-            if (leftRedirect.isArray() && rightRedirect.isArray()) {
-                return checkCompatibleAssignmentTypes(leftRedirect.getComponentType(), rightRedirect.getComponentType());
-            } else if (rightRedirect.isArray() && !leftRedirect.isArray()) {
+            if (rightRedirect.isArray() && !leftRedirect.isArray()) {
                 return false;
             }
             return true;
@@ -719,15 +725,6 @@ public abstract class StaticTypeCheckingSupport {
 
         if (GROOVY_OBJECT_TYPE.equals(leftRedirect) && isBeingCompiled(right)) {
             return true;
-        }
-
-        if (left.isGenericsPlaceHolder()) {
-            // GROOVY-7307
-            GenericsType[] genericsTypes = left.getGenericsTypes();
-            if (genericsTypes != null && genericsTypes.length == 1) {
-                // should always be the case, but safe guard is better
-                return genericsTypes[0].isCompatibleWith(right);
-            }
         }
 
         // GROOVY-7316: It is an apparently legal thing to allow this. It's not type safe, but it is allowed...
