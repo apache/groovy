@@ -424,6 +424,23 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         ''', 'No such property: y for class: A'
     }
 
+    // GROOVY-9953
+    void testInstanceOfPropagatesToLocalVariable() {
+        assertScript '''
+            class A {
+            }
+            A test(Object x) {
+                if (x instanceof A) {
+                    def y = x
+                    return y
+                } else {
+                    new A()
+                }
+            }
+            new A().with { assert test(it) === it }
+        '''
+    }
+
     void testShouldNotFailWithWith() {
         assertScript '''
             class A {
