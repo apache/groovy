@@ -1675,8 +1675,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         FieldNode fieldNode = classNode.getDeclaredField(fieldName);
 
         if (fieldNode != null && !classNode.hasProperty(fieldName)) {
+            if (fieldNode.hasInitialExpression() && initialValue != null) {
+                throw createParsingFailedException("A field and a property have the same name '" + fieldName + "' and both have initial values", ctx);
+            }
             classNode.getFields().remove(fieldNode);
-
             propertyNode = new PropertyNode(fieldNode, modifiers | Opcodes.ACC_PUBLIC, null, null);
             classNode.addProperty(propertyNode);
         } else {
@@ -1718,6 +1720,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         PropertyNode propertyNode = classNode.getProperty(fieldName);
 
         if (null != propertyNode && propertyNode.getField().isSynthetic()) {
+            if (propertyNode.hasInitialExpression() && initialValue != null) {
+                throw createParsingFailedException("A field and a property have the same name '" + fieldName + "' and both have initial values", ctx);
+            }
             classNode.getFields().remove(propertyNode.getField());
             fieldNode = new FieldNode(fieldName, modifiers, variableType, classNode.redirect(), initialValue);
             propertyNode.setField(fieldNode);
