@@ -763,11 +763,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
 
             if (lType == null) lType = getType(leftExpression);
-            ClassNode rType = (isNullConstant(rightExpression) && !isPrimitiveType(lType)
-                    // primitive types should be ignored as they will result in another failure
-                    ? UNKNOWN_PARAMETER_TYPE
-                    : getType(rightExpression)
-            );
+            ClassNode rType = isNullConstant(rightExpression) && !isPrimitiveType(lType)
+                    ? UNKNOWN_PARAMETER_TYPE // null to primitive type is handled elsewhere
+                    : getInferredTypeFromTempInfo(rightExpression, getType(rightExpression));
 
             BinaryExpression reversedBinaryExpression = binX(rightExpression, expression.getOperation(), leftExpression);
             ClassNode resultType = (op == KEYWORD_IN || op == COMPARE_NOT_IN)
