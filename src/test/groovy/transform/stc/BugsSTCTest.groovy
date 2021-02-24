@@ -938,4 +938,22 @@ Printer
             }
         '''
     }
+
+    // GROOVY-9951
+    void testInnerImmutablePOJO() {
+        assertScript '''
+            import groovy.transform.Immutable
+            import groovy.transform.stc.POJO
+
+            class Outer {
+                @Immutable @POJO
+                static class Inner {
+                    String proper
+                }
+            }
+
+            def obj = new Outer.Inner('value')
+            assert obj.proper == 'value'
+        '''
+    }
 }

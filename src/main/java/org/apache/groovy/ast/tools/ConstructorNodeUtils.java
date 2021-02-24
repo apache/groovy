@@ -24,7 +24,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
@@ -33,14 +33,17 @@ import org.codehaus.groovy.transform.ImmutableASTTransformation;
 
 import java.util.List;
 
+import static java.util.stream.Collectors.toList;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.forS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
@@ -88,17 +91,20 @@ public class ConstructorNodeUtils {
         if (!pojo) {
             return stmt(callX(IMMUTABLE_TYPE, "checkPropNames", args(varX("this"), namedArgs)));
         }
-        BlockStatement block = new BlockStatement();
-        ListExpression knownPropNames = new ListExpression();
-        for (PropertyNode pNode : props) {
-            knownPropNames.addExpression(constX(pNode.getName()));
-        }
-        VariableExpression validNames = localVarX("validNames", ClassHelper.LIST_TYPE);
+
+        Expression validNames = localVarX("validNames", ClassHelper.LIST_TYPE);
         Parameter name = param(ClassHelper.STRING_TYPE, "arg");
-        Statement loopS = ifS(notX(callX(validNames, "contains", varX(name))),
-                throwS(ctorX(EXCEPTION, plusX(constX("Unknown named argument: "), varX(name)))));
-        block.addStatement(declS(validNames, knownPropNames));
-        block.addStatement(forS(name, callX(namedArgs, "keySet"), loopS));
-        return block;
+
+        MethodCallExpression names = callX(namedArgs, "keySet");
+        names.setImplicitThis(false);
+
+        MethodCallExpression isNameValid = callX(validNames, "contains", varX(name));
+        isNameValid.setImplicitThis(false);
+
+        return block(
+            declS(validNames, listX(props.stream().map(p -> constX(p.getName())).collect(toList()))),
+            forS(name, names, ifS(notX(isNameValid),
+                    throwS(ctorX(EXCEPTION, plusX(constX("Unknown named argument: "), varX(name))))))
+        );
     }
 }
