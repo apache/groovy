@@ -157,12 +157,12 @@ public class JsonParserLax extends JsonParserCharArray {
 
                 case '/': /* */ //
                     handleComment();
-                    startIndexOfKey = __index;
+                    startIndexOfKey = __index + 1;
                     break;
 
                 case '#':
                     handleBashComment();
-                    startIndexOfKey = __index;
+                    startIndexOfKey = __index + 1;
                     break;
             }
         }
@@ -321,7 +321,6 @@ public class JsonParserLax extends JsonParserCharArray {
             __currentChar = charArray[__index];
 
             if (__currentChar == '\n') {
-                __index++;
                 return;
             }
         }
@@ -342,10 +341,7 @@ public class JsonParserLax extends JsonParserCharArray {
                                 __index++;
                                 __currentChar = charArray[__index];
                                 if (__currentChar == '/') {
-                                    if (hasMore()) {
-                                        __index++;
-                                        return;
-                                    }
+                                    return;
                                 }
                             } else {
                                 complain("missing close of comment");
@@ -358,12 +354,7 @@ public class JsonParserLax extends JsonParserCharArray {
                         __currentChar = charArray[__index];
 
                         if (__currentChar == '\n') {
-                            if (hasMore()) {
-                                __index++;
-                                return;
-                            } else {
-                                return;
-                            }
+                            return;
                         }
                     }
             }
@@ -635,9 +626,11 @@ public class JsonParserLax extends JsonParserCharArray {
                 switch (__currentChar) {
                     case '/':
                         handleComment();
+                        __index++;
                         continue;
                     case '#':
                         handleBashComment();
+                        __index++;
                         continue;
                     case ',':
                         __index++;

@@ -165,4 +165,25 @@ class JsonSlurperLaxTest extends JsonSlurperTest {
         assert !parser.parseText(jsonString).containsKey('appUserId')
     }
 
+    void testGroovy9954() {
+        String jsonString = """
+// first comment
+{
+// comment before foo
+foo:bar,
+/* comment before foo1 */'foo1': 'bar1',
+# comment before foo2
+"foo2": "bar2",
+array: [/* comment in array */"a"/* comment in array */,"b"]
+}
+// last comment
+"""
+
+        Map<String, Object> map = parser.parseText(jsonString)
+        assert map.foo == "bar"
+        assert map.foo1 == "bar1"
+        assert map.foo2 == "bar2"
+        assert map.array == ["a", "b"]
+    }
+
 }
