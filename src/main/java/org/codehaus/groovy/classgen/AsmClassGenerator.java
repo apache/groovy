@@ -1054,9 +1054,8 @@ public class AsmClassGenerator extends ClassGenerator {
                         field = classNode.getDeclaredField(name);
                         if (field == null && controller.isStaticContext()
                                 && expression instanceof AttributeExpression) {
-                            // GROOVY-6183: checks supers
-                            field = classNode.getField(name);
-                            if (!field.isPublic() && !field.isProtected()) {
+                            field = classNode.getField(name); // GROOVY-6183: check supers
+                            if (field != null && !field.isPublic() && !field.isProtected()) {
                                 field = null;
                             }
                         }

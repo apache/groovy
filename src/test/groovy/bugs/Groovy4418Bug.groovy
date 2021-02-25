@@ -21,7 +21,7 @@ package groovy.bugs
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
-import static groovy.util.GroovyAssert.shouldFail
+import static groovy.test.GroovyAssert.shouldFail
 
 final class Groovy4418Bug {
 
@@ -52,6 +52,15 @@ final class Groovy4418Bug {
             A.reset()
             assert A.x == 2
             assert A.@x == 2
+        '''
+
+        // TODO: MissingFieldException
+        shouldFail IncompatibleClassChangeError, '''
+            class A {
+                static main(args) {
+                    this.@x // NullPointerException
+                }
+            }
         '''
     }
 
@@ -155,41 +164,37 @@ final class Groovy4418Bug {
 
     @Test // GROOVY-8385
     void testParentClassPrivateStaticAttributeSetAccessShouldCallSetter() {
-        shouldFail(MissingFieldException) {
-            Eval.me'''
-                class A {
-                    static private p
-    
-                    void setP(def val) { p = 2 }
-    
-                    def getP() { -1 }
-                }
-                class B extends A {
-                    def m() { this.@p = 1 }
-                }
-                def x = new B()
-                assert A.@p == null
-                x.m()
-            '''
-        }
+        shouldFail MissingFieldException, '''
+            class A {
+                static private p
+
+                void setP(def val) { p = 2 }
+
+                def getP() { -1 }
+            }
+            class B extends A {
+                def m() { this.@p = 1 }
+            }
+            def x = new B()
+            assert A.@p == null
+            x.m()
+        '''
     }
 
     @Test // GROOVY-8385
     void testParentClassPrivateNonStaticAttributeSetAccessShouldNotCallSetter() {
-        shouldFail(MissingFieldException) {
-            Eval.me'''
-                class A {
-                    private p
-                    void setP(def val) { p = 2 }
-                    def getP() { -1 }
-                }
-                class B extends A {
-                    def m() { this.@p = 1 }
-                }
-                def x = new B()
-                assert x.@p == null
-                x.m()
+        shouldFail MissingFieldException, '''
+            class A {
+                private p
+                void setP(def val) { p = 2 }
+                def getP() { -1 }
+            }
+            class B extends A {
+                def m() { this.@p = 1 }
+            }
+            def x = new B()
+            assert x.@p == null
+            x.m()
         '''
-        }
     }
 }
