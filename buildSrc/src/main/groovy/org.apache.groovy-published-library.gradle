@@ -26,8 +26,8 @@ publishing {
                     ? 'https://repository.apache.org/content/repositories/snapshots'
                     : 'https://repository.apache.org/service/local/staging/deploy/maven2'
             credentials {
-                username findProperty('apacheUser')
-                password findProperty('apachePassword')
+                username findProperty('groovyVersion').contains('SNAPSHOT') ? findProperty('asfNexusUsername') : findProperty('apacheUser')
+                password findProperty('groovyVersion').contains('SNAPSHOT') ? findProperty('asfNexusPassword') : findProperty('apachePassword')
             }
         }
     }
