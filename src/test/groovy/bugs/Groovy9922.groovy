@@ -22,7 +22,19 @@ import org.junit.Test
 
 final class Groovy9922 {
     @Test
-    void testGetPid() {
-        assert "jps".execute().text.contains("${Runtime.getRuntime().getPid()} ")
+    void getPidConfirmedByJpsOutputOnEnvironmentsWithThatExecutable() {
+        def result = executeJpsSafe()
+        if (result) {
+            assert result.contains("${Runtime.getRuntime().getPid()} ")
+        }
+    }
+
+    private static String executeJpsSafe() {
+        try {
+            "jps".execute().text
+        } catch(IOException ex) {
+            // some environments, e.g. CI server may not have JPS
+            null
+        }
     }
 }
