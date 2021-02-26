@@ -302,7 +302,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             assert B.m() == 0
         '''
         def b = astTrees['B'][1]
-        assert  b.contains('GETSTATIC p/A.x')
+        assert  b.contains('GETSTATIC B.x')
         assert !b.contains('INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.getGroovyObjectProperty')
     }
 
