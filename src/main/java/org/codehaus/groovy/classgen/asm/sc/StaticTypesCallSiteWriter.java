@@ -157,42 +157,13 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             makeDynamicGetProperty(receiver, propertyName, safe);
             return;
         }
-        TypeChooser typeChooser = controller.getTypeChooser();
-        ClassNode classNode = controller.getClassNode();
-        ClassNode receiverType = receiver.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
-        if (receiverType == null) {
-            receiverType = typeChooser.resolveType(receiver, classNode);
-        }
-        Object type = receiver.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-        if (type == null && receiver instanceof VariableExpression) {
-            Variable variable = ((VariableExpression) receiver).getAccessedVariable();
-            if (variable instanceof Expression) {
-                type = ((Expression) variable).getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-            }
-        }
-        if (type != null) {
-            // in case a "flow type" is found, it is preferred to use it instead of
-            // the declaration type
-            receiverType = (ClassNode) type;
-        }
-        boolean isClassReceiver = false;
-        if (isClassClassNodeWrappingConcreteType(receiverType)) {
-            isClassReceiver = true;
-            receiverType = receiverType.getGenericsTypes()[0].getType();
-        }
-
-        if (isPrimitiveType(receiverType)) {
-            // GROOVY-6590: wrap primitive types
-            receiverType = getWrapper(receiverType);
-        }
-
-        MethodVisitor mv = controller.getMethodVisitor();
-
+        boolean[] isClassReceiver = new boolean[1];
+        ClassNode receiverType = getPropertyOwnerType(receiver, isClassReceiver);
         if (receiverType.isArray() && "length".equals(propertyName)) {
             receiver.visit(controller.getAcg());
-            ClassNode arrayGetReturnType = typeChooser.resolveType(receiver, classNode);
+            ClassNode arrayGetReturnType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
             controller.getOperandStack().doGroovyCast(arrayGetReturnType);
-            mv.visitInsn(ARRAYLENGTH);
+            controller.getMethodVisitor().visitInsn(ARRAYLENGTH);
             controller.getOperandStack().replace(int_TYPE);
             return;
         } else if (isOrImplements(receiverType, COLLECTION_TYPE) && ("size".equals(propertyName) || "length".equals(propertyName))) {
@@ -209,7 +180,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
 
         if (!isStaticProperty && isOrImplements(receiverType, MAP_TYPE)) {
             // for maps, replace map.foo with map.get('foo')
-            writeMapDotProperty(receiver, propertyName, mv, safe);
+            writeMapDotProperty(receiver, propertyName, safe);
             return;
         }
         if (makeGetPropertyWithGetter(receiver, receiverType, propertyName, safe, implicitThis)) return;
@@ -219,7 +190,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             if (makeGetPropertyWithGetter(receiver, receiver.getType(), propertyName, safe, implicitThis)) return;
             if (makeGetPrivateFieldWithBridgeMethod(receiver, receiver.getType(), propertyName, safe, implicitThis)) return;
         }
-        if (isClassReceiver) {
+        if (isClassReceiver[0]) {
             // we are probably looking for a property of the class
             if (makeGetPropertyWithGetter(receiver, CLASS_Type, propertyName, safe, implicitThis)) return;
             if (makeGetField(receiver, CLASS_Type, propertyName, safe, false)) return;
@@ -273,7 +244,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         }
 
         if (!isStaticProperty && isOrImplements(receiverType, LIST_TYPE)) {
-            writeListDotProperty(receiver, propertyName, mv, safe);
+            writeListDotProperty(receiver, propertyName, safe);
             return;
         }
 
@@ -295,8 +266,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         call.visit(controller.getAcg());
     }
 
-    private void writeMapDotProperty(final Expression receiver, final String propertyName, final MethodVisitor mv, final boolean safe) {
+    private void writeMapDotProperty(final Expression receiver, final String propertyName, final boolean safe) {
         receiver.visit(controller.getAcg()); // load receiver
+
+        MethodVisitor mv = controller.getMethodVisitor();
 
         Label exit = new Label();
         if (safe) {
@@ -317,7 +290,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         controller.getOperandStack().replace(OBJECT_TYPE);
     }
 
-    private void writeListDotProperty(final Expression receiver, final String propertyName, final MethodVisitor mv, final boolean safe) {
+    private void writeListDotProperty(final Expression receiver, final String propertyName, final boolean safe) {
         ClassNode componentType = receiver.getNodeMetaData(StaticCompilationMetadataKeys.COMPONENT_TYPE);
         if (componentType == null) {
             componentType = OBJECT_TYPE;
@@ -327,6 +300,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         // for (e in list) { result.add (e.foo) }
         // result
         CompileStack compileStack = controller.getCompileStack();
+        MethodVisitor mv = controller.getMethodVisitor();
 
         Label exit = new Label();
         if (safe) {
@@ -561,7 +535,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             ClassNode replacementType = field.getOriginType();
             OperandStack operandStack = controller.getOperandStack();
             if (field.isStatic()) {
-                mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(field.getOwner()), fieldName, BytecodeHelper.getTypeDescription(replacementType));
+                mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(receiverType), fieldName, BytecodeHelper.getTypeDescription(replacementType));
                 operandStack.push(replacementType);
             } else {
                 if (implicitThis) {
@@ -816,11 +790,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
     @Override
     public void fallbackAttributeOrPropertySite(final PropertyExpression expression, final Expression objectExpression, final String name, final MethodCallerMultiAdapter adapter) {
         if (name != null && controller.getCompileStack().isLHS()) {
-            ClassNode classNode = controller.getClassNode();
-            ClassNode receiverType = controller.getTypeChooser().resolveType(objectExpression, classNode);
+            ClassNode receiverType = getPropertyOwnerType(objectExpression);
             if (adapter == AsmClassGenerator.setField || adapter == AsmClassGenerator.setGroovyObjectField) {
                 if (setField(expression, objectExpression, receiverType, name)) return;
             } else if (isThisExpression(objectExpression)) {
+                ClassNode classNode = controller.getClassNode();
                 FieldNode fieldNode = receiverType.getField(name);
                 if (fieldNode != null && fieldNode.isPrivate() && !receiverType.equals(classNode)
                         && StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode)) {
@@ -853,29 +827,57 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         super.fallbackAttributeOrPropertySite(expression, objectExpression, name, adapter);
     }
 
+    private ClassNode getPropertyOwnerType(final Expression receiver, final boolean... isClassReceiver) {
+        Object inferredType = receiver.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        if (inferredType == null && receiver instanceof VariableExpression) {
+            Variable variable = ((VariableExpression) receiver).getAccessedVariable();
+            if (variable instanceof Expression) {
+                inferredType = ((Expression) variable).getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+            }
+        }
+        ClassNode receiverType;
+        if (inferredType instanceof ClassNode) {
+            // in case a "flow type" is found, it is preferred to use it instead of the declaration type
+            receiverType = (ClassNode) inferredType;
+        } else {
+            receiverType = receiver.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
+            if (receiverType == null) {
+                receiverType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
+            }
+        }
+        if (isClassClassNodeWrappingConcreteType(receiverType)) {
+            if (isClassReceiver.length > 0) isClassReceiver[0] = true;
+            receiverType = receiverType.getGenericsTypes()[0].getType();
+        }
+        if (isPrimitiveType(receiverType)) {
+            // GROOVY-6590: wrap primitive types
+            receiverType = getWrapper(receiverType);
+        }
+        return receiverType;
+    }
+
     // this is just a simple set field handling static and non-static, but not Closure and inner classes
-    private boolean setField(final PropertyExpression expression, final Expression objectExpression, final ClassNode rType, final String name) {
+    private boolean setField(final PropertyExpression expression, final Expression objectExpression, final ClassNode receiverType, final String name) {
         if (expression.isSafe()) return false;
-        FieldNode fn = AsmClassGenerator.getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(controller.getClassNode(), rType, name, false);
+        FieldNode fn = AsmClassGenerator.getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(controller.getClassNode(), receiverType, name, false);
         if (fn == null) return false;
         OperandStack stack = controller.getOperandStack();
         stack.doGroovyCast(fn.getType());
 
         MethodVisitor mv = controller.getMethodVisitor();
-        String ownerName = BytecodeHelper.getClassInternalName(fn.getOwner());
         if (!fn.isStatic()) {
             controller.getCompileStack().pushLHS(false);
             objectExpression.visit(controller.getAcg());
             controller.getCompileStack().popLHS();
-            if (!rType.equals(stack.getTopOperand())) {
-                BytecodeHelper.doCast(mv, rType);
-                stack.replace(rType);
+            if (!receiverType.equals(stack.getTopOperand())) {
+                BytecodeHelper.doCast(mv, receiverType);
+                stack.replace(receiverType);
             }
             stack.swap();
-            mv.visitFieldInsn(PUTFIELD, ownerName, name, BytecodeHelper.getTypeDescription(fn.getType()));
+            mv.visitFieldInsn(PUTFIELD, BytecodeHelper.getClassInternalName(fn.getOwner()), name, BytecodeHelper.getTypeDescription(fn.getType()));
             stack.remove(1);
         } else {
-            mv.visitFieldInsn(PUTSTATIC, ownerName, name, BytecodeHelper.getTypeDescription(fn.getType()));
+            mv.visitFieldInsn(PUTSTATIC, BytecodeHelper.getClassInternalName(receiverType), name, BytecodeHelper.getTypeDescription(fn.getType()));
         }
 
         return true;
