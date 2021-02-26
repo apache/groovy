@@ -240,6 +240,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     void testStaticPropertyWithInheritanceFromAnotherSourceUnit() {
         assertScript '''
             import groovy.transform.stc.FieldsAndPropertiesSTCTest.Public
+            assert Public.answer == 42
             assert Public.CONST == 'XX'
             assert Public.VALUE == null
             Public.VALUE = 'YY'
@@ -1101,6 +1102,7 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
     }
 
     @PackageScope static class PackagePrivate {
+        public static Number getAnswer() { 42 }
         public static final String CONST = 'XX'
         public static String VALUE
     }
