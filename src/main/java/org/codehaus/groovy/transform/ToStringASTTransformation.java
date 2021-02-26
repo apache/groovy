@@ -30,7 +30,6 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -47,6 +46,8 @@ import java.util.List;
 import java.util.Set;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
+import static org.apache.groovy.ast.tools.MethodCallUtils.appendS;
+import static org.apache.groovy.ast.tools.MethodCallUtils.toStringX;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callSuperX;
@@ -64,7 +65,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.sameX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -286,17 +286,5 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         final BlockStatement body = new BlockStatement();
         body.addStatement(appendS(result, constX(fName + ":")));
         return body;
-    }
-
-    private static Statement appendS(Expression result, Expression expr) {
-        MethodCallExpression append = callX(result, "append", expr);
-        append.setImplicitThis(false);
-        return stmt(append);
-    }
-
-    private static Expression toStringX(final Expression object) {
-        MethodCallExpression toString = callX(object, "toString");
-        toString.setImplicitThis(false);
-        return toString;
     }
 }

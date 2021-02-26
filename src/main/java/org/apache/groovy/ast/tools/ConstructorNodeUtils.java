@@ -29,11 +29,14 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.transform.ImmutableASTTransformation;
 
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
+import static org.apache.groovy.ast.tools.MethodCallUtils.appendS;
+import static org.apache.groovy.ast.tools.MethodCallUtils.toStringX;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
@@ -47,7 +50,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.plusX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -58,6 +60,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 public class ConstructorNodeUtils {
     private static final ClassNode EXCEPTION = make(IllegalArgumentException.class);
     private static final ClassNode IMMUTABLE_TYPE = make(ImmutableASTTransformation.class);
+    private static final ClassNode STRINGBUILDER_TYPE = make(StringBuilder.class);
+    private static final ClassNode INVOKER_TYPE = make(InvokerHelper.class);
 
     private ConstructorNodeUtils() { }
 
@@ -101,10 +105,18 @@ public class ConstructorNodeUtils {
         MethodCallExpression isNameValid = callX(validNames, "contains", varX(name));
         isNameValid.setImplicitThis(false);
 
+        Expression sb = localVarX("sb");
+        Expression toString = pojo ? toStringX(sb) : callX(INVOKER_TYPE, "toString", sb);
+        Statement errorBlock = block(
+                declS(sb, ctorX(STRINGBUILDER_TYPE)),
+                appendS(sb, constX("Unknown named argument: ")),
+                appendS(sb, varX(name)),
+                throwS(ctorX(EXCEPTION, toString))
+        );
+
         return block(
             declS(validNames, listX(props.stream().map(p -> constX(p.getName())).collect(toList()))),
-            forS(name, names, ifS(notX(isNameValid),
-                    throwS(ctorX(EXCEPTION, plusX(constX("Unknown named argument: "), varX(name))))))
+            forS(name, names, ifS(notX(isNameValid), errorBlock))
         );
     }
 }
