@@ -19,6 +19,7 @@
 package groovy.transform.stc
 
 import groovy.test.NotYetImplemented
+import groovy.transform.PackageScope
 
 /**
  * Unit tests for static type checking : fields and properties.
@@ -232,6 +233,19 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             }
             B b = new B()
             b.x = 2
+        '''
+    }
+
+    // GROOVY-9955
+    void testStaticPropertyWithInheritanceFromAnotherSourceUnit() {
+        assertScript '''
+            import groovy.transform.stc.FieldsAndPropertiesSTCTest.Public
+            assert Public.CONST == 'XX'
+            assert Public.VALUE == null
+            Public.VALUE = 'YY'
+            assert Public.VALUE == 'YY'
+            Public.@VALUE = 'ZZ'
+            assert Public.@VALUE == 'ZZ'
         '''
     }
 
@@ -1084,5 +1098,13 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
     }
 
     static class BaseClass2 extends BaseClass {
+    }
+
+    @PackageScope static class PackagePrivate {
+        public static final String CONST = 'XX'
+        public static String VALUE
+    }
+
+    static class Public extends PackagePrivate {
     }
 }
