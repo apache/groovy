@@ -46,18 +46,22 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.TreeMap;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
+import static org.codehaus.groovy.ast.ClassHelper.isFunctionalInterface;
+import static org.codehaus.groovy.ast.ClassHelper.isGeneratedFunction;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 import static org.objectweb.asm.Opcodes.AALOAD;
+import static org.objectweb.asm.Opcodes.ACC_FINAL;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ATHROW;
@@ -104,7 +108,7 @@ public class InvocationWriter {
     public void makeCall(final Expression origin, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, boolean safe, final boolean spreadSafe, boolean implicitThis) {
         ClassNode sender = controller.getClassNode();
         if (isSuperExpression(receiver) || (isThisExpression(receiver) && !implicitThis)) {
-            while (ClassHelper.isGeneratedFunction(sender)) {
+            while (isGeneratedFunction(sender)) {
                 sender = sender.getOuterClass();
             }
             if (isSuperExpression(receiver)) {
@@ -120,13 +124,8 @@ public class InvocationWriter {
     protected boolean writeDirectMethodCall(final MethodNode target, final boolean implicitThis, final Expression receiver, final TupleExpression args) {
         if (target == null) return false;
 
-        String methodName = target.getName();
-        CompileStack compileStack = controller.getCompileStack();
-        OperandStack operandStack = controller.getOperandStack();
         ClassNode declaringClass = target.getDeclaringClass();
-        ClassNode classNode = controller.getClassNode();
-
-        MethodVisitor mv = controller.getMethodVisitor();
+        String methodName = target.getName();
         int opcode = INVOKEVIRTUAL;
         if (target.isStatic()) {
             opcode = INVOKESTATIC;
@@ -136,12 +135,17 @@ public class InvocationWriter {
             opcode = INVOKESPECIAL;
         }
 
+        CompileStack compileStack = controller.getCompileStack();
+        OperandStack operandStack = controller.getOperandStack();
+        MethodVisitor mv = controller.getMethodVisitor();
+        ClassNode classNode = controller.getClassNode();
+
         // handle receiver
         int argumentsToRemove = 0;
         if (opcode != INVOKESTATIC) {
             if (receiver != null) {
                 // load receiver if not static invocation
-                // todo: fix inner class case
+                // TODO: fix inner class case
                 if (implicitThis
                         && classNode.getOuterClass() != null
                         && !classNode.isDerivedFrom(declaringClass)
@@ -150,7 +154,7 @@ public class InvocationWriter {
                     compileStack.pushImplicitThis(false);
                     if (controller.isInGeneratedFunction()) {
                         new VariableExpression("thisObject").visit(controller.getAcg());
-                    } else {
+                    } else { // TODO: handle implicitThis && !isThisExpression(receiver)
                         Expression expr = new PropertyExpression(new ClassExpression(declaringClass), "this");
                         expr.visit(controller.getAcg());
                     }
@@ -162,54 +166,57 @@ public class InvocationWriter {
                 compileStack.popImplicitThis();
                 argumentsToRemove += 1;
             } else {
-                mv.visitIntInsn(ALOAD,0);
+                mv.visitIntInsn(ALOAD, 0);
                 operandStack.push(classNode);
                 argumentsToRemove += 1;
             }
         }
 
-        int stackSize = operandStack.getStackLength();
+        ClassNode receiverType;
+        if (receiver == null) {
+            receiverType = declaringClass;
+        } else {
+            receiverType = controller.getTypeChooser().resolveType(receiver, classNode);
+            if (isClassClassNodeWrappingConcreteType(receiverType) && target.isStatic()) {
+                receiverType = receiverType.getGenericsTypes()[0].getType();
+            }
+        }
 
+        int stackLen = operandStack.getStackLength();
         String owner = BytecodeHelper.getClassInternalName(declaringClass);
-        ClassNode receiverType = receiver != null ? controller.getTypeChooser().resolveType(receiver, classNode) : declaringClass;
-        if (opcode == INVOKEVIRTUAL && ClassHelper.OBJECT_TYPE.equals(declaringClass)) {
+        if (opcode == INVOKEVIRTUAL && declaringClass.equals(ClassHelper.OBJECT_TYPE)) {
             // avoid using a narrowed type if the method is defined on object because it can interfere
             // with delegate type inference in static compilation mode and trigger a ClassCastException
             receiverType = declaringClass;
-        }
-        if (opcode == INVOKEVIRTUAL) {
-            if (!receiverType.equals(declaringClass)
-                    && !ClassHelper.OBJECT_TYPE.equals(declaringClass)
-                    && !receiverType.isArray()
-                    && !receiverType.isInterface()
-                    && !ClassHelper.isPrimitiveType(receiverType) // e.g int.getClass()
-                    && receiverType.isDerivedFrom(declaringClass)) {
+        } else if (opcode == INVOKEVIRTUAL
+                && !receiverType.isArray()
+                && !receiverType.isInterface()
+                && !isPrimitiveType(receiverType)
+                && !receiverType.equals(declaringClass)
+                && receiverType.isDerivedFrom(declaringClass)) {
 
-                owner = BytecodeHelper.getClassInternalName(receiverType);
-                ClassNode top = operandStack.getTopOperand();
-                if (!receiverType.equals(top)) {
-                    mv.visitTypeInsn(CHECKCAST, owner);
-                }
-            } else if (target.isPublic()
-                    && (!receiverType.equals(declaringClass) && !Modifier.isPublic(declaringClass.getModifiers()))
-                    && receiverType.isDerivedFrom(declaringClass) && !Objects.equals(receiverType.getPackageName(), classNode.getPackageName())) {
-                // GROOVY-6962: package private class, public method
-                owner = BytecodeHelper.getClassInternalName(receiverType);
+            owner = BytecodeHelper.getClassInternalName(receiverType);
+            if (!receiverType.equals(operandStack.getTopOperand())) {
+                mv.visitTypeInsn(CHECKCAST, owner);
             }
+        } else if (opcode != INVOKESPECIAL && (declaringClass.getModifiers() & (ACC_FINAL | ACC_PUBLIC)) == 0 && !receiverType.equals(declaringClass)
+                && (declaringClass.isInterface() ? receiverType.implementsInterface(declaringClass) : receiverType.isDerivedFrom(declaringClass))) {
+            // GROOVY-6962, GROOVY-9955: method declared by inaccessible class
+            owner = BytecodeHelper.getClassInternalName(receiverType);
         }
 
         loadArguments(args.getExpressions(), target.getParameters());
 
-        String desc = BytecodeHelper.getMethodDescriptor(target.getReturnType(), target.getParameters());
-        mv.visitMethodInsn(opcode, owner, methodName, desc, declaringClass.isInterface());
-        ClassNode ret = target.getReturnType().redirect();
-        if (ret == ClassHelper.VOID_TYPE) {
-            ret = ClassHelper.OBJECT_TYPE;
+        String descriptor = BytecodeHelper.getMethodDescriptor(target.getReturnType(), target.getParameters());
+        mv.visitMethodInsn(opcode, owner, methodName, descriptor, declaringClass.isInterface());
+        ClassNode returnType = target.getReturnType().redirect();
+        if (returnType == ClassHelper.VOID_TYPE) {
+            returnType = ClassHelper.OBJECT_TYPE;
             mv.visitInsn(ACONST_NULL);
         }
-        argumentsToRemove += (operandStack.getStackLength()-stackSize);
+        argumentsToRemove += (operandStack.getStackLength() - stackLen);
         controller.getOperandStack().remove(argumentsToRemove);
-        controller.getOperandStack().push(ret);
+        controller.getOperandStack().push(returnType);
         return true;
     }
 
@@ -454,7 +461,7 @@ public class InvocationWriter {
         if ("call".equals(call.getMethodAsString())) {
             Expression objectExpression = call.getObjectExpression();
             if (!isThisExpression(objectExpression)) {
-                return ClassHelper.isFunctionalInterface(objectExpression.getType());
+                return isFunctionalInterface(objectExpression.getType());
             }
         }
         return false;

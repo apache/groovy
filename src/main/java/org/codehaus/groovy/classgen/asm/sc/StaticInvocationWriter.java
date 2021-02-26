@@ -683,11 +683,10 @@ public class StaticInvocationWriter extends InvocationWriter {
         private final Expression receiver;
         private final MethodNode target;
 
-        private ClassNode resolvedType;
-
         public CheckcastReceiverExpression(final Expression receiver, final MethodNode target) {
             this.receiver = receiver;
             this.target = target;
+            setType(null);
         }
 
         @Override
@@ -721,32 +720,33 @@ public class StaticInvocationWriter extends InvocationWriter {
 
         @Override
         public ClassNode getType() {
-            if (resolvedType != null) {
-                return resolvedType;
+            ClassNode type = super.getType();
+            if (type == null) {
+                if (target instanceof ExtensionMethodNode) {
+                    type = ((ExtensionMethodNode) target).getExtensionMethodNode().getDeclaringClass();
+                } else {
+                    type = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
+                    if (ClassHelper.isPrimitiveType(type)) {
+                        type = ClassHelper.getWrapper(type);
+                    }
+                    ClassNode declaringClass = target.getDeclaringClass();
+                    if (type.getClass() != ClassNode.class
+                            && type.getClass() != InnerClassNode.class
+                            && type.getClass() != DecompiledClassNode.class) {
+                        type = declaringClass; // ex: LUB type
+                    }
+                    if (ClassHelper.OBJECT_TYPE.equals(declaringClass)) {
+                        // checkcast not necessary because Object never evolves
+                        // and it prevents a potential ClassCastException if the
+                        // delegate of a closure is changed in a SC closure
+                        type = ClassHelper.OBJECT_TYPE;
+                    } else if (ClassHelper.OBJECT_TYPE.equals(type)) {
+                        // can happen for compiler rewritten code, where type information is missing
+                        type = declaringClass;
+                    }
+                }
+                setType(type);
             }
-            ClassNode type;
-            if (target instanceof ExtensionMethodNode) {
-                type = ((ExtensionMethodNode) target).getExtensionMethodNode().getDeclaringClass();
-            } else {
-                type = ClassHelper.getWrapper(controller.getTypeChooser().resolveType(receiver, controller.getClassNode()));
-                ClassNode declaringClass = target.getDeclaringClass();
-                if (type.getClass() != ClassNode.class
-                        && type.getClass() != InnerClassNode.class
-                        && type.getClass() != DecompiledClassNode.class) {
-                    type = declaringClass; // ex: LUB type
-                }
-                if (ClassHelper.OBJECT_TYPE.equals(type) && !ClassHelper.OBJECT_TYPE.equals(declaringClass)) {
-                    // can happen for compiler rewritten code, where type information is missing
-                    type = declaringClass;
-                }
-                if (ClassHelper.OBJECT_TYPE.equals(declaringClass)) {
-                    // check cast not necessary because Object never evolves
-                    // and it prevents a potential ClassCastException if the delegate of a closure
-                    // is changed in a statically compiled closure
-                    type = ClassHelper.OBJECT_TYPE;
-                }
-            }
-            resolvedType = type;
             return type;
         }
     }
