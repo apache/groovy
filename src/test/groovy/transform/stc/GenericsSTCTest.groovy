@@ -311,16 +311,16 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     @NotYetImplemented
     void testDiamondInferrenceFromConstructor9() {
         assertScript '''
+            abstract class A<X> { }
             @groovy.transform.TupleConstructor
-            class C<T> {
+            class C<T> extends A<T> {
                 T p
             }
             interface I { }
             class D implements I { }
-            class E extends C<I> { }
 
             void test() {
-                E e = new C<>(new D())
+                A<I> ai = new C<>(new D())
             }
             test()
         '''
@@ -941,8 +941,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-5528
     void testAssignmentToInterfaceFromUserClassWithGenerics() {
-        assertScript '''class UserList<T> extends LinkedList<T> {}
-        List<String> list = new UserList<String>()
+        assertScript '''
+            class UserList<T> extends LinkedList<T> {}
+            List<String> list = new UserList<String>()
         '''
     }
 
