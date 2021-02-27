@@ -223,9 +223,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testDiamondInferrenceFromConstructor3() {
-        shouldFailWithMessages '''
+        assertScript '''
             Set<Number> set = new HashSet<>(Arrays.asList(0L))
-        ''', 'Cannot assign java.util.HashSet <java.lang.Long> to: java.util.Set <Number>'
+        '''
 
         // not diamond inference, but tests compatible assignment
         assertScript '''
@@ -241,16 +241,13 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-6232
     void testDiamondInferrenceFromConstructor5() {
-        [/*'"a",new Object()',*/ 'new Object(),"b"', /*'"a","b"'*/].each { args ->
+        ['"a",new Object()', 'new Object(),"b"', '"a","b"'].each { args ->
             assertScript """
                 class C<T> {
                     C(T x, T y) {
                     }
                 }
-                void test() {
-                    C<Object> c = new C<>($args)
-                }
-                test()
+                C<Object> c = new C<>($args)
             """
         }
     }
@@ -265,11 +262,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
 
-            void test() {
-                C<Integer> c = new C<>(1)
-                assert c.p < 10
-            }
-            test()
+            C<Integer> c = new C<>(1)
+            assert c.p < 10
         '''
     }
 
@@ -281,15 +275,12 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 T p
             }
 
-            void test() {
-                C<Integer> c = new C<>(1)
-                assert c.p < 10
-            }
-            test()
+            C<Integer> c = new C<>(1)
+            assert c.p < 10
         '''
     }
 
-    @NotYetImplemented // GROOVY-9956
+    // GROOVY-9956
     void testDiamondInferrenceFromConstructor8() {
         assertScript '''
             @groovy.transform.TupleConstructor
@@ -299,16 +290,11 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             interface I { }
             class D implements I { }
 
-            void test() {
-                C<I> ci;
-                ci = new C<I>(new D())
-                ci = new C<>(new D()) // infers C<D> on RHS
-            }
-            test()
+            C<I> ci = new C<I>(new D())
+            ci = new C<>(new D()) // infers C<D> on RHS
         '''
     }
 
-    @NotYetImplemented
     void testDiamondInferrenceFromConstructor9() {
         assertScript '''
             abstract class A<X> { }
@@ -319,11 +305,24 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             interface I { }
             class D implements I { }
 
-            void test() {
-                A<I> ai = new C<>(new D())
-            }
-            test()
+            A<I> ai = new C<>(new D())
         '''
+
+        shouldFailWithMessages '''
+            abstract class A<X> { }
+            @groovy.transform.TupleConstructor
+            class C<T> extends A<T> {
+                T p
+            }
+            interface I { }
+            class D implements I { }
+
+            A<String> ax = new C<>(new D())
+        ''', 'Incompatible generic argument types. Cannot assign C <D> to: A <String>'
+
+        shouldFailWithMessages '''
+            Set<List<String>> strings = new HashSet<>([new ArrayList<Number>()])
+        ''', 'Incompatible generic argument types. Cannot assign java.util.HashSet <java.util.ArrayList> to: java.util.Set <List>'
     }
 
     void testLinkedListWithListArgument() {
