@@ -46,4 +46,19 @@ class Groovy9797 extends GroovyTestCase {
         int positiveZeroBits = Float.floatToIntBits(0.0f)
         assertNotSame(negativeZeroBits, positiveZeroBits)
     }
+
+    // Test with string conversion
+    void testDoubleToString() {
+        double negativeZero = -0.0d
+        double positiveZero = 0.0d
+        assertToString(negativeZero, '-0.0')
+        assertToString(positiveZero, '0.0')
+    }
+
+    // Test with long bits
+    void testNegativePositiveZeroDoubleLongBitsNotSame() {
+        long negativeZeroBits = Double.doubleToLongBits(-0.0d)
+        long positiveZeroBits = Double.doubleToLongBits(0.0d)
+        assertNotSame(negativeZeroBits, positiveZeroBits)
+    }
 }
