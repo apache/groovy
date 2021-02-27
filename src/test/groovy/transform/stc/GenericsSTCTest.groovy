@@ -289,6 +289,43 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @NotYetImplemented // GROOVY-9956
+    void testDiamondInferrenceFromConstructor8() {
+        assertScript '''
+            @groovy.transform.TupleConstructor
+            class C<T> {
+                T p
+            }
+            interface I { }
+            class D implements I { }
+
+            void test() {
+                C<I> ci;
+                ci = new C<I>(new D())
+                ci = new C<>(new D()) // infers C<D> on RHS
+            }
+            test()
+        '''
+    }
+
+    @NotYetImplemented
+    void testDiamondInferrenceFromConstructor9() {
+        assertScript '''
+            @groovy.transform.TupleConstructor
+            class C<T> {
+                T p
+            }
+            interface I { }
+            class D implements I { }
+            class E extends C<I> { }
+
+            void test() {
+                E e = new C<>(new D())
+            }
+            test()
+        '''
+    }
+
     void testLinkedListWithListArgument() {
         assertScript '''
             List<String> list = new LinkedList<String>(['1','2','3'])
