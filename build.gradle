@@ -22,7 +22,7 @@ buildscript {
             // Try to use Aliyun maven repository when building in China
             maven { url 'https://maven.aliyun.com/nexus/content/groups/public' }
         }
-        jcenter()
+        mavenCentral()
 //        maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
         maven {
             url "https://plugins.gradle.org/m2/"
