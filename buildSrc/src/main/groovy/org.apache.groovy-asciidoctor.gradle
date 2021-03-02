@@ -103,6 +103,7 @@ asciidoctorj {
     modules {
         diagram.version(versions.asciidoctorDiagram)
         pdf.version(versions.asciidoctorPdf)
+        groovyDsl.version(versions.asciidoctorGroovyDsl)
     }
 }
 

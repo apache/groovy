@@ -47,7 +47,6 @@ repositories {
         maven { url 'https://maven.aliyun.com/nexus/content/groups/public' }
     }
     mavenCentral()
-    jcenter() // needed for asciidoctorj-groovy-dsl
     exclusiveContent {
         forRepository {
             maven { // openbeans
