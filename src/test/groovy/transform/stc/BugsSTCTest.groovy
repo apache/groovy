@@ -938,4 +938,19 @@ Printer
             }
         '''
     }
+
+    // GROOVY-9951
+    void testInnerImmutable() {
+        assertScript '''
+            class Outer {
+                @groovy.transform.Immutable
+                static class Inner {
+                    String proper
+                }
+            }
+
+            def obj = new Outer.Inner('value')
+            assert obj.proper == 'value'
+        '''
+    }
 }
