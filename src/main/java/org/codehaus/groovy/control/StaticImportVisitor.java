@@ -122,14 +122,14 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         }
         if (clazz == ArgumentListExpression.class) {
             Expression result = exp.transformExpression(this);
-            if (inPropertyExpression) {
+            if (foundArgs == null && inPropertyExpression) {
                 foundArgs = result;
             }
             return result;
         }
         if (exp instanceof ConstantExpression) {
             Expression result = exp.transformExpression(this);
-            if (inPropertyExpression) {
+            if (foundConstant == null && inPropertyExpression) {
                 foundConstant = result;
             }
             if (inAnnotation && exp instanceof AnnotationConstantExpression) {
@@ -351,19 +351,18 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             pexp.setSourcePosition(pe);
             return pexp;
         }
-        boolean oldInPropertyExpression = inPropertyExpression;
-        Expression oldFoundArgs = foundArgs;
-        Expression oldFoundConstant = foundConstant;
-        inPropertyExpression = true;
-        foundArgs = null;
-        foundConstant = null;
-        Expression objectExpression = transform(pe.getObjectExpression());
-        boolean candidate = false;
-        if (objectExpression instanceof MethodCallExpression) {
-            candidate = ((MethodCallExpression)objectExpression).isImplicitThis();
-        }
 
-        if (foundArgs != null && foundConstant != null && candidate) {
+        boolean oldInPropertyExpression = inPropertyExpression;
+        Expression oldFoundConstant = foundConstant;
+        Expression oldFoundArgs = foundArgs;
+        inPropertyExpression = true;
+        foundConstant = null;
+        foundArgs = null;
+        Expression objectExpression = transform(pe.getObjectExpression());
+        if (foundArgs != null && foundConstant != null
+                && !foundConstant.getText().trim().isEmpty()
+                && objectExpression instanceof MethodCallExpression
+                && ((MethodCallExpression)objectExpression).isImplicitThis()) {
             Expression result = findStaticMethodImportFromModule(foundConstant, foundArgs);
             if (result != null) {
                 objectExpression = result;
@@ -371,8 +370,9 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             }
         }
         inPropertyExpression = oldInPropertyExpression;
-        foundArgs = oldFoundArgs;
         foundConstant = oldFoundConstant;
+        foundArgs = oldFoundArgs;
+
         pe.setObjectExpression(objectExpression);
         return pe;
     }
