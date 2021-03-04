@@ -325,6 +325,20 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Incompatible generic argument types. Cannot assign java.util.HashSet <java.util.ArrayList> to: java.util.Set <List>'
     }
 
+    // GROOVY-9963
+    void testDiamondInferrenceFromConstructor10() {
+        assertScript '''
+            @groovy.transform.TupleConstructor
+            class C<T> {
+                T p
+            }
+            static void m(String s) {
+                assert s.isEmpty()
+            }
+            m(new C<>("").p)
+        '''
+    }
+
     void testLinkedListWithListArgument() {
         assertScript '''
             List<String> list = new LinkedList<String>(['1','2','3'])
