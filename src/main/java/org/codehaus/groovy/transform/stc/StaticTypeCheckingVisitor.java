@@ -3120,7 +3120,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // TODO: Merge with StaticTypeCheckingSupport#getCombinedBoundType(GenericsType)?
         ClassNode value = genericsType.getType();
         if (genericsType.isPlaceholder()) {
-            value = OBJECT_TYPE;
+            value = value.isRedirectNode() ? value.redirect() : OBJECT_TYPE;
         }
         ClassNode lowerBound = genericsType.getLowerBound();
         if (lowerBound != null) {
