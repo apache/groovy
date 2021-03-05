@@ -388,7 +388,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testInstanceOfInferenceWithField() {
+    void testInstanceOfInferenceWithProperty1() {
         assertScript '''
             class A {
                 int x
@@ -400,7 +400,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testInstanceOfInferenceWithFieldAndAssignment() {
+    void testInstanceOfInferenceWithProperty2() {
         shouldFailWithMessages '''
             class A {
                 int x
@@ -412,7 +412,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot assign value of type java.lang.String to variable of type int'
     }
 
-    void testInstanceOfInferenceWithMissingField() {
+    void testInstanceOfInferenceWithMissingProperty() {
         shouldFailWithMessages '''
             class A {
                 int x
@@ -422,6 +422,52 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 a.y = 2
             }
         ''', 'No such property: y for class: A'
+    }
+
+    // GROOVY-9967
+    void testInstanceOfInferenceWithSubclassProperty() {
+        assertScript '''
+            class A {
+                int i
+            }
+            class B extends A {
+                String s = 'foo'
+            }
+
+            String scenario1(x) {
+                (x instanceof String) ? x.toLowerCase() : 'bar'
+            }
+            String scenario2(B x) {
+                x.s
+            }
+            String scenario2a(B x) {
+                x.getS()
+            }
+            String scenario3(B x) {
+                (x instanceof B) ? x.s : 'bar'
+            }
+            String scenario3a(B x) {
+                (x instanceof B) ? x.getS() : 'bar'
+            }
+            String scenario4(A x) {
+                (x instanceof B) ? x.s : 'bar' // Access to A#s is forbidden
+            }
+            String scenario4a(A x) {
+                (x instanceof B) ? x.getS() : 'bar'
+            }
+
+            assert scenario1(null) == 'bar'
+            assert scenario1('Foo') == 'foo'
+            assert scenario2(new B()) == 'foo'
+            assert scenario2a(new B()) == 'foo'
+            assert scenario3(new B()) == 'foo'
+            assert scenario3a(new B()) == 'foo'
+
+            assert scenario4(new A()) == 'bar'
+            assert scenario4(new B()) == 'foo'
+            assert scenario4a(new A()) == 'bar'
+            assert scenario4a(new B()) == 'foo'
+        '''
     }
 
     // GROOVY-9953
