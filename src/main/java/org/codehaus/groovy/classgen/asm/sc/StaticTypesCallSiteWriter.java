@@ -402,7 +402,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     public void makeGroovyObjectGetPropertySite(final Expression receiver, final String propertyName, final boolean safe, final boolean implicitThis) {
         ClassNode receiverType = controller.getClassNode();
         if (!isThisExpression(receiver) || controller.isInGeneratedFunction()) {
-            receiverType = controller.getTypeChooser().resolveType(receiver, receiverType);
+            receiverType = getPropertyOwnerType(receiver); // GROOVY-9967, et al.
         }
 
         if (implicitThis && controller.getInvocationWriter() instanceof StaticInvocationWriter) {
