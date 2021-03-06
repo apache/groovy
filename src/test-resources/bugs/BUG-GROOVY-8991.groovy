@@ -33,36 +33,6 @@ def foo(lambda) {
     lambda()
 }
 
-def result =
-        foo () -> {
-            new BarHolder()
-        }
-        .bar () -> {
-            2
-        }
-assert 3 == result
-
-def result2 =
-        foo () -> {
-            new BarHolder()
-        }
-        .bar2 (e) -> {
-            2 + e
-        }
-assert 9 == result2
-
-def result3 =
-        foo () -> {
-            new BarHolder()
-        }
-        .foo2 () -> {
-            new BarHolder()
-        }
-        .bar () -> {
-            2
-        }
-assert 3 == result3
-
 def foo5(c) {c()}
 def c2 = foo5 { { Integer x -> 1} }
 assert 1 == c2()

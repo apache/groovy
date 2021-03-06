@@ -812,6 +812,7 @@ RANGE_INCLUSIVE     : '..';
 RANGE_EXCLUSIVE     : '..<';
 SPREAD_DOT          : '*.';
 SAFE_DOT            : '?.';
+SAFE_INDEX          : '?[';
 SAFE_CHAIN_DOT      : '??.';
 ELVIS               : '?:';
 METHOD_POINTER      : '.&';
