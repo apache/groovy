@@ -5142,10 +5142,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (resolvedPlaceholders.isEmpty()) {
             return boundUnboundedWildcards(returnType);
         }
-        Map<GenericsTypeName, GenericsType> placeholdersFromContext = extractGenericsParameterMapOfThis(typeCheckingContext);
-        applyGenericsConnections(placeholdersFromContext, resolvedPlaceholders);
 
-        // then resolve receivers from method arguments
+        // resolve type parameters from method arguments
         List<Expression> expressions = InvocationWriter.makeArgumentList(arguments).getExpressions();
         Parameter[] parameters = method.getParameters();
         boolean isVargs = isVargs(parameters);
@@ -5181,10 +5179,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     extractGenericsConnectionsForSuperClassAndInterfaces(resolvedPlaceholders, connections);
 
                     applyGenericsConnections(connections, resolvedPlaceholders);
-                    applyGenericsConnections(placeholdersFromContext, resolvedPlaceholders);
                 }
             }
         }
+
+        // GROOVY-9970: resolve from enclosing context after arguments, in case a type parameter name is reused
+        applyGenericsConnections(extractGenericsParameterMapOfThis(typeCheckingContext), resolvedPlaceholders);
 
         return applyGenericsContext(resolvedPlaceholders, returnType);
     }
