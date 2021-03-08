@@ -325,6 +325,96 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Incompatible generic argument types. Cannot assign java.util.HashSet <java.util.ArrayList> to: java.util.Set <List>'
     }
 
+    // GROOVY-9972
+    void testDiamondInferrenceFromConstructor9a() {
+        assertScript '''
+            @groovy.transform.TupleConstructor
+            class C<T> {
+                T p
+            }
+            class D {
+                public String f = 'D#f'
+            }
+            C<D> cd = true ? new C<>(new D()) : new C<>(new D())
+            assert cd.p.f.toLowerCase() == 'd#f'
+        '''
+
+        assertScript '''
+            @groovy.transform.TupleConstructor
+            class C<T> {
+                T p
+            }
+            class D {
+                public String f = 'D#f'
+            }
+            boolean b = false
+            C<D> cd = b ? new C<>(new D()) : (b ? new C<>((D) null) : new C<>(new D()))
+            assert cd.p.f.toLowerCase() == 'd#f'
+        '''
+
+        assertScript '''
+            @groovy.transform.TupleConstructor
+            class C<T> {
+                T p
+            }
+            class D {
+                public String f = 'D#f'
+            }
+            def cd
+            if (true) {
+                cd = new C<>(new D())
+            } else {
+                cd = new C<>((D) null)
+            }
+            assert cd.p.f.toLowerCase() == 'd#f'
+        '''
+
+        assertScript '''
+            @groovy.transform.TupleConstructor
+            class C {
+                List<D> list
+            }
+            class D {
+            }
+            List test(C... array) {
+                // old code used "List<D> many" as target for guts of closure
+                List<D> many = array.collectMany { it.list ?: [] }
+            }
+            def result = test(new C(), new C(list:[new D()]))
+            assert result.size() == 1
+        '''
+    }
+
+    @NotYetImplemented
+    void testDiamondInferrenceFromConstructor9b() {
+        assertScript '''
+            @groovy.transform.TupleConstructor
+            class C<T> {
+                T p
+            }
+            class D {
+                public String f = 'D#f'
+            }
+            def foo = { flag, C<D> cd = (flag ? new C<>(new D()) : new C<>(new D())) ->
+                cd.p.f.toLowerCase()
+            }
+            assert foo.call(true) == 'd#f'
+        '''
+
+        shouldFailWithMessages '''
+            @groovy.transform.TupleConstructor
+            class C<T> {
+                T p
+            }
+            class D {
+                public String f = 'D#f'
+            }
+            def foo = { flag, C<D> cd = (flag ? new C<>(new D()) : new C<>(new Object())) ->
+                cd.p.f.toLowerCase()
+            }
+        ''', 'Incompatible generic argument types. Cannot assign C <? extends java.lang.Object> to: C <D>'
+    }
+
     // GROOVY-9963
     void testDiamondInferrenceFromConstructor10() {
         assertScript '''
