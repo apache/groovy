@@ -4101,80 +4101,77 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitTernaryExpression(final TernaryExpression expression) {
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
-        // create a new temporary element in the if-then-else type info
-        typeCheckingContext.pushTemporaryTypeInfo();
+        typeCheckingContext.pushTemporaryTypeInfo(); // capture instanceof restriction
         expression.getBooleanExpression().visit(this);
         Expression trueExpression = expression.getTrueExpression();
-        Expression falseExpression = expression.getFalseExpression();
         trueExpression.visit(this);
         ClassNode typeOfTrue = findCurrentInstanceOfClass(trueExpression, getType(trueExpression));
-        // pop if-then-else temporary type info
-        typeCheckingContext.popTemporaryTypeInfo();
+        typeCheckingContext.popTemporaryTypeInfo(); // instanceof doesn't apply to false branch
+        Expression falseExpression = expression.getFalseExpression();
         falseExpression.visit(this);
         ClassNode typeOfFalse = getType(falseExpression);
+
         ClassNode resultType;
-        // handle instanceof cases
-        if (hasInferredReturnType(falseExpression)) {
-            typeOfFalse = falseExpression.getNodeMetaData(INFERRED_RETURN_TYPE);
-        }
-        if (hasInferredReturnType(trueExpression)) {
-            typeOfTrue = trueExpression.getNodeMetaData(INFERRED_RETURN_TYPE);
-        }
-        // TODO consider moving next two statements "up a level", i.e. have just one more widely invoked
-        // check but determine no -ve consequences first
-        typeOfFalse = checkForTargetType(falseExpression, typeOfFalse);
-        typeOfTrue = checkForTargetType(trueExpression, typeOfTrue);
-        if (isNullConstant(trueExpression) || isNullConstant(falseExpression)) {
-            BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
-            if (enclosingBinaryExpression != null && enclosingBinaryExpression.getRightExpression() == expression) {
-                resultType = getType(enclosingBinaryExpression.getLeftExpression());
-            } else if (isNullConstant(trueExpression) && isNullConstant(falseExpression)) {
-                resultType = OBJECT_TYPE;
-            } else if (isNullConstant(trueExpression)) {
-                resultType = wrapTypeIfNecessary(typeOfFalse);
-            } else {
-                resultType = wrapTypeIfNecessary(typeOfTrue);
-            }
+        if (isNullConstant(trueExpression) && isNullConstant(falseExpression)) { // GROOVY-5523
+            resultType = checkForTargetType(expression, UNKNOWN_PARAMETER_TYPE);
+        } else if (isNullConstant(trueExpression) || (isEmptyCollection(trueExpression)
+                && isOrImplements(typeOfTrue, typeOfFalse))) { // [] : List/Collection/Iterable
+            resultType = wrapTypeIfNecessary(checkForTargetType(falseExpression, typeOfFalse));
+        } else if (isNullConstant(falseExpression) || (isEmptyCollection(falseExpression)
+                && isOrImplements(typeOfFalse, typeOfTrue))) { // List/Collection/Iterable : []
+            resultType = wrapTypeIfNecessary(checkForTargetType(trueExpression, typeOfTrue));
         } else {
-            // store type information
+            typeOfFalse = checkForTargetType(falseExpression, typeOfFalse);
+            typeOfTrue = checkForTargetType(trueExpression, typeOfTrue);
             resultType = lowestUpperBound(typeOfTrue, typeOfFalse);
         }
         storeType(expression, resultType);
         popAssignmentTracking(oldTracker);
     }
 
-    // currently just for empty literals, not for e.g. Collections.emptyList() at present
-    /// it seems attractive to want to do this for more cases but perhaps not all cases
+    /**
+     * @param expr true or false branch of ternary expression
+     * @param type the inferred type of {@code expr}
+     */
     private ClassNode checkForTargetType(final Expression expr, final ClassNode type) {
+        ClassNode sourceType = (hasInferredReturnType(expr) ? expr.getNodeMetaData(INFERRED_RETURN_TYPE) : type);
+
+        ClassNode targetType = null;
+        MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
         BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
         if (enclosingBinaryExpression instanceof DeclarationExpression
-                && isEmptyCollection(expr) && isAssignment(enclosingBinaryExpression.getOperation().getType())) {
-            VariableExpression target = (VariableExpression) enclosingBinaryExpression.getLeftExpression();
-            return adjustForTargetType(target.getType(), type);
+                && isAssignment(enclosingBinaryExpression.getOperation().getType())
+                && isTypeSource(expr, enclosingBinaryExpression.getRightExpression())) {
+            targetType = enclosingBinaryExpression.getLeftExpression().getType();
+        } else if (currentField != null
+                && isTypeSource(expr, currentField.getInitialExpression())) {
+            targetType = currentField.getType();
+        } else if (currentProperty != null
+                && isTypeSource(expr, currentProperty.getInitialExpression())) {
+            targetType = currentProperty.getType();
+        } else if (enclosingMethod != null) {
+            // TODO: try enclosingMethod's code with isTypeSource(expr, ...)
+            targetType = enclosingMethod.getReturnType();
+        } // TODO: closure parameter default expression
+
+        if (expr instanceof ConstructorCallExpression) {
+            if (targetType == null) targetType = sourceType;
+            inferDiamondType((ConstructorCallExpression) expr, targetType);
+        } else if (targetType != null && !isPrimitiveType(getUnwrapper(targetType))
+                && !targetType.equals(OBJECT_TYPE) && missesGenericsTypes(sourceType)) {
+            // unchecked assignment with ternary/elvis, like "List<T> list = listOfT ?: []"
+            // the inferred type is the RHS type "completed" with generics information from LHS
+            return GenericsUtils.parameterizeType(targetType, sourceType.getPlainNodeReference());
         }
-        if (currentField != null) {
-            return adjustForTargetType(currentField.getType(), type);
-        }
-        if (currentProperty != null) {
-            return adjustForTargetType(currentProperty.getType(), type);
-        }
-        MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
-        if (enclosingMethod != null) {
-            return adjustForTargetType(enclosingMethod.getReturnType(), type);
-        }
-        return type;
+        return targetType != null && sourceType == UNKNOWN_PARAMETER_TYPE ? targetType : sourceType;
     }
 
-    private static ClassNode adjustForTargetType(final ClassNode targetType, final ClassNode resultType) {
-        if (targetType.isUsingGenerics() && missesGenericsTypes(resultType)) {
-            // unchecked assignment within ternary/elvis
-            // examples:
-            // List<A> list = existingAs ?: []
-            // in that case, the inferred type of the RHS is the type of the RHS
-            // "completed" with generics type information available in the LHS
-            return GenericsUtils.parameterizeType(targetType, resultType.getPlainNodeReference());
+    private static boolean isTypeSource(final Expression expr, final Expression right) {
+        if (right instanceof TernaryExpression) {
+            return isTypeSource(expr, ((TernaryExpression) right).getTrueExpression())
+                || isTypeSource(expr, ((TernaryExpression) right).getFalseExpression());
         }
-        return resultType;
+        return expr == right;
     }
 
     private static boolean isEmptyCollection(final Expression expr) {
