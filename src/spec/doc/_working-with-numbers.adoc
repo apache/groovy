@@ -1,0 +1,344 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Numbers
+:gdk: http://www.groovy-lang.org/gdk.html[Groovy development kit]
+
+Groovy supports different kinds of integral literals and decimal literals, backed by the usual `Number` types of Java.
+
+== Integral literals
+
+The integral literal types are the same as in Java:
+
+* `byte`
+* `char`
+* `short`
+* `int`
+* `long`
+* `java.lang.BigInteger`
+
+You can create integral numbers of those types with the following declarations:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=int_decl,indent=0]
+----
+
+If you use optional typing by using the `def` keyword, the type of the integral number will vary:
+it'll adapt to the capacity of the type that can hold that number.
+
+For positive numbers:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=wide_int_positive,indent=0]
+----
+
+As well as for negative numbers:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=wide_int_negative,indent=0]
+----
+
+=== Alternative non-base 10 representations
+
+Numbers can also be represented in binary, octal, hexadecimal and decimal bases.
+
+==== Binary literal
+
+Binary numbers start with a `0b` prefix:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=binary_literal_example,indent=0]
+----
+
+==== Octal literal
+
+Octal numbers are specified in the typical format of `0` followed by octal digits.
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=octal_literal_example,indent=0]
+----
+
+==== Hexadecimal literal
+
+Hexadecimal numbers are specified in the typical format of `0x` followed by hex digits.
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=hexadecimal_literal_example,indent=0]
+----
+
+== Decimal literals
+
+The decimal literal types are the same as in Java:
+
+* `float`
+* `double`
+* `java.lang.BigDecimal`
+
+You can create decimal numbers of those types with the following declarations:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=float_decl,indent=0]
+----
+
+Decimals can use exponents, with the `e` or `E` exponent letter, followed by an optional sign,
+and a integral number representing the exponent:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=float_exp,indent=0]
+----
+
+Conveniently for exact decimal number calculations, Groovy choses `java.lang.BigDecimal` as its decimal number type.
+In addition, both `float` and `double` are supported, but require an explicit type declaration, type coercion or suffix.
+Even if `BigDecimal` is the default for decimal numbers, such literals are accepted in methods or closures taking `float` or `double` as parameter types.
+
+NOTE: Decimal numbers can't be represented using a binary, octal or hexadecimal representation.
+
+== Underscore in literals
+
+When writing long literal numbers, it’s harder on the eye to figure out how some numbers are grouped together, for example with groups of thousands, of words, etc. By allowing you to place underscore in number literals, it’s easier to spot those groups:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=underscore_in_number_example,indent=0]
+----
+
+== Number type suffixes
+
+We can force a number (including binary, octals and hexadecimals) to have a specific type by giving a suffix (see table below), either uppercase or lowercase.
+
+[cols="1,2" options="header"]
+|====
+|Type
+|Suffix
+
+|BigInteger
+|`G` or `g`
+
+|Long
+|`L` or `l`
+
+|Integer
+|`I` or `i`
+
+|BigDecimal
+|`G` or `g`
+
+|Double
+|`D` or `d`
+
+|Float
+|`F` or `f`
+|====
+
+Examples:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=number_type_suffixes_example,indent=0]
+----
+
+== Math operations
+
+Although <<{core-operators}#groovy-operators,operators>> are covered in more detail elsewhere, it's important to discuss the behavior of math operations
+and what their resulting types are.
+
+Division and power binary operations aside (covered below),
+
+* binary operations between `byte`, `char`, `short` and `int` result in `int`
+* binary operations involving `long` with `byte`, `char`, `short` and `int` result in `long`
+* binary operations involving `BigInteger` and any other integral type result in `BigInteger`
+* binary operations involving `BigDecimal` with `byte`, `char`, `short`, `int` and `BigInteger` result in `BigDecimal`
+* binary operations between `float`, `double` and `BigDecimal` result in `double`
+* binary operations between two `BigDecimal` result in `BigDecimal`
+
+The following table summarizes those rules:
+
+[cols="10" options="header"]
+|====
+|
+| byte
+| char
+| short
+| int
+| long
+| BigInteger
+| float
+| double
+| BigDecimal
+
+| *byte*
+| int
+| int
+| int
+| int
+| long
+| BigInteger
+| double
+| double
+| BigDecimal
+
+| *char*
+|
+| int
+| int
+| int
+| long
+| BigInteger
+| double
+| double
+| BigDecimal
+
+| *short*
+|
+|
+| int
+| int
+| long
+| BigInteger
+| double
+| double
+| BigDecimal
+
+| *int*
+|
+|
+|
+| int
+| long
+| BigInteger
+| double
+| double
+| BigDecimal
+
+| *long*
+|
+|
+|
+|
+| long
+| BigInteger
+| double
+| double
+| BigDecimal
+
+| *BigInteger*
+|
+|
+|
+|
+|
+| BigInteger
+| double
+| double
+| BigDecimal
+
+| *float*
+|
+|
+|
+|
+|
+|
+| double
+| double
+| double
+
+| *double*
+|
+|
+|
+|
+|
+|
+|
+| double
+| double
+
+| *BigDecimal*
+|
+|
+|
+|
+|
+|
+|
+|
+| BigDecimal
+|====
+
+[NOTE]
+Thanks to Groovy's operator overloading, the usual arithmetic operators work as well with `BigInteger` and `BigDecimal`,
+unlike in Java where you have to use explicit methods for operating on those numbers.
+
+[[integer_division]]
+=== The case of the division operator
+
+The division operators `/` (and `/=` for division and assignment) produce a `double` result
+if either operand is a `float` or `double`, and a `BigDecimal` result otherwise
+(when both operands are any combination of an integral type `short`, `char`, `byte`, `int`, `long`,
+`BigInteger` or `BigDecimal`).
+
+`BigDecimal` division is performed with the `divide()` method if the division is exact
+(i.e. yielding a result that can be represented within the bounds of the same precision and scale),
+or using a `MathContext` with a http://docs.oracle.com/javase/7/docs/api/java/math/BigDecimal.html#precision()[precision]
+of the maximum of the two operands' precision plus an extra precision of 10,
+and a http://docs.oracle.com/javase/7/docs/api/java/math/BigDecimal.html#scale()[scale]
+of the maximum of 10 and the maximum of the operands' scale.
+
+[NOTE]
+For integer division like in Java, you should use the `intdiv()` method,
+as Groovy doesn't provide a dedicated integer division operator symbol.
+
+[[power_operator]]
+=== The case of the power operator
+
+The power operation is represented by the `**` operator, with two parameters: the base and the exponent.
+The result of the power operation depends on its operands, and the result of the operation
+(in particular if the result can be represented as an integral value).
+
+The following rules are used by Groovy's power operation to determine the resulting type:
+
+* If the exponent is a decimal value
+** if the result can be represented as an `Integer`, then return an `Integer`
+** else if the result can be represented as a `Long`, then return a `Long`
+** otherwise return a `Double`
+* If the exponent is an integral value
+** if the exponent is strictly negative, then return an `Integer`, `Long` or `Double` if the result value fits in that type
+** if the exponent is positive or zero
+*** if the base is a `BigDecimal`, then return a `BigDecimal` result value
+*** if the base is a `BigInteger`, then return a `BigInteger` result value
+*** if the base is an `Integer`, then return an `Integer` if the result value fits in it, otherwise a `BigInteger`
+*** if the base is a `Long`, then return a `Long` if the result value fits in it, otherwise a `BigInteger`
+
+We can illustrate those rules with a few examples:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=number_power,indent=0]
+----
