@@ -339,6 +339,28 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9970
+    void testDiamondInferrenceFromConstructor11() {
+        assertScript '''
+            @groovy.transform.TupleConstructor
+            class A<T extends B> {
+                T p
+            }
+            class B {
+            }
+            class C<T extends Number> {
+                void test(T n) {
+                    A<B> x = new A<>(new B())
+                    def closure = { ->
+                        A<B> y = new A<>(new B())
+                    }
+                    closure.call()
+                }
+            }
+            new C<Long>().test(42L)
+        '''
+    }
+
     void testLinkedListWithListArgument() {
         assertScript '''
             List<String> list = new LinkedList<String>(['1','2','3'])
