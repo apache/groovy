@@ -96,6 +96,18 @@ class MethodReferenceTest extends GroovyTestCase {
         '''
     }
 
+    // class::instanceMethod -- GROOVY-9974
+    void testPredicateCI() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            void test(List<String> strings = ['']) {
+                strings.removeIf(String::isEmpty)
+                assert strings.isEmpty()
+            }
+            test()
+        '''
+    }
+
     // class::instanceMethod
     void testBinaryOperatorCI() {
         assertScript '''
