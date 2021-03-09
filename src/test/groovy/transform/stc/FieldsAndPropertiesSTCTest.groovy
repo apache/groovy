@@ -250,21 +250,37 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testMethodUsageForProperty() {
-        assertScript '''
-            class Foo {
-                String name
-            }
-            def name = new Foo().getName()
-            name?.toUpperCase()
-        '''
-    }
-
     void testDateProperties() {
         assertScript '''
             Date d = new Date()
             def time = d.time
             d.time = 0
+        '''
+    }
+
+    void testGetterForProperty1() {
+        assertScript '''
+            class C {
+                String p
+            }
+            def x = new C().getP()
+            x = x?.toUpperCase()
+        '''
+    }
+
+    // GROOVY-9973
+    void testGetterForProperty2() {
+        assertScript '''
+            class C {
+                private int f
+                int getP() { f }
+                Integer m() { 123456 - p }
+                Integer m(int i) { i - p }
+            }
+
+            def c = new C()
+            assert c.m() == 123456 // BUG! exception in phase 'class generation' ...
+            assert c.m(123) == 123 // ClassCastException: class org.codehaus.groovy.ast.Parameter cannot be cast to ...
         '''
     }
 
