@@ -98,6 +98,18 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // class::instanceMethod -- GROOVY-9974
+    void testPredicateCI() {
+        assertScript shell, '''
+            @CompileStatic
+            void test(List<String> strings = ['']) {
+                strings.removeIf(String::isEmpty)
+                assert strings.isEmpty()
+            }
+            test()
+        '''
+    }
+
     @Test // class::instanceMethod
     void testBinaryOperatorCI() {
         assertScript shell, '''
