@@ -2559,7 +2559,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-9981
+    // GROOVY-9891
     void testBoundedReturnTypeChecking3() {
         assertScript '''
             class Pogo {

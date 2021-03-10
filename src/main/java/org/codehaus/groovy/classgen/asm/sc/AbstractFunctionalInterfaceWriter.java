@@ -108,7 +108,7 @@ public interface AbstractFunctionalInterfaceWriter {
     }
 
     default ClassNode convertParameterType(ClassNode parameterType, ClassNode inferredType) {
-        if (!getWrapper(inferredType.redirect()).isDerivedFrom(getWrapper(parameterType.redirect()))) {
+        if (!getWrapper(inferredType).isDerivedFrom(getWrapper(parameterType))) {
             throw new RuntimeParserException("The inferred type[" + inferredType.redirect() + "] is not compatible with the parameter type[" + parameterType.redirect() + "]", parameterType);
         }
 

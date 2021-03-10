@@ -331,15 +331,15 @@ public final class ClosureMetaClass extends MetaClassImpl {
                 return method.doMethodInvoke(callObject, arguments);
             }
         } else {
-            // if no method was found, try to find a closure defined as a field of the class and run it
+            // no method was found; try to find a closure defined as a field of the class and run it
             Object value = null;
             try {
-                value = this.getProperty(object, methodName);
+                value = getProperty(sender, object, methodName, isCallToSuper, fromInsideClass);
             } catch (MissingPropertyException mpe) {
                 // ignore
             }
             if (value instanceof Closure) {  // This test ensures that value != this If you ever change this ensure that value != this
-                Closure cl = (Closure) value;
+                Closure<?> cl = (Closure<?>) value;
                 MetaClass delegateMetaClass = cl.getMetaClass();
                 return delegateMetaClass.invokeMethod(cl.getClass(), closure, CLOSURE_DO_CALL_METHOD, originalArguments, false, fromInsideClass);
             }

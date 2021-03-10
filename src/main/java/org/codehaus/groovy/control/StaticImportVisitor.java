@@ -352,11 +352,11 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     }
 
     protected Expression transformPropertyExpression(PropertyExpression pe) {
-        if (currentMethod!=null && currentMethod.isStatic()
+        if (currentMethod != null && currentMethod.isStatic()
                 && pe.getObjectExpression() instanceof VariableExpression
                 && ((VariableExpression) pe.getObjectExpression()).isSuperExpression()) {
             PropertyExpression pexp = new PropertyExpression(
-                    new ClassExpression(currentClass.getSuperClass()),
+                    new ClassExpression(currentClass.getUnresolvedSuperClass()),
                     transform(pe.getProperty())
             );
             pexp.setSourcePosition(pe);
@@ -373,7 +373,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (foundArgs != null && foundConstant != null
                 && !foundConstant.getText().trim().isEmpty()
                 && objectExpression instanceof MethodCallExpression
-                && ((MethodCallExpression)objectExpression).isImplicitThis()) {
+                && ((MethodCallExpression) objectExpression).isImplicitThis()) {
             Expression result = findStaticMethodImportFromModule(foundConstant, foundArgs);
             if (result != null) {
                 objectExpression = result;

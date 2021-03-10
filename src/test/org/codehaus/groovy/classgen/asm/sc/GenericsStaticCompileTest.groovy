@@ -21,9 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc
 import groovy.transform.stc.GenericsSTCTest
 
 /**
- * Unit tests for static type checking : generics.
+ * Unit tests for static compilation : generics.
  */
 class GenericsStaticCompileTest extends GenericsSTCTest implements StaticCompilationTestSupport {
-
 }
-

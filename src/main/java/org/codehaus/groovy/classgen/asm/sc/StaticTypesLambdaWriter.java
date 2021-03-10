@@ -33,6 +33,7 @@ import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.ClosureUtils;
 import org.codehaus.groovy.classgen.BytecodeInstruction;
 import org.codehaus.groovy.classgen.BytecodeSequence;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
@@ -296,23 +297,15 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
     }
 
     private Parameter[] createParametersWithExactType(final LambdaExpression expression) {
-        Parameter[] parameters = expression.getParameters();
-        if (parameters == null) {
-            parameters = Parameter.EMPTY_ARRAY;
-        }
-
+        Parameter[] parameters = ClosureUtils.getParametersSafe(expression);
         for (Parameter parameter : parameters) {
             ClassNode inferredType = parameter.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-            if (inferredType == null) {
-                continue;
+            if (inferredType != null) {
+                ClassNode type = convertParameterType(parameter.getType(), inferredType);
+                parameter.setOriginType(type);
+                parameter.setType(type);
             }
-
-            ClassNode type = convertParameterType(parameter.getType(), inferredType);
-
-            parameter.setType(type);
-            parameter.setOriginType(type);
         }
-
         return parameters;
     }
 
