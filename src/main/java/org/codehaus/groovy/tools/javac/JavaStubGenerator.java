@@ -928,13 +928,14 @@ public class JavaStubGenerator {
             String key = entry.getKey();
             if (first) first = false;
             else out.print(", ");
-            out.print(key + "=" + getAnnotationValue(entry.getValue()).replace('$', '.'));
+            out.print(key + "=" + getAnnotationValue(entry.getValue()));
         }
         out.print(") ");
     }
 
     private String getAnnotationValue(Object memberValue) {
         String val = "null";
+        boolean replaceDollars = true;
         if (memberValue instanceof ListExpression) {
             StringBuilder sb = new StringBuilder("{");
             boolean first = true;
@@ -954,10 +955,12 @@ public class JavaStubGenerator {
                 PrintWriter out = new PrintWriter(writer);
                 printAnnotation(out, (AnnotationNode) constValue);
                 val = writer.toString();
-            } else if (constValue instanceof Number || constValue instanceof Boolean)
+            } else if (constValue instanceof Number || constValue instanceof Boolean) {
                 val = constValue.toString();
-            else
+            } else {
                 val = "\"" + escapeSpecialChars(constValue.toString()) + "\"";
+                replaceDollars = false;
+            }
         } else if (memberValue instanceof PropertyExpression) {
             // assume must be static class field or enum value or class that Java can resolve
             val = ((Expression) memberValue).getText();
@@ -974,7 +977,7 @@ public class JavaStubGenerator {
         } else if (memberValue instanceof ClassExpression) {
             val = ((Expression) memberValue).getText() + ".class";
         }
-        return val;
+        return replaceDollars ? val.replace('$', '.') : val;
     }
 
     private static void printModifiers(PrintWriter out, int modifiers) {
