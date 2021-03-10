@@ -18,29 +18,69 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.InnerClassNode;
+import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
+import org.codehaus.groovy.ast.expr.AttributeExpression;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.BitwiseNegationExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ClosureListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.GStringExpression;
+import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.MapEntryExpression;
+import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.MethodPointerExpression;
+import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PostfixExpression;
+import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
+import org.codehaus.groovy.ast.expr.SpreadMapExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
+import org.codehaus.groovy.ast.expr.UnaryPlusExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.AssertStatement;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.BreakStatement;
+import org.codehaus.groovy.ast.stmt.CaseStatement;
+import org.codehaus.groovy.ast.stmt.CatchStatement;
+import org.codehaus.groovy.ast.stmt.ContinueStatement;
+import org.codehaus.groovy.ast.stmt.DoWhileStatement;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.SwitchStatement;
+import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
+import org.codehaus.groovy.ast.stmt.ThrowStatement;
+import org.codehaus.groovy.ast.stmt.TryCatchStatement;
+import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
-import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.StatementMeta;
+import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
@@ -103,7 +143,7 @@ public class InvocationWriter {
     static final MethodCaller selectConstructorAndTransformArguments = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "selectConstructorAndTransformArguments");
 
     private final WriterController controller;
-    
+
     public InvocationWriter(WriterController wc) {
         this.controller = wc;
     }
@@ -115,7 +155,7 @@ public class InvocationWriter {
         // message name
         Expression messageName = new CastExpression(ClassHelper.STRING_TYPE, call.getMethod());
         if (useSuper) {
-            ClassNode classNode = controller.isInClosure() ? controller.getOutermostClass() : controller.getClassNode(); // GROOVY-4035 
+            ClassNode classNode = controller.isInClosure() ? controller.getOutermostClass() : controller.getClassNode(); // GROOVY-4035
             ClassNode superClass = classNode.getSuperClass();
             makeCall(call, new ClassExpression(superClass),
                     objectExpression, messageName,
@@ -131,7 +171,7 @@ public class InvocationWriter {
             );
         }
     }
-    
+
     public void makeCall(
             Expression origin,
             Expression receiver, Expression message, Expression arguments,
@@ -157,6 +197,7 @@ public class InvocationWriter {
         if (target == null) return false;
 
         ClassNode declaringClass = target.getDeclaringClass();
+        ClassNode enclosingClass = controller.getClassNode();
         String methodName = target.getName();
         int opcode = INVOKEVIRTUAL;
         if (target.isStatic()) {
@@ -170,37 +211,33 @@ public class InvocationWriter {
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
         MethodVisitor mv = controller.getMethodVisitor();
-        ClassNode classNode = controller.getClassNode();
 
         // handle receiver
         int argumentsToRemove = 0;
-        if (opcode!=INVOKESTATIC) {
-            if (receiver!=null) {
-                // load receiver if not static invocation
-                // TODO: fix inner class case
+        if (opcode != INVOKESTATIC) {
+            argumentsToRemove += 1;
+            if (receiver != null) {
+                Expression objectExpression = receiver;
                 if (implicitThis
-                        && !classNode.isDerivedFrom(declaringClass)
-                        && !classNode.implementsInterface(declaringClass)
-                        && classNode instanceof InnerClassNode) {
-                    // we are calling an outer class method
+                        && enclosingClass.getOuterClass() != null
+                        && !enclosingClass.isDerivedFrom(declaringClass)
+                        && !enclosingClass.implementsInterface(declaringClass)) {
+                    // outer class method invocation
                     compileStack.pushImplicitThis(false);
                     if (controller.isInClosure()) {
-                        new VariableExpression("thisObject").visit(controller.getAcg());
-                    } else {
-                        Expression expr = new PropertyExpression(new ClassExpression(declaringClass), "this");
-                        expr.visit(controller.getAcg());
+                        objectExpression = new VariableExpression("thisObject");
+                    } else if (isThis(receiver)) {
+                        objectExpression = new PropertyExpression(new ClassExpression(declaringClass), "this");
                     }
                 } else {
                     compileStack.pushImplicitThis(implicitThis);
-                    receiver.visit(controller.getAcg());
                 }
+                objectExpression.visit(controller.getAcg());
                 operandStack.doGroovyCast(declaringClass);
                 compileStack.popImplicitThis();
-                argumentsToRemove++;
             } else {
                 mv.visitIntInsn(ALOAD, 0);
-                operandStack.push(classNode);
-                argumentsToRemove++;
+                operandStack.push(enclosingClass);
             }
         }
 
@@ -208,7 +245,7 @@ public class InvocationWriter {
         if (receiver == null) {
             receiverType = declaringClass;
         } else {
-            receiverType = controller.getTypeChooser().resolveType(receiver, classNode);
+            receiverType = controller.getTypeChooser().resolveType(receiver, enclosingClass);
             if (isClassClassNodeWrappingConcreteType(receiverType) && target.isStatic()) {
                 receiverType = receiverType.getGenericsTypes()[0].getType();
             }
@@ -252,12 +289,241 @@ public class InvocationWriter {
         return true;
     }
 
+    /**
+     * Supplements {@link ExpressionUtils#isThisExpression isThisExpression}
+     * with the ability to see into {@code CheckcastReceiverExpression}.
+     */
+    private static boolean isThis(final Expression expression) {
+        final boolean[] isThis = new boolean[1];
+        expression.visit(new GroovyCodeVisitor() {
+
+            @Override
+            public void visitVariableExpression(VariableExpression expression) {
+                isThis[0] = expression.isThisExpression();
+            }
+
+            // expressions:
+
+            @Override
+            public void visitArgumentlistExpression(ArgumentListExpression expression) {
+                visitTupleExpression(expression);
+            }
+
+            @Override
+            public void visitArrayExpression(ArrayExpression expression) {
+            }
+
+            @Override
+            public void visitAttributeExpression(AttributeExpression expression) {
+                visitPropertyExpression(expression);
+            }
+
+            @Override
+            public void visitBinaryExpression(BinaryExpression expression) {
+            }
+
+            @Override
+            public void visitBitwiseNegationExpression(BitwiseNegationExpression expression) {
+            }
+
+            @Override
+            public void visitBooleanExpression(BooleanExpression expression) {
+            }
+
+            @Override
+            public void visitBytecodeExpression(BytecodeExpression expression) {
+            }
+
+            @Override
+            public void visitCastExpression(CastExpression expression) {
+            }
+
+            @Override
+            public void visitClassExpression(ClassExpression expression) {
+            }
+
+            @Override
+            public void visitClosureExpression(ClosureExpression expression) {
+            }
+
+            @Override
+            public void visitClosureListExpression(ClosureListExpression expression) {
+                visitListExpression(expression);
+            }
+
+            @Override
+            public void visitConstantExpression(ConstantExpression expression) {
+            }
+
+            @Override
+            public void visitConstructorCallExpression(ConstructorCallExpression expression) {
+            }
+
+            @Override
+            public void visitDeclarationExpression(DeclarationExpression expression) {
+                visitBinaryExpression(expression);
+            }
+
+            @Override
+            public void visitFieldExpression(FieldExpression expression) {
+            }
+
+            @Override
+            public void visitGStringExpression(GStringExpression expression) {
+            }
+
+            @Override
+            public void visitListExpression(ListExpression expression) {
+            }
+
+            @Override
+            public void visitMapExpression(MapExpression expression) {
+            }
+
+            @Override
+            public void visitMapEntryExpression(MapEntryExpression expression) {
+            }
+
+            @Override
+            public void visitMethodCallExpression(MethodCallExpression expression) {
+            }
+
+            @Override
+            public void visitMethodPointerExpression(MethodPointerExpression expression) {
+            }
+
+            @Override
+            public void visitNotExpression(NotExpression expression) {
+                visitBooleanExpression(expression);
+            }
+
+            @Override
+            public void visitPostfixExpression(PostfixExpression expression) {
+            }
+
+            @Override
+            public void visitPrefixExpression(PrefixExpression expression) {
+            }
+
+            @Override
+            public void visitPropertyExpression(PropertyExpression expression) {
+            }
+
+            @Override
+            public void visitRangeExpression(RangeExpression expression) {
+            }
+
+            @Override
+            public void visitShortTernaryExpression(ElvisOperatorExpression expression) {
+                visitTernaryExpression(expression);
+            }
+
+            @Override
+            public void visitSpreadExpression(SpreadExpression expression) {
+            }
+
+            @Override
+            public void visitSpreadMapExpression(SpreadMapExpression expression) {
+            }
+
+            @Override
+            public void visitStaticMethodCallExpression(StaticMethodCallExpression expression) {
+            }
+
+            @Override
+            public void visitTernaryExpression(TernaryExpression expression) {
+            }
+
+            @Override
+            public void visitTupleExpression(TupleExpression expression) {
+            }
+
+            @Override
+            public void visitUnaryMinusExpression(UnaryMinusExpression expression) {
+            }
+
+            @Override
+            public void visitUnaryPlusExpression(UnaryPlusExpression expression) {
+            }
+
+            // statements:
+
+            @Override
+            public void visitAssertStatement(AssertStatement statement) {
+            }
+
+            @Override
+            public void visitBlockStatement(BlockStatement statement) {
+            }
+
+            @Override
+            public void visitBreakStatement(BreakStatement statement) {
+            }
+
+            @Override
+            public void visitCaseStatement(CaseStatement statement) {
+            }
+
+            @Override
+            public void visitCatchStatement(CatchStatement statement) {
+            }
+
+            @Override
+            public void visitContinueStatement(ContinueStatement statement) {
+            }
+
+            @Override
+            public void visitDoWhileLoop(DoWhileStatement statement) {
+            }
+
+            public void visitEmptyStatement(EmptyStatement statement) {
+            }
+
+            @Override
+            public void visitExpressionStatement(ExpressionStatement statement) {
+            }
+
+            @Override
+            public void visitForLoop(ForStatement statement) {
+            }
+
+            @Override
+            public void visitIfElse(IfStatement statement) {
+            }
+
+            @Override
+            public void visitReturnStatement(ReturnStatement statement) {
+            }
+
+            @Override
+            public void visitSwitch(SwitchStatement statement) {
+            }
+
+            @Override
+            public void visitSynchronizedStatement(SynchronizedStatement statement) {
+            }
+
+            @Override
+            public void visitThrowStatement(ThrowStatement statement) {
+            }
+
+            @Override
+            public void visitTryCatchFinally(TryCatchStatement statement) {
+            }
+
+            @Override
+            public void visitWhileLoop(WhileStatement statement) {
+            }
+        });
+        return isThis[0];
+    }
+
     private boolean lastIsArray(List<Expression> argumentList, int pos) {
         Expression last = argumentList.get(pos);
         ClassNode type = controller.getTypeChooser().resolveType(last, controller.getClassNode());
         return type.isArray();
     }
-    
+
     // load arguments
     protected void loadArguments(List<Expression> argumentList, Parameter[] para) {
         if (para.length==0) return;
@@ -302,7 +568,7 @@ public class InvocationWriter {
     }
 
     protected boolean makeDirectCall(
-        Expression origin, Expression receiver, 
+        Expression origin, Expression receiver,
         Expression message, Expression arguments,
         MethodCallerMultiAdapter adapter,
         boolean implicitThis, boolean containsSpreadExpression
@@ -322,8 +588,8 @@ public class InvocationWriter {
                     args = new TupleExpression(receiver);
                 }
 
-                StatementMeta meta = null;
-                if (origin!=null) meta = origin.getNodeMetaData(StatementMeta.class);
+                OptimizingStatementWriter.StatementMeta meta = null;
+                if (origin!=null) meta = origin.getNodeMetaData(OptimizingStatementWriter.StatementMeta.class);
                 MethodNode mn = null;
                 if (meta!=null) mn = meta.target;
 
@@ -353,15 +619,15 @@ public class InvocationWriter {
 
             if (methodName != null) {
                 controller.getCallSiteWriter().makeCallSite(
-                        receiver, methodName, arguments, safe, implicitThis, 
-                        adapter == invokeMethodOnCurrent, 
+                        receiver, methodName, arguments, safe, implicitThis,
+                        adapter == invokeMethodOnCurrent,
                         adapter == invokeStaticMethod);
                 return true;
             }
         }
         return false;
     }
-    
+
     protected void makeUncachedCall(
             Expression origin, ClassExpression sender,
             Expression receiver, Expression message, Expression arguments,
@@ -372,7 +638,7 @@ public class InvocationWriter {
         OperandStack operandStack = controller.getOperandStack();
         CompileStack compileStack = controller.getCompileStack();
         AsmClassGenerator acg = controller.getAcg();
-        
+
         // ensure VariableArguments are read, not stored
         compileStack.pushLHS(false);
 
@@ -387,14 +653,14 @@ public class InvocationWriter {
         if (adapter == invokeMethodOnSuper && methodName != null) {
             controller.getSuperMethodNames().add(methodName);
         }
-        
+
         // receiver
         compileStack.pushImplicitThis(implicitThis);
         receiver.visit(acg);
         operandStack.box();
         compileStack.popImplicitThis();
-        
-        
+
+
         int operandsToRemove = 2;
         // message
         if (message != null) {
@@ -429,7 +695,7 @@ public class InvocationWriter {
         compileStack.popLHS();
         operandStack.replace(ClassHelper.OBJECT_TYPE,operandsToRemove);
     }
-    
+
     protected void makeCall(
             Expression origin, ClassExpression sender,
             Expression receiver, Expression message, Expression arguments,
@@ -548,7 +814,7 @@ public class InvocationWriter {
         if (controller.isStaticMethod()) return true;
         return controller.isStaticContext() && !call.isImplicitThis();
     }
-    
+
     private static boolean usesSuper(MethodCallExpression call) {
         Expression expression = call.getObjectExpression();
         if (expression instanceof VariableExpression) {
@@ -567,37 +833,37 @@ public class InvocationWriter {
                 InvocationWriter.invokeStaticMethod,
                 false, false, false);
     }
-    
+
     private boolean writeDirectConstructorCall(ConstructorCallExpression call) {
         if (!controller.isFastPath()) return false;
-        
-        StatementMeta meta = call.getNodeMetaData(StatementMeta.class);
+
+        OptimizingStatementWriter.StatementMeta meta = call.getNodeMetaData(OptimizingStatementWriter.StatementMeta.class);
         ConstructorNode cn = null;
         if (meta!=null) cn = (ConstructorNode) meta.target;
         if (cn==null) return false;
-        
+
         String ownerDescriptor = prepareConstructorCall(cn);
         TupleExpression args = makeArgumentList(call.getArguments());
         loadArguments(args.getExpressions(), cn.getParameters());
         finnishConstructorCall(cn, ownerDescriptor, args.getExpressions().size());
-        
+
         return true;
     }
-    
+
     protected String prepareConstructorCall(ConstructorNode cn) {
         String owner = BytecodeHelper.getClassInternalName(cn.getDeclaringClass());
         MethodVisitor mv = controller.getMethodVisitor();
-        
+
         mv.visitTypeInsn(NEW, owner);
         mv.visitInsn(DUP);
         return owner;
     }
-    
+
     protected void finnishConstructorCall(ConstructorNode cn, String ownerDescriptor, int argsToRemove) {
         String desc = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitMethodInsn(INVOKESPECIAL, ownerDescriptor, "<init>", desc, false);
-        
+
         controller.getOperandStack().remove(argsToRemove);
         controller.getOperandStack().push(cn.getDeclaringClass());
     }
@@ -618,7 +884,7 @@ public class InvocationWriter {
                 arguments, false, false, false,
                 false);
     }
-    
+
     public void writeInvokeConstructor(ConstructorCallExpression call) {
         if (writeDirectConstructorCall(call)) return;
         if (writeAICCall(call)) return;
@@ -629,13 +895,13 @@ public class InvocationWriter {
         if (!call.isUsingAnonymousInnerClass()) return false;
         ConstructorNode cn = call.getType().getDeclaredConstructors().get(0);
         OperandStack os = controller.getOperandStack();
-        
+
         String ownerDescriptor = prepareConstructorCall(cn);
-        
+
         List<Expression> args = makeArgumentList(call.getArguments()).getExpressions();
         Parameter[] params = cn.getParameters();
         // if a this appears as parameter here, then it should be
-        // not static, unless we are in a static method. But since 
+        // not static, unless we are in a static method. But since
         // ACG#visitVariableExpression does the opposite for this case, we
         // push here an explicit this. This should not have any negative effect
         // sine visiting a method call or property with implicit this will push
@@ -656,7 +922,7 @@ public class InvocationWriter {
         finnishConstructorCall(cn, ownerDescriptor, args.size());
         return true;
     }
-    
+
     private void loadVariableWithReference(VariableExpression var) {
         if (!var.isUseReferenceDirectly()) {
             var.visit(controller.getAcg());
