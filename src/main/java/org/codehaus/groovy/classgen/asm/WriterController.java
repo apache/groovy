@@ -287,6 +287,14 @@ public class WriterController {
         this.methodNode = null;
     }
 
+    public ClassNode getThisType() {
+        ClassNode thisType = getClassNode();
+        while (isGeneratedFunction(thisType)) {
+            thisType = thisType.getOuterClass();
+        }
+        return thisType;
+    }
+
     public ClassNode getReturnType() {
         if (methodNode != null) {
             return methodNode.getReturnType();

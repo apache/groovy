@@ -1343,12 +1343,7 @@ public class AsmClassGenerator extends ClassGenerator {
             // "this" in static context is Class instance
             if (controller.isStaticMethod() || controller.getCompileStack().isInSpecialConstructorCall()
                     || (!controller.getCompileStack().isImplicitThis() && controller.isStaticContext())) {
-                ClassNode thisType = controller.getClassNode();
-                if (controller.isInGeneratedFunction()) {
-                    do { thisType = thisType.getOuterClass();
-                    } while (ClassHelper.isGeneratedFunction(thisType));
-                }
-                classX(thisType).visit(this);
+                classX(controller.getThisType()).visit(this);
             } else {
                 loadThis(expression);
             }

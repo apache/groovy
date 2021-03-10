@@ -60,7 +60,6 @@ import static org.codehaus.groovy.ast.ClassHelper.SERIALIZABLE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.SERIALIZEDLAMBDA_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.findSAM;
-import static org.codehaus.groovy.ast.ClassHelper.isGeneratedFunction;
 import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
@@ -175,11 +174,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         mv.visitInsn(DUP);
 
         if (controller.isStaticMethod() || compileStack.isInSpecialConstructorCall() || !accessingInstanceMembers) {
-            ClassNode classNode = controller.getClassNode();
-            while (isGeneratedFunction(classNode)) {
-                classNode = classNode.getOuterClass();
-            }
-            classX(classNode).visit(controller.getAcg());
+            classX(controller.getThisType()).visit(controller.getAcg());
         } else {
             loadThis();
         }

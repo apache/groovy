@@ -84,6 +84,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
@@ -364,18 +365,20 @@ public class StaticInvocationWriter extends InvocationWriter {
             }
         } else if (target.isPublic() && receiver != null) {
             if (implicitThis
+                    && controller.isInGeneratedFunction()
                     && !classNode.isDerivedFrom(target.getDeclaringClass())
-                    && !classNode.implementsInterface(target.getDeclaringClass())
-                    && classNode.getOuterClass() != null && controller.isInGeneratedFunction()) {
-                ClassNode current = classNode.getOuterClass();
-                fixedReceiver = varX("thisObject", current);
-                // adjust for multiple levels of nesting if needed
-                while (current.getOuterClass() != null && !target.getDeclaringClass().equals(current)) {
-                    FieldNode thisField = current.getField("this$0");
-                    current = current.getOuterClass();
+                    && !classNode.implementsInterface(target.getDeclaringClass())) {
+                ClassNode thisType = controller.getThisType();
+                if (isTrait(thisType.getOuterClass())) thisType = ClassHelper.DYNAMIC_TYPE; // GROOVY-7242
+
+                fixedReceiver = varX("thisObject", thisType);
+                // account for multiple levels of inner types
+                while (thisType.getOuterClass() != null && !target.getDeclaringClass().equals(thisType)) {
+                    FieldNode thisField = thisType.getField("this$0");
+                    thisType = thisType.getOuterClass();
                     if (thisField != null) {
                         fixedReceiver = propX(fixedReceiver, "this$0");
-                        fixedReceiver.setType(current);
+                        fixedReceiver.setType(thisType);
                         fixedImplicitThis = false;
                     }
                 }
