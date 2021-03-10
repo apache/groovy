@@ -153,7 +153,7 @@ public class InvocationWriter {
                         && !classNode.implementsInterface(declaringClass)) {
                     // outer class method invocation
                     compileStack.pushImplicitThis(false);
-                    if (!controller.isInGeneratedFunction()) {
+                    if (!controller.isInGeneratedFunction() && isThis(receiver)) {
                         objectExpression = new PropertyExpression(new ClassExpression(declaringClass), "this");
                     }
                 } else {
@@ -213,6 +213,21 @@ public class InvocationWriter {
         operandStack.remove(argumentsToRemove);
         operandStack.push(returnType);
         return true;
+    }
+
+    /**
+     * Supplements {@link org.apache.groovy.ast.tools.ExpressionUtils#isThisExpression isThisExpression}
+     * with the ability to see into {@code CheckcastReceiverExpression}.
+     */
+    private static boolean isThis(final Expression expression) {
+        boolean[] isThis = new boolean[1];
+        expression.visit(new org.codehaus.groovy.ast.GroovyCodeVisitorAdapter() {
+            @Override
+            public void visitVariableExpression(final VariableExpression vexp) {
+                isThis[0] = vexp.isThisExpression();
+            }
+        });
+        return isThis[0];
     }
 
     private boolean lastIsArray(final List<Expression> argumentList, final int pos) {
