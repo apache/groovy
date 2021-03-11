@@ -20,6 +20,9 @@ package groovy
 
 import groovy.test.GroovyTestCase
 
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
+
 class ClosureMethodCallTest extends GroovyTestCase {
 
     void testCallingClosureWithMultipleArguments() {
@@ -118,5 +121,21 @@ class ClosureMethodCallTest extends GroovyTestCase {
             ref = Y.&m
             assert ref(1) == 1
         '''
+    }
+
+    //GROOVY-9397
+    void testRespondsToIsThreadSafe() {
+      final Executor executor = Executors.newCachedThreadPool()
+      try {
+        final Closure action = { -> }
+        // ensure that executing the closure and calling respondsTo
+        // concurrently doesn't throw an exception.
+        for (int i = 0; i < 500; ++i) {
+          executor.execute(action)
+          executor.execute(() -> action.respondsTo('test'))
+        }
+      } finally {
+        executor.shutdownNow();
+      }
     }
 }
