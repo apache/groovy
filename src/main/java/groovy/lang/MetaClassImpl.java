@@ -3432,18 +3432,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     public synchronized void initialize() {
         if (!isInitialized()) {
-            fillMethodIndex();
-            try {
-                addProperties();
-            } catch (Throwable e) {
-                if (!AndroidSupport.isRunningAndroid()) {
-                    UncheckedThrow.rethrow(e);
-                }
-                // Introspection failure...
-                // May happen in Android
-            }
-            setInitialized(true);
+          reinitialize();
         }
+    }
+
+    protected synchronized void reinitialize() {
+      fillMethodIndex();
+      try {
+        addProperties();
+      } catch (Throwable e) {
+        if (!AndroidSupport.isRunningAndroid()) {
+          UncheckedThrow.rethrow(e);
+        }
+        // Introspection failure...
+        // May happen in Android
+      }
+      setInitialized(true);
     }
 
     private void addProperties() {

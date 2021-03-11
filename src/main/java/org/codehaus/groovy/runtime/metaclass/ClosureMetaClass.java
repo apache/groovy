@@ -696,9 +696,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
     private synchronized void loadMetaInfo() {
         if (metaMethodIndex.isEmpty()) {
-            initialized = false;
-            super.initialize();
-            initialized = true;
+          reinitialize();
         }
     }
 
