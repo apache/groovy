@@ -30,7 +30,7 @@ final class Groovy9982 {
                 def foo() { 'foo' }
             }
             class C extends A {
-                def foo = 'bar'
+                def foo
                 def test() {
                     foo = foo() // do not want ScriptBytecodeAdapter#invokeClosure
                     foo
