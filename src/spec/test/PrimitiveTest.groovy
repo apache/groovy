@@ -49,4 +49,27 @@ class PrimitiveTest extends GroovyTestCase {
             // end::widening_vs_boxing[]
         '''
     }
+
+    void testPrimitiveVsWrapperPosNegZero() {
+        assertScript '''
+            // tag::pos_neg_zero[]
+            float f1 = 0.0f
+            float f2 = -0.0f
+            Float f3 = 0.0f
+            Float f4 = -0.0f
+
+            assert f1 == f2
+            assert (Float) f1 != (Float) f2
+
+            assert f3 != f4         //<1>
+            assert (float) f3 == (float) f4
+
+            assert !f1.equals(f2)
+            assert !f3.equals(f4)
+
+            assert f1.equalsIgnoreZeroSign(f2)
+            assert f3.equalsIgnoreZeroSign(f4)
+            // end::pos_neg_zero[]
+        '''
+    }
 }

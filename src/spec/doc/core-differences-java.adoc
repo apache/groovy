@@ -274,10 +274,97 @@ with exception.
 include::../test/DifferencesFromJavaTest.groovy[tags=chars_c_vs_groovy_cast,indent=0]
 ----
 
+== Behaviour of `==`
+
+In Java, `==` means equality of primitive types or identity for objects.
+In Groovy, `==` means equality in all places.
+For non-primitives, it translates to `a.compareTo(b) == 0`,
+when evaluating equality for `Comparable` objects,
+and `a.equals(b)` otherwise.
+
+To check for identity (reference equality), use the `is` method: `a.is(b)`.
+From Groovy 3, you can also use the `===` operator (or negated version): `a === b` (or `c !== d`).
+
 == Primitives and wrappers
 
-Because Groovy uses Objects for everything, it link:core-object-orientation.html#_primitive_types[autowraps] references
-to primitives. Because of this, it does not follow Java's behavior of widening taking priority over boxing.
+In a pure object-oriented language, everything would be an object.
+Java takes the stance that primitive types, such as int, boolean and double,
+are used very frequently and worthy of special treatment.
+Primitives can be efficiently stored and manipulated but can't be used in all contexts where an object could be used.
+Luckily, Java auto boxes and unboxes primitives when they are passed as parameters or used as return types:
+
+// a few shell blocks use "ruby" code style as it is more forgiving than Java or Groovy
+// it's not straight code after all, but might as well be a little pretty
+[source,ruby]
+----
+jshell> class Main {
+   ...>   float f1 = 1.0f;
+   ...>   Float f2 = 2.0f;
+   ...>   float add(Float a1, float a2) { return a1 + a2; }
+   ...>   Float calc() { return add(f1, f2); } // <1>
+   ...> }
+|  created class Main
+
+jshell> new Main().calc()
+$2 ==> 3.0
+----
+<1> The `add` method expects wrapper then primitive type arguments,
+but we are supplying parameters with a primitive then wrapper type.
+Similarly, the return type from `add` is primitive, but we need the wrapper type.
+
+Groovy does the same:
+
+[source,ruby]
+----
+groovy:000> class Main {
+groovy:001>   float f1 = 1.0f
+groovy:002>   Float f2 = 2.0f
+groovy:003>   float add(Float a1, float a2) { a1 + a2 }
+groovy:004>   Float calc() { add(f1, f2) }
+groovy:005> }
+===> true
+groovy:000> new Main().calc()
+===> 3.0
+----
+
+Groovy, also supports primitives and object types, however, it goes a little further
+in pushing OO purity; it tries hard to treat _everything_ as an object.
+Any primitive typed variable or field can be treated like an object and it
+will be link:core-object-orientation.html#_primitive_types[autowrapped] as needed.
+While primitive types might be used under the covers,
+their use should be indistinguishable from normal object use whenever possible
+and they will be boxed/unboxed as needed.
+
+Here is a little example using Java trying to (incorrectly for Java) dereference a primitive `float`:
+
+[source,ruby]
+----
+jshell> class Main {
+   ...>     public float z1 = 0.0f;
+   ...> }
+|  created class Main
+
+jshell> new Main().z1.equals(1.0f)
+|  Error:
+|  float cannot be dereferenced
+|  new Main().z1.equals(1.0f)
+|  ^------------------^
+----
+
+The same example using Groovy compiles and runs successfully:
+
+[source,ruby]
+----
+groovy:000> class Main {
+groovy:001>     float z1 = 0.0f
+groovy:002> }
+===> true
+groovy:000> new Main().z1.equals(1.0f)
+===> false
+----
+
+Because of Groovy's additional use of un/boxing, it does not follow
+Java's behavior of widening taking priority over boxing.
 Here's an example using `int`
 
 [source,groovy]
@@ -287,14 +374,72 @@ include::../test/PrimitiveTest.groovy[tags=widening_vs_boxing,indent=0]
 <1> This is the method that Java would call, since widening has precedence over unboxing.
 <2> This is the method Groovy actually calls, since all primitive references use their wrapper class.
 
-== Behaviour of `==`
+[[primitive-optimisation-numbers]]
+=== Numeric Primitive Optimisation with `@CompileStatic`
 
-In Java `==` means equality of primitive types or identity for objects.
-In Groovy `==` means equality in all cases.
-It translates to `a.compareTo(b) == 0`, when evaluating equality for `Comparable` objects,
-and `a.equals(b)` otherwise.
-To check for identity (reference equality), use the `is` method: `a.is(b)`.
-From Groovy 3, you can also use the `===` operator (or negated version): `a === b` (or `c !== d`).
+Since Groovy converts to wrapper classes in more places, you might wonder
+whether it produces less efficient bytecode for numeric expressions.
+Groovy has a highly optimised set of classes for doing math computations.
+When using `@CompileStatic`, expressions involving only primitives
+uses the same bytecode that Java would use.
+
+[[zero-edge-case]]
+=== Positive/Negative zero edge case
+
+Java float/double operations for both primitives and wrapper classes follow the IEEE 754 standard
+but there is an interesting edge case involving positive and negative zero.
+The standard supports distinguishing between these two cases and while in many scenarios
+programmers may not care about the difference, in some mathematical or data science scenarios
+it is important to cater for the distinction.
+
+For primitives, Java maps down onto a special
+https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.dcmp_op[bytecode instruction]
+when comparing such values which has the property that
+"Positive zero and negative zero are considered equal".
+
+[source,ruby]
+----
+jshell> float f1 = 0.0f
+f1 ==> 0.0
+
+jshell> float f2 = -0.0f
+f2 ==> -0.0
+
+jshell> f1 == f2
+$3 ==> true
+----
+
+For the wrapper classes, e.g. jdk:java.base/java.lang.Float#equals(java.lang.Object)[Float#equals],
+the result is `false` for this same case.
+
+[source,ruby]
+----
+jshell> Float f1 = 0.0f
+f1 ==> 0.0
+
+jshell> Float f2 = -0.0f
+f2 ==> -0.0
+
+jshell> f1.equals(f2)
+$3 ==> false
+----
+
+Groovy on the one hand tries to follow Java behavior closely, but on the other
+switches automatically between primitives and wrapped equivalents in more places.
+To avoid confusion we recommend the following guidelines:
+
+* If you wish to distinguish between positive and negative zero, use the `equals`
+method directly or cast any primitives to their wrapper equivalent before using `==`.
+* If you wish to ignore the difference between positive and negative zero, use the `equalsIgnoreZeroSign`
+method directly or cast any non-primitives to their primitive equivalent before using `==`.
+
+These guidelines are illustrated in the following example:
+
+[source,groovy]
+----
+include::../test/PrimitiveTest.groovy[tags=pos_neg_zero,indent=0]
+----
+<1> Recall that for non-primitives, `==` maps to `.equals()`
 
 == Conversions
 
