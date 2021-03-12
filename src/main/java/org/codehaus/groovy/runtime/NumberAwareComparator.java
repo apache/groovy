@@ -31,10 +31,30 @@ import java.util.Comparator;
  */
 public class NumberAwareComparator<T> implements Comparator<T>, Serializable {
     private static final long serialVersionUID = 9017657289076651660L;
+    private boolean ignoreZeroSign;
+
+    public NumberAwareComparator() {
+        this(false);
+    }
+
+    /**
+     * @since 3.0.8
+     */
+    public NumberAwareComparator(boolean ignoreZeroSign) {
+        this.ignoreZeroSign = ignoreZeroSign;
+    }
 
     @Override
     public int compare(T o1, T o2) {
         try {
+            if (ignoreZeroSign) {
+                if (o1 instanceof Float && 0.0f == (Float) o1 && o2 instanceof Float && 0.0f == (Float) o2) {
+                    return 0;
+                }
+                if (o1 instanceof Double && 0.0d == (Double) o1 && o2 instanceof Double && 0.0d == (Double) o2) {
+                    return 0;
+                }
+            }
             return DefaultTypeTransformation.compareTo(o1, o2);
         } catch (ClassCastException | IllegalArgumentException | GroovyRuntimeException cce) {
             /* ignore */
