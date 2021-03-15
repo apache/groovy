@@ -5214,6 +5214,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         int paramLength = parameters.length;
         if (expressions.size() >= paramLength) {
             for (int i = 0; i < paramLength; i += 1) {
+                if (isNullConstant(expressions.get(i)))
+                    continue; // GROOVY-9984: skip null
                 boolean lastArg = (i == paramLength - 1);
                 ClassNode paramType = parameters[i].getType();
                 ClassNode argumentType = getDeclaredOrInferredType(expressions.get(i));

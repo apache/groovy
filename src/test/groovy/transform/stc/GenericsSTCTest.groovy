@@ -214,26 +214,38 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testDiamondInferrenceFromConstructorWithoutAssignment() {
+    void testDiamondInferrenceFromConstructor2() {
         assertScript '''
             new HashSet<>(Arrays.asList(0L,0L));
         '''
     }
 
-    void testDiamondInferrenceFromConstructor2() {
+    void testDiamondInferrenceFromConstructor3() {
         shouldFailWithMessages '''
             Set< Number > s3 = new HashSet<>(Arrays.asList(0L,0L));
         ''', 'Cannot assign java.util.HashSet <java.lang.Long> to: java.util.Set <Number>'
     }
 
-    void testDiamondInferrenceFromConstructor3() {
+    void testDiamondInferrenceFromConstructor4() {
         assertScript '''
             Set<Number> s4 = new HashSet<Number>(Arrays.asList(0L,0L))
         '''
     }
+    // GROOVY-9984
+    void testDiamondInferrenceFromConstructor5() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<T> {
+                T p
+            }
+
+            C<Integer> c = new C<>(null)
+            assert c.p === null
+        '''
+    }
 
     // GROOVY-9996
-    void testDiamondInferrenceFromConstructor8a() {
+    void testDiamondInferrenceFromConstructor6() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class C<T> {
@@ -250,7 +262,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10011
-    void testDiamondInferrenceFromConstructor8b() {
+    void testDiamondInferrenceFromConstructor7() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class C<T> {
