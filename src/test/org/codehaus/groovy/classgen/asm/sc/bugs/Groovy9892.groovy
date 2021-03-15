@@ -21,23 +21,48 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
-class Groovy9892Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
-    void testUnaryIncrementInGString() {
+final class Groovy9892 extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
+    void testIncrementPropertyWithinClosure1() {
         assertScript '''
-            class OuterClass {
+            class C {
                 int prefix
                 int postfix
-            
-                def call() {
+
+                def test() {
                     { ->
-                        "Hello${++prefix}World${postfix++}"
+                        "pre:${++prefix} post:${postfix++}"
                     }.call()
                 }
             }
-            def instance = new OuterClass() 
-            assert instance.call() == 'Hello1World0'
-            assert instance.prefix == 1
-            assert instance.postfix == 1
+            new C().with {
+                assert test() == 'pre:1 post:0'
+                assert prefix == 1
+                assert postfix == 1
+            }
+        '''
+    }
+
+    // GROOVY-9978
+    void testIncrementPropertyWithinClosure2() {
+        assertScript '''
+            import groovyx.gpars.dataflow.Dataflow
+
+            class C {
+                boolean stopProcessing = true
+                int processedEvents = 0
+
+                void test() {
+                    def promise = Dataflow.task {
+                        while (!stopProcessing) {
+                            processedEvents++
+                        }
+                    }
+                    // ...
+                }
+            }
+
+            new C().test()
         '''
     }
 }
