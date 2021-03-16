@@ -293,8 +293,39 @@ final class InnerClassTest {
         '''
     }
 
-    @Test @NotYetImplemented
+    @Test // GROOVY-7944
     void testNonStaticInnerClass2() {
+        assertScript '''
+            class A {
+                class B {
+                }
+                static main(args) {
+                    new B(new A())
+                    new A().with {
+                        new B(it)
+                        new B(delegate)
+                    }
+                }
+            }
+        '''
+
+        def err = shouldFail '''
+            class A {
+                class B {
+                }
+                static main(args) {
+                    new A().with {
+                        new B(this)
+                        new B(owner)
+                    }
+                }
+            }
+        '''
+        assert err =~ 'Could not find matching constructor for: A\\$B\\(Class\\)'
+    }
+
+    @Test @NotYetImplemented
+    void testNonStaticInnerClass3() {
         shouldFail CompilationFailedException, '''
             class A {
                 class B {}
@@ -304,7 +335,7 @@ final class InnerClassTest {
     }
 
     @Test @NotYetImplemented // GROOVY-9781
-    void testNonStaticInnerClass3() {
+    void testNonStaticInnerClass4() {
         assertScript '''
             class A {
                 class B {
@@ -323,7 +354,7 @@ final class InnerClassTest {
     }
 
     @Test @NotYetImplemented // GROOVY-8104
-    void testNonStaticInnerClass4() {
+    void testNonStaticInnerClass5() {
         assertScript '''
             class A {
                 void foo() {
