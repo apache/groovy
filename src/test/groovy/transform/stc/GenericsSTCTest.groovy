@@ -1103,15 +1103,37 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5559: related behaviour
-    void testGStringString() {
+    void testGStringVsString1() {
         assertScript '''
             int i = 1
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == GSTRING_TYPE
             })
-            def str = "foo$i"
-            assert str == 'foo1'
+            def s = "i=$i"
+            assert s == 'i=1'
         '''
+    }
+
+    // GROOVY-9971
+    void testGStringVsString2() {
+        shouldFailWithMessages '''
+            class C {
+                String apply(Closure<String> code) {
+                    code.call()
+                }
+
+                void test() {
+                    int i = 1
+                    assert apply { "i=$i" } == 'i=1'
+                    assert apply { "i=$i".toString() } == 'i=1'
+                    assert apply { false ? 'abc' : "i=$i" } == 'i=1'
+                    assert apply { true  ? 'abc' : "i=$i".toString() } == 'abc'
+                }
+            }
+            new C().test()
+        ''',
+        'Cannot find matching method C#apply(groovy.lang.Closure <groovy.lang.GString>)',
+        'Cannot find matching method C#apply(groovy.lang.Closure <java.io.Serializable>)'
     }
 
     // GROOVY-5594
