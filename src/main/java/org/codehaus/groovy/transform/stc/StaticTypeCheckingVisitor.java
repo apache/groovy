@@ -2177,11 +2177,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             extension.afterMethodCall(call);
             return;
         }
-        ClassNode receiver = call.getType();
+        ClassNode receiver;
         if (call.isThisCall()) {
-            receiver = typeCheckingContext.getEnclosingClassNode();
+            receiver = makeThis();
         } else if (call.isSuperCall()) {
-            receiver = typeCheckingContext.getEnclosingClassNode().getSuperClass();
+            receiver = makeSuper();
+        } else {
+            receiver = call.getType();
         }
         Expression arguments = call.getArguments();
         ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(arguments);
