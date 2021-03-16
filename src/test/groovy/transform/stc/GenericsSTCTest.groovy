@@ -416,6 +416,34 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-7945
+    void testSpecialCtorCallWithClassLiteral() {
+        shouldFailWithMessages '''
+            abstract class A<X, Y> {
+                private final Class<X> x
+                private final Class<Y> y
+
+                A(Class<X> x, Class<Y> y) {
+                    this.x = x
+                    this.y = y
+                }
+
+                void test() {
+                    println("{$x} and {$y}")
+                }
+            }
+
+            class B extends A<String, Integer> {
+                B() {
+                    super(Integer, String)
+                }
+            }
+
+            A<String, Integer> a = new B()
+            a.test()
+        ''', 'Cannot call A <String, Integer>#<init>(java.lang.Class <String>, java.lang.Class <Integer>) with arguments [java.lang.Class <java.lang.Integer>, java.lang.Class <java.lang.String>]'
+    }
+
     // GROOVY-9460
     void testMethodCallWithClassParameterUnbounded() {
         assertScript '''
