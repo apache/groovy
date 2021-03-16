@@ -44,6 +44,12 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot assign value of type java.lang.String into array of type int[]'
     }
 
+    void testWrongComponentTypeInArrayInitializer() {
+        shouldFailWithMessages '''
+            int[] intArray = new int[]{'a'}
+        ''', 'Cannot assign value of type java.lang.String into array of type int[]'
+    }
+
     void testAssignValueInArrayWithCorrectType() {
         assertScript '''
             int[] arr2 = [1, 2, 3]

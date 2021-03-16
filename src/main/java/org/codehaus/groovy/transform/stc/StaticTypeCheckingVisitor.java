@@ -49,6 +49,7 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.AttributeExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BitwiseNegationExpression;
@@ -4048,6 +4049,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         Map<VariableExpression, List<ClassNode>> oldTracker = typeCheckingContext.ifElseForWhileAssignmentTracker;
         typeCheckingContext.ifElseForWhileAssignmentTracker = new HashMap<>();
         return oldTracker;
+    }
+
+    @Override
+    public void visitArrayExpression(ArrayExpression source) {
+        super.visitArrayExpression(source);
+        ClassNode elementType = source.getElementType();
+        for (Expression expression : source.getExpressions()) {
+            if (!checkCast(elementType, expression)) {
+                addStaticTypeError("Cannot assign value of type " +
+                        prettyPrintType(getType(expression)) + " into array of type " +
+                        prettyPrintType(source.getType()), expression);
+            }
+        }
     }
 
     @Override
