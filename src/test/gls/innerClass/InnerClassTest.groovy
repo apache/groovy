@@ -322,6 +322,41 @@ final class InnerClassTest {
         '''
     }
 
+    @Test @NotYetImplemented // GROOVY-8104
+    void testNonStaticInnerClass4() {
+        assertScript '''
+            class A {
+                void foo() {
+                    C c = new C()
+                    ['1','2','3'].each { obj ->
+                        c.baz(obj, new I() {
+                            @Override
+                            void bar(Object o) {
+                                B b = new B() // Could not find matching constructor for: A$B(A$_foo_closure1)
+                            }
+                        })
+                    }
+                }
+
+                class B {
+                }
+            }
+
+            class C {
+                void baz(Object o, I i) {
+                    i.bar(o)
+                }
+            }
+
+            interface I {
+                void bar(Object o)
+            }
+
+            A a = new A()
+            a.foo()
+        '''
+    }
+
     @Test
     void testAnonymousInnerClass() {
         assertScript '''
@@ -1394,7 +1429,7 @@ final class InnerClassTest {
     }
 
     @org.junit.Ignore @Test // GROOVY-9866
-    void testResolveInnerTypeOfSuperType11() {
+    void testResolveInnerOfSuperType12() {
         assertScript '''
             class X {                   // System
                 interface Y {           // Logger
