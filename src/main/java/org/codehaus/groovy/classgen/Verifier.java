@@ -1044,14 +1044,16 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
         }
 
-        statements.addAll(node.getObjectInitializerStatements());
-
         BlockStatement block = getCodeAsBlock(constructorNode);
         List<Statement> blockStatements = block.getStatements();
         if (!blockStatements.isEmpty()) {
             if (specialCtorCall != null) {
                 blockStatements.remove(0);
                 statements.add(0, firstStatement);
+                // GROOVY-7686: place local variable references above super ctor call
+                if (node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous()) {
+                    extractVariableReferenceInitializers(statements).forEach(s -> statements.add(0, s));
+                }
             }
             if (node instanceof InnerClassNode) {
                 // GROOVY-4471: place this$0 init above other field init and super ctor call;
@@ -1061,7 +1063,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     statements.add(0, initThis$0);
                 }
             }
+            statements.addAll(node.getObjectInitializerStatements());
             statements.addAll(blockStatements);
+        } else {
+            statements.addAll(node.getObjectInitializerStatements());
         }
 
         BlockStatement newBlock = new BlockStatement(statements, block.getVariableScope());
@@ -1108,28 +1113,51 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 List<Statement> stmts = ((BlockStatement) stmt).getStatements();
                 for (Statement bstmt : stmts) {
                     if (bstmt instanceof ExpressionStatement) {
-                        if (extractImplicitThis$0StmtIfInnerClassFromExpression(stmts, bstmt)) return bstmt;
+                        if (extractImplicitThis$0StmtFromExpression(stmts, bstmt)) return bstmt;
                     }
                 }
             } else if (stmt instanceof ExpressionStatement) {
-                if (extractImplicitThis$0StmtIfInnerClassFromExpression(statements, stmt)) return stmt;
+                if (extractImplicitThis$0StmtFromExpression(statements, stmt)) return stmt;
             }
         }
         return null;
     }
 
-    private static boolean extractImplicitThis$0StmtIfInnerClassFromExpression(final List<Statement> stmts, final Statement bstmt) {
-        Expression expr = ((ExpressionStatement) bstmt).getExpression();
+    private static boolean extractImplicitThis$0StmtFromExpression(final List<Statement> stmts, final Statement exprStmt) {
+        Expression expr = ((ExpressionStatement) exprStmt).getExpression();
         if (expr instanceof BinaryExpression) {
             Expression lExpr = ((BinaryExpression) expr).getLeftExpression();
             if (lExpr instanceof FieldExpression) {
                 if ("this$0".equals(((FieldExpression) lExpr).getFieldName())) {
-                    stmts.remove(bstmt); // remove from here and let the caller reposition it
+                    stmts.remove(exprStmt); // remove from here and let the caller reposition it
                     return true;
                 }
             }
         }
         return false;
+    }
+
+    private static List<Statement> extractVariableReferenceInitializers(final List<Statement> statements) {
+        List<Statement> localVariableReferences = new ArrayList<>();
+        for (ListIterator<Statement> it = statements.listIterator(1); it.hasNext();) {
+            // the first statement is the super constructor call  ^
+
+            Statement stmt = it.next();
+            if (stmt instanceof ExpressionStatement
+                    && ((ExpressionStatement) stmt).getExpression() instanceof BinaryExpression) {
+                BinaryExpression expr = (BinaryExpression) ((ExpressionStatement) stmt).getExpression();
+
+                if (expr.getOperation().getType() == Types.ASSIGN
+                        && expr.getLeftExpression() instanceof FieldExpression
+                        && expr.getLeftExpression().getType().equals(ClassHelper.REFERENCE_TYPE)
+                        && (((FieldExpression) expr.getLeftExpression()).getField().getModifiers() & Opcodes.ACC_SYNTHETIC) != 0
+                        /* also could check if the right expression is a variable expression that references ctor parameter */) {
+                    localVariableReferences.add(stmt);
+                    it.remove();
+                }
+            }
+        }
+        return localVariableReferences;
     }
 
     // TODO: add generics to collections
