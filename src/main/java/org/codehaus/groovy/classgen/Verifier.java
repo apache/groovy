@@ -1020,34 +1020,24 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     protected void addInitialization(final ClassNode node, final ConstructorNode constructorNode) {
         Statement firstStatement = constructorNode.getFirstStatement();
-        // if some transformation decided to generate constructor then it probably knows who it does
-        if (firstStatement instanceof BytecodeSequence)
-            return;
 
-        ConstructorCallExpression first = getFirstIfSpecialConstructorCall(firstStatement);
+        // if some transformation decided to generate constructor then it probably knows best
+        if (firstStatement instanceof BytecodeSequence) return;
 
-        // in case of this(...) let the other constructor do the init
-        if (first != null && (first.isThisCall())) return;
+        ConstructorCallExpression specialCtorCall = getFirstIfSpecialConstructorCall(firstStatement);
 
-        List<Statement> statements = new ArrayList<Statement>();
-        List<Statement> staticStatements = new ArrayList<Statement>();
-        final boolean isEnum = node.isEnum();
-        List<Statement> initStmtsAfterEnumValuesInit = new ArrayList<Statement>();
-        Set<String> explicitStaticPropsInEnum = new HashSet<String>();
-        if (isEnum) {
-            for (PropertyNode propNode : node.getProperties()) {
-                if (!propNode.isSynthetic() && propNode.getField().isStatic()) {
-                    explicitStaticPropsInEnum.add(propNode.getField().getName());
-                }
-            }
-            for (FieldNode fieldNode : node.getFields()) {
-                if (!fieldNode.isSynthetic() && fieldNode.isStatic() && fieldNode.getType() != node) {
-                    explicitStaticPropsInEnum.add(fieldNode.getName());
-                }
-            }
-        }
+        // in case of this(...) let the other constructor initialize
+        if (specialCtorCall != null && (specialCtorCall.isThisCall())) return;
+
+        boolean isEnum = node.isEnum();
+        List<Statement> statements = new ArrayList<>();
+        List<Statement> staticStatements = new ArrayList<>();
+        List<Statement> initStmtsAfterEnumValuesInit = new ArrayList<>();
 
         if (!Traits.isTrait(node)) {
+            Set<String> explicitStaticPropsInEnum = !isEnum
+                    ? Collections.emptySet() : getExplicitStaticProperties(node);
+
             for (FieldNode fn : node.getFields()) {
                 addFieldInitialization(statements, staticStatements, fn, isEnum,
                         initStmtsAfterEnumValuesInit, explicitStaticPropsInEnum);
@@ -1057,31 +1047,31 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         statements.addAll(node.getObjectInitializerStatements());
 
         BlockStatement block = getCodeAsBlock(constructorNode);
-        List<Statement> otherStatements = block.getStatements();
-        if (!otherStatements.isEmpty()) {
-            if (first != null) {
-                // it is super(..) since this(..) is already covered
-                otherStatements.remove(0);
+        List<Statement> blockStatements = block.getStatements();
+        if (!blockStatements.isEmpty()) {
+            if (specialCtorCall != null) {
+                blockStatements.remove(0);
                 statements.add(0, firstStatement);
             }
-            Statement stmtThis$0 = getImplicitThis$0StmtIfInnerClass(otherStatements);
-            if (stmtThis$0 != null) {
-                // since there can be field init statements that depend on method/property dispatching
-                // that uses this$0, it needs to bubble up before the super call itself (GROOVY-4471)
-                statements.add(0, stmtThis$0);
+            if (node instanceof InnerClassNode) {
+                // GROOVY-4471: place this$0 init above other field init and super ctor call;
+                // there can be field initializers that depend on method/property dispatching
+                Statement initThis$0 = getImplicitThis$0Stmt(blockStatements);
+                if (initThis$0 != null) {
+                    statements.add(0, initThis$0);
+                }
             }
-            statements.addAll(otherStatements);
+            statements.addAll(blockStatements);
         }
+
         BlockStatement newBlock = new BlockStatement(statements, block.getVariableScope());
         newBlock.setSourcePosition(block);
         constructorNode.setCode(newBlock);
 
         if (!staticStatements.isEmpty()) {
             if (isEnum) {
-                /*
-                 * GROOVY-3161: initialize statements for explicitly declared static fields
-                 * inside an enum should come after enum values are initialized
-                 */
+                // GROOVY-3161: initialization statements for explicitly declared static
+                // fields inside an enum should come after enum values are initialized
                 staticStatements.removeAll(initStmtsAfterEnumValuesInit);
                 node.addStaticInitializerStatements(staticStatements, true);
                 if (!initStmtsAfterEnumValuesInit.isEmpty()) {
@@ -1093,13 +1083,27 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
     }
 
-    /*
+    private static Set<String> getExplicitStaticProperties(final ClassNode cn) {
+        Set<String> staticProperties = new HashSet<>();
+        for (PropertyNode pn : cn.getProperties()) {
+            if (!pn.isSynthetic() && pn.getField().isStatic()) {
+                staticProperties.add(pn.getField().getName());
+            }
+        }
+        for (FieldNode fn : cn.getFields()) {
+            if (!fn.isSynthetic() && fn.isStatic() && fn.getType() != cn) {
+                staticProperties.add(fn.getName());
+            }
+        }
+        return staticProperties;
+    }
+
+    /**
      * When InnerClassVisitor adds <code>this.this$0 = $p$n</code>, it adds it
      * as a BlockStatement having that ExpressionStatement.
      */
-    private Statement getImplicitThis$0StmtIfInnerClass(final List<Statement> otherStatements) {
-        if (!(classNode instanceof InnerClassNode)) return null;
-        for (Statement stmt : otherStatements) {
+    private static Statement getImplicitThis$0Stmt(final List<Statement> statements) {
+        for (Statement stmt : statements) {
             if (stmt instanceof BlockStatement) {
                 List<Statement> stmts = ((BlockStatement) stmt).getStatements();
                 for (Statement bstmt : stmts) {
@@ -1108,7 +1112,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     }
                 }
             } else if (stmt instanceof ExpressionStatement) {
-                if (extractImplicitThis$0StmtIfInnerClassFromExpression(otherStatements, stmt)) return stmt;
+                if (extractImplicitThis$0StmtIfInnerClassFromExpression(statements, stmt)) return stmt;
             }
         }
         return null;
