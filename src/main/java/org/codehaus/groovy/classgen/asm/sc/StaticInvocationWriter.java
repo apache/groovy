@@ -243,7 +243,8 @@ public class StaticInvocationWriter extends InvocationWriter {
             Expression fixedReceiver = receiver;
             if (implicitThis) {
                 if (!controller.isInClosure()) {
-                    fixedReceiver = new PropertyExpression(new ClassExpression(lookupClassNode), "this");
+                    if (!thisClass.isDerivedFrom(lookupClassNode))
+                        fixedReceiver = new PropertyExpression(new ClassExpression(lookupClassNode), "this");
                 } else if (thisClass != null) {
                     ClassNode current = thisClass.getOuterClass();
                     fixedReceiver = new VariableExpression("thisObject", current);
