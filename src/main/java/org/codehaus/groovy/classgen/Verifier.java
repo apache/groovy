@@ -81,6 +81,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -1050,8 +1051,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
         }
 
-        statements.addAll(node.getObjectInitializerStatements());
-
         Statement code = constructorNode.getCode();
         BlockStatement block = new BlockStatement();
         List<Statement> otherStatements = block.getStatements();
@@ -1066,6 +1065,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 // it is super(..) since this(..) is already covered
                 otherStatements.remove(0);
                 statements.add(0, firstStatement);
+                // GROOVY-7686: place local variable references above super ctor call
+                if (node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous()) {
+                    for (Statement stmt : extractVariableReferenceInitializers(statements)) {
+                        statements.add(0, stmt);
+                    }
+                }
             }
             Statement stmtThis$0 = getImplicitThis$0StmtIfInnerClass(otherStatements);
             if (stmtThis$0 != null) {
@@ -1073,8 +1078,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 // that uses this$0, it needs to bubble up before the super call itself (GROOVY-4471)
                 statements.add(0, stmtThis$0);
             }
+            statements.addAll(node.getObjectInitializerStatements());
             statements.addAll(otherStatements);
+        } else {
+            statements.addAll(node.getObjectInitializerStatements());
         }
+
         BlockStatement newBlock = new BlockStatement(statements, block.getVariableScope());
         newBlock.setSourcePosition(block);
         constructorNode.setCode(newBlock);
@@ -1140,6 +1149,29 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         ConstructorCallExpression cce = (ConstructorCallExpression) expression;
         if (cce.isSpecialCall()) return cce;
         return null;
+    }
+
+    private static List<Statement> extractVariableReferenceInitializers(List<Statement> statements) {
+        List<Statement> localVariableReferences = new ArrayList<>();
+        for (ListIterator<Statement> it = statements.listIterator(1); it.hasNext(); ) {
+            // the first statement is the super constructor call  ^
+
+            Statement stmt = it.next();
+            if (stmt instanceof ExpressionStatement
+                    && ((ExpressionStatement) stmt).getExpression() instanceof BinaryExpression) {
+                BinaryExpression expr = (BinaryExpression) ((ExpressionStatement) stmt).getExpression();
+
+                if (expr.getOperation().getType() == Types.ASSIGN
+                        && expr.getLeftExpression() instanceof FieldExpression
+                        && expr.getLeftExpression().getType().equals(ClassHelper.REFERENCE_TYPE)
+                        && (((FieldExpression) expr.getLeftExpression()).getField().getModifiers() & Opcodes.ACC_SYNTHETIC) != 0
+                        /* also could check if the right expression is a variable expression that references ctor parameter */) {
+                    localVariableReferences.add(stmt);
+                    it.remove();
+                }
+            }
+        }
+        return localVariableReferences;
     }
 
     protected void addFieldInitialization(List list, List staticList, FieldNode fieldNode,
