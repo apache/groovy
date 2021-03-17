@@ -1069,6 +1069,30 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-7686
+    void testReferencedVariableInAIC3() {
+        assertScript '''
+            abstract class A {
+                A() {
+                    m()
+                }
+                abstract void m();
+            }
+            void test() {
+                def v = false
+                def a = new A() {
+                    // run by super ctor
+                    @Override void m() {
+                        assert v != null
+                    }
+                }
+                v = true
+                a.m()
+            }
+            test()
+        '''
+    }
+
     @Test // GROOVY-5754
     void testResolveInnerOfSuperType() {
         assertScript '''

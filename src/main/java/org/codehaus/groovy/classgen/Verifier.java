@@ -1042,8 +1042,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
         }
 
-        statements.addAll(node.getObjectInitializerStatements());
-
         BlockStatement block = getCodeAsBlock(constructorNode);
         List<Statement> otherStatements = block.getStatements();
         if (!otherStatements.isEmpty()) {
@@ -1051,6 +1049,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 // it is super(..) since this(..) is already covered
                 otherStatements.remove(0);
                 statements.add(0, firstStatement);
+                // GROOVY-7686: place local variable references above super ctor call
+                if (node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous()) {
+                    extractVariableReferenceInitializers(statements).forEach(s -> statements.add(0, s));
+                }
             }
             Statement stmtThis$0 = getImplicitThis$0StmtIfInnerClass(otherStatements);
             if (stmtThis$0 != null) {
@@ -1058,8 +1060,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 // that uses this$0, it needs to bubble up before the super call itself (GROOVY-4471)
                 statements.add(0, stmtThis$0);
             }
+            statements.addAll(node.getObjectInitializerStatements());
             statements.addAll(otherStatements);
+        } else {
+            statements.addAll(node.getObjectInitializerStatements());
         }
+
         BlockStatement newBlock = new BlockStatement(statements, block.getVariableScope());
         newBlock.setSourcePosition(block);
         constructorNode.setCode(newBlock);
@@ -1114,6 +1120,29 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
         }
         return false;
+    }
+
+    private static List<Statement> extractVariableReferenceInitializers(final List<Statement> statements) {
+        List<Statement> localVariableReferences = new ArrayList<>();
+        for (ListIterator<Statement> it = statements.listIterator(1); it.hasNext();) {
+            // the first statement is the super constructor call  ^
+
+            Statement stmt = it.next();
+            if (stmt instanceof ExpressionStatement
+                    && ((ExpressionStatement) stmt).getExpression() instanceof BinaryExpression) {
+                BinaryExpression expr = (BinaryExpression) ((ExpressionStatement) stmt).getExpression();
+
+                if (expr.getOperation().getType() == Types.ASSIGN
+                        && expr.getLeftExpression() instanceof FieldExpression
+                        && expr.getLeftExpression().getType().equals(ClassHelper.REFERENCE_TYPE)
+                        && (((FieldExpression) expr.getLeftExpression()).getField().getModifiers() & Opcodes.ACC_SYNTHETIC) != 0
+                        /* also could check if the right expression is a variable expression that references ctor parameter */) {
+                    localVariableReferences.add(stmt);
+                    it.remove();
+                }
+            }
+        }
+        return localVariableReferences;
     }
 
     // TODO: add generics to collections
