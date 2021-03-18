@@ -115,7 +115,7 @@ class EnumTest extends CompilableTestSupport {
     void testEnumWithSingleListInConstructor() {
         def sh = new GroovyShell();
         def enumStr;
-        
+
         enumStr = """
             enum ListEnum1 {
                 ONE([111, 222])
@@ -127,7 +127,7 @@ class EnumTest extends CompilableTestSupport {
             println ListEnum1.ONE
         """
         sh.evaluate(enumStr);
-            
+
         enumStr = """
             enum ListEnum2 {
                 TWO([234, [567,12]])
@@ -140,14 +140,14 @@ class EnumTest extends CompilableTestSupport {
         """
         sh.evaluate(enumStr)
     }
-    
+
+    // GROOVY-3214
     void testSingleListDoesNoInfluenceMaps() {
-        // the fix for GROOVY-2933 caused map["taku"]
-        // to become map[(["take])] instead. -> GROOVY-3214
+        // the fix for GROOVY-2933 caused map["taku"] to become map[(["take])] instead
         assertScript """
             enum FontFamily {
                 ARIAL
-            
+
                 static void obtainMyMap() {
                     Map map = [:]
                     map["taku"] = "dio"
@@ -157,28 +157,28 @@ class EnumTest extends CompilableTestSupport {
             FontFamily.obtainMyMap()
         """
     }
- 
+
+    // GROOVY-3276
     void testMutipleValuesDontGetWronglyWrappedInList() {
-        // the fix for GROOVY-3214 caused multiple values passed in an enum const
-        // to get wrapped in an extra ListExpression. -> GROOVY-3276
+        // the fix for GROOVY-3214 caused multiple values passed in an enum const to get wrapped in an extra ListExpression
         assertScript """
             enum GROOVY3276 {
                A(1,2), B(3,4)
-           
-               GROOVY3276(int xx, int yy) { 
-                   x=xx 
-                   y=yy 
+
+               GROOVY3276(int xx, int yy) {
+                   x=xx
+                   y=yy
                }
                public int x
                public int y
            }
-           
+
            assert GROOVY3276.A.x == 1
            assert GROOVY3276.B.y == 4
         """
     }
 
-    // the fix for GROOVY-3161
+    // GROOVY-3161
     void testStaticEnumFieldWithEnumValues() {
         def allColors = GroovyColors3161.ALL_COLORS
         assert allColors.size() == 3
@@ -187,21 +187,22 @@ class EnumTest extends CompilableTestSupport {
         assert allColors[2] == GroovyColors3161.green
     }
 
-    // the fix for GROOVY-3283
+    // GROOVY-3283
     void testImportStaticMoreThanOneEnum() {
         assertScript """
             enum Foo3283 { A,B }
             enum Bar3283 { X,Y }
-            
+
             import static Foo3283.*
             import static Bar3283.*
-            
+
             a = A
             x = X
         """
     }
 
-    void testCallBehaviorOnEnumForGROOVY3284() {
+    // GROOVY-3284
+    void testCallBehaviorOnEnum() {
         // test the usage in a non-script class first
         for (f in Foo3284) {
             assert f() == "A"
@@ -223,38 +224,38 @@ class EnumTest extends CompilableTestSupport {
             for (f in Foo32842) {
                 assert f() == "B"
             }
-    
+
             assert Foo32842.B.call() == "B"
-    
+
             assert Foo32842.B() == "B"
             b = Foo32842.B
             assert b() == "B"
         """
     }
 
-    void testClassResolutionForInnerEnumsWithPackageNameGROOVY3483() {
-
+    // GROOVY-3483
+    void testClassResolutionForInnerEnumsWithPackageName() {
         assertScript """
             package familie
-            
+
             class Mother3483 {
                 Mother3483.Child child
-                
+
                 enum Child{
                     Franz,
                     Ferdi,
                     Nand
                 }
             }
-            
+
             def mother = new Mother3483(child: Mother3483.Child.Franz)
-            
+
             assert mother.child as String == 'Franz'
         """
     }
 
+    // GROOVY-3110
     void testInnerEnumUsedInDefiningClassWithUnqualifiedEnumNameUsed() {
-        //GROOVY-3110
         assertScript """
             class Class3110 {
                 enum Enum3110{FOO, BAR}
@@ -266,36 +267,36 @@ class EnumTest extends CompilableTestSupport {
                     var
                 }
             }
-            
+
             def obj = new Class3110()
             obj.setEnumVar()
             assert obj.getEnumVar() == Class3110.Enum3110.FOO
         """
     }
 
+    // GROOVY-3693
     void testStaticFieldInitValuesInAStaticBlock() {
-        // GROOVY-3693 - trigger enum class load to test it - asserts are present in the enum 
+        // trigger enum class load to test it - asserts are present in the enum
         GroovyColors3693.r
     }
-    
+
+    // GROOVY-2443
     void testCustomMethodOnEnum() {
-        // GROOVY-2443
-        assertScript """
+        assertScript '''
             enum Day {
-                SUNDAY {
-                    String activity() { 'Relax' }
-                }, MONDAY, TUESDAY, WEDNESDAY,
-                THURSDAY, FRIDAY, SATURDAY
+                SUNDAY { @Override String activity() { 'Relax' } },
+                MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY
                 String activity() { 'Work' }
             }
-            assert "Work" == Day.MONDAY.activity() 
-            assert "Relax" == Day.SUNDAY.activity()
-        """
+            assert 'Work' == Day.MONDAY.activity()
+            assert 'Relax' == Day.SUNDAY.activity()
+        '''
     }
 
+    // GROOVY-3985
     void testEnumConstantSubClassINITMethodOverrideINITOfEnumClass() {
         try {
-            // cause loading of enum that causes its fields to be set and 
+            // cause loading of enum that causes its fields to be set and
             // their instance initializer to be executed
             println Color3985
         }catch(ExceptionInInitializerError err) {
@@ -303,14 +304,14 @@ class EnumTest extends CompilableTestSupport {
         }
     }
 
+    // GROOVY-3996
     void testEnumStaticInitWithAFieldUsingEnumValues() {
-        //GROOVY-3996
         assertScript """
             enum Color3996 {
                 R, G, B
                 public static Color3996[] ALL_COLORS = [R, G, B]
             }
-            
+
             assert Color3996.ALL_COLORS.size() == 3
             assert Color3996.ALL_COLORS[0] == Color3996.R
             assert Color3996.ALL_COLORS[1] == Color3996.G
@@ -318,8 +319,8 @@ class EnumTest extends CompilableTestSupport {
         """
     }
 
+    // GROOVY-3986
     void testEnumWithTopLevelNoBracketsMethodCall() {
-        // GROOVY-3986
         assertScript """
             enum Color3986 {
                 RED {
@@ -330,8 +331,8 @@ class EnumTest extends CompilableTestSupport {
         """
     }
 
+    // GROOVY-3047
     void testEnumConstantSeparators() {
-        // GROOVY-3047
         shouldCompile """
             enum Foo0 { X }
             enum Foo1 {
@@ -367,8 +368,8 @@ class EnumTest extends CompilableTestSupport {
         """
     }
 
+    // GROOVY-4268
     void testEnumWithSingleValueAndClassField() {
-        // GROOVY-4268
         shouldCompile """
             enum EnumWithSingleValueAndClassField {
                 VALUE
@@ -377,43 +378,43 @@ class EnumTest extends CompilableTestSupport {
         """
     }
 
+    // GROOVY-4444
     void testConstructorChainingInEnum() {
-        // GROOVY-4444
         assertScript """
             enum Foo4444 {
                 ONE(1), TWO(1, 2)
-              
+
                 int i
                 int j
-              
+
                 Foo4444(int i) {
                     this(i, 0)
                 }
-            
+
                 Foo4444(int i, int j) {
                     this.i = i
                     this.j = j
                 }
             }
-            
+
             def foos = [Foo4444.ONE, Foo4444.TWO]
-            
+
             assert foos.size() == 2
-            
+
             assert foos[0].i == 1
             assert foos[0].j == 0
-            
+
             assert foos[1].i == 1
             assert foos[1].j == 2
         """
     }
 
+    // GROOVY-6065
     void testOverridingMethodsWithExplicitConstructor() {
-        // GROOVY-6065
-        assertScript """
+        assertScript '''
             enum Country {
                 Hungary(9_939_000), Italy(61_482_000), Poland(38_383_000) { String getCountryCode() { 'pl' } }
-                int population
+                final int population
                 Country(population) { this.population = population }
                 String getCountryCode() { name()[0..1].toLowerCase() }
             }
@@ -421,11 +422,11 @@ class EnumTest extends CompilableTestSupport {
             assert Country.Hungary.countryCode == 'hu'
             assert Country.Italy.countryCode == 'it'
             assert Country.Poland.countryCode == 'pl'
-        """
+        '''
     }
 
+    // GROOVY-4641
     void testAbstractMethodOverriding() {
-        // GROOVY-4641
         assertScript """
             enum Day {
                SUNDAY {
@@ -460,8 +461,8 @@ class EnumTest extends CompilableTestSupport {
         """
     }
 
+    // GROOVY-5756
     void testInnerClosureDefinitions() {
-        // GROOVY-5756
         assertScript """
             enum MyEnum {
                 INSTANCE {
@@ -478,8 +479,8 @@ class EnumTest extends CompilableTestSupport {
         """
     }
 
+    // GROOVY-4794
     void testLenientTypeDefinitions() {
-        // GROOVY-4794
         assertScript """
             enum E {
               enConst {
@@ -494,8 +495,8 @@ class EnumTest extends CompilableTestSupport {
         """
     }
 
+    // GROOVY-4485
     void testNamedArgs() {
-        // GROOVY-4485
         assertScript """
             enum ExportFormat {
                 EXCEL_OOXML(mime: "application/vnd.ms-excel", extension: "xlsx"),
@@ -514,8 +515,8 @@ class EnumTest extends CompilableTestSupport {
         """
     }
 
+    // GROOVY-6250
     void testGenericMethodOverriding() {
-        // GROOVY-6250
         assertScript """
             interface IVisitor<InputType, OutputType> {
                 OutputType visitMe(InputType input)
@@ -553,7 +554,8 @@ class EnumTest extends CompilableTestSupport {
         '''
     }
 
-    void testLastEnumValueIsAnnotatedWithoutTrailingComma_GROOVY_7342() {
+    // GROOVY-7342
+    void testLastEnumValueIsAnnotatedWithoutTrailingComma() {
         assertScript '''
             import java.lang.annotation.ElementType;
             import java.lang.annotation.Target;
@@ -574,7 +576,8 @@ class EnumTest extends CompilableTestSupport {
         '''
     }
 
-    void testEnumWithPropertiesAndDanglingComma_GROOVY_7773() {
+    // GROOVY-7773
+    void testEnumWithPropertiesAndDanglingComma() {
         assertScript '''
             enum UsState {
                 ID('Idaho'),
@@ -600,7 +603,8 @@ class EnumTest extends CompilableTestSupport {
           '''
     }
 
-    void testNestedEnumHasStaticModifier_GROOVY_8360() {
+    // GROOVY-8360
+    void testNestedEnumHasStaticModifier() {
         assertScript '''
             class Foo {
                 enum Bar {
@@ -609,30 +613,32 @@ class EnumTest extends CompilableTestSupport {
                     Bar(String s) { this.s = s }
                     Bar() {}
                 }
-            }            
+            }
             assert java.lang.reflect.Modifier.isStatic(Foo.Bar.modifiers)
             assert Foo.Bar.X.s == 'x'
         '''
     }
 
-    void testEnumWithinInnerClassHasStaticModifier_GROOVY_8360() {
+    // GROOVY-8360
+    void testEnumWithinInnerClassHasStaticModifier() {
         assertScript '''
             class Foo {
                 class Baz {
                     enum Bar {
-                        X('x'), Y                                                                        
-                        String s                                                                                                
+                        X('x'), Y
+                        String s
                         Bar(String s) { this.s = s }
-                        Bar() {}                                                
-                    }                
+                        Bar() {}
+                    }
                 }
-            }            
+            }
             assert java.lang.reflect.Modifier.isStatic(Foo.Baz.Bar.modifiers)
             assert Foo.Baz.Bar.X.s == 'x'
         '''
     }
 
-    void testNestedEnumHasStaticModifierSC_GROOVY_8360() {
+    // GROOVY-8360
+    void testNestedEnumHasStaticModifierSC() {
         assertScript '''
             @groovy.transform.CompileStatic
             class Foo {
@@ -642,7 +648,7 @@ class EnumTest extends CompilableTestSupport {
                     Bar(String s) { this.s = s }
                     Bar() {}
                 }
-            }          
+            }
             @groovy.transform.CompileStatic
             void test() {
                 assert java.lang.reflect.Modifier.isStatic(Foo.Bar.getModifiers())
@@ -652,25 +658,26 @@ class EnumTest extends CompilableTestSupport {
         '''
     }
 
-    void testEnumWithinInnerClassHasStaticModifierSC_GROOVY_8360() {
+    // GROOVY-8360
+    void testEnumWithinInnerClassHasStaticModifierSC() {
         assertScript '''
             @groovy.transform.CompileStatic
             class Foo {
                 class Baz {
                     enum Bar {
-                        X('x'), Y                                                                        
-                        String s                                                                                                
+                        X('x'), Y
+                        String s
                         Bar(String s) { this.s = s }
-                        Bar() {}                                                
-                    }                
+                        Bar() {}
+                    }
                 }
             }
             @groovy.transform.CompileStatic
             void test() {
                 assert java.lang.reflect.Modifier.isStatic(Foo.Baz.Bar.getModifiers())
-                assert Foo.Baz.Bar.X.s == 'x'            
+                assert Foo.Baz.Bar.X.s == 'x'
             }
-            test()                       
+            test()
         '''
     }
 }
@@ -708,15 +715,15 @@ enum GroovyColors3693 {
     static init() {
         assert list == [1, 2]
     }
-    static { 
-        init() 
+    static {
+        init()
     }
 }
 
 enum Color3985 {
     RED {
-        { 
-            throw new RuntimeException('Color3985 RED instance initializer called successfully') 
+        {
+            throw new RuntimeException('Color3985 RED instance initializer called successfully')
         }
     },GREEN,BLUE
 }
