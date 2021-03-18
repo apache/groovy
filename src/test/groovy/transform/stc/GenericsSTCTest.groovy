@@ -231,11 +231,22 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             Set<Number> set = new HashSet<Number>(Arrays.asList(0L))
         '''
-    }
 
-    void testDiamondInferrenceFromConstructor4() {
+        assertScript '''
+            Set<? super Number> set = new HashSet<>(Arrays.asList(0L))
+        '''
+
         assertScript '''
             Set<? extends Number> set = new HashSet<>(Arrays.asList(0L))
+        '''
+    }
+
+    // GROOVY-7419
+    void testDiamondInferrenceFromConstructor4() {
+        assertScript '''
+            Map<Thread.State, Object> map = new EnumMap<>(Thread.State)
+            assert map.size() == 0
+            assert map.isEmpty()
         '''
     }
 
