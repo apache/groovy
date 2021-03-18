@@ -55,7 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasExplicitConstructor;
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.checkPropNamesS;
 import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
@@ -254,9 +254,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
 
         boolean hasMapCons = AnnotatedNodeUtils.hasAnnotation(cNode, MapConstructorASTTransformation.MY_TYPE);
         int modifiers = getVisibility(anno, cNode, ConstructorNode.class, ACC_PUBLIC);
-        ConstructorNode consNode = new ConstructorNode(modifiers, params.toArray(Parameter.EMPTY_ARRAY), ClassNode.EMPTY_ARRAY, body);
-        markAsGenerated(cNode, consNode);
-        cNode.addConstructor(consNode);
+        addGeneratedConstructor(cNode, modifiers, params.toArray(Parameter.EMPTY_ARRAY), ClassNode.EMPTY_ARRAY, body);
 
         if (sourceUnit != null && !body.isEmpty()) {
             VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(sourceUnit);
@@ -315,16 +313,12 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         code.addStatement(ifElseS(equalsNullX(namedArgs),
                 illegalArgumentBlock(message),
                 processArgsBlock(cNode, namedArgs)));
-        ConstructorNode init = new ConstructorNode(modifiers, parameters, ClassNode.EMPTY_ARRAY, code);
-        markAsGenerated(cNode, init);
-        cNode.addConstructor(init);
+        addGeneratedConstructor(cNode, modifiers, parameters, ClassNode.EMPTY_ARRAY, code);
         // potentially add a no-arg constructor too
         if (addNoArg) {
             code = new BlockStatement();
             code.addStatement(stmt(ctorX(ClassNode.THIS, ctorX(LHMAP_TYPE))));
-            init = new ConstructorNode(modifiers, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
-            markAsGenerated(cNode, init);
-            cNode.addConstructor(init);
+            addGeneratedConstructor(cNode, modifiers, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
         }
     }
 

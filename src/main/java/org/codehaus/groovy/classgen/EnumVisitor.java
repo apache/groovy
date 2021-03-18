@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.EnumConstantClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
@@ -98,6 +99,15 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             maxValue = new FieldNode("MAX_VALUE", ACC_FINAL | ACC_PUBLIC | ACC_STATIC, enumPlain, enumClass, null);
             values = new FieldNode("$VALUES", ACC_FINAL | ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, enumPlain.makeArray(), enumClass, null);
             values.setSynthetic(true);
+
+            for (ConstructorNode ctor : enumClass.getDeclaredConstructors()) {
+                if (ctor.isSyntheticPublic()) {
+                    ctor.setSyntheticPublic(false);
+                    ctor.setModifiers((ctor.getModifiers() | ACC_PRIVATE) & ~ACC_PUBLIC);
+                } else if (!ctor.isPrivate()) {
+                    addError(ctor, "Illegal modifier for the enum constructor; only private is permitted.");
+                }
+            }
 
             addMethods(enumClass, values);
             checkForAbstractMethods(enumClass);

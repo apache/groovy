@@ -425,6 +425,30 @@ class EnumTest extends CompilableTestSupport {
         '''
     }
 
+    // GROOVY-6747
+    void testOverridingMethodsWithExplicitConstructor2() {
+        assertScript '''
+            enum Codes {
+                YES('Y') {
+                    @Override String getCode() { /*string*/ }
+                },
+                NO('N') {
+                    @Override String getCode() { /*string*/ }
+                }
+
+                abstract String getCode()
+
+                private final String string
+
+                private Codes(String string) {
+                    this.string = string
+                }
+            }
+
+            assert Codes.YES.code == null // TODO: 'Y'
+        '''
+    }
+
     // GROOVY-4641
     void testAbstractMethodOverriding() {
         assertScript """
@@ -601,6 +625,17 @@ class EnumTest extends CompilableTestSupport {
             assert 'annotations' == Foo.annotations.toString()
             assert Foo.getAnnotations().size() == 1
           '''
+    }
+
+    // GROOVY-6747
+    void testEnumConstructorHasPrivateModifier() {
+        assertScript '''
+            enum Foo {
+                BAR, BAZ
+                Foo() {}
+            }
+            assert java.lang.reflect.Modifier.isPrivate(Foo.declaredConstructors[0].modifiers)
+        '''
     }
 
     // GROOVY-8360

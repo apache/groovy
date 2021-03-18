@@ -25,6 +25,8 @@ import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
@@ -38,6 +40,11 @@ import org.codehaus.groovy.transform.TupleConstructorASTTransformation;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static java.util.stream.Collectors.toList;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
 /**
  * Enums have a parent constructor with two arguments from java.lang.Enum.
@@ -63,11 +70,11 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
     }
 
     private void completeEnum(final ClassNode enumClass) {
-        if (enumClass.getDeclaredConstructors().isEmpty()) {
+        if (nonSyntheticConstructors(enumClass).isEmpty()) {
             addImplicitConstructors(enumClass);
         }
 
-        for (ConstructorNode ctor : enumClass.getDeclaredConstructors()) {
+        for (ConstructorNode ctor : nonSyntheticConstructors(enumClass)) {
             transformConstructor(ctor);
         }
     }
@@ -77,10 +84,10 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
      */
     private static void addImplicitConstructors(final ClassNode enumClass) {
         if (EnumVisitor.isAnonymousInnerClass(enumClass)) {
-            List<ConstructorNode> superCtors = enumClass.getSuperClass().getDeclaredConstructors();
+            List<ConstructorNode> superCtors = nonSyntheticConstructors(enumClass.getSuperClass());
             if (!superCtors.isEmpty()) {
                 for (ConstructorNode ctor : superCtors) {
-                    enumClass.addConstructor(0, ctor.getParameters(), ClassNode.EMPTY_ARRAY, new BlockStatement());
+                    addGeneratedConstructor(enumClass, ACC_PRIVATE, ctor.getParameters(), ClassNode.EMPTY_ARRAY, new BlockStatement());
                 }
                 return;
             }
@@ -126,8 +133,11 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
             args.add(intVariable);
             if (EnumVisitor.isAnonymousInnerClass(ctor.getDeclaringClass())) {
                 for (Parameter parameter : oldP) {
-                    args.add(new VariableExpression(parameter.getName()));
+                    args.add(new VariableExpression(parameter));
                 }
+                ClassNode enumClass = ctor.getDeclaringClass().getSuperClass();
+                makeBridgeConstructor(enumClass, newP); // GROOVY-6747: bridge enum's private constructor
+                args.add(new CastExpression(enumClass.getPlainNodeReference(), ConstantExpression.NULL));
             }
             cce = new ConstructorCallExpression(ClassNode.SUPER, new ArgumentListExpression(args));
             BlockStatement code = new BlockStatement();
@@ -150,5 +160,29 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
         code.visit(cv);
         if (found[0] != null) return getUniqueVariableName("_" + name, code);
         return name;
+    }
+
+    /**
+     * Ensures the enum type {@code e} has an accessible constructor for its AIC
+     * constant class to call.  This constructor delegates to the enum's private
+     * constructor.
+     */
+    private static void makeBridgeConstructor(final ClassNode e, final Parameter[] p) {
+        Parameter[] newP = new Parameter[p.length + 1];
+        for (int i = 0; i < p.length; i += 1) {
+            newP[i] = new Parameter(p[i].getType(), "p" + i);
+        }
+        newP[p.length] = new Parameter(e.getPlainNodeReference(), "$anonymous");
+
+        if (e.getDeclaredConstructor(newP) == null) {
+            ArgumentListExpression args = new ArgumentListExpression();
+            for (int i = 0; i < p.length; i += 1) args.addExpression(new VariableExpression(newP[i]));
+            Statement thisCtorCall = new ExpressionStatement(new ConstructorCallExpression(ClassNode.THIS, args));
+            addGeneratedConstructor(e, ACC_SYNTHETIC, newP, ClassNode.EMPTY_ARRAY, thisCtorCall).setSynthetic(true);
+        }
+    }
+
+    private static List<ConstructorNode> nonSyntheticConstructors(final ClassNode cn) {
+        return cn.getDeclaredConstructors().stream().filter(c -> !c.isSynthetic()).collect(toList());
     }
 }
