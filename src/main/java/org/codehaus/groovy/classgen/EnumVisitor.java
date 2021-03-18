@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.EnumConstantClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
@@ -98,6 +99,15 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             // create $VALUES field
             values = new FieldNode("$VALUES", ACC_FINAL | ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, enumRef.makeArray(), enumClass, null);
             values.setSynthetic(true);
+
+            for (ConstructorNode ctor : enumClass.getDeclaredConstructors()) {
+                if (ctor.isSyntheticPublic()) {
+                    ctor.setSyntheticPublic(false);
+                    ctor.setModifiers((ctor.getModifiers() | ACC_PRIVATE) & ~ACC_PUBLIC);
+                } else if (!ctor.isPrivate()) {
+                    addError(ctor, "Illegal modifier for the enum constructor; only private is permitted.");
+                }
+            }
 
             addMethods(enumClass, values);
             checkForAbstractMethods(enumClass);
@@ -438,7 +448,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
         );
     }
 
-    private static boolean isAnonymousInnerClass(final ClassNode enumClass) {
+    static boolean isAnonymousInnerClass(final ClassNode enumClass) {
         if (!(enumClass instanceof EnumConstantClassNode)) return false;
         return (((EnumConstantClassNode) enumClass).getVariableScope() == null);
     }
