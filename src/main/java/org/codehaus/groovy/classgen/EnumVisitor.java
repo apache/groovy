@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.EnumConstantClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
@@ -97,6 +98,15 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             // create values field
             values = new FieldNode("$VALUES", PRIVATE_FS | Opcodes.ACC_SYNTHETIC, enumRef.makeArray(), enumClass, null);
             values.setSynthetic(true);
+
+            for (ConstructorNode ctor : enumClass.getDeclaredConstructors()) {
+                if (ctor.isSyntheticPublic()) {
+                    ctor.setSyntheticPublic(false);
+                    ctor.setModifiers((ctor.getModifiers() | Opcodes.ACC_PRIVATE) & ~Opcodes.ACC_PUBLIC);
+                } else if (!ctor.isPrivate()) {
+                    addError(ctor, "Illegal modifier for the enum constructor; only private is permitted.");
+                }
+            }
 
             addMethods(enumClass, values);
             checkForAbstractMethods(enumClass);
@@ -296,7 +306,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
         // calling the constructor may require a table with MetaClass
         // selecting the constructor for each enum value. So instead we
         // use this method to have a central point for constructor selection
-        // and only one table. The whole construction is needed because 
+        // and only one table. The whole construction is needed because
         // Reflection forbids access to the enum constructor.
         // code:
         // def $INIT(Object[] para) {
@@ -437,10 +447,9 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
         );
     }
 
-    private static boolean isAnonymousInnerClass(ClassNode enumClass) {
+    static boolean isAnonymousInnerClass(ClassNode enumClass) {
         if (!(enumClass instanceof EnumConstantClassNode)) return false;
         InnerClassNode ic = (InnerClassNode) enumClass;
         return ic.getVariableScope() == null;
     }
-
 }
