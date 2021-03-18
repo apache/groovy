@@ -83,7 +83,13 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
     private static void addImplicitConstructors(ClassNode enumClass, boolean aic) {
         if (aic) {
             ClassNode sn = enumClass.getSuperClass();
-            List<ConstructorNode> sctors = new ArrayList<ConstructorNode>(sn.getDeclaredConstructors());
+            List<ConstructorNode> sctors;
+            if (sn != null) {
+                sctors = new ArrayList<ConstructorNode>(sn.getDeclaredConstructors());
+            }
+            else {
+                sctors = new ArrayList<>();
+            }
             if (sctors.isEmpty()) {
                 addMapConstructors(enumClass);
             } else {
