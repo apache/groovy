@@ -602,7 +602,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5737
-    void testAccessGeneratedFieldFromClosure() {
+    void testGeneratedFieldAccessInClosure() {
         assertScript '''
             import groovy.transform.*
             import groovy.util.logging.*
@@ -617,6 +617,27 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             }
             new GreetingActor()
             '''
+    }
+
+    // GROOVY-6610
+    void testPrivateStaticFieldAccessBeforeThis() {
+        assertScript '''
+            class Outer {
+                static class Inner {
+                    public final String value
+                    Inner(String string) {
+                        value = string
+                    }
+                    Inner() {
+                        this(VALUE.toString())
+                    }
+                }
+                private static Integer VALUE = 42
+                static main(args) {
+                    assert new Inner().value == '42'
+                }
+            }
+        '''
     }
 
     // GROOVY-5872

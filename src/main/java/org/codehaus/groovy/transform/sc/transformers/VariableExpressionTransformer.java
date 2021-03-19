@@ -26,13 +26,17 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
+
 /**
  * Transformer for VariableExpression the bytecode backend wouldn't be able to
  * handle otherwise.
  */
 public class VariableExpressionTransformer {
 
-    public Expression transformVariableExpression(VariableExpression expr) {
+    public Expression transformVariableExpression(final VariableExpression expr) {
         Expression trn = tryTransformDelegateToProperty(expr);
         if (trn != null) {
             return trn;
@@ -44,7 +48,7 @@ public class VariableExpressionTransformer {
         return expr;
     }
 
-    private static Expression tryTransformDelegateToProperty(VariableExpression expr) {
+    private static Expression tryTransformDelegateToProperty(final VariableExpression expr) {
         // we need to transform variable expressions that go to a delegate
         // to a property expression, as ACG would lose the information in
         // processClassVariable before it reaches any makeCall, that could handle it
@@ -72,7 +76,7 @@ public class VariableExpressionTransformer {
         return pexp;
     }
 
-    private static Expression tryTransformPrivateFieldAccess(VariableExpression expr) {
+    private static Expression tryTransformPrivateFieldAccess(final VariableExpression expr) {
         FieldNode field = expr.getNodeMetaData(StaticTypesMarker.PV_FIELDS_ACCESS);
         if (field == null) {
             field = expr.getNodeMetaData(StaticTypesMarker.PV_FIELDS_MUTATION);
@@ -80,17 +84,12 @@ public class VariableExpressionTransformer {
         if (field != null) {
             // access to a private field from a section of code that normally doesn't have access to it, like a
             // closure or an inner class
-            VariableExpression receiver = new VariableExpression("this");
-            PropertyExpression pexp = new PropertyExpression(
-                    receiver,
-                    expr.getName()
-            );
-            pexp.setImplicitThis(true);
-            pexp.getProperty().setSourcePosition(expr);
-            // put the receiver inferred type so that the class writer knows that it will have to call a bridge method
-            receiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, field.getDeclaringClass());
-            // add inferred type information
+            PropertyExpression pexp = !field.isStatic() ? thisPropX(true, expr.getName())
+                    : (PropertyExpression) propX(classX(field.getDeclaringClass()), expr.getName());
+            // store the declaring class so that the class writer knows that it will have to call a bridge method
+            pexp.getObjectExpression().putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, field.getDeclaringClass());
             pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, field.getOriginType());
+            pexp.getProperty().setSourcePosition(expr);
             return pexp;
         }
         return null;
