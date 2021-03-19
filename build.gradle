@@ -111,7 +111,7 @@ dependencies {
     implementation "org.ow2.asm:asm-commons:${versions.asm}"
     implementation "org.ow2.asm:asm-tree:${versions.asm}"
     implementation "org.ow2.asm:asm-util:${versions.asm}"
-    implementation "com.googlecode:openbeans:${versions.openbeans}"
+    implementation "me.champeau.openbeans:openbeans:${versions.openbeans}"
     implementation "com.tunnelvisionlabs:antlr4-runtime:${versions.antlr4}"
 
     antlr "com.tunnelvisionlabs:antlr4:${versions.antlr4}"
@@ -252,7 +252,6 @@ if (file('user.gradle').exists()) {
 
 licenseReport {
     excludeGroups = [
-            'com.googlecode', // openbeans has no pom but is ASLv2
             'org.multiverse'  // we never include this optional dependency of an optional dependency
     ]
 }

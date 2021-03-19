@@ -47,19 +47,6 @@ repositories {
         maven { url 'https://maven.aliyun.com/nexus/content/groups/public' }
     }
     mavenCentral()
-    exclusiveContent {
-        forRepository {
-            maven { // openbeans
-                url 'https://dl.bintray.com/melix/thirdparty-apache'
-                metadataSources {
-                    artifact()
-                }
-            }
-        }
-        filter {
-            includeModule('com.googlecode', 'openbeans')
-        }
-    }
 }
 
 tasks.named('rat') {
