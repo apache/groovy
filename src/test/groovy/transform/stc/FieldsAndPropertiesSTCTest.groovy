@@ -562,6 +562,23 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         ''', 'No such property: p for class: Outer$Inner'
     }
 
+    // GROOVY-7024
+    void testOuterPropertyAccess4() {
+        assertScript '''
+            class Outer {
+                static Map props = [bar: 10, baz: 20]
+                enum Inner {
+                    FOO('foo'),
+                    Inner(String name) {
+                        props[name] = 30
+                    }
+                }
+            }
+            Outer.Inner.FOO
+            assert Outer.props == [bar: 10, baz: 20, foo: 30]
+        '''
+    }
+
     void testPrivateFieldAccessInAIC() {
         assertScript '''
             class A {
