@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -79,7 +80,7 @@ public class VariableExpressionTransformer {
         }
         if (field != null) {
             // access to a private field from a section of code that normally doesn't have access to it, like a closure or an inner class
-            PropertyExpression pexp = thisPropX(true, expr.getName());
+            PropertyExpression pexp = !field.isStatic() ? thisPropX(true, expr.getName()) : propX(classX(field.getDeclaringClass()), expr.getName());
             // store the declaring class so that the class writer knows that it will have to call a bridge method
             pexp.getObjectExpression().putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, field.getDeclaringClass());
             pexp.putNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE, field.getOriginType());

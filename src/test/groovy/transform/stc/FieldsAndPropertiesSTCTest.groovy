@@ -562,35 +562,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         ''', 'No such property: p for class: Outer$Inner'
     }
 
-    void testPrivateFieldAccessInClosure1() {
-        assertScript '''
-            class A {
-                private int x
-                void test() {
-                    def c = { -> x = 666 }
-                    c()
-                    assert x == 666
-                }
-            }
-            new A().test()
-        '''
-    }
-
-    // GROOVY-9683
-    void testPrivateFieldAccessInClosure2() {
-        assertScript '''
-            class A {
-                private static X = 'xxx'
-                void test() {
-                    [:].withDefault { throw new MissingPropertyException(it.toString()) }.with {
-                        assert X == 'xxx'
-                    }
-                }
-            }
-            new A().test()
-        '''
-    }
-
     void testPrivateFieldAccessInAIC() {
         assertScript '''
             class A {
@@ -636,8 +607,37 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testPrivateFieldAccessInClosure1() {
+        assertScript '''
+            class A {
+                private int x
+                void test() {
+                    def c = { -> x = 666 }
+                    c()
+                    assert x == 666
+                }
+            }
+            new A().test()
+        '''
+    }
+
+    // GROOVY-9683
+    void testPrivateFieldAccessInClosure2() {
+        assertScript '''
+            class A {
+                private static X = 'xxx'
+                void test() {
+                    [:].withDefault { throw new MissingPropertyException(it.toString()) }.with {
+                        assert X == 'xxx'
+                    }
+                }
+            }
+            new A().test()
+        '''
+    }
+
     // GROOVY-5737
-    void testAccessGeneratedFieldFromClosure() {
+    void testGeneratedFieldAccessInClosure() {
         assertScript '''
             import groovy.transform.*
             import groovy.util.logging.*
@@ -652,6 +652,31 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             }
             new GreetingActor()
             '''
+    }
+
+    // GROOVY-6610
+    void testPrivateStaticFieldAccessBeforeThis() {
+        assertScript '''
+            class Outer {
+                static class Inner {
+                    public final String value
+
+                    Inner(String string) {
+                        value = string
+                    }
+
+                    Inner() {
+                        this(VALUE.toString())
+                    }
+                }
+
+                private static Integer VALUE = 42
+
+                static main(args) {
+                    assert new Inner().value == '42'
+                }
+            }
+        '''
     }
 
     // GROOVY-5872
