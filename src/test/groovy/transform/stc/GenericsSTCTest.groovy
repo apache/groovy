@@ -1246,13 +1246,59 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testCorrectlyBoundedByExtendsGenericParameterType() {
+    void testCorrectlyBoundedByExtendsGenericParameterType1() {
         assertScript '''
             class Foo {
                 static <T extends List<? extends CharSequence>> void bar(T a) {}
             }
             Foo.bar(['abc'])
         '''
+    }
+
+    // GROOVY-8960
+    void testCorrectlyBoundedByExtendsGenericParameterType2() {
+        File parentDir = File.createTempDir()
+        config.with {
+            targetDirectory = File.createTempDir()
+            jointCompilationOptions = [stubDir: File.createTempDir()]
+        }
+        try {
+            def a = new File(parentDir, 'aJavaClass.java')
+            a.write '''
+                import java.io.Serializable;
+                public class aJavaClass<A extends Serializable>  {
+                    public static <A extends Serializable> aJavaClass<A> create(A a) {
+                        return new aJavaClass<>(a);
+                    }
+                    private aJavaClass(A a) {
+                    }
+                    public enum anEnum {
+                        entry1;
+                    }
+                }
+            '''
+            def b = new File(parentDir, 'aGroovyClass.groovy')
+            b.write '''
+                import aJavaClass
+                class aGroovyClass {
+                    static main(args) {
+                        def out = aJavaClass.create(aJavaClass.anEnum.entry1)
+                        assert out != null
+                    }
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b)
+            cu.compile()
+
+            loader.loadClass('aGroovyClass').main()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+            config.jointCompilationOptions.stubDir.deleteDir()
+        }
     }
 
     void testCorrectlyBoundedBySuperGenericParameterType() {
