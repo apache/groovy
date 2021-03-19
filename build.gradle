@@ -96,8 +96,7 @@ allprojects {
             // Try to use Aliyun maven repository when building in China
             maven { url 'https://maven.aliyun.com/nexus/content/groups/public' }
         }
-        jcenter()
-        maven { url 'https://dl.bintray.com/melix/thirdparty-apache' } // openbeans
+        mavenCentral()
     }
 
     ext.buildDate = isReleaseVersion?new Date():new Date(0)
@@ -156,7 +155,7 @@ ext {
     logbackVersion = '1.2.3'
     log4jVersion = '1.2.17'
     log4j2Version = '2.8'
-    openbeansVersion = '1.0'
+    openbeansVersion = '1.0.1'
     picocliVersion = '4.3.2'
     qdoxVersion = '1.12.1'
     slf4jVersion = '1.7.30'
@@ -183,7 +182,7 @@ dependencies {
         exclude(group: 'jmock', module: 'jmock')
         exclude(group: 'xmlpull', module: 'xmlpull')
     }
-    compile "com.googlecode:openbeans:$openbeansVersion"
+    compile "me.champeau.openbeans:openbeans:$openbeansVersion"
     compile "org.fusesource.jansi:jansi:$jansiVersion"
     compile("org.apache.ivy:ivy:$ivyVersion") {
         transitive = false
