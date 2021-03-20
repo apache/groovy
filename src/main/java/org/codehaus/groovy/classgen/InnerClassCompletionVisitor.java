@@ -45,8 +45,11 @@ import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorThisX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
@@ -81,7 +84,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
     }
 
     @Override
-    public void visitClass(ClassNode node) {
+    public void visitClass(final ClassNode node) {
         classNode = node;
         thisField = null;
         InnerClassNode innerClass = null;
@@ -102,9 +105,33 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
     }
 
     @Override
-    public void visitConstructor(ConstructorNode node) {
+    public void visitConstructor(final ConstructorNode node) {
         addThisReference(node);
         super.visitConstructor(node);
+        // an anonymous inner class may use a private constructor (via a bridge) if its super class is also an outer class
+        if (((InnerClassNode) classNode).isAnonymous() && classNode.getOuterClasses().contains(classNode.getSuperClass())) {
+            ConstructorNode superCtor = classNode.getSuperClass().getDeclaredConstructor(node.getParameters());
+            if (superCtor != null && superCtor.isPrivate()) {
+                ClassNode superClass = classNode.getUnresolvedSuperClass();
+                makeBridgeConstructor(superClass, node.getParameters()); // GROOVY-5728
+                ConstructorCallExpression superCtorCall = getFirstIfSpecialConstructorCall(node.getCode());
+                ((TupleExpression) superCtorCall.getArguments()).addExpression(castX(superClass, nullX()));
+            }
+        }
+    }
+
+    private static void makeBridgeConstructor(final ClassNode c, final Parameter[] p) {
+        Parameter[] newP = new Parameter[p.length + 1];
+        for (int i = 0; i < p.length; i += 1) {
+            newP[i] = new Parameter(p[i].getType(), "p" + i);
+        }
+        newP[p.length] = new Parameter(c, "$anonymous");
+
+        if (c.getDeclaredConstructor(newP) == null) {
+            TupleExpression args = new TupleExpression();
+            for (int i = 0; i < p.length; i += 1) args.addExpression(varX(newP[i]));
+            addGeneratedConstructor(c, ACC_SYNTHETIC, newP, ClassNode.EMPTY_ARRAY, stmt(ctorThisX(args)));
+        }
     }
 
     private static String getTypeDescriptor(ClassNode node, boolean isStatic) {
