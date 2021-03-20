@@ -42,7 +42,11 @@ import org.objectweb.asm.Opcodes;
 import java.util.List;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
-import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorThisX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 public class InnerClassCompletionVisitor extends InnerClassVisitorHelper implements Opcodes {
 
@@ -51,8 +55,8 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
     private FieldNode thisField = null;
 
     private static final String
-            CLOSURE_INTERNAL_NAME   = BytecodeHelper.getClassInternalName(CLOSURE_TYPE),
-            CLOSURE_DESCRIPTOR      = BytecodeHelper.getTypeDescription(CLOSURE_TYPE);
+            CLOSURE_INTERNAL_NAME = BytecodeHelper.getClassInternalName(ClassHelper.CLOSURE_TYPE),
+            CLOSURE_DESCRIPTOR    = BytecodeHelper.getTypeDescription(ClassHelper.CLOSURE_TYPE);
 
     public InnerClassCompletionVisitor(CompilationUnit cu, SourceUnit su) {
         sourceUnit = su;
@@ -65,7 +69,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
 
     @Override
     public void visitClass(ClassNode node) {
-        this.classNode = node;
+        classNode = node;
         thisField = null;
         InnerClassNode innerClass = null;
         if (!node.isEnum() && !node.isInterface() && node instanceof InnerClassNode) {
@@ -88,6 +92,30 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
     public void visitConstructor(ConstructorNode node) {
         addThisReference(node);
         super.visitConstructor(node);
+        // an anonymous inner class may use a private constructor (via a bridge) if its super class is also an outer class
+        if (((InnerClassNode) classNode).isAnonymous() && classNode.getOuterClasses().contains(classNode.getSuperClass())) {
+            ConstructorNode superCtor = classNode.getSuperClass().getDeclaredConstructor(node.getParameters());
+            if (superCtor != null && superCtor.isPrivate()) {
+                ClassNode superClass = classNode.getUnresolvedSuperClass();
+                makeBridgeConstructor(superClass, node.getParameters()); // GROOVY-5728
+                ConstructorCallExpression superCtorCall = getFirstIfSpecialConstructorCall(node.getCode());
+                ((TupleExpression) superCtorCall.getArguments()).addExpression(castX(superClass, nullX()));
+            }
+        }
+    }
+
+    private static void makeBridgeConstructor(ClassNode c, Parameter[] p) {
+        Parameter[] newP = new Parameter[p.length + 1];
+        for (int i = 0; i < p.length; i += 1) {
+            newP[i] = new Parameter(p[i].getType(), "p" + i);
+        }
+        newP[p.length] = new Parameter(c, "$anonymous");
+
+        if (c.getDeclaredConstructor(newP) == null) {
+            TupleExpression args = new TupleExpression();
+            for (int i = 0; i < p.length; i += 1) args.addExpression(varX(newP[i]));
+            addGeneratedConstructor(c, ACC_SYNTHETIC, newP, ClassNode.EMPTY_ARRAY, stmt(ctorThisX(args)));
+        }
     }
 
     private static String getTypeDescriptor(ClassNode node, boolean isStatic) {
@@ -160,7 +188,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
 
     private void getThis(MethodVisitor mv, String classInternalName, String outerClassDescriptor, String innerClassInternalName) {
         mv.visitVarInsn(ALOAD, 0);
-        if (thisField != null && CLOSURE_TYPE.equals(thisField.getType())) {
+        if (thisField != null && ClassHelper.CLOSURE_TYPE.equals(thisField.getType())) {
             mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", CLOSURE_DESCRIPTOR);
             mv.visitMethodInsn(INVOKEVIRTUAL, CLOSURE_INTERNAL_NAME, "getThisObject", "()Ljava/lang/Object;", false);
             mv.visitTypeInsn(CHECKCAST, innerClassInternalName);
@@ -168,18 +196,17 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
             mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
         }
     }
-    
-    private void addDefaultMethods(InnerClassNode node) {
-        final boolean isStatic = isStatic(node);
 
+    private void addDefaultMethods(InnerClassNode node) {
+        boolean isStatic = isStatic(node);
         ClassNode outerClass = node.getOuterClass();
-        final String classInternalName = org.codehaus.groovy.classgen.asm.BytecodeHelper.getClassInternalName(node);
+        final int objectDistance = getObjectDistance(outerClass);
+        final String classInternalName = BytecodeHelper.getClassInternalName(node);
         final String outerClassInternalName = getInternalName(outerClass, isStatic);
         final String outerClassDescriptor = getTypeDescriptor(outerClass, isStatic);
-        final int objectDistance = getObjectDistance(outerClass);
 
         // add missing method dispatcher
-        Parameter[] parameters = new Parameter[]{
+        Parameter[] parameters = {
                 new Parameter(ClassHelper.STRING_TYPE, "name"),
                 new Parameter(ClassHelper.OBJECT_TYPE, "args")
         };
@@ -446,19 +473,20 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         return namePrefix;
     }
 
-    private static ConstructorCallExpression getFirstIfSpecialConstructorCall(BlockStatement code) {
-        if (code == null) return null;
-
-        final List<Statement> statementList = code.getStatements();
-        if (statementList.isEmpty()) return null;
-
-        final Statement statement = statementList.get(0);
-        if (!(statement instanceof ExpressionStatement)) return null;
-
-        Expression expression = ((ExpressionStatement) statement).getExpression();
-        if (!(expression instanceof ConstructorCallExpression)) return null;
-        ConstructorCallExpression cce = (ConstructorCallExpression) expression;
-        if (cce.isSpecialCall()) return cce;
+    private static ConstructorCallExpression getFirstIfSpecialConstructorCall(Statement code) {
+        if (code != null && !code.isEmpty()) {
+            if (code instanceof BlockStatement) {
+                Statement stmt = ((BlockStatement) code).getStatements().get(0);
+                return getFirstIfSpecialConstructorCall(stmt); // blocks of blocks
+            }
+            if (code instanceof ExpressionStatement) {
+                Expression expr = ((ExpressionStatement) code).getExpression();
+                if (expr instanceof ConstructorCallExpression) {
+                    ConstructorCallExpression call = (ConstructorCallExpression) expr;
+                    if (call.isSpecialCall()) return call;
+                }
+            }
+        }
         return null;
     }
 }

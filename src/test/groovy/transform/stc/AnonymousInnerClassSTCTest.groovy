@@ -206,4 +206,21 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
             }
         '''
     }
+
+    // GROOVY-5728
+    void testPrivateConstructorAndPublicStaticFactory() {
+        assertScript '''
+            abstract class A {
+                private A() { }
+                abstract answer()
+                static A create() {
+                    return new A() { // IllegalAccessError when A$1 calls private constructor
+                        def answer() { 42 }
+                    }
+                }
+            }
+
+            assert A.create().answer() == 42
+        '''
+    }
 }
