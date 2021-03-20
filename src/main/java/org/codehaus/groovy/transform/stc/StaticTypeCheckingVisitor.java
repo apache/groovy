@@ -182,6 +182,7 @@ import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getResolveStrategyName;
+import static org.codehaus.groovy.ast.tools.ClosureUtils.hasImplicitParameter;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
@@ -916,19 +917,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private void inferParameterAndReturnTypesOfClosureOnRHS(final ClassNode lhsType, final ClosureExpression rhsExpression) {
         Tuple2<ClassNode[], ClassNode> typeInfo = GenericsUtils.parameterizeSAM(lhsType);
         Parameter[] closureParameters = getParametersSafe(rhsExpression);
-        ClassNode[] parameterTypes = typeInfo.getV1();
+        ClassNode[] samParameterTypes = typeInfo.getV1();
 
-        int n = closureParameters.length;
-        if (n == parameterTypes.length) {
+        int n = closureParameters.length, m = samParameterTypes.length;
+        if (n == m || (1 == m && hasImplicitParameter(rhsExpression))) {
             for (int i = 0; i < n; i += 1) {
                 Parameter parameter = closureParameters[i];
                 if (parameter.isDynamicTyped()) {
-                    parameter.setType(parameterTypes[i]);
-                    parameter.setOriginType(parameterTypes[i]);
+                    parameter.setType(samParameterTypes[i]);
+                    parameter.setOriginType(samParameterTypes[i]);
                 }
             }
         } else {
-            addStaticTypeError("Wrong number of parameters: ", rhsExpression);
+            String descriptor = toMethodParametersString(findSAM(lhsType).getName(), samParameterTypes);
+            addStaticTypeError("Wrong number of parameters for method target " + descriptor, rhsExpression);
         }
 
         storeInferredReturnType(rhsExpression, typeInfo.getV2());

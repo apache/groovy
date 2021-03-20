@@ -342,7 +342,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9882
-    void testFieldInitShouldPassForCcompatibleTypesWithClosure() {
+    void testFieldInitShouldPassForCompatibleTypesWithClosure() {
         assertScript '''
             class Foo {
                 java.util.function.Supplier<String> bar = { 'abc' }
@@ -351,13 +351,30 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testFieldInitClosureParameterMismatch() {
+    void testClosureParameterMismatch() {
         shouldFailWithMessages '''
             class Foo {
-                java.util.function.Supplier<String> bar = { a -> '' }
+                java.util.function.Supplier<String> bar = { baz -> '' }
             }
-            new Foo()
-        ''', 'Wrong number of parameters'
+        ''', 'Wrong number of parameters for method target get()'
+        shouldFailWithMessages '''
+            class Foo {
+                java.util.function.Consumer<String> bar = { -> null }
+            }
+        ''', 'Wrong number of parameters for method target accept(java.lang.String)'
+    }
+
+    // GROOVY-9991
+    void testClosureParameterMatch() {
+        assertScript '''
+            java.util.function.Consumer<String> s = { print it }
+        '''
+        assertScript '''
+            java.util.function.Predicate p = { x -> false }
+        '''
+        assertScript '''
+            java.util.function.Predicate p = { false }
+        '''
     }
 
     // GROOVY-5517
