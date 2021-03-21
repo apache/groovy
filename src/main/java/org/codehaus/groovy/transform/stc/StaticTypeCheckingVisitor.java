@@ -745,25 +745,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (ensureValidSetter(expression, leftExpression, rightExpression, setterInfo)) {
                     return;
                 }
+                lType = getType(leftExpression);
             } else {
                 lType = getType(leftExpression);
-                boolean isFunctionalInterface = isFunctionalInterface(lType);
-                if (isFunctionalInterface && rightExpression instanceof MethodReferenceExpression) {
-                    LambdaExpression lambdaExpression = constructLambdaExpressionForMethodReference(lType);
-                    if (op == ASSIGN) {
-                        inferParameterAndReturnTypesOfClosureOnRHS(lType, lambdaExpression);
-                    }
-                    rightExpression.putNodeMetaData(CONSTRUCTED_LAMBDA_EXPRESSION, lambdaExpression);
-                    rightExpression.putNodeMetaData(CLOSURE_ARGUMENTS, Arrays.stream(lambdaExpression.getParameters()).map(Parameter::getType).toArray(ClassNode[]::new));
-
-                } else if (op == ASSIGN && isFunctionalInterface && rightExpression instanceof ClosureExpression) {
-                    inferParameterAndReturnTypesOfClosureOnRHS(lType, (ClosureExpression) rightExpression);
+                if (op == ASSIGN && isFunctionalInterface(lType)) {
+                    processFunctionalInterfaceAssignment(lType, rightExpression);
                 }
-
                 rightExpression.visit(this);
             }
 
-            if (lType == null) lType = getType(leftExpression);
             ClassNode rType = isNullConstant(rightExpression) && !isPrimitiveType(lType)
                     ? UNKNOWN_PARAMETER_TYPE // null to primitive type is handled elsewhere
                     : getInferredTypeFromTempInfo(rightExpression, getType(rightExpression));
@@ -908,6 +898,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 && TryCatchStatement.isResource(expression)
                 && !isOrImplements(lType, AUTOCLOSEABLE_TYPE)) {
             addError("Resource[" + lType.getName() + "] in ARM should be of type AutoCloseable", expression);
+        }
+    }
+
+    private void processFunctionalInterfaceAssignment(final ClassNode lhsType, final Expression rhsExpression) {
+        if (rhsExpression instanceof ClosureExpression) {
+            inferParameterAndReturnTypesOfClosureOnRHS(lhsType, (ClosureExpression) rhsExpression);
+        } else if (rhsExpression instanceof MethodReferenceExpression) {
+            LambdaExpression lambdaExpression = constructLambdaExpressionForMethodReference(lhsType);
+
+            inferParameterAndReturnTypesOfClosureOnRHS(lhsType, lambdaExpression);
+            rhsExpression.putNodeMetaData(CONSTRUCTED_LAMBDA_EXPRESSION, lambdaExpression);
+            rhsExpression.putNodeMetaData(CLOSURE_ARGUMENTS, Arrays.stream(lambdaExpression.getParameters()).map(Parameter::getType).toArray(ClassNode[]::new));
         }
     }
 
@@ -1822,7 +1824,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         try {
             typeCheckingContext.isInStaticContext = node.isInStaticContext();
             currentProperty = node;
-            super.visitProperty(node);
+            visitAnnotations(node);
+            visitClassCodeContainer(node.getGetterBlock());
+            visitClassCodeContainer(node.getSetterBlock());
         } finally {
             currentProperty = null;
             typeCheckingContext.isInStaticContext = osc;
@@ -1835,19 +1839,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         try {
             typeCheckingContext.isInStaticContext = node.isInStaticContext();
             currentField = node;
-            super.visitField(node);
+            visitAnnotations(node);
             Expression init = node.getInitialExpression();
             if (init != null) {
-                FieldExpression left = new FieldExpression(node);
-                BinaryExpression bexp = assignX(left, init, node);
-                ClassNode lType = getType(node), rType = getType(init);
-                typeCheckAssignment(bexp, left, lType, init, getResultType(lType, ASSIGN, rType, bexp));
-
+                ClassNode lType = getType(node);
+                if (isFunctionalInterface(lType)) { // GROOVY-9977
+                    processFunctionalInterfaceAssignment(lType, init);
+                }
+                init.visit(this);
+                ClassNode rType = getType(init);
                 if (init instanceof ConstructorCallExpression) {
                     inferDiamondType((ConstructorCallExpression) init, lType);
-                } else if (init instanceof ClosureExpression && isFunctionalInterface(lType)) {
-                    inferParameterAndReturnTypesOfClosureOnRHS(lType, (ClosureExpression) init);
                 }
+
+                FieldExpression left = new FieldExpression(node);
+                BinaryExpression bexp = assignX(left, init, node);
+                typeCheckAssignment(bexp, left, lType, init, getResultType(lType, ASSIGN, rType, bexp));
             }
         } finally {
             currentField = null;
