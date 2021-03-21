@@ -33,7 +33,6 @@ import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -47,6 +46,10 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -294,14 +297,18 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
         // if constructor call is not in outer class, don't pass 'this' implicitly. Return.
         if (parent == null) return;
 
-        //add this parameter to node
-        Expression argsExp = call.getArguments();
-        if (argsExp instanceof TupleExpression) {
-            TupleExpression argsListExp = (TupleExpression) argsExp;
-            Expression this0 = VariableExpression.THIS_EXPRESSION;
-            for (int i = 0; i != level; ++i)
-                this0 = new PropertyExpression(this0, "this$0");
-            argsListExp.getExpressions().add(0, this0);
+        Expression args = call.getArguments();
+        if (args instanceof TupleExpression) {
+            Expression this0 = varX("this"); // bypass closure
+            for (int i = 0; i != level; ++i) {
+                this0 = attrX(this0, constX("this$0"));
+                // GROOVY-8104: an anonymous inner class may still have closure nesting
+                if (i == 0 && classNode.getDeclaredField("this$0").getType().equals(ClassHelper.CLOSURE_TYPE)) {
+                    this0 = callX(this0, "getThisObject");
+                }
+            }
+
+            ((TupleExpression) args).getExpressions().add(0, this0);
         }
     }
 }

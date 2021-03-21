@@ -353,7 +353,7 @@ final class InnerClassTest {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-8104
+    @Test // GROOVY-8104
     void testNonStaticInnerClass5() {
         assertScript '''
             class A {
