@@ -18,7 +18,6 @@
  */
 package gls.innerClass
 
-import groovy.test.NotYetImplemented
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
@@ -273,13 +272,38 @@ final class InnerClassTest {
         '''
     }
 
-    @Test @NotYetImplemented
-    void testNonStaticInnerClass2() {
-        shouldFail CompilationFailedException, '''
+    @Test // GROOVY-8104
+    void testNonStaticInnerClass5() {
+        assertScript '''
             class A {
-                class B {}
+                void foo() {
+                    C c = new C()
+                    ['1','2','3'].each { obj ->
+                        c.baz(obj, new I() {
+                            @Override
+                            void bar(Object o) {
+                                B b = new B() // Could not find matching constructor for: A$B(A$_foo_closure1)
+                            }
+                        })
+                    }
+                }
+
+                class B {
+                }
             }
-            def x = new A.B() // requires reference to A
+
+            class C {
+                void baz(Object o, I i) {
+                    i.bar(o)
+                }
+            }
+
+            interface I {
+                void bar(Object o)
+            }
+
+            A a = new A()
+            a.foo()
         '''
     }
 
