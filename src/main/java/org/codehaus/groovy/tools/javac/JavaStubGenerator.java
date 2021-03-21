@@ -569,25 +569,31 @@ public class JavaStubGenerator {
         }
     }
 
-    private static Parameter[] selectAccessibleConstructorFromSuper(ConstructorNode node) {
-        ClassNode type = node.getDeclaringClass();
-        ClassNode superType = type.getUnresolvedSuperClass();
+    private static Parameter[] selectAccessibleConstructorFromSuper(final ConstructorNode source) {
+        ClassNode superType = source.getDeclaringClass().getUnresolvedSuperClass();
+        Map<String, ClassNode> superTypeGenerics = createGenericsSpec(superType);
 
         Parameter[] bestMatch = null;
-        for (ConstructorNode c : superType.getDeclaredConstructors()) {
-            // Only look at things we can actually call
-            if (!c.isPublic() && !c.isProtected()) continue;
-            Parameter[] parameters = c.getParameters();
-            // workaround for GROOVY-5859: remove generic type info
-            Parameter[] copy = new Parameter[parameters.length];
-            for (int i = 0; i < copy.length; i++) {
-                Parameter orig = parameters[i];
-                copy[i] = new Parameter(orig.getOriginType().getPlainNodeReference(), orig.getName());
-            }
-            if (noExceptionToAvoid(node,c)) return copy;
-            if (bestMatch==null) bestMatch = copy;
+        for (ConstructorNode target : superType.getDeclaredConstructors()) {
+            // only look at things we can actually call
+            // TODO: package-private and types are peers
+            if (!target.isPublic() && !target.isProtected()) continue;
+
+            Parameter[] parameters = target.getParameters();
+            Parameter[] normalized = Arrays.stream(parameters).map(parameter -> {
+                ClassNode normalizedType = parameter.getOriginType();
+                // GROOVY-7306: apply type arguments from declaring type to parameter type
+                normalizedType = correctToGenericsSpec(superTypeGenerics, normalizedType);
+                // workaround for GROOVY-5859: remove generic type info
+                normalizedType = normalizedType.getPlainNodeReference();
+
+                return new Parameter(normalizedType, parameter.getName());
+            }).toArray(Parameter[]::new);
+
+            if (noExceptionToAvoid(source, target)) return normalized;
+            if (bestMatch == null) bestMatch = normalized;
         }
-        if (bestMatch!=null) return bestMatch;
+        if (bestMatch != null) return bestMatch;
 
         // fall back for parameterless constructor
         if (superType.isPrimaryClassNode()) {
