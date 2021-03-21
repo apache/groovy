@@ -294,6 +294,43 @@ final class LambdaTest {
     }
 
     @Test
+    void testComparator1() {
+        assertScript '''
+            @groovy.transform.CompileStatic class T {
+                Comparator<Integer> c = (Integer a, Integer b) -> Integer.compare(a, b)
+            }
+            def t = new T()
+            assert t.c.compare(0,0) == 0
+        '''
+
+        def err = shouldFail '''
+            @groovy.transform.CompileStatic class T {
+                Comparator<Integer> c = (int a, int b) -> Integer.compare(a, b)
+            }
+        '''
+        assert err =~ /Cannot assign java.util.Comparator <int> to: java.util.Comparator <Integer>/
+    }
+
+    @Test // GROOVY-9977
+    void testComparator2() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class T {
+                Comparator<Integer> c = (a, b) -> Integer.compare(a, b)
+
+                static void m1() {
+                    Comparator<Integer> x = (a, b) -> Integer.compare(a, b)
+                }
+                void m2() {
+                    Comparator<Integer> y = (a, b) -> Integer.compare(a, b)
+                }
+            }
+            def t = new T()
+            assert t.c.compare(0,0) == 0
+        '''
+    }
+
+    @Test
     void testFunctionWithLocalVariables() {
         assertScript '''
             import groovy.transform.CompileStatic
