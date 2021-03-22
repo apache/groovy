@@ -1294,7 +1294,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode leftRedirect = leftExpressionType.redirect();
         // see if instanceof applies
         if (rightExpression instanceof VariableExpression && hasInferredReturnType(rightExpression) && assignmentExpression.getOperation().getType() == EQUAL) {
-            inferredRightExpressionType = rightExpression.getNodeMetaData(INFERRED_RETURN_TYPE);
+            inferredRightExpressionType = getInferredReturnType(rightExpression);
         }
         ClassNode wrappedRHS = adjustTypeForSpreading(inferredRightExpressionType, leftExpression);
 
@@ -2186,6 +2186,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         if (typeCheckingContext.getEnclosingClosure() != null) {
             ClassNode inferredReturnType = getInferredReturnType(typeCheckingContext.getEnclosingClosure().getClosureExpression());
+            // GROOVY-9995: return ctor call with diamond operator
+            if (expression instanceof ConstructorCallExpression) {
+                ClassNode inferredClosureReturnType = getInferredReturnType(typeCheckingContext.getEnclosingClosure().getClosureExpression());
+                if (inferredClosureReturnType != null) inferDiamondType((ConstructorCallExpression) expression, inferredClosureReturnType);
+            }
             if (inferredReturnType != null && inferredReturnType.equals(STRING_TYPE) && isGStringOrGStringStringLUB(type)) {
                 type = STRING_TYPE; // GROOVY-9971: convert GString to String at point of return
             }
