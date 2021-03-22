@@ -749,8 +749,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 lType = getType(leftExpression);
             } else {
                 lType = getType(leftExpression);
-                if (op == ASSIGN && isFunctionalInterface(lType)) {
-                    processFunctionalInterfaceAssignment(lType, rightExpression);
+                if (op == ASSIGN) {
+                    if (isFunctionalInterface(lType)) {
+                        processFunctionalInterfaceAssignment(lType, rightExpression);
+                    } else if (isClosureWithType(lType) && rightExpression instanceof ClosureExpression) {
+                        storeInferredReturnType(rightExpression, getCombinedBoundType(lType.getGenericsTypes()[0]));
+                    }
                 }
                 rightExpression.visit(this);
             }
@@ -992,6 +996,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             addAssignmentError(firstSetterType, getType(newRightExpression), expression);
             return true;
         }
+    }
+
+    private static boolean isClosureWithType(final ClassNode type) {
+        return type.equals(CLOSURE_TYPE) && Optional.ofNullable(type.getGenericsTypes()).filter(gts -> gts != null && gts.length == 1).isPresent();
     }
 
     private boolean isCompoundAssignment(final Expression exp) {
@@ -1275,7 +1283,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         ClassNode rTypeInferred, rTypeWrapped; // check for instanceof and spreading
         if (rightExpression instanceof VariableExpression && hasInferredReturnType(rightExpression) && assignmentExpression.getOperation().getType() == ASSIGN) {
-            rTypeInferred = rightExpression.getNodeMetaData(INFERRED_RETURN_TYPE);
+            rTypeInferred = getInferredReturnType(rightExpression);
         } else {
             rTypeInferred = rightExpressionType;
         }
@@ -1847,6 +1855,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode lType = getType(node);
                 if (isFunctionalInterface(lType)) { // GROOVY-9977
                     processFunctionalInterfaceAssignment(lType, init);
+                } else if (isClosureWithType(lType) && init instanceof ClosureExpression) {
+                    storeInferredReturnType(init, getCombinedBoundType(lType.getGenericsTypes()[0]));
                 }
                 init.visit(this);
                 ClassNode rType = getType(init);
@@ -2147,11 +2157,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         Expression expression = statement.getExpression();
         ClassNode type;
         if (expression instanceof VariableExpression && hasInferredReturnType(expression)) {
-            type = expression.getNodeMetaData(INFERRED_RETURN_TYPE);
+            type = getInferredReturnType(expression);
         } else {
             type = getType(expression);
         }
         if (typeCheckingContext.getEnclosingClosure() != null) {
+            // GROOVY-9995: return ctor call with diamond operator
+            if (expression instanceof ConstructorCallExpression) {
+                ClassNode inferredClosureReturnType = getInferredReturnType(typeCheckingContext.getEnclosingClosure().getClosureExpression());
+                if (inferredClosureReturnType != null) inferDiamondType((ConstructorCallExpression) expression, inferredClosureReturnType);
+            }
             return type;
         }
         MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
@@ -4159,7 +4174,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param type the inferred type of {@code expr}
      */
     private ClassNode checkForTargetType(final Expression expr, final ClassNode type) {
-        ClassNode sourceType = (hasInferredReturnType(expr) ? expr.getNodeMetaData(INFERRED_RETURN_TYPE) : type);
+        ClassNode sourceType = (hasInferredReturnType(expr) ? getInferredReturnType(expr) : type);
 
         ClassNode targetType = null;
         MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();

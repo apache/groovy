@@ -475,6 +475,26 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9995
+    void testDiamondInferrenceFromConstructor12() {
+        [
+            ['Closure<A<Long>>', 'java.util.concurrent.Callable<A<Long>>'],
+            ['new A<>(42L)', 'return new A<>(42L)']
+        ].combinations { functionalType, returnStmt ->
+            assertScript """
+                @groovy.transform.TupleConstructor(defaults=false)
+                class A<T extends Number> {
+                    T p
+                }
+                $functionalType callable = { ->
+                    $returnStmt
+                }
+                Long n = callable.call().p
+                assert n == 42L
+            """
+        }
+    }
+
     void testLinkedListWithListArgument() {
         assertScript '''
             List<String> list = new LinkedList<String>(['1','2','3'])
