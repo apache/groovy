@@ -4092,16 +4092,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitCastExpression(final CastExpression expression) {
-        super.visitCastExpression(expression);
-        if (!expression.isCoerce()) {
-            ClassNode targetType = expression.getType();
-            Expression source = expression.getExpression();
-            ClassNode expressionType = getType(source);
-            if (!checkCast(targetType, source) && !isDelegateOrOwnerInClosure(source)) {
-                addStaticTypeError("Inconvertible types: cannot cast " + prettyPrintType(expressionType) + " to " + prettyPrintType(targetType), expression);
-            }
+        ClassNode type = expression.getType();
+        Expression source = expression.getExpression();
+        if (isFunctionalInterface(type)) { // GROOVY-9997
+            processFunctionalInterfaceAssignment(type, source);
+        } else if (isClosureWithType(type) && source instanceof ClosureExpression) {
+            storeInferredReturnType(source, getCombinedBoundType(type.getGenericsTypes()[0]));
         }
-        storeType(expression, expression.getType());
+
+        source.visit(this);
+
+        if (!expression.isCoerce() && !checkCast(type, source) && !isDelegateOrOwnerInClosure(source)) {
+            addStaticTypeError("Inconvertible types: cannot cast " + prettyPrintType(getType(source)) + " to " + prettyPrintType(type), expression);
+        }
     }
 
     private boolean isDelegateOrOwnerInClosure(final Expression exp) {
