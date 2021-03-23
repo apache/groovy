@@ -5176,7 +5176,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     continue; // GROOVY-9984: skip null
                 boolean lastArg = (i == paramLength - 1);
                 ClassNode paramType = parameters[i].getType();
-                ClassNode argumentType = getType(expressions.get(i));
+                ClassNode argumentType = getDeclaredOrInferredType(expressions.get(i));
                 while (paramType.isArray() && argumentType.isArray()) {
                     paramType = paramType.getComponentType();
                     argumentType = argumentType.getComponentType();
@@ -5439,6 +5439,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private ClassNode resolveGenericsWithContext(final Map<GenericsTypeName, GenericsType> resolvedPlaceholders, final ClassNode currentType) {
         Map<GenericsTypeName, GenericsType> placeholdersFromContext = extractGenericsParameterMapOfThis(typeCheckingContext);
         return resolveClassNodeGenerics(resolvedPlaceholders, placeholdersFromContext, currentType);
+    }
+
+    private ClassNode getDeclaredOrInferredType(final Expression expression) {
+        // in case of "T t = new ExtendsOrImplementsT()", return T for the expression type
+        if (expression instanceof Variable && !((Variable) expression).isDynamicTyped()) {
+            return getOriginalDeclarationType(expression); // GROOVY-9996
+        }
+        return getInferredTypeFromTempInfo(expression, getType(expression));
     }
 
     private static ClassNode getDeclaringClass(final MethodNode method, final Expression arguments) {
