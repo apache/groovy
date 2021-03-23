@@ -307,7 +307,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-9956
     void testDiamondInferrenceFromConstructor8() {
         assertScript '''
-            @groovy.transform.TupleConstructor
+            @groovy.transform.TupleConstructor(defaults=false)
             class C<T> {
                 T p
             }
@@ -316,6 +316,23 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
             C<I> ci = new C<I>(new D())
             ci = new C<>(new D()) // infers C<D> on RHS
+        '''
+    }
+
+    // GROOVY-9996
+    void testDiamondInferrenceFromConstructor8a() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<T> {
+                T p
+            }
+            interface I { }
+            class D implements I { }
+            void test(C<I> c) { assert c.p instanceof D }
+
+            I i = new D() // infers D for "i"
+            def ci = new C<>(i) // infers C<D> for "ci"
+            test(ci)
         '''
     }
 
