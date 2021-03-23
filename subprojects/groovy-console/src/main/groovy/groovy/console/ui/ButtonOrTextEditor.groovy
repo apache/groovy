@@ -44,12 +44,12 @@ class ButtonOrTextEditor extends AbstractCellEditor implements TableCellEditor {
     Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
         if (value instanceof JButton) {
             editorComponent = value
-            ((JButton) editorComponent).addActionListener({ fireEditingStopped() } as ActionListener)
+            ((JButton) editorComponent).addActionListener({ e -> fireEditingStopped() } as ActionListener)
         } else if (value instanceof JTextArea) {
             editorComponent = value
         } else if (value) {
             editorComponent = new JTextArea(value.toString())
-            editorComponent.addFocusListener({ fireEditingCanceled() } as FocusListener)
+            editorComponent.addFocusListener({ e -> fireEditingCanceled() } as FocusListener)
         } else {
             editorComponent = null
         }

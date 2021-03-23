@@ -330,6 +330,21 @@ final class LambdaTest {
         '''
     }
 
+    @Test // GROOVY-9997
+    void testComparator3() {
+        assertScript '''
+            @groovy.transform.TypeChecked
+            void test() {
+                def cast = (Comparator<Integer>) (a, b) -> Integer.compare(a, b)
+                assert cast.compare(0,0) == 0
+
+                def coerce = ((a, b) -> Integer.compare(a, b)) as Comparator<Integer>
+                assert coerce.compare(0,0) == 0
+            }
+            test()
+        '''
+    }
+
     @Test
     void testFunctionWithLocalVariables() {
         assertScript '''
