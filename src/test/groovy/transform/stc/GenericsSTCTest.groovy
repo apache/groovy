@@ -2543,6 +2543,27 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9998
+    void testContravariantMethodResolution2() {
+        assertScript '''
+            import groovy.transform.*
+            @TupleConstructor(defaults=false)
+            class A {
+              final int order
+            }
+            @InheritConstructors @ToString(includeSuperProperties=true)
+            class B extends A {
+            }
+
+            Comparator<A> comparator = { a1, a2 -> Integer.compare(a1.order, a2.order) }
+
+            def input = [new B(2), new B(3), new B(1), new B(0)]
+            // sorted(Comparator<? super B>) using Comparator<A>
+            def result = input.stream().sorted(comparator).toList()
+            assert result.toString().equals("[B(0), B(1), B(2), B(3)]")
+        '''
+    }
+
     void testContravariantMethodResolutionWithImplicitCoercion() {
         assertScript '''
             interface Function<T, R> {

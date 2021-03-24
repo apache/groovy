@@ -16,10 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
@@ -28,46 +24,48 @@ import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 class Groovy6564Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
     void testShouldNotRequireIntermediateVariableToPass() {
-        assertScript '''class Stream<T> implements Iterable<T> {
-    public static Stream<String> from(BufferedReader reader) { new Stream(data: ['a', 'b', 'c']) }
+        assertScript '''
+            class Stream<T> implements Iterable<T> {
+                public static Stream<String> from(BufferedReader reader) { new Stream(data: ['a', 'b', 'c']) }
 
-    List<T> data
+                List<T> data
 
-    public Iterator<T> iterator() { data.iterator() }
+                public Iterator<T> iterator() { data.iterator() }
 
-    public <U> Stream<U> flatMap(Closure<? extends Collection<U>> closure) {
-        new Stream(data: data.collect(closure).flatten() as List)
-    }
-}
+                public <U> Stream<U> flatMap(Closure<? extends Collection<U>> closure) {
+                    new Stream(data: data.collect(closure).flatten() as List)
+                }
+            }
 
-Map<String, Integer> frequencies = [:].withDefault { 0 }
-BufferedReader r = null
-Stream.from(r)
-    .flatMap { String it -> it.toList() }
-    .each { String it -> frequencies[it.toUpperCase()]++ }
-    assert frequencies == [A:1, B:1, C:1]
-'''
+            Map<String, Integer> frequencies = [:].withDefault { 0 }
+            BufferedReader r = null
+            Stream.from(r)
+                .flatMap { String it -> it.toList() }
+                .each { String it -> frequencies[it.toUpperCase()]++ }
+            assert frequencies == [A:1, B:1, C:1]
+        '''
     }
 
     void testShouldNotRequireIntermediateVariableToPassWithEachParamInference() {
-        assertScript '''class Stream<T> implements Iterable<T> {
-    public static Stream<String> from(BufferedReader reader) { new Stream(data: ['a', 'b', 'c']) }
+        assertScript '''
+            class Stream<T> implements Iterable<T> {
+                public static Stream<String> from(BufferedReader reader) { new Stream(data: ['a', 'b', 'c']) }
 
-    List<T> data
+                List<T> data
 
-    public Iterator<T> iterator() { data.iterator() }
+                public Iterator<T> iterator() { data.iterator() }
 
-    public <U> Stream<U> flatMap(Closure<? extends Collection<U>> closure) {
-        new Stream(data: data.collect(closure).flatten() as List)
-    }
-}
+                public <U> Stream<U> flatMap(Closure<? extends Collection<U>> closure) {
+                    new Stream(data: data.collect(closure).flatten() as List)
+                }
+            }
 
-Map<String, Integer> frequencies = [:].withDefault { 0 }
-BufferedReader r = null
-Stream.from(r)
-    .flatMap { String it -> it.toList() }
-    .each { println it; frequencies[it.toUpperCase()]++ }
-    assert frequencies == [A:1, B:1, C:1]
-'''
+            Map<String, Integer> frequencies = [:].withDefault { 0 }
+            BufferedReader r = null
+            Stream.from(r)
+                .flatMap { String it -> it.toList() }
+                .each { frequencies[it.toUpperCase()]++ }
+            assert frequencies == [A:1, B:1, C:1]
+        '''
     }
 }
