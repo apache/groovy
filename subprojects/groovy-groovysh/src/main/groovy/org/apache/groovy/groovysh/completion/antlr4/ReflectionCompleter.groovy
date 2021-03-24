@@ -69,7 +69,9 @@ import static org.apache.groovy.parser.antlr4.GroovyLexer.NOT
 import static org.apache.groovy.parser.antlr4.GroovyLexer.NOTEQUAL
 import static org.apache.groovy.parser.antlr4.GroovyLexer.OR
 import static org.apache.groovy.parser.antlr4.GroovyLexer.OR_ASSIGN
-import static org.apache.groovy.parser.antlr4.GroovyLexer.RANGE_EXCLUSIVE
+import static org.apache.groovy.parser.antlr4.GroovyLexer.RANGE_EXCLUSIVE_FULL
+import static org.apache.groovy.parser.antlr4.GroovyLexer.RANGE_EXCLUSIVE_LEFT
+import static org.apache.groovy.parser.antlr4.GroovyLexer.RANGE_EXCLUSIVE_RIGHT
 import static org.apache.groovy.parser.antlr4.GroovyLexer.RANGE_INCLUSIVE
 import static org.apache.groovy.parser.antlr4.GroovyLexer.RBRACK
 import static org.apache.groovy.parser.antlr4.GroovyLexer.RPAREN
@@ -349,7 +351,9 @@ class ReflectionCompleter {
                     break
             // may begin expression when outside brackets (from back)
                 case RANGE_INCLUSIVE:
-                case RANGE_EXCLUSIVE:
+                case RANGE_EXCLUSIVE_LEFT:
+                case RANGE_EXCLUSIVE_RIGHT:
+                case RANGE_EXCLUSIVE_FULL:
                 case COLON:
                 case COMMA:
                     if (expectedOpeners.empty()) {

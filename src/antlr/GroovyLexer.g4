@@ -808,22 +808,24 @@ NullLiteral
 
 // Groovy Operators
 
-RANGE_INCLUSIVE     : '..';
-RANGE_EXCLUSIVE     : '..<';
-SPREAD_DOT          : '*.';
-SAFE_DOT            : '?.';
-SAFE_CHAIN_DOT      : '??.';
-ELVIS               : '?:';
-METHOD_POINTER      : '.&';
-METHOD_REFERENCE    : '::';
-REGEX_FIND          : '=~';
-REGEX_MATCH         : '==~';
-POWER               : '**';
-POWER_ASSIGN        : '**=';
-SPACESHIP           : '<=>';
-IDENTICAL           : '===';
-NOT_IDENTICAL       : '!==';
-ARROW               : '->';
+RANGE_INCLUSIVE         : '..';
+RANGE_EXCLUSIVE_LEFT    : '<..';
+RANGE_EXCLUSIVE_RIGHT   : '..<';
+RANGE_EXCLUSIVE_FULL    : '<..<';
+SPREAD_DOT              : '*.';
+SAFE_DOT                : '?.';
+SAFE_CHAIN_DOT          : '??.';
+ELVIS                   : '?:';
+METHOD_POINTER          : '.&';
+METHOD_REFERENCE        : '::';
+REGEX_FIND              : '=~';
+REGEX_MATCH             : '==~';
+POWER                   : '**';
+POWER_ASSIGN            : '**=';
+SPACESHIP               : '<=>';
+IDENTICAL               : '===';
+NOT_IDENTICAL           : '!==';
+ARROW                   : '->';
 
 // !internalPromise will be parsed as !in ternalPromise, so semantic predicates are necessary
 NOT_INSTANCEOF      : '!instanceof' { isFollowedBy(_input, ' ', '\t', '\r', '\n') }?;
