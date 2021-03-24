@@ -27,17 +27,33 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * <pre>for i in 0..10 {...}</pre>
  */
 public class RangeExpression extends Expression {
-
     private final Expression from;
     private final Expression to;
-    private final boolean inclusive;
+    private final boolean inclusive; // Kept to keep old code depending on this working
+    // GROOVY-9649
+    private final boolean exclusiveLeft;
+    private final boolean exclusiveRight;
 
+    // Kept until sure this can be removed
     public RangeExpression(Expression from, Expression to, boolean inclusive) {
         this.from = from;
         this.to = to;
         this.inclusive = inclusive;
+        this.exclusiveLeft = false;
+        this.exclusiveRight = !inclusive;
         setType(ClassHelper.RANGE_TYPE);
     }
+
+    // GROOVY-9649
+    public RangeExpression(Expression from, Expression to, boolean exclusiveLeft, boolean exclusiveRight) {
+        this.from = from;
+        this.to = to;
+        this.inclusive = !exclusiveRight; // Old code depends on this
+        this.exclusiveLeft = exclusiveLeft;
+        this.exclusiveRight = exclusiveRight;
+        setType(ClassHelper.RANGE_TYPE);
+    }
+
 
     @Override
     public void visit(GroovyCodeVisitor visitor) {
@@ -46,7 +62,7 @@ public class RangeExpression extends Expression {
 
     @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new RangeExpression(transformer.transform(from), transformer.transform(to), inclusive);
+        Expression ret = new RangeExpression(transformer.transform(from), transformer.transform(to), exclusiveLeft, exclusiveRight);
         ret.setSourcePosition(this);
         ret.copyNodeMetaData(this);
         return ret;
@@ -64,10 +80,20 @@ public class RangeExpression extends Expression {
         return inclusive;
     }
 
+    public boolean isExclusiveLeft() {
+        return exclusiveLeft;
+    }
+
+    public boolean isExclusiveRight() {
+        return exclusiveRight;
+    }
+
     @Override
     public String getText() {
         return "(" + from.getText() +
-               (!isInclusive()? "..<" : ".." ) +
-               to.getText() + ")";
+                (this.exclusiveLeft ? "<" : "") +
+                ".." +
+                (this.exclusiveRight ? "<" : "") +
+                to.getText() + ")";
     }
 }

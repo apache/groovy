@@ -2870,7 +2870,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         Expression right = (Expression) this.visit(ctx.right);
 
         if (asBoolean(ctx.rangeOp)) {
-            return configureAST(new RangeExpression(left, right, !ctx.rangeOp.getText().endsWith("<")), ctx);
+            return configureAST(new RangeExpression(left, right, ctx.rangeOp.getText().startsWith("<"), ctx.rangeOp.getText().endsWith("<")), ctx);
         }
 
         org.codehaus.groovy.syntax.Token op;
