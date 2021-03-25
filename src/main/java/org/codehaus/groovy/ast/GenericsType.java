@@ -155,7 +155,7 @@ public class GenericsType extends ASTNode {
     }
 
     public boolean isResolved() {
-        return (resolved || isPlaceholder());
+        return resolved;
     }
 
     public void setResolved(final boolean resolved) {
@@ -168,6 +168,8 @@ public class GenericsType extends ASTNode {
 
     public void setPlaceholder(final boolean placeholder) {
         this.placeholder = placeholder;
+        this.resolved = resolved || placeholder;
+        this.wildcard = wildcard && !placeholder;
         getType().setGenericsPlaceHolder(placeholder);
     }
 
@@ -177,6 +179,7 @@ public class GenericsType extends ASTNode {
 
     public void setWildcard(final boolean wildcard) {
         this.wildcard = wildcard;
+        this.placeholder = placeholder && !wildcard;
     }
 
     public ClassNode getLowerBound() {

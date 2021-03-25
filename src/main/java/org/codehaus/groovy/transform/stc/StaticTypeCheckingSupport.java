@@ -1592,15 +1592,22 @@ public abstract class StaticTypeCheckingSupport {
                     if (newValue == oldValue) continue;
                     if (newValue == null) {
                         entry.setValue(newValue = applyGenericsContext(connections, oldValue));
-                        checkForMorePlaceholders = checkForMorePlaceholders || !equalIncludingGenerics(oldValue, newValue);
+                        if (!checkForMorePlaceholders) {
+                            checkForMorePlaceholders = !equalIncludingGenerics(oldValue, newValue);
+                        }
                     } else if (!newValue.isPlaceholder() || newValue != resolvedPlaceholders.get(name)) {
                         // GROOVY-6787: Don't override the original if the replacement doesn't respect the bounds otherwise
                         // the original bounds are lost, which can result in accepting an incompatible type as an argument.
                         ClassNode replacementType = extractType(newValue);
                         if (oldValue.isCompatibleWith(replacementType)) {
-                            entry.setValue(newValue.isWildcard() ? new GenericsType(replacementType) : newValue); // GROOVY-9998
-                            if (newValue.isPlaceholder()) {
-                                checkForMorePlaceholders = checkForMorePlaceholders || !equalIncludingGenerics(oldValue, newValue);
+                            if (newValue.isWildcard() && newValue.getLowerBound() == null && newValue.getUpperBounds() == null) {
+                                // GROOVY-9998: apply upper/lower bound for unknown
+                                entry.setValue(new GenericsType(replacementType));
+                            } else {
+                                entry.setValue(newValue);
+                            }
+                            if (!checkForMorePlaceholders && newValue.isPlaceholder()) {
+                                checkForMorePlaceholders = !equalIncludingGenerics(oldValue, newValue);
                             }
                         }
                     }

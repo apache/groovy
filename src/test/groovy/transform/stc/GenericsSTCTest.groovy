@@ -2601,22 +2601,63 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testContravariantMethodResolutionWithImplicitCoercion() {
+    void testContravariantMethodResolutionWithImplicitCoercion1() {
         assertScript '''
-            interface Function<T, R> {
-                R apply(T t)
+            // static <T,E> List<T> collectMany(Iterable<E> it, Closure<? extends Collection<? extends T>> fn)
+            List<String> strings = [1,2,3].collectMany {
+                Collections.emptyList()
             }
-
-            public <I, O> void transform(Function<? super I, ? extends O> function) {
-                function.apply('')
-            }
-
-            String result = null
-            transform {
-                result = 'ok'
-            }
-            assert result == 'ok'
+            assert strings.isEmpty()
         '''
+    }
+
+    void testContravariantMethodResolutionWithImplicitCoercion2() {
+        ['public', 'static'].each { modifier ->
+            assertScript """
+                $modifier <I, O> void transform(java.util.function.Function<? super I, ? extends O> function) {
+                    function.apply('')
+                }
+
+                boolean called = false
+                transform {
+                    called = true
+                }
+                assert called
+            """
+        }
+    }
+
+    void testContravariantMethodResolutionWithImplicitCoercion3() {
+        File parentDir = File.createTempDir()
+        config.with {
+            targetDirectory = File.createTempDir()
+            jointCompilationOptions = [stubDir: File.createTempDir()]
+        }
+        try {
+            def a = new File(parentDir, 'Bean.java')
+            a.write '''
+                class Bean {
+                    static Class<? extends CharSequence> getType() { return String.class; }
+                }
+            '''
+            def b = new File(parentDir, 'Main.groovy')
+            b.write '''
+                def <T> T create(Class<T> c) { null }
+                CharSequence cs = create(Bean.type)
+                assert cs == null
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b)
+            cu.compile()
+
+            loader.loadClass('Main').main()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+            config.jointCompilationOptions.stubDir.deleteDir()
+        }
     }
 
     // GROOVY-5981
