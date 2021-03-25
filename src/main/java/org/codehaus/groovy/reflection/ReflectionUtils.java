@@ -65,6 +65,7 @@ public class ReflectionUtils {
         set.add("org.codehaus.groovy.vmplugin.v7");
         set.add("org.codehaus.groovy.vmplugin.v8");
         set.add("org.codehaus.groovy.vmplugin.v9");
+        set.add("org.codehaus.groovy.vmplugin.v10");
 
         IGNORED_PACKAGES = Collections.unmodifiableSet(set);
     }
