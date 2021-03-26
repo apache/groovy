@@ -221,7 +221,6 @@ import static org.codehaus.groovy.syntax.Types.INTDIV;
 import static org.codehaus.groovy.syntax.Types.INTDIV_EQUAL;
 import static org.codehaus.groovy.syntax.Types.KEYWORD_IN;
 import static org.codehaus.groovy.syntax.Types.KEYWORD_INSTANCEOF;
-import static org.codehaus.groovy.syntax.Types.LEFT_SQUARE_BRACKET;
 import static org.codehaus.groovy.syntax.Types.MINUS_MINUS;
 import static org.codehaus.groovy.syntax.Types.MOD;
 import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
@@ -762,49 +761,46 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode rType = isNullConstant(rightExpression) && !isPrimitiveType(lType)
                     ? UNKNOWN_PARAMETER_TYPE // null to primitive type is handled elsewhere
                     : getInferredTypeFromTempInfo(rightExpression, getType(rightExpression));
+            ClassNode resultType;
 
-            BinaryExpression reversedBinaryExpression = binX(rightExpression, expression.getOperation(), leftExpression);
-            ClassNode resultType = (op == KEYWORD_IN || op == COMPARE_NOT_IN)
-                    ? getResultType(rType, op, lType, reversedBinaryExpression)
-                    : getResultType(lType, op, rType, expression);
             if (op == KEYWORD_IN || op == COMPARE_NOT_IN) {
-                // in case of the "in" operator, the receiver and the arguments are reversed
-                // so we use the reversedExpression and get the target method from it
-                storeTargetMethod(expression, reversedBinaryExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
-            } else if (op == LEFT_SQUARE_BRACKET
-                    && leftExpression instanceof VariableExpression
-                    && leftExpression.getNodeMetaData(INFERRED_TYPE) == null) {
-                storeType(leftExpression, lType);
-            } else if (op == ELVIS_EQUAL) {
-                ElvisOperatorExpression elvisOperatorExpression = new ElvisOperatorExpression(leftExpression, rightExpression);
-                elvisOperatorExpression.setSourcePosition(expression);
-                elvisOperatorExpression.visit(this);
-                resultType = getType(elvisOperatorExpression);
-                storeType(leftExpression, resultType);
+                // for the "in" or "!in" operator, the receiver and the arguments are reversed
+                BinaryExpression reverseExpression = binX(rightExpression, expression.getOperation(), leftExpression);
+                resultType = getResultType(rType, op, lType, reverseExpression);
+                storeTargetMethod(expression, reverseExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
+            } else {
+                resultType = getResultType(lType, op, rType, expression);
+                if (op == ELVIS_EQUAL) {
+                    // TODO: Should this transform and visit be done before left and right are visited above?
+                    Expression fullExpression = new ElvisOperatorExpression(leftExpression, rightExpression);
+                    fullExpression.setSourcePosition(expression);
+                    fullExpression.visit(this);
+
+                    resultType = getType(fullExpression);
+                    storeType(leftExpression, resultType);
+                } else if (isArrayOp(op)
+                        && leftExpression instanceof VariableExpression
+                        && leftExpression.getNodeMetaData(INFERRED_TYPE) == null) {
+                    storeType(leftExpression, lType);
+                }
             }
 
             if (resultType == null) {
                 resultType = lType;
+            } else if (lType.isUsingGenerics() && isAssignment(op) && missesGenericsTypes(resultType)) {
+                // unchecked assignment
+                // List<Type> list = new LinkedList()
+                // Iterable<Type> iter = new LinkedList()
+                // Collection<Type> coll = Collections.emptyList()
+
+                // the inferred type of the binary expression is the type of the RHS
+                // "completed" with generics type information available from the LHS
+                resultType = GenericsUtils.parameterizeType(lType, resultType.getPlainNodeReference());
             }
 
             // GROOVY-5874: if left expression is a closure shared variable, a second pass should be done
             if (leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).isClosureSharedVariable()) {
-                typeCheckingContext.secondPassExpressions.add(new SecondPassExpression(expression));
-            }
-
-            boolean isAssignment = isAssignment(expression.getOperation().getType());
-            if (isAssignment && lType.isUsingGenerics() && missesGenericsTypes(resultType)) {
-                // unchecked assignment
-                // examples:
-                // List<A> list = []
-                // List<A> list = new LinkedList()
-                // Iterable<A> list = new LinkedList()
-
-                // in that case, the inferred type of the binary expression is the type of the RHS
-                // "completed" with generics type information available in the LHS
-                ClassNode completedType = GenericsUtils.parameterizeType(lType, resultType.getPlainNodeReference());
-
-                resultType = completedType;
+                typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<>(expression));
             }
 
             if (isArrayOp(op)
@@ -812,22 +808,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     && enclosingBinaryExpression != null
                     && enclosingBinaryExpression.getLeftExpression() == expression
                     && isAssignment(enclosingBinaryExpression.getOperation().getType())) {
-                // left hand side of an assignment : map['foo'] = ...
-                Expression enclosingBE_rightExpr = enclosingBinaryExpression.getRightExpression();
-                if (!(enclosingBE_rightExpr instanceof ClosureExpression)) {
-                    enclosingBE_rightExpr.visit(this);
+                // left hand side of an assignment: map['foo'] = ...
+                Expression enclosingExpressionRHS = enclosingBinaryExpression.getRightExpression();
+                if (!(enclosingExpressionRHS instanceof ClosureExpression)) {
+                    enclosingExpressionRHS.visit(this);
                 }
-                ClassNode[] arguments = {rType, getType(enclosingBE_rightExpr)};
+                ClassNode[] arguments = {rType, getType(enclosingExpressionRHS)};
                 List<MethodNode> nodes = findMethod(lType.redirect(), "putAt", arguments);
                 if (nodes.size() == 1) {
-                    typeCheckMethodsWithGenericsOrFail(lType, arguments, nodes.get(0), enclosingBE_rightExpr);
+                    typeCheckMethodsWithGenericsOrFail(lType, arguments, nodes.get(0), enclosingExpressionRHS);
                 } else if (nodes.isEmpty()) {
                     addNoMatchingMethodError(lType, "putAt", arguments, enclosingBinaryExpression);
                 }
             }
 
             boolean isEmptyDeclaration = (expression instanceof DeclarationExpression && rightExpression instanceof EmptyExpression);
-            if (isAssignment && !isEmptyDeclaration) {
+            if (!isEmptyDeclaration && isAssignment(op)) {
                 if (rightExpression instanceof ConstructorCallExpression) {
                     inferDiamondType((ConstructorCallExpression) rightExpression, lType);
                 }
@@ -4145,7 +4141,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     public void visitTernaryExpression(final TernaryExpression expression) {
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
         typeCheckingContext.pushTemporaryTypeInfo(); // capture instanceof restriction
-        expression.getBooleanExpression().visit(this);
+        if (!(expression instanceof ElvisOperatorExpression)) {
+            expression.getBooleanExpression().visit(this);
+        }
         Expression trueExpression = expression.getTrueExpression();
         trueExpression.visit(this);
         ClassNode typeOfTrue = findCurrentInstanceOfClass(trueExpression, getType(trueExpression));
@@ -4218,8 +4216,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private static boolean isEmptyCollection(final Expression expr) {
-        return (expr instanceof ListExpression && ((ListExpression) expr).getExpressions().isEmpty())
-                || (expr instanceof MapExpression && ((MapExpression) expr).getMapEntryExpressions().isEmpty());
+        return isEmptyList(expr) || isEmptyMap(expr);
+    }
+
+    private static boolean isEmptyList(final Expression expr) {
+        return expr instanceof ListExpression && ((ListExpression) expr).getExpressions().isEmpty();
+    }
+
+    private static boolean isEmptyMap(final Expression expr) {
+        return expr instanceof MapExpression && ((MapExpression) expr).getMapEntryExpressions().isEmpty();
     }
 
     private static boolean hasInferredReturnType(final Expression expression) {
@@ -4346,21 +4351,27 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            if (isOrImplements(rightRedirect, Collection_TYPE)) {
-                if (leftRedirect.isArray()) {
-                    return leftRedirect;
-                }
-                if (isOrImplements(leftRedirect, Collection_TYPE) &&
-                        rightExpression instanceof ListExpression && isEmptyCollection(rightExpression)) {
-                    return left;
-                }
+            if (isOrImplements(leftRedirect, Collection_TYPE) && isEmptyList(rightExpression)) {
+                return left;
+            }
+            if (isOrImplements(leftRedirect, MAP_TYPE) && isEmptyMap(rightExpression)) {
+                return left;
+            }
+            if (leftRedirect.isArray() && isOrImplements(right, Collection_TYPE)) {
+                return left;
             }
 
             return right;
         }
+
         if (isBoolIntrinsicOp(op)) {
             return boolean_TYPE;
         }
+
+        if (op == FIND_REGEX) {
+            return Matcher_TYPE;
+        }
+
         if (isArrayOp(op)) {
             // using getPNR() to ignore generics at this point
             // and a different binary expression not to pollute the AST
@@ -4372,10 +4383,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             return method != null ? inferComponentType(left, right) : null;
         }
-        if (op == FIND_REGEX) {
-            // this case always succeeds the result is a Matcher
-            return Matcher_TYPE;
-        }
+
         // the left operand is determining the result of the operation
         // for primitives and their wrapper we use a fixed table here
         String operationName = getOperationName(op);
@@ -4383,13 +4391,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (mathResultType != null) {
             return mathResultType;
         }
-
-        // GROOVY-5890
-        // do not mix Class<Foo> with Foo
+        // GROOVY-5890: do not mix Class<Type> with Type
         if (leftExpression instanceof ClassExpression) {
             left = CLASS_Type.getPlainNodeReference();
         }
-
         MethodNode method = findMethodOrFail(expr, left, operationName, right);
         if (method != null) {
             storeTargetMethod(expr, method);
@@ -4399,7 +4404,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (op == COMPARE_TO) return int_TYPE;
             return inferReturnTypeGenerics(left, method, args(rightExpression));
         }
-        //TODO: other cases
+
+        // TODO: other cases
+
         return null;
     }
 
