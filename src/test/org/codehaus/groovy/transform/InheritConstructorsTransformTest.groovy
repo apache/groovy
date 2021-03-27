@@ -23,16 +23,16 @@ import groovy.test.GroovyShellTestCase
 class InheritConstructorsTransformTest extends GroovyShellTestCase {
 
     void testStandardCase() {
-        assertScript """
+        assertScript '''
             import groovy.transform.InheritConstructors
             @InheritConstructors class CustomException extends RuntimeException { }
             def ce = new CustomException('foo')
             assert ce.message == 'foo'
-        """
+        '''
     }
 
     void testOverrideCase() {
-        assertScript """
+        assertScript '''
             import groovy.transform.InheritConstructors
             @InheritConstructors
             class CustomException2 extends RuntimeException {
@@ -42,11 +42,11 @@ class InheritConstructorsTransformTest extends GroovyShellTestCase {
             assert ce.message == 'bar'
             ce = new CustomException2('foo')
             assert ce.message == 'foo'
-        """
+        '''
     }
 
     void testChainedCase() {
-        assertScript """
+        assertScript '''
             import groovy.transform.InheritConstructors
             @InheritConstructors
             class CustomException5 extends CustomException4 {}
@@ -56,11 +56,12 @@ class InheritConstructorsTransformTest extends GroovyShellTestCase {
             class CustomException4 extends CustomException3 {}
             def ce = new CustomException5('baz')
             assert ce.message == 'baz'
-        """
+        '''
     }
 
-    void testCopyAnnotations_groovy7059() {
-        assertScript """
+    // GROOVY-7059
+    void testCopyAnnotations() {
+        assertScript '''
             import java.lang.annotation.*
             import groovy.transform.InheritConstructors
 
@@ -109,11 +110,11 @@ class InheritConstructorsTransformTest extends GroovyShellTestCase {
                         break
                 }
             }
-        """
+        '''
     }
 
     void testInnerClassUsage() {
-        assertScript """
+        assertScript '''
             import groovy.transform.InheritConstructors
             @InheritConstructors
             class Outer extends RuntimeException {
@@ -138,88 +139,90 @@ class InheritConstructorsTransformTest extends GroovyShellTestCase {
             assert o.message == 'baz'
             o.test()
             new Outer2().test()
-        """
+        '''
     }
 
-    void testParametersWithGenericsAndCompileStatic_GROOVY6874() {
-        assertScript """
+    // GROOVY-6874
+    void testParametersWithGenericsAndCompileStatic() {
+        assertScript '''
             import groovy.transform.*
             import java.math.RoundingMode
 
             @CompileStatic
             abstract class BasePublisher<T, U> {
-               final Deque<T> items
-               private U mode
-               BasePublisher(Deque<T> items) { this.items = items }
-               BasePublisher(U mode) {
-                  this.mode = mode
-                  this.items = []
-               }
-               BasePublisher(Set<U> modes) { this(modes[0]) }
-               void publish(T item) { items.addFirst(item) }
-               void init(U mode) { this.mode = mode }
-               String toString() { items.join('|') + "|" + mode.toString() }
+                final Deque<T> items
+                private U mode
+                BasePublisher(Deque<T> items) { this.items = items }
+                BasePublisher(U mode) {
+                    this.mode = mode
+                    this.items = new ArrayDeque<>()
+                }
+                BasePublisher(Set<U> modes) { this(modes[0]) }
+                void publish(T item) { items.addFirst(item) }
+                void init(U mode) { this.mode = mode }
+                String toString() { items.join('|') + "|" + mode.toString() }
             }
 
             @CompileStatic @InheritConstructors
             class OrderPublisher<V> extends BasePublisher<Integer, V> {
-              static OrderPublisher make() {
-                new OrderPublisher<RoundingMode>(new LinkedList<Integer>())
-              }
-              void foo() { publish(3) }
-              void bar(V mode) { init(mode) }
-              void baz() {
-                new OrderPublisher<RoundingMode>(RoundingMode.UP)
-                new OrderPublisher<RoundingMode>(new HashSet<RoundingMode>())
-              }
+                static OrderPublisher make() {
+                    new OrderPublisher<RoundingMode>(new LinkedList<Integer>())
+                }
+                void foo() { publish(3) }
+                void bar(V mode) { init(mode) }
+                void baz() {
+                    new OrderPublisher<RoundingMode>(RoundingMode.UP)
+                    new OrderPublisher<RoundingMode>(new HashSet<RoundingMode>())
+                }
+            }
+
+            def op = OrderPublisher.make()
+            op.foo()
+            op.bar(RoundingMode.DOWN)
+            op.baz()
+            assert op.toString() == '3|DOWN'
+        '''
+    }
+
+    // GROOVY-6874
+    void testParametersWithGenericsAndCompileStatic_errors() {
+        def message = shouldFail '''
+            import groovy.transform.*
+            import java.math.RoundingMode
+
+            @CompileStatic
+            abstract class BasePublisher<T, U> {
+                final Deque<T> items
+                private U mode
+                BasePublisher(Deque<T> items) { this.items = items }
+                BasePublisher(U mode) {
+                    this.mode = mode
+                    this.items = new ArrayDeque<>()
+                }
+                BasePublisher(Set<U> modes) { this(modes[0]) }
+                void publish(T item) { items.addFirst(item) }
+                void init(U mode) { this.mode = mode }
+                String toString() { items.join('|') + "|" + mode.toString() }
+            }
+
+            @CompileStatic @InheritConstructors
+            class OrderPublisher<V> extends BasePublisher<Integer, V> {
+                static OrderPublisher make() {
+                    new OrderPublisher<RoundingMode>(new LinkedList<String>())
+                }
+                void foo() { publish(3) }
+                void bar(V mode) { init(mode) }
+                void baz() {
+                    new OrderPublisher<RoundingMode>(new Date())
+                    new OrderPublisher<RoundingMode>(new HashSet<Date>())
+                }
             }
 
             def op = OrderPublisher.make()
             op.foo()
             op.bar(RoundingMode.DOWN)
             assert op.toString() == '3|DOWN'
-        """
-    }
-
-    void testParametersWithGenericsAndCompileStatic_errors_GROOVY6874() {
-        def message = shouldFail """
-            import groovy.transform.*
-            import java.math.RoundingMode
-
-            @CompileStatic
-            abstract class BasePublisher<T, U> {
-               final Deque<T> items
-               private U mode
-               BasePublisher(Deque<T> items) { this.items = items }
-               BasePublisher(U mode) {
-                  this.mode = mode
-                  this.items = []
-               }
-               BasePublisher(Set<U> modes) { this(modes[0]) }
-               void publish(T item) { items.addFirst(item) }
-               void init(U mode) { this.mode = mode }
-               String toString() { items.join('|') + "|" + mode.toString() }
-            }
-
-            @CompileStatic @InheritConstructors
-            class OrderPublisher<V> extends BasePublisher<Integer, V> {
-              static OrderPublisher make() {
-                new OrderPublisher<RoundingMode>(new LinkedList<String>())
-              }
-              void foo() { publish(3) }
-              void bar(V mode) { init(mode) }
-              void baz() {
-                new OrderPublisher<RoundingMode>(new Date())
-                new OrderPublisher<RoundingMode>(new HashSet<Date>())
-              }
-            }
-
-            def op = OrderPublisher.make()
-            op.foo()
-            op.bar(RoundingMode.DOWN)
-            assert op.toString() == '3|DOWN'
-        """
-        assert message.contains('Cannot call OrderPublisher <RoundingMode>#<init>(java.util.Deque <java.lang.Integer>) with arguments [java.util.LinkedList <String>]')
+        '''
         assert message.contains('Cannot find matching method OrderPublisher#<init>(java.util.Date)')
         assert message.contains('Cannot call OrderPublisher <RoundingMode>#<init>(java.util.Set <RoundingMode>) with arguments [java.util.HashSet <Date>]')
     }
