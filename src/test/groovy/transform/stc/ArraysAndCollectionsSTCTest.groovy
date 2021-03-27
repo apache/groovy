@@ -650,9 +650,73 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.util.List <java.lang.Integer> to variable of type A'
     }
 
+    // GROOVY-6912
+    void testArrayListTypeInitializedByListLiteral() {
+        assertScript '''
+            ArrayList list = [1,2,3]
+            assert list.size() == 3
+            assert list.last() == 3
+        '''
+
+        assertScript '''
+            ArrayList list = [[1,2,3]]
+            assert list.size() == 1
+        '''
+
+        assertScript '''
+            ArrayList<Integer> list = [1,2,3]
+            assert list.size() == 3
+            assert list.last() == 3
+        '''
+
+        shouldFailWithMessages '''
+            ArrayList<String> strings = [1,2,3]
+        ''',
+        'Incompatible generic argument types. Cannot assign java.util.ArrayList <java.lang.Integer> to: java.util.ArrayList <String>'
+    }
+
+    // GROOVY-6912
+    void testSetDerivativesInitializedByListLiteral() {
+        assertScript '''
+            LinkedHashSet set = [1,2,3]
+            assert set.size() == 3
+            assert set.contains(3)
+        '''
+
+        assertScript '''
+            HashSet set = [1,2,3]
+            assert set.size() == 3
+            assert set.contains(3)
+        '''
+
+        assertScript '''
+            LinkedHashSet set = [[1,2,3]]
+            assert set.size() == 1
+        '''
+
+        assertScript '''
+            LinkedHashSet<Integer> set = [1,2,3]
+            assert set.size() == 3
+            assert set.contains(3)
+        '''
+
+        shouldFailWithMessages '''
+            LinkedHashSet<String> strings = [1,2,3]
+        ''',
+        'Incompatible generic argument types. Cannot assign java.util.LinkedHashSet <java.lang.Integer> to: java.util.LinkedHashSet <String>'
+    }
+
     void testCollectionTypesInitializedByListLiteral1() {
         assertScript '''
             Set<String> set = []
+            set << 'foo'
+            set << 'bar'
+            set << 'foo'
+            assert set.size() == 2
+        '''
+
+        assertScript '''
+            AbstractSet<String> set = []
             set << 'foo'
             set << 'bar'
             set << 'foo'
@@ -668,6 +732,11 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
 
         assertScript '''
+            AbstractList<String> list = ['foo', 'bar', 'foo']
+            assert list.size() == 3
+        '''
+
+        assertScript '''
             ArrayDeque<String> deque = [123] // ArrayDeque(int numElements)
         '''
     }
@@ -677,17 +746,22 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             Set<String> set = [1,2,3]
         ''',
-        'Cannot assign java.util.Set <java.lang.Integer> to: java.util.Set <String>'
+        'Cannot assign java.util.LinkedHashSet <java.lang.Integer> to: java.util.Set <String>'
+
+        shouldFailWithMessages '''
+            List<String> list = ['a','b',3]
+        ''',
+        'Cannot assign java.util.ArrayList <java.io.Serializable> to: java.util.List <String>'
 
         shouldFailWithMessages '''
             Iterable<String> iter = [1,2,3]
         ''',
-        'Cannot assign java.util.List <java.lang.Integer> to: java.lang.Iterable <String>'
+        'Cannot assign java.util.ArrayList <java.lang.Integer> to: java.lang.Iterable <String>'
 
         shouldFailWithMessages '''
             Collection<String> coll = [1,2,3]
         ''',
-        'Cannot assign java.util.List <java.lang.Integer> to: java.util.Collection <String>'
+        'Cannot assign java.util.ArrayList <java.lang.Integer> to: java.util.Collection <String>'
 
         shouldFailWithMessages '''
             Deque<String> deque = [""]

@@ -114,10 +114,10 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
             numbers.sequence
             numbers.string
         ''',
-        'Cannot call <CS extends java.lang.CharSequence> java.util.List <java.lang.Number>#getSequence() with arguments []',
-        'Cannot call java.util.List <java.lang.Number>#getString() with arguments []',
-        'No such property: sequence for class: java.util.List <java.lang.Number>',
-        'No such property: string for class: java.util.List <java.lang.Number>'
+        'Cannot call <CS extends java.lang.CharSequence> java.util.ArrayList <java.lang.Number>#getSequence() with arguments []',
+        'Cannot call java.util.ArrayList <java.lang.Number>#getString() with arguments []',
+        'No such property: sequence for class: java.util.ArrayList <java.lang.Number>',
+        'No such property: string for class: java.util.ArrayList <java.lang.Number>'
     }
 
     // GROOVY-5584
@@ -171,11 +171,14 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7283
-    void testListWithDefaultInfersInt() {
+    void testListWithDefault() {
         assertScript '''
             def list = [].withDefault{ it.longValue() }
+            //                         ^^ int parameter
             list[0] = list[3]
-            assert list[0] == 3 && list[0].class == Long
+
+            assert list[0].class == Long
+            assert list[0] == 3L
         '''
     }
 

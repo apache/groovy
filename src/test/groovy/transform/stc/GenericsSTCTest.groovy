@@ -59,7 +59,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<String> list = []
             list.add(1)
         ''',
-        'Cannot find matching method java.util.List#add(int)'
+        'Cannot find matching method java.util.ArrayList#add(int)'
     }
 
     void testAddOnList2() {
@@ -86,7 +86,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<String> list = []
             list << 1
         ''',
-        'Cannot call <T> java.util.List <String>#leftShift(T) with arguments [int]'
+        'Cannot call <T> java.util.ArrayList <String>#leftShift(T) with arguments [int]'
     }
 
     void testAddOnList2UsingLeftShift() {
@@ -896,7 +896,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9984
-    @NotYetImplemented
     void testDiamondInferenceFromConstructor7a() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
@@ -905,7 +904,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
 
             C<Integer> c = new C<>(null)
-            assert c.p === null
+            assert c.p == null
         '''
     }
 
@@ -1716,7 +1715,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<String> elements = ['a','b', 1]
         ''',
-        'Cannot assign java.util.List <java.io.Serializable> to: java.util.List <String>'
+        'Cannot assign java.util.ArrayList <java.io.Serializable> to: java.util.List <String>'
     }
 
     void testGenericAssignmentWithSubClass() {
@@ -1746,7 +1745,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<? super Number> list = ['string']
         ''',
-        'Cannot assign java.util.List <java.lang.String> to: java.util.List <? super java.lang.Number>'
+        'Cannot assign java.util.ArrayList <java.lang.String> to: java.util.List <? super java.lang.Number>'
     }
 
     void testGroovy5154() {
@@ -2532,9 +2531,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Collection<String> e = list.findAll { it }
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def dmt = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
-                assert dmt instanceof ExtensionMethodNode == false
+                assert dmt.declaringClass.implementsInterface(LIST_TYPE)
+                assert !(dmt instanceof ExtensionMethodNode)
                 assert dmt.name == 'addAll'
-                assert dmt.declaringClass == make(List)
             })
             boolean r = list.addAll(e)
         '''
@@ -2546,7 +2545,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Collection<Integer> e = (Collection<Integer>) [1,2,3]
             boolean r = list.addAll(e)
         ''',
-        'Cannot call java.util.List <java.lang.String>#addAll(java.util.Collection <? extends java.lang.String>) with arguments [java.util.Collection <Integer>]'
+        'Cannot call java.util.ArrayList <java.lang.String>#addAll(java.util.Collection <? extends java.lang.String>) with arguments [java.util.Collection <Integer>]'
     }
 
     // GROOVY-5528
@@ -2893,26 +2892,27 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5617
     void testIntermediateListAssignmentOfGStrings() {
         assertScript '''
-        def test() {
-            @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                def type = node.getNodeMetaData(INFERRED_TYPE)
-                assert type == make(List)
-                assert type.genericsTypes.length==1
-                assert type.genericsTypes[0].type == GSTRING_TYPE
-            })
-            List<GString> dates = ["${new Date()-1}", "${new Date()}", "${new Date()+1}"]
-            dates*.toUpperCase()
-            @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                def type = node.getNodeMetaData(INFERRED_TYPE)
-                assert type == make(List)
-                assert type.genericsTypes.length==1
-                assert type.genericsTypes[0].type == GSTRING_TYPE
-            })
-            List<GString> copied = []
-            copied.addAll(dates)
-            List<String> upper = copied*.toUpperCase()
-        }
-        test()
+            def test() {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    def type = node.getNodeMetaData(INFERRED_TYPE)
+                    assert type.implementsInterface(LIST_TYPE)
+                    assert type.genericsTypes.length == 1
+                    assert type.genericsTypes[0].type == GSTRING_TYPE
+                })
+                List<GString> dates = ["${new Date()-1}", "${new Date()}", "${new Date()+1}"]
+                dates*.toUpperCase()
+
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    def type = node.getNodeMetaData(INFERRED_TYPE)
+                    assert type.implementsInterface(LIST_TYPE)
+                    assert type.genericsTypes.length == 1
+                    assert type.genericsTypes[0].type == GSTRING_TYPE
+                })
+                List<GString> copied = []
+                copied.addAll(dates)
+                List<String> upper = copied*.toUpperCase()
+            }
+            test()
         '''
     }
 
