@@ -4368,11 +4368,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         || ITERABLE_TYPE.equals(leftRedirect)
                         || Collection_TYPE.equals(leftRedirect)
                         || ArrayList_TYPE.isDerivedFrom(leftRedirect)) { // GROOVY-6912
-                    return GenericsUtils.parameterizeType(right, ArrayList_TYPE.getPlainNodeReference());
+                    return getLiteralResultType(left, right, ArrayList_TYPE); // GROOVY-7128
                 }
                 if (SET_TYPE.equals(leftRedirect)
                         || LinkedHashSet_TYPE.isDerivedFrom(leftRedirect)) { // GROOVY-6912
-                    return GenericsUtils.parameterizeType(right, LinkedHashSet_TYPE.getPlainNodeReference());
+                    return getLiteralResultType(left, right, LinkedHashSet_TYPE); // GROOVY-7128
                 }
             }
 
@@ -4423,6 +4423,27 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // TODO: other cases
 
         return null;
+    }
+
+    /**
+     * For "{@code List<Type> x = [...]}" or "{@code Set<Type> y = [...]}", etc.
+     * the literal may be composed of sub-types of {@code Type}. In these cases,
+     * {@code ArrayList<Type>} is an appropriate result type for the expression.
+     */
+    private ClassNode getLiteralResultType(final ClassNode targetType, final ClassNode sourceType, final ClassNode baseType) {
+        ClassNode resultType = sourceType.equals(baseType) ? sourceType
+                : GenericsUtils.parameterizeType(sourceType, baseType.getPlainNodeReference());
+
+        if (targetType.getGenericsTypes() != null
+                && !GenericsUtils.buildWildcardType(targetType).isCompatibleWith(resultType)) {
+            GenericsType[] lgt = targetType.getGenericsTypes(), rgt = resultType.getGenericsTypes();
+            if (!lgt[0].isPlaceholder() && !lgt[0].isWildcard() && GenericsUtils.buildWildcardType(
+                    getCombinedBoundType(lgt[0])).isCompatibleWith(getCombinedBoundType(rgt[0]))) {
+                resultType = GenericsUtils.parameterizeType(targetType, baseType.getPlainNodeReference());
+            }
+        }
+
+        return resultType;
     }
 
     private ClassNode getMathResultType(final int op, final ClassNode leftRedirect, final ClassNode rightRedirect, final String operationName) {
