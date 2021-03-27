@@ -48,7 +48,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<String> list = []
             list.add(1)
-        ''', "[Static type checking] - Cannot find matching method java.util.List#add(int)"
+        ''', "[Static type checking] - Cannot find matching method java.util.ArrayList#add(int)"
     }
 
     void testAddOnList2() {
@@ -74,7 +74,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<String> list = []
             list << 1
-        ''', '[Static type checking] - Cannot call <T> java.util.List#leftShift(T) with arguments [int] '
+        ''', '[Static type checking] - Cannot call <T> java.util.ArrayList#leftShift(T) with arguments [int] '
     }
 
     void testAddOnList2UsingLeftShift() {
@@ -522,12 +522,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<String> list = new LinkedList<String>([1,2,3])
         ''', 'Cannot call java.util.LinkedList#<init>(java.util.Collection <? extends java.lang.String>) with arguments [java.util.List <java.lang.Integer>]'
-    }
-
-    void testIncompatibleGenericAssignment() {
-        shouldFailWithMessages '''
-            List<String> elements = ['a','b', 1]
-        ''', 'Incompatible generic argument types. Cannot assign java.util.List <java.io.Serializable> to: java.util.List <String>'
     }
 
     void testGenericAssignmentWithSubClass() {
@@ -1134,23 +1128,23 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testAddAllWithCollectionShouldBeAllowed() {
         assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
             List<String> list = ['a','b','c']
-            Collection<String> e = list.findAll { it }
+            Collection<String> strings = list.findAll { it }
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def dmt = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                assert dmt.declaringClass.implementsInterface(LIST_TYPE)
                 assert dmt instanceof ExtensionMethodNode == false
                 assert dmt.name == 'addAll'
-                assert dmt.declaringClass == make(List)
             })
-            boolean r = list.addAll(e)
+            boolean r = list.addAll(strings)
         '''
     }
 
     void testAddAllWithCollectionShouldNotBeAllowed() {
         shouldFailWithMessages '''
             List<String> list = ['a','b','c']
-            Collection<Integer> e = (Collection<Integer>) [1,2,3]
-            boolean r = list.addAll(e)
-        ''', 'Cannot call java.util.List#addAll(java.util.Collection <? extends java.lang.String>) with arguments [java.util.Collection <Integer>]'
+            Collection<Integer> numbers = (Collection<Integer>) [1,2,3]
+            boolean r = list.addAll(numbers)
+        ''', 'Cannot call java.util.ArrayList#addAll(java.util.Collection <? extends java.lang.String>) with arguments [java.util.Collection <Integer>]'
     }
 
     // GROOVY-5528
@@ -1483,16 +1477,16 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         def test() {
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def type = node.getNodeMetaData(INFERRED_TYPE)
-                assert type == make(List)
-                assert type.genericsTypes.length==1
+                assert type.implementsInterface(LIST_TYPE)
+                assert type.genericsTypes.length == 1
                 assert type.genericsTypes[0].type == GSTRING_TYPE
             })
             List<GString> dates = ["${new Date()-1}", "${new Date()}", "${new Date()+1}"]
             dates*.toUpperCase()
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def type = node.getNodeMetaData(INFERRED_TYPE)
-                assert type == make(List)
-                assert type.genericsTypes.length==1
+                assert type.implementsInterface(LIST_TYPE)
+                assert type.genericsTypes.length == 1
                 assert type.genericsTypes[0].type == GSTRING_TYPE
             })
             List<GString> copied = []
