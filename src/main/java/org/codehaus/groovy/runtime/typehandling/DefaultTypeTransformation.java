@@ -244,20 +244,17 @@ public class DefaultTypeTransformation {
     }
 
     private static Object continueCastOnCollection(Object object, Class type) {
-        int modifiers = type.getModifiers();
-        Collection answer;
-        if (object instanceof Collection && type.isAssignableFrom(LinkedHashSet.class) &&
-                (type == LinkedHashSet.class || Modifier.isAbstract(modifiers) || Modifier.isInterface(modifiers))) {
+        if (object instanceof Collection && type.isAssignableFrom(LinkedHashSet.class)) {
             return new LinkedHashSet((Collection) object);
         }
+
         if (object.getClass().isArray()) {
-            if (type.isAssignableFrom(ArrayList.class) && (Modifier.isAbstract(modifiers) || Modifier.isInterface(modifiers))) {
+            Collection answer;
+            if (type.isAssignableFrom(ArrayList.class) && Modifier.isAbstract(type.getModifiers())) {
                 answer = new ArrayList();
-            } else if (type.isAssignableFrom(LinkedHashSet.class) && (Modifier.isAbstract(modifiers) || Modifier.isInterface(modifiers))) {
+            } else if (type.isAssignableFrom(LinkedHashSet.class) && Modifier.isAbstract(type.getModifiers())) {
                 answer = new LinkedHashSet();
             } else {
-                // let's call the collections constructor
-                // passing in the list wrapper
                 try {
                     answer = (Collection) type.getDeclaredConstructor().newInstance();
                 } catch (Exception e) {
@@ -267,9 +264,8 @@ public class DefaultTypeTransformation {
 
             // we cannot just wrap in a List as we support primitive type arrays
             int length = Array.getLength(object);
-            for (int i = 0; i < length; i++) {
-                Object element = Array.get(object, i);
-                answer.add(element);
+            for (int i = 0; i < length; i += 1) {
+                answer.add(Array.get(object, i));
             }
             return answer;
         }
