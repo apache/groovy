@@ -67,6 +67,7 @@ import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -140,10 +141,12 @@ public class ClassHelper {
 
             // uncached constants
             MAP_TYPE = makeWithoutCaching(Map.class),
+            SET_TYPE = makeWithoutCaching(Set.class),
             LIST_TYPE = makeWithoutCaching(List.class),
             Enum_Type = makeWithoutCaching(Enum.class),
             CLASS_Type = makeWithoutCaching(Class.class),
             TUPLE_TYPE = makeWithoutCaching(Tuple.class),
+            ITERABLE_TYPE = makeWithoutCaching(Iterable.class),
             REFERENCE_TYPE = makeWithoutCaching(Reference.class),
             COMPARABLE_TYPE = makeWithoutCaching(Comparable.class),
             GROOVY_OBJECT_TYPE = makeWithoutCaching(GroovyObject.class),
