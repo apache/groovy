@@ -236,6 +236,7 @@ import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
 import static org.codehaus.groovy.syntax.Types.PLUS_PLUS;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.ArrayList_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Collection_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.LinkedHashSet_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Matcher_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.NUMBER_OPS;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.UNKNOWN_PARAMETER_TYPE;
@@ -1274,7 +1275,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // constructor type : Dimension d = [100,200]
         // In that case, more checks can be performed
         if (!implementsInterfaceOrIsSubclassOf(LIST_TYPE, leftRedirect)
-                && (!leftRedirect.isAbstract() || leftRedirect.isArray())) {
+                && (!leftRedirect.isAbstract() || leftRedirect.isArray())
+                && !ArrayList_TYPE.isDerivedFrom(leftRedirect) && !LinkedHashSet_TYPE.isDerivedFrom(leftRedirect)) {
             ClassNode[] types = getArgumentTypes(args(((ListExpression) rightExpression).getExpressions()));
             MethodNode methodNode = checkGroovyStyleConstructor(leftRedirect, types, assignmentExpression);
             if (methodNode != null) {
@@ -1321,8 +1323,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private static boolean isConstructorAbbreviation(final ClassNode leftType, final Expression rightExpression) {
-        return (rightExpression instanceof ListExpression && !(leftType.equals(LIST_TYPE) || leftType.equals(SET_TYPE)
-                || leftType.equals(ITERABLE_TYPE) || leftType.equals(Collection_TYPE)));
+        if (rightExpression instanceof ListExpression) {
+            return !(ArrayList_TYPE.isDerivedFrom(leftType) || ArrayList_TYPE.implementsInterface(leftType)
+                    || LinkedHashSet_TYPE.isDerivedFrom(leftType) || LinkedHashSet_TYPE.implementsInterface(leftType));
+        }
+        return false;
     }
 
     protected void typeCheckAssignment(final BinaryExpression assignmentExpression, final Expression leftExpression, final ClassNode leftExpressionType, final Expression rightExpression, final ClassNode rightExpressionType) {
@@ -4514,8 +4519,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            if (rightExpression instanceof ListExpression && leftRedirect.equals(SET_TYPE)) {
-                return GenericsUtils.parameterizeType(right, leftRedirect.getPlainNodeReference());
+            if (rightExpression instanceof ListExpression && !leftRedirect.equals(OBJECT_TYPE)) {
+                if (LIST_TYPE.equals(leftRedirect)
+                        || ITERABLE_TYPE.equals(leftRedirect)
+                        || Collection_TYPE.equals(leftRedirect)
+                        || ArrayList_TYPE.isDerivedFrom(leftRedirect)) { // GROOVY-6912
+                    return GenericsUtils.parameterizeType(right, ArrayList_TYPE.getPlainNodeReference());
+                }
+                if (SET_TYPE.equals(leftRedirect)
+                        || LinkedHashSet_TYPE.isDerivedFrom(leftRedirect)) { // GROOVY-6912
+                    return GenericsUtils.parameterizeType(right, LinkedHashSet_TYPE.getPlainNodeReference());
+                }
             }
 
             return right;

@@ -163,7 +163,7 @@ public abstract class StaticTypeCheckingSupport {
     protected static final ClassNode ArrayList_TYPE = makeWithoutCaching(ArrayList.class);
     protected static final ClassNode Collection_TYPE = makeWithoutCaching(Collection.class);
     protected static final ClassNode Deprecated_TYPE = makeWithoutCaching(Deprecated.class);
-    protected static final ExtensionMethodCache EXTENSION_METHOD_CACHE = ExtensionMethodCache.INSTANCE;
+    protected static final ClassNode LinkedHashSet_TYPE = makeWithoutCaching(LinkedHashSet.class);
 
     protected static final Map<ClassNode, Integer> NUMBER_TYPES = Maps.of(
             byte_TYPE,    0,
@@ -237,6 +237,8 @@ public abstract class StaticTypeCheckingSupport {
             return 1;
         }
     };
+
+    protected static final ExtensionMethodCache EXTENSION_METHOD_CACHE = ExtensionMethodCache.INSTANCE;
 
     public static void clearExtensionMethodCache() {
         EXTENSION_METHOD_CACHE.cache.clearAll();
