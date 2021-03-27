@@ -205,7 +205,6 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.init;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
-import static org.codehaus.groovy.syntax.Types.ASSIGNMENT_OPERATOR;
 import static org.codehaus.groovy.syntax.Types.COMPARE_EQUAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_IDENTICAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_EQUAL;
@@ -282,7 +281,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static final AtomicLong UNIQUE_LONG = new AtomicLong();
 
     protected static final Object ERROR_COLLECTOR = ErrorCollector.class;
-    protected static final ClassNode ITERABLE_TYPE = ClassHelper.make(Iterable.class);
     protected static final List<MethodNode> EMPTY_METHODNODE_LIST = Collections.emptyList();
     protected static final ClassNode TYPECHECKED_CLASSNODE = ClassHelper.make(TypeChecked.class);
     protected static final ClassNode[] TYPECHECKING_ANNOTATIONS = new ClassNode[]{TYPECHECKED_CLASSNODE};
@@ -298,8 +296,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode LINKEDHASHMAP_CLASSNODE = ClassHelper.make(LinkedHashMap.class);
     protected static final ClassNode CLOSUREPARAMS_CLASSNODE = ClassHelper.make(ClosureParams.class);
     protected static final ClassNode NAMED_PARAMS_CLASSNODE = ClassHelper.make(NamedParams.class);
-    protected static final ClassNode MAP_ENTRY_TYPE = ClassHelper.make(Map.Entry.class);
     protected static final ClassNode ENUMERATION_TYPE = ClassHelper.make(Enumeration.class);
+    protected static final ClassNode MAP_ENTRY_TYPE = ClassHelper.make(Map.Entry.class);
+    protected static final ClassNode ITERABLE_TYPE = ClassHelper.make(Iterable.class);
+    private   static final ClassNode SET_TYPE = ClassHelper.make(Set.class);
 
     public static final Statement GENERATED_EMPTY_STATEMENT = new EmptyStatement();
 
@@ -1259,16 +1259,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private void addListAssignmentConstructorErrors(
-            ClassNode leftRedirect, ClassNode leftExpressionType,
-            ClassNode inferredRightExpressionType, Expression rightExpression,
-            Expression assignmentExpression) {
+    private void addListAssignmentConstructorErrors(final ClassNode leftRedirect, final ClassNode leftExpressionType, final ClassNode inferredRightExpressionType, final Expression rightExpression, final Expression assignmentExpression) {
         // if left type is not a list but right type is a list, then we're in the case of a groovy
         // constructor type : Dimension d = [100,200]
         // In that case, more checks can be performed
-        if (rightExpression instanceof ListExpression && !implementsInterfaceOrIsSubclassOf(LIST_TYPE, leftRedirect)) {
-            ArgumentListExpression argList = args(((ListExpression) rightExpression).getExpressions());
-            ClassNode[] args = getArgumentTypes(argList);
+        if (!implementsInterfaceOrIsSubclassOf(LIST_TYPE, leftRedirect)
+                && (!leftRedirect.isAbstract() || leftRedirect.isArray())) {
+            ClassNode[] args = getArgumentTypes(args(((ListExpression) rightExpression).getExpressions()));
             MethodNode methodNode = checkGroovyStyleConstructor(leftRedirect, args, assignmentExpression);
             if (methodNode != null) {
                 rightExpression.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, methodNode);
@@ -1283,7 +1280,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private void addMapAssignmentConstructorErrors(final ClassNode leftRedirect, final Expression leftExpression, final Expression rightExpression) {
-        if (!(rightExpression instanceof MapExpression) || (leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).isDynamicTyped())
+        if ((leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).isDynamicTyped())
                 || leftRedirect.equals(OBJECT_TYPE) || implementsInterfaceOrIsSubclassOf(leftRedirect, MAP_TYPE)) {
             return;
         }
@@ -1313,6 +1310,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return false;
     }
 
+    private static boolean isConstructorAbbreviation(final ClassNode leftType, final Expression rightExpression) {
+        return (rightExpression instanceof ListExpression && !(leftType.equals(LIST_TYPE) || leftType.equals(SET_TYPE)
+                || leftType.equals(ITERABLE_TYPE) || leftType.equals(Collection_TYPE)));
+    }
+
     protected void typeCheckAssignment(final BinaryExpression assignmentExpression, final Expression leftExpression, final ClassNode leftExpressionType, final Expression rightExpression, final ClassNode rightExpressionType) {
         if (!typeCheckMultipleAssignmentAndContinue(leftExpression, rightExpression)) return;
 
@@ -1334,9 +1336,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else {
             ClassNode lTypeRedirect = leftExpressionType.redirect();
             addPrecisionErrors(lTypeRedirect, leftExpressionType, rTypeAdjusted, rightExpression);
-            addListAssignmentConstructorErrors(lTypeRedirect, leftExpressionType, rTypeInferred, rightExpression, assignmentExpression);
-            addMapAssignmentConstructorErrors(lTypeRedirect, leftExpression, rightExpression);
-            if (!hasGStringStringError(leftExpressionType, rTypeAdjusted, rightExpression)) {
+            if (rightExpression instanceof ListExpression) {
+                addListAssignmentConstructorErrors(lTypeRedirect, leftExpressionType, rTypeInferred, rightExpression, assignmentExpression);
+            } else if (rightExpression instanceof MapExpression) {
+                addMapAssignmentConstructorErrors(lTypeRedirect, leftExpression, rightExpression);
+            }
+            if (!hasGStringStringError(leftExpressionType, rTypeAdjusted, rightExpression)
+                    && !isConstructorAbbreviation(leftExpressionType, rightExpression)) {
                 checkTypeGenerics(leftExpressionType, rTypeAdjusted, rightExpression);
             }
         }
@@ -4378,32 +4384,23 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    protected ClassNode getResultType(ClassNode left, int op, ClassNode right, BinaryExpression expr) {
+    protected ClassNode getResultType(ClassNode left, final int op, final ClassNode right, final BinaryExpression expr) {
         ClassNode leftRedirect = left.redirect();
         ClassNode rightRedirect = right.redirect();
 
         Expression leftExpression = expr.getLeftExpression();
         Expression rightExpression = expr.getRightExpression();
 
-        if (op == ASSIGN || op == ASSIGNMENT_OPERATOR) {
-            if (leftRedirect.isArray() && implementsInterfaceOrIsSubclassOf(rightRedirect, Collection_TYPE))
-                return leftRedirect;
-            if (leftRedirect.implementsInterface(Collection_TYPE) && rightRedirect.implementsInterface(Collection_TYPE)) {
-                // because of type inferrence, we must perform an additional check if the right expression
-                // is an empty list expression ([]). In that case and only in that case, the inferred type
-                // will be wrong, so we will prefer the left type
-                if (rightExpression instanceof ListExpression) {
-                    List<Expression> list = ((ListExpression) rightExpression).getExpressions();
-                    if (list.isEmpty()) return left;
+        if (op == ASSIGN) {
+            if (leftRedirect.isArray() && rightRedirect.implementsInterface(Collection_TYPE)) {
+                return left;
+            }
+
+            if (rightExpression instanceof ClosureExpression && rightRedirect.isDerivedFrom(CLOSURE_TYPE)) {
+                MethodNode abstractMethod = findSAM(left);
+                if (abstractMethod != null) {
+                    return inferSAMTypeGenericsInAssignment(left, abstractMethod, right, (ClosureExpression) rightExpression);
                 }
-                return right;
-            }
-            if (rightRedirect.implementsInterface(Collection_TYPE) && rightRedirect.isDerivedFrom(leftRedirect)) {
-                // ex : def foos = ['a','b','c']
-                return right;
-            }
-            if (rightExpression instanceof ClosureExpression && rightRedirect.isDerivedFrom(CLOSURE_TYPE) && isSAMType(leftRedirect)) {
-                return inferSAMTypeGenericsInAssignment(left, findSAM(left), right, (ClosureExpression) rightExpression);
             }
 
             if (leftExpression instanceof VariableExpression) {
@@ -4418,21 +4415,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
 
                 // as anything can be assigned to a String, Class or [Bb]oolean, return the left type instead
-                if (STRING_TYPE.equals(initialType)
-                        || CLASS_Type.equals(initialType)
-                        || Boolean_TYPE.equals(initialType)
-                        || boolean_TYPE.equals(initialType)) {
+                if (isWildcardLeftHandSide(initialType) && !initialType.equals(OBJECT_TYPE)) {
                     return initialType;
                 }
             }
+
+            if (rightExpression instanceof ListExpression && leftRedirect.equals(SET_TYPE)) {
+                return GenericsUtils.parameterizeType(right, leftRedirect.getPlainNodeReference());
+            }
+
             return right;
         }
-        if (isBoolIntrinsicOp(op)) {
-            return boolean_TYPE;
-        }
+
         if (op == FIND_REGEX) {
             // this case always succeeds the result is a Matcher
             return Matcher_TYPE;
+        }
+
+        if (isBoolIntrinsicOp(op)) {
+            return boolean_TYPE;
         }
 
         if (isArrayOp(op)) {
@@ -4480,7 +4481,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return null;
     }
 
-    private ClassNode getMathResultType(int op, ClassNode leftRedirect, ClassNode rightRedirect, String operationName) {
+    private static ClassNode getMathResultType(int op, ClassNode leftRedirect, ClassNode rightRedirect, String operationName) {
         if (isNumberType(leftRedirect) && isNumberType(rightRedirect)) {
             if (isOperationInGroup(op)) {
                 if (isIntCategory(leftRedirect) && isIntCategory(rightRedirect)) return int_TYPE;

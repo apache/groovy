@@ -208,7 +208,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testInlineMap() {
-
         assertScript '''
             Map map = [a:1, b:2]
         '''
@@ -324,7 +323,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             class FooAnother {
-
             }
         ''',
         'Cannot assign value of type Foo[] to variable of type FooAnother'
@@ -640,5 +638,70 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             }
             assert meth().toSet() == ['pls', 'bar'].toSet()
         '''
+    }
+
+    void testAbstractTypeInitializedByListLiteral() {
+        shouldFailWithMessages '''
+            abstract class A {
+                A(int n) {}
+            }
+            A a = [1]
+        ''',
+        'Cannot assign value of type java.util.List <java.lang.Integer> to variable of type A'
+    }
+
+    void testCollectionTypesInitializedByListLiteral1() {
+        assertScript '''
+            Set<String> set = []
+            set << 'foo'
+            set << 'bar'
+            set << 'foo'
+            assert set.size() == 2
+        '''
+    }
+
+    // GROOVY-10002
+    void testCollectionTypesInitializedByListLiteral2() {
+        assertScript '''
+            Set<String> set = ['foo', 'bar', 'foo']
+            assert set.size() == 2
+        '''
+
+        assertScript '''
+            ArrayDeque<String> deque = [123] // ArrayDeque(int numElements)
+        '''
+    }
+
+    // GROOVY-10002
+    void testCollectionTypesInitializedByListLiteral3() {
+        shouldFailWithMessages '''
+            Set<String> set = [1,2,3]
+        ''',
+        'Cannot assign java.util.Set <java.lang.Integer> to: java.util.Set <String>'
+
+        shouldFailWithMessages '''
+            Iterable<String> iter = [1,2,3]
+        ''',
+        'Cannot assign java.util.List <java.lang.Integer> to: java.lang.Iterable <String>'
+
+        shouldFailWithMessages '''
+            Collection<String> coll = [1,2,3]
+        ''',
+        'Cannot assign java.util.List <java.lang.Integer> to: java.util.Collection <String>'
+
+        shouldFailWithMessages '''
+            Deque<String> deque = [""]
+        ''',
+        'Cannot assign value of type java.util.List', ' to variable of type java.util.Deque <String>'
+
+        shouldFailWithMessages '''
+            Deque<String> deque = []
+        ''',
+        'Cannot assign value of type java.util.List', ' to variable of type java.util.Deque <String>'
+
+        shouldFailWithMessages '''
+            Queue<String> queue = []
+        ''',
+        'Cannot assign value of type java.util.List', ' to variable of type java.util.Queue <String>'
     }
 }
