@@ -1586,7 +1586,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 println arg1 == arg2
             }
             printEqual(1, ['foo'])
-        ''', '#printEqual(T, java.util.List <T>) with arguments [int, java.util.List <java.lang.String>]'
+        ''', '#printEqual(T, java.util.List <T>) with arguments [int, java.util.ArrayList <java.lang.String>]'
     }
 
     // GROOVY-9902
@@ -1854,7 +1854,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 static <T extends List<? extends CharSequence>> void bar(T a) {}
             }
             Foo.bar([new Object()])
-        ''', 'Cannot call <T extends java.util.List<? extends java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.List <java.lang.Object>]'
+        ''', 'Cannot call <T extends java.util.List<? extends java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.ArrayList <java.lang.Object>]'
     }
 
     void testOutOfBoundsBySuperGenericParameterType() {
@@ -1863,7 +1863,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 static <T extends List<? super CharSequence>> void bar(T a) {}
             }
             Foo.bar(['abc'])
-        ''', 'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.List <java.lang.String>]'
+        ''', 'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.ArrayList <java.lang.String>]'
     }
 
     void testOutOfBoundsByExtendsPlaceholderParameterType() {

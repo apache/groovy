@@ -232,7 +232,7 @@ class BuilderTransformTest extends CompilableTestSupport {
                 CookBook.builder().recipes([35, 42]).build()
             }
         '''
-        assert message =~ /.*Cannot call.*recipes.*java.util.List\s?<java.lang.String>.*with arguments.*java.util.List\s?<java.lang.Integer>.*/
+        assert message =~ /.*Cannot call.*recipes.*java.util.List\s?<java.lang.String>.*with arguments.*java.util.(Array)?List\s?<java.lang.Integer>.*/
     }
 
     void testInitializerGenerics() {
@@ -261,7 +261,7 @@ class BuilderTransformTest extends CompilableTestSupport {
                 new CookBook(CookBook.createInitializer().recipes([35, 42]))
             }
         '''
-        assert message =~ /.*Cannot call.*recipes.*java.util.List\s?<java.lang.String>.*with arguments.*java.util.List\s?<java.lang.Integer>.*/
+        assert message =~ /.*Cannot call.*recipes.*java.util.List\s?<java.lang.String>.*with arguments.*java.util.(Array)?List\s?<java.lang.Integer>.*/
     }
 
     void testDefaultBuilderCustomNames() {

@@ -741,4 +741,19 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             assert set.last() == 3
         '''
     }
+
+    void testMapWithTypeArgumentsInitializedByMapLiteral() {
+        ['CharSequence,Integer', 'String,Number', 'CharSequence,Number'].each { spec ->
+            assertScript """
+                Map<$spec> map = [a:1,b:2,c:3]
+                assert map.size() == 3
+                assert map['c'] == 3
+                assert 'x' !in map
+            """
+        }
+
+        shouldFailWithMessages '''
+            Map<String,Integer> map = [1:2]
+        ''', 'Cannot assign java.util.LinkedHashMap <java.lang.Integer, java.lang.Integer> to: java.util.Map <String, Integer>'
+    }
 }

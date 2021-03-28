@@ -57,6 +57,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -162,6 +163,7 @@ public abstract class StaticTypeCheckingSupport {
     protected static final ClassNode ArrayList_TYPE = makeWithoutCaching(ArrayList.class);
     protected static final ClassNode Collection_TYPE = makeWithoutCaching(Collection.class);
     protected static final ClassNode Deprecated_TYPE = makeWithoutCaching(Deprecated.class);
+    protected static final ClassNode LinkedHashMap_TYPE = makeWithoutCaching(LinkedHashMap.class);
     protected static final ClassNode LinkedHashSet_TYPE = makeWithoutCaching(LinkedHashSet.class);
 
     protected static final Map<ClassNode, Integer> NUMBER_TYPES = Maps.of(
@@ -1451,15 +1453,12 @@ public abstract class StaticTypeCheckingSupport {
         Set<GenericsTypeName> fixedGenericsPlaceHolders = extractResolvedPlaceHolders(resolvedMethodGenerics);
 
         for (int i = 0, n = argumentTypes.length; i < n; i += 1) {
-            int pindex = min(i, parameters.length - 1);
-            ClassNode wrappedArgument = argumentTypes[i];
-            ClassNode type = parameters[pindex].getOriginType();
+            ClassNode argumentType = argumentTypes[i], parameterType = parameters[min(i, parameters.length - 1)].getOriginType();
+            failure |= inferenceCheck(fixedGenericsPlaceHolders, resolvedMethodGenerics, parameterType, argumentType, i >= parameters.length - 1);
 
-            failure = failure || inferenceCheck(fixedGenericsPlaceHolders, resolvedMethodGenerics, type, wrappedArgument, i >= parameters.length - 1);
-
-            // set real fixed generics for extension methods
-            if (isExtensionMethod && i == 0)
+            if (i == 0 && isExtensionMethod) { // set real fixed generics for extension methods
                 fixedGenericsPlaceHolders = extractResolvedPlaceHolders(resolvedMethodGenerics);
+            }
         }
         return !failure;
     }

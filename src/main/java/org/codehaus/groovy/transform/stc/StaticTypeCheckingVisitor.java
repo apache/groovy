@@ -133,7 +133,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiPredicate;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.apache.groovy.util.BeanUtils.decapitalize;
@@ -228,6 +230,7 @@ import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
 import static org.codehaus.groovy.syntax.Types.PLUS_PLUS;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.ArrayList_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Collection_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.LinkedHashMap_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.LinkedHashSet_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Matcher_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.NUMBER_OPS;
@@ -319,9 +322,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final MethodNode GET_THISOBJECT = CLOSURE_TYPE.getGetterMethod("getThisObject");
     protected static final ClassNode DELEGATES_TO = ClassHelper.make(DelegatesTo.class);
     protected static final ClassNode DELEGATES_TO_TARGET = ClassHelper.make(DelegatesTo.Target.class);
-    protected static final ClassNode LINKEDHASHMAP_CLASSNODE = ClassHelper.make(LinkedHashMap.class);
     protected static final ClassNode CLOSUREPARAMS_CLASSNODE = ClassHelper.make(ClosureParams.class);
     protected static final ClassNode NAMED_PARAMS_CLASSNODE = ClassHelper.make(NamedParams.class);
+    @Deprecated protected static final ClassNode LINKEDHASHMAP_CLASSNODE = LinkedHashMap_TYPE;
     protected static final ClassNode ENUMERATION_TYPE = ClassHelper.make(Enumeration.class);
     protected static final ClassNode MAP_ENTRY_TYPE = ClassHelper.make(Map.Entry.class);
     protected static final ClassNode ITERABLE_TYPE = ClassHelper.ITERABLE_TYPE;
@@ -1279,6 +1282,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return !(ArrayList_TYPE.isDerivedFrom(leftType) || ArrayList_TYPE.implementsInterface(leftType)
                     || LinkedHashSet_TYPE.isDerivedFrom(leftType) || LinkedHashSet_TYPE.implementsInterface(leftType));
         }
+        if (rightExpression instanceof MapExpression) {
+            return !(LinkedHashMap_TYPE.isDerivedFrom(leftType) || LinkedHashMap_TYPE.implementsInterface(leftType));
+        }
         return false;
     }
 
@@ -1390,9 +1396,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         List<MethodNode> constructorList = findMethod(node, "<init>", arguments);
         if (constructorList.isEmpty()) {
-            if (isBeingCompiled(node) && arguments.length == 1 && LINKEDHASHMAP_CLASSNODE.equals(arguments[0])) {
+            if (isBeingCompiled(node) && arguments.length == 1 && LinkedHashMap_TYPE.equals(arguments[0])) {
                 // there will be a default hash map constructor added later
-                ConstructorNode cn = new ConstructorNode(Opcodes.ACC_PUBLIC, new Parameter[]{new Parameter(LINKEDHASHMAP_CLASSNODE, "args")}, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+                ConstructorNode cn = new ConstructorNode(Opcodes.ACC_PUBLIC, new Parameter[]{new Parameter(LinkedHashMap_TYPE, "args")}, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
                 return cn;
             } else {
                 addStaticTypeError("No matching constructor found: " + node + toMethodParametersString("<init>", arguments), source);
@@ -2646,7 +2652,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 mn = findMethod(currentReceiver.getType(), name, args);
                 if (!mn.isEmpty()) {
                     if (mn.size() == 1) {
-                        // GROOVY-8961, GROOVY-9734, GROOVY-9915
+                        // GROOVY-8909, GROOVY-8961, GROOVY-9734, GROOVY-9844, GROOVY-9915, etc.
                         resolvePlaceholdersFromImplicitTypeHints(args, argumentList, mn.get(0));
                         typeCheckMethodsWithGenericsOrFail(currentReceiver.getType(), args, mn.get(0), call);
                     }
@@ -3527,7 +3533,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 returnType = typeCheckingContext.getEnclosingClassNode();
                             }
                         }
-                        // GROOVY-8961, GROOVY-9734
+                        // GROOVY-7106, GROOVY-7274, GROOVY-8909, GROOVY-8961, GROOVY-9734, GROOVY-9844, et al.
                         resolvePlaceholdersFromImplicitTypeHints(args, argumentList, directMethodCallCandidate);
                         if (typeCheckMethodsWithGenericsOrFail(chosenReceiver.getType(), args, directMethodCallCandidate, call)) {
                             returnType = adjustWithTraits(directMethodCallCandidate, chosenReceiver.getType(), args, returnType);
@@ -4363,16 +4369,24 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            if (rightExpression instanceof ListExpression && !leftRedirect.equals(OBJECT_TYPE)) {
-                if (LIST_TYPE.equals(leftRedirect)
-                        || ITERABLE_TYPE.equals(leftRedirect)
-                        || Collection_TYPE.equals(leftRedirect)
-                        || ArrayList_TYPE.isDerivedFrom(leftRedirect)) { // GROOVY-6912
-                    return getLiteralResultType(left, right, ArrayList_TYPE); // GROOVY-7128
+            if (!leftRedirect.equals(OBJECT_TYPE)) {
+                if (rightExpression instanceof ListExpression) {
+                    if (LIST_TYPE.equals(leftRedirect)
+                            || ITERABLE_TYPE.equals(leftRedirect)
+                            || Collection_TYPE.equals(leftRedirect)
+                            || ArrayList_TYPE.isDerivedFrom(leftRedirect)) { // GROOVY-6912
+                        return getLiteralResultType(left, right, ArrayList_TYPE); // GROOVY-7128
+                    }
+                    if (SET_TYPE.equals(leftRedirect)
+                            || LinkedHashSet_TYPE.isDerivedFrom(leftRedirect)) { // GROOVY-6912
+                        return getLiteralResultType(left, right, LinkedHashSet_TYPE); // GROOVY-7128
+                    }
                 }
-                if (SET_TYPE.equals(leftRedirect)
-                        || LinkedHashSet_TYPE.isDerivedFrom(leftRedirect)) { // GROOVY-6912
-                    return getLiteralResultType(left, right, LinkedHashSet_TYPE); // GROOVY-7128
+                if (rightExpression instanceof MapExpression) {
+                    if (MAP_TYPE.equals(leftRedirect)
+                            || LinkedHashMap_TYPE.isDerivedFrom(leftRedirect)) {
+                        return getLiteralResultType(left, right, LinkedHashMap_TYPE); // GROOVY-7128, GROOVY-9844
+                    }
                 }
             }
 
@@ -4430,15 +4444,24 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * the literal may be composed of sub-types of {@code Type}. In these cases,
      * {@code ArrayList<Type>} is an appropriate result type for the expression.
      */
-    private ClassNode getLiteralResultType(final ClassNode targetType, final ClassNode sourceType, final ClassNode baseType) {
+    private static ClassNode getLiteralResultType(final ClassNode targetType, final ClassNode sourceType, final ClassNode baseType) {
         ClassNode resultType = sourceType.equals(baseType) ? sourceType
                 : GenericsUtils.parameterizeType(sourceType, baseType.getPlainNodeReference());
 
         if (targetType.getGenericsTypes() != null
                 && !GenericsUtils.buildWildcardType(targetType).isCompatibleWith(resultType)) {
+            BiPredicate<GenericsType, GenericsType> isEqualOrSuper = (target, source) -> {
+                if (target.isCompatibleWith(source.getType())) {
+                    return true;
+                }
+                if (!target.isPlaceholder() && !target.isWildcard()) {
+                    return GenericsUtils.buildWildcardType(getCombinedBoundType(target)).isCompatibleWith(source.getType());
+                }
+                return false;
+            };
+
             GenericsType[] lgt = targetType.getGenericsTypes(), rgt = resultType.getGenericsTypes();
-            if (!lgt[0].isPlaceholder() && !lgt[0].isWildcard() && GenericsUtils.buildWildcardType(
-                    getCombinedBoundType(lgt[0])).isCompatibleWith(getCombinedBoundType(rgt[0]))) {
+            if (IntStream.range(0, lgt.length).allMatch(i -> isEqualOrSuper.test(lgt[i], rgt[i]))) {
                 resultType = GenericsUtils.parameterizeType(targetType, baseType.getPlainNodeReference());
             }
         }
@@ -4446,7 +4469,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return resultType;
     }
 
-    private ClassNode getMathResultType(final int op, final ClassNode leftRedirect, final ClassNode rightRedirect, final String operationName) {
+    private static ClassNode getMathResultType(final int op, final ClassNode leftRedirect, final ClassNode rightRedirect, final String operationName) {
         if (isNumberType(leftRedirect) && isNumberType(rightRedirect)) {
             if (isOperationInGroup(op)) {
                 if (isIntCategory(leftRedirect) && isIntCategory(rightRedirect)) return int_TYPE;
@@ -5145,7 +5168,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected ClassNode inferMapExpressionType(final MapExpression map) {
-        ClassNode mapType = LINKEDHASHMAP_CLASSNODE.getPlainNodeReference();
+        ClassNode mapType = LinkedHashMap_TYPE.getPlainNodeReference();
         List<MapEntryExpression> entryExpressions = map.getMapEntryExpressions();
         int nExpressions = entryExpressions.size();
         if (nExpressions == 0) return mapType;
@@ -5293,23 +5316,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * method target of "m", {@code T} could be resolved.
      */
     private static void resolvePlaceholdersFromImplicitTypeHints(final ClassNode[] actuals, final ArgumentListExpression argumentList, final MethodNode inferredMethod) {
-        for (int i = 0, n = actuals.length; i < n; i += 1) {
-            // check for method call with known target
+        int np = inferredMethod.getParameters().length;
+        for (int i = 0, n = actuals.length; np > 0 && i < n; i += 1) {
             Expression a = argumentList.getExpression(i);
+            Parameter p = inferredMethod.getParameters()[Math.min(i, np - 1)];
+
+            ClassNode at = actuals[i], pt = p.getOriginType();
+            if (i >= (np - 1) && pt.isArray() && !at.isArray()) pt = pt.getComponentType();
+
+            if (a instanceof ListExpression) {
+                actuals[i] = getLiteralResultType(pt, at, ArrayList_TYPE);
+            } else if (a instanceof MapExpression) {
+                actuals[i] = getLiteralResultType(pt, at, LinkedHashMap_TYPE);
+            }
+
+            // check for method call with known target
             if (!(a instanceof MethodCallExpression)) continue;
             if (((MethodCallExpression) a).isUsingGenerics()) continue;
             MethodNode aNode = a.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
             if (aNode == null || aNode.getGenericsTypes() == null) continue;
 
             // and unknown generics
-            ClassNode at = actuals[i];
             if (!GenericsUtils.hasUnresolvedGenerics(at)) continue;
-
-            int np = inferredMethod.getParameters().length;
-            Parameter p = inferredMethod.getParameters()[Math.min(i, np - 1)];
-
-            ClassNode pt = p.getOriginType();
-            if (i >= (np - 1) && pt.isArray() && !at.isArray()) pt = pt.getComponentType();
 
             // try to resolve placeholder(s) in argument type using parameter type
 
