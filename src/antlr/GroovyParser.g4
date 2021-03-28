@@ -980,11 +980,11 @@ dynamicMemberName
  *  The brackets may also be empty, as in T[].  This is how Groovy names array types.
  */
 indexPropertyArgs
-    :   QUESTION? LBRACK expressionList[true]? RBRACK
+    :   (SAFE_INDEX | LBRACK) expressionList[true]? RBRACK
     ;
 
 namedPropertyArgs
-    :   QUESTION? LBRACK (namedPropertyArgList | COLON) RBRACK
+    :   (SAFE_INDEX | LBRACK) (namedPropertyArgList | COLON) RBRACK
     ;
 
 primary
