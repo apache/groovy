@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException
+
 /**
  * Unit tests for static type checking : constructors.
  */
@@ -121,23 +123,7 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testConstructMap() {
-        assertScript '''
-            def a = [:]
-            assert a instanceof Map
-
-            Map b = [:]
-            assert b instanceof Map
-
-            Object c = [:]
-            assert c instanceof Map
-
-            HashMap d = [:]
-            assert d instanceof HashMap
-        '''
-    }
-
-    void testConstructFromValuedMap() {
+    void testConstructFromValuedMap1() {
         assertScript '''
             class A {
                 int x
@@ -146,6 +132,48 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
             A a = [x:100, y:200]
             assert a.x == 100
             assert a.y == 200
+        '''
+    }
+
+    void testConstructFromValuedMap2() {
+        assertScript '''
+            class A<B,C> {
+                int x
+                int y
+            }
+            A<Number,String> a = [x:100, y:200]
+            assert a.x == 100
+            assert a.y == 200
+        '''
+    }
+
+    void testMapLiteral() {
+        assertScript '''
+            def m = [:]
+            assert m instanceof Map
+        '''
+        assertScript '''
+            Map m = [:]
+            assert m instanceof Map
+        '''
+        assertScript '''
+            Object m = [:]
+            assert m instanceof Map
+        '''
+        assertScript '''
+            HashMap m = [:]
+            assert m instanceof HashMap
+        '''
+        assertScript '''
+            LinkedHashMap m = [:]
+            assert m instanceof LinkedHashMap
+        '''
+
+        shouldFail GroovyCastException, '''
+            EnumMap m = [:] // constructor fails on empty map
+        '''
+        shouldFail GroovyCastException, '''
+            SortedMap m = [:] // no constructor for interface
         '''
     }
 
