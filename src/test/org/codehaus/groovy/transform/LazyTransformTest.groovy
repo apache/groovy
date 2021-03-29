@@ -164,6 +164,30 @@ class LazyTransformTest extends GroovyShellTestCase {
         assert message.contains("You cannot lazily initialize 'foo' from the abstract class 'Foo'")
     }
 
+    void testClassWithExplicitGetterForLazyFieldShouldNotCompile() {
+        def message = shouldFail {
+            new GroovyShell().run('''
+            class Animal {
+                @Lazy String name = { 'sloth' }()
+                String getName() {}
+            }
+            ''', 'dummyFileName', [])
+        }
+        assert message.contains("Error during @Lazy processing: invalid explicit getter 'getName' found")
+    }
+
+    void testClassWithExplicitSetterForLazyFieldShouldNotCompile() {
+        def message = shouldFail {
+            new GroovyShell().run('''
+            class Animal {
+                @Lazy String name = { 'sloth' }()
+                void setName(String name) {}
+            }
+            ''', 'dummyFileName', [])
+        }
+        assert message.contains("Error during @Lazy processing: invalid explicit setter 'setName' found")
+    }
+
     void testSoft() {
         def res = evaluate("""
               class X {
