@@ -302,7 +302,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             assert B.m() == 0
         '''
         def b = astTrees['B'][1]
-        assert  b.contains('GETSTATIC p/A.x')
+        assert  b.contains('GETSTATIC B.x')
         assert !b.contains('INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.getGroovyObjectProperty')
     }
 
@@ -845,6 +845,20 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
                public List<String> getFooNames() { fooNames }
             }
             assert new A(['foo1', 'foo2']).fooNames.size() == 2
+        '''
+    }
+
+    @Override // GROOVY-9955
+    void testStaticPropertyWithInheritanceFromAnotherSourceUnit() {
+        assertScript '''
+            import groovy.transform.stc.FieldsAndPropertiesSTCTest.Public
+          //assert Public.answer == 42
+            assert Public.CONST == 'XX'
+            assert Public.VALUE == null
+            Public.VALUE = 'YY'
+            assert Public.VALUE == 'YY'
+            Public.@VALUE = 'ZZ'
+            assert Public.@VALUE == 'ZZ'
         '''
     }
 }
