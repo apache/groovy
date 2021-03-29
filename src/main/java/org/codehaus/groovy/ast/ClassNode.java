@@ -1311,8 +1311,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     private boolean hasExactMatchingCompatibleType(MethodNode current, MethodNode newCandidate, int i) {
         int lastParamIndex = newCandidate.getParameters().length - 1;
-        return current.getParameters()[i].getType().equals(newCandidate.getParameters()[i].getType())
-                || (isPotentialVarArg(newCandidate, lastParamIndex) && i >= lastParamIndex && current.getParameters()[i].getType().equals(newCandidate.getParameters()[lastParamIndex].getType().componentType));
+        return (i <= lastParamIndex && current.getParameters()[i].getType().equals(newCandidate.getParameters()[i].getType()))
+                || (i >= lastParamIndex && isPotentialVarArg(newCandidate, lastParamIndex) && current.getParameters()[i].getType().equals(newCandidate.getParameters()[lastParamIndex].getType().componentType));
     }
 
     private boolean hasCompatibleType(TupleExpression args, MethodNode method, int i) {
