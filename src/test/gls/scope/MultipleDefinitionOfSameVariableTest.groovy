@@ -23,68 +23,68 @@ import gls.CompilableTestSupport
 class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
 
     void testInSameBlock() {
-        shouldNotCompile """
+        shouldNotCompile '''
             def foo = 1
             def foo = 2
-        """
+        '''
 
-        shouldNotCompile """
+        shouldNotCompile '''
             class Foo {
                 def foo() {
                     def bar=1
                     def bar=2
                 }
             }
-        """
+        '''
     }
 
     void testInSubBlocks() {
-        shouldNotCompile """
+        shouldNotCompile '''
              def foo = 1
              5.times { def foo=2 }
-        """
+        '''
 
-        shouldNotCompile """
+        shouldNotCompile '''
             def foo = 1
             label1: { def foo=2 }
-        """
+        '''
 
-        shouldNotCompile """
+        shouldNotCompile '''
             def foo = 1
             for (i in []) { def foo=2 }
-        """
+        '''
 
-        shouldNotCompile """
+        shouldNotCompile '''
             def foo = 1
             while (true) { def foo=2 }
-        """
+        '''
     }
 
     void testInNestedClosure() {
-        shouldNotCompile """
+        shouldNotCompile '''
             def foo = 1
             5.times { 6.times {def foo=2 }
-        """
+        '''
 
-        assertScript """
+        assertScript '''
             def foo = 1
             5.times { 6.times {foo=2 } }
             assert foo == 2
-        """
+        '''
     }
 
     void testBindingHiding() {
-        assertScript """
+        assertScript '''
             foo = 1
             def foo = 3
             assert foo==3
             assert this.foo == 1
             assert binding.foo == 1
-        """
+        '''
     }
 
     void testBindingAccessInMethod() {
-        assertScript """
+        assertScript '''
             def methodUsingBinding() {
                 try {
                     s = "  bbb  ";
@@ -95,72 +95,72 @@ class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
             }
             methodUsingBinding()
             assert s == "bbb"
-        """
+        '''
     }
 
     void testMultipleOfSameName() {
-        shouldNotCompile """
+        shouldNotCompile '''
             class DoubleField {
                 def zero = 0
                 def zero = 0
             }
-        """
+        '''
     }
 
     void testPropertyField() {
-        shouldCompile """
+        shouldCompile '''
             class A {
                 def foo
                 private foo
             }
-        """
+        '''
     }
 
     void testPropertyFieldBothInit() {
-        shouldNotCompile """
+        shouldNotCompile '''
             class A {
                 def foo = 3
                 private foo = 4
             }
-        """
+        '''
     }
 
     void testFieldProperty() {
-        shouldCompile """
+        shouldCompile '''
             class A {
                 private foo
                 def foo
             }
-        """
+        '''
     }
 
     void testFieldPropertyBothInit() {
-        shouldNotCompile """
+        shouldNotCompile '''
             class A {
                 private foo = 'a'
                 def foo = 'b'
             }
-        """
+        '''
     }
 
     void testFieldPropertyProperty() {
-        shouldNotCompile """
+        shouldNotCompile '''
             class A {
                 private foo
                 def foo
                 def foo
             }
-        """
+        '''
     }
 
     void testPropertyFieldField() {
-        shouldNotCompile """
+        shouldNotCompile '''
             class A {
                 def foo
                 private foo
                 private foo
             }
-        """
+        '''
     }
 
 }
