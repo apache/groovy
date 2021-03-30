@@ -216,7 +216,9 @@ public class AsmClassGenerator extends ClassGenerator {
     // type conversions
     private static final MethodCaller createMapMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createMap");
     private static final MethodCaller createListMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createList");
-    private static final MethodCaller createRangeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createRange");
+    // The 3-parameter version of createRange is kept in for backwards compatibility, so we need to specify the
+    // parameter count here
+    private static final MethodCaller createRangeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createRange", 4);
     private static final MethodCaller createPojoWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createPojoWrapper");
     private static final MethodCaller createGroovyObjectWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createGroovyObjectWrapper");
 
@@ -1526,10 +1528,11 @@ public class AsmClassGenerator extends ClassGenerator {
         operandStack.box();
         expression.getTo().visit(this);
         operandStack.box();
-        operandStack.pushBool(expression.isInclusive());
+        operandStack.pushBool(expression.isExclusiveLeft());
+        operandStack.pushBool(expression.isExclusiveRight());
 
         createRangeMethod.call(controller.getMethodVisitor());
-        operandStack.replace(ClassHelper.RANGE_TYPE, 3);
+        operandStack.replace(ClassHelper.RANGE_TYPE, 4);
     }
 
     @Override

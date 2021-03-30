@@ -635,7 +635,8 @@ public class ScriptBytecodeAdapter {
         return InvokerHelper.createMap(values);
     }
 
-    public static List createRange(Object from, Object to, boolean inclusive) throws Throwable {
+    public static List createRange(Object from, Object to, boolean exclusiveLeft, boolean exclusiveRight) throws Throwable {
+        boolean inclusive = !exclusiveRight;
         if (from instanceof Integer && to instanceof Integer) {
             int ifrom = (Integer) from;
             int ito = (Integer) to;
@@ -658,6 +659,11 @@ public class ScriptBytecodeAdapter {
         }
 
         return new ObjectRange((Comparable) from, (Comparable) to);
+    }
+
+    // Kept in for backwards compatibility
+    public static List createRange(Object from, Object to, boolean inclusive) throws Throwable {
+        return createRange(from, to, false, !inclusive);
     }
 
     @SuppressWarnings("unchecked")
