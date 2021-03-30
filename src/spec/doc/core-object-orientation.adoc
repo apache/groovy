@@ -701,7 +701,7 @@ include::../test/ClassTest.groovy[tags=property_access,indent=0]
 <3> write access to the property is done outside of the `Person` class so it will implicitly call `setName`
 <4> read access to the property is done outside of the `Person` class so it will implicitly call `getName`
 <5> this will call the `name` method on `Person` which performs a direct access to the field
-<6> this will call the `wonder` method on `Person` which performs a direct read access to the field
+<6> this will call the `title` method on `Person` which performs a direct read access to the field
 
 It is worth noting that this behavior of accessing the backing field directly is done in order to prevent a stack
 overflow when using the property access syntax within a class that defines the property.
@@ -729,8 +729,9 @@ This syntactic sugar is at the core of many DSLs written in Groovy.
 
 ===== Property naming conventions
 
-It is generally recommended that the first two letters of a property name are lowercase and for multiword properties
-that camel case is used. In those cases, generated getters and setters will have a name formed by capitalizing the
+It is generally recommended that the first two letters of a property name are
+lowercase and for multi-word properties that camel case is used.
+In those cases, generated getters and setters will have a name formed by capitalizing the
 property name and adding a `get` or `set` prefix (or optionally "is" for a boolean getter).
 So, `getLength` would be a getter  for a `length` property and `setFirstName` a setter for a `firstName` property.
 `isEmpty` might be the getter method name for a property named `empty`.
@@ -761,6 +762,75 @@ Although we _never_ recommend it, it does allow you to have what might seem like
 e.g. you can have `aProp` and `AProp`, or `pNAME` and `PNAME`. The getters would be `getaProp` and `getAProp`,
 and `getpNAME` and `getPNAME` respectively.
 ====
+
+===== Annotations on a property
+
+Annotations, including those associated with AST transforms,
+are copied on to the backing field for the property.
+This allows AST transforms which are applicable to fields to
+be applied to properties, e.g.:
+
+[source,groovy]
+----
+include::../test/ClassTest.groovy[tags=annotated_properties,indent=0]
+----
+<1> Confirms no eager initialization
+<2> Normal property access
+<3> Confirms initialization upon property access
+
+===== Split property definition with an explicit backing field
+
+Groovy's property syntax is a convenient shorthand when your class design
+follows certain conventions which align with common JavaBean practice.
+If your class doesn't exactly fit these conventions,
+you can certainly write the getter, setter and backing field long hand like you would in Java.
+However, Groovy does provide a split definition capability which still provides
+a shortened syntax while allowing slight adjustments to the conventions.
+For a split definition, you write a field and a property with the same name and type.
+Only one of the field or property may have an initial value.
+
+For split properties, annotations on the field remain on the backing field for the property.
+Annotations on the property part of the definition are copied onto the getter and setter methods.
+
+This mechanism allows a number of common variations that property users may wish
+to use if the standard property definition doesn't exactly fit their needs.
+For example, if the backing field should be `protected` rather than `private`:
+
+[source,groovy]
+----
+class HasPropertyWithProtectedField {
+    protected String name  // <1>
+    String name            // <2>
+}
+----
+<1> Protected backing field for name property instead of normal private one
+<2> Declare name property
+
+Or, the same example but with a package-private backing field:
+
+[source,groovy]
+----
+class HasPropertyWithPackagePrivateField {
+    String name                // <1>
+    @PackageScope String name  // <2>
+}
+----
+<1> Declare name property
+<2> Package-private backing field for name property instead of normal private one
+
+As a final example, we may wish to apply method-related AST transforms,
+or in general, any annotation to the setters/getters,
+e.g. to have the accessors be synchronized:
+
+[source,groovy]
+----
+class HasPropertyWithSynchronizedAccessorMethods {
+    private String name        // <1>
+    @Synchronized String name  // <2>
+}
+----
+<1> Backing field for name property
+<2> Declare name property with annotation for setter/getter
 
 === Annotation
 
