@@ -293,6 +293,10 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         return "field '" + node.getName() + "'";
     }
 
+    private static String getDescription(PropertyNode node) {
+        return "property '" + node.getName() + "'";
+    }
+
     private static String getDescription(Parameter node) {
         return "parameter '" + node.getName() + "'";
     }
@@ -537,6 +541,9 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
 
     @Override
     public void visitProperty(PropertyNode node) {
+        if (currentClass.getProperty(node.getName()) != node) {
+            addError("The " + getDescription(node) + " is declared multiple times.", node);
+        }
         checkDuplicateProperties(node);
         checkGenericsUsage(node, node.getType());
         super.visitProperty(node);
