@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.ASTTransformationsContext;
@@ -199,6 +200,10 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
         return result;
     }
 
+    @Override
+    public void visitProperty(PropertyNode node) {
+        // ignore: we'll already have allocated to field or accessor method by now
+    }
 
     public static void addPhaseOperations(final CompilationUnit compilationUnit) {
         ASTTransformationsContext context = compilationUnit.getASTTransformationsContext();
