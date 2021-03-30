@@ -333,17 +333,17 @@ class ClassTest extends GroovyTestCase {
             class Person {
                 String name
                 void name(String name) {
-                    this.name = "Wonder$name"       // <1>
+                    this.name = "Wonder $name"      // <1>
                 }
-                String wonder() {
+                String title() {
                     this.name                       // <2>
                 }
             }
             def p = new Person()
-            p.name = 'Marge'                        // <3>
-            assert p.name == 'Marge'                // <4>
-            p.name('Marge')                         // <5>
-            assert p.wonder() == 'WonderMarge'      // <6>
+            p.name = 'Diana'                        // <3>
+            assert p.name == 'Diana'                // <4>
+            p.name('Woman')                         // <5>
+            assert p.title() == 'Wonder Woman'      // <6>
             // end::property_access[]
         '''
 
