@@ -97,6 +97,7 @@ import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstan
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
+import static org.codehaus.groovy.ast.AnnotationNode.METHOD_TARGET;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
@@ -712,13 +713,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             getterModifiers &= ~ACC_FINAL;
         }
         if (getterBlock != null) {
-            visitGetter(node, getterBlock, getterModifiers, getterName);
+            visitGetter(node, field, getterBlock, getterModifiers, getterName);
 
             if (node.getGetterName() == null && getterName.startsWith("get") && (node.getType().equals(ClassHelper.boolean_TYPE) || node.getType().equals(ClassHelper.Boolean_TYPE))) {
                 String altGetterName = "is" + capitalize(name);
                 MethodNode altGetter = classNode.getGetterMethod(altGetterName, !node.isStatic());
                 if (methodNeedsReplacement(altGetter)) {
-                    visitGetter(node, getterBlock, getterModifiers, altGetterName);
+                    visitGetter(node, field, getterBlock, getterModifiers, altGetterName);
                 }
             }
         }
@@ -727,15 +728,29 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             MethodNode setter = new MethodNode(setterName, accessorModifiers, ClassHelper.VOID_TYPE, setterParameterTypes, ClassNode.EMPTY_ARRAY, setterBlock);
             setter.setSynthetic(true);
             addPropertyMethod(setter);
+            if (!field.isSynthetic()) {
+                copyMethodAnnotations(node, setter);
+            }
             visitMethod(setter);
         }
     }
 
-    private void visitGetter(final PropertyNode node, final Statement getterBlock, final int getterModifiers, final String getterName) {
+    private void visitGetter(final PropertyNode node, final FieldNode field, final Statement getterBlock, final int getterModifiers, final String getterName) {
         MethodNode getter = new MethodNode(getterName, getterModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
         getter.setSynthetic(true);
         addPropertyMethod(getter);
+        if (!field.isSynthetic()) {
+            copyMethodAnnotations(node, getter);
+        }
         visitMethod(getter);
+    }
+
+    private void copyMethodAnnotations(PropertyNode node, MethodNode accessor) {
+        for (AnnotationNode annotationNode : node.getAnnotations()) {
+            if (annotationNode.isTargetAllowed(METHOD_TARGET)) {
+                accessor.addAnnotation(annotationNode);
+            }
+        }
     }
 
     protected void addPropertyMethod(final MethodNode method) {
