@@ -136,12 +136,13 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private static void visitFieldNode(FieldNode fNode) {
+    private void visitFieldNode(FieldNode fNode) {
         final ClassNode cNode = fNode.getDeclaringClass();
         final List<PropertyNode> pList = cNode.getProperties();
         PropertyNode foundProp = null;
+        String fName = fNode.getName();
         for (PropertyNode pNode : pList) {
-            if (pNode.getName().equals(fNode.getName())) {
+            if (pNode.getName().equals(fName) && pNode.getAnnotations(MY_TYPE) != null) {
                 foundProp = pNode;
                 break;
             }
@@ -149,6 +150,26 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
         if (foundProp != null) {
             revertVisibility(fNode);
             pList.remove(foundProp);
+            // now check for split property
+            foundProp = null;
+            for (PropertyNode pNode : pList) {
+                if (pNode.getName().equals(fName)) {
+                    foundProp = pNode;
+                    break;
+                }
+            }
+            if (foundProp != null) {
+                FieldNode oldField = foundProp.getField();
+                cNode.getFields().remove(oldField);
+                cNode.getFieldIndex().put(fName, fNode);
+                if (foundProp.hasInitialExpression()) {
+                    if (fNode.hasInitialExpression()) {
+                        addError("The split property definition named '" + fName + "' must not have an initial value for both the field and the property", fNode);
+                    }
+                    fNode.setInitialValueExpression(foundProp.getInitialExpression());
+                }
+                foundProp.setField(fNode);
+            }
         }
     }
 
