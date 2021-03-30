@@ -995,12 +995,11 @@ public class InvokerHelper {
     public static Object invokeMethod(Object object, String methodName, Object arguments) {
         if (object == null) {
             object = NullObject.getNullObject();
-            //throw new NullPointerException("Cannot invoke method " + methodName + "() on null object");
         }
 
         // if the object is a Class, call a static method from that class
         if (object instanceof Class) {
-            Class theClass = (Class) object;
+            Class<?> theClass = (Class<?>) object;
             MetaClass metaClass = metaRegistry.getMetaClass(theClass);
             return metaClass.invokeStaticMethod(object, methodName, asArray(arguments));
         }

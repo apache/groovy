@@ -212,29 +212,26 @@ public abstract class StaticTypeCheckingSupport {
      * from superclass or interface otherwise the system won't be able to select the correct method, resulting
      * in an ambiguous method selection for similar methods.
      */
-    protected static final Comparator<MethodNode> DGM_METHOD_NODE_COMPARATOR = new Comparator<MethodNode>() {
-        @Override
-        public int compare(final MethodNode o1, final MethodNode o2) {
-            if (o1.getName().equals(o2.getName())) {
-                Parameter[] o1ps = o1.getParameters();
-                Parameter[] o2ps = o2.getParameters();
-                if (o1ps.length == o2ps.length) {
-                    boolean allEqual = true;
-                    for (int i = 0; i < o1ps.length && allEqual; i++) {
-                        allEqual = o1ps[i].getType().equals(o2ps[i].getType());
-                    }
-                    if (allEqual) {
-                        if (o1 instanceof ExtensionMethodNode && o2 instanceof ExtensionMethodNode) {
-                            return compare(((ExtensionMethodNode) o1).getExtensionMethodNode(), ((ExtensionMethodNode) o2).getExtensionMethodNode());
-                        }
-                        return 0;
-                    }
-                } else {
-                    return o1ps.length - o2ps.length;
+    protected static final Comparator<MethodNode> DGM_METHOD_NODE_COMPARATOR = (mn1, mn2) -> {
+        if (mn1.getName().equals(mn2.getName())) {
+            Parameter[] pa1 = mn1.getParameters();
+            Parameter[] pa2 = mn2.getParameters();
+            if (pa1.length == pa2.length) {
+                boolean allEqual = true;
+                for (int i = 0, n = pa1.length; i < n && allEqual; i += 1) {
+                    allEqual = pa1[i].getType().equals(pa2[i].getType());
                 }
+                if (allEqual) {
+                    if (mn1 instanceof ExtensionMethodNode && mn2 instanceof ExtensionMethodNode) {
+                        return StaticTypeCheckingSupport.DGM_METHOD_NODE_COMPARATOR.compare(((ExtensionMethodNode) mn1).getExtensionMethodNode(), ((ExtensionMethodNode) mn2).getExtensionMethodNode());
+                    }
+                    return 0;
+                }
+            } else {
+                return pa1.length - pa2.length;
             }
-            return 1;
         }
+        return 1;
     };
 
     protected static final ExtensionMethodCache EXTENSION_METHOD_CACHE = ExtensionMethodCache.INSTANCE;
@@ -1810,10 +1807,12 @@ public abstract class StaticTypeCheckingSupport {
 
     private static GenericsType[] applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final GenericsType[] gts) {
         if (gts == null) return null;
-        GenericsType[] newGTs = new GenericsType[gts.length];
-        for (int i = 0, n = gts.length; i < n; i += 1) {
-            GenericsType gt = gts[i];
-            newGTs[i] = applyGenericsContext(spec, gt);
+
+        int n = gts.length;
+        if (n == 0) return gts;
+        GenericsType[] newGTs = new GenericsType[n];
+        for (int i = 0; i < n; i += 1) {
+            newGTs[i] = applyGenericsContext(spec, gts[i]);
         }
         return newGTs;
     }

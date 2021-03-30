@@ -92,7 +92,7 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
                 return;
             }
         }
-        TupleConstructorASTTransformation.addSpecialMapConstructors(0, enumClass, "One of the enum constants for enum " +
+        TupleConstructorASTTransformation.addSpecialMapConstructors(ACC_PRIVATE, enumClass, "One of the enum constants for enum " +
                 enumClass.getName() + " was initialized with null. Please use a non-null value or define your own constructor.", true);
     }
 

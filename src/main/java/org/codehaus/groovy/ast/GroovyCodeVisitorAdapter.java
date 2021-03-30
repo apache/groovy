@@ -74,6 +74,9 @@ import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.classgen.BytecodeExpression;
 
+/**
+ * @since 4.0.0
+ */
 public class GroovyCodeVisitorAdapter implements GroovyCodeVisitor {
 
     // statements:
