@@ -933,14 +933,19 @@ public class InvokerHelper {
         return toArrayString(arguments, false, maxSize, safe);
     }
 
-    public static List createRange(Object from, Object to, boolean inclusive) {
+    public static List createRange(Object from, Object to, boolean exclusiveLeft, boolean exclusiveRight) {
         try {
-            return ScriptBytecodeAdapter.createRange(from, to, inclusive);
+            return ScriptBytecodeAdapter.createRange(from, to, exclusiveLeft, exclusiveRight);
         } catch (RuntimeException | Error re) {
             throw re;
         } catch (Throwable t) {
             throw new RuntimeException(t);
         }
+    }
+
+    // Kept in for backwards compatibility
+    public static List createRange(Object from, Object to, boolean inclusive) {
+        return createRange(from, to, false, !inclusive);
     }
 
     public static Object bitwiseNegate(Object value) {
