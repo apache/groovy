@@ -44,10 +44,11 @@ public class RangeExpression extends Expression {
         setType(ClassHelper.RANGE_TYPE);
     }
 
+    // GROOVY-9649
     public RangeExpression(Expression from, Expression to, boolean exclusiveLeft, boolean exclusiveRight) {
         this.from = from;
         this.to = to;
-        this.inclusive = !exclusiveRight;
+        this.inclusive = !exclusiveRight; // Old code depends on this
         this.exclusiveLeft = exclusiveLeft;
         this.exclusiveRight = exclusiveRight;
         setType(ClassHelper.RANGE_TYPE);
@@ -79,10 +80,20 @@ public class RangeExpression extends Expression {
         return inclusive;
     }
 
+    public boolean isExclusiveLeft() {
+        return exclusiveLeft;
+    }
+
+    public boolean isExclusiveRight() {
+        return exclusiveRight;
+    }
+
     @Override
     public String getText() {
         return "(" + from.getText() +
-               (!isInclusive()? "..<" : ".." ) +
-               to.getText() + ")";
+                (this.exclusiveLeft ? "<" : "") +
+                ".." +
+                (this.exclusiveRight ? "<" : "") +
+                to.getText() + ")";
     }
 }
