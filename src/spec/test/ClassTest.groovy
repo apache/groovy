@@ -378,6 +378,21 @@ class ClassTest extends GroovyTestCase {
             p.groovy = true                     // <3>
             // end::pseudo_properties[]
         '''
+
+        assertScript '''
+            // tag::annotated_properties[]
+            class Animal {
+                int lowerCount = 0
+                @Lazy String name = { lower().toUpperCase() }()
+                String lower() { lowerCount++; 'sloth' }
+            }
+
+            def a = new Animal()
+            assert a.lowerCount == 0  // <1>
+            assert a.name == 'SLOTH'  // <2>
+            assert a.lowerCount == 1  // <3>
+            // end::annotated_properties[]
+        '''
     }
 
 
