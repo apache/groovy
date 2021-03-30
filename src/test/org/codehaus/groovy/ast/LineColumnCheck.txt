@@ -39,7 +39,7 @@ class Test {
 :::[FieldNode,(2:2),(2:24)][ConstantExpression,(2:17),(2:24)];
 [FieldNode,(3:2),(3:15)];
 [FieldNode,(4:2),(4:26)];
-[FieldNode,(6:2),(6:15)][ConstantExpression,(5:26),(5:40)];
+[FieldNode,(5:2),(5:40)][ConstantExpression,(5:26),(5:40)];
 [FieldNode,(8:2),(8:38)][ConstantExpression,(8:25),(8:38)]
 
 ###wholeAnnotationExpressionSelection:::

@@ -20,6 +20,7 @@ package org.apache.groovy.parser.antlr4;
 
 import groovy.lang.Tuple2;
 import groovy.lang.Tuple3;
+import groovy.transform.CompileStatic;
 import groovy.transform.Trait;
 import org.antlr.v4.runtime.ANTLRErrorListener;
 import org.antlr.v4.runtime.CharStream;
@@ -115,6 +116,7 @@ import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.ast.tools.ClosureUtils;
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
@@ -164,6 +166,9 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.STATIC;
 import static org.apache.groovy.parser.antlr4.GroovyParser.SUB;
 import static org.apache.groovy.parser.antlr4.GroovyParser.VAR;
 import static org.apache.groovy.parser.antlr4.util.PositionConfigureUtils.configureAST;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveType;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
@@ -1666,67 +1671,89 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return null;
     }
 
-    private void declareProperty(final VariableDeclarationContext ctx, final ModifierManager modifierManager, final ClassNode variableType, final ClassNode classNode, final int i, final VariableExpression variableExpression, final String fieldName, final int modifiers, final Expression initialValue) {
-        if (classNode.hasProperty(fieldName)) {
-            throw createParsingFailedException("The property '" + fieldName + "' is declared multiple times", ctx);
+    private static class PropertyExpander extends Verifier {
+        private PropertyExpander(final ClassNode cNode) {
+            setClassNode(cNode);
         }
 
+        @Override
+        protected Statement createSetterBlock(PropertyNode propertyNode, FieldNode field) {
+            return stmt(assignX(varX(field), varX(VALUE_STR, field.getType())));
+        }
+
+        @Override
+        protected Statement createGetterBlock(PropertyNode propertyNode, FieldNode field) {
+            return stmt(varX(field));
+        }
+    }
+
+    private void declareProperty(final VariableDeclarationContext ctx, final ModifierManager modifierManager, final ClassNode variableType, final ClassNode classNode, final int i, final VariableExpression variableExpression, final String fieldName, final int modifiers, final Expression initialValue) {
         PropertyNode propertyNode;
         FieldNode fieldNode = classNode.getDeclaredField(fieldName);
 
         if (fieldNode != null && !classNode.hasProperty(fieldName)) {
             if (fieldNode.hasInitialExpression() && initialValue != null) {
-                throw createParsingFailedException("A field and a property have the same name '" + fieldName + "' and both have initial values", ctx);
+                throw createParsingFailedException("The split property definition named '" + fieldName + "' must not have an initial value for both the field and the property", ctx);
+            }
+            if (!fieldNode.getType().equals(variableType)) {
+                throw createParsingFailedException("The split property definition named '" + fieldName + "' must not have different types for the field and the property", ctx);
             }
             classNode.getFields().remove(fieldNode);
             propertyNode = new PropertyNode(fieldNode, modifiers | Opcodes.ACC_PUBLIC, null, null);
             classNode.addProperty(propertyNode);
+            if (initialValue != null) {
+                fieldNode.setInitialValueExpression(initialValue);
+            }
+            modifierManager.attachAnnotations(propertyNode);
+            propertyNode.addAnnotation(new AnnotationNode(ClassHelper.make(CompileStatic.class)));
+            // expand properties early so AST transforms will be handled correctly
+            PropertyExpander expander = new PropertyExpander(classNode);
+            expander.visitProperty(propertyNode);
         } else {
-            propertyNode =
-                    classNode.addProperty(
-                            fieldName,
-                            modifiers | Opcodes.ACC_PUBLIC,
-                            variableType,
-                            initialValue,
-                            null,
-                            null);
+            propertyNode = new PropertyNode(fieldName, modifiers | Opcodes.ACC_PUBLIC, variableType, classNode, initialValue, null, null);
+            classNode.addProperty(propertyNode);
 
             fieldNode = propertyNode.getField();
+            fieldNode.setModifiers(modifiers & ~Opcodes.ACC_PUBLIC | Opcodes.ACC_PRIVATE);
+            fieldNode.setSynthetic(!classNode.isInterface());
+            modifierManager.attachAnnotations(fieldNode);
+            modifierManager.attachAnnotations(propertyNode);
+            if (i == 0) {
+                configureAST(fieldNode, ctx, initialValue);
+            } else {
+                configureAST(fieldNode, variableExpression, initialValue);
+            }
         }
-
-        fieldNode.setModifiers(modifiers & ~Opcodes.ACC_PUBLIC | Opcodes.ACC_PRIVATE);
-        fieldNode.setSynthetic(!classNode.isInterface());
-        modifierManager.attachAnnotations(fieldNode);
 
         groovydocManager.handle(fieldNode, ctx);
         groovydocManager.handle(propertyNode, ctx);
 
         if (i == 0) {
-            configureAST(fieldNode, ctx, initialValue);
             configureAST(propertyNode, ctx, initialValue);
         } else {
-            configureAST(fieldNode, variableExpression, initialValue);
             configureAST(propertyNode, variableExpression, initialValue);
         }
     }
 
     private void declareField(final VariableDeclarationContext ctx, final ModifierManager modifierManager, final ClassNode variableType, final ClassNode classNode, final int i, final VariableExpression variableExpression, final String fieldName, final int modifiers, final Expression initialValue) {
-        FieldNode existingFieldNode = classNode.getDeclaredField(fieldName);
-        if (null != existingFieldNode && !existingFieldNode.isSynthetic()) {
-            throw createParsingFailedException("The field '" + fieldName + "' is declared multiple times", ctx);
-        }
-
         FieldNode fieldNode;
         PropertyNode propertyNode = classNode.getProperty(fieldName);
 
         if (null != propertyNode && propertyNode.getField().isSynthetic()) {
             if (propertyNode.hasInitialExpression() && initialValue != null) {
-                throw createParsingFailedException("A field and a property have the same name '" + fieldName + "' and both have initial values", ctx);
+                throw createParsingFailedException("The split property definition named '" + fieldName + "' must not have an initial value for both the field and the property", ctx);
+            }
+            if (!propertyNode.getType().equals(variableType)) {
+                throw createParsingFailedException("The split property definition named '" + fieldName + "' must not have different types for the field and the property", ctx);
             }
             classNode.getFields().remove(propertyNode.getField());
-            fieldNode = new FieldNode(fieldName, modifiers, variableType, classNode.redirect(), initialValue);
+            fieldNode = new FieldNode(fieldName, modifiers, variableType, classNode.redirect(), propertyNode.hasInitialExpression() ? propertyNode.getInitialExpression() : initialValue);
             propertyNode.setField(fieldNode);
+            propertyNode.addAnnotation(new AnnotationNode(ClassHelper.make(CompileStatic.class)));
             classNode.addField(fieldNode);
+            // expand properties early so AST transforms will be handled correctly
+            PropertyExpander expander = new PropertyExpander(classNode);
+            expander.visitProperty(propertyNode);
         } else {
             fieldNode =
                     classNode.addField(
