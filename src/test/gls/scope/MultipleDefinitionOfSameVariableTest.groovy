@@ -163,4 +163,34 @@ class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
         '''
     }
 
+    void testFieldAndPropertyWithInit() {
+        assertScript '''
+            class X {
+                def foo = 3
+                public foo
+                public bar
+                def bar = 4
+            }
+
+            def x = new X()
+            def result = [x.foo, x.bar]
+            assert result == [3, 4]
+        '''
+    }
+
+    void testPropertyAndFieldWithInit() {
+        assertScript '''
+            class Y {
+                def foo
+                public foo = 5
+                public bar = 6
+                def bar
+            }
+
+            def y = new Y()
+            result = [y.foo, y.bar]
+            assert result == [5, 6]
+        '''
+    }
+
 }
