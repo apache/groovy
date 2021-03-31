@@ -543,6 +543,8 @@ assert function(*args,5,6) == 26
         def range = 0..5                                    // <1>
         assert (0..5).collect() == [0, 1, 2, 3, 4, 5]       // <2>
         assert (0..<5).collect() == [0, 1, 2, 3, 4]         // <3>
+        assert (0<..5).collect() == [1, 2, 3, 4, 5]
+        assert (0<..<5).collect() == [1, 2, 3, 4]
         assert (0..5) instanceof List                       // <4>
         assert (0..5).size() == 6                           // <5>
         // end::intrange[]

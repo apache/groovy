@@ -36,6 +36,18 @@ class RangeTest extends GroovyTestCase {
         assert x == 45
 
         x = 0
+        for (i in 1<..10) {
+            x = x + i
+        }
+        assert x == 54
+
+        x = 0
+        for (i in 1<..<10) {
+            x = x + i
+        }
+        assert x == 44
+
+        x = 0
         for (i in 0..'\u0009') {
             x = x + i
         }
@@ -54,13 +66,29 @@ class RangeTest extends GroovyTestCase {
             x = x + it
         }
         assert x == 45
+
+        x = 0
+        (1<..10).each {
+            x = x + it
+        }
+        assert x == 54
+
+        x = 0
+        (1<..<10).each {
+            x = x + it
+        }
+        assert x == 44
     }
 
     void testIntStep() {
         assertStep(0..9, 3, [0, 3, 6, 9])
         assertStep(0..<10, 3, [0, 3, 6, 9])
+        assertStep(0<..10, 3, [1, 4, 7, 10])
+        assertStep(0<..<10, 3, [1, 4, 7])
         assertStep(9..0, 3, [9, 6, 3, 0])
         assertStep(9..<0, 3, [9, 6, 3])
+        assertStep(9<..-1, 3, [8, 5, 2, -1])
+        assertStep(9<..<-1, 3, [8, 5, 2])
     }
 
 
@@ -75,8 +103,12 @@ class RangeTest extends GroovyTestCase {
         assertStep('a'..'f', 2, ['a', 'c', 'e'])
         assertStep('f'..'a', 2, ['f', 'd', 'b'])
         assertStep('a'..<'e', 2, ['a', 'c'])
+        assertStep('a'<..'f', 2, ['b', 'd', 'f'])
+        assertStep('a'<..<'f', 2, ['b', 'd'])
         assertStep('z'..'v', 2, ['z', 'x', 'v'])
         assertStep('z'..<'v', 2, ['z', 'x'])
+        assertStep('z'<..'u', 2, ['y', 'w', 'u'])
+        assertStep('z'<..<'u', 2, ['y', 'w'])
     }
 
     void testNegativeObjectStep() {
@@ -87,15 +119,23 @@ class RangeTest extends GroovyTestCase {
     void testIterateIntRange() {
         assertIterate(0..9, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         assertIterate(1..<8, [1, 2, 3, 4, 5, 6, 7])
+        assertIterate(1<..8, [2, 3, 4, 5, 6, 7, 8])
+        assertIterate(1<..<8, [2, 3, 4, 5, 6, 7])
         assertIterate(7..1, [7, 6, 5, 4, 3, 2, 1])
         assertIterate(6..<1, [6, 5, 4, 3, 2])
+        assertIterate(6<..1, [5, 4, 3, 2, 1])
+        assertIterate(6<..<1, [5, 4, 3, 2])
     }
 
     void testIterateObjectRange() {
         assertIterate('a'..'d', ['a', 'b', 'c', 'd'])
         assertIterate('a'..<'d', ['a', 'b', 'c'])
+        assertIterate('a'<..'d', ['b', 'c', 'd'])
+        assertIterate('a'<..<'d', ['b', 'c'])
         assertIterate('z'..'x', ['z', 'y', 'x'])
         assertIterate('z'..<'x', ['z', 'y'])
+        assertIterate('z'<..'x', ['y', 'x'])
+        assertIterate('z'<..<'x', ['y'])
     }
 
     enum RomanNumber {
@@ -146,6 +186,14 @@ class RangeTest extends GroovyTestCase {
         range = 0..<5
         assert range.contains(0) && 0 in range
         assert !range.contains(5) && !(5 in range)
+
+        range = 0<..5
+        assert !range.contains(0) && !(0 in range)
+        assert range.contains(5) && 5 in range
+
+        range = 0<..<5
+        assert !range.contains(0) && !(0 in range)
+        assert !range.contains(5) && !(5 in range)
     }
 
     void testBackwardsRangeContains() {
@@ -155,6 +203,14 @@ class RangeTest extends GroovyTestCase {
 
         range = 5..<1
         assert range.contains(5) && 5 in range
+        assert !range.contains(1) && !(1 in range)
+
+        range = 5<..1
+        assert !range.contains(5) && !(5 in range)
+        assert range.contains(1) && 1 in range
+
+        range = 5<..<1
+        assert !range.contains(5) && !(5 in range)
         assert !range.contains(1) && !(1 in range)
     }
 
@@ -169,6 +225,19 @@ class RangeTest extends GroovyTestCase {
         assert !range.contains('g')
         assert !range.contains('f')
         assert !range.contains('a')
+
+        range = 'b'<..'f'
+        assert range.contains('f')
+        assert !range.contains('b')
+        assert !range.contains('g')
+        assert !range.contains('a')
+
+        range = 'b'<..<'f'
+        assert !range.contains('b')
+        assert !range.contains('f')
+        assert !range.contains('a')
+        assert !range.contains('g')
+        assert range.contains('c')
     }
 
     void testBackwardsObjectRangeContains() {
@@ -182,6 +251,19 @@ class RangeTest extends GroovyTestCase {
         assert range.contains('f')
         assert range.contains('c')
         assert !range.contains('b')
+
+        range = 'f'<..'b'
+        assert !range.contains('f')
+        assert range.contains('b')
+        assert !range.contains('g')
+        assert !range.contains('a')
+
+        range = 'f'<..<'b'
+        assert !range.contains('b')
+        assert !range.contains('f')
+        assert !range.contains('a')
+        assert !range.contains('g')
+        assert range.contains('c')
     }
 
     void testIntRangeToString() {
@@ -191,25 +273,47 @@ class RangeTest extends GroovyTestCase {
         assertToString(0..<11, "0..<11")
         assertToString([1, 4..<11, 9], "[1, 4..<11, 9]")
 
+        assertToString(0<..11, "0<..11")
+        assertToString([1, 4<..11, 9], "[1, 4<..11, 9]")
+
+        assertToString(0<..<11, "0<..<11")
+        assertToString([1, 4<..<11, 9], "[1, 4<..<11, 9]")
+
         assertToString(10..0, "10..0")
         assertToString([1, 10..4, 9], "[1, 10..4, 9]")
 
         assertToString(11..<0, "11..<0")
         assertToString([1, 11..<4, 9], "[1, 11..<4, 9]")
+
+        assertToString(11<..0, "11<..0")
+        assertToString([1, 11<..4, 9], "[1, 11<..4, 9]")
+
+        assertToString(11<..<0, "11<..<0")
+        assertToString([1, 11<..<4, 9], "[1, 11<..<4, 9]")
     }
 
     void testObjectRangeToString() {
         assertToString('a'..'d', 'a..d', "'a'..'d'")
         assertToString('a'..<'d', 'a..c', "'a'..'c'")
+        assertToString('a'<..'d', 'b..d', "'b'..'d'")
+        assertToString('a'<..<'d', 'b..c', "'b'..'c'")
+
         assertToString('z'..'x', 'z..x', "'z'..'x'")
         assertToString('z'..<'x', 'z..y', "'z'..'y'")
+        assertToString('z'<..'x', 'y..x', "'y'..'x'")
+        assertToString('z'<..<'x', 'y..y', "'y'..'y'")
     }
 
     void testRangeSize() {
         assertSize(1..10, 10)
         assertSize(11..<21, 10)
+        assertSize(11<..21, 10)
+        assertSize(11<..<22, 10)
+
         assertSize(30..21, 10)
         assertSize(40..<30, 10)
+        assertSize(40<..30, 10)
+        assertSize(41<..<30, 10)
     }
 
     void testBorderCases() {
@@ -217,6 +321,8 @@ class RangeTest extends GroovyTestCase {
         assertIterate(0..0, [0])
         assertIterate(0..-1, [0, -1])
         assertIterate(0..<-1, [0])
+        assertIterate(0<..-1, [-1])
+        assertIterate(0<..<-1, [])
     }
 
     void testEmptyRanges() {

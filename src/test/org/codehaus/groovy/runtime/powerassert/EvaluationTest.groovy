@@ -156,6 +156,8 @@ final class EvaluationTest extends GroovyTestCase {
     void testRangeExpression() {
         assert (1..3).contains(3)
         assert !((1..<3).contains(3))
+        assert !((1<..3).contains(1))
+        assert (!(1<..<3).contains(1) && !(1<..<3).contains(3))
     }
 
     void testPropertyExpression() {

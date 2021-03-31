@@ -363,6 +363,26 @@ assert (a..<b) == null
             def b = 2
             assert (a..<b) == null
         }
+
+        isRendered '''
+assert (a<..b) == null
+        |   |  |
+        1   2  false
+        ''', { ->
+            def a = 1
+            def b = 2
+            assert (a<..b) == null
+        }
+
+        isRendered '''
+assert (a<..<b) == null
+        |    |  |
+        1    2  false
+        ''', { ->
+            def a = 1
+            def b = 2
+            assert (a<..<b) == null
+        }
     }
 
     @Test
