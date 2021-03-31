@@ -1077,7 +1077,7 @@ constructor is created having a parameter for each property (and possibly each f
 
 ===== Implementation Details
 
-Normally you don't need to understand the imp[ementation details of the generated constructor(s); you just use them in the normal way.
+Normally you don't need to understand the implementation details of the generated constructor(s); you just use them in the normal way.
 However, if you want to add multiple constructors, understand Java integration options or meet requirements of some
 dependency injection frameworks, then some details are useful.
 
