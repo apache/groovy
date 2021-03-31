@@ -89,17 +89,18 @@ public class PositionConfigureUtils {
         return astNode;
     }
 
-    public static <T extends ASTNode> T configureAST(T astNode, GroovyParser.GroovyParserRuleContext ctx, ASTNode stop) {
+    public static <T extends ASTNode> T configureAST(T astNode, GroovyParser.GroovyParserRuleContext ctx, ASTNode initialStop) {
         Token start = ctx.getStart();
+        Token stop = ctx.getStop();
 
         astNode.setLineNumber(start.getLine());
         astNode.setColumnNumber(start.getCharPositionInLine() + 1);
 
-        if (asBoolean(stop)) {
-            astNode.setLastLineNumber(stop.getLastLineNumber());
-            astNode.setLastColumnNumber(stop.getLastColumnNumber());
+        if (asBoolean(initialStop)) {
+            astNode.setLastLineNumber(initialStop.getLastLineNumber());
+            astNode.setLastColumnNumber(initialStop.getLastColumnNumber());
         } else {
-            configureEndPosition(astNode, start);
+            configureEndPosition(astNode, stop);
         }
 
         return astNode;
