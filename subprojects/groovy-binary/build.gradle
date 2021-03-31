@@ -52,7 +52,6 @@ distribution {
     docs ':groovy-dateutil', 'org.apache.groovy.dateutil.extensions.DateUtilExtensions'
     docs ':groovy-datetime', 'org.apache.groovy.datetime.extensions.DateTimeExtensions',
             'org.apache.groovy.datetime.extensions.DateTimeStaticExtensions'
-    docs ':groovy-jaxb', 'org.apache.groovy.jaxb.extensions.JaxbExtensions'
     docs ':groovy-sql', 'org.apache.groovy.sql.extensions.SqlExtensions'
     docs ':groovy-swing', 'org.apache.groovy.swing.extensions.SwingExtensions'
     docs ':groovy-xml', 'org.apache.groovy.xml.extensions.XmlExtensions'
@@ -68,7 +67,6 @@ distribution {
             from(configurations.distributionsRuntimeClasspath) {
                 exclude {
                     it.file.name.contains('activation') ||
-                            it.file.name.startsWith('jaxb-') ||
                             it.file.name.contains('livetribe-jsr223') ||
                             it.file.name.startsWith('openbeans-') ||
                             it.file.name.startsWith('asm-') ||
@@ -77,14 +75,6 @@ distribution {
                 }
             }
             from rootProject.file('src/bin/groovy.icns')
-        }
-        into('lib/extras-jaxb') {
-            from(configurations.distributionsRuntimeClasspath) {
-                include {
-                    it.file.name.contains('activation') ||
-                            it.file.name.startsWith('jaxb-')
-                }
-            }
         }
         rootProject.allprojects {
             pluginManager.withPlugin('org.apache.groovy-base') {

@@ -77,11 +77,7 @@ final class ExecuteTest extends GroovyTestCase {
                 "groovy.ui.GroovyMain",
                 "-e",
                 "sleep(2000); println('Done'); System.exit(0)"]
-        // jaxb deprecated in 9, gone in 11
-        if (isAtLeastJdk('9.0') && !isAtLeastJdk('11.0')) {
-            javaArgs.add(3, '--add-modules')
-            javaArgs.add(4, 'java.xml.bind')
-        }
+
         String[] java = javaArgs.toArray()
         println "Executing this command for two cases:\n${java.join(' ')}"
         StringBuffer sbout = new StringBuffer()
@@ -132,11 +128,6 @@ final class ExecuteTest extends GroovyTestCase {
                 '-e',
                 "println(System.getenv('foo'))"
         ]
-        // jaxb deprecated in 9, gone in 11
-        if (isAtLeastJdk('9.0') && !isAtLeastJdk('11.0')) {
-            java.add(3, '--add-modules')
-            java.add(4, 'java.xml.bind')
-        }
 
         println "Executing this command:\n${java.join(' ')}"
         def process = java.execute(['foo=bar'], null)
@@ -159,11 +150,6 @@ final class ExecuteTest extends GroovyTestCase {
                 '-e',
                 "println('hello')"
         ]
-        // jaxb deprecated in 9, gone in 11
-        if (isAtLeastJdk('9.0') && !isAtLeastJdk('11.0')) {
-            java.add(3, '--add-modules')
-            java.add(4, 'java.xml.bind')
-        }
 
         println "Executing this command:\n${java.join(' ')}"
         def process = java.execute()
