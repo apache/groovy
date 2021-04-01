@@ -132,7 +132,9 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
      * <p>
      * If true or false, the reverse flag is discarded.
      */
-    private final Boolean inclusive;
+    private final Boolean inclusiveRight;
+
+    private final Boolean inclusiveLeft;
 
     /**
      * Creates a new non-inclusive aware <code>IntRange</code>. If <code>from</code> is greater than
@@ -143,7 +145,8 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
      * @throws IllegalArgumentException if the range would contain more than {@link Integer#MAX_VALUE} values.
      */
     public IntRange(int from, int to) {
-        this.inclusive = null;
+        this.inclusiveRight = null;
+        this.inclusiveLeft = null;
         if (from > to) {
             this.from = to;
             this.to = from;
@@ -166,7 +169,8 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
      * @throws IllegalArgumentException if <code>from</code> is greater than <code>to</code>.
      */
     protected IntRange(int from, int to, boolean reverse) {
-        this.inclusive = null;
+        this.inclusiveRight = null;
+        this.inclusiveLeft = null;
         if (from > to) {
             throw new IllegalArgumentException("'from' must be less than or equal to 'to'");
         }
@@ -182,12 +186,17 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
      *
      * @param from      the first value in the range.
      * @param to        the last value in the range.
-     * @param inclusive <code>true</code> if the to value is included in the range.
+     * @param inclusiveRight <code>true</code> if the to value is included in the range.
      */
-    public IntRange(boolean inclusive, int from, int to) {
+    public IntRange(boolean inclusiveRight, int from, int to) {
+        this(true, inclusiveRight, from, to);
+    }
+
+    public IntRange(boolean inclusiveLeft, boolean inclusiveRight, int from, int to) {
         this.from = from;
         this.to = to;
-        this.inclusive = inclusive;
+        this.inclusiveRight = inclusiveRight;
+        this.inclusiveLeft = inclusiveLeft;
         this.reverse = false; // range may still be reversed, this value is ignored for inclusive-aware ranges
         checkSize();
     }
@@ -201,7 +210,8 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
      * @since 2.5.0
      */
     public <T extends Number & Comparable> NumberRange by(T stepSize) {
-        return new NumberRange(NumberRange.comparableNumber((Number)from), NumberRange.comparableNumber((Number)to), stepSize, inclusive);
+        // TODO edit NumberRange
+        return new NumberRange(NumberRange.comparableNumber((Number)from), NumberRange.comparableNumber((Number)to), stepSize, inclusiveRight);
     }
 
     private void checkSize() {
@@ -220,13 +230,17 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
      * @return the calculated range information (with 1 added to the to value, ready for providing to subList
      */
     public RangeInfo subListBorders(int size) {
-        if (inclusive == null) {
+        if (inclusiveRight == null || inclusiveLeft == null) {
             throw new IllegalStateException("Should not call subListBorders on a non-inclusive aware IntRange");
         }
-        return subListBorders(from, to, inclusive, size);
+        return subListBorders(from, to, inclusiveRight, size);
     }
 
-    static RangeInfo subListBorders(int from, int to, boolean inclusive, int size) {
+    static RangeInfo subListBorders(int from, int to, boolean inclusiveRight, int size) {
+        return subListBorders(from, to, true, inclusiveRight, size);
+    }
+
+    static RangeInfo subListBorders(int from, int to, boolean inclusiveLeft, boolean inclusiveRight, int size) {
         int tempFrom = from;
         if (tempFrom < 0) {
             tempFrom += size;
@@ -236,9 +250,9 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
             tempTo += size;
         }
         if (tempFrom > tempTo) {
-            return new RangeInfo(inclusive ? tempTo : tempTo + 1, tempFrom + 1, true);
+            return new RangeInfo(inclusiveRight ? tempTo : tempTo + 1, inclusiveLeft ? tempFrom + 1 : tempFrom, true);
         }
-        return new RangeInfo(tempFrom, inclusive ? tempTo + 1 : tempTo, false);
+        return new RangeInfo(inclusiveLeft ? tempFrom : tempFrom + 1, inclusiveRight ? tempTo + 1 : tempTo, false);
     }
 
     /**
@@ -267,34 +281,44 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
      * @return <code>true</code> if the ranges are equal
      */
     public boolean equals(IntRange that) {
-        return that != null && ((inclusive == null && reverse == that.reverse && from == that.from && to == that.to)
-                || (inclusive != null && Objects.equals(inclusive, that.inclusive) && from == that.from && to == that.to));
+        return that != null && from == that.from && to == that.to && (
+                (inclusiveRight == null && inclusiveLeft == null && reverse == that.reverse)
+                || (
+                        (inclusiveLeft == null || Objects.equals(inclusiveLeft, that.inclusiveLeft))
+                        && (inclusiveRight == null || Objects.equals(inclusiveRight, that.inclusiveRight))
+                )
+        );
     }
 
     @Override
     public Integer getFrom() {
-        if (inclusive == null || from <= to) {
-            return from;
+        if (from <= to) {
+            return (inclusiveLeft == null || inclusiveLeft) ? from : from + 1;
         }
-        return inclusive ? to : to + 1;
+        return (inclusiveRight == null || inclusiveRight) ? to : to + 1;
     }
 
     @Override
     public Integer getTo() {
-        if (inclusive == null) {
-            return to;
-        }
         if (from <= to) {
-            return inclusive ? to : to - 1;
+            return (inclusiveRight == null || inclusiveRight) ? to : to - 1;
         }
-        return from;
+        return (inclusiveLeft == null || inclusiveLeft) ? from : from - 1;
     }
 
     /**
      * Returns the inclusive flag. Null for non-inclusive aware ranges or non-null for inclusive aware ranges.
      */
     public Boolean getInclusive() {
-        return inclusive;
+        return inclusiveRight;
+    }
+
+    public Boolean getInclusiveRight() {
+        return inclusiveRight;
+    }
+
+    public Boolean getInclusiveLeft() {
+        return inclusiveLeft;
     }
 
     /**
@@ -317,7 +341,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
 
     @Override
     public boolean isReverse() {
-        return inclusive == null ? reverse : (from > to);
+        return (inclusiveRight == null && inclusiveLeft == null) ? reverse : (from > to);
     }
 
     @Override
@@ -367,8 +391,9 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
 
     @Override
     public String toString() {
-        return inclusive != null ? ("" + from + ".." + (inclusive ? "" : "<") + to)
-                : (reverse ? "" + to + ".." + from : "" + from + ".." + to);
+        return (inclusiveRight == null && inclusiveLeft == null) ? (reverse ? "" + to + ".." + from : "" + from + ".." + to)
+                : ("" + from + ((inclusiveLeft != null && inclusiveLeft) ? "" : "<") + ".."
+                             + ((inclusiveRight != null && inclusiveRight) ? "" : "<") + to);
     }
 
     @Override
