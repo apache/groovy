@@ -641,7 +641,7 @@ public class ScriptBytecodeAdapter {
             int ifrom = (Integer) from;
             int ito = (Integer) to;
             if (inclusive || ifrom != ito) {
-                return new IntRange(inclusive, ifrom, ito);
+                return new IntRange(!exclusiveLeft, !exclusiveRight, ifrom, ito);
             } // else fall through for EmptyRange
         }
         if (!inclusive && compareEqual(from, to)) {
