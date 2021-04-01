@@ -611,7 +611,7 @@ Using an explicit checked exception declaration is illustrated in the following 
 include::../test/objectorientation/MethodsTest.groovy[tags=checked_method_declaration,indent=0]
 ----
 
-=== Fields and properties
+=== Fields and Properties
 
 [[fields]]
 ==== Fields
@@ -763,6 +763,18 @@ e.g. you can have `aProp` and `AProp`, or `pNAME` and `PNAME`. The getters would
 and `getpNAME` and `getPNAME` respectively.
 ====
 
+===== Modifiers on a property
+
+We have already seen that properties are defined by omitting the visibility modifier.
+In general, any other modifiers, e.g. `transient` would be copied across to the field.
+Two special cases are worth noting:
+
+* `final`, which we saw earlier is for read-only properties, is copied onto the backing field but also causes no setter to be defined
+* `static` is copied onto the backing field but also causes the accessor methods to be static
+
+If you wish to have a modifier like `final` also carried over to the accessor methods,
+you can write your properties long hand or consider using a <<split-properties,split property definition>>.
+
 ===== Annotations on a property
 
 Annotations, including those associated with AST transforms,
@@ -778,6 +790,7 @@ include::../test/ClassTest.groovy[tags=annotated_properties,indent=0]
 <2> Normal property access
 <3> Confirms initialization upon property access
 
+[[split-properties]]
 ===== Split property definition with an explicit backing field
 
 Groovy's property syntax is a convenient shorthand when your class design
@@ -831,6 +844,15 @@ class HasPropertyWithSynchronizedAccessorMethods {
 ----
 <1> Backing field for name property
 <2> Declare name property with annotation for setter/getter
+
+===== Explicit accessor methods
+
+The automatic generation of accessor methods doesn't occur if there
+is an explicit definition of the getter or setter in the class.
+This allows you to modify the normal behavior of such a getter or setter if needed.
+Inherited accessor methods aren't normally considered but if an inherited
+accessor method is marked final, that will also cause no generation of an
+additional accessor method to honor the `final` requirement of no subclassing of such methods.
 
 === Annotation
 
