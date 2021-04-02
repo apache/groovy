@@ -752,6 +752,17 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             """
         }
 
+        // GROOVY-8001
+        assertScript '''
+            class C {
+                Map<String,Object> map
+            }
+            int value = 42
+            def c = new C()
+            c.map = [key:"$value"]
+            assert c.map['key'] == '42'
+        '''
+
         shouldFailWithMessages '''
             Map<String,Integer> map = [1:2]
         ''', 'Cannot assign java.util.LinkedHashMap <java.lang.Integer, java.lang.Integer> to: java.util.Map <String, Integer>'
