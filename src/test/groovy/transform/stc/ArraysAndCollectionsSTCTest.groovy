@@ -313,7 +313,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5177
-    void testShouldNotAllowArrayAssignment() {
+    void testShouldNotAllowArrayAssignment1() {
         shouldFailWithMessages '''
             class Foo {
                 def say() {
@@ -321,9 +321,44 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             class FooAnother {
-
             }
         ''', 'Cannot assign value of type Foo[] to variable of type FooAnother'
+    }
+
+    // GROOVY-8984
+    void testShouldNotAllowArrayAssignment2() {
+        shouldFailWithMessages '''
+            List<String> m() { }
+            Number[] array = m()
+        ''', 'Cannot assign value of type java.util.List <String> to variable of type java.lang.Number[]'
+
+        shouldFailWithMessages '''
+            void test(Set<String> set) {
+                Number[] array = set
+            }
+        ''', 'Cannot assign value of type java.util.Set <String> to variable of type java.lang.Number[]'
+
+        shouldFailWithMessages '''
+            List<? super CharSequence> m() { }
+            CharSequence[] array = m()
+        ''', 'Cannot assign value of type java.util.List <? super java.lang.CharSequence> to variable of type java.lang.CharSequence[]'
+
+        shouldFailWithMessages '''
+            void test(Set<? super CharSequence> set) {
+                CharSequence[] array = set
+            }
+        ''', 'Cannot assign value of type java.util.Set <? super java.lang.CharSequence> to variable of type java.lang.CharSequence[]'
+
+        shouldFailWithMessages '''
+            List<? super Runnable> m() { }
+            Runnable[] array = m()
+        ''', 'Cannot assign value of type java.util.List <? super java.lang.Runnable> to variable of type java.lang.Runnable[]'
+
+        shouldFailWithMessages '''
+            void test(List<? super Runnable> list) {
+                Runnable[] array = list
+            }
+        ''', 'Cannot assign value of type java.util.List <? super java.lang.Runnable> to variable of type java.lang.Runnable[]'
     }
 
     // GROOVY-9517
