@@ -648,7 +648,7 @@ public class ScriptBytecodeAdapter {
             return new EmptyRange((Comparable) from);
         }
         if (from instanceof Number && to instanceof Number) {
-            return new NumberRange(comparableNumber((Number) from), comparableNumber((Number) to), inclusive);
+            return new NumberRange(comparableNumber((Number) from), comparableNumber((Number) to), !exclusiveLeft, !exclusiveRight);
         }
         if (!inclusive) {
             if (compareGreaterThan(from, to)) {
