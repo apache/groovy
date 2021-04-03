@@ -361,8 +361,61 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot assign value of type java.util.List <? super java.lang.Runnable> to variable of type java.lang.Runnable[]'
     }
 
+    // GROOVY-8983
+    void testShouldAllowArrayAssignment1() {
+        assertScript '''
+            List<String> m() { ['foo'] }
+            void test(Set<String> set) {
+                String[] one = m()
+                String[] two = set
+                assert one + two == ['foo','bar']
+            }
+            test(['bar'].toSet())
+        '''
+
+        assertScript '''
+            List<String> m() { ['foo'] }
+            void test(Set<String> set) {
+                CharSequence[] one = m()
+                CharSequence[] two = set
+                assert one + two == ['foo','bar']
+            }
+            test(['bar'].toSet())
+        '''
+
+        assertScript '''
+            List<String> m() { ['foo'] }
+            void test(Set<String> set) {
+                Object[] one = m()
+                Object[] two = set
+                assert one + two == ['foo','bar']
+            }
+            test(['bar'].toSet())
+        '''
+
+        assertScript '''
+            List<? extends CharSequence> m() { ['foo'] }
+            void test(Set<? extends CharSequence> set) {
+                CharSequence[] one = m()
+                CharSequence[] two = set
+                assert one + two == ['foo','bar']
+            }
+            test(['bar'].toSet())
+        '''
+
+        assertScript '''
+            List<? super CharSequence> m() { [null] }
+            void test(Set<? super CharSequence> set) {
+                Object[] one = m()
+                Object[] two = set
+                assert one + two == [null,null]
+            }
+            test([null].toSet())
+        '''
+    }
+
     // GROOVY-9517
-    void testShouldAllowArrayAssignment() {
+    void testShouldAllowArrayAssignment2() {
         assertScript '''
             void test(File directory) {
                 File[] files = directory.listFiles()
@@ -371,7 +424,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
                     // ...
                 }
             }
-            println 'works'
+            assert 'no error'
         '''
     }
 
