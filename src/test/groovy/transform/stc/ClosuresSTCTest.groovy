@@ -117,6 +117,21 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9971
+    void testClosureReturnTypeInference6() {
+        assertScript '''
+            def m(Closure<String> c) {
+                c.call()
+            }
+            final x = 123
+            Closure<String> c = { -> "x=$x" }
+            String type = c.call().class.name
+            assert type == 'java.lang.String'
+            type = (m { -> "x=$x" }).class.name
+            assert type == 'java.lang.String' // not GStringImpl
+        '''
+    }
+
     // GROOVY-5145
     void testCollect() {
         assertScript '''

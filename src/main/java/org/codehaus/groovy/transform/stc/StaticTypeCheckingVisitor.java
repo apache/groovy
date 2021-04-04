@@ -266,6 +266,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isBitO
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isBoolIntrinsicOp;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isCompareToBoolean;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isGStringOrGStringStringLUB;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isOperationInGroup;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isParameterizedWithGStringOrGStringString;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isParameterizedWithString;
@@ -2216,7 +2217,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void addClosureReturnType(final ClassNode returnType) {
-        typeCheckingContext.getEnclosingClosure().addReturnType(returnType);
+        TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
+        if (isGStringOrGStringStringLUB(returnType)
+                && STRING_TYPE.equals(getInferredReturnType(enclosingClosure.getClosureExpression()))) {
+            // GROOVY-9971: convert GString to String at the point of return
+            enclosingClosure.addReturnType(STRING_TYPE);
+        } else {
+            enclosingClosure.addReturnType(returnType);
+        }
     }
 
     @Override
@@ -2745,14 +2753,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (visitClosures && expression instanceof ClosureExpression
                     || !visitClosures && !(expression instanceof ClosureExpression)) {
                 if (i < params.length && visitClosures) {
-                    Parameter param = params[i];
-                    checkClosureWithDelegatesTo(receiver, selectedMethod, newArgs, params, expression, param);
+                    Parameter target = params[i];
+                    ClassNode targetType = target.getType();
+                    ClosureExpression source = (ClosureExpression) expression;
+                    checkClosureWithDelegatesTo(receiver, selectedMethod, newArgs, params, source, target);
                     if (selectedMethod instanceof ExtensionMethodNode) {
                         if (i > 0) {
-                            inferClosureParameterTypes(receiver, arguments, (ClosureExpression) expression, param, selectedMethod);
+                            inferClosureParameterTypes(receiver, arguments, source, target, selectedMethod);
                         }
                     } else {
-                        inferClosureParameterTypes(receiver, newArgs, (ClosureExpression) expression, param, selectedMethod);
+                        inferClosureParameterTypes(receiver, newArgs, source, target, selectedMethod);
+                    }
+                    if (isFunctionalInterface(targetType)) {
+                        storeInferredReturnType(source, GenericsUtils.parameterizeSAM(targetType).getV2());
+                    } else if (isClosureWithType(targetType)) {
+                        storeInferredReturnType(source, getCombinedBoundType(targetType.getGenericsTypes()[0]));
                     }
                 }
                 expression.visit(this);
