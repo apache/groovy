@@ -38,6 +38,7 @@ import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.Verifier;
 import org.objectweb.asm.MethodVisitor;
@@ -57,6 +58,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_RETURN_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -188,7 +190,6 @@ public class ClosureWriter {
         ClassNode classNode = controller.getClassNode();
         ClassNode outerClass = controller.getOutermostClass();
         String name = genClosureClassName();
-        boolean staticMethodOrInStaticClass = controller.isStaticMethod() || classNode.isStaticClass();
 
         Parameter[] parameters = expression.getParameters();
         if (parameters == null) {
@@ -204,20 +205,22 @@ public class ClosureWriter {
         Parameter[] localVariableParams = getClosureSharedVariables(expression);
         removeInitialValues(localVariableParams);
 
+        // GROOVY-9971: closure return type is mapped to Groovy cast by classgen
+        ClassNode returnType = expression.getNodeMetaData(INFERRED_RETURN_TYPE);
+        if (returnType == null) returnType = ClassHelper.OBJECT_TYPE; // not STC or unknown path
+        else if (returnType.isPrimaryClassNode()) returnType = returnType.getPlainNodeReference();
+        else if (ClassHelper.isPrimitiveType(returnType)) returnType = ClassHelper.getWrapper(returnType);
+        else if (GenericsUtils.hasUnresolvedGenerics(returnType)) returnType = GenericsUtils.nonGeneric(returnType);
+
         InnerClassNode answer = new InnerClassNode(classNode, name, modifiers, ClassHelper.CLOSURE_TYPE.getPlainNodeReference());
         answer.setEnclosingMethod(controller.getMethodNode());
+        answer.setScriptBody(controller.isInScriptBody());
+        answer.setSourcePosition(expression);
+        answer.setStaticClass(controller.isStaticMethod() || classNode.isStaticClass());
         answer.setSynthetic(true);
         answer.setUsingGenerics(outerClass.isUsingGenerics());
-        answer.setSourcePosition(expression);
 
-        if (staticMethodOrInStaticClass) {
-            answer.setStaticClass(true);
-        }
-        if (controller.isInScriptBody()) {
-            answer.setScriptBody(true);
-        }
-        MethodNode method =
-                answer.addMethod("doCall", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, parameters, ClassNode.EMPTY_ARRAY, expression.getCode());
+        MethodNode method = answer.addMethod("doCall", ACC_PUBLIC, returnType, parameters, ClassNode.EMPTY_ARRAY, expression.getCode());
         method.setSourcePosition(expression);
 
         VariableScope varScope = expression.getVariableScope();
@@ -229,14 +232,14 @@ public class ClosureWriter {
         }
         if (parameters.length > 1
                 || (parameters.length == 1
-                && parameters[0].getType() != null
-                && parameters[0].getType() != ClassHelper.OBJECT_TYPE
-                && !ClassHelper.OBJECT_TYPE.equals(parameters[0].getType().getComponentType()))) {
+                    && parameters[0].getType() != null
+                    && !ClassHelper.OBJECT_TYPE.equals(parameters[0].getType())
+                    && !ClassHelper.OBJECT_TYPE.equals(parameters[0].getType().getComponentType()))) {
             // let's add a typesafe call method
             MethodNode call = new MethodNode(
                     "call",
                     ACC_PUBLIC,
-                    ClassHelper.OBJECT_TYPE,
+                    returnType,
                     parameters,
                     ClassNode.EMPTY_ARRAY,
                     returnS(callThisX("doCall", args(parameters))));
