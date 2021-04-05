@@ -636,28 +636,43 @@ public class ScriptBytecodeAdapter {
     }
 
     public static List createRange(Object from, Object to, boolean exclusiveLeft, boolean exclusiveRight) throws Throwable {
-        boolean inclusive = !exclusiveRight;
         if (from instanceof Integer && to instanceof Integer) {
             int ifrom = (Integer) from;
             int ito = (Integer) to;
-            if (inclusive || ifrom != ito) {
+            if ((!exclusiveLeft && !exclusiveRight) || ifrom != ito) {
+                // Currently, empty ranges where from != to and the range is full exclusive (e.g. 0<..<-1) are
+                // constructed as IntRanges. This is because these ranges can still be used to index into lists.
                 return new IntRange(!exclusiveLeft, !exclusiveRight, ifrom, ito);
             } // else fall through for EmptyRange
         }
-        if (!inclusive && compareEqual(from, to)) {
+        if ((exclusiveLeft || exclusiveRight) && compareEqual(from, to)) {
             return new EmptyRange((Comparable) from);
         }
         if (from instanceof Number && to instanceof Number) {
             return new NumberRange(comparableNumber((Number) from), comparableNumber((Number) to), !exclusiveLeft, !exclusiveRight);
         }
-        if (!inclusive) {
-            if (compareGreaterThan(from, to)) {
+        Boolean greater = null;
+        if (exclusiveRight) {
+            greater = compareGreaterThan(from, to);
+            if (greater) {
                 to = invokeMethod0(ScriptBytecodeAdapter.class, to, "next");
             } else {
                 to = invokeMethod0(ScriptBytecodeAdapter.class, to, "previous");
             }
         }
-
+        if (exclusiveLeft) {
+            if (greater == null) {
+                greater = compareGreaterThan(from, to);
+            }
+            if (compareEqual(from, to)) {
+                return new EmptyRange((Comparable) from);
+            }
+            if (greater) {
+                from = invokeMethod0(ScriptBytecodeAdapter.class, from, "previous");
+            } else {
+                from = invokeMethod0(ScriptBytecodeAdapter.class, from, "next");
+            }
+        }
         return new ObjectRange((Comparable) from, (Comparable) to);
     }
 
