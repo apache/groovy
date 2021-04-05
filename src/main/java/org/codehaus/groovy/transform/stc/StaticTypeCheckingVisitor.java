@@ -5567,6 +5567,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode[] paramTypes = new ClassNode[parameters.length];
             for (int i = 0, n = parameters.length; i < n; i += 1) {
                 paramTypes[i] = fullyResolveType(parameters[i].getType(), classGTs);
+                // GROOVY-10010: check for List<String> parameter and ["foo","$bar"] argument
+                if (i < arguments.length && hasGStringStringError(paramTypes[i], arguments[i], location)) {
+                    return false;
+                }
             }
             addStaticTypeError("Cannot call " + toMethodGenericTypesString(candidateMethod) + receiver.toString(false) + "#" +
                     toMethodParametersString(candidateMethod.getName(), paramTypes) + " with arguments " + formatArgumentList(arguments), location);

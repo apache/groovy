@@ -445,7 +445,7 @@ public class GenericsType extends ASTNode {
                                         if (!match) break;
                                     }
                                 }
-                                return match;
+                                continue;
                             }
                         }
                         match = redirectBoundType.isCompatibleWith(classNodeType.getType());
