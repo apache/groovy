@@ -329,11 +329,29 @@ class RangeTest extends GroovyTestCase {
         assertSize(0..<0, 0)
         assertSize(1..<1, 0)
         assertSize(-1..<-1, 0)
+        assertSize(-1<..-1, 0)
+        assertSize(-1<..<-1, 0)
+        assertSize(-1<..<-2, 0)
         assertSize('a'..<'a', 0)
+        assertSize('a'<..'a', 0)
+        assertSize('a'<..<'a', 0)
+        assertSize('a'<..<'b', 0)
         assertSize(0.0G..<0.0G, 0)
+        assertSize(0.0G<..0.0G, 0)
+        assertSize(0.0G<..<0.0G, 0)
+        assertSize(0.0G<..<1.0G, 0)
         (0..<0).each { assert false }
+        (0<..0).each { assert false }
+        (0<..<0).each { assert false }
+        (0<..<1).each { assert false }
         (0..<0).step(1) { assert false }
+        (0<..0).step(1) { assert false }
+        (0<..<0).step(1) { assert false }
+        (0<..<1).step(1) { assert false }
         for (i in 0..<0) assert false
+        for (i in 0<..0) assert false
+        for (i in 0<..<0) assert false
+        for (i in 0<..<1) assert false
         assertToString(0..<0, '0..<0', '0..<0')
         assertToString('a'..<'a', 'a..<a', "'a'..<'a'")
         assertToString(null..<null, 'null..<null', 'null..<null')
