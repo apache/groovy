@@ -5434,16 +5434,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected boolean typeCheckMethodsWithGenericsOrFail(ClassNode receiver, ClassNode[] arguments, MethodNode candidateMethod, Expression location) {
         if (!typeCheckMethodsWithGenerics(receiver, arguments, candidateMethod)) {
-            Map<GenericsTypeName, GenericsType> classGTs = GenericsUtils.extractPlaceholders(receiver);
-            ClassNode[] ptypes = new ClassNode[candidateMethod.getParameters().length];
-            final Parameter[] parameters = candidateMethod.getParameters();
-            for (int i = 0; i < parameters.length; i++) {
-                final Parameter parameter = parameters[i];
-                ClassNode type = parameter.getType();
-                ptypes[i] = fullyResolveType(type, classGTs);
+            Map<GenericsTypeName, GenericsType> spec = GenericsUtils.extractPlaceholders(receiver);
+            Parameter[] parameters = candidateMethod.getParameters();
+            ClassNode[] paramTypes = new ClassNode[parameters.length];
+            for (int i = 0, n = parameters.length; i < n; i += 1) {
+                paramTypes[i] = fullyResolveType(parameters[i].getType(), spec);
+                // GROOVY-10010: check for List<String> parameter and ["foo","$bar"] argument
+                if (i < arguments.length && hasGStringStringError(paramTypes[i], arguments[i], location)) {
+                    return false;
+                }
             }
             addStaticTypeError("Cannot call " + toMethodGenericTypesString(candidateMethod) + receiver.toString(false) + "#" +
-                    toMethodParametersString(candidateMethod.getName(), ptypes) +
+                    toMethodParametersString(candidateMethod.getName(), paramTypes) +
                     " with arguments " + formatArgumentList(arguments), location);
             return false;
         }

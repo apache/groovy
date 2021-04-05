@@ -26,22 +26,29 @@ import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
  */
 class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
-    void testDeclaration() {
+    void testDeclaration1() {
         assertScript '''
             List test = new LinkedList<String>()
         '''
     }
 
-    void testDeclaration5() {
+    void testDeclaration2() {
         assertScript '''
             Map<String,Integer> obj = new HashMap<String,Integer>()
         '''
     }
 
-    void testDeclaration6() {
+    void testDeclaration3() {
         shouldFailWithMessages '''
             Map<String,String> obj = new HashMap<String,Integer>()
         ''', 'Incompatible generic argument types. Cannot assign java.util.HashMap <String, Integer> to: java.util.Map <String, String>'
+    }
+
+    // GROOVY-10010: check beyond first wildcard
+    void testDeclaration4() {
+        shouldFailWithMessages '''
+            Map<? extends CharSequence,String> obj = new HashMap<String,Integer>()
+        ''', 'Incompatible generic argument types. Cannot assign java.util.HashMap <String, Integer> to: java.util.Map <? extends java.lang.CharSequence, String>'
     }
 
     void testAddOnList() {
@@ -664,34 +671,59 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-5559
+    // GROOVY-5559, GROOVY-10010
     void testGStringInListShouldNotBeConsideredAsAString() {
-        assertScript '''import org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode as LUB
-        def bar = 1
-        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-            assert node.getNodeMetaData(INFERRED_TYPE) == LIST_TYPE
-            assert node.getNodeMetaData(INFERRED_TYPE).genericsTypes[0].type instanceof LUB
-        })
-        def list = ["foo", "$bar"]
+        String base = '''import org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode as LUB
+            def bar = 1
         '''
 
-        shouldFailWithMessages '''import org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode as LUB
-        def bar = 1
-        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-            assert node.getNodeMetaData(INFERRED_TYPE) == LIST_TYPE
-            assert node.getNodeMetaData(INFERRED_TYPE).genericsTypes[0].type instanceof LUB
-        })
-        List<String> list = ["foo", "$bar"]
-        ''', 'You are trying to use a GString'
+        assertScript base + '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == LIST_TYPE
+                assert node.getNodeMetaData(INFERRED_TYPE).genericsTypes[0].type instanceof LUB
+            })
+            def list = ["foo", "$bar"]
+        '''
 
-        shouldFailWithMessages '''
-        def bar = 1
-        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-            assert node.getNodeMetaData(INFERRED_TYPE) == LIST_TYPE
-            assert node.getNodeMetaData(INFERRED_TYPE).genericsTypes[0].type == GSTRING_TYPE
-        })
-        List<String> list = ["$bar"] // single element means no LUB
-        ''', 'You are trying to use a GString'
+        shouldFailWithMessages base + '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == LIST_TYPE
+                assert node.getNodeMetaData(INFERRED_TYPE).genericsTypes[0].type instanceof LUB
+            })
+            List<String> list = ["foo", "$bar"]
+        ''', 'You are trying to use a GString in place of a String'
+
+        shouldFailWithMessages base + '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == LIST_TYPE
+                assert node.getNodeMetaData(INFERRED_TYPE).genericsTypes[0].type == GSTRING_TYPE // single element means no LUB
+            })
+            List<String> list = ["$bar"]
+        ''', 'You are trying to use a GString in place of a String'
+
+        shouldFailWithMessages base + '''
+            void m(List<String> list) {}
+            m(["foo", "$bar"])
+        ''', 'You are trying to use a GString in place of a String'
+    }
+
+    // GROOVY-5559, GROOVY-10010
+    void testGStringInMapShouldNotBeConsideredAsAString() {
+        String base = 'def bar = 123'
+
+        shouldFailWithMessages base + '''
+            Map<String,String> map = [x:"foo", y:"$bar"]
+        ''', 'You are trying to use a GString in place of a String'
+
+        shouldFailWithMessages base + '''
+            void m(Map<?,String> map) {}
+            m([x:"foo", y:"$bar"])
+        ''', 'You are trying to use a GString in place of a String'
+
+        shouldFailWithMessages base + '''
+            void m(Map<?,String> map) {}
+            m(x:"foo", y:"$bar")
+        ''', 'You are trying to use a GString in place of a String'
     }
 
     // GROOVY-5559: related behaviour
