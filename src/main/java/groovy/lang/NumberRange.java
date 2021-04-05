@@ -86,11 +86,6 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
     private final boolean reverse;
 
     /**
-     * <code>true</code> if the range includes the upper bound.
-     */
-    private final boolean inclusive;
-
-    /**
      * <code>true</code> if the range includes the lower bound.
      */
     private final boolean inclusiveLeft;
@@ -218,7 +213,6 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
         this.from = (Comparable) tempFrom;
         this.to = (Comparable) tempTo;
         this.stepSize = stepSize == null ? 1 : stepSize;
-        this.inclusive = inclusiveRight;
         this.inclusiveLeft = inclusiveLeft;
         this.inclusiveRight = inclusiveRight;
     }
@@ -234,7 +228,7 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
         if (stepSize.intValue() != 1) {
             throw new IllegalStateException("Step must be 1 when used by subList!");
         }
-        return IntRange.subListBorders(((Number) from).intValue(), ((Number) to).intValue(), inclusive, size);
+        return IntRange.subListBorders(((Number) from).intValue(), ((Number) to).intValue(), inclusiveLeft, inclusiveRight, size);
     }
 
     /**
@@ -249,7 +243,7 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
         if (!Integer.valueOf(1).equals(this.stepSize)) {
             throw new IllegalStateException("by only allowed on ranges with original stepSize = 1 but found " + this.stepSize);
         }
-        return new NumberRange(comparableNumber(from), comparableNumber(to), stepSize, inclusive);
+        return new NumberRange(comparableNumber(from), comparableNumber(to), stepSize, inclusiveLeft, inclusiveRight);
     }
 
     @SuppressWarnings("unchecked")
@@ -352,7 +346,8 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
     public boolean fastEquals(NumberRange that) {
         return that != null
                 && reverse == that.reverse
-                && inclusive == that.inclusive
+                && inclusiveLeft == that.inclusiveLeft
+                && inclusiveRight == that.inclusiveRight
                 && compareEqual(from, that.from)
                 && compareEqual(to, that.to)
                 && compareEqual(stepSize, that.stepSize);
@@ -452,7 +447,6 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
         return size;
     }
 
-    // TODO: Update to work with inclusiveLeft! (GROOVY-9649)
     void calcSize(Comparable from, Comparable to, Number stepSize) {
         int tempsize = 0;
         boolean shortcut = false;
@@ -460,18 +454,20 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
             if ((from instanceof Integer || from instanceof Long)
                     && (to instanceof Integer || to instanceof Long)) {
                 // let's fast calculate the size
-                final BigInteger fromNum = new BigInteger(from.toString());
+                final BigInteger fromTemp = new BigInteger(from.toString());
+                final BigInteger fromNum = inclusiveLeft ? fromTemp : fromTemp.add(BigInteger.ONE);
                 final BigInteger toTemp = new BigInteger(to.toString());
-                final BigInteger toNum = inclusive ? toTemp : toTemp.subtract(BigInteger.ONE);
+                final BigInteger toNum = inclusiveRight ? toTemp : toTemp.subtract(BigInteger.ONE);
                 final BigInteger sizeNum = new BigDecimal(toNum.subtract(fromNum)).divide(BigDecimal.valueOf(stepSize.longValue()), RoundingMode.DOWN).toBigInteger().add(BigInteger.ONE);
                 tempsize = sizeNum.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) < 0 ? sizeNum.intValue() : Integer.MAX_VALUE;
                 shortcut = true;
             } else if (((from instanceof BigDecimal || from instanceof BigInteger) && to instanceof Number) ||
                     ((to instanceof BigDecimal || to instanceof BigInteger) && from instanceof Number)) {
                 // let's fast calculate the size
-                final BigDecimal fromNum = NumberMath.toBigDecimal((Number) from);
+                final BigDecimal fromTemp = NumberMath.toBigDecimal((Number) from);
+                final BigDecimal fromNum = inclusiveLeft ? fromTemp : fromTemp.add(BigDecimal.ONE);
                 final BigDecimal toTemp = NumberMath.toBigDecimal((Number) to);
-                final BigDecimal toNum = inclusive ? toTemp : toTemp.subtract(BigDecimal.ONE);
+                final BigDecimal toNum = inclusiveRight ? toTemp : toTemp.subtract(BigDecimal.ONE);
                 final BigInteger sizeNum = toNum.subtract(fromNum).divide(BigDecimal.valueOf(stepSize.longValue()), RoundingMode.DOWN).toBigInteger().add(BigInteger.ONE);
                 tempsize = sizeNum.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) < 0 ? sizeNum.intValue() : Integer.MAX_VALUE;
                 shortcut = true;
