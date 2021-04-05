@@ -28,13 +28,25 @@ class ResourceGroovyMethodsTest {
 	@Rule
 	public TemporaryFolder temporaryFolder = new TemporaryFolder()
 
+
+	@Test
+	void test_Should_write_fail_when_path_doesnt_exists() {
+		File file =  new File("C:\\does\\not\\exists.txt") // temporaryFolder.newFile()
+		String text = "foobar"
+		String encoding = 'UTF-16LE'
+
+		ResourceGroovyMethods.write(file, text, encoding)
+
+		assert file.getText(encoding) == text
+	}
+
 	@Test
 	void test_Should_write_String_to_File_using_default_encoding() {
 		File file = temporaryFolder.newFile()
 		String text = 'Hello World'
 		
 		ResourceGroovyMethods.write(file, text)
-		
+
 		assert file.text == text
 	}
 
