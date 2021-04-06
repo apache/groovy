@@ -48,7 +48,7 @@ allprojects {
         apply plugin: 'com.jfrog.artifactory-upload'
 
         artifactory {
-            contextUrl = project.hasProperty('artifactoryContext') ? project.artifactoryContext : 'https://groovy.jfrog.io'
+            contextUrl = project.hasProperty('artifactoryContext') ? project.artifactoryContext : 'https://groovy.jfrog.io/artifactory'
             resolve {
                 repository {
                     repoKey = 'libs-release'
