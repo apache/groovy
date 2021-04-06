@@ -23,25 +23,21 @@ import org.codehaus.groovy.runtime.StringBufferWriter
 
 /**
  * Test for the Interceptor Interface usage as implemented by the
- * TracingInterceptor. Makes also use of the ProxyMetaClass and
+ * {@link TracingInterceptor}. Makes use of the {@link ProxyMetaClass} and
  * shows the collaboration.
- * As a side Effect, the ProxyMetaClass is also partly tested.
+ * <p>
+ * As a side effect, the {@code ProxyMetaClass} is also partly tested.
  */
-class InterceptorTest extends GroovyTestCase {
+final class InterceptorTest extends GroovyTestCase {
 
-    def Interceptor logInterceptor
-    def StringBuffer log
-    def interceptable   // the object to intercept method calls on
-    def proxy
+    private final Interceptor interceptor = new TracingInterceptor() // class under test
+    private final String interceptable = 'Interceptable String' // the object to observe
+    private final ProxyMetaClass proxy = ProxyMetaClass.getInstance(interceptable.class)
+    private final StringBuffer log = new StringBuffer('\n')
 
     void setUp() {
-        logInterceptor = new TracingInterceptor()
-        log = new StringBuffer("\n")
-        logInterceptor.writer = new StringBufferWriter(log)
-        // we intercept calls from Groovy to the java.lang.String object
-        interceptable = 'Interceptable String'
-        proxy = ProxyMetaClass.getInstance(interceptable.class)
-        proxy.setInterceptor(logInterceptor)
+        interceptor.writer = new StringBufferWriter(log)
+        proxy.interceptor = interceptor
     }
 
     void testSimpleInterception() {
@@ -90,7 +86,7 @@ after  java.lang.String.valueOf(java.lang.Boolean)
     void testInterceptionOfGroovyClasses() {
         def slicer = new groovy.mock.example.CheeseSlicer()
         def proxy = ProxyMetaClass.getInstance(slicer.class)
-        proxy.setInterceptor(logInterceptor)
+        proxy.setInterceptor(interceptor)
         proxy.use(slicer) {
             slicer.coffeeBreak('')
         }
@@ -101,6 +97,17 @@ after  groovy.mock.example.CheeseSlicer.coffeeBreak(java.lang.String)
     }
 
     void testProxyMetaClassUseMethodShouldReturnTheResultOfClosure() {
-        assertEquals true, proxy.use { true }
+        assertTrue proxy.use { true }
+    }
+
+    // GROOVY-10009
+    void testNullArgumentToMethodCall() {
+        interceptable.metaClass = proxy
+        interceptable.equals(null)
+
+        assertEquals '''
+            |before java.lang.String.equals(java.lang.Object)
+            |after  java.lang.String.equals(java.lang.Object)
+            |'''.stripMargin(), log.toString()
     }
 }
