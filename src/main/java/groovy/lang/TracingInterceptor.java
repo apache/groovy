@@ -23,12 +23,12 @@ import java.io.PrintWriter;
 import java.io.Writer;
 
 /*
- * This {@link Interceptor} traces method calls on the proxied object to a log. 
- * By default, the log is simply <pre>System.out</pre>; however, that can be 
+ * This {@link Interceptor} traces method calls on the proxied object to a log.
+ * By default, the log is simply <pre>System.out</pre>; however, that can be
  * changed with the <pre>setWriter(Writer)</pre> method.
  * <p>
  * A message will be written to output before a method is invoked and after a method
- * is invoked. If methods are nested, and invoke one another, then indentation 
+ * is invoked. If methods are nested, and invoke one another, then indentation
  * of two spaces is written.
  * <p>
  * Here is an example usage on the ArrayList object: <br>
@@ -41,7 +41,7 @@ import java.io.Writer;
  *     assert list.contains(1)
  * }
  * </pre>
- * Running this code produces this output: 
+ * Running this code produces this output:
  * <pre>
  * before java.util.ArrayList.size()
  * after  java.util.ArrayList.size()
@@ -55,15 +55,15 @@ public class TracingInterceptor implements Interceptor {
     private int indent = 0;
 
     /**
-    * Returns the writer associated with this interceptor. 
-    */ 
+    * Returns the writer associated with this interceptor.
+    */
     public Writer getWriter() {
         return writer;
     }
 
     /**
-    * Changes the writer associated with this interceptor. 
-    */ 
+    * Changes the writer associated with this interceptor.
+    */
     public void setWriter(Writer writer) {
         this.writer = writer;
     }
@@ -108,16 +108,13 @@ public class TracingInterceptor implements Interceptor {
         }
     }
 
-    protected void writeInfo(final Class aClass, String methodName, Object[] arguments) throws IOException {
-        writer.write(aClass.getName());
-        writer.write(".");
-        writer.write(methodName);
-        writer.write("(");
-        for (int i = 0; i < arguments.length; i++) {
-            if (i > 0) writer.write(", ");
-            Object argument = arguments[i];
-            writer.write(argument.getClass().getName());
-        }
-        writer.write(")");
+    protected void writeInfo(final Class aClass, final String methodName, final Object[] arguments) throws IOException {
+        String argumentTypes = java.util.stream.Stream.of(arguments)
+                .map(arg -> arg != null ? arg.getClass().getName() : "java.lang.Object") // GROOVY-10009
+                .collect(java.util.stream.Collectors.joining(", "));
+        StringBuilder result = new StringBuilder(aClass.getName());
+        result.append('.').append(methodName).append('(');
+        result.append(argumentTypes).append(')');
+        writer.write(result.toString());
     }
 }
