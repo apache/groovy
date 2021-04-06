@@ -644,7 +644,7 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
                     // make the first fetch lazy too
                     next = isAscending ? range.getFrom() : range.getTo();
                     if (!range.inclusiveLeft) {
-                        next = next();
+                        next = isAscending ? increment(next, step) : decrement(next, step);
                     }
                 } else {
                     next = isAscending ? increment(next, step) : decrement(next, step);
