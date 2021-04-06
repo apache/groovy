@@ -5447,11 +5447,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private ClassNode getDeclaredOrInferredType(final Expression expression) {
+        ClassNode declaredOrInferred;
         // in case of "T t = new ExtendsOrImplementsT()", return T for the expression type
         if (expression instanceof Variable && !((Variable) expression).isDynamicTyped()) {
-            return getOriginalDeclarationType(expression); // GROOVY-9996
+            declaredOrInferred = getOriginalDeclarationType(expression); // GROOVY-9996
+        } else {
+            declaredOrInferred = getType(expression);
         }
-        return getInferredTypeFromTempInfo(expression, getType(expression));
+        // GROOVY-10011: apply instanceof constraints to either option
+        return getInferredTypeFromTempInfo(expression, declaredOrInferred);
     }
 
     private static ClassNode getDeclaringClass(final MethodNode method, final Expression arguments) {
