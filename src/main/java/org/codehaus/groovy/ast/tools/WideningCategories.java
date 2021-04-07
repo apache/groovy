@@ -52,7 +52,6 @@ import static org.codehaus.groovy.ast.ClassHelper.isNumberType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
-import static org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
@@ -138,21 +137,21 @@ public class WideningCategories {
     }
     /**
      * It is of a long category, if the provided type is a
-     * long, its wrapper or if it is a long category. 
+     * long, its wrapper or if it is a long category.
      */
     public static boolean isLongCategory(ClassNode type) {
         return  type==long_TYPE     ||  isIntCategory(type);
     }
     /**
      * It is of a BigInteger category, if the provided type is a
-     * long category or a BigInteger. 
+     * long category or a BigInteger.
      */
     public static boolean isBigIntCategory(ClassNode type) {
         return  type==BigInteger_TYPE || isLongCategory(type);
     }
     /**
      * It is of a BigDecimal category, if the provided type is a
-     * BigInteger category or a BigDecimal. 
+     * BigInteger category or a BigDecimal.
      */
     public static boolean isBigDecCategory(ClassNode type) {
         return  type==BigDecimal_TYPE || isBigIntCategory(type);
@@ -301,13 +300,13 @@ public class WideningCategories {
         ClassNode superClass = source.getUnresolvedSuperClass();
         // copy generic type information if available
         if (superClass!=null && superClass.isUsingGenerics()) {
-            Map<GenericsTypeName, GenericsType> genericsTypeMap = GenericsUtils.extractPlaceholders(source);
+            Map<GenericsType.GenericsTypeName, GenericsType> genericsTypeMap = GenericsUtils.extractPlaceholders(source);
             GenericsType[] genericsTypes = superClass.getGenericsTypes();
             if (genericsTypes!=null) {
                 GenericsType[] copyTypes = new GenericsType[genericsTypes.length];
                 for (int i = 0; i < genericsTypes.length; i++) {
                     GenericsType genericsType = genericsTypes[i];
-                    GenericsTypeName gtn = new GenericsTypeName(genericsType.getName());
+                    GenericsType.GenericsTypeName gtn = new GenericsType.GenericsTypeName(genericsType.getName());
                     if (genericsType.isPlaceholder() && genericsTypeMap.containsKey(gtn)) {
                         copyTypes[i] = genericsTypeMap.get(gtn);
                     } else {
@@ -474,7 +473,7 @@ public class WideningCategories {
         Collections.addAll(interfaces, node.getInterfaces());
         extractInterfaces(node.getSuperClass(), interfaces);
     }
-    
+
     /**
      * Given the list of interfaces implemented by two class nodes, returns the list of the most specific common
      * implemented interfaces.
@@ -614,19 +613,19 @@ public class WideningCategories {
             compileTimeClassNode = upper.equals(OBJECT_TYPE) && interfaces.length>0?interfaces[0]:upper;
             this.name = name;
             usesGenerics = upper.isUsingGenerics();
-            List<GenericsType[]> genericsTypesList = new LinkedList<GenericsType[]>();
+            List<GenericsType[]> genericsTypesList = new LinkedList<>();
             genericsTypesList.add(upper.getGenericsTypes());
-			for (ClassNode anInterface : interfaces) {
+            for (ClassNode anInterface : interfaces) {
                 usesGenerics |= anInterface.isUsingGenerics();
                 genericsTypesList.add(anInterface.getGenericsTypes());
-				for (MethodNode methodNode : anInterface.getMethods()) {
+                for (MethodNode methodNode : anInterface.getMethods()) {
                     MethodNode method = addMethod(methodNode.getName(), methodNode.getModifiers(), methodNode.getReturnType(), methodNode.getParameters(), methodNode.getExceptions(), methodNode.getCode());
                     method.setDeclaringClass(anInterface); // important for static compilation!
                 }
-			}
+            }
             setUsingGenerics(usesGenerics);
             if (usesGenerics) {
-                List<GenericsType> asArrayList = new ArrayList<GenericsType>();
+                List<GenericsType> asArrayList = new ArrayList<>();
                 for (GenericsType[] genericsTypes : genericsTypesList) {
                     if (genericsTypes!=null) {
                         Collections.addAll(asArrayList, genericsTypes);
@@ -646,7 +645,12 @@ public class WideningCategories {
         }
 
         public String getLubName() {
-            return this.name;
+            return name;
+        }
+
+        @Override
+        public String getText() {
+            return text;
         }
 
         @Override
@@ -662,14 +666,22 @@ public class WideningCategories {
         @Override
         public int hashCode() {
             int result = super.hashCode();
-//            result = 31 * result + (compileTimeClassNode != null ? compileTimeClassNode.hashCode() : 0);
             result = 31 * result + (name != null ? name.hashCode() : 0);
             return result;
         }
 
         @Override
-        public String getText() {
-            return text;
+        public GenericsType asGenericsType() {
+            ClassNode[] ubs;
+            if (upper.equals(OBJECT_TYPE)) {
+                ubs = interfaces; // Object is implicit
+            } else {
+                ubs = new ClassNode[interfaces.length + 1]; ubs[0] = upper;
+                System.arraycopy(interfaces, 0, ubs, 1, interfaces.length);
+            }
+            GenericsType gt = new GenericsType(ClassHelper.makeWithoutCaching("?"), ubs, null);
+            gt.setWildcard(true);
+            return gt;
         }
 
         @Override
@@ -724,7 +736,7 @@ public class WideningCategories {
         }
         return true;
     }
-    
+
     /**
      * Determines if the source class implements an interface or subclasses the target type.
      * This method takes the {@link org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode lowest
