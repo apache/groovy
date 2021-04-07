@@ -54,6 +54,11 @@ class IntRangeTest extends GroovyTestCase {
         assert new IntRange(true, 0, 0).size() == 1
         assert new IntRange(false, 0, 1).size() == 1
         assert new IntRange(true, 0, 1).size() == 2
+        assert new IntRange(true, true, 0, 0).size() == 1
+        assert new IntRange(false, true, 0, 0).size() == 0
+        assert new IntRange(false, true, 0, 1).size() == 1
+        assert new IntRange(false, false, 0, 0).size() == 0
+        assert new IntRange(false, false, 0, 1).size() == 0
     }
 
     /**
@@ -90,37 +95,81 @@ class IntRangeTest extends GroovyTestCase {
 
     void testInclusiveRangesWithNegativesAndPositives() {
         final a = [1, 2, 3, 4]
-        assert a[-3..-2] == [2, 3]
-        assert a[-3..<-2] == [2]
-        assert a[2..-3] == [3, 2]
-        assert a[1..-1] == [2, 3, 4]
-        assert a[1..<-1] == [2, 3]
-        assert a[-2..<1] == [3]
-        assert a[-2..<-3] == [3]
-        assert a[5..<5] == []
-        assert a[-5..<-5] == []
+        assert a[-3..-2]   == [2, 3]
+        assert a[-3..<-2]  == [2]
+        assert a[-3<..2]   == [3]
+        assert a[-3<..<-2] == []
+
+        assert a[2..-3]    == [3, 2]
+
+        assert a[1..-1]    == [2, 3, 4]
+        assert a[1..<-1]   == [2, 3]
+        assert a[1<..-1]   == [3, 4]
+        assert a[1<..<-1]  == [3]
+
+        assert a[-2..<1]   == [3]
+        assert a[-2<..1]   == [2]
+        assert a[-2<..<1]  == []
+
+        assert a[-2..<-3]  == [3]
+        assert a[-2<..-3]  == [2]
+        assert a[-2<..<-3] == []
+
+        assert a[5..<5]    == []
+        assert a[5<..5]    == []
+        assert a[5<..<5]   == []
+        assert a[5<..<6]   == []
+        assert a[-5..<-5]  == []
     }
 
     void testInclusiveRangesWithNegativesAndPositivesStrings() {
         def items = 'abcde'
-        assert items[1..-2]   == 'bcd'
-        assert items[1..<-2]  == 'bc'
-        assert items[-3..<-2] == 'c'
-        assert items[-2..-4]  == 'dcb'
-        assert items[-2..<-4] == 'dc'
-        assert items[2..<2] == ''
-        assert items[-2..<-2] == ''
+        assert items[1..-2]    == 'bcd'
+        assert items[1..<-2]   == 'bc'
+        assert items[1<..-2]   == 'cd'
+        assert items[1<..<-2]  == 'c'
+
+        assert items[-3..<-2]  == 'c'
+        assert items[-3<..-2]  == 'd'
+        assert items[-3<..<-2] == ''
+
+        assert items[-2..-4]   == 'dcb'
+        assert items[-2..<-4]  == 'dc'
+        assert items[-2<..-4]  == 'cb'
+        assert items[-2<..<-4] == 'c'
+
+        assert items[2..<2]    == ''
+        assert items[2<..2]    == ''
+        assert items[2<..<2]   == ''
+        assert items[2<..<3]   == ''
+
+        assert items[-2..<-2]  == ''
+        assert items[-2<..-2]  == ''
+        assert items[-2<..<-2] == ''
+        assert items[-2<..<-3] == ''
     }
 
     void testInclusiveRangesWithNegativesAndPositivesPrimBoolArray() {
         boolean[] bs = [true, false, true, true]
-        assert bs[-3..-2]  == [false, true]
-        assert bs[-3..<-2] == [false]
-        assert bs[2..-3]   == [true, false]
-        assert bs[1..-1]   == [false, true, true]
-        assert bs[1..<-1]  == [false, true]
-        assert bs[-2..<1]  == [true]
-        assert bs[-2..<-3] == [true]
+        assert bs[-3..-2]   == [false, true]
+        assert bs[-3..<-2]  == [false]
+        assert bs[-3<..-2]  == [true]
+        assert bs[-3<..<-2] == []
+
+        assert bs[2..-3]    == [true, false]
+
+        assert bs[1..-1]    == [false, true, true]
+        assert bs[1..<-1]   == [false, true]
+        assert bs[1<..-1]   == [true, true]
+        assert bs[1<..<-1]  == [true]
+
+        assert bs[-2..<1]   == [true]
+        assert bs[-2<..1]   == [false]
+        assert bs[-2<..<1]  == []
+
+        assert bs[-2..<-3]  == [true]
+        assert bs[-2<..-3]  == [false]
+        assert bs[-2<..<-3] == []
     }
 
     void testInclusiveRangesWithNegativesAndPositivesBitset() {
@@ -132,13 +181,25 @@ class IntRangeTest extends GroovyTestCase {
         assert bs.toString() == '{1, 2, 6, 10, 14, 16, 17, 18, 23}'
         assert bs[bs.length()-1] == true
         assert bs[-1] == true
-        assert bs[6..17].toString() == '{0, 4, 8, 10, 11}'
-        assert bs[6..<17].toString() == '{0, 4, 8, 10}'
-        assert bs[17..6].toString() == '{0, 1, 3, 7, 11}'
-        assert bs[17..<6].toString() == '{0, 1, 3, 7}'
-        assert bs[-1..-7].toString() == '{0, 5, 6}'
-        assert bs[-1..<-7].toString() == '{0, 5}'
-        assert bs[20..<-8].toString() == '{2, 3}'
+
+        assert bs[6..17].toString()    == '{0, 4, 8, 10, 11}'
+        assert bs[6..<17].toString()   == '{0, 4, 8, 10}'
+        assert bs[6<..17].toString()   == '{3, 7, 9, 10}'
+        assert bs[6<..<17].toString()  == '{3, 7, 9}'
+
+        assert bs[17..6].toString()    == '{0, 1, 3, 7, 11}'
+        assert bs[17..<6].toString()   == '{0, 1, 3, 7}'
+        assert bs[17<..6].toString()   == '{0, 2, 6, 10}'
+        assert bs[17<..<6].toString()  == '{0, 2, 6}'
+
+        assert bs[-1..-7].toString()   == '{0, 5, 6}'
+        assert bs[-1..<-7].toString()  == '{0, 5}'
+        assert bs[-1<..-7].toString()  == '{4, 5}'
+        assert bs[-1<..<-7].toString() == '{4}'
+
+        assert bs[20..<-8].toString()  == '{2, 3}'
+        assert bs[20<..-8].toString()  == '{1, 2, 3}'
+        assert bs[20<..<-8].toString() == '{1, 2}'
     }
 
     void testHashCode(){
