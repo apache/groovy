@@ -1459,14 +1459,17 @@ public abstract class StaticTypeCheckingSupport {
         // extension methods are special, since they set the receiver as
         // first parameter. While we normally allow generalization for the first
         // parameter, in case of an extension method we must not.
-        Set<GenericsTypeName> fixedGenericsPlaceHolders = extractResolvedPlaceHolders(resolvedMethodGenerics);
+        Set<GenericsTypeName> fixedPlaceHolders = extractResolvedPlaceHolders(resolvedMethodGenerics);
 
+        int lastParamIndex = parameters.length - 1;
         for (int i = 0, n = argumentTypes.length; i < n; i += 1) {
-            ClassNode argumentType = argumentTypes[i], parameterType = parameters[min(i, parameters.length - 1)].getOriginType();
-            failure |= inferenceCheck(fixedGenericsPlaceHolders, resolvedMethodGenerics, parameterType, argumentType, i >= parameters.length - 1);
+            ClassNode parameterType = parameters[min(i, lastParamIndex)].getOriginType();
+            ClassNode argumentType = StaticTypeCheckingVisitor.wrapTypeIfNecessary(argumentTypes[i]);
+            failure |= inferenceCheck(fixedPlaceHolders, resolvedMethodGenerics, parameterType, argumentType, i >= lastParamIndex);
 
-            if (i == 0 && isExtensionMethod) { // set real fixed generics for extension methods
-                fixedGenericsPlaceHolders = extractResolvedPlaceHolders(resolvedMethodGenerics);
+            if (i == 0 && isExtensionMethod) {
+                // set real fixed type parameters for extension method
+                fixedPlaceHolders = extractResolvedPlaceHolders(resolvedMethodGenerics);
             }
         }
         return !failure;
@@ -1483,26 +1486,37 @@ public abstract class StaticTypeCheckingSupport {
         return result;
     }
 
-    private static boolean inferenceCheck(final Set<GenericsTypeName> fixedGenericsPlaceHolders, final Map<GenericsTypeName, GenericsType> resolvedMethodGenerics, ClassNode type, ClassNode wrappedArgument, final boolean lastArg) {
-        Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
-        if (isPrimitiveType(wrappedArgument)) wrappedArgument = getWrapper(wrappedArgument);
-
-        if (lastArg &&
-                type.isArray() && type.getComponentType().isGenericsPlaceHolder() &&
-                !wrappedArgument.isArray() && wrappedArgument.isGenericsPlaceHolder()) {
-            // GROOVY-8090: handle generics varargs, e.g. "U x = ...; Arrays.asList(x)"
-            // we should connect the type of vararg(e.g. T is the type of T...) to the argument type
+    private static boolean inferenceCheck(final Set<GenericsTypeName> fixedPlaceHolders, final Map<GenericsTypeName, GenericsType> resolvedMethodGenerics, ClassNode type, final ClassNode wrappedArgument, final boolean lastArg) {
+        // GROOVY-8090: handle generics varargs like "T x = ...; Arrays.asList(x)"
+        if (lastArg && type.isArray() && type.getComponentType().isGenericsPlaceHolder()
+                && !wrappedArgument.isArray() && wrappedArgument.isGenericsPlaceHolder()) {
             type = type.getComponentType();
         }
         // the context we compare with in the end is the one of the callsite
         // so far we specified the context of the method declaration only
         // thus for each argument, we try to find the connected generics first
+        Map<GenericsTypeName, GenericsType> connections = new LinkedHashMap<>();
         extractGenericsConnections(connections, wrappedArgument, type);
-        // each found connection must comply with already found connections
-        boolean failure = !compatibleConnections(connections, resolvedMethodGenerics, fixedGenericsPlaceHolders);
-        // and then apply the found information to refine the method level
-        // information. This way the method level information slowly turns
-        // into information for the callsite
+
+        // each new connection must comply with previous connections
+        for (Map.Entry<GenericsTypeName, GenericsType> entry : connections.entrySet()) {
+            GenericsType candidate = entry.getValue(), resolved = resolvedMethodGenerics.get(entry.getKey());
+            if (resolved == null || (candidate.isPlaceholder() && !hasNonTrivialBounds(candidate))) continue;
+
+            if (!compatibleConnection(resolved, candidate)) {
+                if (!resolved.isPlaceholder() && !resolved.isWildcard()
+                        && !fixedPlaceHolders.contains(entry.getKey())
+                        && compatibleConnection(candidate, resolved)) {
+                    // was "T=Integer" and now is "T=Number" or "T=Object"
+                    resolvedMethodGenerics.put(entry.getKey(), candidate);
+                } else {
+                    return true; // incompatible
+                }
+            }
+        }
+
+        // apply the new information to refine the method level information so
+        // that the information slowly becomes information for the callsite
         applyGenericsConnections(connections, resolvedMethodGenerics);
         // since it is possible that the callsite uses some generics as well,
         // we may have to add additional elements here
@@ -1510,45 +1524,8 @@ public abstract class StaticTypeCheckingSupport {
         // to finally see if the parameter and the argument fit together,
         // we use the provided information to transform the parameter
         // into something that can exist in the callsite context
-        type = applyGenericsContext(resolvedMethodGenerics, type);
-        // there of course transformed parameter type and argument must fit
-        return failure || !typeCheckMethodArgumentWithGenerics(type, wrappedArgument, lastArg);
-    }
-
-    private static GenericsType buildWildcardType(final GenericsType origin) {
-        ClassNode lowerBound = origin.getType().getPlainNodeReference();
-        if (hasNonTrivialBounds(origin)) {
-            lowerBound.setGenericsTypes(new GenericsType[]{origin});
-        }
-        ClassNode base = makeWithoutCaching("?");
-        GenericsType gt = new GenericsType(base, null, lowerBound);
-        gt.setWildcard(true);
-        return gt;
-    }
-
-    private static boolean compatibleConnections(final Map<GenericsTypeName, GenericsType> connections, final Map<GenericsTypeName, GenericsType> resolvedMethodGenerics, final Set<GenericsTypeName> fixedGenericsPlaceHolders) {
-        for (Map.Entry<GenericsTypeName, GenericsType> entry : connections.entrySet()) {
-            GenericsType resolved = resolvedMethodGenerics.get(entry.getKey());
-            if (resolved == null) continue;
-            GenericsType connection = entry.getValue();
-            if (connection.isPlaceholder() && !hasNonTrivialBounds(connection)) {
-                continue;
-            }
-            if (!compatibleConnection(resolved, connection)) {
-                if (!(resolved.isPlaceholder() || resolved.isWildcard())
-                        && !fixedGenericsPlaceHolders.contains(entry.getKey())
-                        && compatibleConnection(connection, resolved)) {
-                    // we did for example find T=String and now check against
-                    // T=Object, which fails the first compatibleConnection check
-                    // but since T=Object works for both, the second one will pass
-                    // and we need to change the type for T to the more general one
-                    resolvedMethodGenerics.put(entry.getKey(), connection);
-                } else {
-                    return false;
-                }
-            }
-        }
-        return true;
+        ClassNode resolvedType = applyGenericsContext(resolvedMethodGenerics, type);
+        return !typeCheckMethodArgumentWithGenerics(resolvedType, wrappedArgument, lastArg);
     }
 
     private static boolean compatibleConnection(final GenericsType resolved, final GenericsType connection) {
@@ -1559,17 +1536,29 @@ public abstract class StaticTypeCheckingSupport {
                 && resolved.getUpperBounds()[0].getName().equals("java.lang.Object")) {
             return true;
         }
-        ClassNode compareNode;
+
+        ClassNode resolvedType;
         if (hasNonTrivialBounds(resolved)) {
-            compareNode = getCombinedBoundType(resolved);
-            compareNode = compareNode.redirect().getPlainNodeReference();
+            resolvedType = getCombinedBoundType(resolved);
+            resolvedType = resolvedType.redirect().getPlainNodeReference();
         } else if (!resolved.isPlaceholder()) {
-            compareNode = resolved.getType().getPlainNodeReference();
+            resolvedType = resolved.getType().getPlainNodeReference();
         } else {
             return true;
         }
-        GenericsType gt = connection.isWildcard() ? connection : buildWildcardType(connection);
-        return gt.isCompatibleWith(compareNode);
+
+        GenericsType gt;
+        if (connection.isWildcard()) {
+            gt = connection;
+        } else { // test compatibility with "? super Type"
+            ClassNode lowerBound = connection.getType().getPlainNodeReference();
+            if (hasNonTrivialBounds(connection)) {
+                lowerBound.setGenericsTypes(new GenericsType[] {connection});
+            }
+            gt = new GenericsType(makeWithoutCaching("?"), null, lowerBound);
+            gt.setWildcard(true);
+        }
+        return gt.isCompatibleWith(resolvedType);
     }
 
     private static void addMissingEntries(final Map<GenericsTypeName, GenericsType> connections, final Map<GenericsTypeName, GenericsType> resolved) {
@@ -1646,7 +1635,7 @@ public abstract class StaticTypeCheckingSupport {
             GenericsType realGt = gt.getType().getGenericsTypes()[0];
             if (realGt.getLowerBound() != null) {
                 replacementType = realGt.getLowerBound();
-            } else if (realGt.getUpperBounds() != null && realGt.getUpperBounds().length > 0) {
+            } else if (asBoolean(realGt.getUpperBounds())) {
                 replacementType = realGt.getUpperBounds()[0];
             }
         }

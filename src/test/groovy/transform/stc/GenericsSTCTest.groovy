@@ -1581,7 +1581,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testIncompatibleGenericsForTwoArguments() {
+    // GROOVY-5692
+    void testIncompatibleArgumentsForPlaceholders1() {
         shouldFailWithMessages '''
             public <T> void printEqual(T arg1, T arg2) {
                 println arg1 == arg2
@@ -1590,7 +1591,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''', '#printEqual(T, T) with arguments [int, java.lang.String]'
     }
 
-    void testIncompatibleGenericsForTwoArgumentsUsingEmbeddedPlaceholder() {
+    // GROOVY-5692
+    void testIncompatibleArgumentsForPlaceholders2() {
         shouldFailWithMessages '''
             public <T> void printEqual(T arg1, List<T> arg2) {
                 println arg1 == arg2
@@ -1599,8 +1601,16 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''', '#printEqual(T, java.util.List <T>) with arguments [int, java.util.ArrayList <java.lang.String>]'
     }
 
-    // GROOVY-9902
-    void testIncompatibleArgumentsForGenericArgument_IncludingDelegation() {
+    void testIncompatibleArgumentsForPlaceholders3() {
+        shouldFailWithMessages '''
+            def <T extends Number> T test(T one, T two) { }
+            test(1,"II")
+        ''',
+        '#test(int, java.lang.String). Please check if the declared type is correct and if the method exists.'
+    }
+
+    // GROOVY-9902: incomplete generics should not stop type checking
+    void testIncompatibleArgumentsForPlaceholders4() {
         shouldFailWithMessages '''
             class Holder<Unknown> {
                 TypedProperty<Number, Unknown> numberProperty = prop(Number)
@@ -1639,7 +1649,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot call TypedProperty#eq(java.lang.Number) with arguments [java.lang.String]'
     }
 
-    void testGroovy5748() {
+    // GROOVY-5748
+    void testPlaceholdersAndWildcards() {
         assertScript '''
             interface IStack<T> {
                 INonEmptyStack<T, ? extends IStack<T>> push(T x)
