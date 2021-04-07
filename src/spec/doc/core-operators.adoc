@@ -705,8 +705,10 @@ include::../test/OperatorsTest.groovy[tags=intrange,indent=0]
 <1> a simple range of integers, stored into a local variable
 <2> an `IntRange`, with inclusive bounds
 <3> an `IntRange`, with exclusive upper bound
-<4> a `groovy.lang.Range` implements the `List` interface
-<5> meaning that you can call the `size` method on it
+<4> an `IntRange`, with exclusive lower bound
+<5> an `IntRange`, with exclusive lower and upper bounds
+<6> a `groovy.lang.Range` implements the `List` interface
+<7> meaning that you can call the `size` method on it
 
 Ranges implementation is lightweight, meaning that only the lower and upper bounds are stored. You can create a range
 from any `Comparable` object that has `next()` and `previous()` methods to determine the next / previous item in the range.

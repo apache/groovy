@@ -341,6 +341,12 @@ contains the from and to value).
 Ranges defined with the `..<` notation are half-open, they include the
 first value but not the last value.
 
+Ranges defined with the `<..` notation are also half-open, they include the
+last value but not the first value.
+
+Ranges defined with the `<..<` notation are full-open, they do not include the
+first value nor the last value.
+
 [source,groovy]
 ----------------------------------------------------------------------------
 include::../test/gdk/WorkingWithCollectionsTest.groovy[tags=intrange,indent=0]
