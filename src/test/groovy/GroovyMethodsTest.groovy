@@ -295,6 +295,9 @@ class GroovyMethodsTest extends GroovyTestCase {
         def list = ['a', 'b', 'c']
         assert list[1..2] == ['b', 'c']
         assert list[0..<0] == []
+        assert list[0<..0] == []
+        assert list[0<..<0] == []
+        assert list[0<..<1] == []
     }
 
     void testCharSequenceGetAt() {

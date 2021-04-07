@@ -101,6 +101,34 @@ public class DefaultGroovyMethodsSupport {
         return new RangeInfo(from, from, false);
     }
 
+    // Helper method for primitive array getAt
+    protected static IntRange subListRange(RangeInfo info, IntRange range) {
+        int from = info.from;
+        int to = info.to - 1;
+
+        // Undo inclusiveness effects done by subListBorders()
+        if (!info.reverse) {
+            if (!range.getInclusiveLeft()) {
+                from--;
+            }
+            if (!range.getInclusiveRight()) {
+                to++;
+            }
+        } else {
+            if (!range.getInclusiveLeft()) {
+                to++;
+            }
+            if (!range.getInclusiveRight()) {
+                from--;
+            }
+        }
+
+        boolean inclusiveLeft = info.reverse ? range.getInclusiveRight() : range.getInclusiveLeft();
+        boolean inclusiveRight = info.reverse ? range.getInclusiveLeft() : range.getInclusiveRight();
+
+        return new IntRange(inclusiveLeft, inclusiveRight, from, to);
+    }
+
     /**
      * This converts a possibly negative index to a real index into the array.
      *

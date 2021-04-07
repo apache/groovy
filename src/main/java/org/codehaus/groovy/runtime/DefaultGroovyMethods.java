@@ -13944,7 +13944,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @SuppressWarnings("unchecked")
     public static List<Byte> getAt(byte[] array, IntRange range) {
         RangeInfo info = subListBorders(array.length, range);
-        List<Byte> answer = primitiveArrayGet(array, new IntRange(true, info.from, info.to - 1));
+        List<Byte> answer = primitiveArrayGet(array, subListRange(info, range));
         return info.reverse ? reverse(answer) : answer;
     }
 
@@ -13959,7 +13959,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @SuppressWarnings("unchecked")
     public static List<Character> getAt(char[] array, IntRange range) {
         RangeInfo info = subListBorders(array.length, range);
-        List<Character> answer = primitiveArrayGet(array, new IntRange(true, info.from, info.to - 1));
+        List<Character> answer = primitiveArrayGet(array, subListRange(info, range));
         return info.reverse ? reverse(answer) : answer;
     }
 
@@ -13974,7 +13974,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @SuppressWarnings("unchecked")
     public static List<Short> getAt(short[] array, IntRange range) {
         RangeInfo info = subListBorders(array.length, range);
-        List<Short> answer = primitiveArrayGet(array, new IntRange(true, info.from, info.to - 1));
+        List<Short> answer = primitiveArrayGet(array, subListRange(info, range));
         return info.reverse ? reverse(answer) : answer;
     }
 
@@ -13989,7 +13989,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @SuppressWarnings("unchecked")
     public static List<Integer> getAt(int[] array, IntRange range) {
         RangeInfo info = subListBorders(array.length, range);
-        List<Integer> answer = primitiveArrayGet(array, new IntRange(true, info.from, info.to - 1));
+        List<Integer> answer = primitiveArrayGet(array, subListRange(info, range));
         return info.reverse ? reverse(answer) : answer;
     }
 
@@ -14004,7 +14004,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @SuppressWarnings("unchecked")
     public static List<Long> getAt(long[] array, IntRange range) {
         RangeInfo info = subListBorders(array.length, range);
-        List<Long> answer = primitiveArrayGet(array, new IntRange(true, info.from, info.to - 1));
+        List<Long> answer = primitiveArrayGet(array, subListRange(info, range));
         return info.reverse ? reverse(answer) : answer;
     }
 
@@ -14019,7 +14019,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @SuppressWarnings("unchecked")
     public static List<Float> getAt(float[] array, IntRange range) {
         RangeInfo info = subListBorders(array.length, range);
-        List<Float> answer = primitiveArrayGet(array, new IntRange(true, info.from, info.to - 1));
+        List<Float> answer = primitiveArrayGet(array, subListRange(info, range));
         return info.reverse ? reverse(answer) : answer;
     }
 
@@ -14034,7 +14034,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @SuppressWarnings("unchecked")
     public static List<Double> getAt(double[] array, IntRange range) {
         RangeInfo info = subListBorders(array.length, range);
-        List<Double> answer = primitiveArrayGet(array, new IntRange(true, info.from, info.to - 1));
+        List<Double> answer = primitiveArrayGet(array, subListRange(info, range));
         return info.reverse ? reverse(answer) : answer;
     }
 
@@ -14049,7 +14049,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @SuppressWarnings("unchecked")
     public static List<Boolean> getAt(boolean[] array, IntRange range) {
         RangeInfo info = subListBorders(array.length, range);
-        List<Boolean> answer = primitiveArrayGet(array, new IntRange(true, info.from, info.to - 1));
+        List<Boolean> answer = primitiveArrayGet(array, subListRange(info, range));
         return info.reverse ? reverse(answer) : answer;
     }
 
