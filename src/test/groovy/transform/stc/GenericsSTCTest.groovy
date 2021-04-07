@@ -1600,27 +1600,31 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5692, GROOVY-10006
+    void testCompatibleArgumentsForPlaceholders1() {
+        assertScript '''
+            def <T> T test(T one, T two) { }
+            def result = test(1,"II")
+        '''
+        assertScript '''
+            def <T> T test(T one, T two, T three) { }
+            def result = test(1,"II",Class)
+        '''
+        assertScript '''
+            def <T extends Number> T test(T one, T two) { }
+            def result = test(1L,2G)
+        '''
+    }
+
     // GROOVY-5692
+    void testCompatibleArgumentsForPlaceholders2() {
+        assertScript '''
+            def <T> boolean test(T one, List<T> many) { }
+            test(1,["II","III"])
+        '''
+    }
+
     void testIncompatibleArgumentsForPlaceholders1() {
-        shouldFailWithMessages '''
-            public <T> void printEqual(T arg1, T arg2) {
-                println arg1 == arg2
-            }
-            printEqual(1, 'foo')
-        ''', '#printEqual(T, T) with arguments [int, java.lang.String]'
-    }
-
-    // GROOVY-5692
-    void testIncompatibleArgumentsForPlaceholders2() {
-        shouldFailWithMessages '''
-            public <T> void printEqual(T arg1, List<T> arg2) {
-                println arg1 == arg2
-            }
-            printEqual(1, ['foo'])
-        ''', '#printEqual(T, java.util.List <T>) with arguments [int, java.util.ArrayList <java.lang.String>]'
-    }
-
-    void testIncompatibleArgumentsForPlaceholders3() {
         shouldFailWithMessages '''
             def <T extends Number> T test(T one, T two) { }
             test(1,"II")
@@ -1629,7 +1633,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9902: incomplete generics should not stop type checking
-    void testIncompatibleArgumentsForPlaceholders4() {
+    void testIncompatibleArgumentsForPlaceholders2() {
         shouldFailWithMessages '''
             class Holder<Unknown> {
                 TypedProperty<Number, Unknown> numberProperty = prop(Number)
