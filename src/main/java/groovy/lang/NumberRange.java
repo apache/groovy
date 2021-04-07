@@ -448,6 +448,10 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
     }
 
     void calcSize(Comparable from, Comparable to, Number stepSize) {
+        if (from == to && !inclusiveLeft && !inclusiveRight) {
+            size = 0;
+            return;
+        }
         int tempsize = 0;
         boolean shortcut = false;
         if (isIntegral(stepSize)) {
