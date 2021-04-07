@@ -362,7 +362,8 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
 
     @Override
     public int size() {
-        return getTo() - getFrom() + 1;
+        // If fully exclusive and borders are one apart, the size would be negative, take that into account
+        return Math.max(getTo() - getFrom() + 1, 0);
     }
 
     @Override
