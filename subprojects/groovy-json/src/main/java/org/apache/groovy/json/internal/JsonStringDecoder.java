@@ -28,6 +28,7 @@ public class JsonStringDecoder {
     }
 
     public static String decodeForSure(char[] chars, int start, int to) {
+        // consider wrapping in a try with resources block if CharBuf is ever refactored to have a non-empty close()
         CharBuf builder = CharBuf.create(to - start);
         builder.decodeJsonString(chars, start, to);
         return builder.toString();
