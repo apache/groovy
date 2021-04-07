@@ -24,7 +24,7 @@ dependencies {
     api rootProject  // JsonBuilder extends GroovyObjectSupport...
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-dateutil')
-    testImplementation 'net.javacrumbs.json-unit:json-unit:2.9.0'
+    testImplementation 'net.javacrumbs.json-unit:json-unit:2.25.0'
     testRuntimeOnly "org.slf4j:slf4j-api:${versions.slf4j}"
     testRuntimeOnly project(':groovy-ant') // for JavadocAssertionTests
     testRuntimeOnly 'com.google.code.gson:gson:2.8.6' // json-unit requires gson, jackson1, or jackson2

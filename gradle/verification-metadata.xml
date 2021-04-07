@@ -168,6 +168,7 @@
          <trusted-key id="cfc10b69382cbcf5387e51484ece492b63e38acf" group="com.h3xstream.findsecbugs"/>
          <trusted-key id="d54a395b5cf3f86eb45f6e426b1b008864323b92" group="org.antlr"/>
          <trusted-key id="d6f1bc78607808ec8e9f69437a8860944fad5f62" group="org.apache.commons" name="commons-parent"/>
+         <trusted-key id="d75a8c9fcf1016c0f54f2d4dc51e10bd96d06071" group="net.javacrumbs.json-unit"/>
          <trusted-key id="d76260c72df74e66268f7770ab049df4ab24c1ef" group="org.hsqldb" name="hsqldb" version="2.5.1"/>
          <trusted-key id="d790f72ea8fd39551012b62dcf9f3090ce4cb752">
             <trusting group="org.abego.treelayout" name="org.abego.treelayout.core" version="1.0.1"/>
