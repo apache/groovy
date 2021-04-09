@@ -298,11 +298,10 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
      */
     public boolean equals(IntRange that) {
         return that != null && from == that.from && to == that.to && (
-                (inclusiveRight == null && inclusiveLeft == null && reverse == that.reverse)
-                || (
-                        (inclusiveLeft == null || Objects.equals(inclusiveLeft, that.inclusiveLeft))
-                        && (inclusiveRight == null || Objects.equals(inclusiveRight, that.inclusiveRight))
-                )
+                // If inclusiveRight is null, then inclusive left is also null (see constructor)
+                (inclusiveRight == null) ? reverse == that.reverse:
+                        (Objects.equals(inclusiveLeft, that.inclusiveLeft)
+                                && Objects.equals(inclusiveRight, that.inclusiveRight))
         );
     }
 
@@ -417,8 +416,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
         if (inclusiveRight == null && inclusiveLeft == null)  {
                return reverse ? "" + to + ".." + from : "" + from + ".." + to;
         }
-        return "" + from + ((inclusiveLeft != null && inclusiveLeft) ? "" : "<") + ".."
-                  + ((inclusiveRight != null && inclusiveRight) ? "" : "<") + to;
+        return "" + from + (inclusiveLeft ? "" : "<") + ".." + (inclusiveRight ? "" : "<") + to;
     }
 
     @Override
