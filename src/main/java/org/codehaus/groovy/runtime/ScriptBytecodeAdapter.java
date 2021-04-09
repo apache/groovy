@@ -661,14 +661,10 @@ public class ScriptBytecodeAdapter {
             return new EmptyRange((Comparable) from);
         }
         if (from instanceof Integer && to instanceof Integer) {
-            int ifrom = (Integer) from;
-            int ito = (Integer) to;
-            if ((!exclusiveLeft && !exclusiveRight) || ifrom != ito) {
-                // Currently, empty ranges where from != to, the range is full exclusive (e.g. 0<..<-1) and from and to
-                // have a different sign are constructed as IntRanges. This is because these ranges can still be used to
-                // index into lists.
-                return new IntRange(!exclusiveLeft, !exclusiveRight, ifrom, ito);
-            }
+            // Currently, empty ranges where from != to, the range is full exclusive (e.g. 0<..<-1) and from and to
+            // have a different sign are constructed as IntRanges. This is because t3hese ranges can still be used to
+            // index into lists.
+            return new IntRange(!exclusiveLeft, !exclusiveRight, (Integer) from, (Integer) to);
         }
         if (from instanceof Number && to instanceof Number) {
             return new NumberRange(comparableNumber((Number) from), comparableNumber((Number) to), !exclusiveLeft, !exclusiveRight);
