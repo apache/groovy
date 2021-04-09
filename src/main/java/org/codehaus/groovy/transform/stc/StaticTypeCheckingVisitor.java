@@ -2797,19 +2797,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         if (!entries.keySet().contains(name)) {
             if (required) {
-                addStaticTypeError("required named arg '" + name + "' not found.", expression);
+                addStaticTypeError("required named param '" + name + "' not found.", expression);
             }
-        } else {
-            Expression supplied = entries.get(name);
-            if (isCompatibleType(expectedType, expectedType != null, supplied.getType())) {
-                addStaticTypeError("parameter for named arg '" + name + "' has type '" + prettyPrintType(supplied.getType()) +
-                        "' but expected '" + prettyPrintType(expectedType) + "'.", expression);
+        } else if (expectedType != null) {
+            ClassNode argumentType = getDeclaredOrInferredType(entries.get(name));
+            if (!isAssignableTo(argumentType, expectedType)) {
+                addStaticTypeError("argument for named param '" + name + "' has type '" + prettyPrintType(argumentType) + "' but expected '" + prettyPrintType(expectedType) + "'.", expression);
             }
         }
     }
 
-    private boolean isCompatibleType(ClassNode expectedType, boolean b, ClassNode type) {
-        return b && !isAssignableTo(type, expectedType);
+    private ClassNode getDeclaredOrInferredType(Expression expression) {
+        ClassNode declaredOrInferred;
+        // in case of "T t = new ExtendsOrImplementsT()", return T for the expression type
+        if (expression instanceof Variable && !((Variable) expression).isDynamicTyped()) {
+            declaredOrInferred = getOriginalDeclarationType(expression);
+        } else {
+            declaredOrInferred = getType(expression);
+        }
+        // apply instanceof constraints to either option
+        return getInferredTypeFromTempInfo(expression, declaredOrInferred);
     }
 
     /**
