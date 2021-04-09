@@ -218,4 +218,41 @@ class IntRangeTest extends GroovyTestCase {
         bais.withObjectInputStream { ois -> assert ois.readObject() == [4..1, 2..<5] }
     }
 
+    void testEquals() {
+        IntRange r1 = new IntRange(0, 10)
+        IntRange r2 = new IntRange(0, 10)
+        assert r1.equals(r2)
+        assert r2.equals(r1)
+
+        r1 = new IntRange(true, false, 0, 10)
+        r2 = new IntRange(true, false, 0, 10)
+        assert r1.equals(r2)
+        assert r2.equals(r1)
+
+        r1 = new IntRange(false, 1, 11)
+        r2 = new IntRange(1, 10)
+        assert !r1.equals(r2)
+        assert !r2.equals(r1)
+
+        r1 = new IntRange(false, 1, 10)
+        r2 = new IntRange(1, 10)
+        assert !r1.equals(r2)
+        // As before GROOVY-9649
+        assert r2.equals(r1)
+
+        r1 = new IntRange(false, true, -1, 10)
+        r2 = new IntRange(1, 10)
+        assert !r1.equals(r2)
+        assert !r2.equals(r1)
+
+        r1 = new IntRange(true, true, 10, 0)
+        r2 = new IntRange(0, 10, true)
+        assert !r1.equals(r2)
+        assert !r2.equals(r1)
+
+        r1 = new IntRange(0, 10, true)
+        r2 = new IntRange(0, 10, false)
+        assert !r1.equals(r2)
+        assert !r2.equals(r1)
+    }
 }
