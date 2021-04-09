@@ -326,7 +326,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
      * Returns the same as <code>getInclusiveRight</code>, kept here for backwards compatibility.
      */
     public Boolean getInclusive() {
-        return inclusiveRight;
+        return getInclusiveRight();
     }
 
     /**
@@ -414,9 +414,11 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
 
     @Override
     public String toString() {
-        return (inclusiveRight == null && inclusiveLeft == null) ? (reverse ? "" + to + ".." + from : "" + from + ".." + to)
-                : ("" + from + ((inclusiveLeft != null && inclusiveLeft) ? "" : "<") + ".."
-                             + ((inclusiveRight != null && inclusiveRight) ? "" : "<") + to);
+        if (inclusiveRight == null && inclusiveLeft == null)  {
+               return reverse ? "" + to + ".." + from : "" + from + ".." + to;
+        }
+        return "" + from + ((inclusiveLeft != null && inclusiveLeft) ? "" : "<") + ".."
+                  + ((inclusiveRight != null && inclusiveRight) ? "" : "<") + to;
     }
 
     @Override
