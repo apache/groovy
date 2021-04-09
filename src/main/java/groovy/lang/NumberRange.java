@@ -624,9 +624,18 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
         @Override
         public boolean hasNext() {
             fetchNextIfNeeded();
-            return (next != null) && (isAscending
-                    ? (range.inclusiveRight ? compareLessThanEqual(next, range.getTo()) : compareLessThan(next, range.getTo()))
-                    : (range.inclusiveRight ? compareGreaterThanEqual(next, range.getFrom()) : compareGreaterThan(next, range.getFrom())));
+            if (next == null) {
+                return false;
+            }
+            if (isAscending) {
+                return range.inclusiveRight
+                        ? compareLessThanEqual(next, range.getTo())
+                        : compareLessThan(next, range.getTo());
+            }
+            return range.inclusiveRight
+                    ? compareGreaterThanEqual(next, range.getFrom())
+                    : compareGreaterThan(next, range.getFrom());
+
         }
 
         @Override
@@ -641,18 +650,18 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
         }
 
         private void fetchNextIfNeeded() {
-            if (!isNextFetched) {
-                isNextFetched = true;
-
-                if (next == null) {
-                    // make the first fetch lazy too
-                    next = isAscending ? range.getFrom() : range.getTo();
-                    if (!range.inclusiveLeft) {
-                        next = isAscending ? increment(next, step) : decrement(next, step);
-                    }
-                } else {
+            if (isNextFetched) {
+                return;
+            }
+            isNextFetched = true;
+            if (next == null) {
+                // make the first fetch lazy too
+                next = isAscending ? range.getFrom() : range.getTo();
+                if (!range.inclusiveLeft) {
                     next = isAscending ? increment(next, step) : decrement(next, step);
                 }
+            } else {
+                next = isAscending ? increment(next, step) : decrement(next, step);
             }
         }
 
