@@ -77,7 +77,7 @@ If you wish to embed Groovy in your application, you may just prefer to point to
 |<groupId>org.codehaus.groovy</groupId> +
 <artifactId>groovy-$module</artifactId> +
 <version>{groovy-full-version}</version>
-|"$module" stands for the different optional groovy modules "ant", "bsf", "console", "docgenerator", "groovydoc", "groovysh", "jmx", "json", "jsr223", "servlet", "sql", "swing", "test", "testng" and "xml". Example: <artifactId>groovy-sql</artifactId>
+|"$module" stands for the different optional groovy modules "ant", "console", "docgenerator", "groovydoc", "groovysh", "jmx", "json", "jsr223", "servlet", "sql", "swing", "test", "testng" and "xml". Example: <artifactId>groovy-sql</artifactId>
 
 |&#39;org.codehaus.groovy:groovy-all:{groovy-full-version}'
 |<groupId>org.codehaus.groovy</groupId> +

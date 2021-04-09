@@ -34,7 +34,6 @@ def subprojects = [
         'groovy-ant',
         'groovy-astbuilder',
         'groovy-binary',
-        'groovy-bsf',
         'groovy-bom',
         'groovy-cli-commons',
         'groovy-cli-picocli',
