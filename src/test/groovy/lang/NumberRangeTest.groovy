@@ -23,9 +23,8 @@ import junit.framework.TestCase
 /**
  * Provides unit tests for the <code>NumberRange</code> class.
  */
-public class NumberRangeTest extends TestCase {
-
-    public void testStep() {
+class NumberRangeTest extends TestCase {
+    void testStep() {
         Range n = new NumberRange(1, 3)
         assert n.step(1) == [1, 2, 3]
         assert n.size() == 3
@@ -72,4 +71,15 @@ public class NumberRangeTest extends TestCase {
         assert Integer.MAX_VALUE == new NumberRange(new BigInteger("-10"), new BigInteger(Long.toString((long) Integer.MAX_VALUE) + 1L)).size()
     }
 
+    void testSizeEdgeCases() {
+        assert new NumberRange(0, 0, false).size() == 0
+        assert new NumberRange(0, 0, true).size() == 1
+        assert new NumberRange(0, 1, false).size() == 1
+        assert new NumberRange(0, 1, true).size() == 2
+        assert new NumberRange(0, 0, true, true).size() == 1
+        assert new NumberRange(0, 0, false, true).size() == 0
+        assert new NumberRange(0, 1, false, true).size() == 1
+        assert new NumberRange(0, 0, false, false).size() == 0
+        assert new NumberRange(0, 1, false, false).size() == 0
+    }
 }
