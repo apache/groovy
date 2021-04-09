@@ -2841,19 +2841,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         if (!entries.containsKey(name)) {
             if (required) {
-                addStaticTypeError("required named arg '" + name + "' not found.", expression);
+                addStaticTypeError("required named param '" + name + "' not found.", expression);
             }
-        } else {
-            Expression supplied = entries.get(name);
-            if (isCompatibleType(expectedType, expectedType != null, supplied.getType())) {
-                addStaticTypeError("parameter for named arg '" + name + "' has type '" + prettyPrintType(supplied.getType()) +
-                        "' but expected '" + prettyPrintType(expectedType) + "'.", expression);
+        } else if (expectedType != null) {
+            ClassNode argumentType = getDeclaredOrInferredType(entries.get(name));
+            if (!isAssignableTo(argumentType, expectedType)) {
+                addStaticTypeError("argument for named param '" + name + "' has type '" + prettyPrintType(argumentType) + "' but expected '" + prettyPrintType(expectedType) + "'.", expression);
             }
         }
-    }
-
-    private boolean isCompatibleType(final ClassNode expectedType, final boolean b, final ClassNode type) {
-        return b && !isAssignableTo(type, expectedType);
     }
 
     /**
