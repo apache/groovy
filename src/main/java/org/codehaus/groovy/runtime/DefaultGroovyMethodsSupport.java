@@ -108,17 +108,17 @@ public class DefaultGroovyMethodsSupport {
 
         // Undo inclusiveness effects done by subListBorders()
         if (!info.reverse) {
-            if (!range.getInclusiveLeft()) {
+            if (Boolean.FALSE.equals(range.getInclusiveLeft())) {
                 from--;
             }
-            if (!range.getInclusiveRight()) {
+            if (Boolean.FALSE.equals(range.getInclusiveRight())) {
                 to++;
             }
         } else {
-            if (!range.getInclusiveLeft()) {
+            if (Boolean.FALSE.equals(range.getInclusiveLeft())) {
                 to++;
             }
-            if (!range.getInclusiveRight()) {
+            if (Boolean.FALSE.equals(range.getInclusiveRight())) {
                 from--;
             }
         }
