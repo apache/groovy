@@ -241,6 +241,12 @@ foo
 
         text = $/$$$$$//$
         assert text == '$$/'
+
+        //GROOVY-10024
+        def s1 = $/abc\\/$
+        def s2 = $/def\/$
+        def s3 = $/ghi/$
+        assert s1 == 'abc\\\\' && s2 == 'def\\' && s3 == 'ghi'
     }
 
     void testSplit() {

@@ -369,9 +369,9 @@ fragment SlashyStringCharacter
     |   ~[/$\u0000]
     ;
 
-// character in the collar slashy string. e.g. $/a/$
+// character in the dollar slashy string. e.g. $/a/$
 fragment DollarSlashyStringCharacter
-    :   SlashEscape | DollarSlashEscape | DollarDollarEscape
+    :   DollarSlashEscape | DollarDollarEscape
     |   Slash { _input.LA(1) != '$' }?
     |   Dollar { !isFollowedByJavaLetterInGString(_input) }?
     |   ~[/$\u0000]
@@ -793,7 +793,7 @@ DollarSlashyGStringQuotationMarkEnd
 
 fragment
 DollarSlashEscape
-    :   '$/$'
+    :   '$/'
     ;
 
 fragment

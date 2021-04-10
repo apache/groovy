@@ -594,13 +594,14 @@ You can instead use a special trick, `/ends with slash ${'\'}/`. But best just a
 
 === Dollar slashy string
 
-Dollar slashy strings are multiline GStrings delimited with an opening `$/` and and a closing `/$`.
+Dollar slashy strings are multiline GStrings delimited with an opening `$/` and a closing `/$`.
 The escaping character is the dollar sign, and it can escape another dollar, or a forward slash.
-But both dollar and forward slashes don't need to be escaped, except to escape the dollar of a string
-subsequence that would start like a GString placeholder sequence, or if you need to escape a sequence
-that would start like a closing dollar slashy string delimiter.
+Escaping for the dollar and forward slash characters is only needed where conflicts arise with
+the special use of those characters. The characters `$foo` would normally indicate a GString
+placeholder, so those four characters can be entered into a dollar slashy string by escaping the dollar, i.e. `$$foo`.
+Similarly, you will need to escape a dollar slashy closing delimiter if you want it to appear in your string.
 
-Here's an example:
+Here are a few examples:
 
 [source,groovy]
 ----
