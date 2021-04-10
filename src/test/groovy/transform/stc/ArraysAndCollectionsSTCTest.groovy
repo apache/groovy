@@ -414,8 +414,22 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-9517
+    // GROOVY-8983
     void testShouldAllowArrayAssignment2() {
+        assertScript '''
+            List<String> m() { ['foo'] }
+            void test(Set<String> set) {
+                String[] one, two
+                one = m()
+                two = set
+                assert one + two == ['foo','bar']
+            }
+            test(['bar'].toSet())
+        '''
+    }
+
+    // GROOVY-9517
+    void testShouldAllowArrayAssignment3() {
         assertScript '''
             void test(File directory) {
                 File[] files = directory.listFiles()
@@ -425,6 +439,26 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             assert 'no error'
+        '''
+    }
+
+    // GROOVY-8983
+    void testShouldAllowArrayAssignment4() {
+        assertScript '''
+            class C {
+                List<String> list = []
+                void setX(String[] array) {
+                    Collections.addAll(list, array)
+                }
+            }
+            List<String> m() { ['foo'] }
+            void test(Set<String> set) {
+                def c = new C()
+                c.x = m()
+                c.x = set
+                assert c.list == ['foo','bar']
+            }
+            test(['bar'].toSet())
         '''
     }
 

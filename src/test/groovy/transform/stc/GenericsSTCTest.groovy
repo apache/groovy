@@ -985,7 +985,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 $mods void setM(List<String> strings) {
                 }
                 void test() {
-                  m = Collections.emptyList() // Cannot assign value of type List<T> to variable of List<String>
+                    m = Collections.emptyList() // Cannot assign value of type List<T> to variable of List<String>
                 }
                 test()
             """
@@ -993,7 +993,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 $mods void setM(Collection<String> strings) {
                 }
                 void test() {
-                  m = Collections.emptyList()
+                    m = Collections.emptyList()
                 }
                 test()
             """
@@ -1001,7 +1001,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 $mods void setM(Iterable<String> strings) {
                 }
                 void test() {
-                  m = Collections.emptyList()
+                    m = Collections.emptyList()
                 }
                 test()
             """
@@ -1010,9 +1010,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 $mods void setM(List<String> strings) {
                 }
                 void test() {
-                  m = Collections.<Integer>emptyList()
+                    m = Collections.<Integer>emptyList()
                 }
-            """, '[Static type checking] - Cannot assign value of type java.util.List <Integer> to variable of type java.util.List <String>'
+            """, 'Incompatible generic argument types. Cannot assign java.util.List <Integer> to: java.util.List <String>'
         }
     }
 
@@ -1023,7 +1023,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 $mods void m(List<String> strings) {
                 }
                 void test() {
-                  m(Collections.emptyList()) // Cannot call m(List<String>) with arguments [List<T>]
+                    m(Collections.emptyList()) // Cannot call m(List<String>) with arguments [List<T>]
                 }
                 test()
             """
@@ -1031,7 +1031,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 $mods void m(Collection<String> strings) {
                 }
                 void test() {
-                  m(Collections.emptyList())
+                    m(Collections.emptyList())
                 }
                 test()
             """
@@ -1039,7 +1039,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 $mods void m(Iterable<String> strings) {
                 }
                 void test() {
-                  m(Collections.emptyList())
+                    m(Collections.emptyList())
                 }
                 test()
             """

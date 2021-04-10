@@ -134,6 +134,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
@@ -958,37 +959,40 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // we know that the RHS type is a closure
         // but we must check if the binary expression is an assignment
         // because we need to check if a setter uses @DelegatesTo
-        VariableExpression ve = varX("%", setterInfo.receiverType);
-        // for compound assignment "x op= y" find type as if it was "x = (x op y)"
+        VariableExpression receiver = varX("%", setterInfo.receiverType);
+        // for "x op= y" expression, find type as if it was "x = x op y"
         Expression newRightExpression = isCompoundAssignment(expression)
                 ? binX(leftExpression, getOpWithoutEqual(expression), rightExpression)
                 : rightExpression;
-        MethodCallExpression call = callX(ve, setterInfo.name, newRightExpression);
-        call.setImplicitThis(false);
-        visitMethodCallExpression(call);
-        MethodNode directSetterCandidate = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-        if (directSetterCandidate == null) {
-            // this may happen if there's a setter of type boolean/String/Class, and that we are using the property
-            // notation AND that the RHS is not a boolean/String/Class
+
+        Function<Expression, MethodNode> setterCall = right -> {
+            MethodCallExpression call = callX(receiver, setterInfo.name, right);
+            call.setImplicitThis(false);
+            visitMethodCallExpression(call);
+            return call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        };
+
+        MethodNode methodTarget = setterCall.apply(newRightExpression);
+        if (methodTarget == null && !isCompoundAssignment(expression)) {
+            // if no direct match, try implicit conversion
             for (MethodNode setter : setterInfo.setters) {
-                ClassNode type = getWrapper(setter.getParameters()[0].getOriginType());
-                if (Boolean_TYPE.equals(type) || STRING_TYPE.equals(type) || CLASS_Type.equals(type)) {
-                    call = callX(ve, setterInfo.name, castX(type, newRightExpression));
-                    call.setImplicitThis(false);
-                    visitMethodCallExpression(call);
-                    directSetterCandidate = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-                    if (directSetterCandidate != null) {
+                ClassNode lType = setter.getParameters()[0].getOriginType();
+                ClassNode rType = getDeclaredOrInferredType(newRightExpression);
+                if (checkCompatibleAssignmentTypes(lType, rType, newRightExpression, false)) {
+                    methodTarget = setterCall.apply(castX(lType, newRightExpression));
+                    if (methodTarget != null) {
                         break;
                     }
                 }
             }
         }
-        if (directSetterCandidate != null) {
+
+        if (methodTarget != null) {
             for (MethodNode setter : setterInfo.setters) {
-                if (setter == directSetterCandidate) {
-                    leftExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, directSetterCandidate);
-                    leftExpression.removeNodeMetaData(INFERRED_TYPE); // clear assumption
-                    storeType(leftExpression, getType(newRightExpression));
+                if (setter == methodTarget) {
+                    leftExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, methodTarget);
+                    leftExpression.removeNodeMetaData(INFERRED_TYPE); // clear the assumption
+                    storeType(leftExpression, methodTarget.getParameters()[0].getOriginType());
                     break;
                 }
             }
@@ -1004,13 +1008,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return type.equals(CLOSURE_TYPE) && Optional.ofNullable(type.getGenericsTypes()).filter(gts -> gts != null && gts.length == 1).isPresent();
     }
 
-    private boolean isCompoundAssignment(final Expression exp) {
+    private static boolean isCompoundAssignment(final Expression exp) {
         if (!(exp instanceof BinaryExpression)) return false;
         int type = ((BinaryExpression) exp).getOperation().getType();
         return isAssignment(type) && type != ASSIGN;
     }
 
-    private Token getOpWithoutEqual(final Expression exp) {
+    private static Token getOpWithoutEqual(final Expression exp) {
         if (!(exp instanceof BinaryExpression)) return null; // should never happen
         Token op = ((BinaryExpression) exp).getOperation();
         int typeWithoutEqual = TokenUtil.removeAssignment(op.getType());
