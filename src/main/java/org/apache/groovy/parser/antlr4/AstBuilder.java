@@ -3023,7 +3023,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     new BinaryExpression(
                             configureAST(new TupleExpression(leftExpr), ctx.left),
                             this.createGroovyToken(ctx.op),
-                            this.visitEnhancedStatementExpression(ctx.enhancedStatementExpression())),
+                            (Expression) this.visit(ctx.right)),
                     ctx);
         }
 
@@ -3050,7 +3050,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 new BinaryExpression(
                         leftExpr,
                         this.createGroovyToken(ctx.op),
-                        this.visitEnhancedStatementExpression(ctx.enhancedStatementExpression())),
+                        (Expression) this.visit(ctx.right)),
                 ctx);
     }
 

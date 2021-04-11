@@ -61,6 +61,6 @@ assert 6 == c()(3)
 c = { (e) -> { e * 2 } }
 assert 6 == c()(3)
 
-assert ['1', '2', '3'] == [0, 1, 2].collect(e -> String.valueOf e + 1)
-assert [3, 4, 5] == ['0', '1', '2'].collect(e -> Integer.parseInt e plus 1 plus 2)
-assert [4] == ['0'].collect(e -> e.length() plus 1 plus 2)
+assert ['1', '2', '3'] == [0, 1, 2].collect(e -> String.valueOf(e + 1))
+assert [3, 4, 5] == ['0', '1', '2'].collect(e -> Integer.parseInt(e).plus(1).plus(2))
+assert [4] == ['0'].collect(e -> e.length().plus(1).plus(2))

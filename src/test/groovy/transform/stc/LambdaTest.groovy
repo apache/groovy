@@ -41,7 +41,7 @@ final class LambdaTest {
                 }
 
                 public static void p() {
-                    assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus 1).collect(Collectors.toList());
+                    assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus(1)).collect(Collectors.toList());
                 }
             }
         '''
@@ -61,7 +61,7 @@ final class LambdaTest {
 
                 @CompileStatic
                 public static void p() {
-                    assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus 1).collect(Collectors.toList());
+                    assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus(1)).collect(Collectors.toList());
                 }
             }
         '''
@@ -92,7 +92,7 @@ final class LambdaTest {
 
             @CompileStatic
             void p() {
-                assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus 1).collect(Collectors.toList());
+                assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus(1)).collect(Collectors.toList());
             }
 
             p()
@@ -1004,7 +1004,7 @@ final class LambdaTest {
                     Function<Integer, String> f = (Integer e) -> 'a' + e
                     assert ['a1', 'a2', 'a3'] == [1, 2, 3].stream().map(f).collect(Collectors.toList())
 
-                    assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus 1).collect(Collectors.toList());
+                    assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus(1)).collect(Collectors.toList());
                 }
             }
         '''
@@ -1099,7 +1099,7 @@ final class LambdaTest {
             @groovy.transform.CompileStatic
             void p() {
                 assert ['1', '2', '3'] == [1, 2, 3].stream().map(Object::toString).collect(Collectors.toList())
-                assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus 1).collect(Collectors.toList())
+                assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus(1)).collect(Collectors.toList())
                 assert ['1', '2', '3'] == [1, 2, 3].stream().map(Object::toString).collect(Collectors.toList())
             }
 
