@@ -29,26 +29,18 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 public class RangeExpression extends Expression {
     private final Expression from;
     private final Expression to;
-    private final boolean inclusive; // Kept to keep old code depending on this working
-    // GROOVY-9649
     private final boolean exclusiveLeft;
     private final boolean exclusiveRight;
 
     // Kept until sure this can be removed
     public RangeExpression(Expression from, Expression to, boolean inclusive) {
-        this.from = from;
-        this.to = to;
-        this.inclusive = inclusive;
-        this.exclusiveLeft = false;
-        this.exclusiveRight = !inclusive;
-        setType(ClassHelper.RANGE_TYPE);
+        this(from, to, false, !inclusive);
     }
 
     // GROOVY-9649
     public RangeExpression(Expression from, Expression to, boolean exclusiveLeft, boolean exclusiveRight) {
         this.from = from;
         this.to = to;
-        this.inclusive = !exclusiveRight; // Old code depends on this
         this.exclusiveLeft = exclusiveLeft;
         this.exclusiveRight = exclusiveRight;
         setType(ClassHelper.RANGE_TYPE);
@@ -77,7 +69,7 @@ public class RangeExpression extends Expression {
     }
 
     public boolean isInclusive() {
-        return inclusive;
+        return !isExclusiveRight();
     }
 
     public boolean isExclusiveLeft() {
