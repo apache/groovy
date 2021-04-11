@@ -293,6 +293,11 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertFalse(DefaultGroovyMethods.and(true, null))
     }
 
+    void testBooleanNot() {
+        assertTrue(DefaultGroovyMethods.not(false))
+        assertFalse(DefaultGroovyMethods.not(true))
+    }
+
     void testBooleanXor() {
         assertFalse(DefaultGroovyMethods.xor(true, true))
         assertTrue(DefaultGroovyMethods.xor(true, false))
