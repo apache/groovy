@@ -28,13 +28,27 @@ class ResourceGroovyMethodsTest {
 	@Rule
 	public TemporaryFolder temporaryFolder = new TemporaryFolder()
 
+
+	@Test
+	void test_Should_write_should_create_missing_directories_and_write() {
+
+		final String filename = "testing.txt"
+		File file = new File(temporaryFolder.getRoot().getAbsolutePath() + "\\foo\\bar\\" + filename);
+		String text = "foobar"
+		String encoding = "UTF-8"
+
+		ResourceGroovyMethods.write(file, text, encoding)
+
+		assert file.getText(encoding) == text;
+	}
+
 	@Test
 	void test_Should_write_String_to_File_using_default_encoding() {
 		File file = temporaryFolder.newFile()
 		String text = 'Hello World'
 		
 		ResourceGroovyMethods.write(file, text)
-		
+
 		assert file.text == text
 	}
 

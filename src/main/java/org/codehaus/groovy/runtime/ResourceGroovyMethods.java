@@ -852,6 +852,8 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void write(File file, String text, String charset, boolean writeBom) throws IOException {
         Writer writer = null;
         try {
+            file.getCanonicalFile().getParentFile().mkdirs();
+
             FileOutputStream out = new FileOutputStream(file);
             if (writeBom) {
                 writeUTF16BomIfRequired(out, charset);
