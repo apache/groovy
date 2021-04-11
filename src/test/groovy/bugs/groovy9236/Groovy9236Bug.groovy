@@ -69,7 +69,7 @@ java.util.stream$Stream
                 
                 @CompileStatic
                 void p() {
-                    assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus 1).collect(Collectors.toList())
+                    assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus(1)).collect(Collectors.toList())
                 }
                 
                 p()
