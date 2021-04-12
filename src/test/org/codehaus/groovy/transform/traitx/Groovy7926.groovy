@@ -20,43 +20,37 @@ package org.codehaus.groovy.transform.traitx
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 
-class Groovy7926Bug extends AbstractBytecodeTestCase {
+final class Groovy7926 extends AbstractBytecodeTestCase {
 
     void testThatVoidTypesFromTraitsWithGenericsWork() {
         assertScript '''
             trait MyTrait<D> {
                 void delete() {
-                    // no-op
-                    println "works"
+                    println 'works'
                 }
             }
-            class MyImpl implements MyTrait<MyImpl> { }
+            class MyImpl implements MyTrait<MyImpl> {
+            }
             new MyImpl().delete()
-            return true
+            true
         '''
     }
 
     void testThatVoidTypesAreNotUsedForVariableNamesInByteCode() {
-        def byteCode = compile([method:"delete", classNamePattern:"MyImpl"],"""\
+        def result = compile method:'delete', classNamePattern:'MyImpl', '''
             trait MyTrait<D> {
                 void delete() {
-                    // no-op
-                    println "works"
+                    println 'works'
                 }
             }
-            class MyImpl implements MyTrait<MyImpl> { }
-        """)
+            class MyImpl implements MyTrait<MyImpl> {
+            }
+        '''
 
-        def instructions = byteCode.instructions
-        byteCode.instructions = instructions[
-                instructions.indexOf("public delete()V")..-1
-        ]
-        instructions = byteCode.instructions
-        byteCode.instructions = instructions[
-                0..instructions.indexOf( instructions.find { it == '--BEGIN----END--' } )
-        ]
-        assert !byteCode.hasSequence([
-                "CHECKCAST void"
-        ])
+        int start = result.indexOf('--BEGIN--')
+        int until = result.indexOf('--END--')
+        assert start > 0 && until > start
+
+        assert result.indexOf('CHECKCAST void', start) !in start..until
     }
 }

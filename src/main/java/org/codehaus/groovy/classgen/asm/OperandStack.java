@@ -292,12 +292,11 @@ public class OperandStack {
      * do Groovy cast for top level element
      */
     public void doGroovyCast(final ClassNode targetType) {
-        doConvertAndCast(targetType,false);
+        doConvertAndCast(targetType, false);
     }
 
     public void doGroovyCast(final Variable v) {
-        ClassNode targetType = v.getOriginType();
-        doConvertAndCast(targetType,false);
+        doConvertAndCast(v.getOriginType(), false);
     }
 
     public void doAsType(final ClassNode targetType) {
@@ -363,7 +362,7 @@ public class OperandStack {
                 && !primTop && ClassHelper.getWrapper(targetType).equals(top)) {
             BytecodeHelper.doCastToPrimitive(mv, top, targetType);
         } else {
-            top = stack.get(size-1);
+            top = stack.get(size - 1);
             if (!WideningCategories.implementsInterfaceOrSubclassOf(top, targetType)) {
                 BytecodeHelper.doCast(mv,targetType);
             }
