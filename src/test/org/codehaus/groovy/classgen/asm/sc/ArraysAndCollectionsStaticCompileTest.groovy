@@ -80,24 +80,21 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
 
     // GROOVY-7656
     void testSpreadSafeMethodCallsOnListLiteralShouldNotCreateListTwice() {
-        try {
-            assertScript '''
-                class Foo {
-                    static void test() {
-                        def list = [1, 2]
-                        def lengths = [list << 3]*.size()
-                        assert lengths == [3]
-                        assert list == [1, 2, 3]
-                    }
+        assertScript '''
+            class Foo {
+                static void test() {
+                    def list = [1, 2]
+                    def lengths = [list << 3]*.size()
+                    assert lengths == [3]
+                    assert list == [1, 2, 3]
                 }
-                Foo.test()
-            '''
-        } finally {
-            assert astTrees['Foo'][1].count('ScriptBytecodeAdapter.createList') == 4
-        }
+            }
+            Foo.test()
+        '''
+        assert astTrees['Foo'][1].count('ScriptBytecodeAdapter.createList') == 4
     }
 
-    //GROOVY-7442
+    // GROOVY-7442
     void testSpreadDotOperatorWithinAssert() {
         assertScript '''
             def myMethod(String a, String b) {
@@ -108,44 +105,66 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
         '''
     }
 
-    //GROOVY-7688
+    // GROOVY-7688
     void testSpreadSafeMethodCallReceiversWithSideEffectsShouldNotBeVisitedTwice() {
-        try {
-            assertScript '''
-                class Foo {
-                    static void test() {
-                        def list = ['a', 'b']
-                        def lengths = list.toList()*.length()
-                        assert lengths == [1, 1]
-                    }
+        assertScript '''
+            class Foo {
+                static void test() {
+                    def list = ['a', 'b']
+                    def lengths = list.toList()*.length()
+                    assert lengths == [1, 1]
                 }
-                Foo.test()
-            '''
-        } finally {
-            assert astTrees['Foo'][1].count('DefaultGroovyMethods.toList') == 1
-        }
+            }
+            Foo.test()
+        '''
+        assert astTrees['Foo'][1].count('DefaultGroovyMethods.toList') == 1
     }
 
-    //GROOVY-8074
+    // GROOVY-8074
     void testMapSubclassPropertyStyleAccess() {
         assertScript '''
             class MyMap extends LinkedHashMap {
                 def foo = 1
             }
-        
+
             def map = new MyMap()
             map.put('foo', 42)
-            assert map.foo == 42               
+            assert map.foo == 42
         '''
     }
 
-    @Override
-    void testForInLoop() {
-        try {
-            super.testForInLoop()
-        } finally {
-            println astTrees
-        }
+    // GROOVY-10029
+    void testCollectionToArrayAssignmentSC() {
+        assertScript '''
+            class C {
+                static List<String> m() {
+                    return ['foo']
+                }
+                static main(args) {
+                    String[] strings = m()
+                    assert strings.length == 1
+                    assert strings[0] == 'foo'
+                }
+            }
+        '''
+        String out = astTrees['C'][1]
+        out = out.substring(out.indexOf('main([Ljava/lang/String;)'))
+        assert out.contains('INVOKEINTERFACE java/util/List.toArray')
+        assert !out.contains('INVOKEDYNAMIC cast(Ljava/util/List;)') : 'dynamic cast should have been replaced by direct method call'
+    }
+
+    void testCollectionToObjectAssignmentSC() {
+        assertScript '''
+            def collectionOfI = [1,2,3]
+
+            def obj
+            obj = new String[0]
+            obj = new Number[1]
+            obj = collectionOfI
+
+            assert obj instanceof List
+        '''
+        String out = astTrees.values()[0][1]
+        assert !out.contains('INVOKEINTERFACE java/util/List.toArray')
     }
 }
-
