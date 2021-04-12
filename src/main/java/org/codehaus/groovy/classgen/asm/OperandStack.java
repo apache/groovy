@@ -338,6 +338,12 @@ public class OperandStack {
             return;
         }
 
+        // GROOVY-10034: no need to cast non-primitive array when target is "java.lang.Object[]"
+        if (targetType.isArray() && targetType.getComponentType().equals(ClassHelper.OBJECT_TYPE)
+                && top.isArray() && !ClassHelper.isPrimitiveType(top.getComponentType())) {
+            return;
+        }
+
         boolean primTarget = ClassHelper.isPrimitiveType(targetType);
         boolean primTop = ClassHelper.isPrimitiveType(top);
 
