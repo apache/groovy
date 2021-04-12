@@ -29,12 +29,14 @@ import java.util.Map;
  * Helper class to help with RMI
  */
 public class JmxConnectorHelper {
+    private static final int MAX_RETRIES = 10;
+
     public static Map createRmiRegistry(int initPort) {
         Map<String, Object> result = new HashMap<String, Object>(2);
         int counter = 0;
         int port = initPort;
         Registry reg = null;
-        while (reg == null && counter <= 4) {
+        while (reg == null && counter <= MAX_RETRIES) {
             try {
                 reg = LocateRegistry.createRegistry(port);
                 result.put("registry", reg);
@@ -45,7 +47,7 @@ public class JmxConnectorHelper {
                 port = port + 1;
                 System.out.println("JmxBuilder - *** FAILED *** to create RMI Registry - Will Retry on port [" + port + "].");
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep(100L * counter);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
