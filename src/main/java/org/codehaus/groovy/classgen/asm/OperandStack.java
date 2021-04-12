@@ -80,59 +80,58 @@ import static org.objectweb.asm.Opcodes.SWAP;
 
 public class OperandStack {
 
+    private final List<ClassNode> stack = new ArrayList<>();
     private final WriterController controller;
-    private final List<ClassNode> stack = new ArrayList<ClassNode>();
 
-    public OperandStack(WriterController wc) {
-        this.controller = wc;        
+    public OperandStack(final WriterController controller) {
+        this.controller = controller;
     }
-    
+
     public int getStackLength() {
         return stack.size();
     }
-    
-    public void popDownTo(int elements) {
+
+    public void popDownTo(final int elements) {
         int last = stack.size();
         MethodVisitor mv = controller.getMethodVisitor();
-        while (last>elements) {
-            last--;
+        while (last > elements) {
+            last -= 1;
             ClassNode element = popWithMessage(last);
             if (isTwoSlotType(element)) {
                 mv.visitInsn(POP2);
             } else {
                 mv.visitInsn(POP);
             }
-        }   
+        }
     }
-    
-    private ClassNode popWithMessage(int last) {
+
+    private ClassNode popWithMessage(final int last) {
         try {
             return stack.remove(last);
         } catch (ArrayIndexOutOfBoundsException ai) {
-            String method = controller.getMethodNode() == null ?
-                    controller.getConstructorNode().getTypeDescriptor() :
-                    controller.getMethodNode().getTypeDescriptor();
-            throw new GroovyBugError("Error while popping argument from operand stack tracker in class " +
-                    controller.getClassName() + " method " + method + ".");
+            String method = controller.getMethodNode() != null
+                    ? controller.getMethodNode().getTypeDescriptor()
+                    : controller.getConstructorNode().getTypeDescriptor();
+            throw new GroovyBugError("Error while popping argument from operand stack tracker in class " + controller.getClassName() + " method " + method + ".");
         }
     }
 
     /**
      * returns true for long and double
      */
-    private static boolean isTwoSlotType(ClassNode type) {
-        return type==ClassHelper.long_TYPE || type==ClassHelper.double_TYPE;
+    private static boolean isTwoSlotType(final ClassNode type) {
+        return type == ClassHelper.long_TYPE || type == ClassHelper.double_TYPE;
     }
 
     /**
      * ensure last marked parameter on the stack is a primitive boolean
      * if mark==stack size, we assume an empty expression or statement.
-     * was used and we will use the value given in emptyDefault as boolean 
+     * was used and we will use the value given in emptyDefault as boolean
      * if mark==stack.size()-1 the top element will be cast to boolean using
      * Groovy truth.
      * In other cases we throw a GroovyBugError
      */
-    public void castToBool(int mark, boolean emptyDefault) {
+    public void castToBool(final int mark, final boolean emptyDefault) {
         int size = stack.size();
         MethodVisitor mv = controller.getMethodVisitor();
         if (mark == size) {
@@ -147,17 +146,13 @@ public class OperandStack {
             ClassNode last = stack.get(size - 1);
             // nothing to do in that case
             if (last == ClassHelper.boolean_TYPE) return;
-            // not a primitive type, so call booleanUnbox
-            if (!ClassHelper.isPrimitiveType(last)) {
-                controller.getInvocationWriter().castNonPrimitiveToBool(last);
-            } else {
+            if (ClassHelper.isPrimitiveType(last)) {
                 BytecodeHelper.convertPrimitiveToBoolean(mv, last);
+            } else {
+                controller.getInvocationWriter().castNonPrimitiveToBool(last);
             }
         } else {
-            throw new GroovyBugError(
-                    "operand stack contains " + size +
-                            " elements, but we expected only " + mark
-            );
+            throw new GroovyBugError("operand stack contains " + size + " elements, but we expected only " + mark);
         }
         stack.set(mark, ClassHelper.boolean_TYPE);
     }
@@ -166,16 +161,16 @@ public class OperandStack {
      * remove operand stack top element using bytecode pop
      */
     public void pop() {
-        popDownTo(stack.size()-1);
+        popDownTo(stack.size() - 1);
     }
 
-    public Label jump(int ifIns) {
+    public Label jump(final int ifIns) {
         Label label = new Label();
         jump(ifIns,label);
         return label;
     }
-    
-    public void jump(int ifIns, Label label) {
+
+    public void jump(final int ifIns, final Label label) {
         controller.getMethodVisitor().visitJumpInsn(ifIns, label);
         // remove the boolean from the operand stack tracker
         remove(1);
@@ -188,7 +183,7 @@ public class OperandStack {
         ClassNode type = getTopOperand();
         stack.add(type);
         MethodVisitor mv = controller.getMethodVisitor();
-        if (type == ClassHelper.double_TYPE || type == ClassHelper.long_TYPE) {
+        if (isTwoSlotType(type)) {
             mv.visitInsn(DUP2);
         } else {
             mv.visitInsn(DUP);
@@ -198,23 +193,23 @@ public class OperandStack {
     public ClassNode box() {
         MethodVisitor mv = controller.getMethodVisitor();
         int size = stack.size();
-        ClassNode type = stack.get(size-1);
-        if (ClassHelper.isPrimitiveType(type) && ClassHelper.VOID_TYPE!=type) {
+        ClassNode type = stack.get(size - 1);
+        if (ClassHelper.isPrimitiveType(type) && ClassHelper.VOID_TYPE != type) {
             ClassNode wrapper = ClassHelper.getWrapper(type);
             BytecodeHelper.doCastToWrappedType(mv, type, wrapper);
             type = wrapper;
         } // else nothing to box
-        stack.set(size-1, type);
+        stack.set(size - 1, type);
         return type;
     }
 
     /**
-     * Remove amount elements from the operand stack, without using pop. 
+     * Remove amount elements from the operand stack, without using pop.
      * For example after a method invocation
      */
-    public void remove(int amount) {
+    public void remove(final int amount) {
         int size = stack.size();
-        for (int i=size-1; i>size-1-amount; i--) {
+        for (int i = size - 1, n = size - 1 - amount; i > n; i -= 1) {
             popWithMessage(i);
         }
     }
@@ -222,7 +217,7 @@ public class OperandStack {
     /**
      * push operand on stack
      */
-    public void push(ClassNode type) {
+    public void push(final ClassNode type) {
         stack.add(type);
     }
 
@@ -232,9 +227,9 @@ public class OperandStack {
     public void swap() {
         MethodVisitor mv = controller.getMethodVisitor();
         int size = stack.size();
-        ClassNode b = stack.get(size-1);
-        ClassNode a = stack.get(size-2);
-        //        dup_x1:     --- 
+        ClassNode b = stack.get(size - 1);
+        ClassNode a = stack.get(size - 2);
+        //        dup_x1:     ---
         //        dup_x2:     aab  -> baab
         //        dup2_x1:    abb  -> bbabb
         //        dup2_x2:    aabb -> bbaabb
@@ -260,19 +255,19 @@ public class OperandStack {
                 mv.visitInsn(SWAP);
             }
         }
-        stack.set(size-1,a);
-        stack.set(size-2,b);
+        stack.set(size - 1, a);
+        stack.set(size - 2, b);
     }
 
     /**
      * replace top level element with new element of given type
      */
-    public void replace(ClassNode type) {
+    public void replace(final ClassNode type) {
         int size = ensureStackNotEmpty(stack);
         stack.set(size - 1, type);
     }
 
-    private int ensureStackNotEmpty(List<ClassNode> stack) {
+    private int ensureStackNotEmpty(final List<ClassNode> stack) {
         int size = stack.size();
 
         try {
@@ -288,29 +283,29 @@ public class OperandStack {
     /**
      * replace n top level elements with new element of given type
      */
-    public void replace(ClassNode type, int n) {
+    public void replace(final ClassNode type, final int n) {
         remove(n);
         push(type);
     }
-    
+
     /**
      * do Groovy cast for top level element
      */
-    public void doGroovyCast(ClassNode targetType) {
+    public void doGroovyCast(final ClassNode targetType) {
         doConvertAndCast(targetType,false);
     }
-    
-    public void doGroovyCast(Variable v) {
+
+    public void doGroovyCast(final Variable v) {
         ClassNode targetType = v.getOriginType();
         doConvertAndCast(targetType,false);
     }
-    
-    public void doAsType(ClassNode targetType) {
+
+    public void doAsType(final ClassNode targetType) {
         doConvertAndCast(targetType,true);
     }
 
-    private void throwExceptionForNoStackElement(int size, ClassNode targetType, boolean coerce) {
-        if (size>0) return;
+    private void throwExceptionForNoStackElement(final int size, final ClassNode targetType, final boolean coerce) {
+        if (size > 0) return;
         StringBuilder sb = new StringBuilder();
         sb.append("Internal compiler error while compiling ").append(controller.getSourceUnit().getName()).append("\n");
         MethodNode methodNode = controller.getMethodNode();
@@ -331,16 +326,16 @@ public class OperandStack {
         throw new ArrayIndexOutOfBoundsException(sb.toString());
     }
 
-    private void doConvertAndCast(ClassNode targetType, boolean coerce) {
+    private void doConvertAndCast(ClassNode targetType, final boolean coerce) {
         int size = stack.size();
         throwExceptionForNoStackElement(size, targetType, coerce);
 
-        ClassNode top = stack.get(size-1);
+        ClassNode top = stack.get(size - 1);
         targetType = targetType.redirect();
         if (targetType == top) return;
 
         if (coerce) {
-            controller.getInvocationWriter().coerce(top,targetType);
+            controller.getInvocationWriter().coerce(top, targetType);
             return;
         }
 
@@ -364,7 +359,8 @@ public class OperandStack {
         }
 
         MethodVisitor mv = controller.getMethodVisitor();
-        if (primTarget && !ClassHelper.boolean_TYPE.equals(targetType) && !primTop && ClassHelper.getWrapper(targetType).equals(top)) {
+        if (primTarget && !ClassHelper.boolean_TYPE.equals(targetType)
+                && !primTop && ClassHelper.getWrapper(targetType).equals(top)) {
             BytecodeHelper.doCastToPrimitive(mv, top, targetType);
         } else {
             top = stack.get(size-1);
@@ -375,19 +371,19 @@ public class OperandStack {
         replace(targetType);
     }
 
-    private boolean convertFromInt(ClassNode target) {
+    private boolean convertFromInt(final ClassNode target) {
         int convertCode;
-        if (target==ClassHelper.char_TYPE){
+        if (target == ClassHelper.char_TYPE) {
             convertCode = I2C;
-        } else if (target==ClassHelper.byte_TYPE){
+        } else if (target == ClassHelper.byte_TYPE) {
             convertCode = I2B;
-        } else if (target==ClassHelper.short_TYPE){
+        } else if (target == ClassHelper.short_TYPE) {
             convertCode = I2S;
-        } else if (target==ClassHelper.long_TYPE){
+        } else if (target == ClassHelper.long_TYPE) {
             convertCode = I2L;
-        } else if (target==ClassHelper.float_TYPE){
+        } else if (target == ClassHelper.float_TYPE) {
             convertCode = I2F;
-        } else if (target==ClassHelper.double_TYPE){
+        } else if (target == ClassHelper.double_TYPE) {
             convertCode = I2D;
         } else {
             return false;
@@ -395,98 +391,95 @@ public class OperandStack {
         controller.getMethodVisitor().visitInsn(convertCode);
         return true;
     }
-    
-    private boolean convertFromLong(ClassNode target) {
+
+    private boolean convertFromLong(final ClassNode target) {
         MethodVisitor mv = controller.getMethodVisitor();
-        if (target==ClassHelper.int_TYPE){
+        if (target == ClassHelper.int_TYPE) {
             mv.visitInsn(L2I);
             return true;
-        } else if ( target==ClassHelper.char_TYPE ||
-                    target==ClassHelper.byte_TYPE ||
-                    target==ClassHelper.short_TYPE)
-        {
+        } else if (target == ClassHelper.char_TYPE
+                || target == ClassHelper.byte_TYPE
+                || target == ClassHelper.short_TYPE) {
             mv.visitInsn(L2I);
             return convertFromInt(target);
-        } else if (target==ClassHelper.double_TYPE){
+        } else if (target == ClassHelper.double_TYPE) {
             mv.visitInsn(L2D);
             return true;
-        } else if (target==ClassHelper.float_TYPE){
+        } else if (target == ClassHelper.float_TYPE) {
             mv.visitInsn(L2F);
             return true;
-        } 
+        }
         return false;
     }
 
-    private boolean convertFromDouble(ClassNode target) {
+    private boolean convertFromDouble(final ClassNode target) {
         MethodVisitor mv = controller.getMethodVisitor();
-        if (target==ClassHelper.int_TYPE){
+        if (target == ClassHelper.int_TYPE) {
             mv.visitInsn(D2I);
             return true;
-        } else if ( target==ClassHelper.char_TYPE ||
-                    target==ClassHelper.byte_TYPE ||
-                    target==ClassHelper.short_TYPE)
-        {
+        } else if (target == ClassHelper.char_TYPE
+                || target == ClassHelper.byte_TYPE
+                || target == ClassHelper.short_TYPE) {
             mv.visitInsn(D2I);
             return convertFromInt(target);
-        } else if (target==ClassHelper.long_TYPE){
+        } else if (target == ClassHelper.long_TYPE) {
             mv.visitInsn(D2L);
             return true;
-        } else if (target==ClassHelper.float_TYPE){
+        } else if (target == ClassHelper.float_TYPE) {
             mv.visitInsn(D2F);
             return true;
-        } 
-        return false;
-    }    
-    
-    private boolean convertFromFloat(ClassNode target) {
-        MethodVisitor mv = controller.getMethodVisitor();
-        if (target==ClassHelper.int_TYPE){
-            mv.visitInsn(F2I);
-            return true;
-        } else if ( target==ClassHelper.char_TYPE ||
-                    target==ClassHelper.byte_TYPE ||
-                    target==ClassHelper.short_TYPE)
-        {
-            mv.visitInsn(F2I);
-            return convertFromInt(target);
-        } else if (target==ClassHelper.long_TYPE){
-            mv.visitInsn(F2L);
-            return true;
-        } else if (target==ClassHelper.double_TYPE){
-            mv.visitInsn(F2D);
-            return true;
-        } 
+        }
         return false;
     }
-    
-    private boolean convertPrimitive(ClassNode top, ClassNode target) {
-        if (top==target) return true;
-        if (top==ClassHelper.int_TYPE) {
+
+    private boolean convertFromFloat(final ClassNode target) {
+        MethodVisitor mv = controller.getMethodVisitor();
+        if (target == ClassHelper.int_TYPE) {
+            mv.visitInsn(F2I);
+            return true;
+        } else if (target == ClassHelper.char_TYPE
+                || target == ClassHelper.byte_TYPE
+                || target == ClassHelper.short_TYPE) {
+            mv.visitInsn(F2I);
             return convertFromInt(target);
-        } else if ( top==ClassHelper.char_TYPE || 
-                    top==ClassHelper.byte_TYPE ||
-                    top==ClassHelper.short_TYPE)
-        {
+        } else if (target == ClassHelper.long_TYPE) {
+            mv.visitInsn(F2L);
+            return true;
+        } else if (target == ClassHelper.double_TYPE) {
+            mv.visitInsn(F2D);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean convertPrimitive(final ClassNode top, final ClassNode target) {
+        if (top == target)
+            return true;
+        if (top == ClassHelper.int_TYPE) {
+            return convertFromInt(target);
+        } else if (top == ClassHelper.char_TYPE
+                || top == ClassHelper.byte_TYPE
+                || top == ClassHelper.short_TYPE) {
             return target == ClassHelper.int_TYPE || convertFromInt(target);
-        } else if ( top==ClassHelper.float_TYPE) {
+        } else if (top == ClassHelper.float_TYPE) {
             return convertFromFloat(target);
-        } else if ( top==ClassHelper.double_TYPE) {
+        } else if (top == ClassHelper.double_TYPE) {
             return convertFromDouble(target);
-        } else if ( top==ClassHelper.long_TYPE) {
+        } else if (top == ClassHelper.long_TYPE) {
             return convertFromLong(target);
         }
         return false;
     }
 
     /**
-     * load the constant on the operand stack. 
+     * load the constant on the operand stack.
      */
-    public void pushConstant(ConstantExpression expression) {
+    public void pushConstant(final ConstantExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
         Object value = expression.getValue();
         ClassNode origType = expression.getType().redirect();
         ClassNode type = ClassHelper.getUnwrapper(origType);
-        boolean boxing = origType!=type;
+        boolean boxing = origType != type;
         boolean asPrimitive = boxing || ClassHelper.isPrimitiveType(type);
 
         if (value == null) {
@@ -510,12 +503,12 @@ public class OperandStack {
             throw new ClassGeneratorException(
                     "Cannot generate bytecode for constant: " + value + " of type: " + type.getName());
         }
-        
+
         push(type);
-        if (boxing) box(); 
+        if (boxing) box();
     }
 
-    private static void newInstance(MethodVisitor mv, Object value) {
+    private static void newInstance(final MethodVisitor mv, final Object value) {
         String className = BytecodeHelper.getClassInternalName(value.getClass().getName());
         mv.visitTypeInsn(NEW, className);
         mv.visitInsn(DUP);
@@ -529,12 +522,12 @@ public class OperandStack {
         boolean isByte = ClassHelper.byte_TYPE.equals(type);
         boolean isChar = ClassHelper.char_TYPE.equals(type);
         if (isInt || isShort || isByte || isChar) {
-            int val = isInt?(Integer)value:isShort?(Short)value:isChar?(Character)value:(Byte)value;
+            int val = isInt ? (Integer) value : isShort ? (Short) value : isChar ? (Character) value : (Byte) value;
             BytecodeHelper.pushConstant(mv, val);
         } else if (ClassHelper.long_TYPE.equals(type)) {
-            if ((Long)value==0L) {
+            if ((Long) value == 0L) {
                 mv.visitInsn(LCONST_0);
-            } else if ((Long)value==1L) {
+            } else if ((Long) value == 1L) {
                 mv.visitInsn(LCONST_1);
             } else {
                 mv.visitLdcInsn(value);
@@ -543,9 +536,9 @@ public class OperandStack {
             // GROOVY-9797: Use Float.equals to differentiate between positive and negative zero
             if (value.equals(0f)) {
                 mv.visitInsn(FCONST_0);
-            } else if ((Float)value==1f) {
+            } else if ((Float) value == 1f) {
                 mv.visitInsn(FCONST_1);
-            } else if ((Float)value==2f) {
+            } else if ((Float) value == 2f) {
                 mv.visitInsn(FCONST_2);
             } else {
                 mv.visitLdcInsn(value);
@@ -554,7 +547,7 @@ public class OperandStack {
             // GROOVY-9797: Use Double.equals to differentiate between positive and negative zero
             if (value.equals(0d)) {
                 mv.visitInsn(DCONST_0);
-            } else if ((Double)value==1d) {
+            } else if ((Double) value == 1d) {
                 mv.visitInsn(DCONST_1);
             } else {
                 mv.visitLdcInsn(value);
@@ -571,7 +564,7 @@ public class OperandStack {
         }
     }
 
-    public void pushDynamicName(Expression name) {
+    public void pushDynamicName(final Expression name) {
         if (name instanceof ConstantExpression) {
             ConstantExpression ce = (ConstantExpression) name;
             Object value = ce.getValue();
@@ -583,16 +576,15 @@ public class OperandStack {
         new CastExpression(ClassHelper.STRING_TYPE, name).visit(controller.getAcg());
     }
 
-    public void loadOrStoreVariable(BytecodeVariable variable, boolean useReferenceDirectly) {
+    public void loadOrStoreVariable(final BytecodeVariable variable, final boolean useReferenceDirectly) {
         CompileStack compileStack = controller.getCompileStack();
-        
         if (compileStack.isLHS()) {
             storeVar(variable);
         } else {
             MethodVisitor mv = controller.getMethodVisitor();
             int idx = variable.getIndex();
             ClassNode type = variable.getType();
-            
+
             if (variable.isHolder()) {
                 mv.visitVarInsn(ALOAD, idx);
                 if (!useReferenceDirectly) {
@@ -603,12 +595,12 @@ public class OperandStack {
                     push(ClassHelper.REFERENCE_TYPE);
                 }
             } else {
-                load(type,idx);
+                load(type, idx);
             }
         }
     }
 
-    public void storeVar(BytecodeVariable variable) {
+    public void storeVar(final BytecodeVariable variable) {
         MethodVisitor mv = controller.getMethodVisitor();
         int idx = variable.getIndex();
         ClassNode type = variable.getType();
@@ -628,21 +620,21 @@ public class OperandStack {
         remove(1);
     }
 
-    public void load(ClassNode type, int idx) {
+    public void load(final ClassNode type, final int idx) {
         MethodVisitor mv = controller.getMethodVisitor();
         BytecodeHelper.load(mv, type, idx);
         push(type);
     }
 
-    public void pushBool(boolean inclusive) {
+    public void pushBool(final boolean inclusive) {
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitLdcInsn(inclusive);
         push(ClassHelper.boolean_TYPE);
     }
-    
+
     @Override
     public String toString() {
-        return "OperandStack(size="+stack.size()+":"+stack.toString()+")";
+        return "OperandStack(size=" + stack.size() + ":" + stack.toString() + ")";
     }
 
     public ClassNode getTopOperand() {
