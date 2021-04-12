@@ -49,6 +49,7 @@ import static org.apache.groovy.parser.antlr4.GroovyLexer.LPAREN;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.RBRACE;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.RBRACK;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.RPAREN;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.SAFE_INDEX;
 
 /**
  * Represents highlighter to highlight matched parentheses, brackets and curly braces when caret touching them
@@ -59,15 +60,16 @@ public class MatchingHighlighter implements CaretListener {
     private final SmartDocumentFilter smartDocumentFilter;
     private final JTextPane textEditor;
     private final DefaultStyledDocument doc;
-    private static final Map<String, Tuple3<Integer, Integer, Boolean>> PAREN_MAP = Maps.of(
-            "(", tuple(LPAREN, RPAREN, true),
-            ")", tuple(RPAREN, LPAREN, false),
-            "[", tuple(LBRACK, RBRACK, true),
-            "]", tuple(RBRACK, LBRACK, false),
-            "{", tuple(LBRACE, RBRACE, true),
-            "}", tuple(RBRACE, LBRACE, false)
+    private static final Map<String, Tuple3<Integer, List<Integer>, Boolean>> PAREN_MAP = Maps.of(
+            "(", tuple(LPAREN, Collections.singletonList(RPAREN), true),
+            ")", tuple(RPAREN, Collections.singletonList(LPAREN), false),
+            "?[", tuple(SAFE_INDEX, Collections.singletonList(RBRACK), true),
+            "[", tuple(LBRACK, Collections.singletonList(RBRACK), true),
+            "]", tuple(RBRACK, Arrays.asList(LBRACK, SAFE_INDEX), false),
+            "{", tuple(LBRACE, Collections.singletonList(RBRACE), true),
+            "}", tuple(RBRACE, Collections.singletonList(LBRACE), false)
     );
-    private volatile List<Tuple2<Integer, Position>> highlightedTokenInfoList = Collections.emptyList();
+    private volatile List<Tuple3<Integer, Position, Integer>> highlightedTokenInfoList = Collections.emptyList();
 
     public MatchingHighlighter(SmartDocumentFilter smartDocumentFilter, JTextPane textEditor) {
         this.smartDocumentFilter = smartDocumentFilter;
@@ -97,25 +99,38 @@ public class MatchingHighlighter implements CaretListener {
         int caretPosition = textEditor.getCaretPosition();
         int f = -1;
         String c = null;
-        try {
-            f = caretPosition - 1;
-            c = doc.getText(f, 1);
-        } catch (BadLocationException e1) {
-            // ignore
-        }
-
-        if (!PAREN_MAP.containsKey(c)) {
+        for (int len = 2; len >= 1; len--) {
             try {
-                f = caretPosition;
-                c = doc.getText(f, 1);
+                f = caretPosition - len;
+                c = doc.getText(f, len);
+
+                if (PAREN_MAP.containsKey(c)) break;
             } catch (BadLocationException e1) {
                 // ignore
             }
+
+            try {
+                f = caretPosition;
+                c = doc.getText(f, len);
+
+                if (PAREN_MAP.containsKey(c)) break;
+            } catch (BadLocationException e1) {
+                // ignore
+            }
+
+            if (2 == len) {
+                try {
+                    f = caretPosition - 1;
+                    c = doc.getText(f, len);
+
+                    if (PAREN_MAP.containsKey(c)) break;
+                } catch (BadLocationException e1) {
+                    // ignore
+                }
+            }
         }
 
-        if (!PAREN_MAP.containsKey(c)) {
-            return;
-        }
+        if (!PAREN_MAP.containsKey(c)) return;
 
         final int offset = f;
         final String p = c;
@@ -125,9 +140,9 @@ public class MatchingHighlighter implements CaretListener {
 
     private void highlightMatched(int offset, String p) {
         List<Token> latestTokenList = smartDocumentFilter.getLatestTokenList();
-        Tuple3<Integer, Integer, Boolean> tokenTypeTuple = PAREN_MAP.get(p);
+        Tuple3<Integer, List<Integer>, Boolean> tokenTypeTuple = PAREN_MAP.get(p);
         int triggerTokenType = tokenTypeTuple.getV1();
-        int matchedTokenType = tokenTypeTuple.getV2();
+        List<Integer> matchedTokenTypeList = tokenTypeTuple.getV2();
         boolean normalOrder = tokenTypeTuple.getV3();
         Deque<Tuple2<Token, Boolean>> stack = new ArrayDeque<>();
 
@@ -143,7 +158,7 @@ public class MatchingHighlighter implements CaretListener {
                 Boolean triggerFlag = offset == token.getStartIndex();
 
                 stack.push(tuple(token, triggerFlag));
-            } else if (tokenType == matchedTokenType) {
+            } else if (matchedTokenTypeList.contains(tokenType)) {
                 if (!stack.isEmpty()) {
                     Tuple2<Token, Boolean> tokenAndTriggerFlagTuple = stack.pop();
                     if (tokenAndTriggerFlagTuple.getV2()) {
@@ -160,8 +175,8 @@ public class MatchingHighlighter implements CaretListener {
             highlightToken(p, matchedToken);
             try {
                 highlightedTokenInfoList = Arrays.asList(
-                        tuple(triggerToken.getType(), doc.createPosition(triggerToken.getStartIndex())),
-                        tuple(matchedToken.getType(), doc.createPosition(matchedToken.getStartIndex()))
+                        tuple(triggerToken.getType(), doc.createPosition(triggerToken.getStartIndex()), triggerToken.getText().length()),
+                        tuple(matchedToken.getType(), doc.createPosition(matchedToken.getStartIndex()), matchedToken.getText().length())
                 );
             } catch (BadLocationException e) {
                 e.printStackTrace();
@@ -201,17 +216,17 @@ public class MatchingHighlighter implements CaretListener {
     private void highlightToken(String p, final Token tokenToHighlight) {
         Style style = findHighlightedStyleByParen(p);
         doc.setCharacterAttributes(tokenToHighlight.getStartIndex(),
-                1,
+                tokenToHighlight.getText().length(),
                 style,
                 true);
     }
 
     private void clearHighlighted() {
         if (!highlightedTokenInfoList.isEmpty()) {
-            for (Tuple2<Integer, Position> highlightedTokenInfo : highlightedTokenInfoList) {
+            for (Tuple3<Integer, Position, Integer> highlightedTokenInfo : highlightedTokenInfoList) {
                 doc.setCharacterAttributes(
                         highlightedTokenInfo.getV2().getOffset(),
-                        1,
+                        highlightedTokenInfo.getV3(),
                         findStyleByTokenType(highlightedTokenInfo.getV1()),
                         true
                 );
