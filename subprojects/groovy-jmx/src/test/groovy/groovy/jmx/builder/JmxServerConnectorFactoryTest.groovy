@@ -20,12 +20,14 @@ package groovy.jmx.builder
 
 import groovy.test.GroovyTestCase
 
+import javax.management.remote.JMXConnector
+import javax.management.remote.JMXConnectorFactory
 import javax.management.remote.JMXServiceURL
 import javax.management.remote.rmi.RMIConnectorServer
 
 class JmxServerConnectorFactoryTest extends GroovyTestCase {
     def builder
-    int defaultPort = 10997
+    int defaultPort = 10995
     def rmi
 
     void setUp() {
@@ -54,8 +56,8 @@ class JmxServerConnectorFactoryTest extends GroovyTestCase {
         assert result.isActive()
 
         JMXServiceURL url = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://localhost:${rmi.port}/jmxrmi")
-        javax.management.remote.JMXConnector conn = javax.management.remote.JMXConnectorFactory.newJMXConnector(url, null)
-        conn.connect();
+        JMXConnector conn = JMXConnectorFactory.newJMXConnector(url, null)
+        conn.connect()
 
         result.stop()
     }

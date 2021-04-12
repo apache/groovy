@@ -25,7 +25,7 @@ import javax.management.remote.rmi.RMIConnectorServer
 
 class JmxClientConnectorFactoryTest extends GroovyTestCase {
     def builder
-    int defaultPort = 10995
+    int defaultPort = 10990
     def rmi
 
     void setUp() {
