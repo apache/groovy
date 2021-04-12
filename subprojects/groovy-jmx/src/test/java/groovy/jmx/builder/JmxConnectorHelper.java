@@ -36,7 +36,7 @@ public class JmxConnectorHelper {
         int counter = 0;
         int port = initPort;
         Registry reg = null;
-        while (reg == null && counter <= MAX_RETRIES) {
+        while (counter <= MAX_RETRIES) {
             try {
                 reg = LocateRegistry.createRegistry(port);
                 result.put("registry", reg);
