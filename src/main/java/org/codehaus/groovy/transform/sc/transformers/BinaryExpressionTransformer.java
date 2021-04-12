@@ -21,6 +21,8 @@ package org.codehaus.groovy.transform.sc.transformers;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
@@ -43,6 +45,7 @@ import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -53,6 +56,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -81,24 +85,34 @@ public class BinaryExpressionTransformer {
         Object[] list = bin.getNodeMetaData(StaticCompilationMetadataKeys.BINARY_EXP_TARGET);
         Token operation = bin.getOperation();
         int operationType = operation.getType();
-        Expression rightExpression = bin.getRightExpression();
         Expression leftExpression = bin.getLeftExpression();
-        if (bin instanceof DeclarationExpression && leftExpression instanceof VariableExpression) {
+        Expression rightExpression = bin.getRightExpression();
+        if (bin instanceof DeclarationExpression
+                && leftExpression instanceof VariableExpression
+                && rightExpression instanceof ConstantExpression) {
             ClassNode declarationType = ((VariableExpression) leftExpression).getOriginType();
-            if (rightExpression instanceof ConstantExpression) {
-                ClassNode unwrapper = ClassHelper.getUnwrapper(declarationType);
-                ClassNode wrapper = ClassHelper.getWrapper(declarationType);
-                if (!rightExpression.getType().equals(declarationType)
-                        && wrapper.isDerivedFrom(ClassHelper.Number_TYPE)
-                        && WideningCategories.isDoubleCategory(unwrapper)) {
-                    ConstantExpression constant = (ConstantExpression) rightExpression;
-                    if (!constant.isNullExpression()) {
-                        return optimizeConstantInitialization(bin, operation, constant, leftExpression, declarationType);
-                    }
+            if (!rightExpression.getType().equals(declarationType)
+                    && ClassHelper.getWrapper(declarationType).isDerivedFrom(ClassHelper.Number_TYPE)
+                    && WideningCategories.isDoubleCategory(ClassHelper.getUnwrapper(declarationType))) {
+                ConstantExpression constant = (ConstantExpression) rightExpression;
+                if (!constant.isNullExpression()) {
+                    return optimizeConstantInitialization(bin, operation, constant, leftExpression, declarationType);
                 }
             }
         }
         if (operationType == Types.ASSIGN) {
+            // GROOVY-10029: add "?.toArray(new T[0])" to "T[] array = collectionOfT" assignments
+            ClassNode leftType = findType(leftExpression), rightType = findType(rightExpression);
+            if (leftType.isArray() && !(rightExpression instanceof ListExpression) && isOrImplements(rightType, ClassHelper.COLLECTION_TYPE)) {
+                ArrayExpression emptyArray = new ArrayExpression(leftType.getComponentType(), null, Collections.singletonList(CONSTANT_ZERO));
+                rightExpression = callX(rightExpression, "toArray", args(emptyArray));
+                rightExpression.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, leftType);
+                ((MethodCallExpression) rightExpression).setMethodTarget(
+                        rightType.getMethod("toArray", new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE.makeArray(), "a")}));
+                ((MethodCallExpression) rightExpression).setImplicitThis(false);
+                ((MethodCallExpression) rightExpression).setSafe(true);
+            }
+
             MethodNode directMCT = leftExpression.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
             if (directMCT != null) {
                 Expression left = staticCompilationTransformer.transform(leftExpression);
@@ -127,6 +141,11 @@ public class BinaryExpressionTransformer {
                             bin // "x = val"
                     );
                 }
+            }
+
+            // if not transformed to setter call but RHS has been transformed...
+            if (rightExpression != bin.getRightExpression()) {
+                bin.setRightExpression(rightExpression);
             }
         } else if (operationType == Types.COMPARE_EQUAL || operationType == Types.COMPARE_NOT_EQUAL) {
             // let's check if one of the operands is the null constant

@@ -64,6 +64,7 @@ import java.lang.ref.SoftReference;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -148,6 +149,7 @@ public class ClassHelper {
             TUPLE_TYPE = makeWithoutCaching(Tuple.class),
             ITERABLE_TYPE = makeWithoutCaching(Iterable.class),
             REFERENCE_TYPE = makeWithoutCaching(Reference.class),
+            COLLECTION_TYPE = makeWithoutCaching(Collection.class),
             COMPARABLE_TYPE = makeWithoutCaching(Comparable.class),
             GROOVY_OBJECT_TYPE = makeWithoutCaching(GroovyObject.class),
             GENERATED_LAMBDA_TYPE = makeWithoutCaching(GeneratedLambda.class),
