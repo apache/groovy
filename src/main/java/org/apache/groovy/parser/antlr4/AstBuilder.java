@@ -330,7 +330,9 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.LT;
 import static org.apache.groovy.parser.antlr4.GroovyParser.NOT_IN;
 import static org.apache.groovy.parser.antlr4.GroovyParser.NOT_INSTANCEOF;
 import static org.apache.groovy.parser.antlr4.GroovyParser.PRIVATE;
-import static org.apache.groovy.parser.antlr4.GroovyParser.RANGE_EXCLUSIVE;
+import static org.apache.groovy.parser.antlr4.GroovyParser.RANGE_EXCLUSIVE_FULL;
+import static org.apache.groovy.parser.antlr4.GroovyParser.RANGE_EXCLUSIVE_LEFT;
+import static org.apache.groovy.parser.antlr4.GroovyParser.RANGE_EXCLUSIVE_RIGHT;
 import static org.apache.groovy.parser.antlr4.GroovyParser.RANGE_INCLUSIVE;
 import static org.apache.groovy.parser.antlr4.GroovyParser.SAFE_INDEX;
 import static org.apache.groovy.parser.antlr4.GroovyParser.STATIC;
@@ -4473,7 +4475,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         int tokenType = token.getType();
         String text = 1 == cardinality ? tokenText : StringGroovyMethods.multiply(tokenText, cardinality);
         return new org.codehaus.groovy.syntax.Token(
-                RANGE_EXCLUSIVE == tokenType || RANGE_INCLUSIVE == tokenType
+                RANGE_EXCLUSIVE_FULL == tokenType || RANGE_EXCLUSIVE_LEFT == tokenType || RANGE_EXCLUSIVE_RIGHT == tokenType || RANGE_INCLUSIVE == tokenType
                         ? Types.RANGE_OPERATOR
                         : SAFE_INDEX == tokenType
                         ? Types.LEFT_SQUARE_BRACKET

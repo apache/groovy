@@ -890,7 +890,9 @@ options { baseContext = expression; }
                         |   dgOp=GT GT
                         )
             |   rangeOp=(    RANGE_INCLUSIVE
-                        |    RANGE_EXCLUSIVE
+                        |    RANGE_EXCLUSIVE_LEFT
+                        |    RANGE_EXCLUSIVE_RIGHT
+                        |    RANGE_EXCLUSIVE_FULL
                         )
             ) nls
         right=plainExpression                                                                        #shiftExprAlt
