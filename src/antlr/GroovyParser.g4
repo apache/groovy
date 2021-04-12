@@ -396,7 +396,7 @@ thisFormalParameter
     ;
 
 formalParameter
-    :   variableModifiersOpt type? ELLIPSIS? variableDeclaratorId (nls ASSIGN nls plainExpression)?
+    :   variableModifiersOpt type? ELLIPSIS? variableDeclaratorId (nls ASSIGN nls expression)?
     ;
 
 methodBody
@@ -482,7 +482,7 @@ standardLambdaParameters
 
 lambdaBody
     :   block
-    |   plainStatementExpression
+    |   expression
     ;
 
 // CLOSURE
@@ -538,7 +538,7 @@ elementValuePairName
 elementValue
     :   elementValueArrayInitializer
     |   annotation
-    |   plainExpression
+    |   expression
     ;
 
 elementValueArrayInitializer
@@ -621,7 +621,7 @@ tryCatchStatement
     ;
 
 assertStatement
-    :   ASSERT ce=plainExpression (nls (COLON | COMMA) nls me=plainExpression)?
+    :   ASSERT ce=expression (nls (COLON | COMMA) nls me=expression)?
     ;
 
 statement
@@ -630,8 +630,8 @@ statement
     |   loopStatement                                                                                       #loopStmtAlt
     |   tryCatchStatement                                                                                   #tryCatchStmtAlt
     |   SYNCHRONIZED expressionInPar nls block                                                              #synchronizedStmtAlt
-    |   RETURN plainExpression?                                                                                  #returnStmtAlt
-    |   THROW plainExpression                                                                                    #throwStmtAlt
+    |   RETURN expression?                                                                                  #returnStmtAlt
+    |   THROW expression                                                                                    #throwStmtAlt
     |   breakStatement                                                                                      #breakStmtAlt
     |   continueStatement                                                                                   #continueStmtAlt
     |   identifier COLON nls statement                                                                      #labeledStmtAlt
@@ -663,7 +663,7 @@ resourceList
 
 resource
     :   localVariableDeclaration
-    |   plainExpression
+    |   expression
     ;
 
 
@@ -675,7 +675,7 @@ switchBlockStatementGroup
     ;
 
 switchLabel
-    :   CASE plainExpression COLON
+    :   CASE expression COLON
     |   DEFAULT COLON
     ;
 
@@ -685,11 +685,11 @@ forControl
     ;
 
 enhancedForControl
-    :   variableModifiersOpt type? variableDeclaratorId (COLON | IN) plainExpression
+    :   variableModifiersOpt type? variableDeclaratorId (COLON | IN) expression
     ;
 
 classicalForControl
-    :   forInit? SEMI plainExpression? SEMI forUpdate?
+    :   forInit? SEMI expression? SEMI forUpdate?
     ;
 
 forInit
@@ -721,23 +721,12 @@ expressionList[boolean canSpread]
     ;
 
 expressionListElement[boolean canSpread]
-    :   MUL? plainExpression
-    ;
-
-enhancedPlainStatementExpression
-options { baseContext = enhancedStatementExpression; }
-    :   plainStatementExpression
-    |   standardLambdaExpression
+    :   MUL? expression
     ;
 
 enhancedStatementExpression
     :   statementExpression
     |   standardLambdaExpression
-    ;
-
-plainStatementExpression
-options { baseContext = statementExpression; }
-    :   plainCommandExpression                   #commandExprAlt
     ;
 
 statementExpression
@@ -842,7 +831,7 @@ expression
                            |   POWER_ASSIGN
                            |   ELVIS_ASSIGN
                            ) nls
-                     right=enhancedStatementExpression                                            #assignmentExprAlt
+                     right=enhancedStatementExpression                                      #assignmentExprAlt
     ;
 
 castOperandExpression
@@ -856,109 +845,6 @@ options { baseContext = expression; }
 
     // ++(prefix)/--(prefix)/+(unary)/-(unary)
     |   op=(INC | DEC | ADD | SUB) castOperandExpression                                    #unaryAddExprAlt
-    ;
-
-plainExpression
-options { baseContext = expression; }
-    // must come before postfixExpression to resovle the ambiguities between casting and call on parentheses plainExpression, e.g. (int)(1 / 2)
-    :   castParExpression castOperandExpression                                                      #castExprAlt
-
-    // qualified names, array expressions, method invocation, post inc/dec
-    |   postfixExpression                                                                            #postfixExprAlt
-
-    // ~(BNOT)/!(LNOT) (level 1)
-    |   (BITNOT | NOT) nls plainExpression                                                           #unaryNotExprAlt
-
-    // math power operator (**) (level 2)
-    |   left=plainExpression op=POWER nls right=plainExpression                                      #powerExprAlt
-
-    // ++(prefix)/--(prefix)/+(unary)/-(unary) (level 3)
-    |   op=(INC | DEC | ADD | SUB) plainExpression                                                   #unaryAddExprAlt
-
-    // multiplication/division/modulo (level 4)
-    |   left=plainExpression nls op=(MUL | DIV | MOD) nls right=plainExpression                      #multiplicativeExprAlt
-
-    // binary addition/subtraction (level 5)
-    |   left=plainExpression op=(ADD | SUB) nls right=plainExpression                                #additiveExprAlt
-
-    // bit shift expressions (level 6)
-    |   left=plainExpression nls
-            (           (   dlOp=LT LT
-                        |   tgOp=GT GT GT
-                        |   dgOp=GT GT
-                        )
-            |   rangeOp=(    RANGE_INCLUSIVE
-                        |    RANGE_EXCLUSIVE
-                        )
-            ) nls
-        right=plainExpression                                                                        #shiftExprAlt
-
-    // boolean relational expressions (level 7)
-    |   left=plainExpression nls op=(AS | INSTANCEOF | NOT_INSTANCEOF) nls type                      #relationalExprAlt
-    |   left=plainExpression nls op=(LE | GE | GT | LT | IN | NOT_IN)  nls right=plainExpression     #relationalExprAlt
-
-    // equality/inequality (==/!=) (level 8)
-    |   left=plainExpression nls
-            op=(    IDENTICAL
-               |    NOT_IDENTICAL
-               |    EQUAL
-               |    NOTEQUAL
-               |    SPACESHIP
-               ) nls
-        right=plainExpression                                                                         #equalityExprAlt
-
-    // regex find and match (=~ and ==~) (level 8.5)
-    // jez: moved =~ closer to precedence of == etc, as...
-    // 'if (foo =~ "a.c")' is very close in intent to 'if (foo == "abc")'
-    |   left=plainExpression nls op=(REGEX_FIND | REGEX_MATCH) nls right=plainExpression              #regexExprAlt
-
-    // bitwise or non-short-circuiting and (&)  (level 9)
-    |   left=plainExpression nls op=BITAND nls right=plainExpression                                  #andExprAlt
-
-    // exclusive or (^)  (level 10)
-    |   left=plainExpression nls op=XOR nls right=plainExpression                                     #exclusiveOrExprAlt
-
-    // bitwise or non-short-circuiting or (|)  (level 11)
-    |   left=plainExpression nls op=BITOR nls right=plainExpression                                   #inclusiveOrExprAlt
-
-    // logical and (&&)  (level 12)
-    |   left=plainExpression nls op=AND nls right=plainExpression                                     #logicalAndExprAlt
-
-    // logical or (||)  (level 13)
-    |   left=plainExpression nls op=OR nls right=plainExpression                                      #logicalOrExprAlt
-
-    // conditional test (level 14)
-    |   <assoc=right> con=plainExpression nls
-        (   QUESTION nls tb=plainExpression nls COLON nls
-        |   ELVIS nls
-        )
-        fb=plainExpression                                                                             #conditionalExprAlt
-
-    // assignment plainExpression (level 15)
-    // "(a) = [1]" is a special case of multipleAssignmentExprAlt, it will be handle by assignmentExprAlt
-    |   <assoc=right> left=variableNames nls op=ASSIGN nls right=plainStatementExpression              #multipleAssignmentExprAlt
-    |   <assoc=right> left=plainExpression nls
-                        op=(   ASSIGN
-                           |   ADD_ASSIGN
-                           |   SUB_ASSIGN
-                           |   MUL_ASSIGN
-                           |   DIV_ASSIGN
-                           |   AND_ASSIGN
-                           |   OR_ASSIGN
-                           |   XOR_ASSIGN
-                           |   RSHIFT_ASSIGN
-                           |   URSHIFT_ASSIGN
-                           |   LSHIFT_ASSIGN
-                           |   MOD_ASSIGN
-                           |   POWER_ASSIGN
-                           |   ELVIS_ASSIGN
-                           ) nls
-                     right=enhancedPlainStatementExpression                                                  #assignmentExprAlt
-    ;
-
-plainCommandExpression
-options { baseContext = commandExpression; }
-    :   plainExpression
     ;
 
 commandExpression
@@ -1162,20 +1048,20 @@ options { baseContext = mapEntryList; }
     ;
 
 mapEntry
-    :   mapEntryLabel COLON nls plainExpression
-    |   MUL COLON nls plainExpression
+    :   mapEntryLabel COLON nls expression
+    |   MUL COLON nls expression
     ;
 
 namedPropertyArg
 options { baseContext = mapEntry; }
-    :   namedPropertyArgLabel COLON nls plainExpression
-    |   MUL COLON nls plainExpression
+    :   namedPropertyArgLabel COLON nls expression
+    |   MUL COLON nls expression
     ;
 
 namedArg
 options { baseContext = mapEntry; }
-    :   namedArgLabel COLON nls plainExpression
-    |   MUL COLON nls plainExpression
+    :   namedArgLabel COLON nls expression
+    |   MUL COLON nls expression
     ;
 
 mapEntryLabel
@@ -1206,7 +1092,7 @@ creator[int t]
     ;
 
 dim
-    :   annotationsOpt LBRACK plainExpression? RBRACK
+    :   annotationsOpt LBRACK expression? RBRACK
     ;
 
 arrayInitializer
