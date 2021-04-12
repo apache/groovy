@@ -20,7 +20,7 @@ package groovy
 
 import groovy.test.GroovyTestCase
 
-class ArrayCoerceTest extends GroovyTestCase {
+final class ArrayCoerceTest extends GroovyTestCase {
 
     Object[] field
     Long[] numberField
@@ -34,52 +34,36 @@ class ArrayCoerceTest extends GroovyTestCase {
 
     void testStaticallyTypedPrimitiveFieldArrays() {
         primitiveField = [1, 2, 3]
-
         assert primitiveField instanceof int[]
         assert primitiveField.length == 3
     }
 
-
-    void testFoo2() {
-        def x = [1, 2, 3] as Object[]
-        assert x instanceof Object[]
-        def c = x.getClass()
-        def et = c.componentType
-        assert et == Object.class
-    }
-
     void testStaticallyTypedObjectArrays() {
         Object[] b = [1, 2, 3]
-
         assert b instanceof Object[]
         assert b.length == 3
         def c = b.getClass()
         def et = c.componentType
         assert et == Object.class
-
     }
 
     void testStaticallyTypedArrays() {
         Integer[] b = [1, 2, 3]
-
         assert b instanceof Integer[]
         assert b.length == 3
         def c = b.getClass()
         def et = c.componentType
         assert et == Integer.class
-
     }
 
     void testStaticallyTypedObjectFieldArrays() {
         field = [1, 2, 3]
-
         assert field instanceof Object[]
         assert field.length == 3
     }
 
     void testStaticallyTypedFieldArrays() {
         numberField = [1, 2, 3]
-
         assert numberField instanceof Long[]
         assert numberField.length == 3
     }
@@ -120,10 +104,9 @@ class ArrayCoerceTest extends GroovyTestCase {
         assert x instanceof double[]
     }
 
-
-
     void testAsObjectArray() {
         def x = [1, 2, 3] as Object[]
+        assert x instanceof Object[]
         def c = x.getClass()
         def et = c.componentType
         assert et == Object.class
@@ -153,7 +136,6 @@ class ArrayCoerceTest extends GroovyTestCase {
         assert x.size() == 3
         assert x instanceof int[]
     }
-
 
     void testMakeArrayTypes() {
         def x = null
@@ -191,4 +173,42 @@ class ArrayCoerceTest extends GroovyTestCase {
         assert x instanceof Double[]
     }
 
+    // GROOVY-10028
+    void testMakeArrayFromOtherTypes() {
+        int[] a = Arrays.stream(0, 1, 2)
+        assert a instanceof int[]
+        assert a.length == 3
+
+        long[] b = Arrays.stream(0, 1, 2)
+        assert b instanceof long[]
+        assert b.length == 3
+
+        long[] c = Arrays.stream(0L, 1L, 2L)
+        assert c instanceof long[]
+        assert c.length == 3
+
+        double[] d = Arrays.stream(0, 1, 2)
+        assert d instanceof double[]
+        assert d.length == 3
+
+        d = Arrays.stream(0L, 1L, 2L)
+        assert d instanceof double[]
+        assert d.length == 3
+
+        d = Arrays.stream(0D, 1D, 2D)
+        assert d instanceof double[]
+        assert d.length == 3
+
+        primitiveField = Arrays.stream(0, 1, 2)
+        assert primitiveField instanceof int[]
+        assert primitiveField.length == 3
+
+        numberField = Arrays.stream(0, 1, 2)
+        assert numberField instanceof Long[]
+        assert numberField.length == 3
+
+        field = Arrays.stream(0, 1, 2)
+        assert field instanceof Object[]
+        assert field.length == 3
+    }
 }
