@@ -68,6 +68,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.regex.Matcher;
+import java.util.stream.BaseStream;
 
 import static java.lang.Math.min;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
@@ -162,6 +163,7 @@ public abstract class StaticTypeCheckingSupport {
 
     protected static final ClassNode Matcher_TYPE = makeWithoutCaching(Matcher.class);
     protected static final ClassNode ArrayList_TYPE = makeWithoutCaching(ArrayList.class);
+    protected static final ClassNode BaseStream_TYPE = makeWithoutCaching(BaseStream.class);
     protected static final ClassNode Collection_TYPE = makeWithoutCaching(Collection.class);
     protected static final ClassNode Deprecated_TYPE = makeWithoutCaching(Deprecated.class);
     protected static final ClassNode LinkedHashMap_TYPE = makeWithoutCaching(LinkedHashMap.class);
@@ -670,6 +672,11 @@ public abstract class StaticTypeCheckingSupport {
                 return OBJECT_TYPE.equals(left.getComponentType()) // Object[] can accept any collection element type(s)
                     || (elementType.getLowerBound() == null && isCovariant(extractType(elementType), left.getComponentType()));
                     //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GROOVY-8984: "? super T" is only compatible with an Object[] target
+            }
+            if (GeneralUtils.isOrImplements(right, BaseStream_TYPE)) {
+                GenericsType elementType = GenericsUtils.parameterizeType(right, BaseStream_TYPE).getGenericsTypes()[0];
+                return OBJECT_TYPE.equals(left.getComponentType()) // Object[] can accept any stream API element type(s)
+                    || (elementType.getLowerBound() == null && isCovariant(extractType(elementType), getWrapper(left.getComponentType())));
             }
         }
 

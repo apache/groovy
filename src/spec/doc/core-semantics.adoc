@@ -1179,7 +1179,7 @@ include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_array_fail,inden
 ----
 ====
 
-* _or_ `T` is an array and `A` is a list and the component type of `A` is assignable to the component type of `T`
+* _or_ `T` is an array and `A` is a collection or stream and the component type of `A` is assignable to the component type of `T`
 
 +
 
@@ -1189,6 +1189,8 @@ include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_array_fail,inden
 ----
 include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_array_list,indent=0]
 include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_array_list_fail,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_array_set,indent=0]
+include::../test/typing/TypeCheckingTest.groovy[tags=stc_assign_array_stream,indent=0]
 ----
 ====
 

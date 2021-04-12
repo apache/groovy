@@ -25,7 +25,7 @@ import static groovy.test.GroovyAssert.shouldFail
 final class DefaultTypeTransformationTest {
 
     @Test
-    void testCastToType() {
+    void testCastToType1() {
         def input = null, result
 
         result = DefaultTypeTransformation.castToType(input, int)
@@ -51,6 +51,71 @@ final class DefaultTypeTransformationTest {
         input = "$input"
         result = DefaultTypeTransformation.castToType(input, Object)
         assert result === input
+    }
+
+    @Test
+    void testCastToType2() {
+        def input = new int[] {0,1}, result
+
+        result = DefaultTypeTransformation.castToType(input, Number[])
+        assert result instanceof Number[]
+        assert result[0] == 0
+        assert result[1] == 1
+
+        result = DefaultTypeTransformation.castToType(input, List)
+        assert result instanceof List
+        assert result[0] == 0
+        assert result[1] == 1
+
+        result = DefaultTypeTransformation.castToType(input, Set)
+        assert result instanceof Set
+        assert result[0] == 0
+        assert result[1] == 1
+    }
+
+    @Test
+    void testCastToType3() {
+        def input = Arrays.asList(0,1), result
+
+        result = DefaultTypeTransformation.castToType(input, Number[])
+        assert result instanceof Number[]
+        assert result[0] == 0
+        assert result[1] == 1
+
+        result = DefaultTypeTransformation.castToType(input, List)
+        assert result === input
+        assert result[0] == 0
+        assert result[1] == 1
+
+        result = DefaultTypeTransformation.castToType(input, Set)
+        assert result instanceof Set
+        assert result[0] == 0
+        assert result[1] == 1
+    }
+
+    @Test // GROOVY-10028
+    void testCastToType4() {
+        def result
+
+        result = DefaultTypeTransformation.castToType(Arrays.stream(0,1), Number[])
+        assert result instanceof Number[]
+        assert result[0] == 0
+        assert result[1] == 1
+
+        result = DefaultTypeTransformation.castToType(Arrays.stream(0,1), int[])
+        assert result instanceof int[]
+        assert result[0] == 0
+        assert result[1] == 1
+
+        result = DefaultTypeTransformation.castToType(Arrays.stream(0,1), List)
+        assert result instanceof List
+        assert result[0] == 0
+        assert result[1] == 1
+
+        result = DefaultTypeTransformation.castToType(Arrays.stream(0,1), Set)
+        assert result instanceof Set
+        assert result[0] == 0
+        assert result[1] == 1
     }
 
     @Test
