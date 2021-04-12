@@ -1646,8 +1646,6 @@ public class AsmClassGenerator extends ClassGenerator {
     @Override
     public void visitArrayExpression(final ArrayExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
-        ClassNode elementType = expression.getElementType();
-        String arrayTypeName = BytecodeHelper.getClassInternalName(elementType);
 
         int size = 0;
         int dimensions = 0;
@@ -1658,15 +1656,18 @@ public class AsmClassGenerator extends ClassGenerator {
             for (Expression element : expression.getSizeExpression()) {
                 if (element == ConstantExpression.EMPTY_EXPRESSION) break;
                 dimensions += 1;
-                // let's convert to an int
+                // convert to an int
                 element.visit(this);
                 controller.getOperandStack().doGroovyCast(ClassHelper.int_TYPE);
             }
             controller.getOperandStack().remove(dimensions);
         }
 
+        ClassNode arrayType = expression.getType();
+        ClassNode elementType = arrayType.getComponentType();
+
         int storeIns = AASTORE;
-        if (expression.hasInitializer()) {
+        if (!elementType.isArray() || expression.hasInitializer()) {
             if (ClassHelper.isPrimitiveType(elementType)) {
                 int primType = 0;
                 if (elementType == ClassHelper.boolean_TYPE) {
@@ -1696,11 +1697,10 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
                 mv.visitIntInsn(NEWARRAY, primType);
             } else {
-                mv.visitTypeInsn(ANEWARRAY, arrayTypeName);
+                mv.visitTypeInsn(ANEWARRAY, BytecodeHelper.getClassInternalName(elementType));
             }
         } else {
-            arrayTypeName = BytecodeHelper.getTypeDescription(expression.getType());
-            mv.visitMultiANewArrayInsn(arrayTypeName, dimensions);
+            mv.visitMultiANewArrayInsn(BytecodeHelper.getTypeDescription(arrayType), dimensions);
         }
 
         for (int i = 0; i < size; i += 1) {
@@ -1717,7 +1717,7 @@ public class AsmClassGenerator extends ClassGenerator {
             controller.getOperandStack().remove(1);
         }
 
-        controller.getOperandStack().push(expression.getType());
+        controller.getOperandStack().push(arrayType);
     }
 
     @Override
