@@ -16787,13 +16787,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**   
-     * Logical not for a boolean operator
+     * Logical not for a boolean operator, null input will return null
      * 
      * @param left left operator
      * @return result of logical not
      */
     public static Boolean not(Boolean left) {
-        return !left;
+        if(left == null){
+            return left;
+        } else{
+            return Boolean.valueOf(!left.booleanValue());
+        }  
     }
 
     /**
