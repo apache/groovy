@@ -16786,6 +16786,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return left || Boolean.TRUE.equals(right);
     }
 
+    /**   
+     * Logical not for a boolean operator, null input will return true
+     * 
+     * @param self this
+     * @param target boolean operator
+     * @return result of logical not
+     */
+    public static Boolean not(Object self, Boolean target) {
+        return !Boolean.TRUE.equals(target);
+    }
+
     /**
      * Logical implication of two boolean operators
      *
@@ -16810,9 +16821,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return left ^ Boolean.TRUE.equals(right);
     }
 
-//    public static Boolean negate(Boolean left) {
-//        return Boolean.valueOf(!left.booleanValue());
-//    }
 
     /**
      * Allows a simple syntax for using timers. This timer will execute the
