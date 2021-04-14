@@ -22,8 +22,6 @@ import groovy.transform.CompileStatic
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 import org.junit.Test
 
-import static groovy.test.GroovyAssert.assertScript
-
 @CompileStatic
 final class Groovy9126 extends AbstractBytecodeTestCase {
 
@@ -64,7 +62,6 @@ final class Groovy9126 extends AbstractBytecodeTestCase {
                  'L0',
                  'LINENUMBER 4 L0',
                  'ALOAD 0',
-                 'CHECKCAST script',
                  'BIPUSH 123',
                  'INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;',
                  'INVOKEVIRTUAL script.println (Ljava/lang/Object;)V',
@@ -95,7 +92,6 @@ final class Groovy9126 extends AbstractBytecodeTestCase {
                  'L0',
                  'LINENUMBER 4 L0',
                  'ALOAD 0',
-                 'CHECKCAST script',
                  'BIPUSH 123',
                  'INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;',
                  'INVOKEVIRTUAL script.println (Ljava/lang/Object;)V',
