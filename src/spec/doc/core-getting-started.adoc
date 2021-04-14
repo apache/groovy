@@ -23,15 +23,19 @@
 
 == Download
 
-In this download area, you will be able to download the distribution (binary and source), the Windows installer and the documentation for **Groovy**.
+From the https://groovy.apache.org/download.html[download] page,
+you will be able to download the distribution (binary and source),
+the Windows installer (a community artifact) and the documentation for **Groovy**.
 
-For a quick and effortless start on Mac OSX, Linux or Cygwin, you can use http://sdkman.io/[SDKMAN!] (The Software Development Kit Manager) to download and configure any **Groovy** version of your choice. Basic <<SDKMAN,instructions>> can be found below.
+For a quick and effortless start on Mac OSX, Linux, WSL2 or Cygwin, you can use https://sdkman.io/[SDKMAN!]
+(The Software Development Kit Manager) to download and configure any **Groovy** version of your choice.
+Basic <<SDKMAN,instructions>> can be found below.
 
 === Stable
 
-- **Download zip**: https://bintray.com/artifact/download/groovy/maven/apache-groovy-binary-{groovy-full-version}.zip[**Binary Release**] | https://bintray.com/artifact/download/groovy/maven/groovy-src-{groovy-full-version}.zip[Source Release]
-- **Download documentation**: https://bintray.com/artifact/download/groovy/maven/apache-groovy-docs-{groovy-full-version}.zip[**JavaDoc and zipped online documentation**]
-- **Combined binary / source / documentation bundle**: https://bintray.com/artifact/download/groovy/maven/apache-groovy-sdk-{groovy-full-version}.zip[**Distribution bundle**]
+- **Download zip**: https://groovy.jfrog.io/artifactory/dist-release-local/groovy-zips/apache-groovy-binary-{groovy-full-version}.zip[**Binary Release**] | https://groovy.jfrog.io/artifactory/dist-release-local/groovy-zips/apache-groovy-src-{groovy-full-version}.zip[Source Release]
+- **Download documentation**: https://groovy.jfrog.io/artifactory/dist-release-local/groovy-zips/apache-groovy-docs-{groovy-full-version}.zip[**JavaDoc and zipped online documentation**]
+- **Combined binary / source / documentation bundle**: https://groovy.jfrog.io/artifactory/dist-release-local/groovy-zips/apache-groovy-sdk-{groovy-full-version}.zip[**Distribution bundle**]
 
 You can learn more about this version in the http://groovy-lang.org/releasenotes/groovy-{groovy-short-version}.html[release notes] or in the http://groovy-lang.org/changelogs/changelog-{groovy-full-version}.html[changelog].
 
@@ -43,48 +47,16 @@ For those who want to test the very latest versions of Groovy and live on the bl
 
 === Prerequisites
 
-Groovy {groovy-short-version} requires Java 6+ with full support up to Java 8.
-There are currently some known issues for some aspects when using Java 9 snapshots.
-The `groovy-nio` module requires Java 7+.
-Using Groovy's invokeDynamic features require Java 7+ but we recommend Java 8.
+Groovy {groovy-short-version} requires Java 8+ with support for up to Groovy 16.
 
-The Groovy CI server is also useful to look at to confirm supported Java versions for different Groovy releases.
-The test suite (getting close to 10000 tests) runs for the currently supported streams of Groovy across
-all the main versions of Java each stream supports.
+Various Groovy CI servers run the test suite (with more than 10000 tests) across numerous versions of Java.
+Those servers are also useful to look at to confirm supported Java versions for different Groovy releases.
 
 == Maven Repository
 
-If you wish to embed Groovy in your application, you may just prefer to point to your favourite maven repositories or the https://oss.jfrog.org/oss-release-local/org/codehaus/groovy[JCenter maven repository].
-
-=== Stable Release
-
-[cols="1,1,2" options="header"]
-|===
-|Gradle
-|Maven
-|Explanation
-
-|&#39;org.codehaus.groovy:groovy:{groovy-full-version}'
-|<groupId>org.codehaus.groovy</groupId> +
-<artifactId>groovy</artifactId> +
-<version>{groovy-full-version}</version>
-|Just the core of groovy without the modules (see below).
-
-|&#39;org.codehaus.groovy:groovy-$module:{groovy-full-version}'
-|<groupId>org.codehaus.groovy</groupId> +
-<artifactId>groovy-$module</artifactId> +
-<version>{groovy-full-version}</version>
-|"$module" stands for the different optional groovy modules "ant", "bsf", "console", "docgenerator", "groovydoc", "groovysh", "jmx", "json", "jsr223", "servlet", "sql", "swing", "test", "testng" and "xml". Example: <artifactId>groovy-sql</artifactId>
-
-|&#39;org.codehaus.groovy:groovy-all:{groovy-full-version}'
-|<groupId>org.codehaus.groovy</groupId> +
-<artifactId>groovy-all</artifactId> +
-<version>{groovy-full-version}</version> +
-<type>pom</type> <!-- required JUST since Groovy 2.5.0 +-->+
-|The core plus all the modules. Optional dependencies are marked as optional. You may need to include some of the optional dependencies to use some features of Groovy, e.g. AntBuilder, GroovyMBeans, etc.
-|===
-
-To use the link:invokedynamic-support.html[InvokeDynamic] version of the jars just append &#39;:indy' for Gradle or <classifier>indy</classifier> for Maven.
+If you wish to embed Groovy in your application, you may just prefer to point your build
+to your favourite maven repository or the Groovy https://groovy.jfrog.io/artifactory/libs-release-local/[artifactory instance].
+Please see the https://groovy.apache.org/download.html#buildtools[download page] for available modules for each Groovy version.
 
 [[SDKMAN]]
 == SDKMAN! (The Software Development Kit Manager)
@@ -147,11 +119,14 @@ brew install groovy
 
 === Installation on Windows
 
-If you're on Windows, you can also use the https://bintray.com/groovy/Distributions/Windows-Installer[Windows installer].
+If you're on Windows, you can also use the https://groovy.jfrog.io/artifactory/dist-release-local/groovy-windows-installer/[Windows installer].
 
 === Other Distributions
 
-You may download other distributions of Groovy from https://bintray.com/groovy/maven[this site].
+You may download other distributions of Groovy from the ASF
+https://archive.apache.org/dist/groovy/[archive repository]
+or from the Groovy
+https://groovy.jfrog.io/artifactory/dist-release-local/groovy-zips/[artifactory instance] (also includes pre-ASF versions).
 
 === Source Code
 
@@ -163,10 +138,10 @@ If you are an IDE user, you can just grab the latest link:tools-ide.html[IDE plu
 
 == Install Binary
 
-These instructions describe how to install a binary distribution of **Groovy**.
+These instructions describe how to install a binary distribution of **Groovy**:
 
-* First, <<download-groovy,Download>> a binary distribution of Groovy and unpack it into some file on your local file system.
-* Set your `GROOVY_HOME` environment variable to the directory you unpacked the distribution.
+* https://groovy.apache.org/download.html[Download] a binary distribution of Groovy and unpack it into some folder on your local file system.
+* Set your `GROOVY_HOME` environment variable to the directory where you unpacked the distribution.
 * Add `GROOVY_HOME/bin` to your `PATH` environment variable.
 * Set your `JAVA_HOME` environment variable to point to your JDK. On OS X this is `/Library/Java/Home`, on other unixes its often `/usr/java` etc. If you've already installed tools like Ant or Maven you've probably already done this step.
 
