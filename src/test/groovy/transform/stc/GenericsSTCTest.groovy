@@ -578,15 +578,26 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Number'
     }
 
-    // GROOVY-9914
+    // GROOVY-9914, GROOVY-10036
     void testAssignmentShouldWorkForParameterizedMap() {
         assertScript '''
             Map test(Map<String,String> one) {
-              Map<String,Integer> two = one.collectEntries { k,v ->
-                [(k): v.hashCode()]
-              }
+                Map<String,Integer> two = one.collectEntries { k,v ->
+                    [(k): v.hashCode()]
+                }
             }
             assert test(foo:'bar').containsKey('foo')
+        '''
+
+        assertScript '''
+            def list = ['foo','bar','baz']
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'java.util.Map <String, Object>'
+            })
+            def map = list.<String,Object,String>collectEntries {
+                [(it): it.hashCode()]
+            }
         '''
     }
 
