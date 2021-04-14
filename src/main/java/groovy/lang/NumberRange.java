@@ -427,8 +427,12 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
      */
     @Override
     public boolean containsWithinBounds(Object value) {
-        final int result = compareTo(from, value);
-        return result == 0 || result < 0 && compareTo(to, value) >= 0;
+        int result = compareTo(from, value);
+        if ((reverse ? inclusiveRight : inclusiveLeft) && result == 0) result = -1;
+        if (result >= 0) return false;
+        result = compareTo(to, value);
+        if ((reverse ? inclusiveLeft : inclusiveRight) && result == 0) result = 1;
+        return result > 0;
     }
 
     /**
