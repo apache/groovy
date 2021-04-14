@@ -49,6 +49,9 @@ import java.util.function.Predicate;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.isGenerated;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+import static org.codehaus.groovy.runtime.ArrayTypeUtils.dimension;
+import static org.codehaus.groovy.runtime.ArrayTypeUtils.elementType;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
 /**
@@ -353,6 +356,21 @@ public class ClassNodeUtils {
      */
     public static boolean isInnerClass(final ClassNode cNode) {
         return cNode.getOuterClass() != null && !Modifier.isStatic(cNode.getModifiers());
+    }
+
+    /**
+     * Check if the source ClassNode is compatible with the target ClassNode
+     */
+    public static boolean isCompatibleWith(ClassNode source, ClassNode target) {
+        if (source.equals(target)) return true;
+
+        if (source.isArray() && target.isArray() && dimension(source) == dimension(target)) {
+            source = elementType(source);
+            target = elementType(target);
+        }
+
+        return !isPrimitiveType(source) && !isPrimitiveType(target)
+                && (source.isDerivedFrom(target) || source.implementsInterface(target));
     }
 
     public static boolean hasNoArgConstructor(final ClassNode cNode) {

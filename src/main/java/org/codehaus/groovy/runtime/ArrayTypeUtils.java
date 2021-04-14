@@ -19,6 +19,8 @@
 
 package org.codehaus.groovy.runtime;
 
+import org.codehaus.groovy.ast.ClassNode;
+
 /**
  * Utilities for handling array types
  */
@@ -43,12 +45,46 @@ public class ArrayTypeUtils {
     }
 
     /**
+     * Calculate the dimension of array
+     *
+     * @param clazz the type of array
+     * @return the dimension of array
+     */
+    public static int dimension(ClassNode clazz) {
+        checkArrayType(clazz);
+
+        int result = 0;
+        while (clazz.isArray()) {
+            result++;
+            clazz = clazz.getComponentType();
+        }
+
+        return result;
+    }
+
+    /**
      * Get the type of array elements
      *
      * @param clazz the type of array
      * @return the type of elements
      */
     public static Class elementType(Class clazz) {
+        checkArrayType(clazz);
+
+        while (clazz.isArray()) {
+            clazz = clazz.getComponentType();
+        }
+
+        return clazz;
+    }
+
+    /**
+     * Get the type of array elements
+     *
+     * @param clazz the type of array
+     * @return the type of elements
+     */
+    public static ClassNode elementType(ClassNode clazz) {
         checkArrayType(clazz);
 
         while (clazz.isArray()) {
@@ -90,6 +126,20 @@ public class ArrayTypeUtils {
 
         if (!clazz.isArray()) {
             throw new IllegalArgumentException(clazz.getCanonicalName() + " is not array type");
+        }
+    }
+
+    /**
+     * Check whether the type passed in is array type.
+     * If the type is not array type, throw IllegalArgumentException.
+     */
+    private static void checkArrayType(ClassNode clazz) {
+        if (null == clazz) {
+            throw new IllegalArgumentException("clazz can not be null");
+        }
+
+        if (!clazz.isArray()) {
+            throw new IllegalArgumentException(clazz.getName() + " is not array type");
         }
     }
 }

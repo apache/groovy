@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -331,16 +332,10 @@ public class OperandStack {
 
         ClassNode top = stack.get(size - 1);
         targetType = targetType.redirect();
-        if (targetType == top) return;
+        if (ClassNodeUtils.isCompatibleWith(top, targetType)) return;
 
         if (coerce) {
             controller.getInvocationWriter().coerce(top, targetType);
-            return;
-        }
-
-        // GROOVY-10034: no need to cast non-primitive array when target is "java.lang.Object[]"
-        if (targetType.isArray() && targetType.getComponentType().equals(ClassHelper.OBJECT_TYPE)
-                && top.isArray() && !ClassHelper.isPrimitiveType(top.getComponentType())) {
             return;
         }
 
