@@ -150,7 +150,7 @@ module system for Groovy. This allows a developer to write a script with
 an essentially arbitrary library requirement, and ship just the script.
 Grape will, at runtime, download as needed and link the named libraries
 and all dependencies forming a transitive closure when the script is run
-from existing repositories such as JCenter, Ibiblio and java.net.
+from existing repositories such as Maven Central.
 
 Grape follows the Ivy conventions for module version identification,
 with naming change.
