@@ -332,7 +332,8 @@ public class OperandStack {
 
         ClassNode top = stack.get(size - 1);
         targetType = targetType.redirect();
-        if (ClassNodeUtils.isCompatibleWith(top, targetType)) return;
+        if (top == targetType /* for better performance */
+                || ClassNodeUtils.isCompatibleWith(top, targetType)) return;
 
         if (coerce) {
             controller.getInvocationWriter().coerce(top, targetType);
