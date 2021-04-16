@@ -146,7 +146,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testReturnTypeInference() {
+    void testReturnTypeInference1() {
         assertScript '''
             class Foo<U> {
                 U method() { }
@@ -156,13 +156,12 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testReturnTypeInferenceWithDiamond() {
+    void testReturnTypeInference2() {
         assertScript '''
-            class Foo<U> {
-                U method() { }
-            }
-            Foo<Integer> foo = new Foo<>()
-            Integer result = foo.method()
+        Object m() {
+          def s = '1234'
+          println 'Hello'
+        }
         '''
     }
 
@@ -217,19 +216,47 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9033
+    void testReturnTypeInferenceWithMethodGenerics8() {
+        shouldFailWithMessages '''
+            List<String> test() {
+              def x = [].each { }
+              x.add(new Object())
+              return x // List<E>
+            }
+        ''', 'Incompatible generic argument types.' // Cannot assign java.util.List<java.lang.Object> to: java.util.List<java.lang.String>
+
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.genericsTypes[0].toString() == 'java.lang.String'
+                assert type.genericsTypes[1].toString() == 'java.util.List<java.lang.Object>' // not List<E>
+            })
+            def map = [ key: [] ]
+        '''
+    }
+
     void testDiamondInferrenceFromConstructor1() {
         assertScript '''
-            Set<Long> set = new HashSet<>()
+            class Foo<U> {
+                U method() { }
+            }
+            Foo<Integer> foo = new Foo<>()
+            Integer result = foo.method()
         '''
     }
 
     void testDiamondInferrenceFromConstructor2() {
         assertScript '''
-            new HashSet<>(Arrays.asList(0L))
+            Set<Long> set = new HashSet<>()
         '''
     }
 
     void testDiamondInferrenceFromConstructor3() {
+        assertScript '''
+            new HashSet<>(Arrays.asList(0L))
+        '''
+
         assertScript '''
             Set<Number> set = new HashSet<>(Arrays.asList(0L))
         '''
@@ -724,15 +751,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
             new Foo()
         ''', 'Cannot find matching method FooWithGenerics#say(java.lang.Object)'
-    }
-
-    void testVoidReturnTypeInferrence() {
-        assertScript '''
-        Object m() {
-          def s = '1234'
-          println 'Hello'
-        }
-        '''
     }
 
     // GROOVY-5237
