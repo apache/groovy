@@ -208,7 +208,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def type = node.getNodeMetaData(INFERRED_TYPE)
-                assert type.toString(false) == 'java.util.List <T extends java.lang.Object>'
+                assert type.toString(false) == 'java.util.List <java.lang.Object>'
             })
             def list = Arrays.asList()
             assert list.size() == 0
@@ -268,7 +268,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-9033
+    // GROOVY-9033
     void testReturnTypeInferenceWithMethodGenerics8() {
         shouldFailWithMessages '''
             List<String> test() {
@@ -1123,7 +1123,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10324
+    // GROOVY-10324
     void testDiamondInferrenceFromConstructor20() {
         assertScript '''
             class C<T> {
@@ -1214,7 +1214,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    @NotYetImplemented // GROOVY-10367
+    // GROOVY-10367
     void testDiamondInferrenceFromConstructor26() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
