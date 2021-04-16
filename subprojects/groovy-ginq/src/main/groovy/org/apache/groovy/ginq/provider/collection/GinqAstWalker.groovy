@@ -820,7 +820,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             }
         })).getExpression(0)
 
-        def extra = []
+        List<Expression> extra = []
         if (enableCount || rowNumberUsed) {
             currentGinqExpression.putNodeMetaData(__RN_USED, true)
             extra << callX(varX(rowNumberName), 'getAndIncrement')
@@ -873,7 +873,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             validateWindowClause(classifierExpr, orderExpr, rowsExpr, rangeExpr, ignoredMethodCallExpressionList)
         }
 
-        def argumentExpressionList = []
+        List<Expression> argumentExpressionList = []
 
         if (classifierExpr) {
             List<Expression> expressionList = ((ArgumentListExpression) classifierExpr).getExpressions()

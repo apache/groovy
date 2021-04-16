@@ -794,15 +794,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             if (resultType == null) {
                 resultType = lType;
-            } else if (lType.isUsingGenerics() && isAssignment(op) && missesGenericsTypes(resultType)) {
-                // unchecked assignment
-                // List<Type> list = new LinkedList()
-                // Iterable<Type> iter = new LinkedList()
-                // Collection<Type> coll = Collections.emptyList()
+            } else if (isAssignment(op)) {
+                if (lType.isUsingGenerics() && missesGenericsTypes(resultType)) {
+                    // unchecked assignment
+                    // List<Type> list = new LinkedList()
+                    // Iterable<Type> iter = new LinkedList()
+                    // Collection<Type> coll = Collections.emptyList()
 
-                // the inferred type of the binary expression is the type of the RHS
-                // "completed" with generics type information available from the LHS
-                resultType = GenericsUtils.parameterizeType(lType, resultType.getPlainNodeReference());
+                    // the inferred type of the binary expression is the type of the RHS
+                    // "completed" with generics type information available from the LHS
+                    resultType = GenericsUtils.parameterizeType(lType, resultType.getPlainNodeReference());
+                } else if (lType.equals(OBJECT_TYPE) && GenericsUtils.hasUnresolvedGenerics(resultType)) { // def list = []
+                    Map<GenericsTypeName, GenericsType> placeholders = extractGenericsParameterMapOfThis(typeCheckingContext);
+                    resultType = fullyResolveType(resultType, Optional.ofNullable(placeholders).orElseGet(Collections::emptyMap));
+                }
             }
 
             // GROOVY-5874: if left expression is a closure shared variable, a second pass should be done
@@ -841,7 +846,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // and we must update the result type
                 if (!implementsInterfaceOrIsSubclassOf(getWrapper(resultType), getWrapper(originType))) {
                     resultType = originType;
-                } else if (lType.isUsingGenerics() && !lType.isEnum() && hasRHSIncompleteGenericTypeInfo(resultType)) {
+                } else if (lType.isUsingGenerics() && !lType.isEnum() && GenericsUtils.hasUnresolvedGenerics(resultType)) {
                     // for example, LHS is List<ConcreteClass> and RHS is List<T> where T is a placeholder
                     resultType = lType;
                 } else {
@@ -1260,9 +1265,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private void checkTypeGenerics(final ClassNode leftExpressionType, final ClassNode wrappedRHS, final Expression rightExpression) {
         // last, check generic type information to ensure that inferred types are compatible
         if (!leftExpressionType.isUsingGenerics()) return;
-        // List<Foo> l = new List() is an example for incomplete generics type info
-        // we assume arity related errors are already handled here.
-        if (hasRHSIncompleteGenericTypeInfo(wrappedRHS)) return;
+        // example of incomplete type info: "List<Type> list = new LinkedList()"
+        // we assume arity related errors are already handled here
+        if (missesGenericsTypes(wrappedRHS)) return;
 
         GenericsType gt = GenericsUtils.buildWildcardType(leftExpressionType);
         if (UNKNOWN_PARAMETER_TYPE.equals(wrappedRHS) ||
@@ -1356,6 +1361,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         typeCheckingContext.popEnclosingBinaryExpression();
     }
 
+    @Deprecated
     protected static boolean hasRHSIncompleteGenericTypeInfo(final ClassNode inferredRightExpressionType) {
         boolean replaceType = false;
         GenericsType[] genericsTypes = inferredRightExpressionType.getGenericsTypes();
@@ -5658,11 +5664,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected boolean typeCheckMethodsWithGenericsOrFail(final ClassNode receiver, final ClassNode[] arguments, final MethodNode candidateMethod, final Expression location) {
         if (!typeCheckMethodsWithGenerics(receiver, arguments, candidateMethod)) {
-            Map<GenericsTypeName, GenericsType> classGTs = GenericsUtils.extractPlaceholders(receiver);
+            Map<GenericsTypeName, GenericsType> generics = GenericsUtils.extractPlaceholders(receiver);
+            applyGenericsConnections(extractGenericsParameterMapOfThis(typeCheckingContext), generics);
+            addMethodLevelDeclaredGenerics(candidateMethod, generics);
             Parameter[] parameters = candidateMethod.getParameters();
             ClassNode[] paramTypes = new ClassNode[parameters.length];
             for (int i = 0, n = parameters.length; i < n; i += 1) {
-                paramTypes[i] = fullyResolveType(parameters[i].getType(), classGTs);
+                paramTypes[i] = fullyResolveType(parameters[i].getType(), generics);
                 // GROOVY-10010: check for List<String> parameter and ["foo","$bar"] argument
                 if (i < arguments.length && hasGStringStringError(paramTypes[i], arguments[i], location)) {
                     return false;
