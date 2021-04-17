@@ -308,7 +308,7 @@ final class LambdaTest {
                 Comparator<Integer> c = (int a, int b) -> Integer.compare(a, b)
             }
         '''
-        assert err =~ /Cannot assign java.util.Comparator <int> to: java.util.Comparator <Integer>/
+        assert err =~ /Cannot assign java.util.Comparator<int> to: java.util.Comparator<java.lang.Integer>/
     }
 
     @Test // GROOVY-9977

@@ -49,7 +49,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
-import static java.util.stream.Collectors.joining;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_ANNOTATION;
@@ -1208,7 +1207,7 @@ public class ClassNode extends AnnotatedNode {
         return toString(true);
     }
 
-    public String toString(boolean showRedirect) {
+    public String toString(final boolean showRedirect) {
         if (isArray()) {
             return getComponentType().toString(showRedirect) + "[]";
         }
@@ -1216,39 +1215,17 @@ public class ClassNode extends AnnotatedNode {
         StringBuilder ret = new StringBuilder(!placeholder ? getName() : getUnresolvedName());
         GenericsType[] genericsTypes = getGenericsTypes();
         if (!placeholder && genericsTypes != null && genericsTypes.length > 0) {
-            ret.append(" <");
-            ret.append(stream(genericsTypes).map(this::genericTypeAsString).collect(joining(", ")));
-            ret.append(">");
+            ret.append('<');
+            for (int i = 0, n = genericsTypes.length; i < n; i += 1) {
+                if (i != 0) ret.append(", ");
+                ret.append(genericsTypes[i]);
+            }
+            ret.append('>');
         }
         if (showRedirect && redirect != null) {
             ret.append(" -> ").append(redirect.toString());
         }
         return ret.toString();
-    }
-
-    /**
-     * Avoids a recursive definition of toString. The default {@code toString}
-     * in {@link GenericsType} calls {@code ClassNode.toString()}, which would
-     * call {@code GenericsType.toString()} without this method.
-     */
-    private String genericTypeAsString(GenericsType genericsType) {
-        String name = genericsType.getName();
-        if (genericsType.getUpperBounds() != null) {
-            return name + " extends " + stream(genericsType.getUpperBounds())
-                        .map(this::toStringTerminal).collect(joining(" & "));
-        } else if (genericsType.getLowerBound() != null) {
-            return name + " super " + toStringTerminal(genericsType.getLowerBound());
-        } else {
-            return name;
-        }
-    }
-
-    private String toStringTerminal(ClassNode classNode) {
-        if (classNode.equals(this)) {
-            return classNode.getName();
-        } else {
-            return classNode.toString(false);
-        }
     }
 
     /**

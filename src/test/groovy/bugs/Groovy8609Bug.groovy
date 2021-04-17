@@ -31,7 +31,7 @@ final class Groovy8609Bug extends GroovyTestCase {
             E getFirstRecord(T recordList) {
                 return recordList.get(0)
             }
-            
+
             static void main(args) {
                 def list = new ArrayList<HashMap<String, Integer>>()
                 def record = new HashMap<String, Integer>()
@@ -50,7 +50,7 @@ final class Groovy8609Bug extends GroovyTestCase {
             E getFirstRecord(T recordList) {
                 return recordList.get(0);
             }
-            
+
             static void main(args) {
                 def list = new ArrayList<HashMap<String, Integer>>()
                 def record = new HashMap<String, Integer>()
@@ -69,7 +69,7 @@ final class Groovy8609Bug extends GroovyTestCase {
             E getFirstRecord(T recordList) {
                 return recordList.get(0);
             }
-            
+
             static void main(args) {
                 def list = new ArrayList<HashMap<String, Integer>>()
                 def record = new HashMap<String, Integer>()
@@ -88,7 +88,7 @@ final class Groovy8609Bug extends GroovyTestCase {
             E getFirstRecord(T recordList) {
                 return recordList.get(0)
             }
-            
+
             static void main(args) {
                 def list = new ArrayList<TreeMap<String, Integer>>()
                 def record = new TreeMap<String, Integer>()
@@ -99,7 +99,7 @@ final class Groovy8609Bug extends GroovyTestCase {
         }
         '''
 
-        assert errMsg.contains('[Static type checking] - Cannot find matching method A#getFirstRecord(java.util.ArrayList <TreeMap>)')
+        assert errMsg.contains('[Static type checking] - Cannot find matching method A#getFirstRecord(java.util.ArrayList<java.util.TreeMap<java.lang.String, java.lang.Integer>>)')
     }
 
     void testUpperBoundWithGenericsThroughWrongType2() {
@@ -109,7 +109,7 @@ final class Groovy8609Bug extends GroovyTestCase {
             E getFirstRecord(T recordList) {
                 return recordList.get(0)
             }
-            
+
             static void main(args) {
                 def list = new ArrayList<HashMap<String, Long>>()
                 def record = new HashMap<String, Long>()
@@ -120,7 +120,7 @@ final class Groovy8609Bug extends GroovyTestCase {
         }
         '''
 
-        assert errMsg.contains('[Static type checking] - Cannot find matching method A#getFirstRecord(java.util.ArrayList <HashMap>)')
+        assert errMsg.contains('[Static type checking] - Cannot find matching method A#getFirstRecord(java.util.ArrayList<java.util.HashMap<java.lang.String, java.lang.Long>>)')
     }
 
     void testUpperBoundWithGenericsThroughWrongType3() {
@@ -130,7 +130,7 @@ final class Groovy8609Bug extends GroovyTestCase {
             E getFirstRecord(T recordList) {
                 return recordList.get(0)
             }
-            
+
             static void main(args) {
                 def list = new ArrayList<HashMap<StringBuffer, Integer>>()
                 def record = new HashMap<StringBuffer, Integer>()
@@ -141,6 +141,6 @@ final class Groovy8609Bug extends GroovyTestCase {
         }
         '''
 
-        assert errMsg.contains('[Static type checking] - Cannot find matching method A#getFirstRecord(java.util.ArrayList <HashMap>)')
+        assert errMsg.contains('[Static type checking] - Cannot find matching method A#getFirstRecord(java.util.ArrayList<java.util.HashMap<java.lang.StringBuffer, java.lang.Integer>>)')
     }
 }

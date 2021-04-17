@@ -330,35 +330,35 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<String> m() { }
             Number[] array = m()
-        ''', 'Cannot assign value of type java.util.List <String> to variable of type java.lang.Number[]'
+        ''', 'Cannot assign value of type java.util.List<java.lang.String> to variable of type java.lang.Number[]'
 
         shouldFailWithMessages '''
             void test(Set<String> set) {
                 Number[] array = set
             }
-        ''', 'Cannot assign value of type java.util.Set <String> to variable of type java.lang.Number[]'
+        ''', 'Cannot assign value of type java.util.Set<java.lang.String> to variable of type java.lang.Number[]'
 
         shouldFailWithMessages '''
             List<? super CharSequence> m() { }
             CharSequence[] array = m()
-        ''', 'Cannot assign value of type java.util.List <? super java.lang.CharSequence> to variable of type java.lang.CharSequence[]'
+        ''', 'Cannot assign value of type java.util.List<? super java.lang.CharSequence> to variable of type java.lang.CharSequence[]'
 
         shouldFailWithMessages '''
             void test(Set<? super CharSequence> set) {
                 CharSequence[] array = set
             }
-        ''', 'Cannot assign value of type java.util.Set <? super java.lang.CharSequence> to variable of type java.lang.CharSequence[]'
+        ''', 'Cannot assign value of type java.util.Set<? super java.lang.CharSequence> to variable of type java.lang.CharSequence[]'
 
         shouldFailWithMessages '''
             List<? super Runnable> m() { }
             Runnable[] array = m()
-        ''', 'Cannot assign value of type java.util.List <? super java.lang.Runnable> to variable of type java.lang.Runnable[]'
+        ''', 'Cannot assign value of type java.util.List<? super java.lang.Runnable> to variable of type java.lang.Runnable[]'
 
         shouldFailWithMessages '''
             void test(List<? super Runnable> list) {
                 Runnable[] array = list
             }
-        ''', 'Cannot assign value of type java.util.List <? super java.lang.Runnable> to variable of type java.lang.Runnable[]'
+        ''', 'Cannot assign value of type java.util.List<? super java.lang.Runnable> to variable of type java.lang.Runnable[]'
     }
 
     // GROOVY-8983
@@ -720,7 +720,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
                 A(int n) {}
             }
             A a = [1]
-        ''', 'Cannot assign value of type java.util.List <java.lang.Integer> to variable of type A'
+        ''', 'Cannot assign value of type java.util.List<java.lang.Integer> to variable of type A'
     }
 
     // GROOVY-6912
@@ -744,7 +744,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
 
         shouldFailWithMessages '''
             ArrayList<String> strings = [1,2,3]
-        ''', 'Incompatible generic argument types. Cannot assign java.util.ArrayList <java.lang.Integer> to: java.util.ArrayList <String>'
+        ''', 'Incompatible generic argument types. Cannot assign java.util.ArrayList<java.lang.Integer> to: java.util.ArrayList<java.lang.String>'
     }
 
     // GROOVY-6912
@@ -774,7 +774,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
 
         shouldFailWithMessages '''
             LinkedHashSet<String> strings = [1,2,3]
-        ''', 'Incompatible generic argument types. Cannot assign java.util.LinkedHashSet <java.lang.Integer> to: java.util.LinkedHashSet <String>'
+        ''', 'Incompatible generic argument types. Cannot assign java.util.LinkedHashSet<java.lang.Integer> to: java.util.LinkedHashSet<java.lang.String>'
     }
 
     void testCollectionTypesInitializedByListLiteral1() {
@@ -816,31 +816,31 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     void testCollectionTypesInitializedByListLiteral3() {
         shouldFailWithMessages '''
             Set<String> set = [1,2,3]
-        ''', 'Cannot assign java.util.LinkedHashSet <java.lang.Integer> to: java.util.Set <String>'
+        ''', 'Cannot assign java.util.LinkedHashSet<java.lang.Integer> to: java.util.Set<java.lang.String>'
 
         shouldFailWithMessages '''
             List<String> list = ['a','b',3]
-        ''', 'Cannot assign java.util.ArrayList <java.io.Serializable> to: java.util.List <String>'
+        ''', 'Cannot assign java.util.ArrayList<java.io.Serializable<? extends java.lang.Object>> to: java.util.List<java.lang.String>'
 
         shouldFailWithMessages '''
             Iterable<String> iter = [1,2,3]
-        ''', 'Cannot assign java.util.ArrayList <java.lang.Integer> to: java.lang.Iterable <String>'
+        ''', 'Cannot assign java.util.ArrayList<java.lang.Integer> to: java.lang.Iterable<java.lang.String>'
 
         shouldFailWithMessages '''
             Collection<String> coll = [1,2,3]
-        ''', 'Cannot assign java.util.ArrayList <java.lang.Integer> to: java.util.Collection <String>'
+        ''', 'Cannot assign java.util.ArrayList<java.lang.Integer> to: java.util.Collection<java.lang.String>'
 
         shouldFailWithMessages '''
             Deque<String> deque = [""]
-        ''', 'Cannot assign value of type java.util.List <java.lang.String> to variable of type java.util.Deque <String>'
+        ''', 'Cannot assign value of type java.util.List<java.lang.String> to variable of type java.util.Deque<java.lang.String>'
 
         shouldFailWithMessages '''
             Deque<String> deque = []
-        ''', 'Cannot assign value of type java.util.List <java.lang.String> to variable of type java.util.Deque <String>'
+        ''', 'Cannot assign value of type java.util.List<java.lang.String> to variable of type java.util.Deque<java.lang.String>'
 
         shouldFailWithMessages '''
             Queue<String> queue = []
-        ''', 'Cannot assign value of type java.util.List <java.lang.String> to variable of type java.util.Queue <String>'
+        ''', 'Cannot assign value of type java.util.List<java.lang.String> to variable of type java.util.Queue<java.lang.String>'
     }
 
     // GROOVY-7128
@@ -887,6 +887,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
 
         shouldFailWithMessages '''
             Map<String,Integer> map = [1:2]
-        ''', 'Cannot assign java.util.LinkedHashMap <java.lang.Integer, java.lang.Integer> to: java.util.Map <String, Integer>'
+        ''', 'Cannot assign java.util.LinkedHashMap<java.lang.Integer, java.lang.Integer> to: java.util.Map<java.lang.String, java.lang.Integer>'
     }
 }

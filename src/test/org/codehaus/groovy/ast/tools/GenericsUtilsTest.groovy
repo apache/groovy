@@ -189,7 +189,7 @@ final class GenericsUtilsTest {
         ClassNode source = findClassNode('C', classNodeList)
         ClassNode result = GenericsUtils.findParameterizedType(target, source)
 
-        assert result.toString(false) == 'A <java.lang.Number>'
+        assert result.toString(false) == 'A<java.lang.Number>'
     }
 
     @Test

@@ -329,7 +329,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 Closure<List> bar = { Date date -> date.getTime() }
             }
             new Foo()
-        ''', 'Incompatible generic argument types. Cannot assign groovy.lang.Closure <java.lang.Long> to: groovy.lang.Closure <List>'
+        ''', 'Incompatible generic argument types. Cannot assign groovy.lang.Closure<java.lang.Long> to: groovy.lang.Closure<java.util.List>'
     }
 
     void testFieldInitShouldNotPassBecauseOfIncompatibleTypesWithClosure2() {
@@ -338,7 +338,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 java.util.function.Supplier<String> bar = { 123 }
             }
             new Foo()
-        ''', 'Incompatible generic argument types. Cannot assign java.util.function.Supplier <java.lang.Integer> to: java.util.function.Supplier <String>'
+        ''', 'Incompatible generic argument types. Cannot assign java.util.function.Supplier<java.lang.Integer> to: java.util.function.Supplier<java.lang.String>'
     }
 
     // GROOVY-9882
@@ -857,7 +857,7 @@ new FooWorker().doSomething()'''
 
             new FooWorker().doSomething()
         ''',
-        'Incompatible generic argument types. Cannot assign java.util.ArrayList <Integer> to: java.util.List <String>'
+        'Incompatible generic argument types. Cannot assign java.util.ArrayList<java.lang.Integer> to: java.util.List<java.lang.String>'
     }
 
     void testAICAsStaticProperty() {

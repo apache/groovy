@@ -219,7 +219,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             void m(Set<Integer> set) {
             }
             m([1,2,3,3])
-        ''', 'm(java.util.List <java.lang.Integer>). Please check if the declared type is correct and if the method exists.'
+        ''', 'm(java.util.List<java.lang.Integer>). Please check if the declared type is correct and if the method exists.'
     }
 
     // GROOVY-7106, GROOVY-7274, GROOVY-9844
@@ -1148,7 +1148,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             new SpreadInCtor(*['A', 'B'])
         ''',
         'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
-        'Cannot find matching method SpreadInCtor#<init>(java.util.List <E extends java.lang.Object>)'
+        'Cannot find matching method SpreadInCtor#<init>(java.util.List<E>)'
     }
 
     void testSpreadArgsForbiddenInClosureCall() {
