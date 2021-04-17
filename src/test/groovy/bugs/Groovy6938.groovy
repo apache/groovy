@@ -55,7 +55,7 @@ final class Groovy6938 {
                             assert expr.objectExpression.text == 'super'
 
                             def type = expr.objectExpression.getNodeMetaData(INFERRED_TYPE)
-                            assert type.toString(false) == 'J <Integer>' // was "J<T>"
+                            assert type.toString(false) == 'J<java.lang.Integer>' // was "J<T>"
 
                             type = node.leftExpression.getNodeMetaData(INFERRED_TYPE)
                             assert type.toString(false) == 'java.lang.Integer'

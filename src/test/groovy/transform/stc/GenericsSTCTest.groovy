@@ -41,14 +41,14 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testDeclaration3() {
         shouldFailWithMessages '''
             Map<String,String> obj = new HashMap<String,Integer>()
-        ''', 'Incompatible generic argument types. Cannot assign java.util.HashMap <String, Integer> to: java.util.Map <String, String>'
+        ''', 'Incompatible generic argument types. Cannot assign java.util.HashMap<java.lang.String, java.lang.Integer> to: java.util.Map<java.lang.String, java.lang.String>'
     }
 
     void testDeclaration4() {
         // no generics checked after first wildcard
         shouldFailWithMessages '''
             Map<? extends CharSequence,String> obj = new HashMap<String,Integer>()
-        ''', 'Incompatible generic argument types. Cannot assign java.util.HashMap <String, Integer> to: java.util.Map <? extends java.lang.CharSequence, String>'
+        ''', 'Incompatible generic argument types. Cannot assign java.util.HashMap<java.lang.String, java.lang.Integer> to: java.util.Map<? extends java.lang.CharSequence, java.lang.String>'
     }
 
     void testAddOnList() {
@@ -385,11 +385,11 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             class D implements I { }
 
             A<String> ax = new C<>(new D())
-        ''', 'Incompatible generic argument types. Cannot assign C <D> to: A <String>'
+        ''', 'Incompatible generic argument types. Cannot assign C<D> to: A<java.lang.String>'
 
         shouldFailWithMessages '''
             Set<List<String>> strings = new HashSet<>([new ArrayList<Number>()])
-        ''', 'Incompatible generic argument types. Cannot assign java.util.HashSet <java.util.ArrayList> to: java.util.Set <List>'
+        ''', 'Incompatible generic argument types. Cannot assign java.util.HashSet<java.util.ArrayList<java.lang.Number>> to: java.util.Set<java.util.List<java.lang.String>>'
     }
 
     // GROOVY-9972
@@ -479,7 +479,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def foo = { flag, C<D> cd = (flag ? new C<>(new D()) : new C<>(new Object())) ->
                 cd.p.f.toLowerCase()
             }
-        ''', 'Incompatible generic argument types. Cannot assign C <? extends java.lang.Object> to: C <D>'
+        ''', 'Incompatible generic argument types. Cannot assign C<? extends java.lang.Object> to: C<D>'
     }
 
     // GROOVY-9963
@@ -547,7 +547,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testLinkedListWithListArgumentAndWrongElementTypes() {
         shouldFailWithMessages '''
             List<String> list = new LinkedList<String>([1,2,3])
-        ''', 'Cannot call java.util.LinkedList#<init>(java.util.Collection <? extends java.lang.String>) with arguments [java.util.List <java.lang.Integer>]'
+        ''', 'Cannot call java.util.LinkedList#<init>(java.util.Collection<? extends java.lang.String>) with arguments [java.util.List<java.lang.Integer>]'
     }
 
     void testGenericAssignmentWithSubClass() {
@@ -593,7 +593,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def list = ['foo','bar','baz']
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def type = node.getNodeMetaData(INFERRED_TYPE)
-                assert type.toString(false) == 'java.util.Map <String, Object>'
+                assert type.toString(false) == 'java.util.Map<java.lang.String, java.lang.Object>'
             })
             def map = list.<String,Object,String>collectEntries {
                 [(it): it.hashCode()]
@@ -854,7 +854,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
             A<String, Integer> a = new B()
             a.test()
-        ''', 'Cannot call A#<init>(java.lang.Class <String>, java.lang.Class <Integer>) with arguments [java.lang.Class <java.lang.Integer>, java.lang.Class <java.lang.String>]'
+        ''', 'Cannot call A#<init>(java.lang.Class<java.lang.String>, java.lang.Class<java.lang.Integer>) with arguments [java.lang.Class<java.lang.Integer>, java.lang.Class<java.lang.String>]'
     }
 
     // GROOVY-9460
@@ -986,7 +986,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
         }
         new ClassB()
-        ''', 'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA#bar(java.lang.Class <Long>) with arguments [java.lang.Class <? extends java.lang.Object>]'
+        ''', 'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA#bar(java.lang.Class<java.lang.Long>) with arguments [java.lang.Class<? extends java.lang.Object>]'
     }
 
     // GROOVY-8961, GROOVY-9915
@@ -1023,7 +1023,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 void test() {
                     m = Collections.<Integer>emptyList()
                 }
-            """, 'Incompatible generic argument types. Cannot assign java.util.List <Integer> to: java.util.List <String>'
+            """, 'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Integer> to: java.util.List<java.lang.String>'
         }
     }
 
@@ -1181,7 +1181,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<String> list = ['a','b','c']
             Collection<Integer> numbers = (Collection<Integer>) [1,2,3]
             boolean r = list.addAll(numbers)
-        ''', 'Cannot call java.util.ArrayList#addAll(java.util.Collection <? extends java.lang.String>) with arguments [java.util.Collection <Integer>]'
+        ''', 'Cannot call java.util.ArrayList#addAll(java.util.Collection<? extends java.lang.String>) with arguments [java.util.Collection<java.lang.Integer>]'
     }
 
     // GROOVY-5528
@@ -1909,7 +1909,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 static <T extends List<? extends CharSequence>> void bar(T a) {}
             }
             Foo.bar([new Object()])
-        ''', 'Cannot call <T extends java.util.List<? extends java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.ArrayList <java.lang.Object>]'
+        ''', 'Cannot call <T extends java.util.List<? extends java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.ArrayList<java.lang.Object>]'
     }
 
     void testOutOfBoundsBySuperGenericParameterType() {
@@ -1918,7 +1918,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 static <T extends List<? super CharSequence>> void bar(T a) {}
             }
             Foo.bar(['abc'])
-        ''', 'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.ArrayList <java.lang.String>]'
+        ''', 'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.ArrayList<java.lang.String>]'
     }
 
     void testOutOfBoundsByExtendsPlaceholderParameterType() {
@@ -1932,7 +1932,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             Baz.qux([new Object()])
-        ''', 'Cannot call <T extends java.util.List<? extends java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.List <Object>]'
+        ''', 'Cannot call <T extends java.util.List<? extends java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.List<java.lang.Object>]'
     }
 
     void testOutOfBoundsBySuperPlaceholderParameterType() {
@@ -1946,7 +1946,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             Baz.qux(['abc'])
-        ''', 'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.List <String>] '
+        ''', 'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.List<java.lang.String>] '
     }
 
     // GROOVY-5721
@@ -2303,7 +2303,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<Object> l = new ArrayList<>()
             assert foo(l) == 1
         ''',
-        '#foo(java.util.List <? extends A>) with arguments [java.util.ArrayList <java.lang.Object>]'
+        '#foo(java.util.List<? extends A>) with arguments [java.util.ArrayList<java.lang.Object>]'
     }
 
     void testMethodLevelGenericsForMethodCall() {
@@ -2357,7 +2357,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
             GoodCodeRed.foo()
         ''',
-        "Cannot call <T> GoodCodeRed#attach(GoodCodeRed <Long>) with arguments [GoodCodeRed <Integer>]"
+        "Cannot call <T> GoodCodeRed#attach(GoodCodeRed<java.lang.Long>) with arguments [GoodCodeRed<java.lang.Integer>]"
     }
 
     void testHiddenGenerics() {
@@ -2371,7 +2371,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             class Blah {}
             class MyList extends LinkedList<Object> {}
             List<Blah> o = new MyList()
-        ''','Incompatible generic argument types. Cannot assign MyList to: java.util.List <Blah>'
+        ''','Incompatible generic argument types. Cannot assign MyList to: java.util.List<Blah>'
 
         // Groovy-5873
         assertScript """
@@ -2900,7 +2900,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                     [11, 12]
                 }
             }
-        ''', 'Incompatible generic argument types. Cannot assign java.util.List <java.lang.Integer> to: java.util.List <String>'
+        ''', 'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Integer> to: java.util.List<java.lang.String>'
     }
 
     void testBoundedReturnTypeChecking() {

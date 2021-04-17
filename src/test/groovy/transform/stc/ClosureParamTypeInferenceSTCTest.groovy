@@ -275,7 +275,7 @@ import groovy.transform.stc.ClosureParams
 
 void foo(@ClosureParams(value=FromString,options="java.util.List<java.lang.String>") Closure cl) { cl.call(['foo']) }
 foo { List<Date> d -> d.each { println it } }
-''', 'Expected parameter of type java.util.List <java.lang.String> but got java.util.List <Date>'
+''', 'Expected parameter of type java.util.List<java.lang.String> but got java.util.List<java.util.Date>'
     }
 
     void testFromStringWithDirectGenericPlaceholder() {

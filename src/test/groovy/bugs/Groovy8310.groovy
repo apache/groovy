@@ -42,7 +42,7 @@ final class Groovy8310 {
             }
         '''
 
-        assert err =~ /Cannot find matching method \w+#bar\(groovy.lang.Closure <java.util.List>\)/
+        assert err =~ /Cannot find matching method \w+#bar\(groovy.lang.Closure<java.util.List<java.lang.Integer>>\)/
     }
 
     @Test
@@ -60,7 +60,7 @@ final class Groovy8310 {
             }
         '''
 
-        assert err =~ /Cannot find matching method \w+#bar\(groovy.lang.Closure <java.util.List>\)/
+        assert err =~ /Cannot find matching method \w+#bar\(groovy.lang.Closure<java.util.List<java.lang.Integer>>\)/
     }
 
     @Test
