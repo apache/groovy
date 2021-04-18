@@ -87,7 +87,8 @@ class SharedConfiguration {
     }
 
     private static boolean detectCi(File file, Logger logger) {
-        def isCi = file.absolutePath =~ /teamcity|jenkins|hudson|travis/
+        // home/runner/work is path for Github actions
+        def isCi = file.absolutePath =~ $/teamcity|jenkins|hudson|/home/runner/work/|travis/$
         logger.lifecycle "Detected ${isCi ? 'Continuous Integration environment' : 'development environment'}"
         isCi
     }
