@@ -96,7 +96,8 @@ tasks.withType(Test) {
 }
 
 boolean isRunningOnCI() {
-    new File('.').absolutePath =~ /teamcity|jenkins|hudson|travis/
+    // home/runner/work is path for Github actions
+    new File('.').absolutePath =~ $/teamcity|jenkins|hudson|travis|/home/runner/work/$
 }
 
 logger.lifecycle "Detected ${isRunningOnCI() ? 'Continuous Integration environment' : 'development environment'}"
