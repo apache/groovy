@@ -21,6 +21,7 @@ package org.apache.groovy.ginq
 import groovy.transform.CompileStatic
 import org.junit.Test
 
+import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 @CompileStatic
@@ -276,7 +277,7 @@ class GinqErrorTest {
             }
         '''
 
-        assert err.toString().contains("Invalid syntax found in `where' clause @ line 3, column 17.")
+        assert err.toString().contains("Invalid syntax found in `where` clause @ line 3, column 17.")
     }
 
     @Test
@@ -597,5 +598,41 @@ class GinqErrorTest {
         '''
 
         assert err.toString().contains('`select` clause is missing @ line 2, column 17.')
+    }
+
+    @Test
+    void "testGinq - missing as - 1"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 2]
+                select count() cnt
+            }
+        '''
+
+        assert err.toString().contains('Invalid syntax found in `select` clause, maybe `as` is missing when renaming field. @ line 3, column 17.')
+    }
+
+    @Test
+    void "testGinq - missing as - 2"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 2]
+                select n num
+            }
+        '''
+
+        assert err.toString().contains('Invalid syntax found in `select` clause, maybe `as` is missing when renaming field. @ line 3, column 17.')
+    }
+
+    @Test
+    void "testGinq - missing as - 3"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 2]
+                select n num1, n as num2
+            }
+        '''
+
+        assert err.toString().contains('Invalid syntax found in `select` clause @ line 3, column 17.')
     }
 }

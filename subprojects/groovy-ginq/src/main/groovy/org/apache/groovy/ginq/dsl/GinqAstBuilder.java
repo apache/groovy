@@ -41,6 +41,7 @@ import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
@@ -364,13 +365,26 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
         if (KEYWORD_SET.contains(expression.getText())) {
             this.collectSyntaxError(
                     new GinqSyntaxError(
-                            "Invalid syntax found in `" + expression.getText() + "' clause",
+                            "Invalid syntax found in `" + expression.getText() + "` clause",
                             expression.getLineNumber(), expression.getColumnNumber()
                     )
             );
         }
 
         super.visitVariableExpression(expression);
+    }
+
+    @Override
+    public void visitPropertyExpression(PropertyExpression expression) {
+        super.visitPropertyExpression(expression);
+        if (isSelectMethodCallExpression(expression.getObjectExpression())) {
+            this.collectSyntaxError(
+                    new GinqSyntaxError(
+                            "Invalid syntax found in `select` clause, maybe `as` is missing when renaming field.",
+                            expression.getLineNumber(), expression.getColumnNumber()
+                    )
+            );
+        }
     }
 
     @Override
