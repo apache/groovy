@@ -318,27 +318,39 @@ final class GenericsUsageTest extends CompilableTestSupport {
 
         // variable declaration
         shouldFailCompilationWithMessages '''
-             def method() { Map<String> map }
+            def method() { Map<String> map }
         ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
         shouldFailCompilationWithMessages '''
-             def method() { Map<String, Map<String>> map }
+            def method() { Map<String, Map<String>> map }
         ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
         shouldFailCompilationWithMessages '''
-             def (Map<String,String> one, Map<String> two) = [ [:], [:] ]
+            def (Map<String,String> one, Map<String> two) = [ [:], [:] ]
         ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
         shouldFailCompilationWithMessages '''
-             Map<String>[][] array = new Map[0][0]
+            Map<String>[][] array = new Map[0][0]
         ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
         shouldFailCompilationWithMessages '''
-             Map<String,String>[][] array = new Map<String>[0][]
+            Map<String,String>[][] array = new Map<String>[0][]
+        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        shouldFailCompilationWithMessages '''
+            class C { { Map<String> m = null } }
+        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        shouldFailCompilationWithMessages '''
+            class C { static { Map<String> m = null } }
+        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        shouldFailCompilationWithMessages '''
+            @groovy.transform.ASTTest(value={
+                Map<String> m = null
+            })
+            class C { }
         ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
 
         // casting and coercion
         shouldFailCompilationWithMessages '''
-             def map = (Map<String>) null
+            def map = (Map<String>) null
         ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
         shouldFailCompilationWithMessages '''
-             def map = null as Map<String>
+            def map = null as Map<String>
         ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
     }
 

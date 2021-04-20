@@ -69,6 +69,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
             checkGenericsUsage(face);
         }
 
+        visitObjectInitializerStatements(node);
         node.visitContents(this);
     }
 
