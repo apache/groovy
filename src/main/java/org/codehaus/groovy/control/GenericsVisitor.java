@@ -25,10 +25,11 @@ import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.transform.trait.Traits;
 
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isUnboundedWildcard;
@@ -43,143 +44,163 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isUnbo
  * </ul>
  */
 public class GenericsVisitor extends ClassCodeVisitorSupport {
-    private final SourceUnit source;
 
-    public GenericsVisitor(SourceUnit source) {
-        this.source = source;
-    }
+    private final SourceUnit source;
 
     @Override
     protected SourceUnit getSourceUnit() {
         return source;
     }
 
+    public GenericsVisitor(final SourceUnit source) {
+        this.source = source;
+    }
+
+    //--------------------------------------------------------------------------
+
     @Override
-    public void visitClass(ClassNode node) {
-        boolean error = checkWildcard(node);
-        if (error) return;
-        boolean isAnon = node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous();
-        checkGenericsUsage(node.getUnresolvedSuperClass(false), node.getSuperClass(), isAnon ? true : null);
-        ClassNode[] interfaces = node.getInterfaces();
-        for (ClassNode anInterface : interfaces) {
-            checkGenericsUsage(anInterface, anInterface.redirect());
+    public void visitClass(final ClassNode node) {
+        ClassNode sn = node.getUnresolvedSuperClass(false);
+        if (checkWildcard(sn)) return;
+
+        boolean isAIC = node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous();
+        checkGenericsUsage(sn, node.getSuperClass(), isAIC ? Boolean.TRUE : null);
+        for (ClassNode face : node.getInterfaces()) {
+            checkGenericsUsage(face);
         }
+
         node.visitContents(this);
     }
 
     @Override
-    public void visitField(FieldNode node) {
-        ClassNode type = node.getType();
-        checkGenericsUsage(type, type.redirect());
+    public void visitField(final FieldNode node) {
+        checkGenericsUsage(node.getType());
+
         super.visitField(node);
     }
 
     @Override
-    public void visitConstructorCallExpression(ConstructorCallExpression call) {
-        ClassNode type = call.getType();
-        boolean isAnon = type instanceof InnerClassNode && ((InnerClassNode) type).isAnonymous();
-        checkGenericsUsage(type, type.redirect(), isAnon);
-    }
-
-    @Override
-    public void visitMethod(MethodNode node) {
-        Parameter[] parameters = node.getParameters();
-        for (Parameter param : parameters) {
-            ClassNode paramType = param.getType();
-            checkGenericsUsage(paramType, paramType.redirect());
+    protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
+        for (Parameter p : node.getParameters()) {
+            checkGenericsUsage(p.getType());
         }
-        ClassNode returnType = node.getReturnType();
-        checkGenericsUsage(returnType, returnType.redirect());
-        super.visitMethod(node);
+        if (!isConstructor) {
+            checkGenericsUsage(node.getReturnType());
+        }
+
+        super.visitConstructorOrMethod(node, isConstructor);
     }
 
     @Override
-    public void visitDeclarationExpression(DeclarationExpression expression) {
+    public void visitConstructorCallExpression(final ConstructorCallExpression expression) {
+        ClassNode type = expression.getType();
+        boolean isAIC = type instanceof InnerClassNode
+                && ((InnerClassNode) type).isAnonymous();
+        checkGenericsUsage(type, type.redirect(), isAIC);
+
+        super.visitConstructorCallExpression(expression);
+    }
+
+    @Override
+    public void visitDeclarationExpression(final DeclarationExpression expression) {
         if (expression.isMultipleAssignmentDeclaration()) {
-            TupleExpression tExpr = expression.getTupleExpression();
-            for (Expression nextExpr : tExpr.getExpressions()) {
-                ClassNode declType = nextExpr.getType();
-                checkGenericsUsage(declType, declType.redirect());
+            for (Expression e : expression.getTupleExpression().getExpressions()) {
+                checkGenericsUsage(e.getType());
             }
         } else {
-            ClassNode declType = expression.getVariableExpression().getType();
-            checkGenericsUsage(declType, declType.redirect());
+            checkGenericsUsage(expression.getVariableExpression().getType());
         }
+
         super.visitDeclarationExpression(expression);
     }
 
-    private boolean checkWildcard(ClassNode cn) {
-        ClassNode sn = cn.getUnresolvedSuperClass(false);
-        if (sn == null) return false;
-        GenericsType[] generics = sn.getGenericsTypes();
-        if (generics == null) return false;
-        boolean error = false;
-        for (GenericsType generic : generics) {
-            if (generic.isWildcard()) {
-                addError("A supertype may not specify a wildcard type", sn);
-                error = true;
+    @Override
+    public void visitArrayExpression(final ArrayExpression expression) {
+        checkGenericsUsage(expression.getType());
+
+        super.visitArrayExpression(expression);
+    }
+
+    @Override
+    public void visitCastExpression(final CastExpression expression) {
+        checkGenericsUsage(expression.getType());
+
+        super.visitCastExpression(expression);
+    }
+
+    //--------------------------------------------------------------------------
+
+    private boolean checkWildcard(final ClassNode sn) {
+        boolean wildcard = false;
+        if (sn.getGenericsTypes() != null) {
+            for (GenericsType gt : sn.getGenericsTypes()) {
+                if (gt.isWildcard()) {
+                    addError("A supertype may not specify a wildcard type", sn);
+                    wildcard = true;
+                }
             }
         }
-        return error;
+        return wildcard;
     }
 
-    private void checkGenericsUsage(ClassNode n, ClassNode cn) {
-        checkGenericsUsage(n, cn, null);
+    private void checkGenericsUsage(ClassNode cn) {
+        while (cn.isArray())
+            cn = cn.getComponentType();
+        checkGenericsUsage(cn, cn.redirect(), null);
     }
 
-    private void checkGenericsUsage(ClassNode n, ClassNode cn, Boolean isAnonInnerClass) {
-        if (n.isGenericsPlaceHolder()) return;
-        GenericsType[] nTypes = n.getGenericsTypes();
+    private void checkGenericsUsage(final ClassNode cn, final ClassNode rn, final Boolean isAIC) {
+        if (cn.isGenericsPlaceHolder()) return;
         GenericsType[] cnTypes = cn.getGenericsTypes();
+        GenericsType[] rnTypes = rn.getGenericsTypes();
         // raw type usage is always allowed
-        if (nTypes == null) return;
+        if (cnTypes == null) return;
         // you can't parameterize a non-generified type
-        if (cnTypes == null) {
-            String message = "The class " + getPrintName(n) + " (supplied with " + plural("type parameter", nTypes.length) +
-                    ") refers to the class " + getPrintName(cn) + " which takes no parameters";
-            if (nTypes.length == 0) {
+        if (rnTypes == null) {
+            String message = "The class " + cn.toString(false) + " (supplied with " + plural("type parameter", cnTypes.length) +
+                    ") refers to the class " + rn.toString(false) + " which takes no parameters";
+            if (cnTypes.length == 0) {
                 message += " (invalid Diamond <> usage?)";
             }
-            addError(message, n);
+            addError(message, cn);
             return;
         }
         // parameterize a type by using all of the parameters only
-        if (nTypes.length != cnTypes.length) {
-            if (Boolean.FALSE.equals(isAnonInnerClass) && nTypes.length == 0) {
+        if (cnTypes.length != rnTypes.length) {
+            if (Boolean.FALSE.equals(isAIC) && cnTypes.length == 0) {
                 return; // allow Diamond for non-AIC cases from CCE
             }
             String message;
-            if (Boolean.TRUE.equals(isAnonInnerClass) && nTypes.length == 0) {
+            if (Boolean.TRUE.equals(isAIC) && cnTypes.length == 0) {
                 message = "Cannot use diamond <> with anonymous inner classes";
             } else {
-                message = "The class " + getPrintName(n) + " (supplied with " + plural("type parameter", nTypes.length) +
-                        ") refers to the class " + getPrintName(cn) +
-                        " which takes " + plural("parameter", cnTypes.length);
-                if (nTypes.length == 0) {
+                message = "The class " + cn.toString(false) + " (supplied with " + plural("type parameter", cnTypes.length) +
+                        ") refers to the class " + rn.toString(false) + " which takes " + plural("parameter", rnTypes.length);
+                if (cnTypes.length == 0) {
                     message += " (invalid Diamond <> usage?)";
                 }
             }
-            addError(message, n);
+            addError(message, cn);
             return;
         }
-        for (int i = 0; i < nTypes.length; i++) {
-            ClassNode nType = nTypes[i].getType();
+        for (int i = 0; i < cnTypes.length; i++) {
             ClassNode cnType = cnTypes[i].getType();
+            ClassNode rnType = rnTypes[i].getType();
             // check nested type parameters
-            checkGenericsUsage(nType, nType.redirect());
+            checkGenericsUsage(cnType);
             // check bounds: unbounded wildcard (aka "?") is universal substitute
-            if (!isUnboundedWildcard(nTypes[i])) {
+            if (!isUnboundedWildcard(cnTypes[i])) {
                 // check upper bound(s)
-                ClassNode[] bounds = cnTypes[i].getUpperBounds();
+                ClassNode[] bounds = rnTypes[i].getUpperBounds();
 
                 // first can be class or interface
-                boolean valid = nType.isDerivedFrom(cnType) || ((cnType.isInterface() || Traits.isTrait(cnType)) && nType.implementsInterface(cnType));
+                boolean valid = cnType.isDerivedFrom(rnType) || ((rnType.isInterface() || Traits.isTrait(rnType)) && cnType.implementsInterface(rnType));
 
                 // subsequent bounds if present can be interfaces
                 if (valid && bounds != null && bounds.length > 1) {
                     for (int j = 1; j < bounds.length; j++) {
                         ClassNode bound = bounds[j];
-                        if (!nType.implementsInterface(bound)) {
+                        if (!cnType.implementsInterface(bound)) {
                             valid = false;
                             break;
                         }
@@ -187,46 +208,13 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
                 }
 
                 if (!valid) {
-                    addError("The type " + nTypes[i].getName() + " is not a valid substitute for the bounded parameter <" +
-                            getPrintName(cnTypes[i]) + ">", nTypes[i]);
+                    addError("The type " + cnTypes[i].getName() + " is not a valid substitute for the bounded parameter <" + rnTypes[i] + ">", cnTypes[i]);
                 }
             }
         }
     }
 
-    private String plural(String orig, int count) {
-        return "" + count + " " + (count == 1 ? orig : orig + "s");
-    }
-
-    private static String getPrintName(GenericsType gt) {
-        StringBuilder ret = new StringBuilder(gt.getName());
-        ClassNode[] upperBounds = gt.getUpperBounds();
-        ClassNode lowerBound = gt.getLowerBound();
-        if (upperBounds != null) {
-            if (upperBounds.length != 1 || !"java.lang.Object".equals(getPrintName(upperBounds[0]))) {
-                ret.append(" extends ");
-                for (int i = 0; i < upperBounds.length; i++) {
-                    ret.append(getPrintName(upperBounds[i]));
-                    if (i + 1 < upperBounds.length) ret.append(" & ");
-                }
-            }
-        } else if (lowerBound != null) {
-            ret.append(" super ").append(getPrintName(lowerBound));
-        }
-        return ret.toString();
-    }
-
-    private static String getPrintName(ClassNode cn) {
-        StringBuilder ret = new StringBuilder(cn.getName());
-        GenericsType[] gts = cn.getGenericsTypes();
-        if (gts != null) {
-            ret.append("<");
-            for (int i = 0; i < gts.length; i++) {
-                if (i != 0) ret.append(",");
-                ret.append(getPrintName(gts[i]));
-            }
-            ret.append(">");
-        }
-        return ret.toString();
+    private static String plural(final String string, final int count) {
+        return "" + count + " " + (count == 1 ? string : string + "s");
     }
 }

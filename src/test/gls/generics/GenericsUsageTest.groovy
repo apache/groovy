@@ -241,67 +241,105 @@ final class GenericsUsageTest extends CompilableTestSupport {
         '''
     }
 
-    // GROOVY-7865
-    void testFriendlyErrorMessageForGenericsArityErrors() {
+    // GROOVY-3731, GROOVY-7865, GROOVY-10033
+    void testFriendlyErrorMessageForGenericsErrors() {
+        // superclass and interfaces
         shouldFailCompilationWithMessages '''
-            class MyList extends ArrayList<String, String> {}
+            class C extends ArrayList<> { }
+        ''', ["Unexpected input: '<'"]
+        shouldFailCompilationWithMessages '''
+            class C extends ArrayList<? extends Number> { }
+        ''', ['A supertype may not specify a wildcard type']
+        shouldFailCompilationWithMessages '''
+            class C extends ArrayList<String, String> { }
         ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
-
         shouldFailCompilationWithMessages '''
-            class MyList extends ArrayList<> {}
-        ''', ['Unexpected input: \'<\'']
-
-        shouldFailCompilationWithMessages '''
-            class MyMap extends HashMap<String> {}
+            class C extends HashMap<String> { }
         ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
         shouldFailCompilationWithMessages '''
-            class MyList implements List<String, String> {}
-        ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
-
+            class C implements Map<> { }
+        ''', ["Unexpected input: '<'"]
         shouldFailCompilationWithMessages '''
-            class MyList implements Map<> {}
-        ''', ['Unexpected input: \'<\'']
-
-
-        shouldFailCompilationWithMessages '''
-            class MyMap implements Map<String> {}
+            class MyMap implements Map<String> { }
         ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
         shouldFailCompilationWithMessages '''
-            List<String> ss = new LinkedList<Integer, String>()
+            class C implements List<String, String> { }
         ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
+
+        // constructor call
+        assertScript '''
+            List<String> list = new LinkedList<>()
+        '''
         shouldFailCompilationWithMessage '''
-            List<String> ss = new LinkedList<>(){}
+            new LinkedList<>() { }
         ''', 'Cannot use diamond <> with anonymous inner classes'
         shouldFailCompilationWithMessages '''
-            List<String> ss = new LinkedList<String, String>(){}
+            new LinkedList<Integer, String>()
         ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
         shouldFailCompilationWithMessages '''
-            List<String> ss = new LinkedList<String, String>()
-        ''', ['supplied with 2 type parameters', 'which takes 1 parameter']
+            new LinkedList<String, String>()
+        ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
         shouldFailCompilationWithMessages '''
-            def now = new Date<Calendar>()
-        ''', ['supplied with 1 type parameter', 'which takes no parameters']
+            new LinkedList<String, String>() { }
+        ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
         shouldFailCompilationWithMessages '''
-            def method(Map<String> map) { map.toString() }
+            new Date<Calendar>()
+        ''', ['(supplied with 1 type parameter)', 'which takes no parameters']
+
+        // constructor declaration
+        shouldFailCompilationWithMessages '''
+            class C { C(Map<String> m) { } }
         ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
         shouldFailCompilationWithMessages '''
-            def method(Map<String, Map<String>> map) { map.toString() }
+            class C { C(Closure<String,Number> c) { } }
+        ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
+
+        // method declaration
+        shouldFailCompilationWithMessages '''
+            def method(Map<String> map) { }
         ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
         shouldFailCompilationWithMessages '''
-            class MyClass { Map<String> map }
+            Map<String> method() { }
         ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
         shouldFailCompilationWithMessages '''
-            class MyClass { Map<String, Map<String>> map }
+            def method(Map<String, Map<String>> map) { }
         ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        shouldFailCompilationWithMessages '''
+            def method(Map<String, Map<String>> map) { }
+        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+
+        // field declaration
+        shouldFailCompilationWithMessages '''
+            class C { Map<String> map }
+        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        shouldFailCompilationWithMessages '''
+            class C { Map<String, Map<String>> map }
+        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+
+        // variable declaration
         shouldFailCompilationWithMessages '''
              def method() { Map<String> map }
         ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
         shouldFailCompilationWithMessages '''
              def method() { Map<String, Map<String>> map }
         ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
-        assertScript '''
-            List<String> ss = new LinkedList<>()
-        '''
+        shouldFailCompilationWithMessages '''
+             def (Map<String,String> one, Map<String> two) = [ [:], [:] ]
+        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        shouldFailCompilationWithMessages '''
+             Map<String>[][] array = new Map[0][0]
+        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        shouldFailCompilationWithMessages '''
+             Map<String,String>[][] array = new Map<String>[0][]
+        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+
+        // casting and coercion
+        shouldFailCompilationWithMessages '''
+             def map = (Map<String>) null
+        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        shouldFailCompilationWithMessages '''
+             def map = null as Map<String>
+        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
     }
 
     // GROOVY-8990
