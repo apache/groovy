@@ -2787,6 +2787,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (nExpressions > 0 && expressions.get(0) instanceof MapExpression && params.length > 0) {
             checkNamedParamsAnnotation(params[0], (MapExpression) expressions.get(0));
         }
+        if (visitClosures) {
+            inferMethodReferenceType(receiver, arguments, selectedMethod);
+        }
     }
 
     private void checkNamedParamsAnnotation(final Parameter param, final MapExpression args) {
@@ -3623,8 +3626,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
             }
-
-            inferMethodReferenceType(call, receiver, argumentList);
         } finally {
             typeCheckingContext.popEnclosingMethodCall();
             extension.afterMethodCall(call);
@@ -3642,28 +3643,23 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return Closure.OWNER_FIRST;
     }
 
-    private void inferMethodReferenceType(final MethodCallExpression call, final ClassNode receiver, final ArgumentListExpression argumentList) {
-        if (call == null) return;
+    private void inferMethodReferenceType(final ClassNode receiver, final ArgumentListExpression argumentList, final MethodNode selectedMethod) {
         if (receiver == null) return;
         if (argumentList == null) return;
+        if (selectedMethod == null) return;
 
-        List<Expression> argumentExpressionList = argumentList.getExpressions();
-        if (argumentExpressionList == null) return;
-
-        boolean noMethodReferenceParams = argumentExpressionList.stream().noneMatch(e -> e instanceof MethodReferenceExpression);
-        if (noMethodReferenceParams) {
+        List<Expression> argumentExpressions = argumentList.getExpressions();
+        if (argumentExpressions == null || argumentExpressions.stream()
+                .noneMatch(e -> e instanceof MethodReferenceExpression)) {
             return;
         }
-
-        MethodNode selectedMethod = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-        if (selectedMethod == null) return;
 
         Parameter[] parameters = selectedMethod.getParameters();
 
         List<Integer> methodReferenceParamIndexList = new LinkedList<>();
         List<Expression> newArgumentExpressionList = new LinkedList<>();
-        for (int i = 0, n = argumentExpressionList.size(); i < n; i++) {
-            Expression argumentExpression = argumentExpressionList.get(i);
+        for (int i = 0, n = argumentExpressions.size(); i < n; i += 1) {
+            Expression argumentExpression = argumentExpressions.get(i);
             if (!(argumentExpression instanceof MethodReferenceExpression)) {
                 newArgumentExpressionList.add(argumentExpression);
                 continue;
@@ -3686,7 +3682,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         for (Integer methodReferenceParamIndex : methodReferenceParamIndexList) {
             LambdaExpression lambdaExpression = (LambdaExpression) newArgumentExpressionList.get(methodReferenceParamIndex);
             ClassNode[] argumentTypes = lambdaExpression.getNodeMetaData(CLOSURE_ARGUMENTS);
-            argumentExpressionList.get(methodReferenceParamIndex).putNodeMetaData(CLOSURE_ARGUMENTS, argumentTypes);
+            argumentExpressions.get(methodReferenceParamIndex).putNodeMetaData(CLOSURE_ARGUMENTS, argumentTypes);
         }
     }
 

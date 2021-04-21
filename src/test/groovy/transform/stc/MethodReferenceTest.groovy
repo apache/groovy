@@ -51,7 +51,38 @@ final class MethodReferenceTest {
             @CompileStatic
             void p() {
                 def result = [1, 2, 3].stream().map(Integer::toString).collect(Collectors.toList())
-                assert result ['1', '2', '3']
+                assert result == ['1', '2', '3']
+            }
+
+            p()
+        '''
+    }
+
+    @Test // class::instanceMethod -- GROOVY-10047
+    void testFunctionCI3() {
+        assertScript shell, '''
+            import static java.util.stream.Collectors.toMap
+
+            @CompileStatic
+            void p() {
+                List<String> list = ['a','bc','def']
+                Function<String,String> self = str -> str // help for toMap
+                def map = list.stream().collect(toMap(self, String::length))
+                assert map == [a: 1, bc: 2, 'def': 3]
+            }
+
+            p()
+        '''
+
+        assertScript shell, '''
+            import static java.util.stream.Collectors.toMap
+
+            @CompileStatic
+            void p() {
+                List<String> list = ['a','bc','def']
+                // TODO: inference for T in toMap(Function<? super T,...>, Function<? super T,...>)
+                def map = list.stream().collect(toMap(Function.<String>identity(), String::length))
+                assert map == [a: 1, bc: 2, 'def': 3]
             }
 
             p()
@@ -59,7 +90,7 @@ final class MethodReferenceTest {
     }
 
     @Test // class::instanceMethod
-    void testFunctionCI3() {
+    void testFunctionCI4() {
         def err = shouldFail shell, '''
             @CompileStatic
             void p() {
@@ -73,7 +104,7 @@ final class MethodReferenceTest {
     }
 
     @Test // class::instanceMethod -- GROOVY-9814
-    void testFunctionCI4() {
+    void testFunctionCI5() {
         assertScript shell, '''
             @CompileStatic
             class One { String id }
@@ -291,6 +322,22 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // class::new -- GROOVY-10033
+    void testFunctionCN2() {
+        assertScript shell, '''
+            class C {
+                C(Function<String,String> f) {
+                }
+            }
+            @CompileStatic
+            void p() {
+                new C(String::toLowerCase)
+            }
+
+            p()
+        '''
+    }
+
     @Test // class::staticMethod
     void testFunctionCS() {
         assertScript shell, '''
@@ -304,8 +351,24 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::staticMethod -- GROOVY-9799
+    @Test // class::staticMethod
     void testFunctionCS2() {
+        assertScript shell, '''
+            import static java.util.stream.Collectors.toMap
+
+            @CompileStatic
+            void p() {
+                List<String> list = ['x','y','z']
+                def map = list.stream().collect(toMap(Function.identity(), Collections::singletonList))
+                assert map == [x: ['x'], y: ['y'], z: ['z']]
+            }
+
+            p()
+        '''
+    }
+
+    @Test // class::staticMethod -- GROOVY-9799
+    void testFunctionCS3() {
         assertScript shell, '''
             class C {
                 String x
