@@ -18,7 +18,10 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime;
 
+import groovy.lang.Tuple2;
+
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Represents partition
@@ -32,6 +35,18 @@ public interface Partition<T> extends Queryable<T> {
      * @since 4.0.0
      */
     Partition EMPTY_PARTITION = new PartitionImpl(Collections.emptyList());
+
+    /**
+     * Factory method to create {@link Partition} instance
+     *
+     * @param listWithIndex the list with index
+     * @param <T> the type of element
+     * @return the {@link Partition} instance
+     * @since 4.0.0
+     */
+    static <T> Partition<Tuple2<T, Long>> newInstance(List<Tuple2<T, Long>> listWithIndex) {
+        return new PartitionImpl<>(listWithIndex);
+    }
 
     /**
      * Returns the empty Partition instance

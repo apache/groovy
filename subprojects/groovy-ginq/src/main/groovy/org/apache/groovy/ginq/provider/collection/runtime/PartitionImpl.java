@@ -18,22 +18,14 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime;
 
-import groovy.lang.Tuple2;
-
-import java.util.List;
-
 /**
- * Represents partition
+ * Represents partition implementation
  *
  * @param <T> the type of element
  * @since 4.0.0
  */
 class PartitionImpl<T> extends QueryableCollection<T> implements Partition<T> {
     private static final long serialVersionUID = -3650144225768070117L;
-
-    public static <T, U extends Comparable<? super U>> Partition<Tuple2<T, Long>> newInstance(List<Tuple2<T, Long>> listWithIndex) {
-        return new PartitionImpl<>(listWithIndex);
-    }
 
     PartitionImpl(Iterable<T> sourceIterable) {
         super(sourceIterable);
