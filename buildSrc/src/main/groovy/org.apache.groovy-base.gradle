@@ -21,41 +21,24 @@
 import groovy.transform.CompileStatic
 import org.apache.groovy.gradle.GroovyLibraryExtension
 import org.apache.groovy.gradle.JarJarTask
-import org.apache.groovy.gradle.ReleaseInfoGenerator
 import org.gradle.api.attributes.java.TargetJvmVersion
 
 import javax.inject.Inject
-import com.github.spotbugs.snom.SpotBugsTask
-import org.apache.groovy.gradle.CheckstyleHtmlReport
 
 plugins {
-    id 'java-library'
     id 'groovy'
-    id 'checkstyle'
     id 'codenarc'
-    id 'com.github.spotbugs'
-    id 'org.apache.groovy-common'
+    id 'org.apache.groovy-java-base'
     id 'org.apache.groovy-internal'
     id 'org.apache.groovy-tested'
-    id 'org.apache.groovy-asciidoctor'
 }
 
 /**
  * This script defines a conventional plugin for all Groovy modules, be it
  * Groovy core or any of its libraries.
  */
-if (sharedConfiguration.hasCodeCoverage.get()) {
-    pluginManager.apply(JacocoPlugin)
-}
 
 def groovyLibrary = project.extensions.create("groovyLibrary", GroovyLibraryExtension, sharedConfiguration, project.convention.plugins.java, java)
-
-java {
-    withSourcesJar()
-    withJavadocJar()
-}
-
-def generateReleaseInfo = tasks.register("generateReleaseInfo", ReleaseInfoGenerator)
 
 def groovydocJar = tasks.register("groovydocJar", Jar) {
     from groovydoc
@@ -79,35 +62,10 @@ configurations {
         }
     }
     sourcesForAggregation {
-        canBeConsumed = true
-        canBeResolved = false
-        extendsFrom implementation, runtimeOnly
-        attributes {
-            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
-            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
-            attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, DocsType.SOURCES))
-            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, "aggregation"))
-        }
         outgoing {
-            sourceSets.main.java.srcDirs.each {
-                artifact(it)
-            }
             sourceSets.main.groovy.srcDirs.each {
                 artifact(it)
             }
-        }
-    }
-    javadocClasspath {
-        canBeConsumed = true
-        canBeResolved = false
-        extendsFrom implementation, runtimeOnly, compileOnly, compileOnlyApi
-        attributes {
-            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
-            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
-            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, "javadocClasspath"))
-        }
-        outgoing {
-            artifact tasks.named('jar')
         }
     }
     codenarc {
@@ -124,13 +82,8 @@ configurations {
 }
 
 dependencies {
-    compileOnly providers.provider { "com.github.spotbugs:spotbugs-annotations:${versions.spotbugsAnnotations}" }
-
     codenarc "org.codenarc:CodeNarc:${versions.codenarc}"
     codenarc project(":groovy-templates")
-
-    checkstyle "com.puppycrawl.tools:checkstyle:${versions.checkstyle}"
-    spotbugs "com.github.spotbugs:spotbugs:${versions.spotbugs}"
 }
 
 def excludedFromManifest = [
@@ -143,27 +96,6 @@ def excludedFromManifest = [
 tasks.named('jar') {
     archiveAppendix = 'raw'
     groovyLibrary.configureManifest(manifest, excludedFromManifest)
-}
-
-tasks.withType(Jar).configureEach {
-    metaInf {
-        if (file("${projectDir}/LICENSE").exists()) {
-            from "${projectDir}/LICENSE"
-        } else {
-            from("${rootProject.projectDir}/licenses/LICENSE-BASE") {
-                rename 'LICENSE-BASE', 'LICENSE'
-            }
-        }
-        if (file("${projectDir}/NOTICE").exists()) {
-            from "${projectDir}/NOTICE"
-        } else {
-            from("${rootProject.projectDir}/notices/NOTICE-BASE") {
-                rename 'NOTICE-BASE', 'NOTICE'
-            }
-        }
-        from generateReleaseInfo
-    }
-    exclude '**/package-info.class'
 }
 
 tasks.register("jarjar", JarJarTask) {
@@ -204,15 +136,6 @@ tasks.register("jarjar", JarJarTask) {
     }
 }
 
-tasks.withType(AbstractCompile).configureEach {
-    sourceCompatibility(sharedConfiguration.targetJavaVersion.get())
-    targetCompatibility(sharedConfiguration.targetJavaVersion.get())
-}
-
-tasks.withType(Javadoc).configureEach {
-    options.source = sharedConfiguration.targetJavaVersion.get()
-}
-
 tasks.named("compileTestGroovy") {
     options.forkOptions.jvmArgs += ["-Dspock.iKnowWhatImDoing.disableGroovyVersionCheck=true"]
 }
@@ -220,49 +143,6 @@ tasks.named("compileTestGroovy") {
 tasks.withType(CodeNarc).configureEach {
     ignoreFailures = true
     configFile = rootProject.file("config/codenarc/codenarc.groovy")
-}
-
-tasks.withType(SpotBugsTask).configureEach {
-    excludeFilter = rootProject.file("config/spotbugs/exclude.xml")
-    ignoreFailures = true
-    effort = 'max'
-    maxHeapSize = '2g'
-    reports {
-        xml.enabled = false
-        html {
-            enabled = true
-            stylesheet = 'fancy.xsl'
-        }
-    }
-}
-
-tasks.register("checkstyle") {
-    dependsOn tasks.withType(Checkstyle)
-}
-
-tasks.withType(Checkstyle).configureEach {
-    showViolations = false
-    ignoreFailures = true
-    configFile = rootProject.file("config/checkstyle/checkstyle.xml")
-    configProperties = ['rootProject.projectDir': rootProject.projectDir]
-    def reportFile = layout.buildDirectory.file("reports/checkstyle/${name}.xml")
-    reports {
-        include('**/*.java')
-        xml {
-            destination reportFile.get().asFile
-        }
-    }
-    def chk = it
-    finalizedBy {
-        // we use a closure here as a workaround, to preserve task configuration laziness
-        tasks.create("${name}Report", CheckstyleHtmlReport) {
-            dependsOn chk
-            source.from(chk.source)
-            configFile = rootProject.file("config/checkstyle/checkstyle-report.groovy")
-            checkstyleReportFile = reportFile
-            outputFile = layout.buildDirectory.file("reports/checkstyle/${chk.name}.html")
-        }
-    }
 }
 
 interface Services {

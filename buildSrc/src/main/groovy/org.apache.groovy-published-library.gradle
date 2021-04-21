@@ -10,6 +10,8 @@ if (pluginManager.hasPlugin('java-platform')) {
     componentName = 'javaPlatform'
 } else if (pluginManager.hasPlugin('org.apache.groovy-distribution')) {
     componentName = 'groovyDistribution'
+} else if (!pluginManager.hasPlugin('org.apache.groovy-base')) {
+    componentName = 'java'
 } else {
     componentName = 'groovyLibrary'
 }
