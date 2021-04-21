@@ -44,7 +44,40 @@ class MethodReferenceTest extends GroovyTestCase {
             @groovy.transform.CompileStatic
             void p() {
                 def result = [1, 2, 3].stream().map(Integer::toString).collect(Collectors.toList())
-                assert result ['1', '2', '3']
+                assert result == ['1', '2', '3']
+            }
+
+            p()
+        '''
+    }
+
+    // class::instanceMethod -- GROOVY-10047
+    void testFunctionCI3() {
+        assertScript '''
+            import java.util.function.Function
+            import static java.util.stream.Collectors.toMap
+
+            @groovy.transform.CompileStatic
+            void p() {
+                List<String> list = ['a','bc','def']
+                Function<String,String> self = str -> str // help for toMap
+                def map = list.stream().collect(toMap(self, String::length))
+                assert map == [a: 1, bc: 2, 'def': 3]
+            }
+
+            p()
+        '''
+
+        assertScript '''
+            import java.util.function.Function
+            import static java.util.stream.Collectors.toMap
+
+            @groovy.transform.CompileStatic
+            void p() {
+                List<String> list = ['a','bc','def']
+                // TODO: inference for T in toMap(Function<? super T,...>, Function<? super T,...>)
+                def map = list.stream().collect(toMap(Function.<String>identity(), String::length))
+                assert map == [a: 1, bc: 2, 'def': 3]
             }
 
             p()
@@ -52,13 +85,14 @@ class MethodReferenceTest extends GroovyTestCase {
     }
 
     // class::instanceMethod
-    void testFunctionCI3() {
+    void testFunctionCI4() {
         def err = shouldFail '''
-            import java.util.stream.Collectors
+            import static java.util.stream.Collectors.toList
 
             @groovy.transform.CompileStatic
             void p() {
-                def result = [1, 2, 3].stream().map(String::toString).collect(Collectors.toList())
+                def result = [1, 2, 3].stream().map(String::toString).collect(toList())
+                assert result == ["1", "2", "3"]
             }
 
             p()
@@ -68,10 +102,10 @@ class MethodReferenceTest extends GroovyTestCase {
     }
 
     // class::instanceMethod -- GROOVY-9814
-    void testFunctionCI4() {
+    void testFunctionCI5() {
         assertScript '''
             import java.util.function.*
-            import groovy.transform.CompileStatic
+            import groovy.transform.*
 
             @CompileStatic
             class One { String id }
@@ -79,7 +113,7 @@ class MethodReferenceTest extends GroovyTestCase {
             @CompileStatic
             class Two extends One { }
 
-            @CompileStatic @groovy.transform.Immutable(knownImmutableClasses=[Function])
+            @CompileStatic @Immutable(knownImmutableClasses=[Function])
             class FunctionHolder<T> {
                 Function<T, ?> extractor
 
@@ -119,41 +153,6 @@ class MethodReferenceTest extends GroovyTestCase {
             }
 
             p()
-        '''
-    }
-
-    // class::staticMethod
-    void testFunctionCS() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            @CompileStatic
-            void p() {
-                def result = [1, -2, 3].stream().map(Math::abs).collect(Collectors.toList())
-                assert [1, 2, 3] == result
-            }
-            p()
-        '''
-    }
-
-    // class::staticMethod -- GROOVY-9799
-    void testFunctionCS2() {
-        assertScript '''
-            class C {
-                String x
-            }
-            class D {
-                String x
-                static D from(C c) {
-                    new D(x: c.x)
-                }
-            }
-            @groovy.transform.CompileStatic
-            def test(C c) {
-                Optional.of(c).map(D::from).get()
-            }
-            def d = test(new C(x: 'x'))
-            assert d.x == 'x'
         '''
     }
 
@@ -316,30 +315,137 @@ class MethodReferenceTest extends GroovyTestCase {
     }
 
     // arrayClass::new
-    void testIntFunctionCN() {
+    void testFunctionCN() {
         assertScript '''
             @groovy.transform.CompileStatic
             void p() {
-                assert new Integer[] { 1, 2, 3 } == [1, 2, 3].stream().toArray(Integer[]::new)
+                def result = [1, 2, 3].stream().toArray(Integer[]::new)
+                assert result == new Integer[] { 1, 2, 3 }
             }
 
             p()
-
         '''
     }
 
     // class::new
-    void testFunctionCN() {
+    void testFunctionCN2() {
         assertScript '''
-            import java.util.stream.Collectors
+            import static java.util.stream.Collectors.toList
 
             @groovy.transform.CompileStatic
             void p() {
-                assert [1, 2, 3] == ["1", "2", "3"].stream().map(Integer::new).collect(Collectors.toList())
+                def result = ["1", "2", "3"].stream().map(Integer::new).collect(toList())
+                assert result == [1, 2, 3]
             }
 
             p()
+        '''
+    }
 
+    // class::new -- GROOVY-10033
+    void testFunctionCN3() {
+        assertScript '''
+            import java.util.function.Function
+
+            @groovy.transform.CompileStatic
+            class C {
+                C(Function<String,Integer> f) {
+                    def i = f.apply('42')
+                    assert i == 42
+                }
+                static test() {
+                    new C(Integer::new)
+                }
+            }
+            C.test()
+        '''
+    }
+
+    // class::new -- GROOVY-10033
+    void testFunctionCN4() {
+        assertScript '''
+            import java.util.function.Function
+
+            class A {
+                A(Function<A,B> f) {
+                    B b = f.apply(this)
+                    assert b instanceof X.Y
+                }
+            }
+            class B {
+                B(A a) {
+                    assert a != null
+                }
+            }
+            @groovy.transform.CompileStatic
+            class X extends A {
+              public X() {
+                super(Y::new)
+              }
+              private static class Y extends B {
+                Y(A a) {
+                  super(a)
+                }
+              }
+            }
+
+            new X()
+        '''
+    }
+
+    // class::staticMethod
+    void testFunctionCS() {
+        assertScript '''
+            import static java.util.stream.Collectors.toList
+
+            @groovy.transform.CompileStatic
+            void p() {
+                def result = [1, -2, 3].stream().map(Math::abs).collect(toList())
+                assert [1, 2, 3] == result
+            }
+
+            p()
+        '''
+    }
+
+    // class::staticMethod
+    void testFunctionCS2() {
+        assertScript '''
+            import java.util.function.Function
+            import static java.util.stream.Collectors.toMap
+
+            @groovy.transform.CompileStatic
+            void p() {
+                List<String> list = ['x','y','z']
+                def map = list.stream().collect(toMap(Function.identity(), Collections::singletonList))
+                assert map == [x: ['x'], y: ['y'], z: ['z']]
+            }
+
+            p()
+        '''
+    }
+
+    // class::staticMethod -- GROOVY-9799
+    void testFunctionCS3() {
+        assertScript '''
+            class C {
+                String x
+            }
+
+            class D {
+                String x
+                static D from(C c) {
+                    new D(x: c.x)
+                }
+            }
+
+            @groovy.transform.CompileStatic
+            def test(C c) {
+                Optional.of(c).map(D::from).get()
+            }
+
+            def d = test(new C(x: 'x'))
+            assert d.x == 'x'
         '''
     }
 

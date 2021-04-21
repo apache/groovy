@@ -418,7 +418,7 @@ public class ClassHelper {
     public static boolean isFunctionalInterface(final ClassNode type) {
         // Functional interface must be an interface at first, or the following exception will occur:
         // java.lang.invoke.LambdaConversionException: Functional interface SamCallable is not an interface
-        return type.isInterface() && isSAMType(type);
+        return type != null && type.isInterface() && isSAMType(type);
     }
 
     /**
