@@ -2908,11 +2908,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // first we try to get as much information about the declaration class through the receiver
         Map<GenericsTypeName, GenericsType> targetMethodConnections = new HashMap<>();
         for (ClassNode face : receiver.getAllInterfaces()) {
-            extractGenericsConnections(targetMethodConnections, getCorrectedClassNode(receiver, face, true), face.redirect());
+            if (face != receiver) {
+                ClassNode type = getCorrectedClassNode(receiver, face, true);
+                extractGenericsConnections(targetMethodConnections, type, face.redirect());
+            }
         }
-        if (!receiver.isInterface()) {
-            extractGenericsConnections(targetMethodConnections, receiver, receiver.redirect());
-        }
+        extractGenericsConnections(targetMethodConnections, receiver, receiver.redirect());
 
         // then we use the method with the SAM-type parameter to get more information about the declaration
         Parameter[] parametersOfMethodContainingSAM = methodWithSAMParameter.getParameters();
@@ -5259,9 +5260,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             return inferReturnTypeGenerics(receiver, dgm, args, explicitTypeHints);
         }
+
         Map<GenericsTypeName, GenericsType> resolvedPlaceholders = resolvePlaceHoldersFromDeclaration(receiver, getDeclaringClass(method, arguments), method, method.isStatic());
         resolvePlaceholdersFromExplicitTypeHints(method, explicitTypeHints, resolvedPlaceholders);
         if (resolvedPlaceholders.isEmpty()) {
+            if (receiver.getGenericsTypes() == null && receiver.redirect().getGenericsTypes() != null && GenericsUtils.hasUnresolvedGenerics(returnType)) {
+                return returnType.getPlainNodeReference(); // do not return Stream<E> for List#stream()
+            }
             return boundUnboundedWildcards(returnType);
         }
 
@@ -5624,8 +5629,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                 if (resolvedPlaceholders != null) {
                     // merge maps
-                    Set<Map.Entry<GenericsTypeName, GenericsType>> entries = currentPlaceHolders.entrySet();
-                    for (Map.Entry<GenericsTypeName, GenericsType> entry : entries) {
+                    for (Map.Entry<GenericsTypeName, GenericsType> entry : currentPlaceHolders.entrySet()) {
                         GenericsType gt = entry.getValue();
                         if (!gt.isPlaceholder()) continue;
                         GenericsType referenced = resolvedPlaceholders.get(new GenericsTypeName(gt.getName()));
@@ -5638,11 +5642,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // we are done if we are now in the declaring class
                 if (!continueLoop) break;
 
+                boolean isRawType = (current.getGenericsTypes() == null
+                        && current.redirect().getGenericsTypes() != null);
                 current = getNextSuperClass(current, declaringClass);
                 if (current == null && declaringClass.equals(CLASS_Type)) {
                     // this can happen if the receiver is Class<Foo>, then
                     // the actual receiver is Foo and declaringClass is Class
                     current = declaringClass;
+                } else if (isRawType) {
+                    current = current.getPlainNodeReference();
                 }
             }
         }

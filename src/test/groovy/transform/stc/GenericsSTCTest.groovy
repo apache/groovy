@@ -236,6 +236,40 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10049
+    void testReturnTypeInferenceWithMethodGenerics9() {
+        assertScript '''
+            def <X> Set<X> f(Class<X> x) {
+                Collections.singleton(x.newInstance(42))
+            }
+            def <Y extends Number> List<Y> g(Class<Y> y) {
+                f(y).stream().filter(n -> n.intValue() > 0).toList()
+            }
+
+            def result = g(Integer)
+            assert result == [ 42 ]
+        '''
+
+        assertScript '''
+            def <T> String test(Iterable<T> iterable) {
+                Iterator<T> it = iterable.iterator()
+                if (it.hasNext()) {
+                    List<String[]> table = []
+                    it.forEachRemaining(r -> {
+                        if (r instanceof List) {
+                            String[] cells = ((List) r).stream().map(c -> c?.toString())
+                            table.add(cells)
+                        }
+                    })
+                    return table
+                }
+            }
+
+            String result = test([ ['x'], ['y'], [null] ])
+            assert result == '[[x], [y], [null]]'
+        '''
+    }
+
     void testDiamondInferrenceFromConstructor1() {
         assertScript '''
             class Foo<U> {

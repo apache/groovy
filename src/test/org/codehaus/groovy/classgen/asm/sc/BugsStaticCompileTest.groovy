@@ -1158,7 +1158,7 @@ assert it.next() == 1G
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def ift = node.getNodeMetaData(INFERRED_TYPE)
                 assert ift == SET_TYPE
-                assert ift.isUsingGenerics()
+                assert ift.genericsTypes != null
                 assert ift.genericsTypes[0].type == STRING_TYPE
             })
             def set = map.keySet()
@@ -1170,8 +1170,7 @@ assert it.next() == 1G
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def ift = node.getNodeMetaData(INFERRED_TYPE)
                 assert ift == SET_TYPE
-                assert ift.isUsingGenerics()
-                assert ift.genericsTypes[0].name == 'java.lang.Object'
+                assert ift.genericsTypes == null
             })
             def set = map.keySet()
             def key = set[0]
