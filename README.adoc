@@ -118,14 +118,12 @@ expecting.
 
 To bootstrap Gradle, at the top directory of your unpacked source, run the command:
 
-    gradle -b wrapper.gradle wrapper
+    gradle -p bootstrap
 
 On Unix-like systems, use `./gradle`.
-If the version of Gradle you have installed is close to the required version,
-you might be able to get away without the `-b wrapper.gradle` above, but if in
-doubt leave it in.
 
-*NOTE*: At this point, the Gradle wrapper should be set up and from now on you should use
+[NOTE]
+At this point, the Gradle wrapper should be set up and from now on you should use
 the `gradlew` command instead of `gradle`. (On Unix-like systems, use `./gradlew`).
 
 == Building from Source
