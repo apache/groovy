@@ -77,12 +77,12 @@ class JmxClientConnectorFactoryTest extends GroovyTestCase {
 
     static String getHostAddress() {
         try {
-            Enumeration<NetworkInterface> allNetInterfaces = NetworkInterface.getNetworkInterfaces();
+            Enumeration<NetworkInterface> allNetInterfaces = NetworkInterface.getNetworkInterfaces()
             while (allNetInterfaces.hasMoreElements()) {
-                NetworkInterface netInterface = (NetworkInterface) allNetInterfaces.nextElement();
-                Enumeration<InetAddress> addresses = netInterface.getInetAddresses();
+                NetworkInterface netInterface = (NetworkInterface) allNetInterfaces.nextElement()
+                Enumeration<InetAddress> addresses = netInterface.getInetAddresses()
                 while (addresses.hasMoreElements()) {
-                    InetAddress ip = (InetAddress) addresses.nextElement();
+                    InetAddress ip = (InetAddress) addresses.nextElement()
                     if (ip != null
                             && ip instanceof Inet4Address
                             && !ip.isLoopbackAddress()
