@@ -325,8 +325,6 @@ compileJava {
     }
 }
 
-apply from: 'wrapper.gradle'
-
 task dgmConverter(dependsOn:compileJava) {
     outputs.cacheIf { true }
 
