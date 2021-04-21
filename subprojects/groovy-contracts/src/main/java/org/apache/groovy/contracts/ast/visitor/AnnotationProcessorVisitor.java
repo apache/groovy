@@ -36,7 +36,6 @@ import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.io.ReaderSource;
 
@@ -95,8 +94,7 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
         if (!Modifier.isAbstract(superClass.getModifiers())) return;
 
         for (ClassNode interfaceClassNode : superClass.getInterfaces()) {
-            List<MethodNode> methodNodes = new ArrayList<MethodNode>();
-            methodNodes.addAll(interfaceClassNode.getMethods());
+            List<MethodNode> methodNodes = new ArrayList<MethodNode>(interfaceClassNode.getMethods());
 
             for (MethodNode interfaceMethodNode : methodNodes) {
                 final List<AnnotationNode> annotationNodes = AnnotationUtils.hasMetaAnnotations(interfaceMethodNode, ContractElement.class.getName());
@@ -118,8 +116,7 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
 
     private void visitInterfaces(final ClassNode classNode, final ClassNode[] interfaces) {
         for (ClassNode interfaceClassNode : interfaces) {
-            List<MethodNode> methodNodes = new ArrayList<MethodNode>();
-            methodNodes.addAll(interfaceClassNode.getMethods());
+            List<MethodNode> methodNodes = new ArrayList<MethodNode>(interfaceClassNode.getMethods());
 
             // @ContractElement annotations are by now only supported on method interfaces
             for (MethodNode interfaceMethodNode : methodNodes) {
