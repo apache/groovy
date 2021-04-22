@@ -1602,7 +1602,7 @@ public abstract class StaticTypeCheckingSupport {
         }
         // For a placeholder, a type based on the generics type is used for the compatibility check, to match on
         // the actual bounds and not the name of the placeholder.
-        ClassNode replacementType = OBJECT_TYPE;
+        ClassNode replacementType = gt.getType().redirect();
         if (gt.getType().getGenericsTypes() != null) {
             GenericsType realGt = gt.getType().getGenericsTypes()[0];
             if (realGt.getLowerBound() != null) {
