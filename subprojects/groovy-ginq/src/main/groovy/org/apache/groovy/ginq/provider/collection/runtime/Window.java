@@ -18,16 +18,61 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime;
 
+import groovy.lang.Tuple2;
+
 import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static java.util.Collections.binarySearch;
+import static java.util.Comparator.comparing;
+import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from;
 
 /**
  * Represents window which stores elements used by window functions
  *
- * @param <T> the type of {@link Queryable} element
+ * @param <T> the type of {@link Window} element
  * @since 4.0.0
  */
 public interface Window<T> extends Queryable<T> {
+    /**
+     * Factory method to create {@link Window} instance
+     *
+     * @param currentRecord current record
+     * @param partition the partition where the window is constructed
+     * @param windowDefinition window definition
+     * @param <T> the type of {@link Window} element
+     * @param <U> the type of field to sort
+     * @return the {@link Window} instance
+     * @since 4.0.0
+     */
+    static <T, U extends Comparable<? super U>> Window<T> newInstance(Tuple2<T, Long> currentRecord, Partition<Tuple2<T, Long>> partition, WindowDefinition<T, U> windowDefinition) {
+        final List<Order<? super T, ? extends U>> orderList = windowDefinition.orderBy();
+        Order<? super T, ? extends U> order;
+        if (null != orderList && 1 == orderList.size()) {
+            order = orderList.get(0);
+        } else {
+            order = null;
+        }
+
+        List<Tuple2<T, Long>> listWithIndex = partition.toList();
+
+        int tmpIndex = null == orderList || orderList.isEmpty()
+                ? binarySearch(listWithIndex, currentRecord, comparing(Tuple2::getV2))
+                : binarySearch(listWithIndex, currentRecord, WindowImpl.makeComparator(WindowImpl.composeOrders(orderList)).thenComparing(Tuple2::getV2));
+        int index = tmpIndex >= 0 ? tmpIndex : -tmpIndex - 1;
+        U value = null == order ? null : order.getKeyExtractor().apply(currentRecord.getV1());
+
+        RowBound validRowBound = WindowImpl.getValidRowBound(windowDefinition, index, value, listWithIndex);
+        List<T> list = null == validRowBound ? Collections.emptyList()
+                : from(listWithIndex.stream().map(Tuple2::getV1).collect(Collectors.toList()))
+                .limit(validRowBound.getLower(), validRowBound.getUpper() - validRowBound.getLower() + 1)
+                .toList();
+
+        return new WindowImpl<>(currentRecord, index, value, list, order);
+    }
 
     /**
      * Returns row number in the window, similar to SQL's {@code row_number()}

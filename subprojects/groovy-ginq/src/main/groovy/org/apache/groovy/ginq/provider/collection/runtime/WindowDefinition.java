@@ -25,7 +25,7 @@ import java.util.function.Function;
 /**
  * Represents window definition, which will define the result set to construct the window
  *
- * @param <T> the type of {@link Queryable} element
+ * @param <T> the type of {@link Window} element
  * @param <U> the type of field to sort
  * @since 4.0.0
  */

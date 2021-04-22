@@ -602,7 +602,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                 sortedPartitionId -> Partition.newInstance(partition.orderBy(composeOrders(windowDefinition)).toList())
         );
         
-        return WindowImpl.newInstance(currentRecord, sortedPartition, windowDefinition);
+        return Window.newInstance(currentRecord, sortedPartition, windowDefinition);
     }
 
     private static class PartitionCacheKey {
