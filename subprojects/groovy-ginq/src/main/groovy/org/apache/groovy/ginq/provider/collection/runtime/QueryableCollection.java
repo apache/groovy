@@ -583,7 +583,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                             final Queryable<Tuple2<?, Partition<Tuple2<T, Long>>>> q =
                                     from(listWithIndex)
                                             .groupBy(windowDefinition.partitionBy().compose(Tuple2::getV1))
-                                            .select((e, x) -> Tuple.tuple(e.getV1(), Partition.newInstance(e.getV2().toList())));
+                                            .select((e, x) -> Tuple.tuple(e.getV1(), Partition.of(e.getV2().toList())));
                             if (q instanceof QueryableCollection) {
                                 ((QueryableCollection) q).makeReusable();
                             }
@@ -599,10 +599,10 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         final SortedPartitionCacheKey<T> sortedPartitionCacheKey = new SortedPartitionCacheKey<>(partition, orderId);
         Partition<Tuple2<T, Long>> sortedPartition = sortedPartitionCache.computeIfAbsent(
                 sortedPartitionCacheKey,
-                sortedPartitionId -> Partition.newInstance(partition.orderBy(composeOrders(windowDefinition)).toList())
+                sortedPartitionId -> Partition.of(partition.orderBy(composeOrders(windowDefinition)).toList())
         );
         
-        return Window.newInstance(currentRecord, sortedPartition, windowDefinition);
+        return Window.of(currentRecord, sortedPartition, windowDefinition);
     }
 
     private static class PartitionCacheKey {

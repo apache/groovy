@@ -48,7 +48,7 @@ public interface Window<T> extends Queryable<T> {
      * @return the {@link Window} instance
      * @since 4.0.0
      */
-    static <T, U extends Comparable<? super U>> Window<T> newInstance(Tuple2<T, Long> currentRecord, Partition<Tuple2<T, Long>> partition, WindowDefinition<T, U> windowDefinition) {
+    static <T, U extends Comparable<? super U>> Window<T> of(Tuple2<T, Long> currentRecord, Partition<Tuple2<T, Long>> partition, WindowDefinition<T, U> windowDefinition) {
         final List<Order<? super T, ? extends U>> orderList = windowDefinition.orderBy();
         Order<? super T, ? extends U> order;
         if (null != orderList && 1 == orderList.size()) {

@@ -44,7 +44,7 @@ public interface Partition<T> extends Queryable<T> {
      * @return the {@link Partition} instance
      * @since 4.0.0
      */
-    static <T> Partition<Tuple2<T, Long>> newInstance(List<Tuple2<T, Long>> listWithIndex) {
+    static <T> Partition<Tuple2<T, Long>> of(List<Tuple2<T, Long>> listWithIndex) {
         return new PartitionImpl<>(listWithIndex);
     }
 
