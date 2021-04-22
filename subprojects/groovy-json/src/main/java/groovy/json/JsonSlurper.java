@@ -18,6 +18,7 @@
  */
 package groovy.json;
 
+import groovy.transform.NamedParam;
 import org.apache.groovy.json.internal.JsonFastParser;
 import org.apache.groovy.json.internal.JsonParserCharArray;
 import org.apache.groovy.json.internal.JsonParserLax;
@@ -419,11 +420,27 @@ public class JsonSlurper {
      * @return a data structure of lists and maps
      * @since 2.2.0
      */
-    public Object parse(Map params, URL url) {
+    public Object parse(
+            @NamedParam(value = "connectTimeout", type = Integer.class)
+            @NamedParam(value = "readTimeout", type = Integer.class)
+            @NamedParam(value = "useCaches", type = Boolean.class)
+            @NamedParam(value = "allowUserInteraction", type = Boolean.class)
+            @NamedParam(value = "requestProperties", type = Map.class)
+            Map<String, ?> params,
+            URL url
+    ) {
         return parseURL(url, params);
     }
 
-    private Object parseURL(URL url, Map params) {
+    private Object parseURL(
+            URL url,
+            @NamedParam(value = "connectTimeout", type = Integer.class)
+            @NamedParam(value = "readTimeout", type = Integer.class)
+            @NamedParam(value = "useCaches", type = Boolean.class)
+            @NamedParam(value = "allowUserInteraction", type = Boolean.class)
+            @NamedParam(value = "requestProperties", type = Map.class)
+            Map<String, ?> params
+    ) {
         Reader reader = null;
         try {
             if (params == null || params.isEmpty()) {
