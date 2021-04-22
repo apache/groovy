@@ -868,11 +868,11 @@ class QueryableCollectionTest {
         def nums = []
         def result =
                 from(nums).groupBy(e -> 1)
-                        .select(e ->
+                        .select((e, q) ->
                                 e.v2.median(n -> n)
                         )
                         .toList()
-        assert [] == result
+        assert [null] == result
     }
 
     @Test

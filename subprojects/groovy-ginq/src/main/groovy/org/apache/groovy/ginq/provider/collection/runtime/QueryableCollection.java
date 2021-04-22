@@ -234,7 +234,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                         .filter(m -> null == having || having.test(tuple(m.getKey(), from(m.getValue()))))
                         .map(m -> tuple(m.getKey(), from(m.getValue())));
 
-        return from(stream);
+        return Group.of(stream);
     }
 
     @Override
@@ -285,7 +285,17 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
             this.makeReusable();
         }
 
-        Stream<U> stream = this.stream().map((T t) -> mapper.apply(t, this));
+        Stream<U> stream = null;
+        if (this instanceof Group) {
+            this.makeReusable();
+            if (0 == this.count()) {
+                stream = Stream.of((T) tuple(Collections.emptyMap(), EMPTY_QUERYABLE)).map((T t) -> mapper.apply(t, this));
+            }
+        }
+        if (null == stream) {
+            stream = this.stream().map((T t) -> mapper.apply(t, this));
+        }
+
         if (TRUE_STR.equals(originalParallel)) {
             // invoke `collect` to trigger the intermediate operator, which will create `CompletableFuture` instances
             stream = stream.collect(Collectors.toList()).parallelStream().map((U u) -> {

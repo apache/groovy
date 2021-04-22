@@ -3964,6 +3964,26 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - agg function - 10"() {
+        assertGinqScript '''
+            assert [0] == GQ {
+                from n in []
+                select count()
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - agg function - 11"() {
+        assertGinqScript '''
+            assert [[null, null]] == GQ {
+                from n in []
+                select max(n), min(n)
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - GQL - 1"() {
         assertGinqScript '''
 // tag::ginq_tips_06[]
