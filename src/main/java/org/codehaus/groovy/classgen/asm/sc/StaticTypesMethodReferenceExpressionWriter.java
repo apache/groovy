@@ -30,13 +30,16 @@ import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MethodReferenceExpressionWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.syntax.RuntimeParserException;
+import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
@@ -55,7 +58,6 @@ import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersCompatible;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filterMethodsByVisibility;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssignableTo;
-import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUMENTS;
 
 /**
  * Writer responsible for generating method reference in statically compiled mode.
@@ -87,9 +89,8 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         ClassNode typeOrTargetRefType = isClassExpression ? typeOrTargetRef.getType()
                 : controller.getTypeChooser().resolveType(typeOrTargetRef, classNode);
 
-        ClassNode[] methodReferenceParamTypes = methodReferenceExpression.getNodeMetaData(CLOSURE_ARGUMENTS);
+        ClassNode[] methodReferenceParamTypes = methodReferenceExpression.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
         Parameter[] parametersWithExactType = createParametersWithExactType(abstractMethod, methodReferenceParamTypes);
-
         String methodRefName = methodReferenceExpression.getMethodName().getText();
         boolean isConstructorReference = isConstructorReference(methodRefName);
 
@@ -174,7 +175,9 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         ArgumentListExpression args = args(parameters);
         args.getExpressions().add(0, ConstantExpression.NULL);
 
-        Expression returnValue = callX(classX(mn.getDeclaringClass()), mn.getName(), args);
+        MethodCallExpression returnValue = callX(classX(mn.getDeclaringClass()), mn.getName(), args);
+        returnValue.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, mn);
+        returnValue.setMethodTarget(mn);
 
         MethodNode delegateMethod = addGeneratedMethod(controller.getClassNode(),
                 "dgsm$$" + mn.getParameters()[0].getType().getName().replace('.', '$') + "$$" + mn.getName(),
@@ -184,6 +187,8 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                 ClassNode.EMPTY_ARRAY,
                 block(returnS(returnValue))
         );
+
+        delegateMethod.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
 
         return delegateMethod;
     }
@@ -208,6 +213,11 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                 ClassNode.EMPTY_ARRAY,
                 block(returnS(returnValue))
         );
+
+        // TODO: if StaticTypesMarker.DIRECT_METHOD_CALL_TARGET or
+        // OptimizingStatementWriter.StatementMeta.class metadatas
+        // can bet set for the ctorX above, then this can be TRUE:
+        delegateMethod.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.FALSE);
 
         return delegateMethod;
     }
