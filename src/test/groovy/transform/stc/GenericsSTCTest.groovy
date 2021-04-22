@@ -270,6 +270,43 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10051
+    void testReturnTypeInferenceWithMethodGenerics10() {
+        assertScript '''
+            abstract class State<H extends Handle> {
+                // Why not return HandleContainer<H>? I can't really say.
+                def <T extends Handle> HandleContainer<T> getHandleContainer(key) {
+                }
+            }
+            class HandleContainer<H extends Handle> {
+                H handle
+            }
+            interface Handle {
+                Result getResult()
+            }
+            class Result {
+                int itemCount
+                String[] items
+            }
+
+            List<String> getStrings(State state, List keys) {
+                keys.collectMany { key ->
+                    List<String> strings = Collections.emptyList()
+                    def container = state.getHandleContainer(key) // returns HandleContainer<Object> not HandleContainer<SearchHandle>
+                    if (container != null) {
+                        def result = container.handle.result
+                        if (result != null && result.itemCount > 0) {
+                            strings = Arrays.asList(result.items)
+                        }
+                    }
+                    strings
+                }
+            }
+
+            assert getStrings(null,[]).isEmpty()
+        '''
+    }
+
     void testDiamondInferrenceFromConstructor1() {
         assertScript '''
             class Foo<U> {
