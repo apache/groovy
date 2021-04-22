@@ -33,7 +33,7 @@ The integral literal types are the same as in Java:
 * `short`
 * `int`
 * `long`
-* `java.lang.BigInteger`
+* `java.math.BigInteger`
 
 You can create integral numbers of those types with the following declarations:
 
