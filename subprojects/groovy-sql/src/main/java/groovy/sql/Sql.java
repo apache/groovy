@@ -545,10 +545,8 @@ public class Sql implements AutoCloseable {
             @NamedParam(value = "resultSetConcurrency", type = Integer.class)
             @NamedParam(value = "resultSetHoldability", type = Integer.class)
             @NamedParam(value = "resultSetType", type = Integer.class)
-            // TODO below will be deleted once we fix type checker to understand
-            // readonly Map otherwise seen as Map<String, Serializable>
-            @NamedParam(value = "unused", type = Object.class)
-            Map<String, Object> args) throws SQLException, ClassNotFoundException {
+            Map<String, Object> args
+    ) throws SQLException, ClassNotFoundException {
         if (!args.containsKey("url"))
             throw new IllegalArgumentException("Argument 'url' is required");
 
@@ -559,9 +557,8 @@ public class Sql implements AutoCloseable {
             throw new IllegalArgumentException("Only one of 'driverClassName' and 'driver' should be provided");
 
         // Make a copy so destructive operations will not affect the caller
-        Map<String, Object> sqlArgs = new HashMap<String, Object>(args);
+        Map<String, Object> sqlArgs = new HashMap<>(args);
 
-        sqlArgs.remove("unused"); // TODO remove
         Object driverClassName = sqlArgs.remove("driverClassName");
         if (driverClassName == null) driverClassName = sqlArgs.remove("driver");
         if (driverClassName != null) loadDriver(driverClassName.toString());
@@ -631,13 +628,10 @@ public class Sql implements AutoCloseable {
             @NamedParam(value = "resultSetConcurrency", type = Integer.class)
             @NamedParam(value = "resultSetHoldability", type = Integer.class)
             @NamedParam(value = "resultSetType", type = Integer.class)
-            // TODO below will be deleted once we fix type checker to understand
-            // readonly Map otherwise seen as Map<String, Serializable>
-            @NamedParam(value = "unused", type = Object.class)
             Map<String, Object> args,
             @ClosureParams(value=SimpleType.class, options="groovy.sql.Sql")
-            Closure c)
-                throws SQLException, ClassNotFoundException {
+            Closure c
+    ) throws SQLException, ClassNotFoundException {
         try (Sql sql = newInstance(args)) {
             c.call(sql);
         }
