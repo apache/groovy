@@ -16,8 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-import javax.inject.Inject
-import org.apache.groovy.gradle.SharedConfiguration
+
 import org.apache.groovy.gradle.DistributionExtension
 import org.apache.groovy.gradle.DocGDK
 
@@ -206,11 +205,6 @@ tasks.named('asciidoctorPdf') {
     logDocuments = true
     sourceDir = file('src/spec/doc')
     outputDir = "$buildDir/asciidocAll/pdf"
-}
-
-interface Services {
-    @Inject
-    SoftwareComponentFactory getSoftwareComponentFactory()
 }
 
 // The Groovy distribution module isn't a Java library

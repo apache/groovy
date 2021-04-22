@@ -17,14 +17,12 @@
  *  under the License.
  */
 
-
 import groovy.transform.CompileStatic
 import org.apache.groovy.gradle.GroovyLibraryExtension
 import org.apache.groovy.gradle.JarJarTask
 import org.apache.groovy.gradle.ReleaseInfoGenerator
 import org.gradle.api.attributes.java.TargetJvmVersion
 
-import javax.inject.Inject
 import com.github.spotbugs.snom.SpotBugsTask
 import org.apache.groovy.gradle.CheckstyleHtmlReport
 
@@ -145,6 +143,11 @@ tasks.named('jar') {
     groovyLibrary.configureManifest(manifest, excludedFromManifest)
 }
 
+tasks.withType(AbstractArchiveTask) {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
 tasks.withType(Jar).configureEach {
     metaInf {
         if (file("${projectDir}/LICENSE").exists()) {
@@ -263,11 +266,6 @@ tasks.withType(Checkstyle).configureEach {
             outputFile = layout.buildDirectory.file("reports/checkstyle/${chk.name}.html")
         }
     }
-}
-
-interface Services {
-    @Inject
-    SoftwareComponentFactory getSoftwareComponentFactory()
 }
 
 // Groovy doesn't publish the regular jars: it publishes
