@@ -144,7 +144,7 @@ class AsciiTableMaker {
         result.append(line)
 
         range(1, finalTable.length)
-                .forEach(i -> result.append(String.format(formatString.toString(), (Object[]) finalTable[i])))
+                .forEach((int i) -> result.append(String.format(formatString.toString(), (Object[]) finalTable[i])))
         result.append(line)
 
         return result.toString()
