@@ -1943,8 +1943,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 typeCheckingContext.controlStructureVariables.remove(forLoop.getVariable());
             }
         }
-        boolean typeChanged = isSecondPassNeededForControlStructure(varOrigType, oldTracker);
-        if (typeChanged) visitForLoop(forLoop);
+        if (isSecondPassNeededForControlStructure(varOrigType, oldTracker)) {
+            visitForLoop(forLoop);
+        }
     }
 
     /**
@@ -2365,8 +2366,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         typeCheckingContext.isInStaticContext = false;
 
         // collect every variable expression used in the closure body
-        Map<VariableExpression, ClassNode> variableTypes = new HashMap<>();
-        expression.getCode().visit(new VariableExpressionTypeMemoizer(variableTypes));
+        Map<VariableExpression, ClassNode> varTypes = new HashMap<>();
+        expression.getCode().visit(new VariableExpressionTypeMemoizer(varTypes, true));
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
         SharedVariableCollector collector = new SharedVariableCollector(getSourceUnit());
         collector.visitClosureExpression(expression);
@@ -2420,9 +2421,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         typeCheckingContext.popEnclosingClosure();
-
-        boolean typeChanged = isSecondPassNeededForControlStructure(variableTypes, oldTracker);
-        if (typeChanged) visitClosureExpression(expression);
+        // check types of closure shared variables for change
+        if (isSecondPassNeededForControlStructure(varTypes, oldTracker)) {
+            visitClosureExpression(expression);
+        }
 
         // restore original metadata
         restoreVariableExpressionMetadata(variableMetadata);
@@ -5973,10 +5975,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected class VariableExpressionTypeMemoizer extends ClassCodeVisitorSupport {
+        private final boolean onlySharedVariables;
         private final Map<VariableExpression, ClassNode> varOrigType;
 
         public VariableExpressionTypeMemoizer(final Map<VariableExpression, ClassNode> varOrigType) {
+            this(varOrigType, false);
+        }
+
+        public VariableExpressionTypeMemoizer(final Map<VariableExpression, ClassNode> varOrigType, final boolean onlySharedVariables) {
             this.varOrigType = varOrigType;
+            this.onlySharedVariables = onlySharedVariables;
         }
 
         @Override
@@ -5986,12 +5994,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         @Override
         public void visitVariableExpression(final VariableExpression expression) {
-            super.visitVariableExpression(expression);
             Variable var = findTargetVariable(expression);
-            if (var instanceof VariableExpression) {
+            if ((!onlySharedVariables || var.isClosureSharedVariable()) && var instanceof VariableExpression) {
                 VariableExpression ve = (VariableExpression) var;
-                varOrigType.put(ve, ve.getNodeMetaData(INFERRED_TYPE));
+                ClassNode cn = ve.getNodeMetaData(INFERRED_TYPE);
+                if (cn == null) cn = ve.getOriginType();
+                varOrigType.put(ve, cn);
             }
+            super.visitVariableExpression(expression);
         }
     }
 }

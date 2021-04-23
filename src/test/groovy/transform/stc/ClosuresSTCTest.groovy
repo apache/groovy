@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
+
 /**
  * Unit tests for static type checking : closures.
  */
@@ -32,8 +34,8 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9079: no params to statically type check but shouldn't get NPE
     void testClosureWithoutArgumentsExplicit() {
-        // GROOVY-9079: no params to statically type check but shouldn't get NPE
         assertScript '''
             import java.util.concurrent.Callable
 
@@ -210,6 +212,43 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
               c.m()
             }
         ''', 'Cannot find matching method A#m()'
+    }
+
+    // GROOVY-10052
+    void testClosureSharedVariable4() {
+        assertScript '''
+            String x
+            def f = { ->
+                x = Optional.of('x').orElseThrow{ new Exception() }
+            }
+            assert f() == 'x'
+            assert x == 'x'
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-10052
+    void testClosureSharedVariable5() {
+        assertScript '''
+            def x
+            def f = { ->
+                x = Optional.of('x').orElseThrow{ new Exception() }
+            }
+            assert f() == 'x'
+            assert x == 'x'
+        '''
+    }
+
+    // GROOVY-10052
+    void testNotClosureSharedVariable() {
+        assertScript '''
+            String x = Optional.of('x').orElseThrow{ new Exception() }
+            def f = { ->
+                String y = Optional.of('y').orElseThrow{ new Exception() }
+            }
+
+            assert x == 'x'
+            assert f() == 'y'
+        '''
     }
 
     void testClosureCallAsAMethod() {
