@@ -863,7 +863,7 @@ include::../test/SyntaxTest.groovy[tags=variable_key_1,indent=0]
 [NOTE]
 You can also pass quoted strings as well as keys: +["name": "Guillaume"]+.
 This is mandatory if your key string isn't a valid identifier, 
-for example if you wanted to create a string key containing a hash like in: +["street-name": "Main street"]+.
+for example if you wanted to create a string key containing a dash like in: +["street-name": "Main street"]+.
 
 When you need to pass variable values as keys in your map definitions, you must surround the variable or expression with parentheses:
 
