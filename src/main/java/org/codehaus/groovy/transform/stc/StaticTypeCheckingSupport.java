@@ -1779,8 +1779,12 @@ public abstract class StaticTypeCheckingSupport {
             extractGenericsConnections(connections, type.getComponentType(), target.getComponentType());
 
         } else if (type.equals(CLOSURE_TYPE) && (sam = findSAM(target)) != null) { // GROOVY-9974
-            ClassNode returnType = StaticTypeCheckingVisitor.wrapTypeIfNecessary(sam.getReturnType());
-            extractGenericsConnections(connections, type.getGenericsTypes(), new GenericsType[] {new GenericsType(returnType)});
+            ClassNode returnType = sam.getReturnType();
+            if (returnType.isGenericsPlaceHolder()) { // GROOVY-10052
+                returnType = GenericsUtils.findActualTypeByGenericsPlaceholderName(returnType.getUnresolvedName(),
+                    GenericsUtils.makeDeclaringAndActualGenericsTypeMapOfExactType(sam.getDeclaringClass(), target));
+            }
+            extractGenericsConnections(connections, type.getGenericsTypes(), new GenericsType[] {new GenericsType(StaticTypeCheckingVisitor.wrapTypeIfNecessary(returnType))});
 
         } else if (type.equals(target) || !implementsInterfaceOrIsSubclassOf(type, target)) {
             extractGenericsConnections(connections, type.getGenericsTypes(), target.getGenericsTypes());

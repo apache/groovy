@@ -1946,8 +1946,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 typeCheckingContext.controlStructureVariables.remove(forLoop.getVariable());
             }
         }
-        boolean typeChanged = isSecondPassNeededForControlStructure(varOrigType, oldTracker);
-        if (typeChanged) visitForLoop(forLoop);
+        if (isSecondPassNeededForControlStructure(varOrigType, oldTracker)) {
+            visitForLoop(forLoop);
+        }
     }
 
     /**
@@ -2397,10 +2398,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         boolean oldStaticContext = typeCheckingContext.isInStaticContext;
         typeCheckingContext.isInStaticContext = false;
 
-        // collect every variable expression used in the loop body
-        final Map<VariableExpression, ClassNode> varOrigType = new HashMap<VariableExpression, ClassNode>();
-        Statement code = expression.getCode();
-        code.visit(new VariableExpressionTypeMemoizer(varOrigType));
+        // collect every variable expression used in the closure body
+        Map<VariableExpression, ClassNode> varTypes = new HashMap<>();
+        expression.getCode().visit(new VariableExpressionTypeMemoizer(varTypes, true));
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
 
         // first, collect closure shared variables and reinitialize types
@@ -2429,8 +2429,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         super.visitClosureExpression(expression);
         typeCheckingContext.delegationMetadata = typeCheckingContext.delegationMetadata.getParent();
-        MethodNode node = new MethodNode("dummy", 0, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
-        returnAdder.visitMethod(node);
+        returnAdder.visitMethod(new MethodNode("dummy", 0, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, expression.getCode()));
 
         TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
         if (!enclosingClosure.getReturnTypes().isEmpty()) {
@@ -2441,9 +2440,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         typeCheckingContext.popEnclosingClosure();
-
-        boolean typeChanged = isSecondPassNeededForControlStructure(varOrigType, oldTracker);
-        if (typeChanged) visitClosureExpression(expression);
+        // check types of closure shared variables for change
+        if (isSecondPassNeededForControlStructure(varTypes, oldTracker)) {
+            visitClosureExpression(expression);
+        }
 
         // restore original metadata
         restoreVariableExpressionMetadata(typesBeforeVisit);
@@ -5644,10 +5644,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
 
     protected class VariableExpressionTypeMemoizer extends ClassCodeVisitorSupport {
+        private final boolean onlySharedVariables;
         private final Map<VariableExpression, ClassNode> varOrigType;
 
         public VariableExpressionTypeMemoizer(final Map<VariableExpression, ClassNode> varOrigType) {
+            this(varOrigType, false);
+        }
+
+        public VariableExpressionTypeMemoizer(final Map<VariableExpression, ClassNode> varOrigType, final boolean onlySharedVariables) {
             this.varOrigType = varOrigType;
+            this.onlySharedVariables = onlySharedVariables;
         }
 
         @Override
@@ -5657,12 +5663,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         @Override
         public void visitVariableExpression(final VariableExpression expression) {
-            super.visitVariableExpression(expression);
             Variable var = findTargetVariable(expression);
-            if (var instanceof VariableExpression) {
+            if ((!onlySharedVariables || var.isClosureSharedVariable()) && var instanceof VariableExpression) {
                 VariableExpression ve = (VariableExpression) var;
-                varOrigType.put(ve, (ClassNode) ve.getNodeMetaData(INFERRED_TYPE));
+                ClassNode cn = ve.getNodeMetaData(INFERRED_TYPE);
+                if (cn == null) cn = ve.getOriginType();
+                varOrigType.put(ve, cn);
             }
+            super.visitVariableExpression(expression);
         }
     }
 

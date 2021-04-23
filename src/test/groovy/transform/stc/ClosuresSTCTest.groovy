@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import groovy.transform.NotYetImplemented
+
 /**
  * Unit tests for static type checking : closures.
  */
@@ -77,7 +79,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
 
         shouldFailWithMessages '''
-            def c = { int a, int b -> print a + b }
+            def c = { int a, int b -> a + b }
             c('5', '7')
         ''',
         'Cannot call closure that accepts [int, int] with [java.lang.String, java.lang.String]'
@@ -103,7 +105,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testClosureReturnTypeInferrence() {
+    void testClosureReturnTypeInference1() {
         assertScript '''
             def c = { int a, int b -> return a + b }
             int total = c(2, 3)
@@ -131,10 +133,17 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         'Possible loss of precision from long to byte'
     }
 
-    // GROOVY-9907
+    @NotYetImplemented // GROOVY-9907
     void testClosureReturnTypeInference4() {
         assertScript '''
-            { -> println 'Hello' }()
+            Integer foo(x) {
+                if (x instanceof Integer) {
+                    def bar = { -> return x }
+                    return bar.call()
+                }
+                return 0
+            }
+            assert foo(1) == 1
         '''
     }
 
@@ -164,7 +173,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-8427
     void testClosureReturnTypeInference6() {
         assertScript '''
-            class Main {
+            class C {
                 static <T> void m(T t, Consumer<T> c) {
                     c.accept(t)
                 }
@@ -300,15 +309,15 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testClosureShouldNotChangeInferredType() {
+    void testClosureSharedVariable1() {
         assertScript '''
             def x = '123';
             { -> x = new StringBuffer() }
-            x.charAt(0)
+            x.charAt(0) // available in String and StringBuffer
         '''
     }
 
-    void testClosureSharedVariableWithIncompatibleType() {
+    void testClosureSharedVariable2() {
         shouldFailWithMessages '''
             def x = '123';
             { -> x = 123 }
@@ -332,6 +341,43 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             }
         ''',
         'Cannot find matching method A#m()'
+    }
+
+    // GROOVY-10052
+    void testClosureSharedVariable4() {
+        assertScript '''
+            String x
+            def f = { ->
+                x = Optional.of('x').orElseThrow{ new Exception() }
+            }
+            assert f() == 'x'
+            assert x == 'x'
+        '''
+    }
+
+    // GROOVY-10052
+    void testClosureSharedVariable5() {
+        assertScript '''
+            def x
+            def f = { ->
+                x = Optional.of('x').orElseThrow{ new Exception() }
+            }
+            assert f() == 'x'
+            assert x == 'x'
+        '''
+    }
+
+    // GROOVY-10052
+    void testNotClosureSharedVariable() {
+        assertScript '''
+            String x = Optional.of('x').orElseThrow{ new Exception() }
+            def f = { ->
+                String y = Optional.of('y').orElseThrow{ new Exception() }
+            }
+
+            assert x == 'x'
+            assert f() == 'y'
+        '''
     }
 
     // GROOVY-9607
@@ -459,6 +505,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         }
         '''
     }
+
     // a case in Grails
     void testShouldNotThrowClosureSharedVariableError2() {
         assertScript '''
@@ -535,7 +582,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6189
-    void testSAMsInMethodSelection(){
+    void testSAMsInMethodSelection() {
         // simple direct case
         assertScript """
             interface MySAM {
