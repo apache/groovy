@@ -225,6 +225,7 @@ def bin = configurations.create("distributionBinary") {
         }
     }
 }
+
 component.addVariantsFromConfiguration(bin) {
     mapToOptional()
 }
@@ -240,8 +241,7 @@ def sdkElements = configurations.create("sdkElements") {
         }
     }
 }
+
 signing {
     sign sdkElements
 }
-
-
