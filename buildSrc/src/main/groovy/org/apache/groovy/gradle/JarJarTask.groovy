@@ -112,10 +112,11 @@ class JarJarTask extends DefaultTask {
         def manifestFile = new File(temporaryDir, 'MANIFEST.MF')
         // First step is to create a repackaged jar
         outputFile.parentFile.mkdirs()
+        def tstamp = Date.parse('yyyy-MM-dd HH:mm', '1980-02-01 00:00').time.toString()
         try {
             project.ant {
                 taskdef name: 'jarjar', classname: JARJAR_CLASS_NAME, classpath: jarjarToolClasspath.asPath
-                jarjar(jarfile: tmpJar, filesonly: true) {
+                jarjar(jarfile: tmpJar, filesonly: true, modificationtime: tstamp) {
                     zipfileset(
                             src: originalJar,
                             excludes: (untouchedFiles + excludes).join(','))
@@ -167,7 +168,7 @@ class JarJarTask extends DefaultTask {
                 it.into(outputFile.parentFile)
                 it.rename { outputFile.name }
             }
-            project.ant.jar(destfile: outputFile, update: true, index: true, manifest: manifestFile) {
+            project.ant.jar(destfile: outputFile, update: true, index: true, manifest: manifestFile, modificationtime: tstamp) {
                 manifest {
                     // because we don't want to use JDK 1.8.0_91, we don't care and it will
                     // introduce cache misses

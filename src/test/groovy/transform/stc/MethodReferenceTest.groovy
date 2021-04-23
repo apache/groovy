@@ -299,11 +299,12 @@ final class MethodReferenceTest {
     }
 
     @Test // arrayClass::new
-    void testIntFunctionCN() {
+    void testFunctionCN() {
         assertScript shell, '''
             @CompileStatic
             void p() {
-                assert new Integer[] { 1, 2, 3 } == [1, 2, 3].stream().toArray(Integer[]::new)
+                def result = [1, 2, 3].stream().toArray(Integer[]::new)
+                assert result == new Integer[] { 1, 2, 3 }
             }
 
             p()
@@ -311,11 +312,12 @@ final class MethodReferenceTest {
     }
 
     @Test // class::new
-    void testFunctionCN() {
+    void testFunctionCN2() {
         assertScript shell, '''
             @CompileStatic
             void p() {
-                assert [1, 2, 3] == ["1", "2", "3"].stream().map(Integer::new).collect(Collectors.toList())
+                def result = ["1", "2", "3"].stream().map(Integer::new).collect(Collectors.toList())
+                assert result == [1, 2, 3]
             }
 
             p()
@@ -323,18 +325,49 @@ final class MethodReferenceTest {
     }
 
     @Test // class::new -- GROOVY-10033
-    void testFunctionCN2() {
+    void testFunctionCN3() {
         assertScript shell, '''
+            @CompileStatic
             class C {
-                C(Function<String,String> f) {
+                C(Function<String,Integer> f) {
+                    def i = f.apply('42')
+                    assert i == 42
+                }
+                static test() {
+                    new C(Integer::new)
+                }
+            }
+            C.test()
+        '''
+    }
+
+    @Test // class::new -- GROOVY-10033
+    void testFunctionCN4() {
+        assertScript shell, '''
+            class A {
+                A(Function<A,B> f) {
+                    B b = f.apply(this)
+                    assert b instanceof X.Y
+                }
+            }
+            class B {
+                B(A a) {
+                    assert a != null
                 }
             }
             @CompileStatic
-            void p() {
-                new C(String::toLowerCase)
+            class X extends A {
+              public X() {
+                super(Y::new)
+              }
+              private static class Y extends B {
+                Y(A a) {
+                  super(a)
+                }
+              }
             }
 
-            p()
+            new X()
         '''
     }
 

@@ -266,3 +266,12 @@ sonarqube {
 //        property "sonar.coverage.jacoco.xmlReportPaths", "${rootProject.buildDir}/reports/jacoco/jacocoAllReport/jacocoAllReport.xml"
     }
 }
+
+def UNSTABLE = /^([0-9,.-]+[.-](alpha|beta|rc)[.\d-]*)|20030203.000550|20031129.200437$/
+// ignore non-stable releases
+tasks.named("dependencyUpdates")?.configure {
+    gradleReleaseChannel = 'current'
+    rejectVersionIf {
+        !(it.currentVersion.toLowerCase() ==~ UNSTABLE) && it.candidate.version.toLowerCase() ==~ UNSTABLE
+    }
+}
