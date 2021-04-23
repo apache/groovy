@@ -3546,9 +3546,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         ClassNode returnType = getType(directMethodCallCandidate);
                         if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
                             visitMethodCallArguments(chosenReceiver.getType(), argumentList, true, directMethodCallCandidate);
+                            for (Expression argument : argumentList.getExpressions()) {
+                                if (argument instanceof ClosureExpression) {
+                                    // GROOVY-10052: return type known now
+                                    args = getArgumentTypes(argumentList);
+                                    break;
+                                }
+                            }
+                            callArgsVisited = true;
+
                             ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), directMethodCallCandidate, callArguments, call.getGenericsTypes());
                             returnType = (irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType) ? irtg : returnType);
-                            callArgsVisited = true;
                         }
                         // GROOVY-6091: use of "delegate" or "getDelegate()" does not make use of @DelegatesTo metadata
                         if (directMethodCallCandidate == GET_DELEGATE && typeCheckingContext.getEnclosingClosure() != null) {

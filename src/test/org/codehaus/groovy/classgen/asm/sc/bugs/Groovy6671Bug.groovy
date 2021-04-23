@@ -22,81 +22,82 @@ import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
 class Groovy6671Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
     void testGenericsInference() {
         assertScript '''
-interface Converter<F, T> {
-    T convert(F from)
-}
+            interface Converter<I, O> {
+                O convert(I input)
+            }
 
-class Holder<V> {
-    V thing
+            class Holder<T> {
+                T thing
 
-    Holder(V thing) {
-        this.thing = thing
-    }
+                Holder(T thing) {
+                    this.thing = thing
+                }
 
-    def <R> Holder<R> convert(Converter<? super V, ? extends R> func1) {
-        new Holder(func1.convert(thing))
-    }
-}
+                def <U> Holder<U> convert(Converter<? super T, ? extends U> c) {
+                    new Holder(c.convert(thing))
+                }
+            }
 
-@ASTTest(phase=INSTRUCTION_SELECTION,value={
-    def data = node.getNodeMetaData(INFERRED_TYPE)
-    assert data.genericsTypes[0].type == Integer_TYPE
-})
-def h1 = new Holder<Integer>(2).convert {
-    it
-}
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.genericsTypes[0].type == Integer_TYPE
+            })
+            def h1 = new Holder<Integer>(2).convert {
+                it
+            }
 
-@ASTTest(phase=INSTRUCTION_SELECTION,value={
-    def holderType = node.getNodeMetaData(INFERRED_TYPE)
-    def closureReturnType = node.rightExpression.arguments[0].getNodeMetaData(INFERRED_RETURN_TYPE)
-    assert closureReturnType == float_TYPE
-    assert holderType.genericsTypes[0].type == Float_TYPE
-})
-def h2 = h1.convert {
-    it.floatValue() // fails, doesn't know 'it' is an Integer
-}
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def holderType = node.getNodeMetaData(INFERRED_TYPE)
+                assert holderType.genericsTypes[0].type == Float_TYPE
 
-'''
+                def closureReturnType = node.rightExpression.arguments[0].getNodeMetaData(INFERRED_RETURN_TYPE)
+                assert closureReturnType == float_TYPE
+            })
+            def h2 = h1.convert {
+                it.floatValue()
+            }
+        '''
     }
 
     void testGenericsInferenceWithPlaceholderNameClash() {
         assertScript '''
-interface Converter<F, T> {
-    T convert(F from)
-}
+            interface Converter<F, T> {
+                T convert(F from)
+            }
 
-class Holder<T> {
-    T thing
+            class Holder<T> {
+                T thing
 
-    Holder(T thing) {
-        this.thing = thing
-    }
+                Holder(T thing) {
+                    this.thing = thing
+                }
 
-    def <R> Holder<R> convert(Converter<? super T, ? extends R> func1) {
-        new Holder(func1.convert(thing))
-    }
-}
+                def <U> Holder<U> convert(Converter<? super T, ? extends U> c) {
+                    new Holder(c.convert(thing))
+                }
+            }
 
-@ASTTest(phase=INSTRUCTION_SELECTION,value={
-    def data = node.getNodeMetaData(INFERRED_TYPE)
-    assert data.genericsTypes[0].type == Integer_TYPE
-})
-def h1 = new Holder<Integer>(2).convert {
-    it
-}
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.genericsTypes[0].type == Integer_TYPE
+            })
+            def h1 = new Holder<Integer>(2).convert {
+                it
+            }
 
-@ASTTest(phase=INSTRUCTION_SELECTION,value={
-    def holderType = node.getNodeMetaData(INFERRED_TYPE)
-    def closureReturnType = node.rightExpression.arguments[0].getNodeMetaData(INFERRED_RETURN_TYPE)
-    assert closureReturnType == float_TYPE
-    assert holderType.genericsTypes[0].type == Float_TYPE
-})
-def h2 = h1.convert {
-    it.floatValue() // fails, doesn't know 'it' is an Integer
-}
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def holderType = node.getNodeMetaData(INFERRED_TYPE)
+                assert holderType.genericsTypes[0].type == Float_TYPE
 
-'''
+                def closureReturnType = node.rightExpression.arguments[0].getNodeMetaData(INFERRED_RETURN_TYPE)
+                assert closureReturnType == float_TYPE
+            })
+            def h2 = h1.convert {
+                it.floatValue()
+            }
+        '''
     }
 }

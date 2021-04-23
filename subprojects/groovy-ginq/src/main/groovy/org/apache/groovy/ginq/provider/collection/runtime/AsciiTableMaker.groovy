@@ -18,14 +18,12 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime
 
+import static java.util.stream.IntStream.range
+
 import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
 
-import java.util.stream.IntStream
-
 /**
- * Make ascii table
- *
  * @since 4.0.0
  */
 @PackageScope
@@ -34,28 +32,27 @@ class AsciiTableMaker {
     private static final int DEFAULT_MAX_WIDTH = Integer.MAX_VALUE
 
     /**
-     * make ascii table for list whose elements are of type {@link NamedRecord}
+     * Makes ASCII table for list whose elements are of type {@link NamedRecord}.
      *
      * @param queryable the {@link Queryable} instance
      * @return the string result representing the ascii table
      * @since 4.0.0
      */
     static <T> String makeAsciiTable(Queryable<T> queryable) {
-        List<T> tableData = queryable.toList()
-
-        if (!tableData.isEmpty()) {
+        def tableData = queryable.toList()
+        if (tableData) {
             List<String[]> list = new ArrayList<>(tableData.size() + 1)
             def firstRecord = tableData.get(0)
             if (firstRecord instanceof NamedRecord) {
                 list.add(((NamedRecord) firstRecord).nameList as String[])
-                tableData.stream().forEach(e -> {
+                for (e in tableData) {
                     if (e instanceof NamedRecord) {
-                        String[] record = ((List) e).stream().map(c -> c?.toString()).toArray(String[]::new)
+                        String[] record = ((NamedRecord) e)*.toString()
                         list.add(record)
                     }
-                })
+                }
 
-                return "\n" + makeAsciiTable(list, DEFAULT_MAX_WIDTH, true)
+                return '\n' + makeAsciiTable(list, DEFAULT_MAX_WIDTH, true)
             }
         }
 
@@ -91,7 +88,7 @@ class AsciiTableMaker {
                     // If data is less than max width, use that as it is.
                     def col = row[i] ?: ''
                     if (col.length() < maxWidth) {
-                        newRow[i] = splitRow == 0 ? col : ""
+                        newRow[i] = splitRow == 0 ? col : ''
                     } else if ((col.length() > (splitRow * maxWidth))) {
                         // If data is more than max width, then crop data at maxwidth.
                         // Remaining cropped data will be part of next row.
@@ -99,7 +96,7 @@ class AsciiTableMaker {
                         newRow[i] = col.substring((splitRow * maxWidth), end)
                         needExtraRow = true
                     } else {
-                        newRow[i] = ""
+                        newRow[i] = ''
                     }
                 }
                 finalTableList.add(newRow)
@@ -117,7 +114,7 @@ class AsciiTableMaker {
         // Calculate appropriate Length of each column by looking at width of data in each column.
         // Map columnLengths is <column_number, column_length>
         Map<Integer, Integer> columnLengths = new HashMap<>()
-        Arrays.stream(finalTable).forEach((String[] a) -> IntStream.range(0, a.length).forEach((int i) -> {
+        Arrays.stream(finalTable).forEach((String[] a) -> range(0, a.length).forEach((int i) -> {
             columnLengths.putIfAbsent(i, 0)
             if (columnLengths.get(i) < a[i].length()) {
                 columnLengths.put(i, a[i].length())
@@ -125,20 +122,19 @@ class AsciiTableMaker {
         }))
 
         // Prepare format String
-        final StringBuilder formatString = new StringBuilder(256)
-        String flag = leftJustifiedRows ? "-" : ""
-        columnLengths.entrySet().stream().forEach(e -> formatString.append("| %" + flag + e.getValue() + "s "))
-        formatString.append("|\n")
+        def formatString = new StringBuilder(256)
+        def flag = leftJustifiedRows ? '-' : ''
+        for (e in columnLengths) {
+            formatString.append('| %').append(flag).append(e.value).append('s ')
+        }
+        formatString.append('|\n')
 
-        // Prepare line for top, bottom & below header row.
-        String line = columnLengths.entrySet().stream().reduce("", (ln, b) -> {
-            String templn = "+-"
-            templn = templn + IntStream.range(0, b.getValue()).boxed().reduce("", (ln1, b1) -> ln1 + "-",
-                    (a1, b1) -> a1 + b1)
-            templn = templn + "-"
-            return ln + templn
-        }, (a, b) -> a + b)
-        line = line + "+\n"
+        // Prepare line for top, bottom & below header row
+        def line = new StringBuilder(256)
+        for (e in columnLengths) {
+            line.append('+').append('-' * (e.value + 2))
+        }
+        line.append('+\n')
 
         // Print table
         result.append(line)
@@ -147,8 +143,8 @@ class AsciiTableMaker {
                 .forEach((String[] a) -> result.append(String.format(formatString.toString(), (Object[]) a)))
         result.append(line)
 
-        IntStream.range(1, finalTable.length)
-                .forEach((int a) -> result.append(String.format(formatString.toString(), (Object[]) finalTable[a])))
+        range(1, finalTable.length)
+                .forEach(i -> result.append(String.format(formatString.toString(), (Object[]) finalTable[i])))
         result.append(line)
 
         return result.toString()

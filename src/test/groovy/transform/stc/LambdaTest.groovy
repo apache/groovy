@@ -18,6 +18,7 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
 import groovy.transform.CompileStatic
 import org.junit.Test
 
@@ -158,6 +159,19 @@ final class LambdaTest {
                     assert 13 == [1, 2, 3].stream().reduce(7, accumulator);
                 }
             }
+        '''
+    }
+
+    @Test @NotYetImplemented
+    void testBiFunctionAndBinaryOperatorWithSharedTypeParameter() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            void test() {
+                String string = java.util.stream.IntStream.range(0, 10)
+                    .boxed().reduce('', (s, i) -> s + '-', String::concat)
+                assert string == '----------'
+            }
+            test()
         '''
     }
 

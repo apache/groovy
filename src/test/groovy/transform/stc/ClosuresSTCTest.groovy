@@ -18,8 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.test.NotYetImplemented
-
 /**
  * Unit tests for static type checking : closures.
  */
@@ -226,7 +224,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10052
+    // GROOVY-10052
     void testClosureSharedVariable5() {
         assertScript '''
             def x

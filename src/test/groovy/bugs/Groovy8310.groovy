@@ -60,7 +60,7 @@ final class Groovy8310 {
             }
         '''
 
-        assert err =~ /Cannot find matching method \w+#bar\(groovy.lang.Closure<java.util.List<java.lang.Integer>>\)/
+        assert err =~ /Cannot call <T> \w+#bar\(groovy.lang.Closure<java.util.Collection<java.lang.Integer>>\) with arguments \[groovy.lang.Closure<java.util.List<java.lang.Integer>>\]/
     }
 
     @Test

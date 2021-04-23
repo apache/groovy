@@ -165,7 +165,7 @@ public abstract class StaticTypeCheckingSupport {
     protected static final ClassNode Matcher_TYPE = makeWithoutCaching(Matcher.class);
     protected static final ClassNode ArrayList_TYPE = makeWithoutCaching(ArrayList.class);
     protected static final ClassNode BaseStream_TYPE = makeWithoutCaching(BaseStream.class);
-    protected static final ClassNode Collection_TYPE = makeWithoutCaching(Collection.class);
+    protected static final ClassNode Collection_TYPE = COLLECTION_TYPE; // TODO: deprecate?
     protected static final ClassNode Deprecated_TYPE = makeWithoutCaching(Deprecated.class);
     protected static final ClassNode LinkedHashMap_TYPE = makeWithoutCaching(LinkedHashMap.class);
     protected static final ClassNode LinkedHashSet_TYPE = makeWithoutCaching(LinkedHashSet.class);
@@ -1717,18 +1717,16 @@ public abstract class StaticTypeCheckingSupport {
         if (target == null || target == type || !isUsingGenericsOrIsArrayUsingGenerics(target)) return;
         if (type == null || type == UNKNOWN_PARAMETER_TYPE) return;
 
-        MethodNode sam;
-
         if (target.isGenericsPlaceHolder()) {
             connections.put(new GenericsTypeName(target.getUnresolvedName()), new GenericsType(type));
 
         } else if (type.isArray() && target.isArray()) {
             extractGenericsConnections(connections, type.getComponentType(), target.getComponentType());
 
-        } else if (type.equals(CLOSURE_TYPE) && (sam = findSAM(target)) != null) {
-            // GROOVY-9974: Lambda, Closure, Pointer or Reference for SAM-type receiver
-            ClassNode returnType = StaticTypeCheckingVisitor.wrapTypeIfNecessary(sam.getReturnType());
-            extractGenericsConnections(connections, type.getGenericsTypes(), new GenericsType[] {new GenericsType(returnType)});
+        } else if (type.equals(CLOSURE_TYPE) && isSAMType(target)) {
+            // GROOVY-9974, GROOVY-10052: Lambda, Closure, Pointer or Reference for SAM-type receiver
+            ClassNode returnType = StaticTypeCheckingVisitor.wrapTypeIfNecessary(GenericsUtils.parameterizeSAM(target).getV2());
+            extractGenericsConnections(connections, type.getGenericsTypes(), new GenericsType[] {returnType.asGenericsType()});
 
         } else if (type.equals(target) || !implementsInterfaceOrIsSubclassOf(type, target)) {
             extractGenericsConnections(connections, type.getGenericsTypes(), target.getGenericsTypes());
