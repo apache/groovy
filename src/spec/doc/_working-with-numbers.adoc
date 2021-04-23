@@ -96,7 +96,7 @@ The decimal literal types are the same as in Java:
 
 * `float`
 * `double`
-* `java.lang.BigDecimal`
+* `java.math.BigDecimal`
 
 You can create decimal numbers of those types with the following declarations:
 
@@ -113,7 +113,7 @@ and a integral number representing the exponent:
 include::../test/SyntaxTest.groovy[tags=float_exp,indent=0]
 ----
 
-Conveniently for exact decimal number calculations, Groovy choses `java.lang.BigDecimal` as its decimal number type.
+Conveniently for exact decimal number calculations, Groovy choses `java.math.BigDecimal` as its decimal number type.
 In addition, both `float` and `double` are supported, but require an explicit type declaration, type coercion or suffix.
 Even if `BigDecimal` is the default for decimal numbers, such literals are accepted in methods or closures taking `float` or `double` as parameter types.
 
