@@ -428,7 +428,7 @@ public abstract class StaticTypeCheckingSupport {
      * @return -1 if no match, 0 if the last argument is exactly the vararg type and 1 if of an assignable type
      */
     static int lastArgMatchesVarg(final Parameter[] parameters, final ClassNode... argumentTypes) {
-        if (!isVargs(parameters)) return -1;
+        if (!isVargs(parameters, argumentTypes)) return -1;
         // case length ==0 handled already
         // we have now two cases,
         // the argument is wrapped in the vargs array or
@@ -480,8 +480,14 @@ public abstract class StaticTypeCheckingSupport {
         return false;
     }
 
-    static boolean isVargs(final Parameter[] parameters) {
+    static boolean isVargs(final Parameter[] parameters, ClassNode[] argumentTypes) {
         if (parameters == null || parameters.length == 0) return false;
+
+        // GROOVY-10056: Inferred parameter type of lambda expression for multi-dimensions array is not correct
+        if (null != argumentTypes && argumentTypes.length == parameters.length && argumentTypes[argumentTypes.length - 1].isArray()) {
+            return false;
+        }
+
         return (parameters[parameters.length - 1].getType().isArray());
     }
 
@@ -1103,12 +1109,12 @@ public abstract class StaticTypeCheckingSupport {
         if (parameters.length == argumentTypes.length) {
             int allPMatch = allParametersAndArgumentsMatch(parameters, argumentTypes);
             int firstParamDist = firstParametersAndArgumentsMatch(parameters, argumentTypes);
-            int lastArgMatch = isVargs(parameters) && firstParamDist >= 0 ? lastArgMatchesVarg(parameters, argumentTypes) : -1;
+            int lastArgMatch = isVargs(parameters, argumentTypes) && firstParamDist >= 0 ? lastArgMatchesVarg(parameters, argumentTypes) : -1;
             if (lastArgMatch >= 0) {
                 lastArgMatch += getVarargsDistance(parameters);
             }
             dist = allPMatch >= 0 ? Math.max(allPMatch, lastArgMatch) : lastArgMatch;
-        } else if (isVargs(parameters)) {
+        } else if (isVargs(parameters, argumentTypes)) {
             dist = firstParametersAndArgumentsMatch(parameters, argumentTypes);
             if (dist >= 0) {
                 // varargs methods must not be preferred to methods without varargs

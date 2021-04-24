@@ -5283,7 +5283,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // resolve type parameters from method arguments
         List<Expression> expressions = InvocationWriter.makeArgumentList(arguments).getExpressions();
         Parameter[] parameters = method.getParameters();
-        boolean isVargs = isVargs(parameters);
+        boolean isVargs = isVargs(parameters, expressions.stream().map(e -> getDeclaredOrInferredType(e)).toArray(ClassNode[]::new));
         int paramLength = parameters.length;
         if (expressions.size() >= paramLength) {
             for (int i = 0; i < paramLength; i += 1) {
