@@ -482,13 +482,11 @@ public abstract class StaticTypeCheckingSupport {
 
     static boolean isVargs(final Parameter[] parameters, ClassNode[] argumentTypes) {
         if (parameters == null || parameters.length == 0) return false;
+        if (!parameters[parameters.length - 1].getType().isArray()) return false;
 
         // GROOVY-10056: Inferred parameter type of lambda expression for multi-dimensions array is not correct
-        if (null != argumentTypes && argumentTypes.length == parameters.length && argumentTypes[argumentTypes.length - 1].isArray()) {
-            return false;
-        }
-
-        return (parameters[parameters.length - 1].getType().isArray());
+        return !(null != argumentTypes && argumentTypes.length == parameters.length
+                            && argumentTypes[argumentTypes.length - 1].isArray());
     }
 
     public static boolean isCompareToBoolean(final int op) {
