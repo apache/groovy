@@ -34,6 +34,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.ClosureUtils;
+import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.classgen.BytecodeInstruction;
 import org.codehaus.groovy.classgen.BytecodeSequence;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
@@ -272,7 +273,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
     }
 
     private MethodNode addSyntheticLambdaMethodNode(final LambdaExpression expression, final ClassNode lambdaClass, final MethodNode abstractMethod) {
-        Parameter[] parametersWithExactType = createParametersWithExactType(expression);
+        Parameter[] parametersWithExactType = createParametersWithExactType(expression, abstractMethod);
         Parameter[] localVariableParameters = getLambdaSharedVariables(expression);
         removeInitialValues(localVariableParameters);
 
@@ -291,12 +292,15 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         return doCallMethod;
     }
 
-    private Parameter[] createParametersWithExactType(final LambdaExpression expression) {
+    private Parameter[] createParametersWithExactType(final LambdaExpression expression, MethodNode abstractMethod) {
+        Parameter[] targetParameters = GeneralUtils.cloneParams(abstractMethod.getParameters());
         Parameter[] parameters = ClosureUtils.getParametersSafe(expression);
-        for (Parameter parameter : parameters) {
+        for (int i = 0; i < parameters.length; i++) {
+            Parameter targetParameter = targetParameters[i];
+            Parameter parameter = parameters[i];
             ClassNode inferredType = parameter.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
             if (inferredType != null) {
-                ClassNode type = convertParameterType(parameter.getType(), inferredType);
+                ClassNode type = convertParameterType(targetParameter.getType(), parameter.getType(), inferredType);
                 parameter.setOriginType(type);
                 parameter.setType(type);
             }

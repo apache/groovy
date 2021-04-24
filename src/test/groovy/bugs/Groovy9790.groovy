@@ -56,6 +56,20 @@ final class Groovy9790 {
     }
 
     @Test
+    void testLambdaWithNoExplicitType() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            void test() {
+                java.util.stream.IntStream.range(0, 2).forEach(
+                    i -> { assert i >= 0 && i < 2 }
+                )
+            }
+
+            test()
+        '''
+    }
+
+    @Test
     void testLambdaWithIncompatibleType() {
         def err = shouldFail '''
             @groovy.transform.CompileStatic

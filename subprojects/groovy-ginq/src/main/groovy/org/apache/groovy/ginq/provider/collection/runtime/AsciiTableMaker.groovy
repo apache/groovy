@@ -18,10 +18,10 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime
 
-import static java.util.stream.IntStream.range
-
 import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
+
+import static java.util.stream.IntStream.range
 
 /**
  * @since 4.0.0
@@ -144,7 +144,7 @@ class AsciiTableMaker {
         result.append(line)
 
         range(1, finalTable.length)
-                .forEach((int i) -> result.append(String.format(formatString.toString(), (Object[]) finalTable[i])))
+                .forEach(i -> result.append(String.format(formatString.toString(), (Object[]) finalTable[i])))
         result.append(line)
 
         return result.toString()

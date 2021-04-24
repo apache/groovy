@@ -107,7 +107,7 @@ public interface AbstractFunctionalInterfaceWriter {
         return argumentList.toArray();
     }
 
-    default ClassNode convertParameterType(ClassNode parameterType, ClassNode inferredType) {
+    default ClassNode convertParameterType(ClassNode targetType, ClassNode parameterType, ClassNode inferredType) {
         if (!getWrapper(inferredType).isDerivedFrom(getWrapper(parameterType))) {
             throw new RuntimeParserException("The inferred type[" + inferredType.redirect() + "] is not compatible with the parameter type[" + parameterType.redirect() + "]", parameterType);
         }
@@ -116,9 +116,12 @@ public interface AbstractFunctionalInterfaceWriter {
         boolean isParameterTypePrimitive = ClassHelper.isPrimitiveType(parameterType);
         boolean isInferredTypePrimitive = ClassHelper.isPrimitiveType(inferredType);
         if (!isParameterTypePrimitive && isInferredTypePrimitive) {
-            if (parameterType != getUnwrapper(parameterType) && inferredType != getWrapper(inferredType)) {
+            if (ClassHelper.DYNAMIC_TYPE.equals(parameterType) && ClassHelper.isPrimitiveType(targetType) // (1)
+                    || parameterType != getUnwrapper(parameterType) && inferredType != getWrapper(inferredType) // (2)
+            ) {
                 // GROOVY-9790: bootstrap method initialization exception raised when lambda parameter type is wrong
-                // java.lang.BootstrapMethodError: bootstrap method initialization exception
+                // (1) java.lang.invoke.LambdaConversionException: Type mismatch for instantiated parameter 0: class java.lang.Integer is not a subtype of int
+                // (2) java.lang.BootstrapMethodError: bootstrap method initialization exception
                 type = inferredType;
             } else {
                 // The non-primitive type and primitive type are not allowed to mix since Java 9+
