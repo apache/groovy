@@ -743,6 +743,18 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Creates, if needed, any parent directories for this File.
+     *
+     * @param self a File
+     * @return itself
+     * @throws IOException if the parent directories couldn't be created
+     */
+    public static File createParentDirectories(File self) throws IOException {
+        Files.createDirectories(self.getParentFile().toPath()).toFile();
+        return self;
+    }
+
+    /**
      * Write the text to the File without writing a BOM.
      *
      * @param file a File

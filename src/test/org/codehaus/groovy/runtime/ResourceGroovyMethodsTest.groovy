@@ -31,15 +31,14 @@ class ResourceGroovyMethodsTest {
 
 	@Test
 	void test_Should_write_should_create_missing_directories_and_write() {
-
 		final String filename = "testing.txt"
-		File file = new File(temporaryFolder.getRoot().getAbsolutePath() + "\\foo\\bar\\" + filename);
+		File file = new File(temporaryFolder.getRoot().getAbsolutePath() + "\\foo\\bar\\" + filename)
 		String text = "foobar"
 		String encoding = "UTF-8"
 
-		ResourceGroovyMethods.write(file, text, encoding)
+		ResourceGroovyMethods.write(file.createParentDirectories(), text, encoding)
 
-		assert file.getText(encoding) == text;
+		assert file.getText(encoding) == text
 	}
 
 	@Test
@@ -214,7 +213,7 @@ class ResourceGroovyMethodsTest {
 		try {
 			ResourceGroovyMethods.directorySize(new File("doesn't exist"))
 			fail("directorySize() should fail when directory specified doesn't exist")
-		} catch (IOException expected) {
+		} catch (IOException ignore) {
 		}
 
 		File tempFile = File.createTempFile("testDirectorySizeExceptions", "")
@@ -222,7 +221,7 @@ class ResourceGroovyMethodsTest {
 		try {
 			ResourceGroovyMethods.directorySize(tempFile)
 			fail("directorySize() should fail when a file is specified")
-		} catch (IllegalArgumentException expected) {
+		} catch (IllegalArgumentException ignore) {
 		}
 
 		tempFile.delete()
