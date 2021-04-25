@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.tailrec
 
+import groovy.transform.AutoFinal
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.CodeVisitorSupport
@@ -37,6 +38,7 @@ import org.codehaus.groovy.ast.stmt.SwitchStatement
 import org.codehaus.groovy.ast.stmt.SynchronizedStatement
 import org.codehaus.groovy.ast.stmt.ThrowStatement
 import org.codehaus.groovy.ast.stmt.WhileStatement
+import org.codehaus.groovy.ast.tools.GeneralUtils
 
 import java.lang.reflect.Method
 
@@ -49,7 +51,7 @@ import java.lang.reflect.Method
  * - to swap the access of method args with the access to iteration variables
  * - to swap the access of iteration variables with the access of temp vars
  */
-@CompileStatic
+@AutoFinal @CompileStatic
 class VariableExpressionReplacer extends CodeVisitorSupport {
 
     Closure<Boolean> when = { VariableExpression node -> false }
@@ -129,7 +131,6 @@ class VariableExpressionReplacer extends CodeVisitorSupport {
         super.visitSynchronizedStatement(statement)
     }
 
-    @SuppressWarnings('Instanceof')
     private void replaceExpressionPropertyWhenNecessary(ASTNode node, String propName = 'expression', Class propClass = Expression) {
         Expression expr = getExpression(node, propName)
 
@@ -146,25 +147,17 @@ class VariableExpressionReplacer extends CodeVisitorSupport {
 
     private void replaceExpression(ASTNode node, String propName, Class propClass, Expression oldExpr, Expression newExpr) {
         //Use reflection to enable CompileStatic
-        String setterName = 'set' + capitalizeFirst(propName)
-        Method setExpressionMethod = node.class.getMethod(setterName, [propClass].toArray(new Class[1]))
-        newExpr.sourcePosition = oldExpr
+        String setterName = GeneralUtils.getSetterName(propName)
+        Method setExpressionMethod = node.class.getMethod(setterName, propClass)
         newExpr.copyNodeMetaData(oldExpr)
-        setExpressionMethod.invoke(node, [newExpr].toArray())
+        newExpr.setSourcePosition(oldExpr)
+        setExpressionMethod.invoke(node, newExpr)
     }
 
     private Expression getExpression(ASTNode node, String propName) {
         //Use reflection to enable CompileStatic
-        String getterName = 'get' + capitalizeFirst(propName)
-        Method getExpressionMethod = node.class.getMethod(getterName, new Class[0])
-        getExpressionMethod.invoke(node, new Object[0]) as Expression
+        String getterName = GeneralUtils.getGetterName(propName)
+        Method getExpressionMethod = node.class.getMethod(getterName)
+        getExpressionMethod.invoke(node) as Expression
     }
-
-    private String capitalizeFirst(String propName) {
-        propName[0].toUpperCase() + propName[1..-1]
-    }
-
-
 }
-
-

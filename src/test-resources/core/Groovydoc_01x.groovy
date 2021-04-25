@@ -57,7 +57,7 @@ class AA {
 }
 
 assert AA.class.groovydoc.content.contains('class AA')
-assert AA.class.getMethod('m', new Class[0]).groovydoc.content.contains('method m')
+assert AA.class.getMethod('m').groovydoc.content.contains('method m')
 assert AA.class.getConstructor().groovydoc.content.contains('constructor AA')
 assert AA.class.getField('SOME_FIELD').groovydoc.content.contains('field SOME_FIELD')
 assert AA.class.getDeclaredClasses().find {it.simpleName.contains('InnerClass')}.groovydoc.content.contains('class InnerClass')

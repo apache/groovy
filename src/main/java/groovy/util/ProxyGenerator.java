@@ -24,6 +24,7 @@ import groovy.lang.GroovyObject;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.ProxyGeneratorAdapter;
 import org.codehaus.groovy.runtime.memoize.LRUCache;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
@@ -47,8 +48,7 @@ import java.util.Set;
  * maps of closures and/or extend classes/delegates.
  */
 public class ProxyGenerator {
-    private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
-    private static final Class[] EMPTY_INTERFACE_ARRAY = EMPTY_CLASS_ARRAY;
+    private static final Class[] EMPTY_INTERFACE_ARRAY = MetaClassHelper.EMPTY_TYPE_ARRAY;
     private static final Map<Object,Object> EMPTY_CLOSURE_MAP = Collections.emptyMap();
     private static final Set<String> EMPTY_KEYSET = Collections.emptySet();
 
@@ -210,7 +210,7 @@ public class ProxyGenerator {
     private ProxyGeneratorAdapter createAdapter(Map closureMap, List<Class> interfaces, Class delegateClass, Class baseClass) {
         // According to https://shipilev.net/blog/2016/arrays-wisdom-ancients/#_conclusion
         // toArray(new T[0]) seems faster, safer, and contractually cleaner, and therefore should be the default choice now.
-        Class[] intfs = interfaces != null ? interfaces.toArray(EMPTY_CLASS_ARRAY) : EMPTY_INTERFACE_ARRAY;
+        Class[] intfs = interfaces != null ? interfaces.toArray(EMPTY_INTERFACE_ARRAY) : EMPTY_INTERFACE_ARRAY;
         Class base = baseClass;
         if (base == null) {
             if (intfs.length > 0) {
@@ -245,7 +245,7 @@ public class ProxyGenerator {
         };
         GroovySystem.getMetaClassRegistry().setMetaClass(ProxyGenerator.class, newMetaClass);
     }
-    
+
     private static final class CacheKey {
         private static final Comparator<Class> INTERFACE_COMPARATOR = (o1, o2) -> {
             // Traits order *must* be preserved

@@ -57,6 +57,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static org.codehaus.groovy.runtime.MetaClassHelper.EMPTY_TYPE_ARRAY;
+
 /**
  * ExpandoMetaClass is a MetaClass that behaves like an Expando, allowing the addition or replacement
  * of methods, properties and constructors on the fly.
@@ -199,7 +201,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * ndq.metaClass {
  *     mixin ArrayDeque
  *     mixin HashSet
- *     leftShift = { Object o  {@code ->} 
+ *     leftShift = { Object o  {@code ->}
  *         if (!mixedIn[Set].contains(o)) {
  *             mixedIn[Queue].push(o)
  *             mixedIn[Set].add(o)
@@ -256,7 +258,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
-    private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
     private static final String META_CLASS = "metaClass";
     private static final String CLASS = "class";
     private static final String META_METHODS = "metaMethods";
@@ -279,10 +280,10 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
     private final Lock readLock = rwl.readLock();
     private final Lock writeLock = rwl.writeLock();
-    
+
     private final boolean allowChangesAfterInit;
     public boolean inRegistry;
-    
+
     private final Set<MetaMethod> inheritedMetaMethods = new HashSet<MetaMethod>();
     private final Map<String, MetaProperty> beanPropertyCache = new ConcurrentHashMap<String, MetaProperty>(16, 0.75f, 1);
     private final Map<String, MetaProperty> staticBeanPropertyCache = new ConcurrentHashMap<String, MetaProperty>(16, 0.75f, 1);
@@ -300,14 +301,14 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     public ExpandoMetaClass(Class theClass, boolean register, boolean allowChangesAfterInit, MetaMethod[] add) {
         this(GroovySystem.getMetaClassRegistry(), theClass, register, allowChangesAfterInit, add);
     }
-    
+
     public ExpandoMetaClass(MetaClassRegistry registry, Class theClass, boolean register, boolean allowChangesAfterInit, MetaMethod[] add) {
         super(registry, theClass, add);
         this.myMetaClass = InvokerHelper.getMetaClass(getClass());
         this.inRegistry = register;
         this.allowChangesAfterInit = allowChangesAfterInit;
     }
-    
+
     /**
      * Constructs a new ExpandoMetaClass instance for the given class
      *
@@ -370,11 +371,11 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                 MetaMethod method = new MixinInstanceMetaMethod(metaMethod, mixin);
 
                 if (method.getParameterTypes().length == 1 && !method.getParameterTypes()[0].isPrimitive) {
-                    MetaMethod noParam = pickMethod(methodName, EMPTY_CLASS_ARRAY);
-                    // if the current call itself is with empty arg class array, no need to recurse with 'new Class[0]'
+                    MetaMethod noParam = pickMethod(methodName, EMPTY_TYPE_ARRAY);
+                    // if the current call itself is with empty arg class array, no need to recurse
                     if (noParam == null && arguments.length != 0) {
                         try {
-                            findMixinMethod(methodName, EMPTY_CLASS_ARRAY);
+                            findMixinMethod(methodName, EMPTY_TYPE_ARRAY);
                         } catch (MethodSelectionException msex) {
                             /*
                              * Here we just additionally tried to find another no-arg mixin method of the same name and register that as well, if found.
@@ -468,7 +469,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
     /**
      * Call to enable global use of ExpandoMetaClass within the registry.
-     * This has the advantage that inheritance will function correctly and 
+     * This has the advantage that inheritance will function correctly and
      * metaclass modifications will also apply to existing objects,
      * but has a higher memory usage on the JVM than normal Groovy
      */
@@ -762,7 +763,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         if (metaMethod != null) {
             // we have to use doMethodInvoke here instead of simply invoke,
             // because getMetaMethod may provide a method that can not be called
-            // without further argument transformation, which is done only in 
+            // without further argument transformation, which is done only in
             // doMethodInvoke
             return metaMethod.doMethodInvoke(this, argsArr);
         }
@@ -846,7 +847,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             readLock.unlock();
         }
     }
-    
+
     @Override
     protected void checkInitalised() {
         try {
@@ -1348,7 +1349,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             return new PogoMetaClassSite(site, this);
         return super.createPogoCallCurrentSite(site, sender, args);
     }
-    
+
     @Override
     public MetaMethod retrieveConstructor(Object[] args) {
         Class[] params = MetaClassHelper.convertToTypeArray(args);

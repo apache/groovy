@@ -40,6 +40,7 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.reflection.ReflectionUtils;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
@@ -76,7 +77,6 @@ import java.util.List;
 public class Java8 implements VMPlugin {
 
     private static final Class<?>[] PLUGIN_DGM = {PluginDefaultGroovyMethods.class};
-    private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class[0];
     private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
     private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
     private static final Permission ACCESS_PERMISSION = new ReflectPermission("suppressAccessChecks");
@@ -304,7 +304,7 @@ public class Java8 implements VMPlugin {
 
     @Override
     public Class<?>[] getPluginStaticGroovyMethods() {
-        return EMPTY_CLASS_ARRAY;
+        return MetaClassHelper.EMPTY_TYPE_ARRAY;
     }
 
     private void setAnnotationMetaData(Annotation[] annotations, AnnotatedNode an) {

@@ -23,19 +23,17 @@ import java.beans.SimpleBeanInfo;
 import java.lang.reflect.Method;
 
 public class StrangeBeanBeanInfo extends SimpleBeanInfo {
-    private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
-
     public EventSetDescriptor[] getEventSetDescriptors() {
         try {
             Method[] events = StrangeEventListener.class.getMethods();
             Method addListener = StrangeBean.class.getMethod("addStrangeEventListener", StrangeEventListener.class);
             Method removeListener = StrangeBean.class.getMethod("removeStrangeEventListener", StrangeEventListener.class);
-            Method getListeners = StrangeBean.class.getMethod("getStrangeEventListeners", EMPTY_CLASS_ARRAY);
-            
+            Method getListeners = StrangeBean.class.getMethod("getStrangeEventListeners");
+
             return new EventSetDescriptor[] {
-                new EventSetDescriptor( 
+                new EventSetDescriptor(
                         "strangeEvent",
-                        StrangeEventListener.class, 
+                        StrangeEventListener.class,
                         events,
                         addListener,
                         removeListener,
