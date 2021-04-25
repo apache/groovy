@@ -60,6 +60,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileAttribute;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -1882,6 +1883,18 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      */
     public static Writable filterLine(Path self, @ClosureParams(value = SimpleType.class, options = "java.lang.String") Closure closure) throws IOException {
         return IOGroovyMethods.filterLine(newReader(self), closure);
+    }
+
+    /**
+     * Creates, if needed, any parent directories for the file associated with this Path.
+     *
+     * @param self a Path
+     * @return itself
+     * @throws IOException if the parent directories couldn't be created
+     */
+    public static Path createParentDirectories(Path self, FileAttribute<?>... attrs) throws IOException {
+        Files.createDirectories(self.getParent(), attrs);
+        return self;
     }
 
     /**
