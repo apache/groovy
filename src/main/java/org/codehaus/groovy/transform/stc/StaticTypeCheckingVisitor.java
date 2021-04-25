@@ -5305,10 +5305,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                             applyGenericsContextToParameterClass(resolvedPlaceholders, paramType));
                         }
                     }
-                    if (isVargs && lastArg && argumentType.isArray()) {
-                        argumentType = argumentType.getComponentType();
-                    }
-                    if (isVargs && lastArg && paramType.isArray()) {
+                    if (isVargs && lastArg && paramType.isArray() && !argumentType.isArray()) {
                         paramType = paramType.getComponentType();
                     }
                     argumentType = wrapTypeIfNecessary(argumentType);
