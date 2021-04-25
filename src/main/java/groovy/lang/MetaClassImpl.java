@@ -1035,59 +1035,64 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private Object invokeMethodClosure(Object object, Object[] arguments) {
-        final MethodClosure mc = (MethodClosure) object;
-        final Object owner = mc.getOwner();
+        MethodClosure mc = (MethodClosure) object;
 
+        Object owner = mc.getOwner();
         String methodName = mc.getMethod();
-        final Class ownerClass = owner instanceof Class ? (Class) owner : owner.getClass();
+        boolean ownerIsClass = (owner instanceof Class);
+        Class ownerClass = ownerIsClass ? (Class) owner : owner.getClass();
         final MetaClass ownerMetaClass = registry.getMetaClass(ownerClass);
 
-        // To conform to "Least Surprise" principle, try to invoke method with original arguments first, which can match most of use cases
         try {
             return ownerMetaClass.invokeMethod(ownerClass, owner, methodName, arguments, false, false);
+
         } catch (MissingMethodExceptionNoStack | InvokerInvocationException e) {
-            // CONSTRUCTOR REFERENCE
-            if (owner instanceof Class && MethodClosure.NEW.equals(methodName)) {
-                if (ownerClass.isArray()) {
-                    if (0 == arguments.length) {
-                        throw new GroovyRuntimeException("The arguments(specifying size) are required to create array[" + ownerClass.getCanonicalName() + "]");
-                    }
+            if (ownerIsClass) {
+                if (MethodClosure.NEW.equals(methodName)) { // CONSTRUCTOR REFERENCE
+                    if (!ownerClass.isArray()) {
+                        return ownerMetaClass.invokeConstructor(arguments);
 
-                    int arrayDimension = ArrayTypeUtils.dimension(ownerClass);
-
-                    if (arguments.length > arrayDimension) {
-                        throw new GroovyRuntimeException("The length[" + arguments.length + "] of arguments should not be greater than the dimensions[" + arrayDimension + "] of array[" + ownerClass.getCanonicalName() + "]");
-                    }
-
-                    int[] sizeArray = new int[arguments.length];
-
-                    for (int i = 0, n = sizeArray.length; i < n; i++) {
-                        Object argument = arguments[i];
-
-                        if (argument instanceof Integer) {
-                            sizeArray[i] = (Integer) argument;
-                        } else {
-                            sizeArray[i] = Integer.parseInt(String.valueOf(argument));
+                    } else {
+                        if (arguments.length == 0) {
+                            throw new GroovyRuntimeException("The arguments(specifying size) are required to create array[" + ownerClass.getCanonicalName() + "]");
                         }
+
+                        int arrayDimension = ArrayTypeUtils.dimension(ownerClass);
+
+                        if (arguments.length > arrayDimension) {
+                            throw new GroovyRuntimeException("The length[" + arguments.length + "] of arguments should not be greater than the dimensions[" + arrayDimension + "] of array[" + ownerClass.getCanonicalName() + "]");
+                        }
+
+                        int[] sizeArray = new int[arguments.length];
+
+                        for (int i = 0, n = sizeArray.length; i < n; i += 1) {
+                            Object argument = arguments[i];
+                            if (argument instanceof Integer) {
+                                sizeArray[i] = (Integer) argument;
+                            } else {
+                                sizeArray[i] = Integer.parseInt(String.valueOf(argument));
+                            }
+                        }
+
+                        Class arrayType = arguments.length == arrayDimension
+                                ? ArrayTypeUtils.elementType(ownerClass) // Just for better performance, though we can use reduceDimension only
+                                : ArrayTypeUtils.elementType(ownerClass, (arrayDimension - arguments.length));
+                        return Array.newInstance(arrayType, sizeArray);
                     }
+                } else if (ownerClass != Class.class) { // not "new"; maybe it's a reference to a Class method
+                    try {
+                        return InvokerHelper.getMetaClass(owner).invokeMethod(Class.class, owner, methodName, arguments, false, false);
 
-                    Class arrayType =
-                            arguments.length == arrayDimension
-                                    ? ArrayTypeUtils.elementType(ownerClass) // Just for better performance, though we can use reduceDimension only
-                                    : ArrayTypeUtils.elementType(ownerClass, (arrayDimension - arguments.length));
-                    return Array.newInstance(arrayType, sizeArray);
+                    } catch (MissingMethodExceptionNoStack nope) {
+                    }
                 }
-
-                return ownerMetaClass.invokeConstructor(arguments);
             }
 
             // METHOD REFERENCE
-            // if and only if the owner is a class and the method closure can be related to some instance methods,
-            // try to invoke method with adjusted arguments(first argument is the actual owner) again.
-            // otherwise throw the MissingMethodExceptionNoStack.
-            if (!(owner instanceof Class
-                    && (Boolean) mc.getProperty(MethodClosure.ANY_INSTANCE_METHOD_EXISTS))) {
-
+            // if the owner is a class and the method closure can be related to some instance method(s),
+            // try to invoke method with adjusted arguments -- first argument is instance of owner type;
+            // otherwise re-throw the exception
+            if (!(ownerIsClass && (Boolean) mc.getProperty(MethodClosure.ANY_INSTANCE_METHOD_EXISTS))) {
                 throw e;
             }
 

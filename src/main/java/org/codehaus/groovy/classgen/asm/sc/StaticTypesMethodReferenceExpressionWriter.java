@@ -60,7 +60,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDG
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssignableTo;
 
 /**
- * Writer responsible for generating method reference in statically compiled mode.
+ * Generates bytecode for method reference expressions in statically-compiled code.
  *
  * @since 3.0.0
  */

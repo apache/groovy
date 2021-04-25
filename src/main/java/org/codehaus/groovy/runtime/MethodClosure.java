@@ -23,70 +23,63 @@ import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedConstructor;
 import org.codehaus.groovy.reflection.ReflectionCache;
 
-import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 
 /**
- * Represents a method on an object using a closure which can be invoked
- * at any time
+ * Represents a method on an object using a closure, which can be invoked at any
+ * time.
  */
 public class MethodClosure extends Closure {
-    public static final String NEW = "new";
+
+    public static boolean ALLOW_RESOLVE; // choose readObject/readResolve return/throw
     public static final String ANY_INSTANCE_METHOD_EXISTS = "anyInstanceMethodExists";
+    public static final String NEW = "new";
+
+    //
 
     private static final long serialVersionUID = -2491254866810955844L;
-    public static boolean ALLOW_RESOLVE = false;
 
-    private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
+    /**
+     * Indicates if this may be related to an instance method.
+     */
+    private boolean anyInstanceMethodExists;
+
     private final String method;
-    private final boolean anyInstanceMethodExists; // whether the method closure is related to instance method
 
-    public MethodClosure(Object owner, String method) {
+    //--------------------------------------------------------------------------
+
+    public MethodClosure(final Object owner, final String method) {
         super(owner);
         this.method = method;
-
-        final Class clazz = owner.getClass() == Class.class ? (Class) owner : owner.getClass();
-
         this.maximumNumberOfParameters = 0;
-        this.parameterTypes = EMPTY_CLASS_ARRAY;
+        this.parameterTypes = MetaClassHelper.EMPTY_TYPE_ARRAY;
 
-        List<MetaMethod> methods = InvokerHelper.getMetaClass(clazz).respondsTo(owner, method);
-
-        int instanceMethodCnt = 0;
-        for (MetaMethod m : methods) {
-            Class[] newParameterTypes = this.makeParameterTypes(owner, m);
-
-            this.setParameterTypesAndNumber(newParameterTypes);
-
-            if (!m.isStatic()) {
-                instanceMethodCnt++;
-            }
-        }
-
-        this.anyInstanceMethodExists = instanceMethodCnt > 0;
+        Class<?> clazz = owner.getClass() == Class.class ? (Class<?>) owner : owner.getClass();
 
         if (NEW.equals(method)) {
             if (clazz.isArray()) {
-                Class[] sizeTypes = new Class[ArrayTypeUtils.dimension(clazz)];
+                Class<?>[] sizeTypes = new Class[ArrayTypeUtils.dimension(clazz)];
                 Arrays.fill(sizeTypes, int.class);
-
-                this.setParameterTypesAndNumber(sizeTypes);
+                setParameterTypesAndNumber(sizeTypes);
             } else {
                 for (CachedConstructor c : ReflectionCache.getCachedClass(clazz).getConstructors()) {
-                    Class[] newParameterTypes = c.getNativeParameterTypes();
-
-                    this.setParameterTypesAndNumber(newParameterTypes);
+                    setParameterTypesAndNumber(c.getNativeParameterTypes());
+                }
+            }
+        } else {
+            for (MetaMethod m : InvokerHelper.getMetaClass(clazz).respondsTo(owner, method)) {
+                setParameterTypesAndNumber(makeParameterTypes(owner, m));
+                if (!m.isStatic()) {
+                    this.anyInstanceMethodExists = true;
                 }
             }
         }
     }
 
-    private void setParameterTypesAndNumber(Class[] newParameterTypes) {
+    private void setParameterTypesAndNumber(final Class[] newParameterTypes) {
         if (!(newParameterTypes.length > this.maximumNumberOfParameters)) {
             return;
         }
-
         this.maximumNumberOfParameters = newParameterTypes.length;
         this.parameterTypes = newParameterTypes;
     }
@@ -97,7 +90,7 @@ public class MethodClosure extends Closure {
      * If the owner is a class instance(e.g. String) and the method is instance method,
      * we expand the original array of parameter type by inserting the owner at the first place of the expanded array
      */
-    private Class[] makeParameterTypes(Object owner, MetaMethod m) {
+    private Class[] makeParameterTypes(final Object owner, final MetaMethod m) {
         Class[] newParameterTypes;
 
         if (owner instanceof Class && !m.isStatic()) {
@@ -112,14 +105,35 @@ public class MethodClosure extends Closure {
 
         return newParameterTypes;
     }
-    
+
+    //--------------------------------------------------------------------------
+
     public String getMethod() {
         return method;
     }
 
-    // TODO confirm: The "doCall" method seems to be never called..., because MetaClassImpl.invokeMethod will intercept calls and return the result
-    protected Object doCall(Object arguments) {
-        return InvokerHelper.invokeMethod(getOwner(), method, arguments);
+    @Override
+    public Object getProperty(final String property) {
+        switch (property) {
+          case "method":
+            return getMethod();
+          case ANY_INSTANCE_METHOD_EXISTS:
+            return anyInstanceMethodExists;
+          default:
+            return super.getProperty(property);
+        }
+    }
+
+    // TODO: This method seems to be never called..., because MetaClassImpl.invokeMethod will intercept calls and return the result.
+    protected Object doCall(final Object arguments) {
+        return InvokerHelper.invokeMethod(getOwner(), getMethod(), arguments);
+    }
+
+    private void readObject(final java.io.ObjectInputStream stream) throws java.io.IOException, ClassNotFoundException {
+        if (ALLOW_RESOLVE) {
+            stream.defaultReadObject();
+        }
+        throw new UnsupportedOperationException();
     }
 
     private Object readResolve() {
@@ -127,21 +141,5 @@ public class MethodClosure extends Closure {
             return this;
         }
         throw new UnsupportedOperationException();
-    }
-
-    private void readObject(java.io.ObjectInputStream stream) throws IOException, ClassNotFoundException {
-        if (ALLOW_RESOLVE) {
-            stream.defaultReadObject();
-        }
-        throw new UnsupportedOperationException();
-    }
-    
-    @Override
-    public Object getProperty(String property) {
-        if ("method".equals(property)) {
-            return getMethod();
-        } else if (ANY_INSTANCE_METHOD_EXISTS.equals(property)) {
-            return this.anyInstanceMethodExists;
-        } else return super.getProperty(property);
     }
 }

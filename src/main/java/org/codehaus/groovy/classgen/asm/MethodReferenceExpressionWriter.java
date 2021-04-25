@@ -21,15 +21,17 @@ package org.codehaus.groovy.classgen.asm;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 
 /**
- * A helper class used to generate bytecode for method reference expressions.
+ * Generates bytecode for method reference expressions.
+ *
  * @since 3.0.0
  */
 public class MethodReferenceExpressionWriter extends MethodPointerExpressionWriter {
+
     public MethodReferenceExpressionWriter(final WriterController controller) {
         super(controller);
     }
 
-    public void writeMethodReferenceExpression(MethodReferenceExpression expression) {
+    public void writeMethodReferenceExpression(final MethodReferenceExpression expression) {
         super.writeMethodPointerExpression(expression);
     }
 }

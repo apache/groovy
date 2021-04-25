@@ -250,14 +250,14 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             assert result == [ 42 ]
         '''
 
-        ['n -> (N) n', '{ n -> (N) n }'].each { cast ->
+        ['t::cast', 'n -> (N) n', '{ n -> (N) n }'].each { cast ->
             assertScript """
                 Set<Number> f() {
                     Collections.<Number>singleton(42)
                 }
                 def <N extends Number> Set<N> g(Class<N> t) {
                     Set<N> result = new HashSet<>()
-                    f().stream().filter(n -> t.isInstance(n))
+                    f().stream().filter(t::isInstance)
                         .<N>map($cast).forEach(n -> result.add(n))
                     return result
                 }

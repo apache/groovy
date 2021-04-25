@@ -18,18 +18,19 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodPointerExpression;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
+import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
+
 /**
- * A helper class used to generate bytecode for method pointer expressions.
+ * Generates bytecode for method pointer expressions.
+ *
  * @since 3.0.0
  */
 public class MethodPointerExpressionWriter {
-    // Closure
-    static final MethodCaller getMethodPointer = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getMethodPointer");
+
+    private static final MethodCaller getMethodPointer = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getMethodPointer");
 
     protected final WriterController controller;
 
@@ -37,12 +38,14 @@ public class MethodPointerExpressionWriter {
         this.controller = controller;
     }
 
-    public void writeMethodPointerExpression(MethodPointerExpression expression) {
-        Expression subExpression = expression.getExpression();
-        subExpression.visit(controller.getAcg());
-        controller.getOperandStack().box();
-        controller.getOperandStack().pushDynamicName(expression.getMethodName());
+    public void writeMethodPointerExpression(final MethodPointerExpression pointerOrReference) {
+        pointerOrReference.getExpression().visit(controller.getAcg());
+        OperandStack operandStack = controller.getOperandStack();
+        operandStack.box();
+
+        operandStack.pushDynamicName(pointerOrReference.getMethodName());
+        // delegate to ScriptBytecodeAdapter#getMethodPointer
         getMethodPointer.call(controller.getMethodVisitor());
-        controller.getOperandStack().replace(ClassHelper.CLOSURE_TYPE,2);
+        operandStack.replace(CLOSURE_TYPE, 2);
     }
 }

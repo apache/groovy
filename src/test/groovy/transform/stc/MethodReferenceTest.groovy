@@ -154,6 +154,34 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // instance::instanceMethod -- GROOVY-10057
+    void testPredicateII() {
+        assertScript shell, '''
+            Class c = Integer
+            Predicate p
+
+            p = c::isInstance
+            assert p.test(null) == false
+            assert p.test('xx') == false
+            assert p.test(1234) == true
+
+            p = c.&isInstance
+            assert p.test(null) == false
+            assert p.test('xx') == false
+            assert p.test(1234) == true
+
+            p = o -> c.isInstance(o)
+            assert p.test(null) == false
+            assert p.test('xx') == false
+            assert p.test(1234) == true
+
+            p = { c.isInstance(it) }
+            assert p.test(null) == false
+            assert p.test('xx') == false
+            assert p.test(1234) == true
+        '''
+    }
+
     @Test // instance::instanceMethod
     void testBinaryOperatorII() {
         assertScript shell, '''
@@ -231,6 +259,47 @@ final class MethodReferenceTest {
 
                 Adder getThis() {
                     return this
+                }
+            }
+        '''
+    }
+
+    @Test // instance::instanceMethod
+    void testBinaryOperatorII_RHS() {
+        assertScript shell, '''
+            @CompileStatic
+            void p() {
+                Adder adder = new Adder()
+                BinaryOperator<BigDecimal> b = adder::add
+                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, b)
+                assert 6.0G == result
+            }
+
+            p()
+
+            class Adder {
+                BigDecimal add(BigDecimal a, BigDecimal b) {
+                    a.add(b)
+                }
+            }
+        '''
+    }
+
+    @Test // expression::instanceMethod
+    void testBinaryOperatorII_RHS2() {
+        assertScript shell, '''
+            @CompileStatic
+            void p() {
+                BinaryOperator<BigDecimal> b = new Adder()::add
+                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, b)
+                assert 6.0G == result
+            }
+
+            p()
+
+            class Adder {
+                BigDecimal add(BigDecimal a, BigDecimal b) {
+                    a.add(b)
                 }
             }
         '''
@@ -449,47 +518,6 @@ final class MethodReferenceTest {
             }
 
             p()
-        '''
-    }
-
-    @Test // instance::instanceMethod
-    void testBinaryOperatorII_RHS() {
-        assertScript shell, '''
-            @CompileStatic
-            void p() {
-                Adder adder = new Adder()
-                BinaryOperator<BigDecimal> b = adder::add
-                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, b)
-                assert 6.0G == result
-            }
-
-            p()
-
-            class Adder {
-                BigDecimal add(BigDecimal a, BigDecimal b) {
-                    a.add(b)
-                }
-            }
-        '''
-    }
-
-    @Test // expression::instanceMethod
-    void testBinaryOperatorII_RHS2() {
-        assertScript shell, '''
-            @CompileStatic
-            void p() {
-                BinaryOperator<BigDecimal> b = new Adder()::add
-                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, b)
-                assert 6.0G == result
-            }
-
-            p()
-
-            class Adder {
-                BigDecimal add(BigDecimal a, BigDecimal b) {
-                    a.add(b)
-                }
-            }
         '''
     }
 

@@ -24,22 +24,4 @@ import groovy.transform.stc.GenericsSTCTest
  * Unit tests for static compilation : generics.
  */
 class GenericsStaticCompileTest extends GenericsSTCTest implements StaticCompilationTestSupport {
-
-    // GROOVY-10053
-    void testReturnTypeInferenceWithMethodGenericsSC() {
-        assertScript """
-            Set<Number> f() {
-                Collections.<Number>singleton(42)
-            }
-            def <N extends Number> Set<N> g(Class<N> t) {
-                Set<N> result = new HashSet<>()
-                f().stream().filter(n -> t.isInstance(n))
-                    .<N>map(t::cast).forEach(n -> result.add(n))
-                return result
-            }
-
-            def result = g(Integer)
-            assert result == [42] as Set
-        """
-    }
 }
