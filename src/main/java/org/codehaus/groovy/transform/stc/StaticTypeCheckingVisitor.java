@@ -5313,10 +5313,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (isVargs && lastArg && paramType.isArray()) {
                         paramType = paramType.getComponentType();
                     }
-                    argumentType = wrapTypeIfNecessary(argumentType);
 
                     Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
-                    extractGenericsConnections(connections, argumentType, paramType);
+                    extractGenericsConnections(connections, wrapTypeIfNecessary(argumentType), paramType);
                     extractGenericsConnectionsForSuperClassAndInterfaces(resolvedPlaceholders, connections);
 
                     applyGenericsConnections(connections, resolvedPlaceholders);
@@ -5396,7 +5395,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private static void extractGenericsConnectionsForSuperClassAndInterfaces(final Map<GenericsTypeName, GenericsType> resolvedPlaceholders, final Map<GenericsTypeName, GenericsType> connections) {
-        for (GenericsType value : new HashSet<GenericsType>(connections.values())) {
+        for (GenericsType value : new HashSet<>(connections.values())) {
             if (!value.isPlaceholder() && !value.isWildcard()) {
                 ClassNode valueType = value.getType();
                 List<ClassNode> deepNodes = new LinkedList<>();

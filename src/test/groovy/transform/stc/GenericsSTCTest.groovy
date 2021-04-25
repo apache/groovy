@@ -258,7 +258,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 def <N extends Number> Set<N> g(Class<N> t) {
                     Set<N> result = new HashSet<>()
                     f().stream().filter(t::isInstance)
-                        .<N>map($cast).forEach(n -> result.add(n))
+                        .map($cast).forEach(n -> result.add(n))
                     return result
                 }
 

@@ -1617,12 +1617,16 @@ public abstract class StaticTypeCheckingSupport {
                         }
                     } else if (!newValue.isPlaceholder() || newValue != resolvedPlaceholders.get(name)) {
                         // GROOVY-6787: Don't override the original if the replacement doesn't respect the bounds otherwise
-                        // the original bounds are lost, which can result in accepting an incompatible type as an argument.
+                        // the original bounds are lost, which can result in accepting an incompatible type as an argument!
                         ClassNode replacementType = extractType(newValue);
-                        if (oldValue.isCompatibleWith(replacementType)) {
+                        ClassNode suitabilityType = !replacementType.isGenericsPlaceHolder()
+                                ? replacementType : Optional.ofNullable(replacementType.getGenericsTypes())
+                                        .map(gts -> extractType(gts[0])).orElse(replacementType.redirect());
+
+                        if (oldValue.isCompatibleWith(suitabilityType)) {
                             if (newValue.isWildcard() && newValue.getLowerBound() == null && newValue.getUpperBounds() == null) {
                                 // GROOVY-9998: apply upper/lower bound for unknown
-                                entry.setValue(new GenericsType(replacementType));
+                                entry.setValue(replacementType.asGenericsType());
                             } else {
                                 entry.setValue(newValue);
                             }
