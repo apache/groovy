@@ -236,7 +236,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10049
+    // GROOVY-10049, GROOVY-10053
     void testReturnTypeInferenceWithMethodGenerics9() {
         assertScript '''
             def <X> Set<X> f(Class<X> x) {
@@ -249,6 +249,23 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def result = g(Integer)
             assert result == [ 42 ]
         '''
+
+        ['n -> (N) n', '{ n -> (N) n }'].each { cast ->
+            assertScript """
+                Set<Number> f() {
+                    Collections.<Number>singleton(42)
+                }
+                def <N extends Number> Set<N> g(Class<N> t) {
+                    Set<N> result = new HashSet<>()
+                    f().stream().filter(n -> t.isInstance(n))
+                        .<N>map($cast).forEach(n -> result.add(n))
+                    return result
+                }
+
+                def result = g(Integer)
+                assert result == [42] as Set
+            """
+        }
 
         assertScript '''
             def <T> String test(Iterable<T> iterable) {
