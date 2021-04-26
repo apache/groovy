@@ -2148,29 +2148,24 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5893
-    @NotYetImplemented
     void testPlusInClosure() {
-        assertScript '''
-        def list = [1, 2, 3]
+        ['def', 'var', 'Object', 'Number', 'Integer', 'Comparable'].each { type ->
+            assertScript """
+                List<Integer> list = [1, 2, 3]
 
-        @ASTTest(phase=INSTRUCTION_SELECTION,value={
-            assert node.getNodeMetaData(INFERRED_TYPE) == int_TYPE
-        })
-        def sum = 0
-        list.each { int i -> sum = sum+i }
-        assert sum == 6
+                int sum = 0
+                list.each { int i -> sum = sum + i }
+                assert sum == 6
 
-        sum = 0
-        list.each { int i -> sum += i }
-        assert sum == 6
+                sum = 0
+                list.each { int i -> sum += i }
+                assert sum == 6
 
-        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-            assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
-        })
-        def sumWithInject = list.inject(0, { int x, int y -> x + y })
-        sum = sumWithInject
-        assert sum == 6
-        '''
+                $type sumWithInject = list.inject(0, { int x, int y -> x + y })
+                //    ^^^^^^^^^^^^^ T ^^^^ E[]    ^ U      ^ U    ^ E  ^^^^^ V
+                assert sumWithInject == 6
+            """
+        }
     }
 
     void testShouldNotCreateStackOverflow() {

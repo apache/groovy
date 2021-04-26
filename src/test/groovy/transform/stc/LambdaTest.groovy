@@ -176,39 +176,6 @@ final class LambdaTest {
     }
 
     @Test
-    void testConsumer() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            class Test1 {
-                static main(args) {
-                    p()
-                }
-
-                static void p() {
-                    [1, 2, 3].stream().forEach(e -> { System.out.println(e + 1); })
-                }
-            }
-        '''
-    }
-
-    @Test // GROOVY-9340
-    void testConsumerWithSelfType() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            class Test1 {
-                static main(args) {
-                    p()
-                }
-
-                static void p() {
-                    java.util.function.Consumer<Test1> c = t -> null
-                    c.accept(this.newInstance())
-                }
-            }
-        '''
-    }
-
-    @Test
     void testPredicate() {
         assertScript '''
             import groovy.transform.CompileStatic
@@ -819,6 +786,39 @@ final class LambdaTest {
                 assert sum == 6
             }
             test()
+        '''
+    }
+
+    @Test // GROOVY-9340
+    void testConsumer8() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Test1 {
+                static main(args) {
+                    p()
+                }
+
+                static void p() {
+                    java.util.function.Consumer<Test1> c = t -> null
+                    c.accept(this.newInstance())
+                }
+            }
+        '''
+    }
+
+    @Test
+    void testConsumer9() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Test1 {
+                static main(args) {
+                    p()
+                }
+
+                static void p() {
+                    [1, 2, 3].stream().forEach(e -> { System.out.println(e + 1); })
+                }
+            }
         '''
     }
 
