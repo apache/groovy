@@ -30,6 +30,7 @@ import static java.util.stream.IntStream.range
 @CompileStatic
 class AsciiTableMaker {
     private static final int DEFAULT_MAX_WIDTH = Integer.MAX_VALUE
+    private static final String[] EMPTY_STRING_ARRAY = new String[0]
 
     /**
      * Makes ASCII table for list whose elements are of type {@link NamedRecord}.
@@ -44,7 +45,7 @@ class AsciiTableMaker {
             List<String[]> list = new ArrayList<>(tableData.size() + 1)
             def firstRecord = tableData.get(0)
             if (firstRecord instanceof NamedRecord) {
-                list.add(((NamedRecord) firstRecord).nameList as String[])
+                list.add(((NamedRecord) firstRecord).nameList.toArray(EMPTY_STRING_ARRAY))
                 for (e in tableData) {
                     if (e instanceof NamedRecord) {
                         String[] record = ((NamedRecord) e)*.toString()
@@ -114,10 +115,11 @@ class AsciiTableMaker {
         // Calculate appropriate Length of each column by looking at width of data in each column.
         // Map columnLengths is <column_number, column_length>
         Map<Integer, Integer> columnLengths = new HashMap<>()
-        Arrays.stream(finalTable).forEach((String[] a) -> range(0, a.length).forEach((int i) -> {
+        Arrays.stream(finalTable).forEach(a -> range(0, a.length).forEach(i -> {
             columnLengths.putIfAbsent(i, 0)
-            if (columnLengths.get(i) < a[i].length()) {
-                columnLengths.put(i, a[i].length())
+            int len = a[i].length()
+            if (columnLengths.get(i) < len) {
+                columnLengths.put(i, len)
             }
         }))
 
@@ -140,7 +142,7 @@ class AsciiTableMaker {
         result.append(line)
         Arrays.stream(finalTable)
                 .limit(1)
-                .forEach((String[] a) -> result.append(String.format(formatString.toString(), (Object[]) a)))
+                .forEach(a -> result.append(String.format(formatString.toString(), (Object[]) a)))
         result.append(line)
 
         range(1, finalTable.length)
