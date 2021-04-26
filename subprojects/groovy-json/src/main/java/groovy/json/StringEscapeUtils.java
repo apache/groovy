@@ -190,7 +190,7 @@ public class StringEscapeUtils {
                 out.write("\\u" + hex(ch));
             } else if (ch > 0xff) {
                 out.write("\\u0" + hex(ch));
-            } else if (ch > 0x7f) {
+            } else if (ch >= 0x7f) {
                 out.write("\\u00" + hex(ch));
             } else if (ch < 32) {
                 switch (ch) {
