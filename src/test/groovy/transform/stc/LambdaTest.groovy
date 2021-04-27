@@ -822,6 +822,25 @@ final class LambdaTest {
         '''
     }
 
+    @Test // GROOVY-10056
+    void testConsumer10() {
+        ['CompileStatic', 'TypeChecked'].each { xform ->
+            assertScript """
+                @groovy.transform.${xform}
+                void test() {
+                    String[][] arrayArray = new String[][] {
+                        new String[] {'a','b','c'},
+                        new String[] {'d','e','f'}
+                    }
+                    Arrays.stream(arrayArray).limit(1).forEach(array -> {
+                        assert Arrays.asList(array) == ['a','b','c']
+                    })
+                }
+                test()
+            """
+        }
+    }
+
     @Test
     void testFunctionalInterface1() {
         assertScript '''

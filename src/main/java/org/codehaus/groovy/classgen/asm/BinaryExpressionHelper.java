@@ -429,7 +429,7 @@ public class BinaryExpressionHelper {
         } else {
             rhsValueId = compileStack.defineTemporaryVariable("$rhs", rhsType, true);
         }
-        // TODO: if rhs is VariableSlotLoader already, then skip crating a new one
+        // TODO: if RHS is VariableSlotLoader already, then skip creating a new one
         BytecodeExpression rhsValueLoader = new VariableSlotLoader(rhsType,rhsValueId,operandStack);
 
         // assignment for subscript

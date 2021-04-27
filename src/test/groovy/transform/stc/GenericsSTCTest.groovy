@@ -167,15 +167,58 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     void testReturnTypeInferenceWithMethodGenerics1() {
         assertScript '''
-            List<Long> list = Arrays.asList([0L,0L] as Long[])
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'java.util.List<java.lang.Long>'
+            })
+            def list = Arrays.asList(new Long[]{1L,0L})
             assert list.size() == 2
+            assert list.get(0) == 1
+            assert list.get(1) == 0
+        '''
+
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'java.util.List<java.lang.Long>'
+            })
+            def list = Arrays.asList(1L,0L)
+            assert list.size() == 2
+            assert list.get(0) == 1
+            assert list.get(1) == 0
+        '''
+
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'java.util.List<java.lang.Long>'
+            })
+            def list = Arrays.asList(0L)
+            assert list.size() == 1
+            assert list.get(0) == 0
+        '''
+
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'java.util.List<java.lang.Object>'
+            })
+            def list = Arrays.asList()
+            assert list.size() == 0
         '''
     }
 
+    // GROOVY-10062
     void testReturnTypeInferenceWithMethodGenerics2() {
         assertScript '''
-            List<Long> list = Arrays.asList(0L,0L)
-            assert list.size() == 2
+            def <T> T m(T t, ... zeroOrMore) {
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type == Integer_TYPE
+            })
+            def obj = m(42)
         '''
     }
 
@@ -250,7 +293,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             assert result == [ 42 ]
         '''
 
-        ['t::cast', 'n -> (N) n', '{ n -> (N) n }'].each { cast ->
+        ['t::cast', 'n -> t.cast(n)', 'n -> (N) n', '{ n -> (N) n }'].each { cast ->
             assertScript """
                 Set<Number> f() {
                     Collections.<Number>singleton(42)
