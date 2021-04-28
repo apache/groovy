@@ -30,8 +30,8 @@ import org.codehaus.groovy.runtime.IteratorClosureAdapter;
 import org.codehaus.groovy.runtime.MethodClosure;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
+import org.codehaus.groovy.runtime.StreamGroovyMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
-import org.codehaus.groovy.vmplugin.v8.PluginDefaultGroovyMethods;
 
 import java.io.File;
 import java.io.IOException;
@@ -476,7 +476,7 @@ public class DefaultTypeTransformation {
         } else if (value.getClass().isArray()) {
             return arrayAsCollection(value);
         } else if (value instanceof BaseStream) {
-            return PluginDefaultGroovyMethods.toList((BaseStream) value);
+            return StreamGroovyMethods.toList((BaseStream) value);
         } else if (value instanceof MethodClosure) {
             MethodClosure method = (MethodClosure) value;
             IteratorClosureAdapter adapter = new IteratorClosureAdapter(method.getDelegate());

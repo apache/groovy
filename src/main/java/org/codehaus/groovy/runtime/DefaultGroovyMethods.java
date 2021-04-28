@@ -219,15 +219,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             ProcessGroovyMethods.class,
             ResourceGroovyMethods.class,
             SocketGroovyMethods.class,
-            StringGroovyMethods.class//,
-            // Below are registered as module extension classes
-//            DateUtilExtensions.class,
-//            DateTimeStaticExtensions.class,
-//            DateTimeExtensions.class,
-//            SqlExtensions.class,
-//            SwingGroovyMethods.class,
-//            XmlExtensions.class,
-//            NioExtensions.class
+            StreamGroovyMethods.class,
+            StringGroovyMethods.class,
+            /* registered extensions:
+            DateUtilExtensions.class,
+            DateTimeExtensions.class,
+            DateTimeStaticExtensions.class,
+            NioExtensions.class,
+            SqlExtensions.class,
+            SwingGroovyMethods.class,
+            XmlExtensions.class,
+            */
     };
     private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
     private static final NumberAwareComparator<Comparable> COMPARABLE_NUMBER_AWARE_COMPARATOR = new NumberAwareComparator<>();
