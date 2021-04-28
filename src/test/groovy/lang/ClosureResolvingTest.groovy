@@ -18,25 +18,49 @@
  */
 package groovy.lang
 
-import groovy.test.GroovyTestCase
+import org.junit.After
+import org.junit.Ignore
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Tests how closures resolve to either a delegate or an owner for a given resolveStrategy
  *
  * @since 1.5
  */
-final class ClosureResolvingTest extends GroovyTestCase {
+final class ClosureResolvingTest {
 
-    def foo = "bar"
-    def bar = "foo"
+    def foo = 'bar'
+    def bar = 'foo'
 
-    protected void tearDown() {
+    def doStuff() { 'stuff' }
+
+    static class TestResolve1 {
+        def foo = 'hello'
+
+        def doStuff() { 'foo' }
+    }
+
+    static class TestResolve2 {
+        def foo = 'hello'
+        def bar = 'world'
+
+        def doStuff() { 'bar' }
+    }
+
+    //--------------------------------------------------------------------------
+
+    @After
+    void tearDown() {
         Closure.metaClass = null
     }
 
+    @Test
     void testResolveToSelf() {
         def c = { foo }
-        assertEquals "bar", c.call()
+        assert c.call() == 'bar'
 
         c.resolveStrategy = Closure.TO_SELF
 
@@ -45,11 +69,11 @@ final class ClosureResolvingTest extends GroovyTestCase {
         }
 
         def metaClass = c.class.metaClass
-        metaClass.getFoo = {-> "hello!" }
+        metaClass.getFoo = {-> 'hello!' }
 
         c.metaClass = metaClass
 
-        assertEquals "hello!", c.call()
+        assert c.call() == 'hello!'
 
         c = { doStuff() }
         c.resolveStrategy = Closure.TO_SELF
@@ -57,35 +81,34 @@ final class ClosureResolvingTest extends GroovyTestCase {
             c.call()
         }
         metaClass = c.class.metaClass
-        metaClass.doStuff = {-> "hello" }
+        metaClass.doStuff = {-> 'hello' }
         c.metaClass = metaClass
 
-        assertEquals "hello", c.call()
+        assert c.call() == 'hello'
     }
 
-    def doStuff() { "stuff" }
-
+    @Test
     void testResolveDelegateFirst() {
 
         def c = { foo }
 
-        assertEquals "bar", c.call()
+        assert c.call() == 'bar'
 
-        c.setResolveStrategy(Closure.DELEGATE_FIRST)
-        c.delegate = [foo: "hello!"]
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c.delegate = [foo: 'hello!']
 
-        assertEquals "hello!", c.call()
+        assert c.call() == 'hello!'
 
 
         c = { doStuff() }
-        c.setResolveStrategy(Closure.DELEGATE_FIRST)
+        c.resolveStrategy = Closure.DELEGATE_FIRST
 
-        assertEquals "stuff", c.call()
+        assert c.call() == 'stuff'
         c.delegate = new TestResolve1()
-        assertEquals "foo", c.call()
+        assert c.call() == 'foo'
     }
 
-    // GROOVY-7701
+    @Test // GROOVY-7701
     void testResolveDelegateFirst2() {
         assertScript '''
             class Foo {
@@ -112,30 +135,32 @@ final class ClosureResolvingTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testResolveOwnerFirst() {
         def c = { foo }
 
-        assertEquals "bar", c.call()
+        assert c.call() == 'bar'
 
-        c.delegate = [foo: "hello!"]
+        c.delegate = [foo: 'hello!']
 
-        assertEquals "bar", c.call()
+        assert c.call() == 'bar'
 
         c = { doStuff() }
         c.delegate = new TestResolve1()
-        assertEquals "stuff", c.call()
+        assert c.call() == 'stuff'
     }
 
+    @Test
     void testResolveDelegateOnly() {
         def c = { foo + bar }
 
-        assertEquals "barfoo", c.call()
+        assert c.call() == 'barfoo'
 
         c.resolveStrategy = Closure.DELEGATE_FIRST
 
         c.delegate = new TestResolve1()
 
-        assertEquals "hellofoo", c.call()
+        assert c.call() == 'hellofoo'
 
         c.resolveStrategy = Closure.DELEGATE_ONLY
         shouldFail {
@@ -144,65 +169,76 @@ final class ClosureResolvingTest extends GroovyTestCase {
 
         c.delegate = new TestResolve2()
 
-        assertEquals "helloworld", c.call()
+        assert c.call() == 'helloworld'
 
         c = { doStuff() }
         c.resolveStrategy = Closure.DELEGATE_ONLY
         c.delegate = new TestResolve1()
-        assertEquals "foo", c.call()
+        assert c.call() == 'foo'
     }
 
+    @Test
     void testResolveOwnerOnly() {
         def c = { foo + bar }
 
-        assertEquals "barfoo", c.call()
+        assert c.call() == 'barfoo'
         c.resolveStrategy = Closure.OWNER_ONLY
 
         c.delegate = new TestResolve2()
-        assertEquals "barfoo", c.call()
+        assert c.call() == 'barfoo'
 
         c = { doStuff() }
-        assertEquals "stuff", c.call()
+        assert c.call() == 'stuff'
         c.resolveStrategy = Closure.OWNER_ONLY
         c.delegate = new TestResolve1()
-        assertEquals "stuff", c.call()
+        assert c.call() == 'stuff'
     }
 
+    @Test
     void testOwnerDelegateChain() {
-        def outerdel = new TestResolve3(del: "outer delegate")
-        def innerdel = new TestResolve3(del: "inner delegate")
+        assertScript '''
+            class TestResolve3 {
+                def del
+                String toString() { del }
+                def whoisThis() { return this }
+                def met() { return "I'm the method inside '$del'" }
+            }
 
-        def cout = {
-            assert delegate == outerdel
-            assert delegate.whoisThis() == outerdel
-            assert delegate.del == "outer delegate"
-            assert delegate.met() == "I'm the method inside 'outer delegate'"
+            def outerdel = new TestResolve3(del: "outer delegate")
+            def innerdel = new TestResolve3(del: "inner delegate")
 
-            assert whoisThis() == outerdel
-            assert del == "outer delegate"
-            assert met() == "I'm the method inside 'outer delegate'"
-
-            def cin = {
-                assert delegate == innerdel
-                assert delegate.whoisThis() == innerdel
-                assert delegate.del == "inner delegate"
-                assert delegate.met() == "I'm the method inside 'inner delegate'"
+            def cout = {
+                assert delegate == outerdel
+                assert delegate.whoisThis() == outerdel
+                assert delegate.del == "outer delegate"
+                assert delegate.met() == "I'm the method inside 'outer delegate'"
 
                 assert whoisThis() == outerdel
                 assert del == "outer delegate"
                 assert met() == "I'm the method inside 'outer delegate'"
 
+                def cin = {
+                    assert delegate == innerdel
+                    assert delegate.whoisThis() == innerdel
+                    assert delegate.del == "inner delegate"
+                    assert delegate.met() == "I'm the method inside 'inner delegate'"
+
+                    assert whoisThis() == outerdel
+                    assert del == "outer delegate"
+                    assert met() == "I'm the method inside 'outer delegate'"
+
+                }
+
+                cin.delegate = innerdel
+                cin()
             }
 
-            cin.delegate = innerdel
-            cin()
-        }
-
-        cout.delegate = outerdel
-        cout()
+            cout.delegate = outerdel
+            cout()
+        '''
     }
 
-    // GROOVY-7232
+    @Test // GROOVY-7232
     void testOwnerDelegateChain2() {
         assertScript '''
             def outer = { ->
@@ -221,7 +257,7 @@ final class ClosureResolvingTest extends GroovyTestCase {
         '''
     }
 
-    // GROOVY-7232
+    @Test // GROOVY-7232
     void testOwnerDelegateChain3() {
         assertScript '''
             def outer = { ->
@@ -244,7 +280,7 @@ final class ClosureResolvingTest extends GroovyTestCase {
         '''
     }
 
-    // GROOVY-7232
+    @Ignore @Test // GROOVY-7232
     void testOwnerDelegateChain4() {
         assertScript '''
             @GrabResolver(name='grails', root='https://repo.grails.org/grails/core')
@@ -266,26 +302,4 @@ final class ClosureResolvingTest extends GroovyTestCase {
             assert link == 'http://localhost/g/bars/1/baz'
         '''
     }
-}
-
-class TestResolve1 {
-    def foo = "hello"
-
-    def doStuff() { "foo" }
-}
-class TestResolve2 {
-    def foo = "hello"
-    def bar = "world"
-
-    def doStuff() { "bar" }
-}
-
-class TestResolve3 {
-    def del;
-
-    String toString() { del }
-
-    def whoisThis() { return this }
-
-    def met() { return "I'm the method inside '" + del + "'" }
 }
