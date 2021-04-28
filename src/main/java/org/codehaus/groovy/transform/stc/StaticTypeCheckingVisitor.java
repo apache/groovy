@@ -138,6 +138,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
+import static java.util.stream.Collectors.toList;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.apache.groovy.util.BeanUtils.decapitalize;
 import static org.codehaus.groovy.ast.ClassHelper.AUTOCLOSEABLE_TYPE;
@@ -165,7 +166,6 @@ import static org.codehaus.groovy.ast.ClassHelper.RANGE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.SET_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Short_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.TUPLE_CLASSES;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
@@ -331,12 +331,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode MAP_ENTRY_TYPE = ClassHelper.make(Map.Entry.class);
     protected static final ClassNode ITERABLE_TYPE = ClassHelper.ITERABLE_TYPE;
 
-    public static final Statement GENERATED_EMPTY_STATEMENT = EmptyStatement.INSTANCE;
+    private static List<ClassNode> TUPLE_TYPES = Arrays.stream(ClassHelper.TUPLE_CLASSES).map(ClassHelper::makeWithoutCaching).collect(toList());
 
-    // Cache closure call methods
-    public static final MethodNode CLOSURE_CALL_NO_ARG = CLOSURE_TYPE.getDeclaredMethod("call", Parameter.EMPTY_ARRAY);
+    public static final MethodNode CLOSURE_CALL_NO_ARG  = CLOSURE_TYPE.getDeclaredMethod("call", Parameter.EMPTY_ARRAY);
     public static final MethodNode CLOSURE_CALL_ONE_ARG = CLOSURE_TYPE.getDeclaredMethod("call", new Parameter[]{new Parameter(OBJECT_TYPE, "arg")});
-    public static final MethodNode CLOSURE_CALL_VARGS = CLOSURE_TYPE.getDeclaredMethod("call", new Parameter[]{new Parameter(OBJECT_TYPE.makeArray(), "args")});
+    public static final MethodNode CLOSURE_CALL_VARGS   = CLOSURE_TYPE.getDeclaredMethod("call", new Parameter[]{new Parameter(OBJECT_TYPE.makeArray(), "args")});
+
+    public static final Statement GENERATED_EMPTY_STATEMENT = EmptyStatement.INSTANCE;
 
     protected final ReturnAdder.ReturnStatementListener returnListener = new ReturnAdder.ReturnStatementListener() {
         @Override
@@ -1105,77 +1106,48 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private boolean typeCheckMultipleAssignmentAndContinue(final Expression leftExpression, Expression rightExpression) {
-        // multiple assignment check
-        if (!(leftExpression instanceof TupleExpression)) return true;
+        if (rightExpression instanceof VariableExpression || rightExpression instanceof PropertyExpression || rightExpression instanceof MethodCall) {
+            ClassNode inferredType = Optional.ofNullable(getType(rightExpression)).orElseGet(rightExpression::getType);
+            GenericsType[] genericsTypes = inferredType.getGenericsTypes();
+            ListExpression listExpression = new ListExpression();
+            listExpression.setSourcePosition(rightExpression);
 
-        Expression transformedRightExpression = transformRightExpressionToSupportMultipleAssignment(rightExpression);
-        if (transformedRightExpression == null) {
-            addStaticTypeError("Multiple assignments without list expressions on the right hand side are unsupported in static type checking mode", rightExpression);
-            return false;
+            // convert Tuple[1-16] bearing expressions to mock list for checking
+            for (int n = TUPLE_TYPES.indexOf(inferredType), i = 0; i < n; i += 1) {
+                ClassNode type = (genericsTypes != null ? genericsTypes[i].getType() : OBJECT_TYPE);
+                listExpression.addExpression(varX("v" + (i + 1), type));
+            }
+            if (!listExpression.getExpressions().isEmpty()) {
+                rightExpression = listExpression;
+            }
         }
 
-        rightExpression = transformedRightExpression;
+        if (!(rightExpression instanceof ListExpression)) {
+            addStaticTypeError("Multiple assignments without list or tuple on the right-hand side are unsupported in static type checking mode", rightExpression);
+            return false;
+        }
 
         TupleExpression tuple = (TupleExpression) leftExpression;
-        ListExpression list = (ListExpression) rightExpression;
-        List<Expression> listExpressions = list.getExpressions();
+        ListExpression values = (ListExpression) rightExpression;
         List<Expression> tupleExpressions = tuple.getExpressions();
-        if (listExpressions.size() < tupleExpressions.size()) {
-            addStaticTypeError("Incorrect number of values. Expected:" + tupleExpressions.size() + " Was:" + listExpressions.size(), list);
+        List<Expression> valueExpressions = values.getExpressions();
+
+        if (tupleExpressions.size() > valueExpressions.size()) {
+            addStaticTypeError("Incorrect number of values. Expected:" + tupleExpressions.size() + " Was:" + valueExpressions.size(), values);
             return false;
         }
-        for (int i = 0, tupleExpressionsSize = tupleExpressions.size(); i < tupleExpressionsSize; i++) {
-            Expression tupleExpression = tupleExpressions.get(i);
-            Expression listExpression = listExpressions.get(i);
-            ClassNode elemType = getType(listExpression);
-            ClassNode tupleType = getType(tupleExpression);
-            if (!isAssignableTo(elemType, tupleType)) {
-                addStaticTypeError("Cannot assign value of type " + prettyPrintType(elemType) + " to variable of type " + prettyPrintType(tupleType), rightExpression);
-                return false; // avoids too many errors
-            } else {
-                storeType(tupleExpression, elemType);
+
+        for (int i = 0, n = tupleExpressions.size(); i < n; i += 1) {
+            ClassNode valueType = getType(valueExpressions.get(i));
+            ClassNode targetType = getType(tupleExpressions.get(i));
+            if (!isAssignableTo(valueType, targetType)) {
+                addStaticTypeError("Cannot assign value of type " + prettyPrintType(valueType) + " to variable of type " + prettyPrintType(targetType), rightExpression);
+                return false;
             }
+            storeType(tupleExpressions.get(i), valueType);
         }
 
         return true;
-    }
-
-    private Expression transformRightExpressionToSupportMultipleAssignment(final Expression rightExpression) {
-        if (rightExpression instanceof ListExpression) {
-            return rightExpression;
-        }
-
-        ClassNode cn = null;
-        if (rightExpression instanceof MethodCallExpression || rightExpression instanceof ConstructorCallExpression || rightExpression instanceof VariableExpression) {
-            ClassNode inferredType = getType(rightExpression);
-            cn = (inferredType == null ? rightExpression.getType() : inferredType);
-        }
-
-        if (cn == null) {
-            return null;
-        }
-
-        for (int i = 0, n = TUPLE_CLASSES.length; i < n; i += 1) {
-            Class<?> tcn = TUPLE_CLASSES[i];
-            if (tcn.equals(cn.getTypeClass())) {
-                ListExpression listExpression = new ListExpression();
-                GenericsType[] genericsTypes = cn.getGenericsTypes();
-                for (int j = 0; j < i; j += 1) {
-                    // the index of element in tuple starts with 1
-                    MethodCallExpression mce = new MethodCallExpression(rightExpression, "getV" + (j + 1), ArgumentListExpression.EMPTY_ARGUMENTS);
-                    ClassNode elementType = (genericsTypes != null ? genericsTypes[j].getType() : OBJECT_TYPE);
-                    mce.setType(elementType);
-                    storeType(mce, elementType);
-                    listExpression.addExpression(mce);
-                }
-
-                listExpression.setSourcePosition(rightExpression);
-
-                return listExpression;
-            }
-        }
-
-        return null;
     }
 
     private ClassNode adjustTypeForSpreading(final ClassNode inferredRightExpressionType, final Expression leftExpression) {
@@ -1299,7 +1271,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void typeCheckAssignment(final BinaryExpression assignmentExpression, final Expression leftExpression, final ClassNode leftExpressionType, final Expression rightExpression, final ClassNode rightExpressionType) {
-        if (!typeCheckMultipleAssignmentAndContinue(leftExpression, rightExpression)) return;
+        if (leftExpression instanceof TupleExpression) {
+            if (!typeCheckMultipleAssignmentAndContinue(leftExpression, rightExpression)) return;
+        }
 
         // TODO: need errors for write-only too!
         if (addedReadOnlyPropertyError(leftExpression)) return;
