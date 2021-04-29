@@ -26,15 +26,22 @@ import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FirstParam;
 import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.RangeInfo;
+import org.codehaus.groovy.runtime.StreamGroovyMethods;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.Set;
+import java.util.Spliterator;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -49,6 +56,11 @@ import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
+import java.util.stream.BaseStream;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 /**
  * Defines new Groovy methods which appear on standard Java 8 classes within the
@@ -534,5 +546,142 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @Deprecated
     public static int size(final StringBuilder self) {
         return self.length();
+    }
+
+    //--------------------------------------------------------------------------
+
+    @Deprecated
+    public static <T> Stream<T> stream(final T self) {
+        return Stream.of(self);
+    }
+
+    @Deprecated
+    public static <T> Stream<T> stream(final T[] self) {
+        return Arrays.stream(self);
+    }
+
+    @Deprecated
+    public static Stream<Integer> stream(final int[] self) {
+        return StreamGroovyMethods.stream(self);
+    }
+
+    @Deprecated
+    public static Stream<Long> stream(final long[] self) {
+        return StreamGroovyMethods.stream(self);
+    }
+
+    @Deprecated
+    public static Stream<Double> stream(final double[] self) {
+        return StreamGroovyMethods.stream(self);
+    }
+
+    @Deprecated
+    public static Stream<Character> stream(final char[] self) {
+        return StreamGroovyMethods.stream(self);
+    }
+
+    @Deprecated
+    public static Stream<Byte> stream(final byte[] self) {
+        return StreamGroovyMethods.stream(self);
+    }
+
+    @Deprecated
+    public static Stream<Short> stream(final short[] self) {
+        return StreamGroovyMethods.stream(self);
+    }
+
+    @Deprecated
+    public static Stream<Boolean> stream(final boolean[] self) {
+        return StreamGroovyMethods.stream(self);
+    }
+
+    @Deprecated
+    public static Stream<Float> stream(final float[] self) {
+        return StreamGroovyMethods.stream(self);
+    }
+
+    @Deprecated
+    public static <T> Stream<T> stream(final Enumeration<T> self) {
+        return StreamGroovyMethods.stream(self);
+    }
+
+    @Deprecated
+    public static <T> Stream<T> stream(final Iterable<T> self) {
+        return StreamGroovyMethods.stream(self);
+    }
+
+    @Deprecated
+    public static <T> Stream<T> stream(final Iterator<T> self) {
+        return StreamGroovyMethods.stream(self);
+    }
+
+    @Deprecated
+    public static <T> Stream<T> stream(final Spliterator<T> self) {
+        return StreamGroovyMethods.stream(self);
+    }
+
+    @Deprecated
+    public static <T> Stream<T> stream(final NullObject self) {
+        return Stream.empty();
+    }
+
+    @Deprecated
+    public static <T> Stream<T> stream(final Optional<T> self) {
+        return StreamGroovyMethods.stream(self);
+    }
+
+    @Deprecated
+    public static IntStream stream(final OptionalInt self) {
+        return StreamGroovyMethods.stream(self);
+    }
+
+    @Deprecated
+    public static LongStream stream(final OptionalLong self) {
+        return StreamGroovyMethods.stream(self);
+    }
+
+    @Deprecated
+    public static DoubleStream stream(final OptionalDouble self) {
+        return StreamGroovyMethods.stream(self);
+    }
+
+    @Deprecated
+    public static IntStream intStream(final int[] self) {
+        return Arrays.stream(self);
+    }
+
+    @Deprecated
+    public static LongStream longStream(final long[] self) {
+        return Arrays.stream(self);
+    }
+
+    @Deprecated
+    public static DoubleStream doubleStream(final double[] self) {
+        return Arrays.stream(self);
+    }
+
+    @Deprecated
+    public static <T> T[] toArray(final Stream<? extends T> self, final Class<T> type) {
+        return StreamGroovyMethods.toArray(self, type);
+    }
+
+    @Deprecated
+    public static <T> List<T> toList(final Stream<T> self) {
+        return StreamGroovyMethods.toList(self);
+    }
+
+    @Deprecated
+    public static <T> List<T> toList(final BaseStream<T, ? extends BaseStream> self) {
+        return StreamGroovyMethods.toList(self);
+    }
+
+    @Deprecated
+    public static <T> Set<T> toSet(final Stream<T> self) {
+        return StreamGroovyMethods.toSet(self);
+    }
+
+    @Deprecated
+    public static <T> Set<T> toSet(final BaseStream<T, ? extends BaseStream> self) {
+        return StreamGroovyMethods.toSet(self);
     }
 }
