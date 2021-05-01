@@ -46,16 +46,16 @@ final class Groovy7985 {
             }
 
             @groovy.transform.CompileStatic
-            Pair<Pair<String, Integer>, Pair<String, Integer>> doSmething() {
+            Pair<Pair<String, Integer>, Pair<String, Integer>> doSomething() {
                 def one = (Pair<String, Integer>) Pair.of('a', 1)
                 def two = (Pair<String, Integer>) Pair.of('b', 2)
                 return Pair.of(one, two)
             }
 
-            assert doSmething().left.left == 'a'
-            assert doSmething().left.right == 1
-            assert doSmething().right.left == 'b'
-            assert doSmething().right.right == 2
+            assert doSomething().left.left == 'a'
+            assert doSomething().left.right == 1
+            assert doSomething().right.left == 'b'
+            assert doSomething().right.right == 2
         '''
     }
 }

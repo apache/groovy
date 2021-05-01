@@ -206,26 +206,29 @@ public class GenericsType extends ASTNode {
             return true; // diamond always matches
         }
         if (classNode.isGenericsPlaceHolder()) {
-            // if the compare type is a generics placeholder (like <E>) then we
-            // only need to check that the names are equal
             if (genericsTypes == null) {
                 return true;
             }
-            if (isWildcard()) {
-                if (getLowerBound() != null) {
-                    ClassNode lowerBound = getLowerBound();
-                    return genericsTypes[0].name.equals(lowerBound.getUnresolvedName());
+            String name = genericsTypes[0].name;
+            if (!isWildcard()) {
+                return this.name.equals(name);
+            }
+            if (getLowerBound() != null) {
+                // check for "? super T" vs "T"
+                ClassNode lowerBound = getLowerBound();
+                if (lowerBound.getUnresolvedName().equals(name)) {
+                    return true;
                 }
-                if (getUpperBounds() != null) {
-                    for (ClassNode upperBound : getUpperBounds()) {
-                        if (genericsTypes[0].name.equals(upperBound.getUnresolvedName())) {
-                            return true;
-                        }
+            } else if (getUpperBounds() != null) {
+                // check for "? extends T & I" vs "T" or "I"
+                for (ClassNode upperBound : getUpperBounds()) {
+                    if (upperBound.getUnresolvedName().equals(name)) {
+                        return true;
                     }
-                    return false;
                 }
             }
-            return genericsTypes[0].name.equals(name);
+            // check for "? extends/super X" vs "T extends/super X"
+            return checkGenerics(classNode);
         }
         if (isWildcard() || isPlaceholder()) {
             // if the generics spec is a wildcard or a placeholder then check the bounds

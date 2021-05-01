@@ -367,6 +367,35 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10067
+    void testReturnTypeInferenceWithMethodGenerics11() {
+        assertScript '''
+            def <N extends Number> N getNumber() {
+                return (N) 42
+            }
+            def f(Integer i) {
+            }
+            def g(int i) {
+            }
+
+            Integer i = this.<Integer>getNumber()
+            f(this.<Integer>getNumber())
+            g(this.<Integer>getNumber())
+
+            i = (Integer) getNumber()
+            f((Integer) getNumber())
+            g((Integer) getNumber())
+
+            i = getNumber()
+          //f(getNumber())
+          //g(getNumber())
+
+            i = number
+          //f(number)
+          //g(number)
+        '''
+    }
+
     void testDiamondInferrenceFromConstructor1() {
         assertScript '''
             class Foo<U> {
