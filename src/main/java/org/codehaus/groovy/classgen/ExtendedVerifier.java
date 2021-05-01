@@ -175,6 +175,8 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
                 List<AnnotationNode> seen = nonSourceAnnotations.get(name);
                 if (seen == null) {
                     seen = new ArrayList<>();
+                } else if (!isRepeatable(visited.getClassNode())) {
+                    addError("Cannot specify duplicate annotation on the same member : " + name, visited);
                 }
                 seen.add(visited);
                 nonSourceAnnotations.put(name, seen);
@@ -189,10 +191,19 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             visitDeprecation(node, visited);
             visitOverride(node, visited);
         }
-        checkForDuplicateAnnotations(node, nonSourceAnnotations);
+        processDuplicateAnnotationContainers(node, nonSourceAnnotations);
     }
 
-    private void checkForDuplicateAnnotations(AnnotatedNode node, Map<String, List<AnnotationNode>> nonSourceAnnotations) {
+    private boolean isRepeatable(final ClassNode classNode) {
+        for (AnnotationNode anno : classNode.getAnnotations()) {
+            if (anno.getClassNode().getName().equals("java.lang.annotation.Repeatable")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void processDuplicateAnnotationContainers(AnnotatedNode node, Map<String, List<AnnotationNode>> nonSourceAnnotations) {
         for (Map.Entry<String, List<AnnotationNode>> next : nonSourceAnnotations.entrySet()) {
             if (next.getValue().size() > 1) {
                 ClassNode repeatable = null;

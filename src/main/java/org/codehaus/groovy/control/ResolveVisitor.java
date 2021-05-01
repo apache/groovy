@@ -1329,7 +1329,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     public void visitAnnotations(final AnnotatedNode node) {
         List<AnnotationNode> annotations = node.getAnnotations();
         if (annotations.isEmpty()) return;
-        Map<String, AnnotationNode> tmpAnnotations = new HashMap<>();
         for (AnnotationNode an : annotations) {
             // skip built-in properties
             if (an.isBuiltIn()) continue;
@@ -1341,28 +1340,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 member.setValue(adjusted);
                 checkAnnotationMemberValue(adjusted);
             }
-            if (annType.isResolved()) {
-                Class<?> annTypeClass = annType.getTypeClass();
-                Retention retAnn = annTypeClass.getAnnotation(Retention.class);
-                if (retAnn != null && !retAnn.value().equals(RetentionPolicy.SOURCE) && !isRepeatable(annTypeClass)) {
-                    // remember non-source/non-repeatable annos (auto collecting of Repeatable annotations is handled elsewhere)
-                    AnnotationNode anyPrevAnnNode = tmpAnnotations.put(annTypeClass.getName(), an);
-                    if (anyPrevAnnNode != null) {
-                        addError("Cannot specify duplicate annotation on the same member : " + annType.getName(), an);
-                    }
-                }
-            }
         }
-    }
-
-    private boolean isRepeatable(final Class<?> annTypeClass) {
-        Annotation[] annTypeAnnotations = annTypeClass.getAnnotations();
-        for (Annotation annTypeAnnotation : annTypeAnnotations) {
-            if (annTypeAnnotation.annotationType().getName().equals("java.lang.annotation.Repeatable")) {
-                return true;
-            }
-        }
-        return false;
     }
 
     // resolve constant-looking expressions statically (do here as they get transformed away later)
