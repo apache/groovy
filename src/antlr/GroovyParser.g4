@@ -1136,14 +1136,6 @@ options { baseContext = enhancedArgumentListInPar; }
         )*
     ;
 
-enhancedArgumentList
-options { baseContext = enhancedArgumentListInPar; }
-    :   firstEnhancedArgumentListElement
-        (   COMMA nls
-            enhancedArgumentListElement
-        )*
-    ;
-
 enhancedArgumentListInPar
     :   enhancedArgumentListElement
         (   COMMA nls
@@ -1161,13 +1153,6 @@ argumentListElement
 options { baseContext = enhancedArgumentListElement; }
     :   expressionListElement[true]
     |   namedPropertyArg
-    ;
-
-firstEnhancedArgumentListElement
-options { baseContext = enhancedArgumentListElement; }
-    :   expressionListElement[true]
-    |   standardLambdaExpression
-    |   namedArg
     ;
 
 enhancedArgumentListElement
