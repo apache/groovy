@@ -81,7 +81,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<String> list = []
             list << 1
-        ''', '[Static type checking] - Cannot call <T> java.util.ArrayList#leftShift(T) with arguments [int] '
+        ''', 'Cannot call <T> java.util.ArrayList#leftShift(T) with arguments [int]'
     }
 
     void testAddOnList2UsingLeftShift() {
@@ -129,14 +129,14 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<Integer> list = new LinkedList<>()
             list.add 'Hello'
-        ''', '[Static type checking] - Cannot find matching method java.util.LinkedList#add(java.lang.String). Please check if the declared type is correct and if the method exists.'
+        ''', 'Cannot find matching method java.util.LinkedList#add(java.lang.String). Please check if the declared type is correct and if the method exists.'
     }
 
     void testAddOnListWithDiamondAndWrongTypeUsingLeftShift() {
         shouldFailWithMessages '''
             List<Integer> list = new LinkedList<>()
             list << 'Hello'
-        ''', '[Static type checking] - Cannot call <T> java.util.LinkedList#leftShift(T) with arguments [java.lang.String]'
+        ''', 'Cannot call <T> java.util.LinkedList#leftShift(T) with arguments [java.lang.String]'
     }
 
     void testAddOnListWithDiamondAndNullUsingLeftShift() {
@@ -2221,7 +2221,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             Baz.qux(['abc'])
-        ''', 'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.List<java.lang.String>] '
+        ''', 'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.List<java.lang.String>]'
     }
 
     // GROOVY-5721
@@ -2627,7 +2627,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
             GoodCodeRed.foo()
         ''',
-        "Cannot call <T> GoodCodeRed#attach(GoodCodeRed<java.lang.Long>) with arguments [GoodCodeRed<java.lang.Integer>]"
+        'Cannot call <T> GoodCodeRed#attach(GoodCodeRed<java.lang.Long>) with arguments [GoodCodeRed<java.lang.Integer>]'
     }
 
     void testHiddenGenerics() {

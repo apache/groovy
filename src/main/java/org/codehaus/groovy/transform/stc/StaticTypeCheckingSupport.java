@@ -65,6 +65,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -377,7 +378,6 @@ public abstract class StaticTypeCheckingSupport {
     static int allParametersAndArgumentsMatchWithDefaultParams(final Parameter[] parameters, final ClassNode[] argumentTypes) {
         int dist = 0;
         ClassNode ptype = null;
-        // we already know the lengths are equal
         for (int i = 0, j = 0, n = parameters.length; i < n; i += 1) {
             Parameter param = parameters[i];
             ClassNode paramType = param.getType();
@@ -429,16 +429,17 @@ public abstract class StaticTypeCheckingSupport {
      */
     static int lastArgMatchesVarg(final Parameter[] parameters, final ClassNode... argumentTypes) {
         if (!isVargs(parameters)) return -1;
-        // case length ==0 handled already
-        // we have now two cases,
+        int lastParamIndex = parameters.length - 1;
+        if (lastParamIndex == argumentTypes.length) return 0;
+        // two cases remain:
         // the argument is wrapped in the vargs array or
         // the argument is an array that can be used for the vargs part directly
-        // we test only the wrapping part, since the non wrapping is done already
-        ClassNode lastParamType = parameters[parameters.length - 1].getType();
-        ClassNode ptype = lastParamType.getComponentType();
-        ClassNode arg = argumentTypes[argumentTypes.length - 1];
-        if (isNumberType(ptype) && isNumberType(arg) && !getWrapper(ptype).equals(getWrapper(arg))) return -1;
-        return isAssignableTo(arg, ptype) ? min(getDistance(arg, lastParamType), getDistance(arg, ptype)) : -1;
+        // testing only the wrapping case since the non-wrapping is done already
+        ClassNode arrayType = parameters[lastParamIndex].getType();
+        ClassNode elementType = arrayType.getComponentType();
+        ClassNode argumentType = argumentTypes[argumentTypes.length - 1];
+        if (isNumberType(elementType) && isNumberType(argumentType) && !getWrapper(elementType).equals(getWrapper(argumentType))) return -1;
+        return isAssignableTo(argumentType, elementType) ? min(getDistance(argumentType, arrayType), getDistance(argumentType, elementType)) : -1;
     }
 
     /**
@@ -849,16 +850,13 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     static String toMethodParametersString(final String methodName, final ClassNode... parameters) {
-        StringBuilder sb = new StringBuilder(methodName);
-        sb.append('(');
-        if (parameters != null) {
-            for (int i = 0, n = parameters.length; i < n; i += 1) {
-                sb.append(prettyPrintType(parameters[i]));
-                if (i < n - 1) sb.append(", ");
-            }
+        if (parameters == null || parameters.length == 0) return methodName + "()";
+
+        StringJoiner joiner = new StringJoiner(", ", methodName + "(", ")");
+        for (ClassNode parameter : parameters) {
+            joiner.add(prettyPrintType(parameter));
         }
-        sb.append(')');
-        return sb.toString();
+        return joiner.toString();
     }
 
     /**

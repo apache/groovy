@@ -23,88 +23,101 @@ package groovy.transform.stc
  */
 class ClosuresSTCTest extends StaticTypeCheckingTestCase {
 
-    void testClosureWithoutArguments() {
+    void testClosureWithoutArguments1() {
         assertScript '''
-        def clos = { println "hello!" }
-
-        println "Executing the Closure:"
-        clos() //prints "hello!"
+            def c = { return 'foo' }
+            assert c() == 'foo'
         '''
     }
 
-    // GROOVY-9079: no params to statically type check but shouldn't get NPE
-    void testClosureWithoutArgumentsExplicit() {
+    void testClosureWithoutArguments2() {
         assertScript '''
-            import java.util.concurrent.Callable
-
-            String makeFoo() {
-                Callable<String> call = { -> 'foo' }
-                call()
-            }
-
-            assert makeFoo() == 'foo'
+            def c = { -> return 'foo' }
+            assert c() == 'foo'
         '''
     }
 
-    void testClosureWithArguments() {
+    // GROOVY-9079
+    void testClosureWithoutArguments3() {
         assertScript '''
-            def printSum = { int a, int b -> print a+b }
-            printSum( 5, 7 ) //prints "12"
+            java.util.concurrent.Callable<String> c = { -> return 'foo' }
+            assert c() == 'foo'
+        '''
+    }
+
+    // GROOVY-10071
+    void testClosureWithoutArguments4() {
+        assertScript '''
+            def c = { ... zeroOrMore -> return 'foo' + zeroOrMore }
+            assert c('bar', 'baz') == 'foo[bar, baz]'
+            assert c('bar') == 'foo[bar]'
+            assert c() == 'foo[]'
+        '''
+    }
+
+    void testClosureWithArguments1() {
+        assertScript '''
+            def c = { int a, int b -> a + b }
+            assert c(5, 7) == 12
         '''
 
         shouldFailWithMessages '''
-            def printSum = { int a, int b -> print a+b }
-            printSum( '5', '7' ) //prints "12"
-        ''', 'Closure argument types: [int, int] do not match with parameter types: [java.lang.String, java.lang.String]'
+            def c = { int a, int b -> print a + b }
+            c('5', '7')
+        ''',
+        'Cannot call closure that accepts [int, int] with [java.lang.String, java.lang.String]'
     }
 
-    void testClosureWithArgumentsAndNoDef() {
+    void testClosureWithArguments2() {
         assertScript '''
-            { int a, int b -> print a+b }(5,7)
+            def result = { int a, int b -> a + b }(5, 7)
+            assert result == 12
         '''
+
+        shouldFailWithMessages '''
+            { int a, int b -> a + b }('5', 7)
+        ''',
+        'Cannot call closure that accepts [int, int] with [java.lang.String, int]'
     }
 
-    void testClosureWithArgumentsNoDefAndWrongType() {
-        shouldFailWithMessages '''
-            { int a, int b -> print a+b }('5',7)
-        ''', 'Closure argument types: [int, int] do not match with parameter types: [java.lang.String, int]'
+    // GROOVY-6365
+    void testClosureWithArguments3() {
+        assertScript '''
+            def c = { Object[] args -> args.length }
+            assert c('one', 'two') == 2
+        '''
     }
 
     void testClosureReturnTypeInference1() {
         assertScript '''
-            def closure = { int x, int y -> return x+y }
-            int total = closure(2,3)
+            def c = { int a, int b -> return a + b }
+            int total = c(2, 3)
+            assert total == 5
         '''
     }
 
     void testClosureReturnTypeInference2() {
-        shouldFailWithMessages '''
-            def closure = { int x, int y -> return x+y }
-            int total = closure('2',3)
-        ''', 'Closure argument types: [int, int] do not match with parameter types: [java.lang.String, int]'
-    }
-
-    void testClosureReturnTypeInference3() {
         assertScript '''
-            int total = { int x, int y -> return x+y }(2,3)
+            int total = { int a, int b -> return a + b }(2, 3)
         '''
     }
 
-    void testClosureReturnTypeInference4() {
+    void testClosureReturnTypeInference3() {
         shouldFailWithMessages '''
-            def cl = { int x ->
-                if (x==0) {
-                    1L
+            def c = { int x ->
+                if (x == 0) {
+                    1L // long
                 } else {
                     x // int
                 }
             }
-            byte res = cl(0) // should throw an error because return type inference should be a long
-        ''', 'Possible loss of precision from long to byte'
+            byte res = c(0)
+        ''',
+        'Possible loss of precision from long to byte'
     }
 
     // GROOVY-9907
-    void testClosureReturnTypeInference5() {
+    void testClosureReturnTypeInference4() {
         assertScript '''
             Integer foo(x) {
                 if (x instanceof Integer) {
@@ -118,7 +131,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9971
-    void testClosureReturnTypeInference6() {
+    void testClosureReturnTypeInference5() {
         assertScript '''
             def m(Closure<String> c) {
                 c.call()

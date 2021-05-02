@@ -1158,7 +1158,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             closure(*strings)
         ''',
         'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
-        'Closure argument types: [java.lang.String, java.lang.String, java.lang.String] do not match with parameter types: [java.lang.Object]'
+        'Cannot call closure that accepts [java.lang.String, java.lang.String, java.lang.String] with [java.lang.Object]'
     }
 
     void testBoxingShouldCostMore() {
