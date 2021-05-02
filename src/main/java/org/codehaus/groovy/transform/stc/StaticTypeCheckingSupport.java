@@ -438,18 +438,19 @@ public abstract class StaticTypeCheckingSupport {
      * @param args
      * @return -1 if no match, 0 if the last argument is exactly the vararg type and 1 if of an assignable type
      */
-    static int lastArgMatchesVarg(Parameter[] params, ClassNode... args) {
-        if (!isVargs(params)) return -1;
-        // case length ==0 handled already
-        // we have now two cases,
+    static int lastArgMatchesVarg(final Parameter[] parameters, final ClassNode... argumentTypes) {
+        if (!isVargs(parameters)) return -1;
+        int lastParamIndex = parameters.length - 1;
+        if (lastParamIndex == argumentTypes.length) return 0;
+        // two cases remain:
         // the argument is wrapped in the vargs array or
         // the argument is an array that can be used for the vargs part directly
-        // we test only the wrapping part, since the non wrapping is done already
-        ClassNode lastParamType = params[params.length - 1].getType();
-        ClassNode ptype = lastParamType.getComponentType();
-        ClassNode arg = args[args.length - 1];
-        if (isNumberType(ptype) && isNumberType(arg) && !getWrapper(ptype).equals(getWrapper(arg))) return -1;
-        return isAssignableTo(arg, ptype) ? min(getDistance(arg, lastParamType), getDistance(arg, ptype)) : -1;
+        // testing only the wrapping case since the non-wrapping is done already
+        ClassNode arrayType = parameters[lastParamIndex].getType();
+        ClassNode elementType = arrayType.getComponentType();
+        ClassNode argumentType = argumentTypes[argumentTypes.length - 1];
+        if (isNumberType(elementType) && isNumberType(argumentType) && !getWrapper(elementType).equals(getWrapper(argumentType))) return -1;
+        return isAssignableTo(argumentType, elementType) ? min(getDistance(argumentType, arrayType), getDistance(argumentType, elementType)) : -1;
     }
 
     /**

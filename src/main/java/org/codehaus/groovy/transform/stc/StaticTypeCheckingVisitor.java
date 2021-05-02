@@ -3391,12 +3391,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     FieldNode field = typeCheckingContext.getEnclosingClassNode().getDeclaredField(name);
                     GenericsType[] genericsTypes = field.getType().getGenericsTypes();
                     if (genericsTypes != null) {
-                        ClassNode closureReturnType = genericsTypes[0].getType();
-                        Object data = field.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
-                        if (data != null) {
-                            Parameter[] parameters = (Parameter[]) data;
+                        Parameter[] parameters = field.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
+                        if (parameters != null) {
                             typeCheckClosureCall(callArguments, args, parameters);
                         }
+                        ClassNode closureReturnType = genericsTypes[0].getType();
                         storeType(call, closureReturnType);
                     }
                 } else if (objectExpression instanceof VariableExpression) {
@@ -3424,10 +3423,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 } else if (objectExpression instanceof ClosureExpression) {
                     // we can get actual parameters directly
                     Parameter[] parameters = ((ClosureExpression) objectExpression).getParameters();
-                    if (parameters != null) typeCheckClosureCall(callArguments, args, parameters);
-                    ClassNode data = getInferredReturnType(objectExpression);
-                    if (data != null) {
-                        storeType(call, data);
+                    if (parameters != null) {
+                        typeCheckClosureCall(callArguments, args, parameters);
+                    }
+                    ClassNode type = getInferredReturnType(objectExpression);
+                    if (type != null) {
+                        storeType(call, type);
                     }
                 }
                 int nbOfArgs;
@@ -3792,17 +3793,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return (getType(objectExpression).equals(CLOSURE_TYPE));
     }
 
-    protected void typeCheckClosureCall(final Expression callArguments, final ClassNode[] args, final Parameter[] parameters) {
-        if (allParametersAndArgumentsMatch(parameters, args) < 0 &&
-                lastArgMatchesVarg(parameters, args) < 0) {
-            StringBuilder sb = new StringBuilder("[");
-            for (int i = 0, parametersLength = parameters.length; i < parametersLength; i++) {
-                final Parameter parameter = parameters[i];
-                sb.append(parameter.getType().getName());
-                if (i < parametersLength - 1) sb.append(", ");
-            }
-            sb.append("]");
-            addStaticTypeError("Closure argument types: " + sb + " do not match with parameter types: " + formatArgumentList(args), callArguments);
+    protected void typeCheckClosureCall(final Expression arguments, final ClassNode[] argumentTypes, final Parameter[] parameters) {
+        if (allParametersAndArgumentsMatch(parameters, argumentTypes) < 0 && lastArgMatchesVarg(parameters, argumentTypes) < 0) {
+            addStaticTypeError("Cannot call closure that accepts " + formatArgumentList(extractTypesFromParameters(parameters)) + "with " + formatArgumentList(argumentTypes), arguments);
         }
     }
 
@@ -5453,7 +5446,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected static String formatArgumentList(ClassNode[] nodes) {
-        if (nodes == null || nodes.length == 0) return "[]";
+        if (nodes == null || nodes.length == 0) return "[] ";
         StringBuilder sb = new StringBuilder(24 * nodes.length);
         sb.append("[");
         for (ClassNode node : nodes) {

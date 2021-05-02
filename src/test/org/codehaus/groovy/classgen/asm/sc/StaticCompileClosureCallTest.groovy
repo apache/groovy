@@ -23,7 +23,8 @@ import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 /**
  * Tests for static compilation: checks that closures are called properly.
  */
-class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
+final class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
+
     void testShouldCallClosure() {
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -117,61 +118,61 @@ class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
 
     void testWriteSharedVariableInClosure() {
         def bytecode = compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        void m() {
-            String test = 'test'
-            def cl = { test = 'TEST' }
-            cl()
-            assert test == 'TEST'
-        }
+            @groovy.transform.CompileStatic
+            void m() {
+                String test = 'test'
+                def cl = { test = 'TEST' }
+                cl()
+                assert test == 'TEST'
+            }
         ''')
         clazz.newInstance().main()
     }
 
     void testCallPrivateMethodFromClosure() {
         assertScript '''
-        @groovy.transform.CompileStatic
-        class Foo {
-            void m() {
-                String test = 'test'
-                def cl = { test = bar() }
-                cl()
-                assert test == 'TEST'
+            @groovy.transform.CompileStatic
+            class Foo {
+                void m() {
+                    String test = 'test'
+                    def cl = { test = bar() }
+                    cl()
+                    assert test == 'TEST'
+                }
+                private String bar() { 'TEST' }
             }
-            private String bar() { 'TEST' }
-        }
-        new Foo().m()
+            new Foo().m()
         '''
     }
 
     void testCallStaticPrivateMethodFromClosure() {
         assertScript '''
-        @groovy.transform.CompileStatic
-        class Foo {
-            void m() {
-                String test = 'test'
-                def cl = { test = bar() }
-                cl()
-                assert test == 'TEST'
+            @groovy.transform.CompileStatic
+            class Foo {
+                void m() {
+                    String test = 'test'
+                    def cl = { test = bar() }
+                    cl()
+                    assert test == 'TEST'
+                }
+                private static String bar() { 'TEST' }
             }
-            private static String bar() { 'TEST' }
-        }
-        new Foo().m()
+            new Foo().m()
         '''
     }
 
     void testCallMethodWithinClosure() {
         assertScript '''
-        @groovy.transform.CompileStatic
-        class Foo {
-            static void m(StackTraceElement[] trace) {
-                trace.each { StackTraceElement stackTraceElement -> !stackTraceElement.className.startsWith('foo') }
+            @groovy.transform.CompileStatic
+            class Foo {
+                static void m(StackTraceElement[] trace) {
+                    trace.each { StackTraceElement stackTraceElement -> !stackTraceElement.className.startsWith('foo') }
+                }
             }
-        }
-        1
+            1
         '''
     }
-    
+
     // GROOVY-6199
     void testCallClassMethodFromNestedClosure() {
         assertScript '''
@@ -192,30 +193,5 @@ class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
             mc.run()
             assert mc.bool
         '''
-    }
-    
-    //GROOVY-6365
-    void testClosureDoCallNotWrapped() {
-        assertScript """
-            @groovy.transform.CompileStatic
-            class MyClass {
-              def method() {
-                final cl = { Object[] args -> args.length }
-                cl('c1-1', 'c1-2')
-              }
-            }
-
-            assert new MyClass().method() == 2
-        """
-        assertScript """
-            class MyClass {
-              def method() {
-                final cl = { Object[] args -> args.length }
-                cl('c1-1', 'c1-2')
-              }
-            }
-
-            assert new MyClass().method() == 2
-        """
     }
 }

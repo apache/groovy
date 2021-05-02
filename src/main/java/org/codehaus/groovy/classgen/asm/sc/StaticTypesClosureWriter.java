@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -34,13 +35,14 @@ import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Opcodes;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
@@ -77,18 +79,30 @@ public class StaticTypesClosureWriter extends ClosureWriter {
     }
 
     private static void createDirectCallMethod(final ClassNode closureClass, final MethodNode doCallMethod) {
-        // in case there is no "call" method on the closure, we can create a "fast invocation" paths
+        // in case there is no "call" method on the closure, create a "fast invocation" path
         // to avoid going through ClosureMetaClass by call(Object...) method
 
-        // we can't have a specialized version of call(Object...) because the dispatch logic in ClosureMetaClass
-        // is too complex!
+        // we can't have a specialized version of call(Object...) because the dispatch logic
+        // in ClosureMetaClass is too complex!
 
         // call(Object)
-        Parameter args = param(ClassHelper.OBJECT_TYPE, "args");
+        Parameter doCallParam = doCallMethod.getParameters()[0];
+        Parameter args = new Parameter(doCallParam.getType(), "args");
         addGeneratedCallMethod(closureClass, doCallMethod, varX(args), new Parameter[]{args});
 
         // call()
-        addGeneratedCallMethod(closureClass, doCallMethod, constX(null), Parameter.EMPTY_ARRAY);
+        addGeneratedCallMethod(closureClass, doCallMethod, defaultArgument(doCallParam), Parameter.EMPTY_ARRAY);
+    }
+
+    private static Expression defaultArgument(final Parameter parameter) {
+        Expression argument;
+        if (parameter.getType().isArray()) {
+            ClassNode elementType = parameter.getType().getComponentType();
+            argument = new ArrayExpression(elementType, null, Collections.<Expression>singletonList(constX(0, true)));
+        } else {
+            argument = nullX();
+        }
+        return argument;
     }
 
     private static void addGeneratedCallMethod(ClassNode closureClass, MethodNode doCallMethod, Expression expression, Parameter[] params) {
