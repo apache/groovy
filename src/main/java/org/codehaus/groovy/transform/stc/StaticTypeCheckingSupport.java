@@ -2098,26 +2098,14 @@ public abstract class StaticTypeCheckingSupport {
         return node.getSuperClass() != null && isParameterizedWithString(node.getUnresolvedSuperClass());
     }
 
-    public static boolean missesGenericsTypes(final ClassNode cn) {
-        if (cn.isArray()) return missesGenericsTypes(cn.getComponentType());
-        GenericsType[] cnTypes = cn.getGenericsTypes();
-        GenericsType[] rnTypes = cn.redirect().getGenericsTypes();
-        if (rnTypes != null && cnTypes == null) return true;
-        if (cnTypes != null) {
-            for (GenericsType genericsType : cnTypes) {
-                if (genericsType.isPlaceholder()) return true;
-                if (genericsType.isWildcard()) {
-                    ClassNode lowerBound = genericsType.getLowerBound();
-                    ClassNode[] upperBounds = genericsType.getUpperBounds();
-                    if (lowerBound != null) {
-                        if (lowerBound.isGenericsPlaceHolder() || missesGenericsTypes(lowerBound)) return true;
-                    } else if (upperBounds != null) {
-                        if (upperBounds[0].isGenericsPlaceHolder() || missesGenericsTypes(upperBounds[0])) return true;
-                    }
-                }
-            }
-        }
-        return false;
+    /**
+     * Determines if node is a raw type or references any generics placeholders.
+     */
+    public static boolean missesGenericsTypes(ClassNode cn) {
+        while (cn.isArray()) cn = cn.getComponentType();
+        GenericsType[] cnGenerics = cn.getGenericsTypes();
+        GenericsType[] rnGenerics = cn.redirect().getGenericsTypes();
+        return cnGenerics == null || cnGenerics.length == 0 ? rnGenerics != null : GenericsUtils.hasUnresolvedGenerics(cn);
     }
 
     /**

@@ -798,6 +798,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
 
             boolean isAssignment = isAssignment(expression.getOperation().getType());
+            if (isAssignment && rightExpression instanceof ConstructorCallExpression) {
+                inferDiamondType((ConstructorCallExpression) rightExpression, lType);
+            }
             if (isAssignment && lType.isUsingGenerics() && missesGenericsTypes(resultType)) {
                 // unchecked assignment
                 // examples:
@@ -833,10 +836,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             boolean isEmptyDeclaration = (expression instanceof DeclarationExpression && rightExpression instanceof EmptyExpression);
             if (isAssignment && !isEmptyDeclaration) {
-                if (rightExpression instanceof ConstructorCallExpression) {
-                    inferDiamondType((ConstructorCallExpression) rightExpression, lType);
-                }
-
                 ClassNode originType = getOriginalDeclarationType(leftExpression);
                 typeCheckAssignment(expression, leftExpression, originType, rightExpression, resultType);
                 // if assignment succeeds but result type is not a subtype of original type, then we are in a special cast handling

@@ -325,6 +325,17 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-8974
+    void testDiamondInferrenceFromConstructor8() {
+        assertScript '''
+            def <T> T identity(T t) { t }
+            List<String> list = identity(new ArrayList<>())
+            list.add('foo')
+            def foo = list[0]
+            assert foo.toUpperCase() == 'FOO'
+        '''
+    }
+
     void testLinkedListWithListArgument() {
         assertScript '''
             List<String> list = new LinkedList<String>(['1','2','3'])
