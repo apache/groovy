@@ -82,7 +82,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<String> list = []
             list << 1
-        ''', '[Static type checking] - Cannot call <T> java.util.List <String>#leftShift(T) with arguments [int] '
+        ''', 'Cannot call <T> java.util.List <String>#leftShift(T) with arguments [int]'
     }
 
     void testAddOnList2UsingLeftShift() {
@@ -130,14 +130,14 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<Integer> list = new LinkedList<>()
             list.add 'Hello'
-        ''', '[Static type checking] - Cannot find matching method java.util.LinkedList#add(java.lang.String). Please check if the declared type is correct and if the method exists.'
+        ''', 'Cannot find matching method java.util.LinkedList#add(java.lang.String). Please check if the declared type is correct and if the method exists.'
     }
 
     void testAddOnListWithDiamondAndWrongTypeUsingLeftShift() {
         shouldFailWithMessages '''
             List<Integer> list = new LinkedList<>()
             list << 'Hello'
-        ''', '[Static type checking] - Cannot call <T> java.util.LinkedList <java.lang.Integer>#leftShift(T) with arguments [java.lang.String]'
+        ''', 'Cannot call <T> java.util.LinkedList <java.lang.Integer>#leftShift(T) with arguments [java.lang.String]'
     }
 
     void testAddOnListWithDiamondAndNullUsingLeftShift() {
@@ -1666,7 +1666,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             Baz.qux(['abc'])
-        ''', 'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.List <String>] '
+        ''', 'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.List <String>]'
     }
 
     // GROOVY-5721
@@ -2140,8 +2140,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             GoodCodeRed.foo()
-        ''',
-        "Cannot call <T> GoodCodeRed <Long>#attach(GoodCodeRed <Long>) with arguments [GoodCodeRed <Integer>]"
+        ''', 'Cannot call <T> GoodCodeRed <Long>#attach(GoodCodeRed <Long>) with arguments [GoodCodeRed <Integer>]'
     }
 
     void testHiddenGenerics() {
@@ -2155,7 +2154,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             class Blah {}
             class MyList extends LinkedList<Object> {}
             List<Blah> o = new MyList()
-        ''','Incompatible generic argument types. Cannot assign MyList to: java.util.List <Blah>'
+        ''', 'Incompatible generic argument types. Cannot assign MyList to: java.util.List <Blah>'
 
         // Groovy-5873
         assertScript """
