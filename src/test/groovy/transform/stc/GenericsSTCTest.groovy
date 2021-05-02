@@ -1077,14 +1077,14 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testPutMethodWithPrimitiveValue1() {
+    void testPutMethodWithPrimitiveValue() {
         assertScript '''
             def map = new HashMap<String, Integer>()
             map.put('hello', 1)
         '''
     }
 
-    void testPutMethodWithPrimitiveValue2() {
+    void testPutAtMethodWithPrimitiveValue() {
         assertScript '''
             def map = new HashMap<String, Integer>()
             map['hello'] = 1
@@ -1095,7 +1095,47 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             def map = new HashMap<String, Integer>()
             map.put('hello', new Object())
-        ''', '[Static type checking] - Cannot find matching method java.util.HashMap#put(java.lang.String, java.lang.Object). Please check if the declared type is correct and if the method exists.'
+        ''',
+        'Cannot find matching method java.util.HashMap#put(java.lang.String, java.lang.Object). Please check if the declared type is correct and if the method exists.'
+    }
+
+    void testPutAtMethodWithWrongValueType() {
+        shouldFailWithMessages '''
+            def map = new HashMap<String, Integer>()
+            map['hello'] = new Object()
+        ''',
+        'Cannot call <K,V> java.util.HashMap#putAt(java.lang.String, java.lang.Integer) with arguments [java.lang.String, java.lang.Object]'
+    }
+
+    // GROOVY-9069
+    void testPutAtMethodWithWrongValueType2() {
+        shouldFailWithMessages '''
+            class ConfigAttribute {
+            }
+            void test(Map<String, Map<String, List<String>>> maps) {
+                maps.each { String key, Map<String, List<String>> map ->
+                    Map<String, List<ConfigAttribute>> value = [:] // Why "List<ConfigAttribute>"?
+                    // populate value
+                    maps[key] = value
+                    maps.put(key, value)
+                }
+            }
+        ''',
+        'Cannot call <K,V> java.util.Map#putAt(java.lang.String, java.util.Map<java.lang.String, java.util.List<java.lang.String>>) with arguments [java.lang.String, java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>>]',
+        'Cannot find matching method java.util.Map#put(java.lang.String, java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>>). Please check if the declared type is correct and if the method exists.'
+    }
+
+    void testPutAtMethodWithWrongValueType3() {
+        assertScript '''
+            void test(Map<String, Map<String, List<String>>> maps) {
+                maps.each { String key, Map<String, List<String>> map ->
+                    Map<String, List<String>> value = [:]
+                    // populate value
+                    maps[key] = value
+                    maps.put(key, value)
+                }
+            }
+        '''
     }
 
     void testShouldComplainAboutToInteger() {
