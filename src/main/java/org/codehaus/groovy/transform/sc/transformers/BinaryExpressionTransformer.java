@@ -82,7 +82,7 @@ public class BinaryExpressionTransformer {
                 return optimized;
             }
         }
-        Object[] list = bin.getNodeMetaData(StaticCompilationMetadataKeys.BINARY_EXP_TARGET);
+
         Token operation = bin.getOperation();
         int operationType = operation.getType();
         Expression leftExpression = bin.getLeftExpression();
@@ -162,6 +162,8 @@ public class BinaryExpressionTransformer {
         } else if (operationType == Types.KEYWORD_IN) {
             return staticCompilationTransformer.transform(convertInOperatorToTernary(bin, rightExpression, leftExpression));
         }
+
+        Object[] list = bin.getNodeMetaData(StaticCompilationMetadataKeys.BINARY_EXP_TARGET);
         if (list != null) {
             MethodCallExpression call;
             Expression left = staticCompilationTransformer.transform(leftExpression);

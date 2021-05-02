@@ -2726,30 +2726,32 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void visitMethodCallArguments(final ClassNode receiver, final ArgumentListExpression arguments, final boolean visitClosures, final MethodNode selectedMethod) {
-        Parameter[] params = selectedMethod != null ? selectedMethod.getParameters() : Parameter.EMPTY_ARRAY;
-        List<Expression> expressions = new LinkedList<>(arguments.getExpressions());
+        Parameter[] parameters;
+        List<Expression> expressions = new ArrayList<>();
         if (selectedMethod instanceof ExtensionMethodNode) {
-            params = ((ExtensionMethodNode) selectedMethod).getExtensionMethodNode().getParameters();
-            expressions.add(0, varX("$self", receiver));
+            parameters = ((ExtensionMethodNode) selectedMethod).getExtensionMethodNode().getParameters();
+            expressions.add(varX("$self", receiver));
+        } else {
+            parameters = selectedMethod != null ? selectedMethod.getParameters() : Parameter.EMPTY_ARRAY;
         }
-        ArgumentListExpression newArgs = args(expressions);
+        expressions.addAll(arguments.getExpressions());
 
         int nExpressions = expressions.size();
         for (int i = 0; i < nExpressions; i += 1) {
             Expression expression = expressions.get(i);
             if (visitClosures && expression instanceof ClosureExpression
                     || !visitClosures && !(expression instanceof ClosureExpression)) {
-                if (i < params.length && visitClosures) {
-                    Parameter target = params[i];
+                if (i < parameters.length && visitClosures) {
+                    Parameter target = parameters[i];
                     ClassNode targetType = target.getType();
                     ClosureExpression source = (ClosureExpression) expression;
-                    checkClosureWithDelegatesTo(receiver, selectedMethod, newArgs, params, source, target);
+                    checkClosureWithDelegatesTo(receiver, selectedMethod, args(expressions), parameters, source, target);
                     if (selectedMethod instanceof ExtensionMethodNode) {
                         if (i > 0) {
                             inferClosureParameterTypes(receiver, arguments, source, target, selectedMethod);
                         }
                     } else {
-                        inferClosureParameterTypes(receiver, newArgs, source, target, selectedMethod);
+                        inferClosureParameterTypes(receiver, arguments, source, target, selectedMethod);
                     }
                     if (isFunctionalInterface(targetType)) {
                         storeInferredReturnType(source, GenericsUtils.parameterizeSAM(targetType).getV2());
@@ -2760,9 +2762,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 expression.visit(this);
                 expression.removeNodeMetaData(DELEGATION_METADATA);
             }
-        }
-        if (nExpressions > 0 && expressions.get(0) instanceof MapExpression && params.length > 0) {
-            checkNamedParamsAnnotation(params[0], (MapExpression) expressions.get(0));
+            if (i == 0 && parameters.length > 0 && expression instanceof MapExpression) {
+                checkNamedParamsAnnotation(parameters[0], (MapExpression) expression);
+            }
         }
         if (visitClosures) {
             inferMethodReferenceType(receiver, arguments, selectedMethod);

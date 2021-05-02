@@ -665,7 +665,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
                 char c = arr[0]
                 ' '==c
             }
-            assert m(' abc '.toCharArray()) == true
+            assert m(' abc '.toCharArray())
         '''
         assert compile(method:'m',code).hasSequence(['BIPUSH','ILOAD','IF_ICMPNE'])
         assertScript(code)
@@ -676,7 +676,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
                 char c = arr[0]
                 c==' '
             }
-            assert m(' abc '.toCharArray()) == true
+            assert m(' abc '.toCharArray())
         '''
         assert compile(method:'m',code).hasSequence(['ILOAD','BIPUSH','IF_ICMPNE'])
         assertScript(code)

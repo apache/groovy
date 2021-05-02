@@ -1099,13 +1099,15 @@ public abstract class StaticTypeCheckingSupport {
     private static int measureParametersAndArgumentsDistance(final Parameter[] parameters, final ClassNode[] argumentTypes) {
         int dist = -1;
         if (parameters.length == argumentTypes.length) {
-            int allPMatch = allParametersAndArgumentsMatch(parameters, argumentTypes);
-            int firstParamDist = firstParametersAndArgumentsMatch(parameters, argumentTypes);
-            int lastArgMatch = isVargs(parameters) && firstParamDist >= 0 ? lastArgMatchesVarg(parameters, argumentTypes) : -1;
-            if (lastArgMatch >= 0) {
-                lastArgMatch += getVarargsDistance(parameters);
+            int allMatch = allParametersAndArgumentsMatch(parameters, argumentTypes);
+            int endMatch = -1;
+            if (isVargs(parameters) && firstParametersAndArgumentsMatch(parameters, argumentTypes) >= 0) {
+                endMatch = lastArgMatchesVarg(parameters, argumentTypes);
+                if (endMatch >= 0) {
+                    endMatch += getVarargsDistance(parameters);
+                }
             }
-            dist = allPMatch >= 0 ? Math.max(allPMatch, lastArgMatch) : lastArgMatch;
+            dist = (allMatch >= 0 ? Math.max(allMatch, endMatch) : endMatch);
         } else if (isVargs(parameters)) {
             dist = firstParametersAndArgumentsMatch(parameters, argumentTypes);
             if (dist >= 0) {
@@ -1120,10 +1122,10 @@ public abstract class StaticTypeCheckingSupport {
                 if (parameters.length < argumentTypes.length) {
                     // (3) there is more than one argument for the vargs array
                     int excessArgumentsDistance = excessArgumentsMatchesVargsParameter(parameters, argumentTypes);
-                    if (excessArgumentsDistance < 0) {
-                        dist = -1;
-                    } else {
+                    if (excessArgumentsDistance >= 0) {
                         dist += excessArgumentsDistance;
+                    } else {
+                        dist = -1;
                     }
                 }
             }
