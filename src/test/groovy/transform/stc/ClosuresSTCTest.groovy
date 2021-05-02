@@ -55,6 +55,21 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10072
+    void testClosureWithoutArguments5() {
+        assertScript '''
+            def c = { p = 'foo' -> return p }
+            assert c('bar') == 'bar'
+            assert c() == 'foo'
+        '''
+
+        assertScript '''
+            def c = { p, q = 'baz' -> '' + p + q }
+            assert c('foo', 'bar') == 'foobar'
+            assert c('foo') == 'foobaz'
+        '''
+    }
+
     void testClosureWithArguments1() {
         assertScript '''
             def c = { int a, int b -> a + b }
@@ -62,7 +77,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
 
         shouldFailWithMessages '''
-            def c = { int a, int b -> print a + b }
+            def c = { int a, int b -> a + b }
             c('5', '7')
         ''',
         'Cannot call closure that accepts [int, int] with [java.lang.String, java.lang.String]'

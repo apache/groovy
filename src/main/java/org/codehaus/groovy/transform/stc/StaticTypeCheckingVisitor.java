@@ -238,7 +238,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Matche
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.NUMBER_OPS;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.UNKNOWN_PARAMETER_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.addMethodLevelDeclaredGenerics;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.allParametersAndArgumentsMatch;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.allParametersAndArgumentsMatchWithDefaultParams;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.applyGenericsConnections;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.applyGenericsContext;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.applyGenericsContextToParameterClass;
@@ -1852,27 +1852,29 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             typeCheckingContext.isInStaticContext = node.isInStaticContext();
             currentField = node;
             visitAnnotations(node);
-            Expression init = node.getInitialExpression();
-            if (init != null) {
-                ClassNode lType = getType(node);
-                if (isFunctionalInterface(lType)) { // GROOVY-9977
-                    processFunctionalInterfaceAssignment(lType, init);
-                } else if (isClosureWithType(lType) && init instanceof ClosureExpression) {
-                    storeInferredReturnType(init, getCombinedBoundType(lType.getGenericsTypes()[0]));
-                }
-                init.visit(this);
-                ClassNode rType = getType(init);
-                if (init instanceof ConstructorCallExpression) {
-                    inferDiamondType((ConstructorCallExpression) init, lType);
-                }
-
-                FieldExpression left = new FieldExpression(node);
-                BinaryExpression bexp = assignX(left, init, node);
-                typeCheckAssignment(bexp, left, lType, init, getResultType(lType, ASSIGN, rType, bexp));
-            }
+            visitInitialExpression(node.getInitialExpression(), new FieldExpression(node), node);
         } finally {
             currentField = null;
             typeCheckingContext.isInStaticContext = osc;
+        }
+    }
+
+    private void visitInitialExpression(final Expression value, final Expression target, final ASTNode position) {
+        if (value != null) {
+            ClassNode lType = target.getType();
+            if (isFunctionalInterface(lType)) { // GROOVY-9977
+                processFunctionalInterfaceAssignment(lType, value);
+            } else if (isClosureWithType(lType) && value instanceof ClosureExpression) {
+                storeInferredReturnType(value, getCombinedBoundType(lType.getGenericsTypes()[0]));
+            }
+            value.visit(this);
+            ClassNode rType = getType(value);
+            if (value instanceof ConstructorCallExpression) {
+                inferDiamondType((ConstructorCallExpression) value, lType);
+            }
+
+            BinaryExpression bexp = assignX(target, value, position);
+            typeCheckAssignment(bexp, target, lType, value, getResultType(lType, ASSIGN, rType, bexp));
         }
     }
 
@@ -2405,6 +2407,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         typeCheckingContext.isInStaticContext = oldStaticContext;
         for (Parameter parameter : getParametersSafe(expression)) {
             typeCheckingContext.controlStructureVariables.remove(parameter);
+            // GROOVY-10071: visit param default argument expression if present
+            visitInitialExpression(parameter.getInitialExpression(), varX(parameter), parameter);
         }
     }
 
@@ -3880,7 +3884,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void typeCheckClosureCall(final Expression arguments, final ClassNode[] argumentTypes, final Parameter[] parameters) {
-        if (allParametersAndArgumentsMatch(parameters, argumentTypes) < 0 && lastArgMatchesVarg(parameters, argumentTypes) < 0) {
+        if (allParametersAndArgumentsMatchWithDefaultParams(parameters, argumentTypes) < 0 && lastArgMatchesVarg(parameters, argumentTypes) < 0) {
             addStaticTypeError("Cannot call closure that accepts " + formatArgumentList(extractTypesFromParameters(parameters)) + " with " + formatArgumentList(argumentTypes), arguments);
         }
     }
