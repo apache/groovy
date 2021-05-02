@@ -245,6 +245,7 @@ final class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                         startsWith('ClassNode'),
                         eq('Methods'),
                         startsWith('MethodNode - run'),
+                        eq('Body'),
                         startsWith('BlockStatement'),
                         startsWith('ExpressionStatement'),
                         startsWith('Constant - foo'),
@@ -284,6 +285,7 @@ final class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                         startsWith('ClassNode'),
                         eq('Methods'),
                         eq('MethodNode - main'),
+                        eq('Body'),
                         startsWith('ExpressionStatement'),  //notice, there is only one ExpressionStatement
                         startsWith('StaticMethodCallExpression'),
                 ]
@@ -316,7 +318,8 @@ final class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                 [
                         startsWith('InnerClassNode - Outer\$Inner'),
                         eq('Methods'),
-                        startsWith('MethodNode - someMethod'),
+                        eq('MethodNode - someMethod'),
+                        eq('Body'),
                         startsWith('BlockStatement'),
                 ]
         )
@@ -448,7 +451,7 @@ final class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         }
     }
 
-   void testScriptWithAdapterThatLoadsNitherFreeFormNorClass() {
+   void testScriptWithAdapterThatLoadsNeitherFreeFormNorClass() {
         ScriptToTreeNodeAdapter adapter = createAdapter(false, false, false)
 
         // since free standing script is not being loaded, it should fail
