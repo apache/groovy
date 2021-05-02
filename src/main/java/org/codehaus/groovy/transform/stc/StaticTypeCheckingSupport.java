@@ -2148,7 +2148,7 @@ public abstract class StaticTypeCheckingSupport {
         while (cn.isArray()) cn = cn.getComponentType();
         GenericsType[] cnGenerics = cn.getGenericsTypes();
         GenericsType[] rnGenerics = cn.redirect().getGenericsTypes();
-        return cnGenerics == null ? rnGenerics != null : GenericsUtils.hasUnresolvedGenerics(cn);
+        return cnGenerics == null || cnGenerics.length == 0 ? rnGenerics != null : GenericsUtils.hasUnresolvedGenerics(cn);
     }
 
     /**
