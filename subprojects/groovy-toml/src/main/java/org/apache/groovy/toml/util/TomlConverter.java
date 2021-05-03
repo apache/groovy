@@ -26,7 +26,6 @@ import groovy.toml.TomlRuntimeException;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.io.StringReader;
 
 /**
  *  A converter for converting TOML to JSON, vice versa
@@ -64,11 +63,4 @@ public class TomlConverter {
     }
 
     private TomlConverter() {}
-
-    public static void main(String[] args) {
-        String json = TomlConverter.convertTomlToJson(new StringReader("number = 42"));
-        System.out.println(json);
-        String toml = TomlConverter.convertJsonToToml(new StringReader(json));
-        System.out.println(toml);
-    }
 }
