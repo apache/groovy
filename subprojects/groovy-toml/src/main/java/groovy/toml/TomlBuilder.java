@@ -37,7 +37,7 @@ import java.util.Map;
  *  @since 4.0.0
  */
 public class TomlBuilder extends GroovyObjectSupport implements Writable {
-    private JsonBuilder jsonBuilder;
+    private final JsonBuilder jsonBuilder;
 
     public TomlBuilder() {
         this.jsonBuilder = new JsonBuilder();
