@@ -26,6 +26,8 @@ import groovy.lang.GroovyRuntimeException;
  * @since 4.0.0
  */
 public class TomlRuntimeException extends GroovyRuntimeException {
+    private static final long serialVersionUID = -5723737489247290350L;
+
     public TomlRuntimeException(String msg) {
         super(msg);
     }
