@@ -35,7 +35,7 @@ import java.nio.file.Path;
  *  @since 3.0.0
  */
 public class YamlSlurper {
-    private JsonSlurper jsonSlurper;
+    private final JsonSlurper jsonSlurper;
 
     public YamlSlurper() {
         this.jsonSlurper = new JsonSlurper();

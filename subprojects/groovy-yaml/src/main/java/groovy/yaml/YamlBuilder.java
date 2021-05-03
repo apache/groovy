@@ -37,7 +37,7 @@ import java.util.Map;
  *  @since 3.0.0
  */
 public class YamlBuilder extends GroovyObjectSupport implements Writable {
-    private JsonBuilder jsonBuilder;
+    private final JsonBuilder jsonBuilder;
 
     public YamlBuilder() {
         this.jsonBuilder = new JsonBuilder();
