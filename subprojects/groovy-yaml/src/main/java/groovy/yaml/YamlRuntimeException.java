@@ -26,6 +26,8 @@ import groovy.lang.GroovyRuntimeException;
  * @since 3.0.0
  */
 public class YamlRuntimeException extends GroovyRuntimeException {
+    private static final long serialVersionUID = -6071053120162025455L;
+
     public YamlRuntimeException(String msg) {
         super(msg);
     }
