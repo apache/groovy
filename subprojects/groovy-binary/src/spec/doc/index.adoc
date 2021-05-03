@@ -106,6 +106,8 @@ include::../../../../../subprojects/groovy-xml/src/spec/doc/xml-userguide.adoc[l
 
 include::../../../../../subprojects/groovy-yaml/src/spec/doc/yaml-userguide.adoc[leveloffset=+2]
 
+include::../../../../../subprojects/groovy-toml/src/spec/doc/toml-userguide.adoc[leveloffset=+2]
+
 include::../../../../../subprojects/groovy-contracts/src/spec/doc/contracts-userguide.adoc[leveloffset=+2]
 
 === Scripting Ant tasks
