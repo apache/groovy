@@ -51,6 +51,10 @@ class Null {
         return null
     }
 
+    static $static_propertyMissing(String name, def value) {
+        return null
+    }
+
     boolean asBoolean() {
         return false
     }
