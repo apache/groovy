@@ -407,6 +407,18 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9064
+    void testReturnTypeInferenceWithMethodGenerics13() {
+        assertScript '''
+            List getSomeRows() { [new String[]{'x'}] }
+            List<String[]> rows = getSomeRows()
+            rows.each { row ->
+                def col = row[0].toUpperCase()
+                assert col == 'X'
+            }
+        '''
+    }
+
     void testDiamondInferrenceFromConstructor1() {
         assertScript '''
             class Foo<U> {
