@@ -289,7 +289,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         if (this instanceof Group) {
             this.makeReusable();
             if (0 == this.count()) {
-                stream = Stream.of((T) tuple(Collections.emptyMap(), EMPTY_QUERYABLE)).map((T t) -> mapper.apply(t, this));
+                stream = Stream.of((T) tuple(NULL, EMPTY_QUERYABLE)).map((T t) -> mapper.apply(t, this));
             }
         }
         if (null == stream) {

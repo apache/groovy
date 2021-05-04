@@ -40,10 +40,10 @@ import java.util.stream.Stream;
 @Internal
 public interface Queryable<T> {
     /**
-     * Represents null of GINQ, it could be used as the default group field
+     * Represents null of GINQ, e.g. it could be used as the default group field
      * @since 4.0.0
      */
-    Object NULL = new Object();
+    Object NULL = Null.INSTANCE;
 
     /**
      * Represents the empty Queryable instance
