@@ -1364,25 +1364,21 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     protected static boolean typeCheckMethodsWithGenerics(final ClassNode receiver, final ClassNode[] argumentTypes, final MethodNode candidateMethod) {
-        boolean isExtensionMethod = candidateMethod instanceof ExtensionMethodNode;
-        if (!isExtensionMethod
-                && receiver.isUsingGenerics()
+        if (candidateMethod instanceof ExtensionMethodNode) {
+            ClassNode[] realTypes = new ClassNode[argumentTypes.length + 1];
+            realTypes[0] = receiver; // object expression is implicit argument
+            System.arraycopy(argumentTypes, 0, realTypes, 1, argumentTypes.length);
+            MethodNode realMethod = ((ExtensionMethodNode) candidateMethod).getExtensionMethodNode();
+            return typeCheckMethodsWithGenerics(realMethod.getDeclaringClass(), realTypes, realMethod, true);
+        }
+
+        if (receiver.isUsingGenerics()
                 && receiver.equals(CLASS_Type)
                 && !candidateMethod.getDeclaringClass().equals(CLASS_Type)) {
             return typeCheckMethodsWithGenerics(receiver.getGenericsTypes()[0].getType(), argumentTypes, candidateMethod);
         }
-        // both candidate method and receiver have generic information so a check is possible
-        GenericsType[] genericsTypes = candidateMethod.getGenericsTypes();
-        boolean methodUsesGenerics = (genericsTypes != null && genericsTypes.length > 0);
-        if (isExtensionMethod && methodUsesGenerics) {
-            ClassNode[] dgmArgs = new ClassNode[argumentTypes.length + 1];
-            dgmArgs[0] = receiver;
-            System.arraycopy(argumentTypes, 0, dgmArgs, 1, argumentTypes.length);
-            MethodNode extensionMethodNode = ((ExtensionMethodNode) candidateMethod).getExtensionMethodNode();
-            return typeCheckMethodsWithGenerics(extensionMethodNode.getDeclaringClass(), dgmArgs, extensionMethodNode, true);
-        } else {
-            return typeCheckMethodsWithGenerics(receiver, argumentTypes, candidateMethod, false);
-        }
+
+        return typeCheckMethodsWithGenerics(receiver, argumentTypes, candidateMethod, false);
     }
 
     private static boolean typeCheckMethodsWithGenerics(final ClassNode receiver, final ClassNode[] argumentTypes, final MethodNode candidateMethod, final boolean isExtensionMethod) {
