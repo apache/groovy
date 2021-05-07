@@ -20,7 +20,6 @@
 package org.codehaus.groovy.transform.stc;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
@@ -1449,25 +1448,21 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     protected static boolean typeCheckMethodsWithGenerics(ClassNode receiver, ClassNode[] arguments, MethodNode candidateMethod) {
-        boolean isExtensionMethod = candidateMethod instanceof ExtensionMethodNode;
-        if (!isExtensionMethod
-                && receiver.isUsingGenerics()
+        if (candidateMethod instanceof ExtensionMethodNode) {
+            ClassNode[] realTypes = new ClassNode[arguments.length + 1];
+            realTypes[0] = receiver; // object expression is first argument
+            System.arraycopy(arguments, 0, realTypes, 1, arguments.length);
+            MethodNode realMethod = ((ExtensionMethodNode) candidateMethod).getExtensionMethodNode();
+            return typeCheckMethodsWithGenerics(realMethod.getDeclaringClass(), realTypes, realMethod, true);
+        }
+
+        if (receiver.isUsingGenerics()
                 && receiver.equals(CLASS_Type)
                 && !candidateMethod.getDeclaringClass().equals(CLASS_Type)) {
             return typeCheckMethodsWithGenerics(receiver.getGenericsTypes()[0].getType(), arguments, candidateMethod);
         }
-        // both candidate method and receiver have generic information so a check is possible
-        GenericsType[] genericsTypes = candidateMethod.getGenericsTypes();
-        boolean methodUsesGenerics = (genericsTypes != null && genericsTypes.length > 0);
-        if (isExtensionMethod && methodUsesGenerics) {
-            ClassNode[] dgmArgs = new ClassNode[arguments.length + 1];
-            dgmArgs[0] = receiver;
-            System.arraycopy(arguments, 0, dgmArgs, 1, arguments.length);
-            MethodNode extensionMethodNode = ((ExtensionMethodNode) candidateMethod).getExtensionMethodNode();
-            return typeCheckMethodsWithGenerics(extensionMethodNode.getDeclaringClass(), dgmArgs, extensionMethodNode, true);
-        } else {
-            return typeCheckMethodsWithGenerics(receiver, arguments, candidateMethod, false);
-        }
+
+        return typeCheckMethodsWithGenerics(receiver, arguments, candidateMethod, false);
     }
 
     private static boolean typeCheckMethodsWithGenerics(ClassNode receiver, ClassNode[] arguments, MethodNode candidateMethod, boolean isExtensionMethod) {

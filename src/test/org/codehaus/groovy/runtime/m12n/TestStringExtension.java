@@ -19,8 +19,16 @@
 package org.codehaus.groovy.runtime.m12n;
 
 public class TestStringExtension {
+
     public static String reverseToUpperCase(String self) {
-        StringBuilder sb = new StringBuilder(self.toUpperCase());
-        return sb.reverse().toString();
+        return new StringBuilder(self.toUpperCase()).reverse().toString();
+    }
+
+    public static String getString(java.util.List<String> self) {
+        return self.get(0);
+    }
+
+    public static <CS extends CharSequence> CharSequence getSequence(java.util.List<CS> self) {
+        return self.get(0);
     }
 }

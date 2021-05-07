@@ -1581,6 +1581,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 for (MethodNode m : findDGMMethodsByNameAndArguments(getSourceUnit().getClassLoader(), dgmReceiver, "is" + capName, ClassNode.EMPTY_ARRAY)) {
                     if (Boolean_TYPE.equals(getWrapper(m.getReturnType()))) methods.add(m);
                 }
+                if (isUsingGenericsOrIsArrayUsingGenerics(dgmReceiver)) { // GROOVY-10075: "List<Integer>" vs "List<String>"
+                    for (Iterator<MethodNode> it = methods.iterator(); it.hasNext(); ) { MethodNode method = it.next();
+                        if (!typeCheckMethodsWithGenerics(dgmReceiver, ClassNode.EMPTY_ARRAY, method)) it.remove();
+                    }
+                }
                 if (!methods.isEmpty()) {
                     List<MethodNode> methodNodes = chooseBestMethod(dgmReceiver, methods, ClassNode.EMPTY_ARRAY);
                     if (methodNodes.size() == 1) {

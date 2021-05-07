@@ -24,37 +24,37 @@ package groovy.transform.stc
 class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
 
     void testEach() {
-        assertScript """
+        assertScript '''
             ['a','b'].each { // DGM#each(Object, Closure)
                 println it // DGM#println(Object,Object)
             }
-        """
+        '''
 
-        assertScript """
+        assertScript '''
             ['a','b'].eachWithIndex { it, i ->// DGM#eachWithIndex(Object, Closure)
                 println it // DGM#println(Object,Object)
             }
-        """
+        '''
     }
 
     void testStringToInteger() {
-        assertScript """
-        String name = "123"
-        name.toInteger() // toInteger() is defined by DGM
-        """
+        assertScript '''
+            String name = "123"
+            name.toInteger() // toInteger() is defined by DGM
+        '''
     }
 
     void testVariousAssignmentsThenToInteger() {
-        assertScript """
-         class A {
-          void foo() {}
-         }
-        def name = new A()
-        name.foo()
-        name = 1
-        name = '123'
-        name.toInteger() // toInteger() is defined by DGM
-        """
+        assertScript '''
+            class A {
+                void foo() {}
+            }
+            def name = new A()
+            name.foo()
+            name = 1
+            name = '123'
+            name.toInteger() // toInteger() is defined by DGM
+        '''
     }
 
     void testMethodsOnPrimitiveTypes() {
@@ -66,7 +66,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
             true.equals { it }
         '''
     }
-  
+
     void testShouldAcceptMethodFromDefaultDateMethods() {
       assertScript '''
         def s = new Date()
@@ -76,14 +76,48 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5568
-    void testDGMMethodAsProperty() {
+    void testPropertySemantics1() {
         assertScript '''
-            String foo(InputStream input) {
-                input.text
+            String test(InputStream input) {
+                input.text // IOGroovyMethods#getText(InputStream)
             }
-            def text = new ByteArrayInputStream('foo'.getBytes())
-            assert foo(text) == 'foo'
+            assert test(new ByteArrayInputStream('foo'.bytes)) == 'foo'
         '''
+
+        assertScript '''
+            def chars = new StringBuilder('foo').chars // StringGroovyMethods#getChars(CharSequence)
+            assert chars == 'foo'.toCharArray()
+        '''
+
+        assertScript '''
+            def a = Character.valueOf((char) 'a')
+            assert a.letter // DefaultGroovyMethods#isLetter(Character)
+        '''
+    }
+
+    // GROOVY-10075
+    void testPropertySemantics2() {
+        // see org.codehaus.groovy.runtime.m12n.TestStringExtension
+
+        assertScript '''
+            List<String> strings = ['x','y','z']
+            assert strings.getSequence() == 'x'
+            assert strings.getString() == 'x'
+          //assert strings.sequence == 'x'
+          //assert strings.string == 'x'
+        '''
+
+        shouldFailWithMessages '''
+            List<Number> numbers = [(Number)1, 2, 3]
+            numbers.getSequence()
+            numbers.getString()
+            numbers.sequence
+            numbers.string
+        ''',
+        'Cannot call <CS extends java.lang.CharSequence> java.util.List <java.lang.Number>#getSequence() with arguments []',
+        'Cannot call java.util.List <java.lang.Number>#getString() with arguments []',
+        'No such property: sequence for class: java.util.List <java.lang.Number>',
+        'No such property: string for class: java.util.List <java.lang.Number>'
     }
 
     // GROOVY-5584
@@ -195,7 +229,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
                 def results = [:]
                 Functions.values().eachWithIndex { val, idx -> results[idx] = val.name() }
                 results
-            } 
+            }
             assert m() == ['A', 'B', 'C']
             assert m2() == [0: 'A', 1: 'B', 2: 'C']
         '''
