@@ -136,10 +136,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.apache.groovy.util.BeanUtils.decapitalize;
 import static org.codehaus.groovy.ast.ClassHelper.AUTOCLOSEABLE_TYPE;
@@ -241,7 +240,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.addMet
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.allParametersAndArgumentsMatchWithDefaultParams;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.applyGenericsConnections;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.applyGenericsContext;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.applyGenericsContextToParameterClass;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.boundUnboundedWildcards;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.checkCompatibleAssignmentTypes;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.checkPossibleLossOfPrecision;
@@ -276,7 +274,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isPowe
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isShiftOperation;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isTraitSelf;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isUsingGenericsOrIsArrayUsingGenerics;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isUsingUncheckedGenerics;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isVargs;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isWildcardLeftHandSide;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.lastArgMatchesVarg;
@@ -1785,17 +1782,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return member;
     }
 
-    private void storeWithResolve(ClassNode type, final ClassNode receiver, final ClassNode declaringClass, final boolean isStatic, final Expression expressionToStoreOn) {
-        if (GenericsUtils.hasUnresolvedGenerics(type)) {
-            type = resolveGenericsWithContext(resolvePlaceHoldersFromDeclaration(receiver, declaringClass, null, isStatic), type);
-        }
-        if (expressionToStoreOn instanceof PropertyExpression) {
-            storeInferredTypeForPropertyExpression((PropertyExpression) expressionToStoreOn, type);
-        } else {
-            storeType(expressionToStoreOn, type);
-        }
-    }
-
     private boolean storeField(final FieldNode field, final PropertyExpression expressionToStoreOn, final ClassNode receiver, final ClassCodeVisitorSupport visitor, final String delegationData, final boolean lhsOfAssignment) {
         if (visitor != null) visitor.visitField(field);
         checkOrMarkPrivateAccess(expressionToStoreOn, field, lhsOfAssignment);
@@ -1822,11 +1808,27 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return true;
     }
 
-    protected void storeInferredTypeForPropertyExpression(final PropertyExpression pexp, final ClassNode flatInferredType) {
-        if (pexp.isSpreadSafe()) {
-            storeType(pexp, extension.buildListType(flatInferredType));
+    private void storeWithResolve(ClassNode type, final ClassNode receiver, final ClassNode declaringClass, final boolean isStatic, final Expression expressionToStoreOn) {
+        if (GenericsUtils.hasUnresolvedGenerics(type)) {
+            type = resolveGenericsWithContext(resolvePlaceHoldersFromDeclaration(receiver, declaringClass, null, isStatic), type);
+        }
+        if (expressionToStoreOn instanceof PropertyExpression) {
+            storeInferredTypeForPropertyExpression((PropertyExpression) expressionToStoreOn, type);
         } else {
-            storeType(pexp, flatInferredType);
+            storeType(expressionToStoreOn, type);
+        }
+    }
+
+    private ClassNode resolveGenericsWithContext(final Map<GenericsTypeName, GenericsType> resolvedPlaceholders, final ClassNode currentType) {
+        Map<GenericsTypeName, GenericsType> placeholdersFromContext = extractGenericsParameterMapOfThis(typeCheckingContext);
+        return resolveClassNodeGenerics(resolvedPlaceholders, placeholdersFromContext, currentType);
+    }
+
+    private void storeInferredTypeForPropertyExpression(final PropertyExpression pexp, final ClassNode type) {
+        if (pexp.isSpreadSafe()) {
+            storeType(pexp, extension.buildListType(type));
+        } else {
+            storeType(pexp, type);
         }
     }
 
@@ -5196,121 +5198,125 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return mapType;
     }
 
-    private static class ExtensionMethodDeclaringClass {
-    }
-
     /**
-     * If a method call returns a parameterized type, then we can perform additional inference on the
-     * return type, so that the type gets actual type parameters. For example, the method
-     * Arrays.asList(T...) is generified with type T which can be deduced from actual type
-     * arguments.
+     * If a method call returns a parameterized type, then perform additional
+     * inference on the return type, so that the type gets actual type arguments.
+     * For example, the method {@code Arrays.asList(T...)} is parameterized with
+     * {@code T}, which can be deduced type arguments or call arguments.
      *
-     * @param method    the method node
-     * @param arguments the method call arguments
-     * @return parameterized, infered, class node
+     * @param method            the method node
+     * @param arguments         the method call arguments
+     * @param receiver          the object expression type
      */
     protected ClassNode inferReturnTypeGenerics(final ClassNode receiver, final MethodNode method, final Expression arguments) {
         return inferReturnTypeGenerics(receiver, method, arguments, null);
     }
 
     /**
-     * If a method call returns a parameterized type, then we can perform additional inference on the
-     * return type, so that the type gets actual type parameters. For example, the method
-     * Arrays.asList(T...) is generified with type T which can be deduced from actual type
-     * arguments.
+     * If a method call returns a parameterized type, then perform additional
+     * inference on the return type, so that the type gets actual type arguments.
+     * For example, the method {@code Arrays.asList(T...)} is parameterized with
+     * {@code T}, which can be deduced type arguments or call arguments.
      *
      * @param method            the method node
      * @param arguments         the method call arguments
-     * @param explicitTypeHints explicit type hints as found for example in Collections.&lt;String&gt;emptyList()
-     * @return parameterized, infered, class node
+     * @param receiver          the object expression type
+     * @param explicitTypeHints type arguments (optional), for example {@code Collections.<String>emptyList()}
      */
     protected ClassNode inferReturnTypeGenerics(final ClassNode receiver, final MethodNode method, final Expression arguments, final GenericsType[] explicitTypeHints) {
         ClassNode returnType = method instanceof ConstructorNode ? method.getDeclaringClass() : method.getReturnType();
-        if (getGenericsWithoutArray(returnType) == null) {
+        if (!GenericsUtils.hasUnresolvedGenerics(returnType)) {
+            // GROOVY-7538: replace "Type<?>" with "Type<? extends/super X>" for any "Type<T extends/super X>"
+            if (getGenericsWithoutArray(returnType) != null) returnType = boundUnboundedWildcards(returnType);
+
             return returnType;
         }
+
         if (method instanceof ExtensionMethodNode) {
-            // check if the placeholder corresponds to the placeholder of the first parameter
-            ExtensionMethodNode emn = (ExtensionMethodNode) method;
-            MethodNode dgm = emn.getExtensionMethodNode();
-            ArgumentListExpression args = new ArgumentListExpression();
-            VariableExpression vexp = varX("$self", receiver);
-            args.addExpression(vexp);
-            vexp.setNodeMetaData(ExtensionMethodDeclaringClass.class, emn.getDeclaringClass());
-            if (arguments instanceof ArgumentListExpression) {
-                for (Expression argument : (ArgumentListExpression) arguments) {
-                    args.addExpression(argument);
-                }
-            } else {
-                args.addExpression(arguments);
-            }
-            return inferReturnTypeGenerics(receiver, dgm, args, explicitTypeHints);
+            ArgumentListExpression args = getExtensionArguments(receiver, method, arguments);
+            MethodNode extension = ((ExtensionMethodNode) method).getExtensionMethodNode();
+            return inferReturnTypeGenerics(receiver, extension, args, explicitTypeHints);
         }
 
-        Map<GenericsTypeName, GenericsType> resolvedPlaceholders = resolvePlaceHoldersFromDeclaration(receiver, getDeclaringClass(method, arguments), method, method.isStatic());
-        resolvePlaceholdersFromExplicitTypeHints(method, explicitTypeHints, resolvedPlaceholders);
-        if (resolvedPlaceholders.isEmpty()) {
+        Map<GenericsTypeName, GenericsType> context = method.isStatic() || method instanceof ConstructorNode
+                                            ? null : extractPlaceHolders(null, receiver, getDeclaringClass(method, arguments));
+        GenericsType[] methodGenericTypes = method instanceof ConstructorNode ? method.getDeclaringClass().getGenericsTypes() : method.getGenericsTypes();
+
+        // 1) resolve type parameters of method
+
+        if (methodGenericTypes != null) {
+            Map<GenericsTypeName, GenericsType> resolvedPlaceholders = new HashMap<>();
+            for (GenericsType gt : applyGenericsContext(context, methodGenericTypes)) resolvedPlaceholders.put(new GenericsTypeName(gt.getName()), gt);
+            applyGenericsConnections(extractGenericsConnectionsFromArguments(methodGenericTypes, method.getParameters(), arguments, explicitTypeHints), resolvedPlaceholders);
+
+            returnType = applyGenericsContext(resolvedPlaceholders, returnType);
+        }
+
+        // 2) resolve type parameters of method's enclosing context
+
+        if (context != null) {
+            returnType = applyGenericsContext(context, returnType);
+
             if (receiver.getGenericsTypes() == null && receiver.redirect().getGenericsTypes() != null && GenericsUtils.hasUnresolvedGenerics(returnType)) {
-                return returnType.getPlainNodeReference(); // do not return Stream<E> for List#stream()
-            }
-            return boundUnboundedWildcards(returnType);
-        }
-
-        // resolve type parameters from method arguments
-        List<Expression> expressions = InvocationWriter.makeArgumentList(arguments).getExpressions();
-        Parameter[] parameters = method.getParameters();
-        boolean isVargs = isVargs(parameters);
-        int nArguments = expressions.size();
-        int nParams = parameters.length;
-
-        if (isVargs ? nArguments >= nParams - 1 : nArguments == nParams) {
-            for (int i = 0; i < nArguments; i += 1) {
-                if (isNullConstant(expressions.get(i)))
-                    continue; // GROOVY-9984: skip null
-                ClassNode paramType = parameters[Math.min(i, nParams - 1)].getType();
-                ClassNode argumentType = getDeclaredOrInferredType(expressions.get(i));
-
-                if (isUsingGenericsOrIsArrayUsingGenerics(paramType)) {
-                    // if supplying array param with multiple arguments or single non-array argument, infer using element type
-                    if (isVargs && (i >= nParams || (i == nParams - 1 && (nArguments > nParams || !argumentType.isArray())))) {
-                        paramType = paramType.getComponentType();
-                    }
-
-                    if (argumentType.isDerivedFrom(CLOSURE_TYPE)) {
-                        MethodNode sam = findSAM(paramType);
-                        if (sam != null) { // implicit closure coercion in action!
-                            argumentType = !paramType.isUsingGenerics() ? paramType
-                                    : convertClosureTypeToSAMType(expressions.get(i), argumentType, sam, paramType,
-                                            applyGenericsContextToParameterClass(resolvedPlaceholders, paramType));
-                        }
-                    }
-
-                    Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
-                    extractGenericsConnections(connections, wrapTypeIfNecessary(argumentType), paramType);
-                    extractGenericsConnectionsForSuperClassAndInterfaces(resolvedPlaceholders, connections);
-
-                    applyGenericsConnections(connections, resolvedPlaceholders);
-                }
+                returnType = returnType.getPlainNodeReference(); // GROOVY-10049: do not return "Stream<E>" for raw type "List#stream()"
             }
         }
 
-        // GROOVY-9970: resolve from enclosing context after arguments, in case a type parameter name is reused
-        applyGenericsConnections(extractGenericsParameterMapOfThis(typeCheckingContext), resolvedPlaceholders);
+        // 3) resolve bounds of type parameters from calling context
 
-        return applyGenericsContext(resolvedPlaceholders, returnType);
+        returnType = applyGenericsContext(extractGenericsParameterMapOfThis(typeCheckingContext), returnType);
+
+        return returnType;
     }
 
-    private static void resolvePlaceholdersFromExplicitTypeHints(final MethodNode method, final GenericsType[] explicitTypeHints, final Map<GenericsTypeName, GenericsType> resolvedPlaceholders) {
-        if (explicitTypeHints != null) {
-            GenericsType[] methodGenericTypes = method.getGenericsTypes();
-            if (methodGenericTypes != null && methodGenericTypes.length == explicitTypeHints.length) {
-                for (int i = 0, n = methodGenericTypes.length; i < n; i += 1) {
-                    GenericsType methodGenericType = methodGenericTypes[i];
-                    GenericsType explicitTypeHint = explicitTypeHints[i];
-                    resolvedPlaceholders.put(new GenericsTypeName(methodGenericType.getName()), explicitTypeHint);
+    /**
+     * Resolves type parameters declared by method from type or call arguments.
+     */
+    private Map<GenericsTypeName, GenericsType> extractGenericsConnectionsFromArguments(final GenericsType[] methodGenericTypes, final Parameter[] parameters, final Expression arguments, final GenericsType[] explicitTypeHints) {
+        Map<GenericsTypeName, GenericsType> resolvedPlaceholders = new HashMap<>();
+
+        if (explicitTypeHints != null) { // resolve type parameters from type arguments
+            int n = methodGenericTypes.length;
+            if (n == explicitTypeHints.length) {
+                for (int i = 0; i < n; i += 1) {
+                    resolvedPlaceholders.put(new GenericsTypeName(methodGenericTypes[i].getName()), explicitTypeHints[i]);
                 }
             }
+        } else if (parameters.length > 0) { // resolve type parameters from call arguments
+            List<Expression> expressions = InvocationWriter.makeArgumentList(arguments).getExpressions();
+            boolean isVargs = isVargs(parameters);
+            int nArguments = expressions.size();
+            int nParams = parameters.length;
+
+            if (isVargs ? nArguments >= nParams - 1 : nArguments == nParams) {
+                for (int i = 0; i < nArguments; i += 1) {
+                    if (isNullConstant(expressions.get(i)))
+                        continue; // GROOVY-9984: skip null
+                    ClassNode paramType = parameters[Math.min(i, nParams - 1)].getType();
+                    ClassNode argumentType = getDeclaredOrInferredType(expressions.get(i));
+
+                    if (isUsingGenericsOrIsArrayUsingGenerics(paramType)) {
+                        // if supplying array param with multiple arguments or single non-array argument, infer using element type
+                        if (isVargs && (i >= nParams || (i == nParams - 1 && (nArguments > nParams || !argumentType.isArray())))) {
+                            paramType = paramType.getComponentType();
+                        }
+
+                        Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
+                        extractGenericsConnections(connections, wrapTypeIfNecessary(argumentType), paramType);
+                        connections.forEach((gtn, gt) -> resolvedPlaceholders.merge(gtn, gt, (gt1, gt2) -> {
+                            return gt2; // TODO
+                        }));
+                    }
+                }
+            }
+
+            // in case of "<T, U extends Type<T>>" we can learn about "T" from resolved "U"
+            Map<GenericsTypeName, GenericsType> connections = Arrays.stream(methodGenericTypes)
+                    .collect(toMap(gt -> new GenericsTypeName(gt.getName()), Function.identity()));
+            extractGenericsConnectionsForSuperClassAndInterfaces(connections, resolvedPlaceholders);
         }
+
+        return resolvedPlaceholders;
     }
 
     /**
@@ -5351,7 +5357,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // connect E:T from source to E:Type from target
             for (GenericsType placeholder : aNode.getGenericsTypes()) {
                 for (Map.Entry<GenericsTypeName, GenericsType> e : source.entrySet()) {
-                    if (e.getValue() == placeholder) {
+                    if (e.getValue().getName().equals(placeholder.getName())) {
                         Optional.ofNullable(target.get(e.getKey()))
                             // skip "f(g())" for "f(T<String>)" and "<U extends Number> U g()"
                             .filter(gt -> isAssignableTo(gt.getType(), placeholder.getType()))
@@ -5405,136 +5411,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private static MethodNode chooseMethod(final MethodPointerExpression source, final Supplier<ClassNode[]> samSignature) {
-        List<MethodNode> options = source.getNodeMetaData(MethodNode.class);
-        if (options == null || options.isEmpty()) {
-            return null;
-        }
-
-        ClassNode[] paramTypes = samSignature.get();
-        return options.stream().filter((MethodNode option) -> {
-            ClassNode[] types = collateMethodReferenceParameterTypes(source, option);
-            final int n = types.length;
-            if (n != paramTypes.length) {
-                return false;
-            }
-            for (int i = 0; i < n; i += 1) {
-                // param type represents incoming argument type
-                if (!isAssignableTo(paramTypes[i], types[i])) {
-                    return false;
-                }
-            }
-            return true;
-        }).findFirst().orElse(null); // TODO: order matches by param distance
-    }
-
-    private static ClassNode[] collateMethodReferenceParameterTypes(final MethodPointerExpression source, final MethodNode target) {
-        Parameter[] params;
-
-        if (target instanceof ExtensionMethodNode && !((ExtensionMethodNode) target).isStaticExtension()) {
-            params = ((ExtensionMethodNode) target).getExtensionMethodNode().getParameters();
-        } else if (!target.isStatic() && source.getExpression() instanceof ClassExpression) {
-            ClassNode thisType = ((ClassExpression) source.getExpression()).getType();
-            // there is an implicit parameter for "String::length"
-            int n = target.getParameters().length;
-            params = new Parameter[n + 1];
-            params[0] = new Parameter(thisType, "");
-            System.arraycopy(target.getParameters(), 0, params, 1, n);
-        } else {
-            params = target.getParameters();
-        }
-
-        return extractTypesFromParameters(params);
-    }
-
-    /**
-     * Converts a closure type to the appropriate SAM type, which is used to
-     * infer return type generics.
-     *
-     * @param expression closure, lambda, pointer or reference
-     * @param closureType the inferred type of {@code expression}
-     * @return {@code samType} augmented by argument expression information
-     */
-    private static ClassNode convertClosureTypeToSAMType(final Expression expression, final ClassNode closureType, final MethodNode sam, final ClassNode samType, final Map<GenericsTypeName, GenericsType> placeholders) {
-        // use the generics information from Closure to further specify the type
-        if (closureType.isUsingGenerics()) {
-            ClassNode closureReturnType = closureType.getGenericsTypes()[0].getType();
-
-            Parameter[] parameters = sam.getParameters();
-            if (parameters.length > 0 && expression instanceof MethodPointerExpression
-                    && isUsingUncheckedGenerics(closureReturnType)) { // needs resolve
-                MethodPointerExpression mp = (MethodPointerExpression) expression;
-                MethodNode mn = chooseMethod(mp, () ->
-                    applyGenericsContext(placeholders, extractTypesFromParameters(parameters))
-                );
-                if (mn != null) {
-                    ClassNode[] pTypes = collateMethodReferenceParameterTypes(mp, mn);
-                    Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
-                    for (int i = 0, n = parameters.length; i < n; i += 1) {
-                        // SAM parameters should align one-for-one with the referenced method's parameters
-                        extractGenericsConnections(connections, parameters[i].getOriginType(), pTypes[i]);
-                    }
-                    // convert the method reference's generics into the SAM's generics domain
-                    closureReturnType = applyGenericsContext(connections, closureReturnType);
-                    // apply known generics connections to the placeholders of the return type
-                    closureReturnType = applyGenericsContext(placeholders, closureReturnType);
-                }
-            }
-
-            // the SAM's return type exactly corresponds to the inferred closure return type
-            extractGenericsConnections(placeholders, closureReturnType, sam.getReturnType());
-
-            // repeat the same for each parameter given in the ClosureExpression
-            if (parameters.length > 0 && expression instanceof ClosureExpression) {
-                List<ClassNode[]> genericsToConnect = new ArrayList<>();
-                Parameter[] closureParams = ((ClosureExpression) expression).getParameters();
-                ClassNode[] closureParamTypes = expression.getNodeMetaData(CLOSURE_ARGUMENTS);
-                if (closureParamTypes == null) closureParamTypes = extractTypesFromParameters(closureParams);
-
-                for (int i = 0, n = parameters.length; i < n; i += 1) {
-                    Parameter parameter = parameters[i];
-                    if (parameter.getOriginType().isUsingGenerics() && closureParamTypes.length > i) {
-                        genericsToConnect.add(new ClassNode[]{closureParamTypes[i], parameter.getOriginType()});
-                    }
-                }
-                for (ClassNode[] classNodes : genericsToConnect) {
-                    ClassNode found = classNodes[0];
-                    ClassNode expected = classNodes[1];
-                    if (!isAssignableTo(found, expected)) {
-                        // probably facing a type mismatch
-                        continue;
-                    }
-                    ClassNode generifiedType = GenericsUtils.parameterizeType(found, expected);
-                    while (expected.isArray()) {
-                        expected = expected.getComponentType();
-                        generifiedType = generifiedType.getComponentType();
-                    }
-                    if (expected.isGenericsPlaceHolder()) {
-                        placeholders.put(new GenericsTypeName(expected.getGenericsTypes()[0].getName()), new GenericsType(generifiedType));
-                    } else {
-                        GenericsType[] expectedGenericsTypes = expected.getGenericsTypes();
-                        GenericsType[] foundGenericsTypes = generifiedType.getGenericsTypes();
-
-                        for (int i = 0, n = expectedGenericsTypes.length; i < n; i += 1) {
-                            GenericsType type = expectedGenericsTypes[i];
-                            if (type.isPlaceholder()) {
-                                String name = type.getName();
-                                placeholders.put(new GenericsTypeName(name), foundGenericsTypes[i]);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return applyGenericsContext(placeholders, samType.redirect());
-    }
-
-    private ClassNode resolveGenericsWithContext(final Map<GenericsTypeName, GenericsType> resolvedPlaceholders, final ClassNode currentType) {
-        Map<GenericsTypeName, GenericsType> placeholdersFromContext = extractGenericsParameterMapOfThis(typeCheckingContext);
-        return resolveClassNodeGenerics(resolvedPlaceholders, placeholdersFromContext, currentType);
-    }
-
     private ClassNode getDeclaredOrInferredType(final Expression expression) {
         ClassNode declaredOrInferred;
         // in case of "T t = new ExtendsOrImplementsT()", return T for the expression type
@@ -5562,22 +5438,42 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return declaringClass;
     }
 
+    private static class ExtensionMethodDeclaringClass {
+    }
+
+    private static ArgumentListExpression getExtensionArguments(final ClassNode receiver, final MethodNode method, final Expression arguments) {
+        VariableExpression self = varX("$self", receiver); // implicit first argument
+        self.putNodeMetaData(ExtensionMethodDeclaringClass.class, method.getDeclaringClass());
+
+        ArgumentListExpression args = new ArgumentListExpression();
+        args.addExpression(self);
+        if (arguments instanceof TupleExpression) {
+            for (Expression argument : (TupleExpression) arguments) {
+                args.addExpression(argument);
+            }
+        } else {
+            args.addExpression(arguments);
+        }
+        return args;
+    }
+
+    private static boolean isGenericsPlaceHolderOrArrayOf(ClassNode cn) {
+        while (cn.isArray()) cn = cn.getComponentType();
+        return cn.isGenericsPlaceHolder();
+    }
+
     private static Map<GenericsTypeName, GenericsType> resolvePlaceHoldersFromDeclaration(final ClassNode receiver, final ClassNode declaration, final MethodNode method, final boolean isStaticTarget) {
         Map<GenericsTypeName, GenericsType> resolvedPlaceholders;
-        if (isStaticTarget && CLASS_Type.equals(receiver) &&
-                receiver.isUsingGenerics() &&
-                receiver.getGenericsTypes().length > 0 &&
-                !OBJECT_TYPE.equals(receiver.getGenericsTypes()[0].getType())) {
+        if (isStaticTarget
+                && CLASS_Type.equals(receiver)
+                && receiver.getGenericsTypes() != null
+                && receiver.getGenericsTypes().length > 0
+                && !OBJECT_TYPE.equals(receiver.getGenericsTypes()[0].getType())) {
             return resolvePlaceHoldersFromDeclaration(receiver.getGenericsTypes()[0].getType(), declaration, method, isStaticTarget);
         } else {
             resolvedPlaceholders = extractPlaceHolders(method, receiver, declaration);
         }
         return resolvedPlaceholders;
-    }
-
-    private static boolean isGenericsPlaceHolderOrArrayOf(final ClassNode cn) {
-        if (cn.isArray()) return isGenericsPlaceHolderOrArrayOf(cn.getComponentType());
-        return cn.isGenericsPlaceHolder();
     }
 
     private static Map<GenericsTypeName, GenericsType> extractPlaceHolders(final MethodNode method, ClassNode receiver, final ClassNode declaringClass) {

@@ -475,15 +475,15 @@ public class GenericsType extends ASTNode {
     }
 
     /**
-     * Represents GenericsType name
-     * TODO In order to distinguish GenericsType with same name(See GROOVY-8409), we should add a property to keep the declaring class.
-     *
-     * fixing GROOVY-8409 steps:
-     * 1) change the signature of constructor GenericsTypeName to `GenericsTypeName(String name, ClassNode declaringClass)`
-     * 2) try to fix all compilation errors(if `GenericsType` has declaringClass property, the step would be a bit easy to fix...)
-     * 3) run all tests to see whether the change breaks anything
-     * 4) if all tests pass, congratulations! but if some tests are broken, try to debug and find why...
-     *
+     * Represents {@link GenericsType} name.
+     * <p>
+     * TODO: In order to distinguish GenericsType with same name, we should add a property to keep the declaring class.
+     * <ol>
+     * <li> change the signature of constructor GenericsTypeName to `GenericsTypeName(String name, ClassNode declaringClass)`
+     * <li> try to fix all compilation errors(if `GenericsType` has declaringClass property, the step would be a bit easy to fix...)
+     * <li> run all tests to see whether the change breaks anything
+     * <li> if all tests pass, congratulations! but if some tests are broken, try to debug and find why...
+     * </ol>
      * We should find a way to set declaring class for `GenericsType` first, it can be completed at the resolving phase.
      */
     public static class GenericsTypeName {

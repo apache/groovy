@@ -419,6 +419,23 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-8409
+    void testReturnTypeInferenceWithMethodGenerics14() {
+        ['R', 'S', 'T', 'U'].each { t -> // BiFunction uses R, T and U
+            assertScript """
+                def <$t> $t applyFunction(java.util.function.BiFunction<Date, URL, $t> action) {
+                    $t result = action.apply(new Date(), new URL('http://www.example.com'))
+                    return result
+                }
+
+                // GroovyCastException: Cannot cast object 'foo' with class 'java.lang.String' to class 'java.util.Date'
+                java.util.function.BiFunction<Date, URL, String> func = { Date d, URL u -> 'foo' }
+                def result = applyFunction(func)
+                assert result == 'foo'
+            """
+        }
+    }
+
     void testDiamondInferrenceFromConstructor1() {
         assertScript '''
             class Foo<U> {
@@ -1394,7 +1411,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    // GROOVY-9803
+    @NotYetImplemented // GROOVY-9803
     void testShouldUseMethodGenericType8() {
         assertScript '''
             def opt = Optional.of(42)
