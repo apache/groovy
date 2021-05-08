@@ -1367,6 +1367,14 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
                 test()
             """
+            assertScript """
+                $mods void m(Iterable<String> strings) {
+                }
+                void test() {
+                    m(Collections.emptyList())
+                }
+                test()
+            """
         }
     }
 

@@ -5342,6 +5342,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             Parameter p = inferredMethod.getParameters()[Math.min(i, np - 1)];
 
             ClassNode at = actuals[i], pt = p.getOriginType();
+            if (!isUsingGenericsOrIsArrayUsingGenerics(pt)) continue;
             if (i >= (np - 1) && pt.isArray() && !at.isArray()) pt = pt.getComponentType();
 
             if (a instanceof ListExpression) {
@@ -5358,6 +5359,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             // and unknown generics
             if (!GenericsUtils.hasUnresolvedGenerics(at)) continue;
+
+            while (!at.equals(pt) && !at.equals(OBJECT_TYPE)) {
+                ClassNode sc = GenericsUtils.getSuperClass(at, pt);
+                at = applyGenericsContext(GenericsUtils.extractPlaceholders(at), sc);
+            }
 
             // try to resolve placeholder(s) in argument type using parameter type
 
