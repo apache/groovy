@@ -387,12 +387,12 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             g((Integer) getNumber())
 
             i = getNumber()
-          //f(getNumber())
-          //g(getNumber())
+            f(getNumber())
+            g(getNumber())
 
             i = number
-          //f(number)
-          //g(number)
+            f(number)
+            g(number)
         '''
     }
 
@@ -424,7 +424,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ['R', 'S', 'T', 'U'].each { t -> // BiFunction uses R, T and U
             assertScript """
                 def <$t> $t applyFunction(java.util.function.BiFunction<Date, URL, $t> action) {
-                    $t result = action.apply(new Date(), new URL('http://www.example.com'))
+                    $t result = action.apply(new Date(), new URL('https://www.example.com'))
                     return result
                 }
 
@@ -434,6 +434,24 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 assert result == 'foo'
             """
         }
+    }
+
+    // GROOVY-8409, GROOVY-10067
+    void testReturnTypeInferenceWithMethodGenerics15() {
+        shouldFailWithMessages '''
+            List<CharSequence> list = ['x'].collect() // GROOVY-10074
+        ''',
+        'Incompatible generic argument types. Cannot assign java.util.List<java.lang.String> to: java.util.List<java.lang.CharSequence>'
+
+        shouldFailWithMessages '''
+            List<CharSequence> list = ['x'].stream().toList() // TODO: fix type param bound of StreamGroovyMethods#toList(Stream<T>)
+        ''',
+        'Incompatible generic argument types. Cannot assign java.util.List<java.lang.String> to: java.util.List<java.lang.CharSequence>'
+
+        assertScript '''
+            import static java.util.stream.Collectors.toList
+            List<CharSequence> list = ['x'].stream().collect(toList())
+        '''
     }
 
     void testDiamondInferrenceFromConstructor1() {
@@ -1296,35 +1314,27 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testShouldUseMethodGenericType3() {
         ['', 'static'].each { mods ->
             assertScript """
-                $mods void setM(List<String> strings) {
+                $mods void setX(List<String> strings) {
                 }
                 void test() {
-                    m = Collections.emptyList() // Cannot assign value of type List<T> to variable of List<String>
+                    x = Collections.emptyList()
                 }
                 test()
             """
             assertScript """
-                $mods void setM(Collection<String> strings) {
+                $mods void setX(Collection<String> strings) {
                 }
                 void test() {
-                    m = Collections.emptyList()
-                }
-                test()
-            """
-            assertScript """
-                $mods void setM(Iterable<String> strings) {
-                }
-                void test() {
-                    m = Collections.emptyList()
+                    x = Collections.emptyList()
                 }
                 test()
             """
 
             shouldFailWithMessages """
-                $mods void setM(List<String> strings) {
+                $mods void setX(List<String> strings) {
                 }
                 void test() {
-                    m = Collections.<Integer>emptyList()
+                    x = Collections.<Integer>emptyList()
                 }
             """, 'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Integer> to: java.util.List<java.lang.String>'
         }
@@ -3319,11 +3329,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-7804
     void testParameterlessClosureToGenericSAMTypeArgumentCoercion() {
         assertScript '''
-            interface Supplier<T> {
-                public <T> T get()
-            }
+            interface Supplier<T> { public T get() }
 
-            static <T> T doGet(Supplier<T> supplier) { supplier.get() }
+            def <T> T doGet(Supplier<T> supplier) { supplier.get() }
 
             assert doGet { -> 'foo' } == 'foo'
         '''

@@ -1498,12 +1498,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                 FieldNode field = current.getDeclaredField(propertyName);
                 if (field == null) {
-                    if (current.getSuperClass() != null) {
-                        queue.addFirst(current.getUnresolvedSuperClass());
-                    }
-                    for (ClassNode face : current.getAllInterfaces()) {
-                        queue.add(GenericsUtils.parameterizeType(current, face));
-                    }
+                    if (current.getSuperClass() != null)
+                        queue.addFirst(current.getSuperClass());
+                    Collections.addAll(queue, current.getInterfaces());
                 }
 
                 // in case of a lookup on Class we look for instance methods on Class
@@ -1602,11 +1599,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
 
             // GROOVY-5568: the property may be defined by DGM
-            List<ClassNode> dgmReceivers = new ArrayList<>(2);
-            dgmReceivers.add(receiverType);
-            if (isPrimitiveType(receiverType))
-                dgmReceivers.add(getWrapper(receiverType));
-            for (ClassNode dgmReceiver : dgmReceivers) {
+            for (ClassNode dgmReceiver : isPrimitiveType(receiverType) ? new ClassNode[]{receiverType, getWrapper(receiverType)} : new ClassNode[]{receiverType}) {
                 List<MethodNode> methods = findDGMMethodsByNameAndArguments(getSourceUnit().getClassLoader(), dgmReceiver, "get" + capName, ClassNode.EMPTY_ARRAY);
                 for (MethodNode method : findDGMMethodsByNameAndArguments(getSourceUnit().getClassLoader(), dgmReceiver, "is" + capName, ClassNode.EMPTY_ARRAY)) {
                     if (Boolean_TYPE.equals(getWrapper(method.getReturnType()))) methods.add(method);
@@ -2414,7 +2407,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         typeCheckingContext.isInStaticContext = oldStaticContext;
         for (Parameter parameter : getParametersSafe(expression)) {
             typeCheckingContext.controlStructureVariables.remove(parameter);
-            // GROOVY-10071: visit param default argument expression if present
+            // GROOVY-10072: visit param default argument expression if present
             visitInitialExpression(parameter.getInitialExpression(), varX(parameter), parameter);
         }
     }
@@ -2645,7 +2638,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode[] args = getArgumentTypes(argumentList);
 
         try {
-
             // method call receivers are :
             //   - possible "with" receivers
             //   - the actual receiver as found in the method call expression
@@ -5245,13 +5237,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         Map<GenericsTypeName, GenericsType> context = method.isStatic() || method instanceof ConstructorNode
                                             ? null : extractPlaceHolders(null, receiver, getDeclaringClass(method, arguments));
-        GenericsType[] methodGenericTypes = method instanceof ConstructorNode ? method.getDeclaringClass().getGenericsTypes() : method.getGenericsTypes();
+        GenericsType[] methodGenericTypes = method instanceof ConstructorNode ? method.getDeclaringClass().getGenericsTypes() : applyGenericsContext(context, method.getGenericsTypes());
 
         // 1) resolve type parameters of method
 
         if (methodGenericTypes != null) {
             Map<GenericsTypeName, GenericsType> resolvedPlaceholders = new HashMap<>();
-            for (GenericsType gt : applyGenericsContext(context, methodGenericTypes)) resolvedPlaceholders.put(new GenericsTypeName(gt.getName()), gt);
+            for (GenericsType gt : methodGenericTypes) resolvedPlaceholders.put(new GenericsTypeName(gt.getName()), gt);
             applyGenericsConnections(extractGenericsConnectionsFromArguments(methodGenericTypes, method.getParameters(), arguments, explicitTypeHints), resolvedPlaceholders);
 
             returnType = applyGenericsContext(resolvedPlaceholders, returnType);
@@ -5321,6 +5313,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             extractGenericsConnectionsForSuperClassAndInterfaces(connections, resolvedPlaceholders);
         }
 
+        for (GenericsType gt : methodGenericTypes) {
+            // GROOVY-8049, GROOVY-10067, et al.: provide "no type witness" mapping for param
+            resolvedPlaceholders.computeIfAbsent(new GenericsTypeName(gt.getName()), gtn -> {
+                GenericsType xxx = new GenericsType(ClassHelper.makeWithoutCaching("#"),
+                        applyGenericsContext(resolvedPlaceholders, gt.getUpperBounds()),
+                        applyGenericsContext(resolvedPlaceholders, gt.getLowerBound()));
+                xxx.getType().setRedirect(gt.getType().redirect());
+                xxx.putNodeMetaData(GenericsType.class, gt);
+                xxx.setName("#" + gt.getName());
+                xxx.setPlaceholder(true);
+                return xxx;
+            });
+        }
+
         return resolvedPlaceholders;
     }
 
@@ -5362,11 +5368,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // connect E:T from source to E:Type from target
             for (GenericsType placeholder : aNode.getGenericsTypes()) {
                 for (Map.Entry<GenericsTypeName, GenericsType> e : source.entrySet()) {
-                    if (e.getValue() == placeholder) {
+                    if (e.getValue().getNodeMetaData(GenericsType.class) == placeholder) {
                         Optional.ofNullable(target.get(e.getKey()))
                             // skip "f(g())" for "f(T<String>)" and "<U extends Number> U g()"
                             .filter(gt -> isAssignableTo(gt.getType(), placeholder.getType()))
-                            .ifPresent(gt -> linked.put(new GenericsTypeName(placeholder.getName()), gt));
+                            .ifPresent(gt -> linked.put(new GenericsTypeName(e.getValue().getName()), gt));
                         break;
                     }
                 }

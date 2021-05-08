@@ -471,12 +471,11 @@ public abstract class StaticTypeCheckingSupport {
             }
             return true;
         }
-        // SAM check
-        if (type.isDerivedFrom(CLOSURE_TYPE) && isSAMType(toBeAssignedTo)) {
-            return true;
+        // GROOVY-10067: unresolved argument like "N extends Number" for parameter like "Integer"
+        if (type.isGenericsPlaceHolder() && type.getUnresolvedName().charAt(0) == '#') {
+            return type.getGenericsTypes()[0].isCompatibleWith(toBeAssignedTo);
         }
-
-        return false;
+        return (type.isDerivedFrom(CLOSURE_TYPE) && isSAMType(toBeAssignedTo));
     }
 
     static boolean isVargs(final Parameter[] parameters) {
@@ -1594,7 +1593,7 @@ public abstract class StaticTypeCheckingSupport {
                 if (oldValue.isPlaceholder()) { // T=T or V, not T=String or ? ...
                     GenericsTypeName name = new GenericsTypeName(oldValue.getName());
                     GenericsType newValue = connections.get(name); // find "V" in T=V
-                    if (newValue == oldValue) continue;
+                    if (newValue == oldValue || name.getName().charAt(0) == '#') continue;
                     if (newValue == null) {
                         entry.setValue(newValue = applyGenericsContext(connections, oldValue));
                         if (!checkForMorePlaceholders) {
@@ -1886,7 +1885,8 @@ public abstract class StaticTypeCheckingSupport {
         if (gt[0].isPlaceholder()) { // convert T to X
             if (type.getGenericsTypes()[0] == gt[0]) {
                 return type; // nothing to do
-            } else if (!hasNonTrivialBounds(gt[0])) {
+            } else if (!hasNonTrivialBounds(gt[0])
+                    || type.getGenericsTypes()[0] == gt[0].getNodeMetaData(GenericsType.class)) {
                 ClassNode cn = make(gt[0].getName());
                 cn.setRedirect(type);
                 cn.setGenericsTypes(gt);
