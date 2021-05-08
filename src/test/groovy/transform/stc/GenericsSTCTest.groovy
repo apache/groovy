@@ -1329,6 +1329,14 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
                 test()
             """
+            assertScript """
+                $mods void setX(Iterable<String> strings) {
+                }
+                void test() {
+                    x = Collections.emptyList()
+                }
+                test()
+            """
 
             shouldFailWithMessages """
                 $mods void setX(List<String> strings) {
@@ -1347,20 +1355,12 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 $mods void m(List<String> strings) {
                 }
                 void test() {
-                    m(Collections.emptyList()) // Cannot call m(List<String>) with arguments [List<T>]
-                }
-                test()
-            """
-            assertScript """
-                $mods void m(Collection<String> strings) {
-                }
-                void test() {
                     m(Collections.emptyList())
                 }
                 test()
             """
             assertScript """
-                $mods void m(Iterable<String> strings) {
+                $mods void m(Collection<String> strings) {
                 }
                 void test() {
                     m(Collections.emptyList())

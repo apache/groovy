@@ -5314,7 +5314,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         for (GenericsType gt : methodGenericTypes) {
-            // GROOVY-8049, GROOVY-10067, et al.: provide "no type witness" mapping for param
+            // GROOVY-8409, GROOVY-10067, et al.: provide "no type witness" mapping for param
             resolvedPlaceholders.computeIfAbsent(new GenericsTypeName(gt.getName()), gtn -> {
                 GenericsType xxx = new GenericsType(ClassHelper.makeWithoutCaching("#"),
                         applyGenericsContext(resolvedPlaceholders, gt.getUpperBounds()),
