@@ -131,8 +131,30 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         'Possible loss of precision from long to byte'
     }
 
-    // GROOVY-9907
+    // GROOVY-8427
     void testClosureReturnTypeInference4() {
+        assertScript '''
+            import java.util.function.Consumer
+
+            class C {
+                static <T> void m(T a, Consumer<T> c) {
+                    c.accept(a)
+                }
+                static void main(args) {
+                    def c = { ->
+                        int x = 0
+                        m('') {
+                            print 'void return'
+                        }
+                    }
+                    c.call()
+                }
+            }
+        '''
+    }
+
+    // GROOVY-9907
+    void testClosureReturnTypeInference5() {
         assertScript '''
             Integer foo(x) {
                 if (x instanceof Integer) {
@@ -146,7 +168,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9971
-    void testClosureReturnTypeInference5() {
+    void testClosureReturnTypeInference6() {
         assertScript '''
             def m(Closure<String> c) {
                 c.call()
