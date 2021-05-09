@@ -18,29 +18,8 @@
  */
 package groovy.console.ui.view
 
+import groovy.transform.Field
 import org.codehaus.groovy.vmplugin.VMPluginFactory
-
-import java.util.concurrent.atomic.AtomicBoolean
-
-/**
- * Allow to install menu event handlers only once.<br /><br />
- * (Add static state, which is not directly possible in script files.)
- */
-class Static {
-
-    private Static() {}
-
-    private static final AtomicBoolean handlersInstalled = new AtomicBoolean(false)
-
-    /**
-     * Test, if the menu handlers have been already installed.
-     * @return false when this method is called the first time, true on subsequent calls.
-     */
-    static boolean installHandlersOnce() {
-        return !handlersInstalled.get()
-                && handlersInstalled.compareAndSet(false, true)
-    }
-}
 
 // install handlers for JDK9+
 final String JDK9PLUS_SCRIPT = """
@@ -148,10 +127,15 @@ try {
             macOsRuntimeForJavaPresent ? MRJ_SCRIPT :
             appleAwtExtensionPresent ? EAWT_SCRIPT :
             null
+    @Field
+    static boolean handlersInstalled = false
+
     if (scriptSource) {
-        if (Static.installHandlersOnce()) {
+        if (!handlersInstalled) {
             build(scriptSource, new GroovyClassLoader(MacOSXMenuBar.class.classLoader))
+            handlersInstalled = true
         }
+        // else just skip handler installation and continue with the rest of the script
     } else {
         build(BasicMenuBar)
         return
