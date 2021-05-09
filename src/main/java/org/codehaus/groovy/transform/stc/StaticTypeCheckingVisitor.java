@@ -2209,7 +2209,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 && STRING_TYPE.equals(getInferredReturnType(enclosingClosure.getClosureExpression()))) {
             // GROOVY-9971: convert GString to String at the point of return
             enclosingClosure.addReturnType(STRING_TYPE);
-        } else {
+        } else if (!VOID_TYPE.equals(returnType)) {
             enclosingClosure.addReturnType(returnType);
         }
     }

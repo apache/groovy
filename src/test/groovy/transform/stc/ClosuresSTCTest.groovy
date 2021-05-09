@@ -131,8 +131,37 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         'Possible loss of precision from long to byte'
     }
 
-    // GROOVY-8427
+    // GROOVY-9907
     void testClosureReturnTypeInference4() {
+        assertScript '''
+            Integer foo(x) {
+                if (x instanceof Integer) {
+                    def bar = { -> return x }
+                    return bar.call()
+                }
+                return 0
+            }
+            assert foo(1) == 1
+        '''
+    }
+
+    // GROOVY-9971
+    void testClosureReturnTypeInference5() {
+        assertScript '''
+            def m(Closure<String> c) {
+                c.call()
+            }
+            final x = 123
+            Closure<String> c = { -> "x=$x" }
+            String type = c.call().class.name
+            assert type == 'java.lang.String'
+            type = (m { -> "x=$x" }).class.name
+            assert type == 'java.lang.String' // not GStringImpl
+        '''
+    }
+
+    // GROOVY-8427
+    void testClosureReturnTypeInference6() {
         assertScript '''
             import java.util.function.Consumer
 
@@ -153,32 +182,56 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-9907
-    void testClosureReturnTypeInference5() {
+    // GROOVY-8202
+    void testClosureReturnTypeInference7() {
         assertScript '''
-            Integer foo(x) {
-                if (x instanceof Integer) {
-                    def bar = { -> return x }
-                    return bar.call()
+            void proc() {
+            }
+            String test0(flag) {
+              if (flag) {
+                'foo'
+              } else {
+                proc()
+              }
+            }
+            String test1(flag) {
+              Closure<String> c = { ->
+                if (flag) {
+                  'bar'
+                } else {
+                  proc()
+                  null
                 }
-                return 0
+              }
+              c.call()
             }
-            assert foo(1) == 1
-        '''
-    }
+            String test2(flag) {
+              Closure<String> c = { -> // Cannot assign Closure<Object> to Closure<String>
+                if (flag) {
+                  'baz'
+                } else {
+                  proc()
+                }
+              }
+              c.call()
+            }
 
-    // GROOVY-9971
-    void testClosureReturnTypeInference6() {
+            assert test0(true) == 'foo'
+            assert test1(true) == 'bar'
+            assert test2(true) == 'baz'
+            assert test0(false) == null
+            assert test1(false) == null
+            assert test2(false) == null
+        '''
+
         assertScript '''
-            def m(Closure<String> c) {
-                c.call()
+            Closure<Void> c = { flag ->
+                if (flag) {
+                    print 'true'
+                } else {
+                    print 'false'
+                }
             }
-            final x = 123
-            Closure<String> c = { -> "x=$x" }
-            String type = c.call().class.name
-            assert type == 'java.lang.String'
-            type = (m { -> "x=$x" }).class.name
-            assert type == 'java.lang.String' // not GStringImpl
         '''
     }
 
