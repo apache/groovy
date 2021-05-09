@@ -2178,6 +2178,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void addClosureReturnType(final ClassNode returnType) {
+        if (VOID_TYPE.equals(returnType)) return; // GROOVY-8202
         typeCheckingContext.getEnclosingClosure().addReturnType(returnType);
     }
 
