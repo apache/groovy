@@ -549,6 +549,11 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     void appendStacktrace(text) {
+        // prevent NPE when outputArea is missing, i.e. there is currently no window present
+        // TODO the text should not be swallowed (options: postpone output, open new window, log file, terminal, ...)
+        if (outputArea == null) {
+            return
+        }
         def doc = outputArea.styledDocument
 
         // split lines by new line separator
