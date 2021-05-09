@@ -112,21 +112,22 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-8427
     void testClosureReturnTypeInference6() {
         assertScript '''
-            import java.util.function.Consumer
-
-            class C {
-                static <T> void m(T a, Consumer<T> c) {
-                    c.accept(a)
+            class Main {
+                static <T> void m(T t, Consumer<T> c) {
+                    c.accept(t)
                 }
                 static void main(args) {
                     def c = { ->
-                        int x = 0
+                        int i = 0
                         m('') {
                             print 'void return'
                         }
                     }
                     c.call()
                 }
+            }
+            interface Consumer<T> {
+                void accept(T t)
             }
         '''
     }
@@ -291,7 +292,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             fib.fib(2)
         '''
     }
-    
+
     void testClosureRecursionWithoutClosureTypeArgument() {
         shouldFailWithMessages '''
             Closure fib
@@ -411,7 +412,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             }
         ''', 'Cannot find matching method'
     }
-    
+
     //GROOVY-6189
     void testSAMsInMethodSelection(){
         // simple direct case
@@ -422,7 +423,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             def foo(MySAM sam) {sam.someMethod()}
             assert foo {1} == 1
         """
-  
+
         // overloads with classes implemented by Closure
         ["java.util.concurrent.Callable", "Object", "Closure", "GroovyObjectSupport", "Cloneable", "Runnable", "GroovyCallable", "Serializable", "GroovyObject"].each {
             className ->
@@ -436,7 +437,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             """
         }
     }
-    
+
     void testSAMVariable() {
         assertScript """
             interface SAM { def foo(); }
@@ -459,7 +460,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             assert s.accept(1) == -1
         """
     }
-    
+
     void testSAMProperty() {
         assertScript """
             interface SAM { def foo(); }
@@ -470,7 +471,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             assert x.s.foo() == 1
         """
     }
-    
+
     void testSAMAttribute() {
         assertScript """
             interface SAM { def foo(); }
@@ -551,7 +552,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             }
         ''', 'Reference to method is ambiguous. Cannot choose between'
     }
-    
+
     void testSAMType() {
         assertScript """
             interface Foo {int foo()}

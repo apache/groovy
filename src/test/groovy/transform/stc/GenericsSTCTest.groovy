@@ -2110,13 +2110,16 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-7804
     void testParameterlessClosureToGenericSAMTypeArgumentCoercion() {
         assertScript '''
-            interface Supplier<T> {
-                public <T> T get()
+            static <T> T doGet(Supplier<T> supplier) {
+                supplier.get()
             }
 
-            static <T> T doGet(Supplier<T> supplier) { supplier.get() }
+            interface Supplier<T> {
+                T get()
+            }
 
-            assert doGet { -> 'foo' } == 'foo'
+            def result = doGet { -> 'foo' }
+            assert result == 'foo'
         '''
     }
 
