@@ -109,6 +109,81 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-8427
+    void testClosureReturnTypeInference6() {
+        assertScript '''
+            import java.util.function.Consumer
+
+            class C {
+                static <T> void m(T a, Consumer<T> c) {
+                    c.accept(a)
+                }
+                static void main(args) {
+                    def c = { ->
+                        int x = 0
+                        m('') {
+                            print 'void return'
+                        }
+                    }
+                    c.call()
+                }
+            }
+        '''
+    }
+
+    // GROOVY-8202
+    void testClosureReturnTypeInference7() {
+        assertScript '''
+            void proc() {
+            }
+            String test0(flag) {
+              if (flag) {
+                'foo'
+              } else {
+                proc()
+              }
+            }
+            String test1(flag) {
+              Closure<String> c = { ->
+                if (flag) {
+                  'bar'
+                } else {
+                  proc()
+                  null
+                }
+              }
+              c.call()
+            }
+            String test2(flag) {
+              Closure<String> c = { -> // Cannot assign Closure<Object> to Closure<String>
+                if (flag) {
+                  'baz'
+                } else {
+                  proc()
+                }
+              }
+              c.call()
+            }
+
+            assert test0(true) == 'foo'
+            assert test1(true) == 'bar'
+            assert test2(true) == 'baz'
+            assert test0(false) == null
+            assert test1(false) == null
+            assert test2(false) == null
+        '''
+
+        assertScript '''
+            Closure<Void> c = { flag ->
+                if (flag) {
+                    print 'true'
+                } else {
+                    print 'false'
+                }
+            }
+        '''
+    }
+
     // GROOVY-5145
     void testCollect() {
         assertScript '''
