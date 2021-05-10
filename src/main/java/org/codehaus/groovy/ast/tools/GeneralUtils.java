@@ -465,7 +465,7 @@ public class GeneralUtils {
 
     public static List<FieldNode> getSuperNonPropertyFields(final ClassNode cNode) {
         List<FieldNode> result;
-        if (cNode == ClassHelper.OBJECT_TYPE) {
+        if (cNode.equals(ClassHelper.OBJECT_TYPE)) {
             result = new ArrayList<>();
         } else {
             result = getSuperNonPropertyFields(cNode.getSuperClass());
@@ -480,7 +480,7 @@ public class GeneralUtils {
 
     public static List<FieldNode> getSuperPropertyFields(final ClassNode cNode) {
         List<FieldNode> result;
-        if (cNode == ClassHelper.OBJECT_TYPE) {
+        if (cNode.equals(ClassHelper.OBJECT_TYPE)) {
             result = new ArrayList<>();
         } else {
             result = getSuperPropertyFields(cNode.getSuperClass());
@@ -505,7 +505,7 @@ public class GeneralUtils {
                                                       final boolean includeFields, final boolean includePseudoGetters, final boolean includePseudoSetters,
                                                       final boolean traverseSuperClasses, final boolean skipReadonly, final boolean reverse, final boolean allNames, final boolean includeStatic) {
         List<PropertyNode> result = new ArrayList<>();
-        if (cNode != ClassHelper.OBJECT_TYPE && traverseSuperClasses && !reverse) {
+        if (!(cNode.equals(ClassHelper.OBJECT_TYPE)) && traverseSuperClasses && !reverse) {
             result.addAll(getAllProperties(names, origType, cNode.getSuperClass(), includeProperties, includeFields, includePseudoGetters, includePseudoSetters, true, skipReadonly));
         }
         if (includeProperties) {
@@ -540,7 +540,7 @@ public class GeneralUtils {
                 names.add(fNode.getName());
             }
         }
-        if (cNode != ClassHelper.OBJECT_TYPE && traverseSuperClasses && reverse) {
+        if (!(cNode.equals(ClassHelper.OBJECT_TYPE)) && traverseSuperClasses && reverse) {
             result.addAll(getAllProperties(names, origType, cNode.getSuperClass(), includeProperties, includeFields, includePseudoGetters, includePseudoSetters, true, skipReadonly));
         }
         return result;

@@ -41,17 +41,18 @@ import static org.codehaus.groovy.ast.ClassHelper.BigInteger_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Number_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
-import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isNumberType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
-import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveByte;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveChar;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveFloat;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveInt;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveShort;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
@@ -108,7 +109,7 @@ public class WideningCategories {
      * @param type the type to check
      */
     public static boolean isInt(ClassNode type) {
-        return int_TYPE == type;
+        return isPrimitiveInt(type);
     }
 
     /**
@@ -116,7 +117,7 @@ public class WideningCategories {
      * @param type the type to check
      */
     public static boolean isDouble(ClassNode type) {
-        return double_TYPE == type;
+        return isPrimitiveDouble(type);
     }
 
     /**
@@ -124,7 +125,7 @@ public class WideningCategories {
      * @param type the type to check
      */
     public static boolean isFloat(ClassNode type) {
-        return float_TYPE == type;
+        return isPrimitiveFloat(type);
     }
 
     /**
@@ -132,37 +133,39 @@ public class WideningCategories {
      * byte, char, short, int.
      */
     public static boolean isIntCategory(ClassNode type) {
-        return  type==byte_TYPE     ||  type==char_TYPE     ||
-                type==int_TYPE      ||  type==short_TYPE;
+        return isPrimitiveByte(type) || isPrimitiveChar(type) || isPrimitiveInt(type) || isPrimitiveShort(type);
     }
+
     /**
      * It is of a long category, if the provided type is a
      * long, its wrapper or if it is a long category.
      */
     public static boolean isLongCategory(ClassNode type) {
-        return  type==long_TYPE     ||  isIntCategory(type);
+        return isPrimitiveLong(type) || isIntCategory(type);
     }
+
     /**
      * It is of a BigInteger category, if the provided type is a
      * long category or a BigInteger.
      */
     public static boolean isBigIntCategory(ClassNode type) {
-        return  type==BigInteger_TYPE || isLongCategory(type);
+        return type.equals(BigInteger_TYPE) || isLongCategory(type);
     }
+
     /**
      * It is of a BigDecimal category, if the provided type is a
      * BigInteger category or a BigDecimal.
      */
     public static boolean isBigDecCategory(ClassNode type) {
-        return  type==BigDecimal_TYPE || isBigIntCategory(type);
+        return type.equals(BigDecimal_TYPE) || isBigIntCategory(type);
     }
+
     /**
      * It is of a double category, if the provided type is a
      * BigDecimal, a float, double. C(type)=double
      */
     public static boolean isDoubleCategory(ClassNode type) {
-        return  type==float_TYPE    ||  type==double_TYPE   ||
-                isBigDecCategory(type);
+        return isPrimitiveFloat(type) || isPrimitiveDouble(type) || isBigDecCategory(type);
     }
 
     /**
@@ -170,7 +173,7 @@ public class WideningCategories {
      * a float, double. C(type)=float
      */
     public static boolean isFloatingCategory(ClassNode type) {
-        return  type==float_TYPE    ||  type==double_TYPE;
+        return isPrimitiveFloat(type) || isPrimitiveDouble(type);
     }
 
     public static boolean isNumberCategory(ClassNode type) {
@@ -342,7 +345,7 @@ public class WideningCategories {
             }
             return OBJECT_TYPE;
         }
-        if (a.equals(VOID_TYPE) || b.equals(VOID_TYPE)) {
+        if (isPrimitiveVoid(a) || isPrimitiveVoid(b)) {
             if (!b.equals(a)) {
                 // one class is void, the other is not
                 return OBJECT_TYPE;
@@ -559,7 +562,7 @@ public class WideningCategories {
                 name = "Virtual$"+baseType1.getName();
             }
         } else {
-            superClass = OBJECT_TYPE;
+            superClass = OBJECT_TYPE.getPlainNodeReference();
             if (baseType1.isDerivedFrom(baseType2)) {
                 superClass = baseType2;
             } else if (baseType2.isDerivedFrom(baseType1)) {

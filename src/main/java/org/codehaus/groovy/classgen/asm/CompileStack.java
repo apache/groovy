@@ -37,6 +37,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveFloat;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.DCONST_0;
@@ -639,11 +642,11 @@ public class CompileStack {
 
     private static void pushInitValue(final ClassNode type, final MethodVisitor mv) {
         if (ClassHelper.isPrimitiveType(type)) {
-            if (type == ClassHelper.long_TYPE) {
+            if (isPrimitiveLong(type)) {
                 mv.visitInsn(LCONST_0);
-            } else if (type == ClassHelper.double_TYPE) {
+            } else if (isPrimitiveDouble(type)) {
                 mv.visitInsn(DCONST_0);
-            } else if (type == ClassHelper.float_TYPE) {
+            } else if (isPrimitiveFloat(type)) {
                 mv.visitInsn(FCONST_0);
             } else {
                 mv.visitLdcInsn(0);
@@ -676,7 +679,7 @@ public class CompileStack {
         OperandStack operandStack = controller.getOperandStack();
 
         if (!initFromStack) {
-            if (ClassHelper.isPrimitiveType(v.getOriginType()) && ClassHelper.getWrapper(v.getOriginType()) == variableType) {
+            if (ClassHelper.isPrimitiveType(v.getOriginType()) && ClassHelper.getWrapper(v.getOriginType()).equals(variableType)) {
                 pushInitValue(v.getOriginType(), mv);
                 operandStack.push(v.getOriginType());
                 operandStack.box();
@@ -712,7 +715,7 @@ public class CompileStack {
      */
     private void makeNextVariableID(final ClassNode type, final boolean useReferenceDirectly) {
         currentVariableIndex = nextVariableIndex;
-        if ((type == ClassHelper.long_TYPE || type == ClassHelper.double_TYPE) && !useReferenceDirectly) {
+        if ((isPrimitiveLong(type) || isPrimitiveDouble(type)) && !useReferenceDirectly) {
             nextVariableIndex += 1;
         }
         nextVariableIndex += 1;

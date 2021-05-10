@@ -92,6 +92,6 @@ public class BinaryObjectExpressionHelper extends BinaryExpressionWriter {
     
     @Override
     protected ClassNode getArrayGetResultType() {
-    	return ClassHelper.OBJECT_TYPE;
+    	return ClassHelper.OBJECT_TYPE.getPlainNodeReference();
     }
 }

@@ -48,8 +48,8 @@ import java.util.function.Predicate;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.isGenerated;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
-import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
 import static org.codehaus.groovy.runtime.ArrayTypeUtils.dimension;
 import static org.codehaus.groovy.runtime.ArrayTypeUtils.elementType;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
@@ -291,7 +291,7 @@ public class ClassNodeUtils {
         }
         String propName = getPropNameForAccessor(methodName);
         PropertyNode pNode = getStaticProperty(cNode, propName);
-        return pNode != null && (methodName.startsWith("get") || boolean_TYPE.equals(pNode.getType()));
+        return pNode != null && (methodName.startsWith("get") || isPrimitiveBoolean(pNode.getType()));
     }
 
     /**

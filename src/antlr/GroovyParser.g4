@@ -199,7 +199,7 @@ typeParameters
     ;
 
 typeParameter
-    :   className (EXTENDS nls typeBound)?
+    :   annotationsOpt className (EXTENDS nls typeBound)?
     ;
 
 typeBound

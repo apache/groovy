@@ -21,8 +21,10 @@ package org.codehaus.groovy.ast;
 import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
@@ -142,7 +144,7 @@ public class MethodNode extends AnnotatedNode {
 
     public void setReturnType(ClassNode returnType) {
         invalidateCachedData();
-        this.dynamicReturnType |= ClassHelper.DYNAMIC_TYPE == returnType;
+        this.dynamicReturnType |= TypeUtil.isDynamicTyped(returnType);
         this.returnType = returnType != null ? returnType : ClassHelper.OBJECT_TYPE;
     }
 

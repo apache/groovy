@@ -79,6 +79,15 @@ import java.util.stream.Stream;
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveByte;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveChar;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveFloat;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveInt;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveShort;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 
 public class JavaStubGenerator {
     private final boolean java5;
@@ -523,7 +532,7 @@ public class JavaStubGenerator {
                 // GROOVY-5150 : Initialize value with a dummy constant so that Java cross compiles correctly
                 if (ClassHelper.STRING_TYPE.equals(valueExpr.getType())) {
                     out.print(formatString(valueExpr.getText()));
-                } else if (ClassHelper.char_TYPE.equals(valueExpr.getType())) {
+                } else if (isPrimitiveChar(valueExpr.getType())) {
                     out.print("'"+valueExpr.getText()+"'");
                 } else {
                     ClassNode constantType = valueExpr.getType();
@@ -534,7 +543,7 @@ public class JavaStubGenerator {
                     if (ClassHelper.Long_TYPE.equals(ClassHelper.getWrapper(constantType))) out.print('L');
                 }
             } else if (ClassHelper.isPrimitiveType(type)) {
-                String val = type == ClassHelper.boolean_TYPE ? "false" : "0";
+                String val = isPrimitiveBoolean(type) ? "false" : "0";
                 out.print("new " + ClassHelper.getWrapper(type) + "((" + type + ")" + val + ")");
             } else {
                 out.print("null");
@@ -818,7 +827,7 @@ public class JavaStubGenerator {
     }
 
     private void printReturn(PrintWriter out, ClassNode retType) {
-        if (!ClassHelper.VOID_TYPE.equals(retType)) {
+        if (!isPrimitiveVoid(retType)) {
             out.print("return ");
             printDefaultValue(out, retType);
             out.print(";");
@@ -826,14 +835,14 @@ public class JavaStubGenerator {
     }
 
     private void printDefaultValue(final PrintWriter out, final ClassNode type) {
-        if (!type.equals(ClassHelper.boolean_TYPE)) {
+        if (!isPrimitiveBoolean(type)) {
             out.print("(");
             printType(out, type);
             out.print(")");
         }
 
         if (ClassHelper.isPrimitiveType(type)) {
-            if (type.equals(ClassHelper.boolean_TYPE)) {
+            if (isPrimitiveBoolean(type)) {
                 out.print("false");
             } else {
                 out.print("0");
@@ -856,21 +865,21 @@ public class JavaStubGenerator {
 
     private void printTypeName(PrintWriter out, ClassNode type) {
         if (ClassHelper.isPrimitiveType(type)) {
-            if (type == ClassHelper.boolean_TYPE) {
+            if (isPrimitiveBoolean(type)) {
                 out.print("boolean");
-            } else if (type == ClassHelper.char_TYPE) {
+            } else if (isPrimitiveChar(type)) {
                 out.print("char");
-            } else if (type == ClassHelper.int_TYPE) {
+            } else if (isPrimitiveInt(type)) {
                 out.print("int");
-            } else if (type == ClassHelper.short_TYPE) {
+            } else if (isPrimitiveShort(type)) {
                 out.print("short");
-            } else if (type == ClassHelper.long_TYPE) {
+            } else if (isPrimitiveLong(type)) {
                 out.print("long");
-            } else if (type == ClassHelper.float_TYPE) {
+            } else if (isPrimitiveFloat(type)) {
                 out.print("float");
-            } else if (type == ClassHelper.double_TYPE) {
+            } else if (isPrimitiveDouble(type)) {
                 out.print("double");
-            } else if (type == ClassHelper.byte_TYPE) {
+            } else if (isPrimitiveByte(type)) {
                 out.print("byte");
             } else {
                 out.print("void");

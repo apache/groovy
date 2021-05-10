@@ -49,6 +49,13 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveByte;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveFloat;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveInt;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveShort;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_TRANSIENT;
 
@@ -117,15 +124,15 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
 
     private static String suffixForField(FieldNode fNode) {
         // use primitives for efficiency
-        if (fNode.getType() == ClassHelper.int_TYPE) return "Int";
-        if (fNode.getType() == ClassHelper.boolean_TYPE) return "Boolean";
+        if (isPrimitiveInt(fNode.getType())) return "Int";
+        if (isPrimitiveBoolean(fNode.getType())) return "Boolean";
 //        currently char isn't found due to a bug, so go with Object
-//        if (fNode.getType() == ClassHelper.char_TYPE) return "Char";
-        if (fNode.getType() == ClassHelper.long_TYPE) return "Long";
-        if (fNode.getType() == ClassHelper.short_TYPE) return "Short";
-        if (fNode.getType() == ClassHelper.byte_TYPE) return "Byte";
-        if (fNode.getType() == ClassHelper.float_TYPE) return "Float";
-        if (fNode.getType() == ClassHelper.double_TYPE) return "Double";
+//        if (isPrimitiveChar(fNode.getType())) return "Character";
+        if (isPrimitiveLong(fNode.getType())) return "Long";
+        if (isPrimitiveShort(fNode.getType())) return "Short";
+        if (isPrimitiveByte(fNode.getType())) return "Byte";
+        if (isPrimitiveFloat(fNode.getType())) return "Float";
+        if (isPrimitiveDouble(fNode.getType())) return "Double";
         return "Object";
     }
 }

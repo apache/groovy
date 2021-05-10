@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.InterfaceHelperClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -110,6 +111,8 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.TypePath;
+import org.objectweb.asm.TypeReference;
 import org.objectweb.asm.util.TraceMethodVisitor;
 
 import java.io.PrintWriter;
@@ -134,6 +137,14 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveByte;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveChar;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveFloat;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveInt;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveShort;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PROPERTY_OWNER;
 import static org.objectweb.asm.Opcodes.AASTORE;
 import static org.objectweb.asm.Opcodes.ACC_ENUM;
@@ -187,6 +198,18 @@ import static org.objectweb.asm.Opcodes.T_INT;
 import static org.objectweb.asm.Opcodes.T_LONG;
 import static org.objectweb.asm.Opcodes.T_SHORT;
 import static org.objectweb.asm.Opcodes.V_PREVIEW;
+import static org.objectweb.asm.TypeReference.CLASS_TYPE_PARAMETER;
+import static org.objectweb.asm.TypeReference.CLASS_TYPE_PARAMETER_BOUND;
+import static org.objectweb.asm.TypeReference.FIELD;
+import static org.objectweb.asm.TypeReference.METHOD_RETURN;
+import static org.objectweb.asm.TypeReference.METHOD_TYPE_PARAMETER;
+import static org.objectweb.asm.TypeReference.METHOD_TYPE_PARAMETER_BOUND;
+import static org.objectweb.asm.TypeReference.newExceptionReference;
+import static org.objectweb.asm.TypeReference.newFormalParameterReference;
+import static org.objectweb.asm.TypeReference.newSuperTypeReference;
+import static org.objectweb.asm.TypeReference.newTypeParameterBoundReference;
+import static org.objectweb.asm.TypeReference.newTypeParameterReference;
+import static org.objectweb.asm.TypeReference.newTypeReference;
 
 /**
  * Generates Java class versions of Groovy classes using ASM.
@@ -309,6 +332,12 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
             } else {
                 visitAnnotations(classNode, classVisitor);
+                visitTypeParameters(classNode, classVisitor);
+                visitType(classNode.getUnresolvedSuperClass(), classVisitor, newSuperTypeReference(-1), "", true);
+                ClassNode[] interfaces = classNode.getInterfaces();
+                for (int i = 0; i < interfaces.length; i++) {
+                    visitType(interfaces[i], classVisitor, newSuperTypeReference(i), "", true);
+                }
                 if (classNode.isInterface()) {
                     String outerClassName = classNode.getName();
                     String name = outerClassName + "$" + context.getNextInnerClassIdx();
@@ -436,8 +465,10 @@ public class AsmClassGenerator extends ClassGenerator {
         controller.resetLineNumber();
 
         visitAnnotations(node, mv);
-        for (int i = 0, n = parameters.length; i < n; i += 1) {
-            visitParameterAnnotations(parameters[i], i, mv);
+        visitTypeParameters(node, mv);
+        // ideally following statement would be in visitMethod but mv not visible there
+        if (!(node instanceof ConstructorNode)) {
+            visitType(node.getReturnType(), mv, newTypeReference(METHOD_RETURN), "", true);
         }
 
         // add parameter names to the MethodVisitor (JDK8+)
@@ -445,6 +476,20 @@ public class AsmClassGenerator extends ClassGenerator {
                 .orElseGet(context::getCompileUnit).getConfig().getParameters()) {
             for (Parameter parameter : parameters) {
                 mv.visitParameter(parameter.getName(), parameter.getModifiers());
+            }
+        }
+        for (int i = 0, n = parameters.length; i < n; i += 1) {
+            visitParameterAnnotations(parameters[i], i, mv);
+            ClassNode paramType = parameters[i].getType();
+            if (paramType.isGenericsPlaceHolder()) {
+                visitTypeAnnotations(paramType, mv, newFormalParameterReference(i), "", true);
+            } else {
+                visitType(parameters[i].getType(), mv, newFormalParameterReference(i), "", true);
+            }
+        }
+        if (node.getExceptions() != null) {
+            for (int i = 0, n = node.getExceptions().length; i < n; i += 1) {
+                visitTypeAnnotations(node.getExceptions()[i], mv, newExceptionReference(i), "", true);
             }
         }
 
@@ -630,9 +675,9 @@ public class AsmClassGenerator extends ClassGenerator {
                 ? cexp.getValue() : null; // GROOVY-5150
         if (value != null) {
             // byte, char and short require an extra cast
-            if (ClassHelper.byte_TYPE.equals(t) || ClassHelper.short_TYPE.equals(t)) {
+            if (isPrimitiveByte(t) || isPrimitiveShort(t)) {
                 value = ((Number) value).intValue();
-            } else if (ClassHelper.char_TYPE.equals(t)) {
+            } else if (isPrimitiveChar(t)) {
                 value = Integer.valueOf((Character)value);
             }
         }
@@ -643,6 +688,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 signature,
                 value);
         visitAnnotations(fieldNode, fv);
+        visitType(fieldNode.getType(), fv, newTypeReference(FIELD), "", true);
         fv.visitEnd();
     }
 
@@ -1670,28 +1716,28 @@ public class AsmClassGenerator extends ClassGenerator {
         if (!elementType.isArray() || expression.hasInitializer()) {
             if (ClassHelper.isPrimitiveType(elementType)) {
                 int primType = 0;
-                if (elementType == ClassHelper.boolean_TYPE) {
+                if (isPrimitiveBoolean(elementType)) {
                     primType = T_BOOLEAN;
                     storeIns = BASTORE;
-                } else if (elementType == ClassHelper.char_TYPE) {
+                } else if (isPrimitiveChar(elementType)) {
                     primType = T_CHAR;
                     storeIns = CASTORE;
-                } else if (elementType == ClassHelper.float_TYPE) {
+                } else if (isPrimitiveFloat(elementType)) {
                     primType = T_FLOAT;
                     storeIns = FASTORE;
-                } else if (elementType == ClassHelper.double_TYPE) {
+                } else if (isPrimitiveDouble(elementType)) {
                     primType = T_DOUBLE;
                     storeIns = DASTORE;
-                } else if (elementType == ClassHelper.byte_TYPE) {
+                } else if (isPrimitiveByte(elementType)) {
                     primType = T_BYTE;
                     storeIns = BASTORE;
-                } else if (elementType == ClassHelper.short_TYPE) {
+                } else if (isPrimitiveShort(elementType)) {
                     primType = T_SHORT;
                     storeIns = SASTORE;
-                } else if (elementType == ClassHelper.int_TYPE) {
+                } else if (isPrimitiveInt(elementType)) {
                     primType = T_INT;
                     storeIns = IASTORE;
-                } else if (elementType == ClassHelper.long_TYPE) {
+                } else if (isPrimitiveLong(elementType)) {
                     primType = T_LONG;
                     storeIns = LASTORE;
                 }
@@ -2014,11 +2060,101 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
+    private void visitTypeAnnotations(final ClassNode sourceNode, final Object visitor, final TypeReference typeRef, final String typePathStr, boolean typeUse) {
+        for (AnnotationNode an : sourceNode.getTypeAnnotations()) {
+            if (an.isBuiltIn() || an.hasSourceRetention()) continue;
+            if (typeUse && !an.isTargetAllowed(AnnotationNode.TYPE_USE_TARGET)) continue;
+
+            AnnotationVisitor av = null;
+            final TypePath typePath;
+            try {
+                typePath = TypePath.fromString(typePathStr);
+            } catch (IllegalArgumentException ex) {
+                throw new GroovyBugError("Illegal type path for " + sourceNode.getText() + ", typeRef = " + typeRef + ", typePath = " + typePathStr);
+            }
+            final int typeRefInt = typeRef.getValue();
+            final String annotationDescriptor = BytecodeHelper.getTypeDescription(an.getClassNode());
+            if (visitor instanceof ClassVisitor) {
+                av = ((ClassVisitor) visitor).visitTypeAnnotation(typeRefInt, typePath, annotationDescriptor, an.hasRuntimeRetention());
+            } else if (visitor instanceof MethodVisitor) {
+                av = ((MethodVisitor) visitor).visitTypeAnnotation(typeRefInt, typePath, annotationDescriptor, an.hasRuntimeRetention());
+            } else if (visitor instanceof FieldVisitor) {
+                av = ((FieldVisitor) visitor).visitTypeAnnotation(typeRefInt, typePath, annotationDescriptor, an.hasRuntimeRetention());
+            } else {
+                throwException("Cannot create an AnnotationVisitor. Please report Groovy bug");
+            }
+            visitAnnotationAttributes(an, av);
+            av.visitEnd();
+        }
+    }
+
+    private void visitGenericsTypeAnnotations(final ClassNode classNode, final Object visitor, final TypeReference typeRef,
+                                              final String typePath, final boolean typeUse) {
+        if (!classNode.isUsingGenerics() || classNode.getGenericsTypes() == null) {
+            return;
+        }
+        visitGenericsTypeAnnotations(classNode.getGenericsTypes(), visitor, typePath, typeRef, typeUse);
+    }
+
+    private void visitTypeParameters(final MethodNode methodNode, final Object visitor) {
+        if (methodNode.getGenericsTypes() == null) {
+            return;
+        }
+        visitGenericsTypeParameterAnnotations(methodNode.getGenericsTypes(), visitor, "", METHOD_TYPE_PARAMETER, METHOD_TYPE_PARAMETER_BOUND);
+    }
+
+    private void visitTypeParameters(final ClassNode classNode, final Object visitor) {
+        if (classNode.getGenericsTypes() == null) {
+            return;
+        }
+        visitGenericsTypeParameterAnnotations(classNode.getGenericsTypes(), visitor, "", CLASS_TYPE_PARAMETER, CLASS_TYPE_PARAMETER_BOUND);
+    }
+
+    private void visitGenericsTypeParameterAnnotations(final GenericsType[] genericsTypes, final Object visitor, final String typePath, final int sort, final int boundSort) {
+        for (int paramIdx = 0; paramIdx < genericsTypes.length; paramIdx++) {
+            GenericsType gt = genericsTypes[paramIdx];
+            visitType(gt.getType(), visitor, newTypeParameterReference(sort, paramIdx), typePath, false);
+            if (gt.getLowerBound() != null) {
+                visitType(gt.getLowerBound(), visitor, newTypeParameterBoundReference(boundSort, paramIdx, 0), typePath, false);
+            }
+            if (gt.getUpperBounds() != null) {
+                ClassNode[] upperBounds = gt.getUpperBounds();
+                for (int boundIdx = 0; boundIdx < upperBounds.length; boundIdx++) {
+                    visitType(upperBounds[boundIdx], visitor, newTypeParameterBoundReference(boundSort, paramIdx, boundIdx), typePath, false);
+                }
+            }
+        }
+    }
+
+    private void visitGenericsTypeAnnotations(final GenericsType[] genericsTypes, final Object visitor,
+                                              final String typePath, final TypeReference typeRef, final boolean typeUse) {
+        for (int paramIdx = 0; paramIdx < genericsTypes.length; paramIdx++) {
+            GenericsType gt = genericsTypes[paramIdx];
+            String prefix = typePath + paramIdx + ";";
+            visitType(gt.getType(), visitor, typeRef, prefix, typeUse);
+            if (!gt.isPlaceholder()) {
+                if (gt.getLowerBound() != null) {
+                    visitType(gt.getLowerBound(), visitor, typeRef, gt.isWildcard() ? prefix + "*" : prefix + "0;", typeUse);
+                }
+                if (gt.getUpperBounds() != null) {
+                    ClassNode[] upperBounds = gt.getUpperBounds();
+                    for (int boundIdx = 0; boundIdx < upperBounds.length; boundIdx++) {
+                        visitType(upperBounds[boundIdx], visitor, typeRef, gt.isWildcard() ? prefix + "*" : prefix + boundIdx + ";", typeUse);
+                    }
+                }
+            }
+        }
+    }
+
+    private void visitType(final ClassNode classNode, final Object visitor, final TypeReference typeRef, final String typePath, boolean typeUse) {
+        visitTypeAnnotations(classNode, visitor, typeRef, typePath, typeUse);
+        visitGenericsTypeAnnotations(classNode, visitor, typeRef, typePath, typeUse);
+    }
+
     private void visitParameterAnnotations(final Parameter parameter, final int paramNumber, final MethodVisitor mv) {
         for (AnnotationNode an : parameter.getAnnotations()) {
             // skip built-in properties
-            if (an.isBuiltIn()) continue;
-            if (an.hasSourceRetention()) continue;
+            if (an.isBuiltIn() || an.hasSourceRetention()) continue;
 
             final String annotationDescriptor = BytecodeHelper.getTypeDescription(an.getClassNode());
             AnnotationVisitor av = mv.visitParameterAnnotation(paramNumber, annotationDescriptor, an.hasRuntimeRetention());

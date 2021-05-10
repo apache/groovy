@@ -101,6 +101,7 @@ import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
+import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.ResolveVisitor;
@@ -210,6 +211,15 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isNumberCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
 import static org.codehaus.groovy.classgen.AsmClassGenerator.MINIMUM_BYTECODE_VERSION;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveByte;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveChar;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveFloat;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveInt;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveShort;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
 import static org.codehaus.groovy.syntax.Types.COMPARE_EQUAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_EQUAL;
@@ -1375,7 +1385,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param arguments the constructor arguments
      */
     protected MethodNode checkGroovyStyleConstructor(final ClassNode node, final ClassNode[] arguments, final ASTNode source) {
-        if (node.equals(OBJECT_TYPE) || node.equals(DYNAMIC_TYPE)) {
+        if (node.equals(OBJECT_TYPE) || TypeUtil.isDynamicTyped(node)) {
             // in that case, we are facing a list constructor assigned to a def or object
             return null;
         }
@@ -1915,7 +1925,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (!checkCompatibleAssignmentTypes(forLoopVariableType, componentType)) {
                 addStaticTypeError("Cannot loop with element of type " + prettyPrintType(forLoopVariableType) + " with collection of type " + prettyPrintType(collectionType), forLoop);
             }
-            if (forLoopVariableType != DYNAMIC_TYPE) {
+            if (!TypeUtil.isDynamicTyped(forLoopVariableType)) {
                 // user has specified a type, prefer it over the inferred type
                 componentType = forLoopVariableType;
             }
@@ -1995,9 +2005,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (isBigIntCategory(typeRe)) {
             // allow any internal number that is not a floating point one
             resultType = type;
-        } else if (typeRe == STRING_TYPE || typeRe == GSTRING_TYPE) {
+        } else if (typeRe.equals(STRING_TYPE) || typeRe.equals(GSTRING_TYPE)) {
             resultType = PATTERN_TYPE;
-        } else if (typeRe == ArrayList_TYPE) {
+        } else if (typeRe.equals(ArrayList_TYPE)) {
             resultType = ArrayList_TYPE;
         } else if (typeRe.equals(PATTERN_TYPE)) {
             resultType = PATTERN_TYPE;
@@ -2094,13 +2104,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private static ClassNode getMathWideningClassNode(final ClassNode type) {
-        if (byte_TYPE.equals(type) || short_TYPE.equals(type) || int_TYPE.equals(type)) {
+        if (isPrimitiveByte(type) || isPrimitiveShort(type) || isPrimitiveInt(type)) {
             return int_TYPE;
         }
         if (Byte_TYPE.equals(type) || Short_TYPE.equals(type) || Integer_TYPE.equals(type)) {
             return Integer_TYPE;
         }
-        if (float_TYPE.equals(type)) {
+        if (isPrimitiveFloat(type)) {
             return double_TYPE;
         }
         if (Float_TYPE.equals(type)) {
@@ -2115,7 +2125,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode resultType;
         if (isDoubleCategory(getUnwrapper(typeRe))) {
             resultType = type;
-        } else if (typeRe == ArrayList_TYPE) {
+        } else if (typeRe.equals(ArrayList_TYPE)) {
             resultType = ArrayList_TYPE;
         } else {
             MethodNode mn = findMethodOrFail(expression, type, name);
@@ -2191,7 +2201,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
         if (enclosingMethod != null && !enclosingMethod.isVoidMethod()) {
             if (!isNullConstant(expression)
-                    && !type.equals(VOID_TYPE)
+                    && !isPrimitiveVoid(type)
                     && !type.equals(void_WRAPPER_TYPE)
                     && !checkCompatibleAssignmentTypes(enclosingMethod.getReturnType(), type, null, false)) {
                 if (!extension.handleIncompatibleReturnType(statement, type)) {
@@ -2218,7 +2228,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void addClosureReturnType(final ClassNode returnType) {
-        if (returnType != null && !returnType.equals(VOID_TYPE)) // GROOVY-8202
+        if (returnType != null && !isPrimitiveVoid(returnType)) // GROOVY-8202
             typeCheckingContext.getEnclosingClosure().addReturnType(returnType);
     }
 
@@ -4150,19 +4160,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode expressionType = getType(source);
         if (targetType.isArray() && expressionType.isArray()) {
             return checkCast(targetType.getComponentType(), varX("foo", expressionType.getComponentType()));
-        } else if (targetType.equals(char_TYPE) && expressionType == STRING_TYPE
+        } else if (isPrimitiveChar(targetType) && expressionType.equals(STRING_TYPE)
                 && source instanceof ConstantExpression && source.getText().length() == 1) {
             // ex: (char) 'c'
-        } else if (targetType.equals(Character_TYPE) && (expressionType == STRING_TYPE || sourceIsNull)
+        } else if (targetType.equals(Character_TYPE) && (expressionType.equals(STRING_TYPE) || sourceIsNull)
                 && (sourceIsNull || source instanceof ConstantExpression && source.getText().length() == 1)) {
             // ex : (Character) 'c'
-        } else if (isNumberCategory(getWrapper(targetType)) && (isNumberCategory(getWrapper(expressionType)) || char_TYPE == expressionType)) {
+        } else if (isNumberCategory(getWrapper(targetType)) && (isNumberCategory(getWrapper(expressionType)) || isPrimitiveChar(expressionType))) {
             // ex: short s = (short) 0
         } else if (sourceIsNull && !isPrimitiveType(targetType)) {
             // ex: (Date)null
-        } else if (char_TYPE == targetType && isPrimitiveType(expressionType) && isNumberType(expressionType)) {
+        } else if (isPrimitiveChar(targetType) && isPrimitiveType(expressionType) && isNumberType(expressionType)) {
             // char c = (char) ...
-        } else if (sourceIsNull && isPrimitiveType(targetType) && !boolean_TYPE.equals(targetType)) {
+        } else if (sourceIsNull && isPrimitiveType(targetType) && !isPrimitiveBoolean(targetType)) {
             return false;
         } else if ((expressionType.getModifiers() & Opcodes.ACC_FINAL) == 0 && targetType.isInterface()) {
             return true;
@@ -4504,7 +4514,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else if (isCompareToBoolean(op) || op == COMPARE_EQUAL || op == COMPARE_NOT_EQUAL) {
                 return boolean_TYPE;
             }
-        } else if (char_TYPE.equals(leftRedirect) && char_TYPE.equals(rightRedirect)) {
+        } else if (isPrimitiveChar(leftRedirect) && isPrimitiveChar(rightRedirect)) {
             if (isCompareToBoolean(op) || op == COMPARE_EQUAL || op == COMPARE_NOT_EQUAL) {
                 return boolean_TYPE;
             }
@@ -4572,19 +4582,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (isBigIntCategory(a) && isBigIntCategory(b)) return BigInteger_TYPE;
             return BigDecimal_TYPE;
         }
-        if (double_TYPE.equals(a) || double_TYPE.equals(b)) return double_TYPE;
+        if (isPrimitiveDouble(a) || isPrimitiveDouble(b)) return double_TYPE;
         if (Double_TYPE.equals(a) || Double_TYPE.equals(b)) return Double_TYPE;
-        if (float_TYPE.equals(a) || float_TYPE.equals(b)) return float_TYPE;
+        if (isPrimitiveFloat(a) || isPrimitiveFloat(b)) return float_TYPE;
         if (Float_TYPE.equals(a) || Float_TYPE.equals(b)) return Float_TYPE;
-        if (long_TYPE.equals(a) || long_TYPE.equals(b)) return long_TYPE;
+        if (isPrimitiveLong(a) || isPrimitiveLong(b)) return long_TYPE;
         if (Long_TYPE.equals(a) || Long_TYPE.equals(b)) return Long_TYPE;
-        if (int_TYPE.equals(a) || int_TYPE.equals(b)) return int_TYPE;
+        if (isPrimitiveInt(a) || isPrimitiveInt(b)) return int_TYPE;
         if (Integer_TYPE.equals(a) || Integer_TYPE.equals(b)) return Integer_TYPE;
-        if (short_TYPE.equals(a) || short_TYPE.equals(b)) return short_TYPE;
+        if (isPrimitiveShort(a) || isPrimitiveShort(b)) return short_TYPE;
         if (Short_TYPE.equals(a) || Short_TYPE.equals(b)) return Short_TYPE;
-        if (byte_TYPE.equals(a) || byte_TYPE.equals(b)) return byte_TYPE;
+        if (isPrimitiveByte(a) || isPrimitiveByte(b)) return byte_TYPE;
         if (Byte_TYPE.equals(a) || Byte_TYPE.equals(b)) return Byte_TYPE;
-        if (char_TYPE.equals(a) || char_TYPE.equals(b)) return char_TYPE;
+        if (isPrimitiveChar(a) || isPrimitiveChar(b)) return char_TYPE;
         if (Character_TYPE.equals(a) || Character_TYPE.equals(b)) return Character_TYPE;
         return Number_TYPE;
     }

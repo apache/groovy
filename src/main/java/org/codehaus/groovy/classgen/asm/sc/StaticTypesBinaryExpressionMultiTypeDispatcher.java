@@ -55,10 +55,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
@@ -72,6 +68,10 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveChar;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveFloat;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_FIELDS_MUTATORS;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_ADD_METHOD;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CLASSNODE;
@@ -124,7 +124,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         }
 
         ClassNode top = controller.getOperandStack().getTopOperand();
-        if (ClassHelper.isPrimitiveType(top) && (ClassHelper.isNumberType(top) || char_TYPE.equals(top))) {
+        if (ClassHelper.isPrimitiveType(top) && (ClassHelper.isNumberType(top) || isPrimitiveChar(top))) {
             MethodVisitor mv = controller.getMethodVisitor();
             visitInsnByType(top, mv, ICONST_1, LCONST_1, FCONST_1, DCONST_1);
             if ("next".equals(method)) {
@@ -139,13 +139,13 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
     }
 
     private static void visitInsnByType(final ClassNode top, final MethodVisitor mv, final int iInsn, final int lInsn, final int fInsn, final int dInsn) {
-        if (WideningCategories.isIntCategory(top) || char_TYPE.equals(top)) {
+        if (WideningCategories.isIntCategory(top) || isPrimitiveChar(top)) {
             mv.visitInsn(iInsn);
-        } else if (long_TYPE.equals(top)) {
+        } else if (isPrimitiveLong(top)) {
             mv.visitInsn(lInsn);
-        } else if (float_TYPE.equals(top)) {
+        } else if (isPrimitiveFloat(top)) {
             mv.visitInsn(fInsn);
-        } else if (double_TYPE.equals(top)) {
+        } else if (isPrimitiveDouble(top)) {
             mv.visitInsn(dInsn);
         }
     }

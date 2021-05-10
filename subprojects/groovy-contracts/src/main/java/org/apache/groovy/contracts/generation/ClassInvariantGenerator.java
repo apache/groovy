@@ -49,6 +49,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 
 /**
  * <p>
@@ -120,7 +121,7 @@ public class ClassInvariantGenerator extends BaseGenerator {
         Statement invariantMethodCall = stmt(callThisX(invariantMethod.getName()));
 
         final Statement statement = method.getCode();
-        if (statement instanceof BlockStatement && method.getReturnType() != ClassHelper.VOID_TYPE && !(method instanceof ConstructorNode)) {
+        if (statement instanceof BlockStatement && !isPrimitiveVoid(method.getReturnType()) && !(method instanceof ConstructorNode)) {
             final BlockStatement blockStatement = (BlockStatement) statement;
 
             final List<ReturnStatement> returnStatements = AssertStatementCreationUtility.getReturnStatements(method);

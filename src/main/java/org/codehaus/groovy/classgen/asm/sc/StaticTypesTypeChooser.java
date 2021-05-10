@@ -19,12 +19,13 @@
 package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.asm.StatementMetaTypeChooser;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
+
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 
 /**
  * A {@link org.codehaus.groovy.classgen.asm.TypeChooser TypeChooser} which reads
@@ -39,7 +40,7 @@ public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
         if (inferredType == null) {
             inferredType = target.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
         }
-        if (inferredType != null && !ClassHelper.VOID_TYPE.equals(inferredType)) {
+        if (inferredType != null && !isPrimitiveVoid(inferredType)) {
             return inferredType;
         }
 

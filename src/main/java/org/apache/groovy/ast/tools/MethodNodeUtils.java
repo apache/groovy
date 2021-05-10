@@ -18,13 +18,14 @@
  */
 package org.apache.groovy.ast.tools;
 
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 
 import static org.apache.groovy.util.BeanUtils.decapitalize;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 
 /**
  * Utility class for working with MethodNodes
@@ -85,17 +86,17 @@ public class MethodNodeUtils {
         if (nameLength > 2) {
             switch (name.charAt(0)) {
                 case 'g':
-                    if (nameLength > 3 && name.charAt(1) == 'e' && name.charAt(2) == 't' && mNode.getParameters().length == 0 && !mNode.getReturnType().equals(ClassHelper.VOID_TYPE)) {
+                    if (nameLength > 3 && name.charAt(1) == 'e' && name.charAt(2) == 't' && mNode.getParameters().length == 0 && !isPrimitiveVoid(mNode.getReturnType())) {
                         return decapitalize(name.substring(3));
                     }
                     break;
                 case 's':
-                    if (nameLength > 3 && name.charAt(1) == 'e' && name.charAt(2) == 't' && mNode.getParameters().length == 1 /*&& mNode.getReturnType().equals(ClassHelper.VOID_TYPE)*/) {
+                    if (nameLength > 3 && name.charAt(1) == 'e' && name.charAt(2) == 't' && mNode.getParameters().length == 1 /*&& isPrimitiveVoid(mNode.getReturnType())*/) {
                         return decapitalize(name.substring(3));
                     }
                     break;
                 case 'i':
-                    if (name.charAt(1) == 's' && mNode.getParameters().length == 0 && (mNode.getReturnType().equals(ClassHelper.boolean_TYPE) /*|| mNode.getReturnType().equals(ClassHelper.Boolean_TYPE)*/)) {
+                    if (name.charAt(1) == 's' && mNode.getParameters().length == 0 && (isPrimitiveBoolean(mNode.getReturnType()) /*|| mNode.getReturnType().equals(ClassHelper.Boolean_TYPE)*/)) {
                         return decapitalize(name.substring(2));
                     }
                     break;

@@ -46,6 +46,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
@@ -68,7 +69,7 @@ public class ContractClosureWriter {
         removeParameter("old", parametersTemp);
         removeParameter("result", parametersTemp);
 
-        if (methodNode != null && addResultVariable && methodNode.getReturnType() != ClassHelper.VOID_TYPE) {
+        if (methodNode != null && addResultVariable && !isPrimitiveVoid(methodNode.getReturnType())) {
             parametersTemp.add(new Parameter(methodNode.getReturnType(), "result"));
         }
 

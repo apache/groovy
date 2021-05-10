@@ -61,7 +61,7 @@ import static java.lang.reflect.Modifier.isStrict;
 import static java.lang.reflect.Modifier.isSynchronized;
 import static java.lang.reflect.Modifier.isTransient;
 import static java.lang.reflect.Modifier.isVolatile;
-import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
@@ -448,7 +448,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         checkGenericsUsage(node, node.getParameters());
         checkGenericsUsage(node, node.getReturnType());
         for (Parameter param : node.getParameters()) {
-            if (param.getType().equals(VOID_TYPE)) {
+            if (isPrimitiveVoid(param.getType())) {
                 addError("The " + getDescription(param) + " in " +  getDescription(node) + " has invalid type void", param);
             }
         }
@@ -533,7 +533,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         checkInterfaceFieldModifiers(node);
         checkInvalidFieldModifiers(node);
         checkGenericsUsage(node, node.getType());
-        if (node.getType().equals(VOID_TYPE)) {
+        if (isPrimitiveVoid(node.getType())) {
             addError("The " + getDescription(node) + " has invalid type void", node);
         }
         super.visitField(node);
@@ -682,7 +682,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         checkInvalidDeclarationModifier(expression, ACC_SYNCHRONIZED, "synchronized");
         checkInvalidDeclarationModifier(expression, ACC_TRANSIENT, "transient");
         checkInvalidDeclarationModifier(expression, ACC_VOLATILE, "volatile");
-        if (expression.getVariableExpression().getOriginType().equals(VOID_TYPE)) {
+        if (isPrimitiveVoid(expression.getVariableExpression().getOriginType())) {
             addError("The variable '" + expression.getVariableExpression().getName() + "' has invalid type void", expression);
         }
     }

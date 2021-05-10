@@ -343,6 +343,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
 
@@ -873,7 +874,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public List<ClassNode> visitCatchType(final CatchTypeContext ctx) {
         if (!asBoolean(ctx)) {
-            return Collections.singletonList(ClassHelper.OBJECT_TYPE);
+            return Collections.singletonList(ClassHelper.DYNAMIC_TYPE);
         }
 
         return ctx.qualifiedClassName().stream()
@@ -1152,13 +1153,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     outerClass,
                     outerClass.getName() + "$" + className,
                     modifiers,
-                    ClassHelper.OBJECT_TYPE
+                    ClassHelper.OBJECT_TYPE.getPlainNodeReference()
             );
         } else {
             classNode = new ClassNode(
                     packageName + className,
                     modifiers,
-                    ClassHelper.OBJECT_TYPE
+                    ClassHelper.OBJECT_TYPE.getPlainNodeReference()
             );
         }
 
@@ -1186,7 +1187,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 }
                 superClass = scs[0];
             } else {
-                superClass = ClassHelper.OBJECT_TYPE;
+                superClass = ClassHelper.OBJECT_TYPE.getPlainNodeReference();
             }
             classNode.setSuperClass(superClass);
             classNode.setInterfaces(this.visitTypeList(ctx.is));
@@ -1194,7 +1195,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         } else if (isInterface) {
             classNode.setModifiers(classNode.getModifiers() | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT);
-            classNode.setSuperClass(ClassHelper.OBJECT_TYPE);
+            classNode.setSuperClass(ClassHelper.OBJECT_TYPE.getPlainNodeReference());
             classNode.setInterfaces(this.visitTypeList(ctx.scs));
             this.initUsingGenerics(classNode);
             this.hackMixins(classNode);
@@ -1442,13 +1443,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public GenericsType visitTypeParameter(final TypeParameterContext ctx) {
-        return configureAST(
-                new GenericsType(
-                        configureAST(ClassHelper.make(this.visitClassName(ctx.className())), ctx),
-                        this.visitTypeBound(ctx.typeBound()),
-                        null
-                ),
-                ctx);
+        ClassNode baseType = configureAST(ClassHelper.make(this.visitClassName(ctx.className())), ctx);
+        baseType.addTypeAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
+        GenericsType genericsType = new GenericsType(baseType, this.visitTypeBound(ctx.typeBound()), null);
+        return configureAST(genericsType, ctx);
     }
 
     @Override
@@ -1708,7 +1706,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public ClassNode visitReturnType(final ReturnTypeContext ctx) {
         if (!asBoolean(ctx)) {
-            return ClassHelper.OBJECT_TYPE;
+            return ClassHelper.OBJECT_TYPE.getPlainNodeReference();
         }
 
         if (asBoolean(ctx.type())) {
@@ -1717,10 +1715,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         if (asBoolean(ctx.VOID())) {
             if (3 == ctx.ct) { // annotation
-                throw createParsingFailedException("annotation method can not have void return type", ctx);
+                throw createParsingFailedException("annotation method cannot have void return type", ctx);
             }
 
-            return ClassHelper.VOID_TYPE;
+            return ClassHelper.VOID_TYPE.getPlainNodeReference(false);
         }
 
         throw createParsingFailedException("Unsupported return type: " + ctx.getText(), ctx);
@@ -3635,7 +3633,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public Parameter[] visitStandardLambdaParameters(final StandardLambdaParametersContext ctx) {
         if (asBoolean(ctx.variableDeclaratorId())) {
             VariableExpression variable = this.visitVariableDeclaratorId(ctx.variableDeclaratorId());
-            Parameter parameter = new Parameter(ClassHelper.OBJECT_TYPE, variable.getName());
+            Parameter parameter = new Parameter(ClassHelper.OBJECT_TYPE.getPlainNodeReference(), variable.getName());
             configureAST(parameter, variable);
             return new Parameter[]{parameter};
         }
@@ -3861,7 +3859,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public ClassNode visitType(final TypeContext ctx) {
         if (!asBoolean(ctx)) {
-            return ClassHelper.OBJECT_TYPE;
+            return ClassHelper.OBJECT_TYPE.getPlainNodeReference();
         }
 
         ClassNode classNode = null;
@@ -3881,7 +3879,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             throw createParsingFailedException("Unsupported type: " + ctx.getText(), ctx);
         }
 
-        classNode.addAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
+        classNode.addTypeAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
 
         List<List<AnnotationNode>> dimList = this.visitEmptyDimsOpt(ctx.emptyDimsOpt());
         if (asBoolean(dimList)) {
@@ -3932,8 +3930,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public GenericsType visitTypeArgument(final TypeArgumentContext ctx) {
         if (asBoolean(ctx.QUESTION())) {
             ClassNode baseType = configureAST(ClassHelper.makeWithoutCaching(QUESTION_STR), ctx.QUESTION());
-
-            baseType.addAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
+            baseType.addTypeAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
 
             if (!asBoolean(ctx.type())) {
                 GenericsType genericsType = new GenericsType(baseType);
@@ -3958,10 +3955,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
             return configureAST(genericsType, ctx);
         } else if (asBoolean(ctx.type())) {
-            return configureAST(
-                    this.createGenericsType(
-                            this.visitType(ctx.type())),
-                    ctx);
+            ClassNode baseType = configureAST(this.visitType(ctx.type()), ctx);
+            return configureAST(this.createGenericsType(baseType), ctx);
         }
 
         throw createParsingFailedException("Unsupported type argument: " + ctx.getText(), ctx);
@@ -3969,7 +3964,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public ClassNode visitPrimitiveType(final PrimitiveTypeContext ctx) {
-        return configureAST(ClassHelper.make(ctx.getText()), ctx);
+        return configureAST(ClassHelper.make(ctx.getText()).getPlainNodeReference(false), ctx);
     }
 
     // } type ------------------------------------------------------------------
@@ -4156,7 +4151,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public ClassNode visitAnnotatedQualifiedClassName(final AnnotatedQualifiedClassNameContext ctx) {
         ClassNode classNode = this.visitQualifiedClassName(ctx.qualifiedClassName());
 
-        classNode.addAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
+        classNode.addTypeAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
 
         return classNode;
     }
@@ -4192,7 +4187,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     private ClassNode createArrayType(final ClassNode elementType) {
-        if (ClassHelper.VOID_TYPE.equals(elementType)) {
+        if (isPrimitiveVoid(elementType)) {
             throw this.createParsingFailedException("void[] is an invalid type", elementType);
         }
         return elementType.makeArray();

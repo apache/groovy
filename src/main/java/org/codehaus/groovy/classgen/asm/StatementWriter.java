@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ATHROW;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
@@ -567,7 +568,7 @@ public class StatementWriter {
         OperandStack operandStack = controller.getOperandStack();
         ClassNode returnType = controller.getReturnType();
 
-        if (returnType.equals(ClassHelper.VOID_TYPE)) {
+        if (isPrimitiveVoid(returnType)) {
             if (!statement.isReturningNullOrVoid()) { // TODO: move to Verifier
                 controller.getAcg().throwException("Cannot use return statement with an expression on a method that returns void");
             }

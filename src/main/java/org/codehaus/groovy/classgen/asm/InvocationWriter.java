@@ -57,6 +57,7 @@ import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.codehaus.groovy.ast.ClassHelper.isFunctionalInterface;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -205,7 +206,7 @@ public class InvocationWriter {
         String descriptor = BytecodeHelper.getMethodDescriptor(target.getReturnType(), target.getParameters());
         mv.visitMethodInsn(opcode, owner, methodName, descriptor, declaringClass.isInterface());
         ClassNode returnType = target.getReturnType().redirect();
-        if (returnType == ClassHelper.VOID_TYPE) {
+        if (isPrimitiveVoid(returnType)) {
             returnType = ClassHelper.OBJECT_TYPE;
             mv.visitInsn(ACONST_NULL);
         }
@@ -429,7 +430,7 @@ public class InvocationWriter {
         String methodName = null;
         if (message instanceof CastExpression) {
             CastExpression msg = (CastExpression) message;
-            if (msg.getType() == ClassHelper.STRING_TYPE) {
+            if (msg.getType().equals(ClassHelper.STRING_TYPE)) {
                 final Expression methodExpr = msg.getExpression();
                 if (methodExpr instanceof ConstantExpression) {
                     methodName = methodExpr.getText();

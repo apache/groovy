@@ -84,6 +84,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
@@ -312,7 +313,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             mv.visitMethodInsn(INVOKESTATIC, owner, target.getName(), desc, false);
             controller.getOperandStack().remove(argumentList.size());
 
-            if (ClassHelper.VOID_TYPE.equals(returnType)) {
+            if (isPrimitiveVoid(returnType)) {
                 returnType = ClassHelper.OBJECT_TYPE;
                 mv.visitInsn(ACONST_NULL);
             }
@@ -629,7 +630,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             newMCE.visit(controller.getAcg());
             compileStack.removeVar(slot.getIndex());
             ClassNode returnType = operandStack.getTopOperand();
-            if (ClassHelper.isPrimitiveType(returnType) && !ClassHelper.VOID_TYPE.equals(returnType)) {
+            if (ClassHelper.isPrimitiveType(returnType) && !isPrimitiveVoid(returnType)) {
                 operandStack.box();
             }
             Label endof = compileStack.createLocalLabel("endof_" + counter);

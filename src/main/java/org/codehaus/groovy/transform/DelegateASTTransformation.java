@@ -67,6 +67,7 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_NATIVE;
@@ -222,8 +223,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                 mNames.add(getSetterName(name));
             }
             mNames.add(getGetterName(name));
-            boolean isPrimBool = pNode.getOriginType().equals(ClassHelper.boolean_TYPE);
-            if (isPrimBool) {
+            if (isPrimitiveBoolean(pNode.getOriginType())) {
                 mNames.add(getPredicateName(name));
             }
         }
@@ -256,7 +256,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
     }
 
     private static void addGetterIfNeeded(final DelegateDescription delegate, final PropertyNode prop, final String name, final boolean allNames) {
-        boolean isPrimBool = prop.getOriginType().equals(ClassHelper.boolean_TYPE);
+        boolean isPrimBool = isPrimitiveBoolean(prop.getOriginType());
         // do a little bit of pre-work since Groovy compiler hasn't added property accessors yet
         boolean willHaveGetAccessor = true;
         boolean willHaveIsAccessor = isPrimBool;
@@ -303,7 +303,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         boolean hasIsAccessor = owner.getGetterMethod(getPredicateName(name)) != null;
         PropertyNode prop = owner.getProperty(name);
         willHaveGetAccessor.set(hasGetAccessor || (prop != null && !hasIsAccessor));
-        willHaveIsAccessor.set(hasIsAccessor || (prop != null && !hasGetAccessor && prop.getOriginType().equals(ClassHelper.boolean_TYPE)));
+        willHaveIsAccessor.set(hasIsAccessor || (prop != null && !hasGetAccessor && isPrimitiveBoolean(prop.getOriginType())));
     }
 
     private static boolean shouldSkipPropertyMethod(final String propertyName, final String methodName, final List<String> excludes, final List<String> includes, final boolean allNames) {

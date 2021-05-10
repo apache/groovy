@@ -45,6 +45,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 
 /**
  * <p>
@@ -124,7 +125,7 @@ public class PostconditionGenerator extends BaseGenerator {
         if (statements.size() > 0) {
             Expression contractsEnabled = localVarX(BaseVisitor.GCONTRACTS_ENABLED_VAR, ClassHelper.boolean_TYPE);
 
-            if (method.getReturnType() != ClassHelper.VOID_TYPE) {
+            if (!isPrimitiveVoid(method.getReturnType())) {
                 List<ReturnStatement> returnStatements = AssertStatementCreationUtility.getReturnStatements(method);
 
                 for (ReturnStatement returnStatement : returnStatements) {

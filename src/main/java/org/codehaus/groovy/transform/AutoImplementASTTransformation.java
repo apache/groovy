@@ -57,6 +57,7 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersEqual;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
 
 /**
  * Generates code for the {@code @AutoImplement} annotation.
@@ -201,7 +202,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
                 if (!pn.getField().isFinal()) {
                     result.remove(pn.getSetterNameOrDefault() + ":" + pn.getType().getText() + ",");
                 }
-                if (!pn.getType().equals(ClassHelper.boolean_TYPE)) {
+                if (!isPrimitiveBoolean(pn.getType())) {
                     result.remove(pn.getGetterNameOrDefault() + ":");
                 } else if (pn.getGetterName() != null) {
                     result.remove(pn.getGetterName() + ":");
