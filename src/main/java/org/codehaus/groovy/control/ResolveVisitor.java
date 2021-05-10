@@ -69,9 +69,6 @@ import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.annotation.Annotation;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -266,6 +263,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     @Override
+    public void visitMethod(MethodNode node) {
+        super.visitMethod(node);
+        visitTypeAnnotations(node.getReturnType());
+    }
+
+    @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         VariableScope oldScope = currentScope;
         currentScope = node.getVariableScope();
@@ -281,11 +284,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             resolveOrFail(p.getType(), p.getType());
             visitAnnotations(p);
         }
-        ClassNode[] exceptions = node.getExceptions();
-        for (ClassNode t : exceptions) {
-            resolveOrFail(t, node);
-        }
         resolveOrFail(node.getReturnType(), node);
+        if (node.getExceptions() != null) {
+            for (ClassNode t : node.getExceptions()) {
+                resolveOrFail(t, node);
+            }
+        }
 
         MethodNode oldCurrentMethod = currentMethod;
         currentMethod = node;
@@ -329,6 +333,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private void resolveOrFail(final ClassNode type, final String msg, final ASTNode node, final boolean preferImports) {
+        visitTypeAnnotations(type);
         if (preferImports) {
             resolveGenericsTypes(type.getGenericsTypes());
             if (resolveAliasFromModule(type)) return;
@@ -1327,8 +1332,24 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     @Override
     public void visitAnnotations(final AnnotatedNode node) {
-        List<AnnotationNode> annotations = node.getAnnotations();
-        if (annotations.isEmpty()) return;
+        visitAnnotations(node.getAnnotations());
+    }
+
+    private void visitTypeAnnotations(final ClassNode node) {
+        visitAnnotations(node.getTypeAnnotations());
+        visitGenericsTypeAnnotations(node);
+    }
+
+    private void visitGenericsTypeAnnotations(final ClassNode node) {
+        if (node.isUsingGenerics() && node.getGenericsTypes() != null) {
+            for (GenericsType gt : node.getGenericsTypes()) {
+                visitTypeAnnotations(gt.getType());
+            }
+        }
+    }
+
+    private void visitAnnotations(List<AnnotationNode> annotations) {
+        if (annotations == null || annotations.isEmpty()) return;
         for (AnnotationNode an : annotations) {
             // skip built-in properties
             if (an.isBuiltIn()) continue;
@@ -1397,6 +1418,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             genericParameterNames = new HashMap<>();
         }
 
+        visitTypeAnnotations(node);
         resolveGenericsHeader(node.getGenericsTypes());
 
         ModuleNode module = node.getModule();
@@ -1628,6 +1650,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         ClassNode type = genericsType.getType();
         // save name before redirect
         GenericsTypeName name = new GenericsTypeName(type.getName());
+        visitTypeAnnotations(type);
         ClassNode[] bounds = genericsType.getUpperBounds();
         if (!genericParameterNames.containsKey(name)) {
             if (bounds != null) {

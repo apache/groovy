@@ -158,6 +158,7 @@ public class ClassNode extends AnnotatedNode {
     private ClassNode superClass;
     protected boolean isPrimaryNode;
     protected List<InnerClassNode> innerClasses;
+    private List<AnnotationNode> typeAnnotations = Collections.emptyList();
 
     /**
      * The AST Transformations to be applied during compilation.
@@ -1505,5 +1506,34 @@ public class ClassNode extends AnnotatedNode {
     @Override
     public String getText() {
         return getName();
+    }
+
+    public List<AnnotationNode> getTypeAnnotations() {
+        return typeAnnotations;
+    }
+
+    public List<AnnotationNode> getTypeAnnotations(ClassNode type) {
+        List<AnnotationNode> ret = new ArrayList<>(typeAnnotations.size());
+        for (AnnotationNode node : typeAnnotations) {
+            if (type.equals(node.getClassNode())) {
+                ret.add(node);
+            }
+        }
+        return ret;
+    }
+
+    public void addTypeAnnotation(AnnotationNode annotation) {
+        if (annotation != null) {
+            if (typeAnnotations == Collections.EMPTY_LIST) {
+                typeAnnotations = new ArrayList<>(3);
+            }
+            typeAnnotations.add(annotation);
+        }
+    }
+
+    public void addTypeAnnotations(List<AnnotationNode> annotations) {
+        for (AnnotationNode annotation : annotations) {
+            addTypeAnnotation(annotation);
+        }
     }
 }

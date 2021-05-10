@@ -1442,13 +1442,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public GenericsType visitTypeParameter(final TypeParameterContext ctx) {
-        return configureAST(
-                new GenericsType(
-                        configureAST(ClassHelper.make(this.visitClassName(ctx.className())), ctx),
-                        this.visitTypeBound(ctx.typeBound()),
-                        null
-                ),
-                ctx);
+        ClassNode baseType = configureAST(ClassHelper.make(this.visitClassName(ctx.className())), ctx);
+        baseType.addTypeAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
+        GenericsType genericsType = new GenericsType(baseType, this.visitTypeBound(ctx.typeBound()), null);
+        return configureAST(genericsType, ctx);
     }
 
     @Override
@@ -3881,7 +3878,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             throw createParsingFailedException("Unsupported type: " + ctx.getText(), ctx);
         }
 
-        classNode.addAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
+        classNode.addTypeAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
 
         List<List<AnnotationNode>> dimList = this.visitEmptyDimsOpt(ctx.emptyDimsOpt());
         if (asBoolean(dimList)) {
@@ -3932,8 +3929,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public GenericsType visitTypeArgument(final TypeArgumentContext ctx) {
         if (asBoolean(ctx.QUESTION())) {
             ClassNode baseType = configureAST(ClassHelper.makeWithoutCaching(QUESTION_STR), ctx.QUESTION());
-
-            baseType.addAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
+            baseType.addTypeAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
 
             if (!asBoolean(ctx.type())) {
                 GenericsType genericsType = new GenericsType(baseType);
@@ -3958,10 +3954,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
             return configureAST(genericsType, ctx);
         } else if (asBoolean(ctx.type())) {
-            return configureAST(
-                    this.createGenericsType(
-                            this.visitType(ctx.type())),
-                    ctx);
+            ClassNode baseType = configureAST(this.visitType(ctx.type()), ctx);
+            return configureAST(this.createGenericsType(baseType), ctx);
         }
 
         throw createParsingFailedException("Unsupported type argument: " + ctx.getText(), ctx);
@@ -4156,7 +4150,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public ClassNode visitAnnotatedQualifiedClassName(final AnnotatedQualifiedClassNameContext ctx) {
         ClassNode classNode = this.visitQualifiedClassName(ctx.qualifiedClassName());
 
-        classNode.addAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
+        classNode.addTypeAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
 
         return classNode;
     }
