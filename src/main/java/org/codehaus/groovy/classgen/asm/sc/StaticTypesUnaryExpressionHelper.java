@@ -31,14 +31,15 @@ import org.codehaus.groovy.classgen.asm.WriterController;
 import org.objectweb.asm.Label;
 
 import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveByte;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveChar;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveFloat;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveInt;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveShort;
 import static org.objectweb.asm.Opcodes.DNEG;
 import static org.objectweb.asm.Opcodes.FNEG;
 import static org.objectweb.asm.Opcodes.GOTO;
@@ -72,19 +73,19 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper {
     public void writeBitwiseNegate(final BitwiseNegationExpression expression) {
         expression.getExpression().visit(controller.getAcg());
         ClassNode top = controller.getOperandStack().getTopOperand();
-        if (top == int_TYPE || top == long_TYPE || top == short_TYPE || top == byte_TYPE || top == char_TYPE) {
+        if (isPrimitiveInt(top) || isPrimitiveLong(top) || isPrimitiveShort(top) || isPrimitiveByte(top) || isPrimitiveChar(top)) {
             bytecodeX(mv -> {
-                if (top == long_TYPE) {
+                if (isPrimitiveLong(top)) {
                     mv.visitLdcInsn(-1L);
                     mv.visitInsn(LXOR);
                 } else {
                     mv.visitInsn(ICONST_M1);
                     mv.visitInsn(IXOR);
-                    if (top == byte_TYPE) {
+                    if (isPrimitiveByte(top)) {
                         mv.visitInsn(I2B);
-                    } else if (top == char_TYPE) {
+                    } else if (isPrimitiveChar(top)) {
                         mv.visitInsn(I2C);
-                    } else if (top == short_TYPE) {
+                    } else if (isPrimitiveShort(top)) {
                         mv.visitInsn(I2S);
                     }
                 }
@@ -99,7 +100,7 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper {
     public void writeNotExpression(final NotExpression expression) {
         Expression subExpression = expression.getExpression();
         TypeChooser typeChooser = controller.getTypeChooser();
-        if (typeChooser.resolveType(subExpression, controller.getClassNode()) == boolean_TYPE) {
+        if (isPrimitiveBoolean(typeChooser.resolveType(subExpression, controller.getClassNode()))) {
             subExpression.visit(controller.getAcg());
             controller.getOperandStack().doGroovyCast(boolean_TYPE);
             bytecodeX(mv -> {
@@ -122,22 +123,23 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper {
     public void writeUnaryMinus(final UnaryMinusExpression expression) {
         expression.getExpression().visit(controller.getAcg());
         ClassNode top = controller.getOperandStack().getTopOperand();
-        if (top == int_TYPE || top == long_TYPE || top == short_TYPE || top == float_TYPE || top == double_TYPE || top == byte_TYPE || top == char_TYPE) {
+        if (isPrimitiveInt(top) || isPrimitiveLong(top) || isPrimitiveShort(top)|| isPrimitiveFloat(top)
+                || isPrimitiveDouble(top) || isPrimitiveByte(top) || isPrimitiveChar(top)) {
             bytecodeX(mv -> {
-                if (top == int_TYPE || top == short_TYPE || top == byte_TYPE || top == char_TYPE) {
+                if (isPrimitiveInt(top) || isPrimitiveShort(top) || isPrimitiveByte(top) || isPrimitiveChar(top)) {
                     mv.visitInsn(INEG);
-                    if (top == byte_TYPE) {
+                    if (isPrimitiveByte(top)) {
                         mv.visitInsn(I2B);
-                    } else if (top == char_TYPE) {
+                    } else if (isPrimitiveChar(top)) {
                         mv.visitInsn(I2C);
-                    } else if (top == short_TYPE) {
+                    } else if (isPrimitiveShort(top)) {
                         mv.visitInsn(I2S);
                     }
-                } else if (top == long_TYPE) {
+                } else if (isPrimitiveLong(top)) {
                     mv.visitInsn(LNEG);
-                } else if (top == float_TYPE) {
+                } else if (isPrimitiveFloat(top)) {
                     mv.visitInsn(FNEG);
-                } else if (top == double_TYPE) {
+                } else if (isPrimitiveDouble(top)) {
                     mv.visitInsn(DNEG);
                 }
             }).visit(controller.getAcg());
@@ -151,7 +153,8 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper {
     public void writeUnaryPlus(final UnaryPlusExpression expression) {
         expression.getExpression().visit(controller.getAcg());
         ClassNode top = controller.getOperandStack().getTopOperand();
-        if (top == int_TYPE || top == long_TYPE || top == short_TYPE || top == float_TYPE || top == double_TYPE || top == byte_TYPE || top == char_TYPE) {
+        if (isPrimitiveInt(top) || isPrimitiveLong(top) || isPrimitiveShort(top)|| isPrimitiveFloat(top)
+                || isPrimitiveDouble(top) || isPrimitiveByte(top) || isPrimitiveChar(top)) {
             // only visit the sub-expression
         } else {
             super.writeUnaryPlus(EMPTY_UNARY_PLUS);

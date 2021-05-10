@@ -46,6 +46,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
@@ -412,7 +413,7 @@ public class ModuleNode extends ASTNode {
                     ClassNode retType = node.getReturnType();
 
                     argTypeMatches = (argType.equals(ClassHelper.OBJECT_TYPE) || argType.getName().contains("String[]"));
-                    retTypeMatches = (retType == ClassHelper.VOID_TYPE || retType == ClassHelper.OBJECT_TYPE);
+                    retTypeMatches = (isPrimitiveVoid(retType) || retType.equals(ClassHelper.OBJECT_TYPE));
                     if (retTypeMatches && argTypeMatches) {
                         if (found) {
                             throw new RuntimeException("Repetitive main method found.");

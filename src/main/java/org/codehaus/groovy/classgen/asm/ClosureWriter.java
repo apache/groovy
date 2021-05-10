@@ -177,7 +177,7 @@ public class ClosureWriter {
     }
 
     private static boolean classNodeUsesReferences(final ClassNode classNode) {
-        boolean ret = classNode.getSuperClass() == ClassHelper.CLOSURE_TYPE;
+        boolean ret = classNode.getSuperClass().equals(ClassHelper.CLOSURE_TYPE);
         if (ret) return ret;
         if (classNode instanceof InnerClassNode) {
             InnerClassNode inner = (InnerClassNode) classNode;

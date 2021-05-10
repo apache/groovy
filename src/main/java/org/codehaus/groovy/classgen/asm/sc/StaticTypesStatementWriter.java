@@ -39,6 +39,15 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.util.Enumeration;
 
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveByte;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveChar;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveFloat;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveInt;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveShort;
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ARRAYLENGTH;
@@ -169,33 +178,21 @@ public class StaticTypesStatementWriter extends StatementWriter {
         mv.visitVarInsn(ILOAD, iteratorIdx);
 
         ClassNode varType = variable.getType();
-        boolean primitiveType = ClassHelper.isPrimitiveType(varType);
-        boolean isByte = ClassHelper.byte_TYPE.equals(varType);
-        boolean isShort = ClassHelper.short_TYPE.equals(varType);
-        boolean isInt = ClassHelper.int_TYPE.equals(varType);
-        boolean isLong = ClassHelper.long_TYPE.equals(varType);
-        boolean isFloat = ClassHelper.float_TYPE.equals(varType);
-        boolean isDouble = ClassHelper.double_TYPE.equals(varType);
-        boolean isChar = ClassHelper.char_TYPE.equals(varType);
-        boolean isBoolean = ClassHelper.boolean_TYPE.equals(varType);
 
-        if (primitiveType) {
-            if (isByte) {
-                mv.visitInsn(BALOAD);
-            }
-            if (isShort) {
-                mv.visitInsn(SALOAD);
-            }
-            if (isInt || isChar || isBoolean) {
-                mv.visitInsn(isChar ? CALOAD : isBoolean ? BALOAD : IALOAD);
-            }
-            if (isLong) {
+        if (isPrimitiveType(varType)) {
+            if (isPrimitiveInt(varType)) {
+                mv.visitInsn(IALOAD);
+            } else if (isPrimitiveLong(varType)) {
                 mv.visitInsn(LALOAD);
-            }
-            if (isFloat) {
+            } else if (isPrimitiveByte(varType) || isPrimitiveBoolean(varType)) {
+                mv.visitInsn(BALOAD);
+            } else if (isPrimitiveChar(varType)) {
+                mv.visitInsn(CALOAD);
+            } else if (isPrimitiveShort(varType)) {
+                mv.visitInsn(SALOAD);
+            } else if (isPrimitiveFloat(varType)) {
                 mv.visitInsn(FALOAD);
-            }
-            if (isDouble) {
+            } else if (isPrimitiveDouble(varType)) {
                 mv.visitInsn(DALOAD);
             }
         } else {

@@ -184,7 +184,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             BlockStatement initBody = new BlockStatement();
             Parameter initParam = param(GenericsUtils.nonGeneric(cNode), "other");
             final Expression other = varX(initParam);
-            boolean hasParent = cNode.getSuperClass() != ClassHelper.OBJECT_TYPE;
+            boolean hasParent = !cNode.getSuperClass().equals(ClassHelper.OBJECT_TYPE);
             if (hasParent) {
                 initBody.addStatement(stmt(ctorX(ClassNode.SUPER, other)));
             }
@@ -244,7 +244,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
     private static void addSimpleCloneHelperMethod(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
         Parameter methodParam = new Parameter(GenericsUtils.nonGeneric(cNode), "other");
         final Expression other = varX(methodParam);
-        boolean hasParent = cNode.getSuperClass() != ClassHelper.OBJECT_TYPE;
+        boolean hasParent = !cNode.getSuperClass().equals(ClassHelper.OBJECT_TYPE);
         BlockStatement methodBody = new BlockStatement();
         if (hasParent) {
             methodBody.addStatement(stmt(callSuperX("cloneOrCopyMembers", args(other))));

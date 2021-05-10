@@ -64,6 +64,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.notX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 
 /**
  * Base class for groovy-contracts code generators.
@@ -155,7 +156,7 @@ public abstract class BaseGenerator {
                 callArgumentList.addExpression(varX(parameter));
             }
 
-            if (isPostcondition && methodNode.getReturnType() != ClassHelper.VOID_TYPE && !(methodNode instanceof ConstructorNode)) {
+            if (isPostcondition && !isPrimitiveVoid(methodNode.getReturnType()) && !(methodNode instanceof ConstructorNode)) {
                 callArgumentList.addExpression(localVarX("result", methodNode.getReturnType()));
             }
 

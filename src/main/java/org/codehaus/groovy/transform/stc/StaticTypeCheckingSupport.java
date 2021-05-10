@@ -112,6 +112,7 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuietly;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
@@ -760,7 +761,7 @@ public abstract class StaticTypeCheckingSupport {
     public static boolean isWildcardLeftHandSide(final ClassNode node) {
         return (OBJECT_TYPE.equals(node)
                 || STRING_TYPE.equals(node)
-                || boolean_TYPE.equals(node)
+                || isPrimitiveBoolean(node)
                 || Boolean_TYPE.equals(node)
                 || CLASS_Type.equals(node));
     }

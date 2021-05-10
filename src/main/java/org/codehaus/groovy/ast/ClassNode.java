@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_ANNOTATION;
 import static org.objectweb.asm.Opcodes.ACC_ENUM;
@@ -158,6 +159,7 @@ public class ClassNode extends AnnotatedNode {
     private ClassNode superClass;
     protected boolean isPrimaryNode;
     protected List<InnerClassNode> innerClasses;
+    private List<AnnotationNode> typeAnnotations = Collections.emptyList();
 
     /**
      * The AST Transformations to be applied during compilation.
@@ -909,8 +911,8 @@ public class ClassNode extends AnnotatedNode {
      * @return true if this node is derived from the given ClassNode
      */
     public boolean isDerivedFrom(ClassNode type) {
-        if (this.equals(ClassHelper.VOID_TYPE)) {
-            return type.equals(ClassHelper.VOID_TYPE);
+        if (isPrimitiveVoid(this)) {
+            return isPrimitiveVoid(type);
         }
         if (type.equals(ClassHelper.OBJECT_TYPE)) {
             return true;
@@ -1160,7 +1162,7 @@ public class ClassNode extends AnnotatedNode {
     public MethodNode getSetterMethod(String setterName, boolean voidOnly) {
         for (MethodNode method : getDeclaredMethods(setterName)) {
             if (setterName.equals(method.getName())
-                    && (!voidOnly || ClassHelper.VOID_TYPE == method.getReturnType())
+                    && (!voidOnly || ClassHelper.VOID_TYPE.equals(method.getReturnType()))
                     && method.getParameters().length == 1) {
                 return method;
             }
@@ -1420,8 +1422,8 @@ public class ClassNode extends AnnotatedNode {
         this.usesGenerics = usesGenerics;
     }
 
-    public ClassNode getPlainNodeReference() {
-        if (ClassHelper.isPrimitiveType(this)) return this;
+    public ClassNode getPlainNodeReference(boolean skipPrimitives) {
+        if (skipPrimitives && ClassHelper.isPrimitiveType(this)) return this;
         ClassNode n = new ClassNode(name, modifiers, superClass, null, null);
         n.isPrimaryNode = false;
         n.setRedirect(redirect());
@@ -1429,6 +1431,10 @@ public class ClassNode extends AnnotatedNode {
             n.componentType = redirect().getComponentType();
         }
         return n;
+    }
+
+    public ClassNode getPlainNodeReference() {
+        return getPlainNodeReference(true);
     }
 
     public boolean isAnnotationDefinition() {
@@ -1505,5 +1511,34 @@ public class ClassNode extends AnnotatedNode {
     @Override
     public String getText() {
         return getName();
+    }
+
+    public List<AnnotationNode> getTypeAnnotations() {
+        return typeAnnotations;
+    }
+
+    public List<AnnotationNode> getTypeAnnotations(ClassNode type) {
+        List<AnnotationNode> ret = new ArrayList<>(typeAnnotations.size());
+        for (AnnotationNode node : typeAnnotations) {
+            if (type.equals(node.getClassNode())) {
+                ret.add(node);
+            }
+        }
+        return ret;
+    }
+
+    public void addTypeAnnotation(AnnotationNode annotation) {
+        if (annotation != null) {
+            if (typeAnnotations == Collections.EMPTY_LIST) {
+                typeAnnotations = new ArrayList<>(3);
+            }
+            typeAnnotations.add(annotation);
+        }
+    }
+
+    public void addTypeAnnotations(List<AnnotationNode> annotations) {
+        for (AnnotationNode annotation : annotations) {
+            addTypeAnnotation(annotation);
+        }
     }
 }

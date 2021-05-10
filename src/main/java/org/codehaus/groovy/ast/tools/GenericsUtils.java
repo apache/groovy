@@ -388,7 +388,7 @@ public class GenericsUtils {
                 }
             }
         }
-        if (type == null) type = ClassHelper.OBJECT_TYPE;
+        if (type == null) type = ClassHelper.OBJECT_TYPE.getPlainNodeReference();
         GenericsType[] oldgTypes = type.getGenericsTypes();
         GenericsType[] newgTypes = EMPTY_GENERICS_ARRAY;
         if (oldgTypes != null) {
@@ -453,7 +453,7 @@ public class GenericsUtils {
                 return correctToGenericsSpec(genericsSpec, type);
             }
         }
-        if (type == null) type = ClassHelper.OBJECT_TYPE;
+        if (type == null) type = ClassHelper.OBJECT_TYPE.getPlainNodeReference();
         return type;
     }
 

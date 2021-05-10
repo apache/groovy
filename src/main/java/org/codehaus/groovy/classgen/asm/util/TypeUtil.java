@@ -26,6 +26,7 @@ import org.objectweb.asm.Type;
 
 import java.util.Map;
 
+import static org.codehaus.groovy.ast.ClassHelper.DYNAMIC_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
@@ -96,7 +97,47 @@ public abstract class TypeUtil {
     }
 
     public static boolean isPrimitiveType(ClassNode type) {
-        return PRIMITIVE_TYPE_TO_DESCRIPTION_MAP.containsKey(type);
+        return PRIMITIVE_TYPE_TO_DESCRIPTION_MAP.containsKey(type.redirect());
+    }
+
+    public static boolean isDynamicTyped(ClassNode type) {
+        return type != null && DYNAMIC_TYPE == type.redirect();
+    }
+
+    public static boolean isPrimitiveBoolean(ClassNode type) {
+        return type.redirect() == boolean_TYPE;
+    }
+
+    public static boolean isPrimitiveChar(ClassNode type) {
+        return type.redirect() == char_TYPE;
+    }
+
+    public static boolean isPrimitiveByte(ClassNode type) {
+        return type.redirect() == byte_TYPE;
+    }
+
+    public static boolean isPrimitiveInt(ClassNode type) {
+        return type.redirect() == int_TYPE;
+    }
+
+    public static boolean isPrimitiveLong(ClassNode type) {
+        return type.redirect() == long_TYPE;
+    }
+
+    public static boolean isPrimitiveShort(ClassNode type) {
+        return type.redirect() == short_TYPE;
+    }
+
+    public static boolean isPrimitiveDouble(ClassNode type) {
+        return type.redirect() == double_TYPE;
+    }
+
+    public static boolean isPrimitiveFloat(ClassNode type) {
+        return type.redirect() == float_TYPE;
+    }
+
+    public static boolean isPrimitiveVoid(ClassNode type) {
+        return type.redirect() == VOID_TYPE;
     }
 
     public static String getDescriptionByType(ClassNode type) {

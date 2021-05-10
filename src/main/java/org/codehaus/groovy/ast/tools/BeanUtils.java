@@ -32,6 +32,7 @@ import java.util.Set;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
 import static org.apache.groovy.util.BeanUtils.decapitalize;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
 
 public class BeanUtils {
     static final String GET_PREFIX = "get";
@@ -120,7 +121,7 @@ public class BeanUtils {
                     // Simple getter
                     propName = decapitalize(name.substring(3));
                     getter = mNode.getCode();
-                } else if (includePseudoGetters && name.startsWith(IS_PREFIX) && paramType.equals(ClassHelper.boolean_TYPE)) {
+                } else if (includePseudoGetters && name.startsWith(IS_PREFIX) && isPrimitiveBoolean(paramType)) {
                     // boolean getter
                     propName = decapitalize(name.substring(2));
                     getter = mNode.getCode();

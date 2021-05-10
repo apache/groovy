@@ -90,11 +90,11 @@ public class MethodCallExpressionTransformer {
                         Expression indexExpr = argList.get(0);
                         ClassNode argType = staticCompilationTransformer.getTypeChooser().resolveType(indexExpr, staticCompilationTransformer.getClassNode());
                         ClassNode indexType = ClassHelper.getWrapper(argType);
-                        if (componentType.isEnum() && ClassHelper.Number_TYPE == indexType) {
+                        if (componentType.isEnum() && ClassHelper.Number_TYPE.equals(indexType)) {
                             // workaround for generated code in enums which use .next() returning a Number
                             indexType = ClassHelper.Integer_TYPE;
                         }
-                        if (argType != null && ClassHelper.Integer_TYPE == indexType) {
+                        if (argType != null && ClassHelper.Integer_TYPE.equals(indexType)) {
                             BinaryExpression binaryExpression = new BinaryExpression(
                                     objectExpression,
                                     Token.newSymbol("[", indexExpr.getLineNumber(), indexExpr.getColumnNumber()),
@@ -113,7 +113,7 @@ public class MethodCallExpressionTransformer {
                         Expression indexExpr = argList.get(0);
                         Expression objExpr = argList.get(1);
                         ClassNode argType = staticCompilationTransformer.getTypeChooser().resolveType(indexExpr, staticCompilationTransformer.getClassNode());
-                        if (argType != null && ClassHelper.Integer_TYPE == ClassHelper.getWrapper(argType)) {
+                        if (argType != null && ClassHelper.Integer_TYPE.equals(ClassHelper.getWrapper(argType))) {
                             BinaryExpression arrayGet = new BinaryExpression(
                                     objectExpression,
                                     Token.newSymbol("[", indexExpr.getLineNumber(), indexExpr.getColumnNumber()),

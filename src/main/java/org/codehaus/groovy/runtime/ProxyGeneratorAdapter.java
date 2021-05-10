@@ -565,7 +565,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
             Type[] args = Type.getArgumentTypes(desc);
             if (emptyBody) {
                 Type returnType = Type.getReturnType(desc);
-                if (returnType == Type.VOID_TYPE) {
+                if (returnType.equals(Type.VOID_TYPE)) {
                     mv.visitInsn(RETURN);
                 } else {
                     int loadIns = getLoadInsn(returnType);

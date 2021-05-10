@@ -41,6 +41,7 @@ import java.lang.reflect.Modifier;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.GOTO;
@@ -110,7 +111,7 @@ public class BooleanExpressionTransformer {
                 WriterController controller = acg.getController();
                 OperandStack os = controller.getOperandStack();
 
-                if (type.equals(ClassHelper.boolean_TYPE)) {
+                if (isPrimitiveBoolean(type)) {
                     expression.visit(visitor);
                     os.doGroovyCast(ClassHelper.boolean_TYPE);
                     return;

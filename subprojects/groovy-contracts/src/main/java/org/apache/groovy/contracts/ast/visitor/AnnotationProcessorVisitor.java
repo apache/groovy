@@ -26,7 +26,6 @@ import org.apache.groovy.contracts.util.AnnotationUtils;
 import org.apache.groovy.contracts.util.Validate;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -51,6 +50,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 
 /**
  * Visits annotations of meta-type {@link ContractElement} and applies the AST transformations of the underlying
@@ -175,7 +175,7 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
                     closureArgumentList.addExpression(varX(parameter));
                 }
 
-                if (methodNode.getReturnType() != ClassHelper.VOID_TYPE && isPostcondition && !(methodNode instanceof ConstructorNode)) {
+                if (!isPrimitiveVoid(methodNode.getReturnType()) && isPostcondition && !(methodNode instanceof ConstructorNode)) {
                     closureArgumentList.addExpression(localVarX("result", methodNode.getReturnType()));
                 }
 

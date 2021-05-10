@@ -108,7 +108,7 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
 
     protected static int getObjectDistance(ClassNode cn) {
         int count = 0;
-        while (cn != null && cn != ClassHelper.OBJECT_TYPE) {
+        while (cn != null && !cn.equals(ClassHelper.OBJECT_TYPE)) {
             cn = cn.getSuperClass();
             count += 1;
         }

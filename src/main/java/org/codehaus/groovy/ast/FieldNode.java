@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 
 import java.lang.reflect.Field;
 
@@ -83,7 +84,7 @@ public class FieldNode extends AnnotatedNode implements Variable {
     public void setType(ClassNode type) {
         this.type = type;
         this.originType = type;
-        dynamicTyped |= type == ClassHelper.DYNAMIC_TYPE;
+        dynamicTyped |= TypeUtil.isDynamicTyped(type);
     }
 
     public ClassNode getOwner() {

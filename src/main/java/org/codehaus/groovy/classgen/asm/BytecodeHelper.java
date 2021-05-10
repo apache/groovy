@@ -32,15 +32,16 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.lang.reflect.Modifier;
 
-import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveByte;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveChar;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveFloat;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveInt;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveShort;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ARETURN;
 import static org.objectweb.asm.Opcodes.ASTORE;
@@ -209,7 +210,7 @@ public class BytecodeHelper {
      */
     private static String getTypeDescription(ClassNode c, boolean end) {
         ClassNode d = c;
-        if (ClassHelper.isPrimitiveType(d.redirect())) {
+        if (isPrimitiveType(d.redirect())) {
             d = d.redirect();
         }
         String desc = TypeUtil.getDescriptionByType(d);
@@ -414,7 +415,7 @@ public class BytecodeHelper {
         } else {
             ret.append(getTypeDescription(printType, false));
             addSubTypes(ret, printType.getGenericsTypes(), "<", ">");
-            if (!ClassHelper.isPrimitiveType(printType)) ret.append(";");
+            if (!isPrimitiveType(printType)) ret.append(";");
         }
     }
 
@@ -463,8 +464,8 @@ public class BytecodeHelper {
     }
 
     public static void doCast(MethodVisitor mv, ClassNode type) {
-        if (type == ClassHelper.OBJECT_TYPE) return;
-        if (ClassHelper.isPrimitiveType(type) && type != VOID_TYPE) {
+        if (type.equals(ClassHelper.OBJECT_TYPE)) return;
+        if (isPrimitiveType(type) && !isPrimitiveVoid(type)) {
             unbox(mv, type);
         } else {
             mv.visitTypeInsn(
@@ -519,7 +520,7 @@ public class BytecodeHelper {
      */
     @Deprecated
     public static boolean box(MethodVisitor mv, ClassNode type) {
-        if (ClassHelper.isPrimitiveType(type) && !ClassHelper.VOID_TYPE.equals(type)) {
+        if (isPrimitiveType(type) && !isPrimitiveVoid(type)) {
             box(mv, BytecodeHelper.getTypeDescription(type));
             return true;
         }
@@ -546,7 +547,7 @@ public class BytecodeHelper {
      * Generates the bytecode to unbox the current value on the stack.
      */
     public static void unbox(MethodVisitor mv, ClassNode type) {
-        if (ClassHelper.isPrimitiveType(type) && !ClassHelper.VOID_TYPE.equals(type)) {
+        if (isPrimitiveType(type) && !isPrimitiveVoid(type)) {
             unbox(mv, type.getName(), BytecodeHelper.getTypeDescription(type));
         }
     }
@@ -570,7 +571,7 @@ public class BytecodeHelper {
      * If the classnode is not a primitive type, we will generate a LDC instruction.
      */
     public static void visitClassLiteral(MethodVisitor mv, ClassNode classNode) {
-        if (ClassHelper.isPrimitiveType(classNode)) {
+        if (isPrimitiveType(classNode)) {
             mv.visitFieldInsn(
                     GETSTATIC,
                     getClassInternalName(ClassHelper.getWrapper(classNode)),
@@ -633,22 +634,22 @@ public class BytecodeHelper {
      * @param type primitive type to convert
      */
     public static void convertPrimitiveToBoolean(MethodVisitor mv, ClassNode type) {
-        if (type == boolean_TYPE) {
+        if (isPrimitiveBoolean(type)) {
             return;
         }
         // Special handling is done for floating point types in order to
         // handle checking for 0 or NaN values.
-        if (type == double_TYPE) {
+        if (isPrimitiveDouble(type)) {
             convertDoubleToBoolean(mv);
             return;
-        } else if (type == float_TYPE) {
+        } else if (isPrimitiveFloat(type)) {
             convertFloatToBoolean(mv);
             return;
         }
         Label trueLabel = new Label();
         Label falseLabel = new Label();
         // Convert long to int for IFEQ comparison using LCMP
-        if (type == long_TYPE) {
+        if (isPrimitiveLong(type)) {
             mv.visitInsn(LCONST_0);
             mv.visitInsn(LCMP);
         }
@@ -840,20 +841,20 @@ public class BytecodeHelper {
         }
 
         public void handle() {
-            if (type == double_TYPE) {
+            if (isPrimitiveDouble(type)) {
                 handleDoubleType();
-            } else if (type == float_TYPE) {
+            } else if (isPrimitiveFloat(type)) {
                 handleFloatType();
-            } else if (type == long_TYPE) {
+            } else if (isPrimitiveLong(type)) {
                 handleLongType();
             } else if (
-                    type == boolean_TYPE
-                            || type == char_TYPE
-                            || type == byte_TYPE
-                            || type == int_TYPE
-                            || type == short_TYPE) {
+                    isPrimitiveBoolean(type)
+                            || isPrimitiveChar(type)
+                            || isPrimitiveByte(type)
+                            || isPrimitiveInt(type)
+                            || isPrimitiveShort(type)) {
                 handleIntType();
-            } else if (type == VOID_TYPE) {
+            } else if (isPrimitiveVoid(type)) {
                 handleVoidType();
             } else {
                 handleRefType();

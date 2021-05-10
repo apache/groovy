@@ -64,6 +64,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PROTECTED;
@@ -178,7 +179,7 @@ public class LazyASTTransformation extends AbstractASTTransformation {
         String propName = capitalize(fieldNode.getName().substring(1));
         ClassNode declaringClass = fieldNode.getDeclaringClass();
         addGeneratedMethodOrError(declaringClass, "get" + propName, visibility, type, body, xform, fieldNode);
-        if (ClassHelper.boolean_TYPE.equals(type)) {
+        if (isPrimitiveBoolean(type)) {
             addGeneratedMethodOrError(declaringClass, "is" + propName, visibility, type, stmt(callThisX("get" + propName)), xform, fieldNode);
         }
         // expect no setter

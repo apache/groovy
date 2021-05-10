@@ -65,7 +65,7 @@ class MethodNodeTest extends TestCase implements Opcodes {
         assert !methodNode.isDynamicReturnType()
     }
     
-    void testIsDynamicReturnTypNull() {
+    void testIsDynamicReturnTypeNull() {
         MethodNode methodNode = new MethodNode('foo', ACC_PUBLIC, null, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement())
         assert !methodNode.isDynamicReturnType()
         assertNotNull(methodNode.getReturnType())

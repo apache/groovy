@@ -513,7 +513,7 @@ public class BinaryExpressionHelper {
             compareMethod.call(controller.getMethodVisitor());
             ClassNode resType = ClassHelper.boolean_TYPE;
             if (compareMethod == findRegexMethod) {
-                resType = ClassHelper.OBJECT_TYPE;
+                resType = ClassHelper.OBJECT_TYPE.getPlainNodeReference();
             }
             operandStack.replace(resType, 2);
         }

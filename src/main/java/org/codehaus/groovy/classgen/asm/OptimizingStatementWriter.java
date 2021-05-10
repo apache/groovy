@@ -80,6 +80,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.isIntCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
 import static org.codehaus.groovy.classgen.asm.BinaryExpressionMultiTypeDispatcher.typeMap;
 import static org.codehaus.groovy.classgen.asm.BinaryExpressionMultiTypeDispatcher.typeMapKeyNames;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.GETSTATIC;
 import static org.objectweb.asm.Opcodes.GOTO;
@@ -706,7 +707,7 @@ public class OptimizingStatementWriter extends StatementWriter {
                     case Types.LOGICAL_AND_EQUAL:
                     case Types.LOGICAL_OR:
                     case Types.LOGICAL_OR_EQUAL:
-                        if (boolean_TYPE.equals(leftType) && boolean_TYPE.equals(rightType)) {
+                        if (isPrimitiveBoolean(leftType) && isPrimitiveBoolean(rightType)) {
                             opt.chainShouldOptimize(true);
                         } else {
                             opt.chainCanOptimize(true);

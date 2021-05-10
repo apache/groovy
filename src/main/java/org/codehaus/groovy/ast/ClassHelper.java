@@ -71,6 +71,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveByte;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveChar;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveFloat;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveInt;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveShort;
+
 /**
  * Helper for {@link ClassNode} and classes handling them.  Contains a set of
  * pre-defined instances for the most used types and some code for cached node
@@ -322,6 +330,9 @@ public class ClassHelper {
         if (!isPrimitiveType(cn)) return cn;
 
         ClassNode result = PRIMITIVE_TYPE_TO_WRAPPER_TYPE_MAP.get(cn);
+        if (result == null) {
+            result = PRIMITIVE_TYPE_TO_WRAPPER_TYPE_MAP.get(cn.redirect());
+        }
 
         if (null != result) {
             return result;
@@ -373,31 +384,31 @@ public class ClassHelper {
      */
     public static boolean isStaticConstantInitializerType(ClassNode cn) {
         cn = cn.redirect();
-        return cn == int_TYPE ||
-                cn == float_TYPE ||
-                cn == long_TYPE ||
-                cn == double_TYPE ||
-                cn == STRING_TYPE ||
+        return isPrimitiveInt(cn) ||
+                isPrimitiveFloat(cn) ||
+                isPrimitiveLong(cn) ||
+                isPrimitiveDouble(cn) ||
+                cn.equals(STRING_TYPE) ||
                 // the next items require conversion to int when initializing
-                cn == byte_TYPE ||
-                cn == char_TYPE ||
-                cn == short_TYPE;
+                isPrimitiveByte(cn) ||
+                isPrimitiveChar(cn) ||
+                isPrimitiveShort(cn);
     }
 
     public static boolean isNumberType(ClassNode cn) {
         cn = cn.redirect();
-        return cn == Byte_TYPE ||
-                cn == Short_TYPE ||
-                cn == Integer_TYPE ||
-                cn == Long_TYPE ||
-                cn == Float_TYPE ||
-                cn == Double_TYPE ||
-                cn == byte_TYPE ||
-                cn == short_TYPE ||
-                cn == int_TYPE ||
-                cn == long_TYPE ||
-                cn == float_TYPE ||
-                cn == double_TYPE;
+        return cn.equals(Byte_TYPE) ||
+                cn.equals(Short_TYPE) ||
+                cn.equals(Integer_TYPE) ||
+                cn.equals(Long_TYPE) ||
+                cn.equals(Float_TYPE) ||
+                cn.equals(Double_TYPE) ||
+                isPrimitiveByte(cn) ||
+                isPrimitiveShort(cn) ||
+                isPrimitiveInt(cn) ||
+                isPrimitiveLong(cn) ||
+                isPrimitiveFloat(cn) ||
+                isPrimitiveDouble(cn);
     }
 
     public static ClassNode makeReference() {

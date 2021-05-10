@@ -38,6 +38,15 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveByte;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveChar;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveFloat;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveInt;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveShort;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.BIPUSH;
@@ -121,7 +130,7 @@ public class OperandStack {
      * returns true for long and double
      */
     private static boolean isTwoSlotType(final ClassNode type) {
-        return type == ClassHelper.long_TYPE || type == ClassHelper.double_TYPE;
+        return isPrimitiveLong(type) || isPrimitiveDouble(type);
     }
 
     /**
@@ -146,7 +155,7 @@ public class OperandStack {
         } else if (mark == size - 1) {
             ClassNode last = stack.get(size - 1);
             // nothing to do in that case
-            if (last == ClassHelper.boolean_TYPE) return;
+            if (isPrimitiveBoolean(last)) return;
             if (ClassHelper.isPrimitiveType(last)) {
                 BytecodeHelper.convertPrimitiveToBoolean(mv, last);
             } else {
@@ -195,7 +204,7 @@ public class OperandStack {
         MethodVisitor mv = controller.getMethodVisitor();
         int size = stack.size();
         ClassNode type = stack.get(size - 1);
-        if (ClassHelper.isPrimitiveType(type) && ClassHelper.VOID_TYPE != type) {
+        if (ClassHelper.isPrimitiveType(type) && !isPrimitiveVoid(type)) {
             ClassNode wrapper = ClassHelper.getWrapper(type);
             BytecodeHelper.doCastToWrappedType(mv, type, wrapper);
             type = wrapper;
@@ -360,7 +369,7 @@ public class OperandStack {
         }
 
         MethodVisitor mv = controller.getMethodVisitor();
-        if (primTarget && !ClassHelper.boolean_TYPE.equals(targetType)
+        if (primTarget && !isPrimitiveBoolean(targetType)
                 && !primTop && ClassHelper.getWrapper(targetType).equals(top)) {
             BytecodeHelper.doCastToPrimitive(mv, top, targetType);
         } else {
@@ -374,17 +383,17 @@ public class OperandStack {
 
     private boolean convertFromInt(final ClassNode target) {
         int convertCode;
-        if (target == ClassHelper.char_TYPE) {
+        if (isPrimitiveChar(target)) {
             convertCode = I2C;
-        } else if (target == ClassHelper.byte_TYPE) {
+        } else if (isPrimitiveByte(target)) {
             convertCode = I2B;
-        } else if (target == ClassHelper.short_TYPE) {
+        } else if (isPrimitiveShort(target)) {
             convertCode = I2S;
-        } else if (target == ClassHelper.long_TYPE) {
+        } else if (isPrimitiveLong(target)) {
             convertCode = I2L;
-        } else if (target == ClassHelper.float_TYPE) {
+        } else if (isPrimitiveFloat(target)) {
             convertCode = I2F;
-        } else if (target == ClassHelper.double_TYPE) {
+        } else if (isPrimitiveDouble(target)) {
             convertCode = I2D;
         } else {
             return false;
@@ -395,18 +404,18 @@ public class OperandStack {
 
     private boolean convertFromLong(final ClassNode target) {
         MethodVisitor mv = controller.getMethodVisitor();
-        if (target == ClassHelper.int_TYPE) {
+        if (isPrimitiveInt(target)) {
             mv.visitInsn(L2I);
             return true;
-        } else if (target == ClassHelper.char_TYPE
-                || target == ClassHelper.byte_TYPE
-                || target == ClassHelper.short_TYPE) {
+        } else if (isPrimitiveChar(target)
+                || isPrimitiveByte(target)
+                || isPrimitiveShort(target)) {
             mv.visitInsn(L2I);
             return convertFromInt(target);
-        } else if (target == ClassHelper.double_TYPE) {
+        } else if (isPrimitiveDouble(target)) {
             mv.visitInsn(L2D);
             return true;
-        } else if (target == ClassHelper.float_TYPE) {
+        } else if (isPrimitiveFloat(target)) {
             mv.visitInsn(L2F);
             return true;
         }
@@ -415,18 +424,18 @@ public class OperandStack {
 
     private boolean convertFromDouble(final ClassNode target) {
         MethodVisitor mv = controller.getMethodVisitor();
-        if (target == ClassHelper.int_TYPE) {
+        if (isPrimitiveInt(target)) {
             mv.visitInsn(D2I);
             return true;
-        } else if (target == ClassHelper.char_TYPE
-                || target == ClassHelper.byte_TYPE
-                || target == ClassHelper.short_TYPE) {
+        } else if (isPrimitiveChar(target)
+                || isPrimitiveByte(target)
+                || isPrimitiveShort(target)) {
             mv.visitInsn(D2I);
             return convertFromInt(target);
-        } else if (target == ClassHelper.long_TYPE) {
+        } else if (isPrimitiveLong(target)) {
             mv.visitInsn(D2L);
             return true;
-        } else if (target == ClassHelper.float_TYPE) {
+        } else if (isPrimitiveFloat(target)) {
             mv.visitInsn(D2F);
             return true;
         }
@@ -435,18 +444,18 @@ public class OperandStack {
 
     private boolean convertFromFloat(final ClassNode target) {
         MethodVisitor mv = controller.getMethodVisitor();
-        if (target == ClassHelper.int_TYPE) {
+        if (isPrimitiveInt(target)) {
             mv.visitInsn(F2I);
             return true;
-        } else if (target == ClassHelper.char_TYPE
-                || target == ClassHelper.byte_TYPE
-                || target == ClassHelper.short_TYPE) {
+        } else if (isPrimitiveChar(target)
+                || isPrimitiveByte(target)
+                || isPrimitiveShort(target)) {
             mv.visitInsn(F2I);
             return convertFromInt(target);
-        } else if (target == ClassHelper.long_TYPE) {
+        } else if (isPrimitiveLong(target)) {
             mv.visitInsn(F2L);
             return true;
-        } else if (target == ClassHelper.double_TYPE) {
+        } else if (isPrimitiveDouble(target)) {
             mv.visitInsn(F2D);
             return true;
         }
@@ -456,17 +465,17 @@ public class OperandStack {
     private boolean convertPrimitive(final ClassNode top, final ClassNode target) {
         if (top == target)
             return true;
-        if (top == ClassHelper.int_TYPE) {
+        if (isPrimitiveInt(top)) {
             return convertFromInt(target);
-        } else if (top == ClassHelper.char_TYPE
-                || top == ClassHelper.byte_TYPE
-                || top == ClassHelper.short_TYPE) {
-            return target == ClassHelper.int_TYPE || convertFromInt(target);
-        } else if (top == ClassHelper.float_TYPE) {
+        } else if (isPrimitiveChar(top)
+                || isPrimitiveByte(top)
+                || isPrimitiveShort(top)) {
+            return isPrimitiveInt(target) || convertFromInt(target);
+        } else if (isPrimitiveFloat(top)) {
             return convertFromFloat(target);
-        } else if (top == ClassHelper.double_TYPE) {
+        } else if (isPrimitiveDouble(top)) {
             return convertFromDouble(target);
-        } else if (top == ClassHelper.long_TYPE) {
+        } else if (isPrimitiveLong(top)) {
             return convertFromLong(target);
         }
         return false;
@@ -480,7 +489,7 @@ public class OperandStack {
         Object value = expression.getValue();
         ClassNode origType = expression.getType().redirect();
         ClassNode type = ClassHelper.getUnwrapper(origType);
-        boolean boxing = origType != type;
+        boolean boxing = !origType.equals(type);
         boolean asPrimitive = boxing || ClassHelper.isPrimitiveType(type);
 
         if (value == null) {
@@ -518,14 +527,14 @@ public class OperandStack {
     }
 
     private static void pushPrimitiveConstant(final MethodVisitor mv, final Object value, final ClassNode type) {
-        boolean isInt = ClassHelper.int_TYPE.equals(type);
-        boolean isShort = ClassHelper.short_TYPE.equals(type);
-        boolean isByte = ClassHelper.byte_TYPE.equals(type);
-        boolean isChar = ClassHelper.char_TYPE.equals(type);
+        boolean isInt = isPrimitiveInt(type);
+        boolean isShort = isPrimitiveShort(type);
+        boolean isByte = isPrimitiveByte(type);
+        boolean isChar = isPrimitiveChar(type);
         if (isInt || isShort || isByte || isChar) {
             int val = isInt ? (Integer) value : isShort ? (Short) value : isChar ? (Character) value : (Byte) value;
             BytecodeHelper.pushConstant(mv, val);
-        } else if (ClassHelper.long_TYPE.equals(type)) {
+        } else if (isPrimitiveLong(type)) {
             if ((Long) value == 0L) {
                 mv.visitInsn(LCONST_0);
             } else if ((Long) value == 1L) {
@@ -533,7 +542,7 @@ public class OperandStack {
             } else {
                 mv.visitLdcInsn(value);
             }
-        } else if (ClassHelper.float_TYPE.equals(type)) {
+        } else if (isPrimitiveFloat(type)) {
             // GROOVY-9797: Use Float.equals to differentiate between positive and negative zero
             if (value.equals(0f)) {
                 mv.visitInsn(FCONST_0);
@@ -544,7 +553,7 @@ public class OperandStack {
             } else {
                 mv.visitLdcInsn(value);
             }
-        } else if (ClassHelper.double_TYPE.equals(type)) {
+        } else if (isPrimitiveDouble(type)) {
             // GROOVY-9797: Use Double.equals to differentiate between positive and negative zero
             if (value.equals(0d)) {
                 mv.visitInsn(DCONST_0);
@@ -553,7 +562,7 @@ public class OperandStack {
             } else {
                 mv.visitLdcInsn(value);
             }
-        } else if (ClassHelper.boolean_TYPE.equals(type)) {
+        } else if (isPrimitiveBoolean(type)) {
             boolean b = (Boolean) value;
             if (b) {
                 mv.visitInsn(ICONST_1);

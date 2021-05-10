@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.Variable;
+import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 
 /**
  * Represents a local variable name, the simplest form of expression. e.g.&#160;"foo".
@@ -36,10 +37,10 @@ public class VariableExpression extends Expression implements Variable {
     private final String variable;
     private int modifiers;
     private boolean inStaticContext;
-    private boolean isDynamicTyped=false;
+    private boolean isDynamicTyped = false;
     private Variable accessedVariable;
-    boolean closureShare=false;
-    boolean useRef=false;
+    boolean closureShare = false;
+    boolean useRef = false;
     private final ClassNode originType;
 
     public Variable getAccessedVariable() {
@@ -103,7 +104,7 @@ public class VariableExpression extends Expression implements Variable {
 
     @Override
     public boolean isInStaticContext() {
-        if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.isInStaticContext();
+        if (accessedVariable != null && accessedVariable != this) return accessedVariable.isInStaticContext();
         return inStaticContext;
     }
 
@@ -116,17 +117,18 @@ public class VariableExpression extends Expression implements Variable {
      * the {@link #getAccessedVariable() accessed variable} is ({@link #isClosureSharedVariable() shared},
      * this operation is unsafe and may lead to a verify error at compile time. Instead, set the type of
      * the {@link #getAccessedVariable() accessed variable}
+     *
      * @param cn the type to be set on this variable
      */
     @Override
-    public void setType(ClassNode cn){
+    public void setType(ClassNode cn) {
         super.setType(cn);
-        isDynamicTyped |= ClassHelper.DYNAMIC_TYPE==cn;
+        isDynamicTyped |= TypeUtil.isDynamicTyped(cn);
     }
 
     @Override
     public boolean isDynamicTyped() {
-        if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.isDynamicTyped();
+        if (accessedVariable != null && accessedVariable != this) return accessedVariable.isDynamicTyped();
         return isDynamicTyped;
     }
 
@@ -137,11 +139,12 @@ public class VariableExpression extends Expression implements Variable {
      * def cl = { println str }
      * </pre>
      * The "str" variable is closure shared.
+     *
      * @return true if this variable is used in a closure
      */
     @Override
     public boolean isClosureSharedVariable() {
-        if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.isClosureSharedVariable();
+        if (accessedVariable != null && accessedVariable != this) return accessedVariable.isClosureSharedVariable();
         return closureShare;
     }
 
@@ -152,6 +155,7 @@ public class VariableExpression extends Expression implements Variable {
      * </pre>
      * The "str" variable is closure shared. The variable expression inside the closure references an
      * accessed variable "str" which must have the closure shared flag set.
+     *
      * @param inClosure tells if this variable is later referenced in a closure
      */
     @Override
@@ -167,6 +171,7 @@ public class VariableExpression extends Expression implements Variable {
     /**
      * For internal use only. This flag is used by compiler internals and should probably
      * be converted to a node metadata in future.
+     *
      * @param useRef
      */
     public void setUseReferenceDirectly(boolean useRef) {
@@ -183,18 +188,19 @@ public class VariableExpression extends Expression implements Variable {
 
     @Override
     public ClassNode getType() {
-        if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.getType();
+        if (accessedVariable != null && accessedVariable != this) return accessedVariable.getType();
         return super.getType();
     }
 
     /**
      * Returns the type which was used when this variable expression was created. For example,
      * {@link #getType()} may return a boxed type while this method would return the primitive type.
+     *
      * @return the type which was used to define this variable expression
      */
     @Override
     public ClassNode getOriginType() {
-        if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.getOriginType();
+        if (accessedVariable != null && accessedVariable != this) return accessedVariable.getOriginType();
         return originType;
     }
 

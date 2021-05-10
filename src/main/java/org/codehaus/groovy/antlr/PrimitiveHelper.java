@@ -18,38 +18,46 @@
  */
 package org.codehaus.groovy.antlr;
 
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveByte;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveChar;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveFloat;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveInt;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveShort;
 
 public class PrimitiveHelper {
     private PrimitiveHelper() {
     }
 
     public static Expression getDefaultValueForPrimitive(ClassNode type) {
-        if (type == ClassHelper.int_TYPE) {
+        if (isPrimitiveInt(type)) {
             return new ConstantExpression(0);
         }
-        if (type == ClassHelper.long_TYPE) {
+        if (isPrimitiveLong(type)) {
             return new ConstantExpression(0L);
         }
-        if (type == ClassHelper.double_TYPE) {
+        if (isPrimitiveDouble(type)) {
             return new ConstantExpression(0.0);
         }
-        if (type == ClassHelper.float_TYPE) {
+        if (isPrimitiveFloat(type)) {
             return new ConstantExpression(0.0F);
         }
-        if (type == ClassHelper.boolean_TYPE) {
+        if (isPrimitiveBoolean(type)) {
             return ConstantExpression.FALSE;
         }
-        if (type == ClassHelper.short_TYPE) {
+        if (isPrimitiveShort(type)) {
             return new ConstantExpression((short) 0);
         }
-        if (type == ClassHelper.byte_TYPE) {
+        if (isPrimitiveByte(type)) {
             return new ConstantExpression((byte) 0);
         }
-        if (type == ClassHelper.char_TYPE) {
+        if (isPrimitiveChar(type)) {
             return new ConstantExpression((char) 0);
         }
         return null;

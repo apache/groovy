@@ -42,6 +42,8 @@ import java.util.function.Function;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -162,7 +164,7 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
                 for (MethodNode method : helperType.getMethods(getterName)) {
                     if (method.isStatic() && method.getParameters().length == 1
                             && isSelfType(method.getParameters()[0], traitType)
-                            && !method.getReturnType().equals(ClassHelper.VOID_TYPE)) {
+                            && !isPrimitiveVoid(method.getReturnType())) {
                         return xform.apply(method);
                     }
                 }
@@ -171,7 +173,7 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
                 for (MethodNode method : helperType.getMethods(isserName)) {
                     if (method.isStatic() && method.getParameters().length == 1
                             && isSelfType(method.getParameters()[0], traitType)
-                            && method.getReturnType().equals(ClassHelper.boolean_TYPE)) {
+                            && isPrimitiveBoolean(method.getReturnType())) {
                         return xform.apply(method);
                     }
                 }

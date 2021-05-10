@@ -143,7 +143,7 @@ final class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                 [
                         eq('ClassNode - Foo'),
                         eq('Fields'),
-                        eq('FieldNode - aField : java.lang.Object'),
+                        startsWith('FieldNode - aField : java.lang.Object'),
                 ]
         )
     }
