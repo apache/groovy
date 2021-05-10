@@ -25,10 +25,10 @@ import org.codehaus.groovy.reflection.CachedClass;
  * A MetaMethod implementation useful for implementing coercion based invocations
  */
 public class TransformMetaMethod extends MetaMethod {
-    
+
     private final MetaMethod metaMethod;
 
-    public TransformMetaMethod(MetaMethod metaMethod) {
+    public TransformMetaMethod(final MetaMethod metaMethod) {
         this.metaMethod = metaMethod;
         setParametersTypes(metaMethod.getParameterTypes());
         nativeParamTypes = metaMethod.getNativeParameterTypes();
@@ -55,7 +55,17 @@ public class TransformMetaMethod extends MetaMethod {
     }
 
     @Override
-    public Object invoke(Object object, Object[] arguments) {
+    public Object invoke(final Object object, final Object[] arguments) {
         return metaMethod.invoke(object, arguments);
+    }
+
+    @Override
+    public Object doMethodInvoke(final Object object, final Object[] arguments) {
+        // no coerceArgumentsToClasses
+        try {
+            return invoke(object, arguments);
+        } catch (final Exception ex) {
+            throw processDoMethodInvokeException(ex, object, arguments);
+        }
     }
 }

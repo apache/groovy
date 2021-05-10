@@ -20,6 +20,7 @@ package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.Closure;
 import groovy.lang.ExpandoMetaClass;
+import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaBeanProperty;
@@ -207,6 +208,16 @@ public final class ClosureMetaClass extends MetaClassImpl {
                 if (method != null) return method;
             }
             return null;
+        } else if (delegate instanceof GroovyInterceptable) {
+            MetaClass delegateMetaClass = lookupObjectMetaClass(delegate);
+            // GROOVY-3015: must route calls through GroovyObject#invokeMethod(String,Object)
+            MetaMethod interceptMethod = delegateMetaClass.pickMethod("invokeMethod", new Class[]{String.class, Object.class});
+            return new TransformMetaMethod(interceptMethod) {
+                @Override
+                public Object invoke(final Object object, final Object[] arguments) {
+                    return super.invoke(object, new Object[]{methodName, arguments});
+                }
+            };
         } else {
             MetaClass delegateMetaClass = lookupObjectMetaClass(delegate);
             MetaMethod method = delegateMetaClass.pickMethod(methodName, argClasses);
