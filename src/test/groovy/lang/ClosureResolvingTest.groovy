@@ -302,4 +302,14 @@ final class ClosureResolvingTest {
             assert link == 'http://localhost/g/bars/1/baz'
         '''
     }
+
+    @Test // GROOVY-2686
+    void testDelegateClosureProperty() {
+        assertScript '''
+            def c = { -> p() }
+            c.delegate = [p: { -> 'value' }]
+
+            assert c() == 'value'
+        '''
+    }
 }
