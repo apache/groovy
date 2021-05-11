@@ -199,6 +199,30 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'No such property: years for class: java.lang.String'
     }
 
+    // GROOVY-10079
+    void testImplicitReturnToPrimitive() {
+        assertScript '''
+            int foo() {
+                Integer.valueOf(42)
+            }
+            assert foo() == 42
+        '''
+
+        assertScript '''
+            long foo() {
+                Long.valueOf(1234L)
+            }
+            assert foo() == 1234L
+        '''
+
+        assertScript '''
+            char foo() {
+                Character.valueOf((char)'x')
+            }
+            assert foo() == 'x'
+        '''
+    }
+
     // GROOVY-5835
     void testReturnInClosureShouldNotBeConsideredAsReturnOfEnclosingMethod() {
         assertScript '''
