@@ -1882,20 +1882,19 @@ public abstract class StaticTypeCheckingSupport {
             return cn;
         }
 
-        if (gt[0].isPlaceholder()) { // convert T to X
-            if (type.getGenericsTypes()[0] == gt[0]) {
-                return type; // nothing to do
-            } else if (!hasNonTrivialBounds(gt[0])
-                    || type.getGenericsTypes()[0] == gt[0].getNodeMetaData(GenericsType.class)) {
-                ClassNode cn = make(gt[0].getName());
-                cn.setRedirect(type);
-                cn.setGenericsTypes(gt);
-                cn.setGenericsPlaceHolder(true);
-                return cn;
-            }
+        if (!gt[0].isPlaceholder()) { // convert T to Type or Type<...>
+            return getCombinedBoundType(gt[0]);
         }
 
-        return getCombinedBoundType(gt[0]); // convert T to Type
+        if (type.getGenericsTypes()[0] != gt[0]) { // convert T to X
+            ClassNode cn = make(gt[0].getName());
+            cn.setRedirect(gt[0].getType());
+            cn.setGenericsPlaceHolder(true);
+            cn.setGenericsTypes(gt);
+            return cn;
+        }
+
+        return type; // nothing to do
     }
 
     static ClassNode getCombinedBoundType(final GenericsType genericsType) {

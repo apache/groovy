@@ -5235,6 +5235,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return inferReturnTypeGenerics(receiver, extension, args, explicitTypeHints);
         }
 
+        // TODO: remove name conflicts from context before applying to method generics or parameters
         Map<GenericsTypeName, GenericsType> context = method.isStatic() || method instanceof ConstructorNode
                                             ? null : extractPlaceHolders(null, receiver, getDeclaringClass(method, arguments));
         GenericsType[] methodGenericTypes = method instanceof ConstructorNode ? method.getDeclaringClass().getGenericsTypes() : applyGenericsContext(context, method.getGenericsTypes());
@@ -5244,7 +5245,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (methodGenericTypes != null) {
             Map<GenericsTypeName, GenericsType> resolvedPlaceholders = new HashMap<>();
             for (GenericsType gt : methodGenericTypes) resolvedPlaceholders.put(new GenericsTypeName(gt.getName()), gt);
-            applyGenericsConnections(extractGenericsConnectionsFromArguments(methodGenericTypes, method.getParameters(), arguments, explicitTypeHints), resolvedPlaceholders);
+            applyGenericsConnections(extractGenericsConnectionsFromArguments(methodGenericTypes, Arrays.stream(method.getParameters()).map(param ->
+                new Parameter(applyGenericsContext(context, param.getType()), param.getName())
+            ).toArray(Parameter[]::new), arguments, explicitTypeHints), resolvedPlaceholders);
 
             returnType = applyGenericsContext(resolvedPlaceholders, returnType);
         }
