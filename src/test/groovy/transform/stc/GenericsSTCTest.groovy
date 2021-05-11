@@ -740,8 +740,28 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-9970
+    // GROOVY-10080
     void testDiamondInferrenceFromConstructor11() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<T> {
+                T p
+            }
+            class D {
+                int m(Object[] objects) {
+                    42
+                }
+            }
+            def closure = { ->
+                new C<>(new D())
+            }
+            def result = closure().p.m(new BigDecimal[0]) // Cannot find matching method Object#m(...)
+            assert result == 42
+        '''
+    }
+
+    // GROOVY-9970
+    void testDiamondInferrenceFromConstructor12() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class A<T extends B> {
@@ -763,7 +783,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     @NotYetImplemented // GROOVY-9983
-    void testDiamondInferrenceFromConstructor12() {
+    void testDiamondInferrenceFromConstructor13() {
         String types = '''
             @groovy.transform.TupleConstructor(defaults=false)
             class A<T> {
@@ -809,7 +829,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9995
-    void testDiamondInferrenceFromConstructor13() {
+    void testDiamondInferrenceFromConstructor14() {
         [
             ['Closure<A<Long>>', 'java.util.concurrent.Callable<A<Long>>'],
             ['new A<>(42L)', 'return new A<>(42L)']

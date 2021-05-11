@@ -2170,7 +2170,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // GROOVY-9995: return ctor call with diamond operator
             if (expression instanceof ConstructorCallExpression) {
                 ClassNode inferredClosureReturnType = getInferredReturnType(typeCheckingContext.getEnclosingClosure().getClosureExpression());
-                if (inferredClosureReturnType != null) inferDiamondType((ConstructorCallExpression) expression, inferredClosureReturnType);
+                if (inferredClosureReturnType == null) inferredClosureReturnType = DYNAMIC_TYPE; // GROOVY-10080
+                inferDiamondType((ConstructorCallExpression) expression, inferredClosureReturnType);
             }
             return type;
         }

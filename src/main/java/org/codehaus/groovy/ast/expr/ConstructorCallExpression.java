@@ -77,9 +77,9 @@ public class ConstructorCallExpression extends Expression implements MethodCall 
         } else if (isThisCall()) {
             text = "this ";
         } else {
-            text = "new " + getType().getName();
+            text = "new " + getType().toString(false);
         }
-        return text + arguments.getText();
+        return text + getArguments().getText();
     }
 
     public boolean isSpecialCall() {

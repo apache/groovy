@@ -1214,7 +1214,7 @@ public class ClassNode extends AnnotatedNode {
         boolean placeholder = isGenericsPlaceHolder();
         StringBuilder ret = new StringBuilder(!placeholder ? getName() : getUnresolvedName());
         GenericsType[] genericsTypes = getGenericsTypes();
-        if (!placeholder && genericsTypes != null && genericsTypes.length > 0) {
+        if (!placeholder && genericsTypes != null) {
             ret.append('<');
             for (int i = 0, n = genericsTypes.length; i < n; i += 1) {
                 if (i != 0) ret.append(", ");
