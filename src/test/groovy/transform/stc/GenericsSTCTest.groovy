@@ -1429,7 +1429,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    @NotYetImplemented // GROOVY-9803
+    // GROOVY-9803
     void testShouldUseMethodGenericType8() {
         assertScript '''
             def opt = Optional.of(42)
@@ -1438,31 +1438,33 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             assert opt.get() == 42
         '''
         // same as above but with separate type parameter name for each location
-        assertScript '''
-            abstract class A<I,O> {
-                abstract O apply(I input)
-            }
-            class C<T> {
-                static <U> C<U> of(U item) {
-                    new C<U>()
+        ['D.&wrap', 'Collections.&singleton', '{x -> [x].toSet()}', '{Collections.singleton(it)}'].each { toSet ->
+            assertScript """
+                abstract class A<I,O> {
+                    abstract O apply(I input)
                 }
-                def <V> C<V> map(A<? super T, ? super V> func) {
-                    new C<V>()
+                class C<T> {
+                    static <U> C<U> of(U item) {
+                        new C<U>()
+                    }
+                    def <V> C<V> map(A<? super T, ? super V> func) {
+                        new C<V>()
+                    }
                 }
-            }
-            class D {
-                static <W> Set<W> wrap(W o) {
+                class D {
+                    static <W> Set<W> wrap(W o) {
+                    }
                 }
-            }
 
-            void test() {
-                def c = C.of(42)
-                def d = c.map(D.&wrap)
-                def e = d.map(x -> x.first().intValue())
-            }
+                void test() {
+                    def c = C.of(42)
+                    def d = c.map($toSet)
+                    def e = d.map(x -> x.first().intValue())
+                }
 
-            test()
-        '''
+                test()
+            """
+        }
     }
 
     // GROOVY-9945
