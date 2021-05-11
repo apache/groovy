@@ -21,50 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc
 import groovy.transform.stc.ReturnsSTCTest
 
 /**
- * Unit tests for static type checking : returns.
+ * Unit tests for static compilation : explicit and implicit returns.
  */
 class ReturnsStaticCompileTest extends ReturnsSTCTest implements StaticCompilationTestSupport {
-
-    void testReturnTypeInferenceWithInheritance() {
-        assertScript '''
-interface Greeter {
-   public void sayHello()
 }
-
-class HelloGreeter implements Greeter {
-   public void sayHello() {
-       println "Hello world!"
-   }
-}
-
-class A {
-   Greeter createGreeter() {
-       new HelloGreeter()
-   }
-
-   void sayHello() {
-      // also fails: def greeter = createGreeter()
-      // successful: def greeter = (Greeter)createGreeter()
-      Greeter greeter = createGreeter()
-      greeter.sayHello()
-   }
-}
-
-class HelloThereGreeter implements Greeter {
-   public void sayHello() {
-       println "Hello there!"
-   }
-}
-
-class B extends A {
-   Greeter createGreeter() {
-       new HelloThereGreeter()
-   }
-}
-
-
-new B().sayHello()'''
-    }
-
-}
-

@@ -19,7 +19,7 @@
 package groovy.transform.stc
 
 /**
- * Unit tests for static type checking : implicit and explicit returns.
+ * Unit tests for static type checking : explicit and implicit returns.
  */
 class ReturnsSTCTest extends StaticTypeCheckingTestCase {
 
@@ -102,8 +102,8 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
         ''',
-            'Cannot return value of type java.lang.String on method returning type int', // first branch
-            'Cannot return value of type java.lang.String on method returning type int' // second branch
+        'Cannot return value of type java.lang.String on method returning type int', // first branch
+        'Cannot return value of type java.lang.String on method returning type int' // second branch
     }
 
     void testImplicitReturnFailureWithSwitch() {
@@ -120,32 +120,22 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
                         3
                  }
              }
-         ''', 'Cannot return value of type java.lang.String on method returning type int'
+         ''',
+         'Cannot return value of type java.lang.String on method returning type int'
     }
 
-
-   void testImplicitReturnFailureWithSwitch2() {
-         assertScript '''
-             int method(int x) {
-                 switch (x) {
+    void testImplicitReturnFailureWithSwitch2() {
+        assertScript '''
+            int method(int x) {
+                switch (x) {
                     case 1:
                         2
                         break
                     case 2:
-                        'String'
+                        'string' // not a return type
                     default:
                         3
-                 }
-             }
-         ''' // should not fail because default case overrides case 2 return type
-     }
-
-    void testImplicitReturnToString() {
-        assertScript '''
-            // automatic toString works
-            String greeting(String name) {
-                def sb = new StringBuilder()
-                sb << "Hi" << name
+                }
             }
         '''
     }
@@ -189,14 +179,25 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         new Foo().foo(2)
         '''
     }
-    
-    void testInferredReturnTypeWithImplicitConversion() {
+
+    void testImplicitReturnToString1() {
+        assertScript '''
+            // automatic toString works
+            String greeting(String name) {
+                def sb = new StringBuilder()
+                sb << "Hi" << name
+            }
+        '''
+    }
+
+    void testImplicitReturnToString2() {
         shouldFailWithMessages '''
             String methodWithImplicitConversion() {
                 new Date()
             }
             methodWithImplicitConversion().years
-        ''', 'No such property: years for class: java.lang.String'
+        ''',
+        'No such property: years for class: java.lang.String'
     }
 
     // GROOVY-10079
@@ -233,5 +234,44 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-}
+    void testReturnTypeInferenceWithInheritance() {
+        assertScript '''
+            interface Greeter {
+               public void sayHello()
+            }
 
+            class HelloGreeter implements Greeter {
+               public void sayHello() {
+                   println "Hello world!"
+               }
+            }
+
+            class A {
+               Greeter createGreeter() {
+                   new HelloGreeter()
+               }
+
+               void sayHello() {
+                  // also fails: def greeter = createGreeter()
+                  // successful: def greeter = (Greeter)createGreeter()
+                  Greeter greeter = createGreeter()
+                  greeter.sayHello()
+               }
+            }
+
+            class HelloThereGreeter implements Greeter {
+               public void sayHello() {
+                   println "Hello there!"
+               }
+            }
+
+            class B extends A {
+               Greeter createGreeter() {
+                   new HelloThereGreeter()
+               }
+            }
+
+            new B().sayHello()
+        '''
+    }
+}
