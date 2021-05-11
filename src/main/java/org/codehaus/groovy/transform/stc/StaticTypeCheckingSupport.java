@@ -678,8 +678,9 @@ public abstract class StaticTypeCheckingSupport {
         if (isWildcardLeftHandSide(leftRedirect) && !(boolean_TYPE.equals(left) && rightExpressionIsNull)) return true;
 
         // char as left expression
-        if (leftRedirect == char_TYPE && rightRedirect == STRING_TYPE) {
-            if (rightExpression instanceof ConstantExpression) {
+        if (leftRedirect == char_TYPE) {
+            if (rightRedirect == Character_TYPE) return true;
+            if (rightRedirect == STRING_TYPE && rightExpression instanceof ConstantExpression) {
                 String value = rightExpression.getText();
                 return value.length() == 1;
             }
