@@ -387,7 +387,8 @@ public class GenericsType extends ASTNode {
                 GenericsTypeName name = new GenericsTypeName(classNodeType.getName());
                 if (redirectBoundType.isPlaceholder()) {
                     GenericsTypeName gtn = new GenericsTypeName(redirectBoundType.getName());
-                    match = name.equals(gtn);
+                    match = name.equals(gtn)
+                            || name.equals(new GenericsTypeName("#" + redirectBoundType.getName()));
                     if (!match) {
                         GenericsType boundGenericsType = boundPlaceHolders.get(gtn);
                         if (boundGenericsType != null) {

@@ -2652,8 +2652,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 mn = findMethod(currentReceiver.getType(), name, args);
                 if (!mn.isEmpty()) {
                     if (mn.size() == 1) {
-                        // GROOVY-8909, GROOVY-8961, GROOVY-9734, GROOVY-9844, GROOVY-9915, etc.
-                        resolvePlaceholdersFromImplicitTypeHints(args, argumentList, mn.get(0));
+                        // GROOVY-8909, GROOVY-8961, GROOVY-9734, GROOVY-9844, GROOVY-9915, et al.
+                        resolvePlaceholdersFromImplicitTypeHints(args, argumentList, mn.get(0).getParameters());
                         typeCheckMethodsWithGenericsOrFail(currentReceiver.getType(), args, mn.get(0), call);
                     }
                     chosenReceiver = currentReceiver;
@@ -3551,8 +3551,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 returnType = typeCheckingContext.getEnclosingClassNode();
                             }
                         }
-                        // GROOVY-7106, GROOVY-7274, GROOVY-8909, GROOVY-8961, GROOVY-9734, GROOVY-9844, et al.
-                        resolvePlaceholdersFromImplicitTypeHints(args, argumentList, directMethodCallCandidate);
+                        // GROOVY-7106, GROOVY-7274, GROOVY-8909, GROOVY-8961, GROOVY-9734, GROOVY-9844, GROOVY-9915, et al.
+                        Parameter[] parameters = directMethodCallCandidate.getParameters();
+                        if (chosenReceiver.getType().getGenericsTypes() != null && !directMethodCallCandidate.isStatic() && !(directMethodCallCandidate instanceof ExtensionMethodNode)) {
+                            Map<GenericsTypeName, GenericsType> context = extractPlaceHolders(null, chosenReceiver.getType(), getDeclaringClass(directMethodCallCandidate, argumentList));
+                            parameters = Arrays.stream(parameters).map(param -> new Parameter(applyGenericsContext(context, param.getType()), param.getName())).toArray(Parameter[]::new);
+                        }
+                        resolvePlaceholdersFromImplicitTypeHints(args, argumentList, parameters);
+
                         if (typeCheckMethodsWithGenericsOrFail(chosenReceiver.getType(), args, directMethodCallCandidate, call)) {
                             returnType = adjustWithTraits(directMethodCallCandidate, chosenReceiver.getType(), args, returnType);
 
@@ -5346,11 +5352,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * argument is {@code List<T>} without explicit type arguments. Knowning the
      * method target of "m", {@code T} could be resolved.
      */
-    private static void resolvePlaceholdersFromImplicitTypeHints(final ClassNode[] actuals, final ArgumentListExpression argumentList, final MethodNode inferredMethod) {
-        int np = inferredMethod.getParameters().length;
+    private static void resolvePlaceholdersFromImplicitTypeHints(final ClassNode[] actuals, final ArgumentListExpression argumentList, final Parameter[] parameterArray) {
+        int np = parameterArray.length;
         for (int i = 0, n = actuals.length; np > 0 && i < n; i += 1) {
             Expression a = argumentList.getExpression(i);
-            Parameter p = inferredMethod.getParameters()[Math.min(i, np - 1)];
+            Parameter p = parameterArray[Math.min(i, np - 1)];
 
             ClassNode at = actuals[i], pt = p.getOriginType();
             if (!isUsingGenericsOrIsArrayUsingGenerics(pt)) continue;

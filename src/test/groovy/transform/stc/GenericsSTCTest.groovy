@@ -1504,6 +1504,23 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-8409, GROOVY-9915
+    void testShouldUseMethodGenericType10() {
+        assertScript '''
+            interface OngoingStubbing<T> /*extends IOngoingStubbing*/ {
+                // type parameter from enclosing type in signature:
+                OngoingStubbing<T> thenReturn(T value)
+            }
+            static <T> OngoingStubbing<T> when(T methodCall) {
+                [thenReturn: { T value -> null }] as OngoingStubbing<T>
+            }
+            Optional<String> foo() {
+            }
+
+            when(foo()).thenReturn(Optional.empty())
+        '''
+    }
+
     // GROOVY-5516
     void testAddAllWithCollectionShouldBeAllowed() {
         assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
