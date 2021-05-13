@@ -1142,7 +1142,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Special 'Case' implementation for Class, which allows testing
      * whether some switch value is assignable from the given case class.
      *
-     * If the switch value is an obj, {@code isCase} will return true if the
+     * If the switch value is an object, {@code isCase} will return true if the
      * switch value is assignment compatible with the class (case value),
      * i.e.&nbsp;is an {@code instanceof} the class, for example:
      * <pre class="groovyTestCase">
