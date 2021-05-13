@@ -976,11 +976,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
         };
 
+        Function<MethodNode, ClassNode> setterType = setter -> {
+            ClassNode type = setter.getParameters()[0].getOriginType();
+            if (!setter.isStatic() && GenericsUtils.hasUnresolvedGenerics(type)) {
+                Map<GenericsTypeName, GenericsType> spec = extractPlaceHolders(null, setterInfo.receiverType, setter.getDeclaringClass());
+                type = applyGenericsContext(spec, type);
+            }
+            return type;
+        };
+
         MethodNode methodTarget = setterCall.apply(newRightExpression);
         if (methodTarget == null && !isCompoundAssignment(expression)) {
             // if no direct match, try implicit conversion
             for (MethodNode setter : setterInfo.setters) {
-                ClassNode lType = setter.getParameters()[0].getOriginType();
+                ClassNode lType = setterType.apply(setter);
                 ClassNode rType = getDeclaredOrInferredType(newRightExpression);
                 if (checkCompatibleAssignmentTypes(lType, rType, newRightExpression, false)) {
                     methodTarget = setterCall.apply(castX(lType, newRightExpression));
@@ -995,14 +1004,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             for (MethodNode setter : setterInfo.setters) {
                 if (setter == methodTarget) {
                     leftExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, methodTarget);
-                    leftExpression.removeNodeMetaData(INFERRED_TYPE); // clear the assumption
-                    storeType(leftExpression, methodTarget.getParameters()[0].getOriginType());
+                    leftExpression.removeNodeMetaData(INFERRED_TYPE); // clear assumption
+                    storeType(leftExpression, setterType.apply(methodTarget));
                     break;
                 }
             }
             return false;
         } else {
-            ClassNode firstSetterType = setterInfo.setters.get(0).getParameters()[0].getOriginType();
+            ClassNode firstSetterType = setterType.apply(setterInfo.setters.get(0));
             addAssignmentError(firstSetterType, getType(newRightExpression), expression);
             return true;
         }
