@@ -50,16 +50,16 @@ public class VariableExpression extends Expression implements Variable {
         this.accessedVariable = origin;
     }
 
-    public VariableExpression(String variable, ClassNode type) {
-        this.variable = variable;
+    public VariableExpression(final String name, final ClassNode type) {
+        variable = name;
         originType = type;
-        setType(ClassHelper.getWrapper(type));
+        setType(ClassHelper.isPrimitiveType(type) ? ClassHelper.getWrapper(type) : type);
     }
-    
+
     public VariableExpression(String variable) {
         this(variable, ClassHelper.DYNAMIC_TYPE);
     }
-    
+
     public VariableExpression(Variable variable) {
         this(variable.getName(), variable.getOriginType());
         setAccessedVariable(variable);
@@ -80,7 +80,7 @@ public class VariableExpression extends Expression implements Variable {
     public String getText() {
         return variable;
     }
-    
+
     @Override
     public String getName() {
         return variable;
@@ -100,13 +100,13 @@ public class VariableExpression extends Expression implements Variable {
     public boolean hasInitialExpression() {
         return false;
     }
-    
+
     @Override
     public boolean isInStaticContext() {
         if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.isInStaticContext();
         return inStaticContext;
     }
-    
+
     public void setInStaticContext(boolean inStaticContext) {
         this.inStaticContext = inStaticContext;
     }
@@ -123,7 +123,7 @@ public class VariableExpression extends Expression implements Variable {
         super.setType(cn);
         isDynamicTyped |= ClassHelper.DYNAMIC_TYPE==cn;
     }
-    
+
     @Override
     public boolean isDynamicTyped() {
         if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.isDynamicTyped();
@@ -156,7 +156,7 @@ public class VariableExpression extends Expression implements Variable {
      */
     @Override
     public void setClosureSharedVariable(boolean inClosure) {
-        closureShare = inClosure;        
+        closureShare = inClosure;
     }
 
     @Override
@@ -170,9 +170,9 @@ public class VariableExpression extends Expression implements Variable {
      * @param useRef
      */
     public void setUseReferenceDirectly(boolean useRef) {
-        this.useRef = useRef;        
+        this.useRef = useRef;
     }
-    
+
     /**
      * For internal use only. This flag is used by compiler internals and should probably
      * be converted to a node metadata in future.
@@ -180,7 +180,7 @@ public class VariableExpression extends Expression implements Variable {
     public boolean isUseReferenceDirectly() {
         return useRef;
     }
-    
+
     @Override
     public ClassNode getType() {
         if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.getType();

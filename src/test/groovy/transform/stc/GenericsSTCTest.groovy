@@ -1521,6 +1521,51 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-8409, GROOVY-9902
+    void testShouldUseMethodGenericType11() {
+        config.with {
+            targetDirectory = File.createTempDir()
+            jointCompilationOptions = [stubDir: File.createTempDir()]
+        }
+        File parentDir = File.createTempDir()
+        try {
+            def a = new File(parentDir, 'Main.groovy')
+            a.write '''
+                def obj = new Pojo()
+                Foo raw = obj.getFoo('')
+                raw.bar = raw.baz // Cannot assign value of type Object to variable of type R
+            '''
+            def b = new File(parentDir, 'Pojo.java')
+            b.write '''
+                public class Pojo {
+                    public <R extends I> Foo<R> getFoo(String key) {
+                        return new Foo<>();
+                    }
+                }
+            '''
+            def c = new File(parentDir, 'Types.groovy')
+            c.write '''
+                interface I {
+                }
+                class Foo<T extends I> {
+                    T bar
+                    T baz
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b, c)
+            cu.compile()
+
+            loader.loadClass('Main').main()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+            config.jointCompilationOptions.stubDir.deleteDir()
+        }
+    }
+
     // GROOVY-5516
     void testAddAllWithCollectionShouldBeAllowed() {
         assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
@@ -2039,8 +2084,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             test(new Holder<Object>())
         ''',
         'Cannot call TypedProperty#eq(java.lang.String) with arguments [groovy.lang.GString]',
-        'Cannot call TypedProperty#eq(java.lang.String) with arguments [int]',
-        'Cannot call TypedProperty#eq(java.lang.Number) with arguments [java.lang.String]'
+        'Cannot find matching method TypedProperty#eq(int)', // chooseBestMethod removes "eq"
+        'Cannot find matching method TypedProperty#eq(java.lang.String)'
     }
 
     // GROOVY-5748

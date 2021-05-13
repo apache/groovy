@@ -1031,9 +1031,6 @@ public abstract class StaticTypeCheckingSupport {
         if (!asBoolean(methods)) {
             return Collections.emptyList();
         }
-        if (isUsingUncheckedGenerics(receiver)) {
-            return chooseBestMethod(makeRawType(receiver), methods, argumentTypes);
-        }
 
         int bestDist = Integer.MAX_VALUE;
         List<MethodNode> bestChoices = new LinkedList<>();

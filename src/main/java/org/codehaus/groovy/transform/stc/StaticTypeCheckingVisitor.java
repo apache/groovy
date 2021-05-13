@@ -805,7 +805,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                     // the inferred type of the binary expression is the type of the RHS
                     // "completed" with generics type information available from the LHS
-                    resultType = GenericsUtils.parameterizeType(lType, resultType.getPlainNodeReference());
+                    if (!resultType.isGenericsPlaceHolder()) // plain reference drops placeholder
+                        resultType = GenericsUtils.parameterizeType(lType, resultType.getPlainNodeReference());
                 } else if (lType.equals(OBJECT_TYPE) && GenericsUtils.hasUnresolvedGenerics(resultType)) { // def list = []
                     Map<GenericsTypeName, GenericsType> placeholders = extractGenericsParameterMapOfThis(typeCheckingContext);
                     resultType = fullyResolveType(resultType, Optional.ofNullable(placeholders).orElseGet(Collections::emptyMap));
@@ -4888,11 +4889,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (!result.isEmpty()) return result;
         }
 
-        if (GSTRING_TYPE.equals(receiver)) return findMethod(STRING_TYPE, name, args);
-
+        if (GSTRING_TYPE.equals(receiver)) {
+            return findMethod(STRING_TYPE, name, args);
+        }
         if (isBeingCompiled(receiver)) {
-            chosen = findMethod(GROOVY_OBJECT_TYPE, name, args);
-            if (!chosen.isEmpty()) return chosen;
+            return findMethod(GROOVY_OBJECT_TYPE, name, args);
         }
 
         return EMPTY_METHODNODE_LIST;
