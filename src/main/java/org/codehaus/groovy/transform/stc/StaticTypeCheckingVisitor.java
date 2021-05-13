@@ -136,6 +136,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static org.apache.groovy.util.BeanUtils.capitalize;
@@ -981,6 +982,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // but we must check if the binary expression is an assignment
         // because we need to check if a setter uses @DelegatesTo
         VariableExpression ve = varX("%", setterInfo.receiverType);
+        ve.setType(setterInfo.receiverType); // same as origin type
+
+        Function<MethodNode, ClassNode> firstParamType = (method) -> {
+            ClassNode type = method.getParameters()[0].getOriginType();
+            if (!method.isStatic() && !(method instanceof ExtensionMethodNode) && GenericsUtils.hasUnresolvedGenerics(type)) {
+                Map<GenericsTypeName, GenericsType> spec = extractPlaceHolders(null, setterInfo.receiverType, method.getDeclaringClass());
+                type = applyGenericsContext(spec, type);
+            }
+            return type;
+        };
+
         // for compound assignment "x op= y" find type as if it was "x = (x op y)"
         Expression valueExpression = rightExpression;
         if (isCompoundAssignment(expression)) {
@@ -1005,7 +1017,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // this may happen if there's a setter of type boolean/String/Class, and that we are using the property
             // notation AND that the RHS is not a boolean/String/Class
             for (MethodNode setter : setterInfo.setters) {
-                ClassNode type = getWrapper(setter.getParameters()[0].getOriginType());
+                ClassNode type = getWrapper(firstParamType.apply(setter));
                 if (Boolean_TYPE.equals(type) || STRING_TYPE.equals(type) || CLASS_Type.equals(type)) {
                     call = new MethodCallExpression(ve, setterInfo.name, castX(type, valueExpression));
                     call.setImplicitThis(false);
@@ -1022,13 +1034,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (setter == directSetterCandidate) {
                     leftExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, directSetterCandidate);
                     leftExpression.removeNodeMetaData(INFERRED_TYPE); // clear assumption
-                    storeType(leftExpression, getType(valueExpression));
+                    storeType(leftExpression, firstParamType.apply(setter));
                     break;
                 }
             }
             return false;
         } else {
-            ClassNode firstSetterType = setterInfo.setters.get(0).getParameters()[0].getOriginType();
+            ClassNode firstSetterType = firstParamType.apply(setterInfo.setters.get(0));
             addAssignmentError(firstSetterType, getType(valueExpression), expression);
             return true;
         }
