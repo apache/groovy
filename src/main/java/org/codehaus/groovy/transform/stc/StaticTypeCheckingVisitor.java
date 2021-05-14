@@ -753,8 +753,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 lType = getType(leftExpression);
             } else {
-                lType = getType(leftExpression);
-                if (op == ASSIGN) {
+                if (op != ASSIGN && op != ELVIS_EQUAL) {
+                    lType = getType(leftExpression);
+                } else {
+                    lType = getOriginalDeclarationType(leftExpression);
+
                     if (isFunctionalInterface(lType)) {
                         processFunctionalInterfaceAssignment(lType, rightExpression);
                     } else if (isClosureWithType(lType) && rightExpression instanceof ClosureExpression) {
@@ -783,20 +786,43 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     fullExpression.visit(this);
 
                     resultType = getType(fullExpression);
-                    storeType(leftExpression, resultType);
-                } else if (isArrayOp(op)
-                        && leftExpression instanceof VariableExpression
-                        && leftExpression.getNodeMetaData(INFERRED_TYPE) == null) {
-                    storeType(leftExpression, lType);
+                }
+            }
+            if (resultType == null) {
+                resultType = lType;
+            }
+
+            if (isArrayOp(op)) {
+                if (leftExpression instanceof VariableExpression) {//GROOVY-6782
+                    if (leftExpression.getNodeMetaData(INFERRED_TYPE) == null) {
+                        leftExpression.removeNodeMetaData(INFERRED_RETURN_TYPE);
+                        storeType(leftExpression, lType);
+                    }
+                }
+                if (!lType.isArray()
+                        && enclosingBinaryExpression != null
+                        && enclosingBinaryExpression.getLeftExpression() == expression
+                        && isAssignment(enclosingBinaryExpression.getOperation().getType())) {
+                    // left hand side of a subscript assignment: map['foo'] = ...
+                    Expression enclosingExpressionRHS = enclosingBinaryExpression.getRightExpression();
+                    if (!(enclosingExpressionRHS instanceof ClosureExpression)) {
+                        enclosingExpressionRHS.visit(this);
+                    }
+                    ClassNode[] arguments = {rType, getType(enclosingExpressionRHS)};
+                    List<MethodNode> nodes = findMethod(lType.redirect(), "putAt", arguments);
+                    if (nodes.size() == 1) {
+                        typeCheckMethodsWithGenericsOrFail(lType, arguments, nodes.get(0), enclosingExpressionRHS);
+                    } else if (nodes.isEmpty()) {
+                        addNoMatchingMethodError(lType, "putAt", arguments, enclosingBinaryExpression);
+                    }
                 }
             }
 
-            if (resultType == null) {
-                resultType = lType;
-            } else if (isAssignment(op)) {
-                if (rightExpression instanceof ConstructorCallExpression) {
+            boolean isEmptyDeclaration = (expression instanceof DeclarationExpression && rightExpression instanceof EmptyExpression);
+            if (!isEmptyDeclaration && isAssignment(op)) {
+                if (rightExpression instanceof ConstructorCallExpression)
                     inferDiamondType((ConstructorCallExpression) rightExpression, lType);
-                }
+
                 if (lType.isUsingGenerics() && missesGenericsTypes(resultType)) {
                     // unchecked assignment
                     // List<Type> list = new LinkedList()
@@ -807,47 +833,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     // "completed" with generics type information available from the LHS
                     if (!resultType.isGenericsPlaceHolder()) // plain reference drops placeholder
                         resultType = GenericsUtils.parameterizeType(lType, resultType.getPlainNodeReference());
-                } else if (lType.equals(OBJECT_TYPE) && GenericsUtils.hasUnresolvedGenerics(resultType)) { // def list = []
-                    Map<GenericsTypeName, GenericsType> placeholders = extractGenericsParameterMapOfThis(typeCheckingContext);
-                    resultType = fullyResolveType(resultType, Optional.ofNullable(placeholders).orElseGet(Collections::emptyMap));
                 }
-            }
 
-            // GROOVY-5874: if left expression is a closure shared variable, a second pass should be done
-            if (leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).isClosureSharedVariable()) {
-                typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<>(expression));
-            }
-
-            if (isArrayOp(op)
-                    && !lType.isArray()
-                    && enclosingBinaryExpression != null
-                    && enclosingBinaryExpression.getLeftExpression() == expression
-                    && isAssignment(enclosingBinaryExpression.getOperation().getType())) {
-                // left hand side of an assignment: map['foo'] = ...
-                Expression enclosingExpressionRHS = enclosingBinaryExpression.getRightExpression();
-                if (!(enclosingExpressionRHS instanceof ClosureExpression)) {
-                    enclosingExpressionRHS.visit(this);
-                }
-                ClassNode[] arguments = {rType, getType(enclosingExpressionRHS)};
-                List<MethodNode> nodes = findMethod(lType.redirect(), "putAt", arguments);
-                if (nodes.size() == 1) {
-                    typeCheckMethodsWithGenericsOrFail(lType, arguments, nodes.get(0), enclosingExpressionRHS);
-                } else if (nodes.isEmpty()) {
-                    addNoMatchingMethodError(lType, "putAt", arguments, enclosingBinaryExpression);
-                }
-            }
-
-            boolean isEmptyDeclaration = (expression instanceof DeclarationExpression && rightExpression instanceof EmptyExpression);
-            if (!isEmptyDeclaration && isAssignment(op)) {
                 ClassNode originType = getOriginalDeclarationType(leftExpression);
                 typeCheckAssignment(expression, leftExpression, originType, rightExpression, resultType);
-                // if assignment succeeds but result type is not a subtype of original type, then we are in a special cast handling
-                // and we must update the result type
-                if (!implementsInterfaceOrIsSubclassOf(getWrapper(resultType), getWrapper(originType))) {
+                // check for implicit conversion like "String a = 123", "int[] b = [1,2,3]", "List c = [].stream()", etc.
+                if (!implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(resultType), wrapTypeIfNecessary(originType))) {
                     resultType = originType;
-                } else if (lType.isUsingGenerics() && !lType.isEnum() && GenericsUtils.hasUnresolvedGenerics(resultType)) {
-                    // for example, LHS is List<ConcreteClass> and RHS is List<T> where T is a placeholder
-                    resultType = lType;
+                } else if (isPrimitiveType(originType) && resultType.equals(getWrapper(originType))) {
+                    resultType = originType; // retain primitive semantics
                 } else {
                     // GROOVY-7549: RHS type may not be accessible to enclosing class
                     int modifiers = resultType.getModifiers();
@@ -856,12 +850,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             && !getOutermost(enclosingType).equals(getOutermost(resultType))
                             && (Modifier.isPrivate(modifiers) || !Objects.equals(enclosingType.getPackageName(), resultType.getPackageName()))) {
                         resultType = originType; // TODO: Find accesible type in hierarchy of resultType?
+                    } else if (GenericsUtils.hasUnresolvedGenerics(resultType)) {// GROOVY-9033, GROOVY-10089, et al.
+                        Map<GenericsTypeName, GenericsType> enclosing = extractGenericsParameterMapOfThis(typeCheckingContext);
+                        resultType = fullyResolveType(resultType, Optional.ofNullable(enclosing).orElseGet(Collections::emptyMap));
                     }
-                }
-
-                // make sure we keep primitive types
-                if (isPrimitiveType(originType) && resultType.equals(getWrapper(originType))) {
-                    resultType = originType;
                 }
 
                 // track conditional assignment
@@ -900,6 +892,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
 
             validateResourceInARM(expression, resultType);
+
+            // GROOVY-5874: if left expression is a closure shared variable, a second pass should be done
+            if (leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).isClosureSharedVariable()) {
+                typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<>(expression));
+            }
         } finally {
             typeCheckingContext.popEnclosingBinaryExpression();
         }

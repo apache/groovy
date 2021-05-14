@@ -1062,6 +1062,60 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-5655
+    void testByteArrayInference() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == byte_TYPE.makeArray()
+            })
+            def b = "foo".bytes
+            new String(b)
+        '''
+    }
+
+    // GROOVY-
+    void testGetAnnotationFails() {
+        assertScript '''
+            import groovy.transform.*
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target([ElementType.FIELD])
+            @interface Ann1 {}
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target([ElementType.FIELD])
+            @interface Ann2 {}
+
+            class A {
+                @Ann2
+                String field
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                lookup('second').each {
+                  assert it.expression.getNodeMetaData(INFERRED_TYPE).name == 'Ann2'
+                }
+            })
+            def doit(obj, String propName) {
+                def field = obj.getClass().getDeclaredField(propName)
+                if (field) {
+                    @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                        assert node.getNodeMetaData(INFERRED_TYPE).name == 'Ann1'
+                    })
+                    def annotation = field.getAnnotation Ann1
+                    if(true) {
+                        second: annotation = field.getAnnotation Ann2
+                    }
+                    return annotation
+                }
+                return null
+            }
+
+            assert Ann2.isAssignableFrom(doit(new A(), "field").class)
+        '''
+    }
+
     // GROOVY-9077
     void testInferredTypeForPropertyThatResolvesToMethod() {
         assertScript '''
@@ -1092,6 +1146,29 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
 
             meth()
+        '''
+    }
+
+    // GROOVY-10089
+    void testInferredTypeForMapOfList() {
+        assertScript '''
+            void test(... attributes) {
+                List one = [
+                    [id:'x', options:[count:1]]
+                ]
+                List two = attributes.collect {
+                    def node = Collections.singletonMap('children', one)
+                    if (node) {
+                        node = node.get('children').find { child -> child['id'] == 'x' }
+                    }
+                    // inferred type of node must be something like Map<String,List<...>>
+
+                    [id: it['id'], name: node['name'], count: node['options']['count']]
+                    //                                        ^^^^^^^^^^^^^^^ GroovyCastException (map ctor for Collection)
+                }
+            }
+
+            test( [id:'x'] )
         '''
     }
 }

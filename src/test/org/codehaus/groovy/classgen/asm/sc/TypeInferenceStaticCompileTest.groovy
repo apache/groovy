@@ -21,73 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc
 import groovy.transform.stc.TypeInferenceSTCTest
 
 /**
- * Unit tests for static type checking : type inference.
+ * Unit tests for static compilation : type inference.
  */
 class TypeInferenceStaticCompileTest extends TypeInferenceSTCTest implements StaticCompilationTestSupport {
-
-    // GROOVY-5655
-    void testByteArrayInference() {
-        assertScript '''
-                @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                    assert node.getNodeMetaData(INFERRED_TYPE) == byte_TYPE.makeArray()
-                })
-                def b = "foo".bytes
-                new String(b)
-            '''
-    }
-
-    @Override
-    void testShouldNotThrowIncompatibleArgToFunVerifyError() {
-        try {
-            super.testShouldNotThrowIncompatibleArgToFunVerifyError()
-        } finally {
-//            println astTrees
-        }
-    }
-
-    // GROOVY-
-    void testGetAnnotationFail() {
-            assertScript '''import groovy.transform.*
-    import java.lang.annotation.ElementType;
-    import java.lang.annotation.Retention;
-    import java.lang.annotation.RetentionPolicy;
-    import java.lang.annotation.Target;
-
-            @Retention(RetentionPolicy.RUNTIME)
-            @Target([ElementType.FIELD])
-            @interface Ann1 {}
-            @Retention(RetentionPolicy.RUNTIME)
-            @Target([ElementType.FIELD])
-            @interface Ann2 {}
-
-            class A {
-                @Ann2
-                String field
-            }
-
-                @ASTTest(phase=INSTRUCTION_SELECTION,value={
-                    lookup('second').each {
-                      assert it.expression.getNodeMetaData(INFERRED_TYPE).name == 'Ann2'
-                    }
-                })
-                def doit(obj, String propName) {
-                def field = obj.getClass().getDeclaredField propName
-                println field
-                if(field) {
-                    @ASTTest(phase=INSTRUCTION_SELECTION,value={
-                        assert node.getNodeMetaData(INFERRED_TYPE).name == 'Ann1'
-                    })
-                    def annotation = field.getAnnotation Ann1
-                    if(true) {
-                        second: annotation = field.getAnnotation Ann2
-                    }
-                    return annotation
-                }
-                return null
-            }
-
-            assert Ann2.isAssignableFrom (doit(new A(), "field").class)
-            '''
-    }
 }
-

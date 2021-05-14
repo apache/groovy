@@ -16,23 +16,25 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
-import groovy.transform.stc.StaticTypeCheckingTestCase
-import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.Test
 
-class Groovy6782Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+import static groovy.test.GroovyAssert.assertScript
 
+final class Groovy6782 {
+    @Test
     void testFlowTypingBreaksSubscriptOperator() {
-            assertScript '''String[] array = [123]
-def tokens = array
-def t = tokens[0]
-tokens = [:]    // if this line is removed, compiles fine
+        assertScript '''
+            @groovy.transform.CompileStatic
+            void test() {
+                String[] array = [123]
+                def temp = array
+                def x = temp[0]
+
+                temp = [:] // if this line is removed, compiles fine
+            }
+            test()
         '''
     }
-
 }
