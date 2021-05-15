@@ -696,25 +696,18 @@ public abstract class StaticTypeCheckingSupport {
             }
         }
 
-        // if rightExpression is null and leftExpression is not a primitive type, it's ok
         boolean rightExpressionIsNull = isNullConstant(rightExpression);
         if (rightExpressionIsNull && !isPrimitiveType(left)) {
             return true;
         }
 
-        // anything can be assigned to an Object, String, Boolean or Class typed variable
+        // anything can be assigned to an Object, String, [Bb]oolean or Class receiver; except null to boolean
         if (isWildcardLeftHandSide(left) && !(leftRedirect == boolean_TYPE && rightExpressionIsNull)) return true;
 
-        // char as left expression
-        if (leftRedirect == char_TYPE) {
-            if (rightRedirect == Character_TYPE) return true;
-            if (rightRedirect == STRING_TYPE && rightExpression instanceof ConstantExpression) {
-                String value = rightExpression.getText();
-                return value.length() == 1;
-            }
-        }
-        if (leftRedirect == Character_TYPE && (rightRedirect == STRING_TYPE || rightExpressionIsNull)) {
-            return rightExpressionIsNull || (rightExpression instanceof ConstantExpression && rightExpression.getText().length() == 1);
+        if (leftRedirect == char_TYPE && rightRedirect == Character_TYPE) return true;
+        if (leftRedirect == Character_TYPE && rightRedirect == char_TYPE) return true;
+        if ((leftRedirect == char_TYPE || leftRedirect == Character_TYPE) && rightRedirect == STRING_TYPE) {
+            return rightExpression instanceof ConstantExpression && rightExpression.getText().length() == 1;
         }
 
         // if left is an enum and right is String or GString we do valueOf

@@ -224,6 +224,33 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10087
+    void testImplicitReturnToWrapper() {
+        assertScript '''
+            Integer foo() {
+                int x = 42
+                return x
+            }
+            assert foo().intValue() == 42
+        '''
+
+        assertScript '''
+            Long foo() {
+                long x = 42L
+                return x
+            }
+            assert foo().longValue() == 42L
+        '''
+
+        assertScript '''
+            Character foo() {
+                char x = 'x'
+                return x
+            }
+            assert foo().charValue() == 'x'
+        '''
+    }
+
     // GROOVY-5835
     void testReturnInClosureShouldNotBeConsideredAsReturnOfEnclosingMethod() {
         assertScript '''
