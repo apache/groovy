@@ -850,7 +850,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             && !getOutermost(enclosingType).equals(getOutermost(resultType))
                             && (Modifier.isPrivate(modifiers) || !Objects.equals(enclosingType.getPackageName(), resultType.getPackageName()))) {
                         resultType = originType; // TODO: Find accesible type in hierarchy of resultType?
-                    } else if (GenericsUtils.hasUnresolvedGenerics(resultType)) {// GROOVY-9033, GROOVY-10089, et al.
+                    } else if (GenericsUtils.hasUnresolvedGenerics(resultType)) { // GROOVY-9033, GROOVY-10089, et al.
                         Map<GenericsTypeName, GenericsType> enclosing = extractGenericsParameterMapOfThis(typeCheckingContext);
                         resultType = fullyResolveType(resultType, Optional.ofNullable(enclosing).orElseGet(Collections::emptyMap));
                     }
@@ -2174,11 +2174,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             type = getType(expression);
         }
         if (typeCheckingContext.getEnclosingClosure() != null) {
+            ClassNode inferredReturnType = getInferredReturnType(typeCheckingContext.getEnclosingClosure().getClosureExpression());
             // GROOVY-9995: return ctor call with diamond operator
             if (expression instanceof ConstructorCallExpression) {
-                ClassNode inferredClosureReturnType = getInferredReturnType(typeCheckingContext.getEnclosingClosure().getClosureExpression());
-                if (inferredClosureReturnType == null) inferredClosureReturnType = DYNAMIC_TYPE; // GROOVY-10080
-                inferDiamondType((ConstructorCallExpression) expression, inferredClosureReturnType);
+                inferDiamondType((ConstructorCallExpression) expression, inferredReturnType != null ? inferredReturnType : /*GROOVY-10080:*/DYNAMIC_TYPE);
+            }
+            if (STRING_TYPE.equals(inferredReturnType) && isGStringOrGStringStringLUB(type)) {
+                type = STRING_TYPE; // GROOVY-9971: convert GString to String at point of return
+            } else if (inferredReturnType != null && !inferredReturnType.isGenericsPlaceHolder()
+                    && !type.isUsingGenerics() && !type.equals(inferredReturnType) && (inferredReturnType.isInterface()
+                            ? type.implementsInterface(inferredReturnType) : type.isDerivedFrom(inferredReturnType))) {
+                type = inferredReturnType; // GROOVY-10082: allow simple covariance
             }
             return type;
         }
@@ -2212,14 +2218,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void addClosureReturnType(final ClassNode returnType) {
-        TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
-        if (isGStringOrGStringStringLUB(returnType)
-                && STRING_TYPE.equals(getInferredReturnType(enclosingClosure.getClosureExpression()))) {
-            // GROOVY-9971: convert GString to String at the point of return
-            enclosingClosure.addReturnType(STRING_TYPE);
-        } else if (!VOID_TYPE.equals(returnType)) {
-            enclosingClosure.addReturnType(returnType);
-        }
+        if (returnType != null && !returnType.equals(VOID_TYPE)) // GROOVY-8202
+            typeCheckingContext.getEnclosingClosure().addReturnType(returnType);
     }
 
     @Override

@@ -160,8 +160,21 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-8427
+    // GROOVY-10082
     void testClosureReturnTypeInference6() {
+        assertScript '''
+            class A {}
+            class B extends A {}
+            Closure<A> c = { -> new B() } // Cannot assign Closure<B> to Closure<A>
+
+            def result = c()
+            assert result instanceof A
+            assert result instanceof B
+        '''
+    }
+
+    // GROOVY-8427
+    void testClosureReturnTypeInference7() {
         assertScript '''
             import java.util.function.Consumer
 
@@ -183,7 +196,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8202
-    void testClosureReturnTypeInference7() {
+    void testClosureReturnTypeInference8() {
         assertScript '''
             void proc() {
             }
