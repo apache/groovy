@@ -76,6 +76,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperBoolean;
 import static org.codehaus.groovy.transform.trait.SuperCallTraitTransformer.UNRESOLVED_HELPER_CLASS;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -423,7 +424,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             getter.setSynthetic(true);
             cNode.addMethod(getter);
 
-            if (node.getGetterName() == null && getterName.startsWith("get") && (isPrimitiveBoolean(node.getType()) || node.getType().equals(ClassHelper.Boolean_TYPE))) {
+            if (node.getGetterName() == null && getterName.startsWith("get") && (isPrimitiveBoolean(node.getType()) || isWrapperBoolean(node.getType()))) {
                 MethodNode secondGetter = new MethodNode("is" + capitalize(name), propNodeModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
                 if (methodNeedsReplacement(cNode, secondGetter)) {
                     secondGetter.setSynthetic(true);

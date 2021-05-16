@@ -66,10 +66,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.codehaus.groovy.ast.ClassHelper.Character_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
@@ -85,6 +83,8 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.applyGenericsContextTo
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isStringType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperCharacter;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.BINARY_EXP_TARGET;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.COMPONENT_TYPE;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.DYNAMIC_OUTER_NODE_CALLBACK;
@@ -458,7 +458,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
             ClassNode forLoopVariableType = statement.getVariableType();
             ClassNode collectionType = getType(collectionExpression);
             ClassNode componentType;
-            if (Character_TYPE.equals(ClassHelper.getWrapper(forLoopVariableType)) && STRING_TYPE.equals(collectionType)) {
+            if (isWrapperCharacter(ClassHelper.getWrapper(forLoopVariableType)) && isStringType(collectionType)) {
                 // we allow auto-coercion here
                 componentType = forLoopVariableType;
             } else {

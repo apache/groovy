@@ -38,6 +38,7 @@ import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 import java.util.List;
 
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperInteger;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
@@ -94,7 +95,7 @@ public class MethodCallExpressionTransformer {
                             // workaround for generated code in enums which use .next() returning a Number
                             indexType = ClassHelper.Integer_TYPE;
                         }
-                        if (argType != null && ClassHelper.Integer_TYPE.equals(indexType)) {
+                        if (argType != null && isWrapperInteger(indexType)) {
                             BinaryExpression binaryExpression = new BinaryExpression(
                                     objectExpression,
                                     Token.newSymbol("[", indexExpr.getLineNumber(), indexExpr.getColumnNumber()),

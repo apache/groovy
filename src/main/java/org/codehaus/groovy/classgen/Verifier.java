@@ -114,9 +114,11 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.addMethodGenerics;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.PropertyNodeUtils.adjustPropertyModifiersForMethod;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperBoolean;
 
 /**
  * Verifies the AST node and adds any default AST code before bytecode generation occurs.
@@ -196,7 +198,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             return ret;
         }
         ClassNode current = node;
-        while (!(current.equals(ClassHelper.OBJECT_TYPE))) {
+        while (!(isObjectType(current))) {
             current = current.getSuperClass();
             if (current == null) break;
             ret = current.getDeclaredField("metaClass");
@@ -647,10 +649,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             Parameter[] params = node.getParameters();
             if (params.length == 1) {
                 Parameter param = params[0];
-                if (param.getType() == null || param.getType().equals(ClassHelper.OBJECT_TYPE)) {
+                if (param.getType() == null || isObjectType(param.getType())) {
                     param.setType(ClassHelper.STRING_TYPE.makeArray());
                     ClassNode returnType = node.getReturnType();
-                    if (returnType.equals(ClassHelper.OBJECT_TYPE)) {
+                    if (isObjectType(returnType)) {
                         node.setReturnType(ClassHelper.VOID_TYPE);
                     }
                 }
@@ -718,7 +720,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (getterBlock != null) {
             visitGetter(node, field, getterBlock, getterModifiers, getterName);
 
-            if (node.getGetterName() == null && getterName.startsWith("get") && (isPrimitiveBoolean(node.getType()) || node.getType().equals(ClassHelper.Boolean_TYPE))) {
+            if (node.getGetterName() == null && getterName.startsWith("get") && (isPrimitiveBoolean(node.getType()) || isWrapperBoolean(node.getType()))) {
                 String altGetterName = "is" + capitalize(name);
                 MethodNode altGetter = classNode.getGetterMethod(altGetterName, !node.isStatic());
                 if (methodNeedsReplacement(altGetter)) {

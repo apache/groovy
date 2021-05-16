@@ -80,6 +80,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PROTECTED;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -184,7 +185,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             BlockStatement initBody = new BlockStatement();
             Parameter initParam = param(GenericsUtils.nonGeneric(cNode), "other");
             final Expression other = varX(initParam);
-            boolean hasParent = !cNode.getSuperClass().equals(ClassHelper.OBJECT_TYPE);
+            boolean hasParent = !isObjectType(cNode.getSuperClass());
             if (hasParent) {
                 initBody.addStatement(stmt(ctorX(ClassNode.SUPER, other)));
             }
@@ -244,7 +245,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
     private static void addSimpleCloneHelperMethod(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
         Parameter methodParam = new Parameter(GenericsUtils.nonGeneric(cNode), "other");
         final Expression other = varX(methodParam);
-        boolean hasParent = !cNode.getSuperClass().equals(ClassHelper.OBJECT_TYPE);
+        boolean hasParent = !isObjectType(cNode.getSuperClass());
         BlockStatement methodBody = new BlockStatement();
         if (hasParent) {
             methodBody.addStatement(stmt(callSuperX("cloneOrCopyMembers", args(other))));

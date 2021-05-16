@@ -33,6 +33,7 @@ import org.objectweb.asm.MethodVisitor;
 import java.lang.reflect.Modifier;
 
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveByte;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveChar;
@@ -464,7 +465,7 @@ public class BytecodeHelper {
     }
 
     public static void doCast(MethodVisitor mv, ClassNode type) {
-        if (type.equals(ClassHelper.OBJECT_TYPE)) return;
+        if (isObjectType(type)) return;
         if (isPrimitiveType(type) && !isPrimitiveVoid(type)) {
             unbox(mv, type);
         } else {

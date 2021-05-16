@@ -33,6 +33,8 @@ import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 import java.util.List;
 
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
+
 /**
  * This transformer focuses on ranges to produce optimized bytecode.
  */
@@ -45,7 +47,7 @@ public class RangeExpressionTransformer {
         ConstructorNode target = null;
         for (ConstructorNode constructor : declaredConstructors) {
             final Parameter[] parameters = constructor.getParameters();
-            if (parameters.length==3 && ClassHelper.boolean_TYPE.equals(parameters[0].getOriginType())) {
+            if (parameters.length==3 && isPrimitiveBoolean(parameters[0].getOriginType())) {
                 target = constructor;
                 break;
             }

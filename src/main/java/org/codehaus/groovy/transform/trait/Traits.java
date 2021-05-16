@@ -47,6 +47,8 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isClassType;
+
 /**
  * A collection of utility methods used to deal with traits.
  *
@@ -108,7 +110,7 @@ public abstract class Traits {
     }
 
     private static ClassNode unwrapOwner(ClassNode owner) {
-        if (ClassHelper.CLASS_Type.equals(owner) && owner.getGenericsTypes()!=null && owner.getGenericsTypes().length==1) {
+        if (isClassType(owner) && owner.getGenericsTypes() != null && owner.getGenericsTypes().length == 1) {
             return owner.getGenericsTypes()[0].getType();
         }
         return owner;

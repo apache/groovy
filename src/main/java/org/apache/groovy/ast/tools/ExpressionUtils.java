@@ -35,6 +35,14 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isStringType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperByte;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperCharacter;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperDouble;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperFloat;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperInteger;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperLong;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperShort;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
 import static org.codehaus.groovy.syntax.Types.BITWISE_OR;
 import static org.codehaus.groovy.syntax.Types.BITWISE_XOR;
@@ -126,22 +134,22 @@ public final class ExpressionUtils {
                             break;
                     }
                     if (result != null) {
-                        if (ClassHelper.Byte_TYPE.equals(wrapperType)) {
+                        if (isWrapperByte(wrapperType)) {
                             return configure(be, new ConstantExpression(result.byteValue(), true));
                         }
-                        if (ClassHelper.Short_TYPE.equals(wrapperType)) {
+                        if (isWrapperShort(wrapperType)) {
                             return configure(be, new ConstantExpression(result.shortValue(), true));
                         }
-                        if (ClassHelper.Long_TYPE.equals(wrapperType)) {
+                        if (isWrapperLong(wrapperType)) {
                             return configure(be, new ConstantExpression(result.longValue(), true));
                         }
-                        if (ClassHelper.Integer_TYPE.equals(wrapperType) || ClassHelper.Character_TYPE.equals(wrapperType)) {
+                        if (isWrapperInteger(wrapperType) || isWrapperCharacter(wrapperType)) {
                             return configure(be, new ConstantExpression(result.intValue(), true));
                         }
-                        if (ClassHelper.Float_TYPE.equals(wrapperType)) {
+                        if (isWrapperFloat(wrapperType)) {
                             return configure(be, new ConstantExpression(result.floatValue(), true));
                         }
-                        if (ClassHelper.Double_TYPE.equals(wrapperType)) {
+                        if (isWrapperDouble(wrapperType)) {
                             return configure(be, new ConstantExpression(result.doubleValue(), true));
                         }
                         return configure(be, new ConstantExpression(result, true));
@@ -312,7 +320,7 @@ public final class ExpressionUtils {
             Expression lhs = transformInlineConstants(be.getLeftExpression());
             Expression rhs = transformInlineConstants(be.getRightExpression());
             if (be.getOperation().getType() == PLUS && lhs instanceof ConstantExpression && rhs instanceof ConstantExpression &&
-                    lhs.getType().equals(ClassHelper.STRING_TYPE) && rhs.getType().equals(ClassHelper.STRING_TYPE)) {
+                    isStringType(lhs.getType()) && isStringType(rhs.getType())) {
                 // GROOVY-9855: inline string concat
                 return configure(be, new ConstantExpression(lhs.getText() + rhs.getText()));
             }

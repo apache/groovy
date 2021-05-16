@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_ANNOTATION;
@@ -914,7 +915,7 @@ public class ClassNode extends AnnotatedNode {
         if (isPrimitiveVoid(this)) {
             return isPrimitiveVoid(type);
         }
-        if (type.equals(ClassHelper.OBJECT_TYPE)) {
+        if (isObjectType(type)) {
             return true;
         }
         ClassNode node = this;

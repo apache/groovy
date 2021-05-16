@@ -96,7 +96,7 @@ public class MethodNodeUtils {
                     }
                     break;
                 case 'i':
-                    if (name.charAt(1) == 's' && mNode.getParameters().length == 0 && (isPrimitiveBoolean(mNode.getReturnType()) /*|| mNode.getReturnType().equals(ClassHelper.Boolean_TYPE)*/)) {
+                    if (name.charAt(1) == 's' && mNode.getParameters().length == 0 && (isPrimitiveBoolean(mNode.getReturnType()) /*|| isWrapperBoolean(mNode.getReturnType())*/)) {
                         return decapitalize(name.substring(2));
                     }
                     break;

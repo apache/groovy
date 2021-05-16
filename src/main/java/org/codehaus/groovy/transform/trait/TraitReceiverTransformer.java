@@ -58,6 +58,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isClassType;
 
 /**
  * This expression transformer is used internally by the {@link org.codehaus.groovy.transform.trait.TraitASTTransformation
@@ -258,7 +259,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
     private static FieldNode tryGetFieldNode(final ClassNode weavedType, final String fieldName) {
         FieldNode fn = weavedType.getDeclaredField(fieldName);
-        if (fn == null && ClassHelper.CLASS_Type.equals(weavedType)) {
+        if (fn == null && isClassType(weavedType)) {
             GenericsType[] genericsTypes = weavedType.getGenericsTypes();
             if (genericsTypes != null && genericsTypes.length == 1) {
                 // for static properties
@@ -393,6 +394,6 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
     }
 
     private Expression createFieldHelperReceiver() {
-        return weaved.getOriginType().equals(ClassHelper.CLASS_Type) ? weaved : castX(fieldHelper, weaved);
+        return isClassType(weaved.getOriginType()) ? weaved : castX(fieldHelper, weaved);
     }
 }

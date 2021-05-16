@@ -28,6 +28,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isGroovyObjectType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
+
 /**
  * This class is used to describe generic type signatures for ClassNodes.
  *
@@ -269,7 +272,7 @@ public class GenericsType extends ASTNode {
                 || type.implementsInterface(superOrInterface)) {
             return true;
         }
-        if (ClassHelper.GROOVY_OBJECT_TYPE.equals(superOrInterface) && type.getCompileUnit() != null) {
+        if (isGroovyObjectType(superOrInterface) && type.getCompileUnit() != null) {
             // type is being compiled so it will implement GroovyObject later
             return true;
         }
@@ -355,7 +358,7 @@ public class GenericsType extends ASTNode {
                     return true;
                 }
             }
-            if (classNode.equals(ClassHelper.OBJECT_TYPE)) {
+            if (isObjectType(classNode)) {
                 return false;
             }
             ClassNode superClass = classNode.getUnresolvedSuperClass();

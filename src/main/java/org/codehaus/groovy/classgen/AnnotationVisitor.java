@@ -43,6 +43,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isClassType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isStringType;
 
 /**
  * An Annotation visitor responsible for:
@@ -184,9 +186,9 @@ public class AnnotationVisitor {
             }
         } else if (ClassHelper.isPrimitiveType(attrType)) {
             visitConstantExpression(attrName, getConstantExpression(attrExp, attrType), ClassHelper.getWrapper(attrType));
-        } else if (ClassHelper.STRING_TYPE.equals(attrType)) {
+        } else if (isStringType(attrType)) {
             visitConstantExpression(attrName, getConstantExpression(attrExp, attrType), ClassHelper.STRING_TYPE);
-        } else if (ClassHelper.CLASS_Type.equals(attrType)) {
+        } else if (isClassType(attrType)) {
             if (!(attrExp instanceof ClassExpression || attrExp instanceof ClosureExpression)) {
                 addError("Only classes and closures can be used for attribute '" + attrName + "'", attrExp);
             }
@@ -211,8 +213,8 @@ public class AnnotationVisitor {
         if (attrType.isArray()) {
             checkReturnType(attrType.getComponentType(), node);
         } else if (ClassHelper.isPrimitiveType(attrType)) {
-        } else if (ClassHelper.STRING_TYPE.equals(attrType)) {
-        } else if (ClassHelper.CLASS_Type.equals(attrType)) {
+        } else if (isStringType(attrType)) {
+        } else if (isClassType(attrType)) {
         } else if (attrType.isDerivedFrom(ClassHelper.Enum_Type)) {
         } else if (isValidAnnotationClass(attrType)) {
         } else {

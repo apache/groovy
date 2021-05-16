@@ -71,6 +71,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveByte;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveChar;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
@@ -78,6 +79,13 @@ import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveFloat;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveInt;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveShort;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isStringType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperByte;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperDouble;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperFloat;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperInteger;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperLong;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperShort;
 
 /**
  * Helper for {@link ClassNode} and classes handling them.  Contains a set of
@@ -388,7 +396,7 @@ public class ClassHelper {
                 isPrimitiveFloat(cn) ||
                 isPrimitiveLong(cn) ||
                 isPrimitiveDouble(cn) ||
-                cn.equals(STRING_TYPE) ||
+                isStringType(cn) ||
                 // the next items require conversion to int when initializing
                 isPrimitiveByte(cn) ||
                 isPrimitiveChar(cn) ||
@@ -397,12 +405,12 @@ public class ClassHelper {
 
     public static boolean isNumberType(ClassNode cn) {
         cn = cn.redirect();
-        return cn.equals(Byte_TYPE) ||
-                cn.equals(Short_TYPE) ||
-                cn.equals(Integer_TYPE) ||
-                cn.equals(Long_TYPE) ||
-                cn.equals(Float_TYPE) ||
-                cn.equals(Double_TYPE) ||
+        return isWrapperByte(cn) ||
+                isWrapperShort(cn) ||
+                isWrapperInteger(cn) ||
+                isWrapperLong(cn) ||
+                isWrapperFloat(cn) ||
+                isWrapperDouble(cn) ||
                 isPrimitiveByte(cn) ||
                 isPrimitiveShort(cn) ||
                 isPrimitiveInt(cn) ||
@@ -468,7 +476,7 @@ public class ClassHelper {
                 if (!Modifier.isAbstract(mi.getModifiers())) continue;
                 // ignore trait methods which have a default implementation
                 if (Traits.hasDefaultImplementation(mi)) continue;
-                if (mi.getDeclaringClass().equals(OBJECT_TYPE)) continue;
+                if (isObjectType(mi.getDeclaringClass())) continue;
                 if (OBJECT_TYPE.getDeclaredMethod(mi.getName(), mi.getParameters()) != null) continue;
 
                 // we have two methods, so no SAM
@@ -496,7 +504,7 @@ public class ClassHelper {
         int asp = found.getModifiers() & ABSTRACT_STATIC_PRIVATE;
         int visible = found.getModifiers() & VISIBILITY;
         if (visible != 0 && asp == 0) return true;
-        if (c.equals(OBJECT_TYPE)) return false;
+        if (isObjectType(c)) return false;
         return hasUsableImplementation(c.getSuperClass(), m);
     }
 

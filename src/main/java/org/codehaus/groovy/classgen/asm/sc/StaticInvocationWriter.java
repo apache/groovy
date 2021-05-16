@@ -84,7 +84,10 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isGStringType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isStringType;
 import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
@@ -438,7 +441,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         if (lastPrmType.isArray() && (nArgs > nPrms || nArgs == nPrms - 1
                 || (nArgs == nPrms && !lastArgType.isArray()
                     && (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(lastArgType, lastPrmType.getComponentType())
-                        || ClassHelper.GSTRING_TYPE.equals(lastArgType) && ClassHelper.STRING_TYPE.equals(lastPrmType.getComponentType())))
+                        || isGStringType(lastArgType) && isStringType(lastPrmType.getComponentType())))
         )) {
             OperandStack operandStack = controller.getOperandStack();
             int stackLength = operandStack.getStackLength() + nArgs;
@@ -705,7 +708,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             if (visitor instanceof AsmClassGenerator) {
                 ClassNode topOperand = controller.getOperandStack().getTopOperand();
                 ClassNode type = getType();
-                if (ClassHelper.GSTRING_TYPE.equals(topOperand) && ClassHelper.STRING_TYPE.equals(type)) {
+                if (isGStringType(topOperand) && isStringType(type)) {
                     // perform regular type conversion
                     controller.getOperandStack().doGroovyCast(type);
                     return;
@@ -740,12 +743,12 @@ public class StaticInvocationWriter extends InvocationWriter {
                             && type.getClass() != DecompiledClassNode.class) {
                         type = declaringClass; // ex: LUB type
                     }
-                    if (ClassHelper.OBJECT_TYPE.equals(declaringClass)) {
+                    if (isObjectType(declaringClass)) {
                         // checkcast not necessary because Object never evolves
                         // and it prevents a potential ClassCastException if the
                         // delegate of a closure is changed in a SC closure
                         type = ClassHelper.OBJECT_TYPE;
-                    } else if (ClassHelper.OBJECT_TYPE.equals(type)) {
+                    } else if (isObjectType(type)) {
                         // can happen for compiler rewritten code, where type information is missing
                         type = declaringClass;
                     }

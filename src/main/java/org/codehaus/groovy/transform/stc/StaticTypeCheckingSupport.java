@@ -77,9 +77,7 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.BigInteger_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.Boolean_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Byte_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.CLASS_Type;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.COLLECTION_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Character_TYPE;
@@ -112,7 +110,14 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isBigDecimalType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isClassType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isGStringType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isGroovyObjectType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isStringType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperBoolean;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuietly;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
@@ -327,7 +332,7 @@ public abstract class StaticTypeCheckingSupport {
         }
         if (clazz.isArray()) {
             ClassNode componentClass = clazz.getComponentType();
-            if (!componentClass.equals(OBJECT_TYPE) && !isPrimitiveType(componentClass)) {
+            if (!isObjectType(componentClass) && !isPrimitiveType(componentClass)) {
                 if (componentClass.isInterface()) {
                     findDGMMethodsForClassNode(loader, OBJECT_TYPE.makeArray(), name, accumulator);
                 } else {
@@ -337,7 +342,7 @@ public abstract class StaticTypeCheckingSupport {
         }
         if (clazz.getSuperClass() != null) {
             findDGMMethodsForClassNode(loader, clazz.getSuperClass(), name, accumulator);
-        } else if (!clazz.equals(OBJECT_TYPE)) {
+        } else if (!isObjectType(clazz)) {
             findDGMMethodsForClassNode(loader, OBJECT_TYPE, name, accumulator);
         }
     }
@@ -459,10 +464,10 @@ public abstract class StaticTypeCheckingSupport {
         if (type.isArray() && toBeAssignedTo.isArray()) {
             return isAssignableTo(type.getComponentType(), toBeAssignedTo.getComponentType());
         }
-        if (type.isDerivedFrom(GSTRING_TYPE) && STRING_TYPE.equals(toBeAssignedTo)) {
+        if (type.isDerivedFrom(GSTRING_TYPE) && isStringType(toBeAssignedTo)) {
             return true;
         }
-        if (STRING_TYPE.equals(type) && toBeAssignedTo.isDerivedFrom(GSTRING_TYPE)) {
+        if (isStringType(type) && toBeAssignedTo.isDerivedFrom(GSTRING_TYPE)) {
             return true;
         }
         if (implementsInterfaceOrIsSubclassOf(type, toBeAssignedTo)) {
@@ -675,7 +680,7 @@ public abstract class StaticTypeCheckingSupport {
             }
             if (GeneralUtils.isOrImplements(right, BaseStream_TYPE)) {
                 GenericsType elementType = GenericsUtils.parameterizeType(right, BaseStream_TYPE).getGenericsTypes()[0];
-                return OBJECT_TYPE.equals(left.getComponentType()) // Object[] can accept any stream API element type(s)
+                return isObjectType(left.getComponentType()) // Object[] can accept any stream API element type(s)
                     || (elementType.getLowerBound() == null && isCovariant(extractType(elementType), getWrapper(left.getComponentType())));
             }
         }
@@ -733,11 +738,11 @@ public abstract class StaticTypeCheckingSupport {
         if (isNumberType(leftRedirect) && isNumberType(rightRedirect)) return true;
 
         // left is a float/double and right is a BigDecimal
-        if (WideningCategories.isFloatingCategory(leftRedirect) && BigDecimal_TYPE.equals(rightRedirect)) {
+        if (WideningCategories.isFloatingCategory(leftRedirect) && isBigDecimalType(rightRedirect)) {
             return true;
         }
 
-        if (GROOVY_OBJECT_TYPE.equals(leftRedirect) && isBeingCompiled(right)) {
+        if (isGroovyObjectType(leftRedirect) && isBeingCompiled(right)) {
             return true;
         }
 
@@ -759,11 +764,11 @@ public abstract class StaticTypeCheckingSupport {
      * @return true if it's an Object, String, boolean, Boolean or Class.
      */
     public static boolean isWildcardLeftHandSide(final ClassNode node) {
-        return (OBJECT_TYPE.equals(node)
-                || STRING_TYPE.equals(node)
+        return (isObjectType(node)
+                || isStringType(node)
                 || isPrimitiveBoolean(node)
-                || Boolean_TYPE.equals(node)
-                || CLASS_Type.equals(node));
+                || isWrapperBoolean(node)
+                || isClassType(node));
     }
 
     public static boolean isBeingCompiled(final ClassNode node) {
@@ -899,7 +904,7 @@ public abstract class StaticTypeCheckingSupport {
         if (type.isArray() && superOrInterface.isArray()) {
             return implementsInterfaceOrIsSubclassOf(type.getComponentType(), superOrInterface.getComponentType());
         }
-        if (GROOVY_OBJECT_TYPE.equals(superOrInterface) && !type.isInterface() && isBeingCompiled(type)) {
+        if (isGroovyObjectType(superOrInterface) && !type.isInterface() && isBeingCompiled(type)) {
             return true;
         }
         return false;
@@ -948,7 +953,7 @@ public abstract class StaticTypeCheckingSupport {
         while (cn != null && !cn.equals(compare)) {
             cn = cn.getSuperClass();
             dist += 1;
-            if (OBJECT_TYPE.equals(cn))
+            if (isObjectType(cn))
                 dist += 1;
             dist = (dist + 1) << 1;
         }
@@ -1399,8 +1404,8 @@ public abstract class StaticTypeCheckingSupport {
         }
 
         if (receiver.isUsingGenerics()
-                && receiver.equals(CLASS_Type)
-                && !candidateMethod.getDeclaringClass().equals(CLASS_Type)) {
+                && isClassType(receiver)
+                && !isClassType(candidateMethod.getDeclaringClass())) {
             return typeCheckMethodsWithGenerics(receiver.getGenericsTypes()[0].getType(), argumentTypes, candidateMethod);
         }
 
@@ -1966,7 +1971,7 @@ public abstract class StaticTypeCheckingSupport {
         if (gt.isWildcard() && gt.getLowerBound() == null) {
             ClassNode[] upperBounds = gt.getUpperBounds();
             return (upperBounds == null || upperBounds.length == 0 || (upperBounds.length == 1
-                    && upperBounds[0].equals(OBJECT_TYPE) && !upperBounds[0].isGenericsPlaceHolder()));
+                    && isObjectType(upperBounds[0]) && !upperBounds[0].isGenericsPlaceHolder()));
         }
         return false;
     }
@@ -2077,7 +2082,7 @@ public abstract class StaticTypeCheckingSupport {
      * @return true if the class node is either a GString or the LUB of String and GString.
      */
     public static boolean isGStringOrGStringStringLUB(final ClassNode node) {
-        return GSTRING_TYPE.equals(node) || GSTRING_STRING_CLASSNODE.equals(node);
+        return isGStringType(node) || GSTRING_STRING_CLASSNODE.equals(node);
     }
 
     /**
@@ -2197,7 +2202,7 @@ public abstract class StaticTypeCheckingSupport {
      */
     public static boolean isClassClassNodeWrappingConcreteType(final ClassNode classNode) {
         GenericsType[] genericsTypes = classNode.getGenericsTypes();
-        return CLASS_Type.equals(classNode)
+        return isClassType(classNode)
                 && classNode.isUsingGenerics()
                 && genericsTypes != null
                 && !genericsTypes[0].isPlaceholder()

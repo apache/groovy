@@ -45,6 +45,7 @@ import java.lang.invoke.MethodType;
 
 import static org.codehaus.groovy.classgen.asm.BytecodeHelper.getTypeDescription;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperBoolean;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.CAST;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.GET;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.INIT;
@@ -195,7 +196,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
     public void coerce(ClassNode from, ClassNode target) {
         ClassNode wrapper = ClassHelper.getWrapper(target);
         makeIndyCall(invokeMethod, EmptyExpression.INSTANCE, false, false, "asType", new ClassExpression(wrapper));
-        if (isPrimitiveBoolean(target) || ClassHelper.Boolean_TYPE.equals(target)) {
+        if (isPrimitiveBoolean(target) || isWrapperBoolean(target)) {
             writeIndyCast(ClassHelper.OBJECT_TYPE,target);
         } else {
             BytecodeHelper.doCast(controller.getMethodVisitor(), wrapper);

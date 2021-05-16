@@ -57,6 +57,8 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersEqual;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isGroovyObjectType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
 
 /**
@@ -172,7 +174,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
             while (!interfaces.isEmpty()) {
                 ClassNode origInterface = interfaces.remove(0);
                 // ignore java.lang.Object; also methods added by Verifier for GroovyObject are already good enough
-                if (!origInterface.equals(ClassHelper.OBJECT_TYPE) && !origInterface.equals(ClassHelper.GROOVY_OBJECT_TYPE)) {
+                if (!isObjectType(origInterface) && !isGroovyObjectType(origInterface)) {
                     updatedGenericsSpec = createGenericsSpec(origInterface, updatedGenericsSpec);
                     ClassNode correctedInterface = correctToGenericsSpecRecurse(updatedGenericsSpec, origInterface);
                     for (MethodNode nextMethod : correctedInterface.getMethods()) {
@@ -197,7 +199,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
         }
 
         // GROOVY-9816: remove entries for to-be-generated property access and mutate methods
-        for (ClassNode cn = cNode; cn != null && !cn.equals(ClassHelper.OBJECT_TYPE); cn = cn.getSuperClass()) {
+        for (ClassNode cn = cNode; cn != null && !isObjectType(cn); cn = cn.getSuperClass()) {
             for (PropertyNode pn : cn.getProperties()) {
                 if (!pn.getField().isFinal()) {
                     result.remove(pn.getSetterNameOrDefault() + ":" + pn.getType().getText() + ",");

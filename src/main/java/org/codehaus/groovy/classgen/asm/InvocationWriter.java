@@ -57,7 +57,10 @@ import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.codehaus.groovy.ast.ClassHelper.isFunctionalInterface;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isClassType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isStringType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -180,7 +183,7 @@ public class InvocationWriter {
 
         int stackLen = operandStack.getStackLength();
         String owner = BytecodeHelper.getClassInternalName(declaringClass);
-        if (opcode == INVOKEVIRTUAL && declaringClass.equals(ClassHelper.OBJECT_TYPE)) {
+        if (opcode == INVOKEVIRTUAL && isObjectType(declaringClass)) {
             // avoid using a narrowed type if the method is defined on object because it can interfere
             // with delegate type inference in static compilation mode and trigger a ClassCastException
             receiverType = declaringClass;
@@ -430,7 +433,7 @@ public class InvocationWriter {
         String methodName = null;
         if (message instanceof CastExpression) {
             CastExpression msg = (CastExpression) message;
-            if (msg.getType().equals(ClassHelper.STRING_TYPE)) {
+            if (isStringType(msg.getType())) {
                 final Expression methodExpr = msg.getExpression();
                 if (methodExpr instanceof ConstantExpression) {
                     methodName = methodExpr.getText();
@@ -863,9 +866,9 @@ public class InvocationWriter {
         ClassNode boxedType = os.box();
         if (WideningCategories.implementsInterfaceOrSubclassOf(boxedType, targetType)) return;
         MethodVisitor mv = controller.getMethodVisitor();
-        if (ClassHelper.CLASS_Type.equals(targetType)) {
+        if (isClassType(targetType)) {
             castToClassMethod.call(mv);
-        } else if (ClassHelper.STRING_TYPE.equals(targetType)) {
+        } else if (isStringType(targetType)) {
             castToStringMethod.call(mv);
         } else if (targetType.isDerivedFrom(ClassHelper.Enum_Type)) {
             (new ClassExpression(targetType)).visit(controller.getAcg());

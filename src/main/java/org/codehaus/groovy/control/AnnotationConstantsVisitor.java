@@ -33,6 +33,14 @@ import org.codehaus.groovy.classgen.Verifier;
 import java.math.BigDecimal;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isBigDecimalType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isStringType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperByte;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperCharacter;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperDouble;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperFloat;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperInteger;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperShort;
 
 /**
  * Visitor to resolve constants in annotation definitions.
@@ -94,28 +102,28 @@ public class AnnotationConstantsVisitor extends ClassCodeVisitorSupport {
 
     private static Expression revertType(Expression val, ClassNode returnWrapperType) {
         ConstantExpression ce = (ConstantExpression) val;
-        if (ClassHelper.Character_TYPE.equals(returnWrapperType) && ClassHelper.STRING_TYPE.equals(val.getType())) {
+        if (isWrapperCharacter(returnWrapperType) && isStringType(val.getType())) {
             return configure(val, Verifier.transformToPrimitiveConstantIfPossible((ConstantExpression) val));
         }
         ClassNode valWrapperType = ClassHelper.getWrapper(val.getType());
-        if (ClassHelper.Integer_TYPE.equals(valWrapperType)) {
+        if (isWrapperInteger(valWrapperType)) {
             Integer i = (Integer) ce.getValue();
-            if (ClassHelper.Character_TYPE.equals(returnWrapperType)) {
+            if (isWrapperCharacter(returnWrapperType)) {
                 return configure(val, new ConstantExpression((char) i.intValue(), true));
             }
-            if (ClassHelper.Short_TYPE.equals(returnWrapperType)) {
+            if (isWrapperShort(returnWrapperType)) {
                 return configure(val, new ConstantExpression(i.shortValue(), true));
             }
-            if (ClassHelper.Byte_TYPE.equals(returnWrapperType)) {
+            if (isWrapperByte(returnWrapperType)) {
                 return configure(val, new ConstantExpression(i.byteValue(), true));
             }
         }
-        if (ClassHelper.BigDecimal_TYPE.equals(valWrapperType)) {
+        if (isBigDecimalType(valWrapperType)) {
             BigDecimal bd = (BigDecimal) ce.getValue();
-            if (ClassHelper.Float_TYPE.equals(returnWrapperType)) {
+            if (isWrapperFloat(returnWrapperType)) {
                 return configure(val, new ConstantExpression(bd.floatValue(), true));
             }
-            if (ClassHelper.Double_TYPE.equals(returnWrapperType)) {
+            if (isWrapperDouble(returnWrapperType)) {
                 return configure(val, new ConstantExpression(bd.doubleValue(), true));
             }
         }

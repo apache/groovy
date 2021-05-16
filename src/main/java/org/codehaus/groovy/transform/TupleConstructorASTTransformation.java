@@ -78,6 +78,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 import static org.codehaus.groovy.transform.ImmutableASTTransformation.makeImmutable;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
@@ -272,7 +273,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         // or if there is already a @MapConstructor annotation
         if (!params.isEmpty() && defaults && !hasMapCons && specialNamedArgCase) {
             ClassNode firstParamType = params.get(0).getType();
-            if (params.size() > 1 || firstParamType.equals(ClassHelper.OBJECT_TYPE)) {
+            if (params.size() > 1 || isObjectType(firstParamType)) {
                 String message = "The class " + cNode.getName() + " was incorrectly initialized via the map constructor with null.";
                 addSpecialMapConstructors(modifiers, cNode, message, false);
             }

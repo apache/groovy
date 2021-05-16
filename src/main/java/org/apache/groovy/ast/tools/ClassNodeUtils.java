@@ -19,7 +19,6 @@
 package org.apache.groovy.ast.tools;
 
 import org.apache.groovy.util.BeanUtils;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -49,6 +48,7 @@ import java.util.function.Predicate;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.isGenerated;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
 import static org.codehaus.groovy.runtime.ArrayTypeUtils.dimension;
 import static org.codehaus.groovy.runtime.ArrayTypeUtils.elementType;
@@ -211,7 +211,7 @@ public class ClassNodeUtils {
     public static void addDeclaredMethodsFromAllInterfaces(final ClassNode cNode, final Map<String, MethodNode> methodsMap) {
         List<?> cnInterfaces = Arrays.asList(cNode.getInterfaces());
         ClassNode parent = cNode.getSuperClass();
-        while (parent != null && !parent.equals(ClassHelper.OBJECT_TYPE)) {
+        while (parent != null && !isObjectType(parent)) {
             ClassNode[] interfaces = parent.getInterfaces();
             for (ClassNode iface : interfaces) {
                 if (!cnInterfaces.contains(iface)) {

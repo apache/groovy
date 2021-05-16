@@ -43,6 +43,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 
 public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
 
@@ -108,7 +109,7 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
 
     protected static int getObjectDistance(ClassNode cn) {
         int count = 0;
-        while (cn != null && !cn.equals(ClassHelper.OBJECT_TYPE)) {
+        while (cn != null && !isObjectType(cn)) {
             cn = cn.getSuperClass();
             count += 1;
         }

@@ -80,6 +80,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.isIntCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
 import static org.codehaus.groovy.classgen.asm.BinaryExpressionMultiTypeDispatcher.typeMap;
 import static org.codehaus.groovy.classgen.asm.BinaryExpressionMultiTypeDispatcher.typeMapKeyNames;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isBigDecimalType;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.GETSTATIC;
@@ -867,7 +868,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             if (op != Types.DIVIDE && op != Types.DIVIDE_EQUAL) return null;
 
             ClassNode originalResultType = typeChooser.resolveType(binExp, node);
-            if (!originalResultType.equals(BigDecimal_TYPE)
+            if (!isBigDecimalType(originalResultType)
                     || !(isLongCategory(assignmentTartgetType) || isFloatingCategory(assignmentTartgetType))) {
                 return null;
             }

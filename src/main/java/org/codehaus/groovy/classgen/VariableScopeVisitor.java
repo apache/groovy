@@ -58,6 +58,7 @@ import java.util.function.BiConsumer;
 import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isStatic;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 
 /**
  * Initializes the variable scopes for an AST.
@@ -169,7 +170,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     private Variable findClassMember(final ClassNode node, final String name) {
         final boolean abstractType = node.isAbstract();
 
-        for (ClassNode cn = node; cn != null && !cn.equals(ClassHelper.OBJECT_TYPE); cn = cn.getSuperClass()) {
+        for (ClassNode cn = node; cn != null && !isObjectType(cn); cn = cn.getSuperClass()) {
             if (cn.isScript()) {
                 return new DynamicVariable(name, false);
             }

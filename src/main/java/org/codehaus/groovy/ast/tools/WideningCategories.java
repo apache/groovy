@@ -36,8 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.BigInteger_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Number_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
@@ -45,6 +43,9 @@ import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.isNumberType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isBigDecimalType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isBigIntegerType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveByte;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveChar;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
@@ -149,7 +150,7 @@ public class WideningCategories {
      * long category or a BigInteger.
      */
     public static boolean isBigIntCategory(ClassNode type) {
-        return type.equals(BigInteger_TYPE) || isLongCategory(type);
+        return isBigIntegerType(type) || isLongCategory(type);
     }
 
     /**
@@ -157,7 +158,7 @@ public class WideningCategories {
      * BigInteger category or a BigDecimal.
      */
     public static boolean isBigDecCategory(ClassNode type) {
-        return type.equals(BigDecimal_TYPE) || isBigIntCategory(type);
+        return isBigDecimalType(type) || isBigIntCategory(type);
     }
 
     /**
@@ -334,7 +335,7 @@ public class WideningCategories {
         if (a.isArray() && b.isArray()) {
             return lowestUpperBound(a.getComponentType(), b.getComponentType(), interfacesImplementedByA, interfacesImplementedByB).makeArray();
         }
-        if (a.equals(OBJECT_TYPE) || b.equals(OBJECT_TYPE)) {
+        if (isObjectType(a) || isObjectType(b)) {
             // one of the objects is at the top of the hierarchy
             GenericsType[] gta = a.getGenericsTypes();
             GenericsType[] gtb = b.getGenericsTypes();
@@ -613,7 +614,7 @@ public class WideningCategories {
             this.interfaces = interfaces;
             boolean usesGenerics;
             Arrays.sort(interfaces, CLASS_NODE_COMPARATOR);
-            compileTimeClassNode = upper.equals(OBJECT_TYPE) && interfaces.length>0?interfaces[0]:upper;
+            compileTimeClassNode = isObjectType(upper) && interfaces.length > 0 ? interfaces[0] : upper;
             this.name = name;
             usesGenerics = upper.isUsingGenerics();
             List<GenericsType[]> genericsTypesList = new LinkedList<>();
@@ -637,7 +638,7 @@ public class WideningCategories {
                 setGenericsTypes(asArrayList.toArray(GenericsType.EMPTY_ARRAY));
             }
             StringBuilder sb = new StringBuilder();
-            if (!upper.equals(OBJECT_TYPE)) sb.append(upper.getName());
+            if (!isObjectType(upper)) sb.append(upper.getName());
             for (ClassNode anInterface : interfaces) {
                 if (sb.length()>0) {
                     sb.append(" or ");
@@ -676,7 +677,7 @@ public class WideningCategories {
         @Override
         public GenericsType asGenericsType() {
             ClassNode[] ubs;
-            if (upper.equals(OBJECT_TYPE)) {
+            if (isObjectType(upper)) {
                 ubs = interfaces; // Object is implicit
             } else {
                 ubs = new ClassNode[interfaces.length + 1]; ubs[0] = upper;

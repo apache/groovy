@@ -42,6 +42,7 @@ import java.util.function.Function;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isClassType;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
@@ -109,7 +110,7 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
                                     new ClassExpression(helperType),
                                     setterName,
                                     new ArgumentListExpression(
-                                            parameters[0].getType().equals(ClassHelper.CLASS_Type)
+                                            isClassType(parameters[0].getType())
                                                 ? thisPropX(false, "class") : varX("this"),
                                             bin.getRightExpression()
                                     )
@@ -148,7 +149,7 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
                             new ClassExpression(helperType),
                             methodNode.getName(),
                             new ArgumentListExpression(
-                                    methodNode.getParameters()[0].getType().equals(ClassHelper.CLASS_Type)
+                                    isClassType(methodNode.getParameters()[0].getType())
                                         ? thisPropX(false, "class") : varX("this")
                             )
                     );
@@ -191,7 +192,7 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
 
             List<MethodNode> targets = helperType.getMethods(exp.getMethodAsString());
             boolean isStatic = !targets.isEmpty() && targets.stream().map(MethodNode::getParameters)
-                .allMatch(params -> params.length > 0 && params[0].getType().equals(ClassHelper.CLASS_Type));
+                .allMatch(params -> params.length > 0 && isClassType(params[0].getType()));
 
             ArgumentListExpression newArgs = new ArgumentListExpression(
                     isStatic ? thisPropX(false, "class") : varX("this"));
@@ -254,7 +255,7 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
     private static boolean isSelfType(final Parameter parameter, final ClassNode traitType) {
         ClassNode paramType = parameter.getType();
         if (paramType.equals(traitType)) return true;
-        return paramType.equals(ClassHelper.CLASS_Type)
+        return isClassType(paramType)
                 && paramType.getGenericsTypes() != null
                 && paramType.getGenericsTypes()[0].getType().equals(traitType);
     }

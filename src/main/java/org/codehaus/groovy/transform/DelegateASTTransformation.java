@@ -67,6 +67,8 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isGroovyObjectType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -136,7 +138,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         }
 
         if (delegate != null) {
-            if (delegate.type.equals(ClassHelper.OBJECT_TYPE) || delegate.type.equals(ClassHelper.GROOVY_OBJECT_TYPE)) {
+            if (isObjectType(delegate.type) || isGroovyObjectType(delegate.type)) {
                 addError(MY_TYPE_NAME + " " + delegate.origin + " '" + delegate.name + "' has an inappropriate type: " + delegate.type.getName() +
                         ". Please add an explicit type but not java.lang.Object or groovy.lang.GroovyObject.", parent);
                 return;

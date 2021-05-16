@@ -41,7 +41,9 @@ import java.lang.reflect.Modifier;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperBoolean;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.GOTO;
@@ -116,7 +118,7 @@ public class BooleanExpressionTransformer {
                     os.doGroovyCast(ClassHelper.boolean_TYPE);
                     return;
                 }
-                if (type.equals(ClassHelper.Boolean_TYPE)) {
+                if (isWrapperBoolean(type)) {
                     MethodVisitor mv = controller.getMethodVisitor();
                     expression.visit(visitor);
                     Label unbox = new Label();
@@ -154,7 +156,7 @@ public class BooleanExpressionTransformer {
                     if (node instanceof ExtensionMethodNode) {
                         MethodNode dgmNode = ((ExtensionMethodNode) node).getExtensionMethodNode();
                         ClassNode owner = dgmNode.getParameters()[0].getType();
-                        if (ClassHelper.OBJECT_TYPE.equals(owner)) {
+                        if (isObjectType(owner)) {
                             // we may inline a var!=null check instead of calling a helper method iff
                             // (1) the class doesn't define an asBoolean method (already tested)
                             // (2) no subclass defines an asBoolean method

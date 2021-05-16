@@ -51,6 +51,7 @@ import java.util.Map;
 import static groovy.transform.Undefined.isUndefined;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFieldNames;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperNonPropertyFields;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 
 public abstract class AbstractASTTransformation implements ASTTransformation, ErrorCollecting {
     public static final ClassNode RETENTION_CLASSNODE = ClassHelper.makeWithoutCaching(Retention.class);
@@ -280,7 +281,7 @@ public abstract class AbstractASTTransformation implements ASTTransformation, Er
                 Map updatedGenericsSpec = new HashMap(genericsSpec);
                 while (!remaining.isEmpty()) {
                     ClassNode next = remaining.remove(0);
-                    if (!next.equals(ClassHelper.OBJECT_TYPE)) {
+                    if (!isObjectType(next)) {
                         updatedGenericsSpec = GenericsUtils.createGenericsSpec(next, updatedGenericsSpec);
                         for (MethodNode mn : next.getMethods()) {
                             MethodNode correctedMethodNode = GenericsUtils.correctToGenericsSpec(updatedGenericsSpec, mn);
@@ -304,7 +305,7 @@ public abstract class AbstractASTTransformation implements ASTTransformation, Er
             Map updatedGenericsSpec = new HashMap(genericsSpec);
             while (!remaining.isEmpty()) {
                 ClassNode next = remaining.remove(0);
-                if (!next.equals(ClassHelper.OBJECT_TYPE)) {
+                if (!isObjectType(next)) {
                     updatedGenericsSpec = GenericsUtils.createGenericsSpec(next, updatedGenericsSpec);
                     for (MethodNode mn : next.getMethods()) {
                         MethodNode correctedMethodNode = GenericsUtils.correctToGenericsSpec(updatedGenericsSpec, mn);

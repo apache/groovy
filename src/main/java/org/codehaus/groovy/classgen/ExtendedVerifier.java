@@ -21,7 +21,6 @@ package org.codehaus.groovy.classgen;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -68,6 +67,7 @@ import static org.codehaus.groovy.ast.AnnotationNode.TYPE_USE_TARGET;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.evaluateExpression;
 
 /**
@@ -411,7 +411,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             List<ClassNode> ifaces = new ArrayList<>(Arrays.asList(next.getInterfaces()));
             while (!ifaces.isEmpty()) {
                 ClassNode origInterface = ifaces.remove(0);
-                if (!origInterface.equals(ClassHelper.OBJECT_TYPE)) {
+                if (!isObjectType(origInterface)) {
                     genericsSpec = createGenericsSpec(origInterface, genericsSpec);
                     ClassNode iNode = correctToGenericsSpecRecurse(genericsSpec, origInterface);
                     MethodNode found2 = getDeclaredMethodCorrected(genericsSpec, mn, iNode);

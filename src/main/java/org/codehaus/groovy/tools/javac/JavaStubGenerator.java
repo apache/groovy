@@ -79,6 +79,7 @@ import java.util.stream.Stream;
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isClassType;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveByte;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveChar;
@@ -88,6 +89,7 @@ import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveInt;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveShort;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isStringType;
 
 public class JavaStubGenerator {
     private final boolean java5;
@@ -395,7 +397,7 @@ public class JavaStubGenerator {
                 if (params.length == 0 && name.equals("values")) continue;
                 if (params.length == 1
                         && name.equals("valueOf")
-                        && params[0].getType().equals(ClassHelper.STRING_TYPE)) {
+                        && isStringType(params[0].getType())) {
                     continue;
                 }
             }
@@ -744,7 +746,7 @@ public class JavaStubGenerator {
                     Expression re = es.getExpression();
                     out.print(" default ");
                     ClassNode rt = methodNode.getReturnType();
-                    boolean classReturn = ClassHelper.CLASS_Type.equals(rt) || (rt.isArray() && ClassHelper.CLASS_Type.equals(rt.getComponentType()));
+                    boolean classReturn = isClassType(rt) || (rt.isArray() && isClassType(rt.getComponentType()));
                     if (re instanceof ListExpression) {
                         out.print("{ ");
                         ListExpression le = (ListExpression) re;

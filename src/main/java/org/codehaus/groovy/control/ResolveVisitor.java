@@ -84,6 +84,7 @@ import java.util.function.Predicate;
 
 import static groovy.lang.Tuple.tuple;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 
 /**
  * Visitor to resolve Types and convert VariableExpression to
@@ -423,7 +424,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // GROOVY-9243
         toResolveFurther = false;
         if (typeName.indexOf('.') == -1) {
-            for (ClassNode cn = currentClass; cn != null && !cn.equals(ClassHelper.OBJECT_TYPE); cn = cn.getSuperClass()) {
+            for (ClassNode cn = currentClass; cn != null && !isObjectType(cn); cn = cn.getSuperClass()) {
                 ConstructedOuterNestedClassNode constructedOuterNestedClassNode =
                         tryToConstructOuterNestedClassNodeForBaseType(compileUnit, typeName, cn, setRedirectListener);
                 if (constructedOuterNestedClassNode != null) {
@@ -522,7 +523,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         ClassNode cn = currentClass;
         Set<ClassNode> cycleCheck = new HashSet<>();
         // GROOVY-4043: for type "X", try "A$X" with each type in the class hierarchy (except for Object)
-        for (; cn != null && cycleCheck.add(cn) && !cn.equals(ClassHelper.OBJECT_TYPE); cn = cn.getSuperClass()) {
+        for (; cn != null && cycleCheck.add(cn) && !isObjectType(cn); cn = cn.getSuperClass()) {
             if (setRedirect(type, cn)) return true;
             // GROOVY-9866: unresolvable interfaces
         }
@@ -1535,7 +1536,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     }
                 }
             }
-            if (parentToCompare.equals(ClassHelper.OBJECT_TYPE)) return;
+            if (isObjectType(parentToCompare)) return;
             checkCyclicInheritance(originalNode, parentToCompare.getUnresolvedSuperClass(), null);
         } else {
             if (interfacesToCompare != null && interfacesToCompare.length > 0) {

@@ -129,6 +129,7 @@ import java.util.Optional;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
@@ -137,6 +138,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isClassType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveByte;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveChar;
@@ -145,6 +148,7 @@ import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveFloat;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveInt;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveShort;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isStringType;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PROPERTY_OWNER;
 import static org.objectweb.asm.Opcodes.AASTORE;
 import static org.objectweb.asm.Opcodes.ACC_ENUM;
@@ -569,7 +573,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 mv.visitInsn(RETURN);
             } else {
                 ClassNode type = node.getReturnType();
-                if (ClassHelper.isPrimitiveType(type)) {
+                if (isPrimitiveType(type)) {
                     mv.visitLdcInsn(Integer.valueOf(0));
                     controller.getOperandStack().push(ClassHelper.int_TYPE);
                     controller.getOperandStack().doGroovyCast(type);
@@ -616,10 +620,10 @@ public class AsmClassGenerator extends ClassGenerator {
             } else {
                 visitAnnotationDefaultExpression(avl, componentType, exp);
             }
-        } else if (ClassHelper.isPrimitiveType(type) || type.equals(ClassHelper.STRING_TYPE)) {
+        } else if (isPrimitiveType(type) || isStringType(type)) {
             ConstantExpression constExp = (ConstantExpression) exp;
             av.visit(null, constExp.getValue());
-        } else if (ClassHelper.CLASS_Type.equals(type)) {
+        } else if (isClassType(type)) {
             ClassNode clazz = exp.getType();
             Type t = Type.getType(BytecodeHelper.getTypeDescription(clazz));
             av.visit(null, t);
@@ -910,16 +914,16 @@ public class AsmClassGenerator extends ClassGenerator {
         ClassNode type = castExpression.getType();
         Expression subExpression = castExpression.getExpression();
         subExpression.visit(this);
-        if (ClassHelper.OBJECT_TYPE.equals(type)) return;
+        if (isObjectType(type)) return;
         if (castExpression.isCoerce()) {
             controller.getOperandStack().doAsType(type);
         } else {
-            if (ExpressionUtils.isNullConstant(subExpression) && !ClassHelper.isPrimitiveType(type)) {
+            if (ExpressionUtils.isNullConstant(subExpression) && !isPrimitiveType(type)) {
                 controller.getOperandStack().replace(type);
             } else {
                 ClassNode subExprType = controller.getTypeChooser().resolveType(subExpression, controller.getClassNode());
                 if (castExpression.isStrict() ||
-                        (!ClassHelper.isPrimitiveType(type) && WideningCategories.implementsInterfaceOrSubclassOf(subExprType, type))) {
+                        (!isPrimitiveType(type) && WideningCategories.implementsInterfaceOrSubclassOf(subExprType, type))) {
                     BytecodeHelper.doCast(controller.getMethodVisitor(), type);
                     controller.getOperandStack().replace(type);
                 } else {
@@ -1175,7 +1179,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (objectExpression instanceof ClassExpression) return false;
 
         ClassNode objectExpressionType = controller.getTypeChooser().resolveType(objectExpression, controller.getClassNode());
-        if (objectExpressionType.equals(ClassHelper.OBJECT_TYPE)) objectExpressionType = objectExpression.getType();
+        if (isObjectType(objectExpressionType)) objectExpressionType = objectExpression.getType();
         return objectExpressionType.isDerivedFromGroovyObject();
     }
 
@@ -1438,7 +1442,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (controller.isInGeneratedFunction() && !controller.getCompileStack().isImplicitThis()) {
             mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "getThisObject", "()Ljava/lang/Object;", false);
             ClassNode expectedType = controller.getTypeChooser().resolveType(thisOrSuper, controller.getOutermostClass());
-            if (!ClassHelper.OBJECT_TYPE.equals(expectedType) && !ClassHelper.isPrimitiveType(expectedType)) {
+            if (!isObjectType(expectedType) && !isPrimitiveType(expectedType)) {
                 BytecodeHelper.doCast(mv, expectedType);
                 controller.getOperandStack().push(expectedType);
             } else {
@@ -1484,7 +1488,7 @@ public class AsmClassGenerator extends ClassGenerator {
             // generate a field node
             FieldNode fn = controller.getClassNode().getDeclaredField(staticFieldName);
             if (fn != null) {
-                boolean type = fn.getType().equals(ClassHelper.CLASS_Type);
+                boolean type = isClassType(fn.getType());
                 boolean modifiers = fn.getModifiers() == ACC_STATIC + ACC_SYNTHETIC;
                 if (!type || !modifiers) {
                     String text = "";
@@ -1714,7 +1718,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         int storeIns = AASTORE;
         if (!elementType.isArray() || expression.hasInitializer()) {
-            if (ClassHelper.isPrimitiveType(elementType)) {
+            if (isPrimitiveType(elementType)) {
                 int primType = 0;
                 if (isPrimitiveBoolean(elementType)) {
                     primType = T_BOOLEAN;
