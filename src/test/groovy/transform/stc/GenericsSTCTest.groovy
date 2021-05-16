@@ -18,7 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.test.NotYetImplemented
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 
 /**
@@ -799,7 +798,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-9983
+    // GROOVY-9983
     void testDiamondInferrenceFromConstructor14() {
         String types = '''
             @groovy.transform.TupleConstructor(defaults=false)
@@ -839,10 +838,10 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             C.m(new A<>(new Object()))
             C.m(true ? new A<>(new B()) : new A<>(new Object()))
         ''',
-        'Cannot assign A <java.lang.Object> to: A <B>',
-        'Cannot assign A <? extends java.lang.Object> to: A <B>',
-        'Cannot call C#m(A <B>) with arguments [A <java.lang.Object>]',
-        'Cannot call C#m(A <B>) with arguments [A <? extends java.lang.Object>]'
+        'Cannot assign A<java.lang.Object> to: A<B>',
+        'Cannot assign A<? extends java.lang.Object> to: A<B>',
+        'Cannot call C#m(A<B>) with arguments [A<java.lang.Object>]',
+        'Cannot call C#m(A<B>) with arguments [A<? extends java.lang.Object>]'
     }
 
     // GROOVY-9995

@@ -1080,7 +1080,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 type = inferReturnTypeGenerics(type, constructor, argumentList);
                 if (type.isUsingGenerics()) {
                     // GROOVY-6232, GROOVY-9956: if cce not assignment compatible, process target as additional type witness
-                    if (checkCompatibleAssignmentTypes(lType, type, cce) && !GenericsUtils.buildWildcardType(lType).isCompatibleWith(type)) {
+                    if (GenericsUtils.hasUnresolvedGenerics(type) || checkCompatibleAssignmentTypes(lType, type, cce)
+                            && !GenericsUtils.buildWildcardType(lType).isCompatibleWith(type)) {
                         // allow covariance of each type parameter, but maintain semantics for nested generics
 
                         ClassNode pType = GenericsUtils.parameterizeType(lType, type);
@@ -5422,6 +5423,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 actuals[i] = getLiteralResultType(pt, at, LinkedHashMap_TYPE);
             } else if (a instanceof ConstructorCallExpression) {
                 inferDiamondType((ConstructorCallExpression) a, pt); // GROOVY-10086
+            } else if (a instanceof TernaryExpression && at.isUsingGenerics() && at.getGenericsTypes().length == 0) {
+                // GROOVY-9983: double diamond scenario -- "m(flag ? new Type<>(...) : new Type<>(...))"
+                typeCheckingContext.pushEnclosingBinaryExpression(assignX(varX(p), a, a));
+                a.visit(this); // re-visit with target type witness
+                typeCheckingContext.popEnclosingBinaryExpression();
+                actuals[i] = getType(a);
             }
 
             // check for method call with known target
