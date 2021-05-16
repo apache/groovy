@@ -37,6 +37,7 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
@@ -101,7 +102,6 @@ import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
-import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.ResolveVisitor;
@@ -212,6 +212,7 @@ import static org.codehaus.groovy.classgen.AsmClassGenerator.MINIMUM_BYTECODE_VE
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isBigDecimalType;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isBigIntegerType;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isClassType;
+import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isDynamicTyped;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isGStringType;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
@@ -231,7 +232,6 @@ import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperFloat;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperInteger;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperLong;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperShort;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperVoid;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
 import static org.codehaus.groovy.syntax.Types.COMPARE_EQUAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_EQUAL;
@@ -1397,7 +1397,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param arguments the constructor arguments
      */
     protected MethodNode checkGroovyStyleConstructor(final ClassNode node, final ClassNode[] arguments, final ASTNode source) {
-        if (isObjectType(node) || TypeUtil.isDynamicTyped(node)) {
+        if (isObjectType(node) || isDynamicTyped(node)) {
             // in that case, we are facing a list constructor assigned to a def or object
             return null;
         }
@@ -1896,14 +1896,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else if (isClosureWithType(lType) && value instanceof ClosureExpression) {
                 storeInferredReturnType(value, getCombinedBoundType(lType.getGenericsTypes()[0]));
             }
+
+            typeCheckingContext.pushEnclosingBinaryExpression(assignX(target, value, position));
+
             value.visit(this);
             ClassNode rType = getType(value);
             if (value instanceof ConstructorCallExpression) {
                 inferDiamondType((ConstructorCallExpression) value, lType);
             }
 
-            BinaryExpression bexp = assignX(target, value, position);
-            typeCheckAssignment(bexp, target, lType, value, getResultType(lType, ASSIGN, rType, bexp));
+            BinaryExpression dummy = typeCheckingContext.popEnclosingBinaryExpression();
+            typeCheckAssignment(dummy, target, lType, value, getResultType(lType, ASSIGN, rType, dummy));
         }
     }
 
@@ -1937,7 +1940,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (!checkCompatibleAssignmentTypes(forLoopVariableType, componentType)) {
                 addStaticTypeError("Cannot loop with element of type " + prettyPrintType(forLoopVariableType) + " with collection of type " + prettyPrintType(collectionType), forLoop);
             }
-            if (!TypeUtil.isDynamicTyped(forLoopVariableType)) {
+            if (!isDynamicTyped(forLoopVariableType)) {
                 // user has specified a type, prefer it over the inferred type
                 componentType = forLoopVariableType;
             }
@@ -2212,9 +2215,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
         if (enclosingMethod != null && !enclosingMethod.isVoidMethod()) {
-            if (!isNullConstant(expression)
-                    && !isPrimitiveVoid(type)
-                    && !isWrapperVoid(type)
+            if (!isNullConstant(expression) && !isPrimitiveVoid(getUnwrapper(type))
                     && !checkCompatibleAssignmentTypes(enclosingMethod.getReturnType(), type, null, false)) {
                 if (!extension.handleIncompatibleReturnType(statement, type)) {
                     addStaticTypeError("Cannot return value of type " + prettyPrintType(type) + " on method returning type " + prettyPrintType(enclosingMethod.getReturnType()), expression);
@@ -4214,7 +4215,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         ClassNode resultType;
         if (isNullConstant(trueExpression) && isNullConstant(falseExpression)) { // GROOVY-5523
-            resultType = checkForTargetType(expression, UNKNOWN_PARAMETER_TYPE);
+            resultType = checkForTargetType(trueExpression, UNKNOWN_PARAMETER_TYPE);
         } else if (isNullConstant(trueExpression) || (isEmptyCollection(trueExpression)
                 && isOrImplements(typeOfTrue, typeOfFalse))) { // [] : List/Collection/Iterable
             resultType = wrapTypeIfNecessary(checkForTargetType(falseExpression, typeOfFalse));
@@ -4239,32 +4240,29 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         ClassNode targetType = null;
         MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
-        BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
-        if (enclosingBinaryExpression instanceof DeclarationExpression
-                && isAssignment(enclosingBinaryExpression.getOperation().getType())
-                && isTypeSource(expr, enclosingBinaryExpression.getRightExpression())) {
-            targetType = enclosingBinaryExpression.getLeftExpression().getType();
-        } else if (currentField != null
-                && isTypeSource(expr, currentField.getInitialExpression())) {
-            targetType = currentField.getType();
-        } else if (currentProperty != null
-                && isTypeSource(expr, currentProperty.getInitialExpression())) {
-            targetType = currentProperty.getType();
-        } else if (enclosingMethod != null) {
-            // TODO: try enclosingMethod's code with isTypeSource(expr, ...)
-            targetType = enclosingMethod.getReturnType();
-        } // TODO: closure parameter default expression
+        BinaryExpression enclosingExpression = typeCheckingContext.getEnclosingBinaryExpression();
+        if (enclosingExpression != null
+                && isAssignment(enclosingExpression.getOperation().getType())
+                && isTypeSource(expr, enclosingExpression.getRightExpression())) {
+            targetType = getDeclaredOrInferredType(enclosingExpression.getLeftExpression());
+        } else if (enclosingMethod != null
+                && !enclosingMethod.isVoidMethod()
+                && isTypeSource(expr, enclosingMethod)) {
+             targetType = enclosingMethod.getReturnType();
+        }
+
+        if (targetType == null) return sourceType;
 
         if (expr instanceof ConstructorCallExpression) {
-            if (targetType == null) targetType = sourceType;
             inferDiamondType((ConstructorCallExpression) expr, targetType);
-        } else if (targetType != null && !isPrimitiveType(getUnwrapper(targetType))
+        } else if (!isPrimitiveType(getUnwrapper(targetType))
                 && !isObjectType(targetType) && missesGenericsTypes(sourceType)) {
             // unchecked assignment with ternary/elvis, like "List<T> list = listOfT ?: []"
             // the inferred type is the RHS type "completed" with generics information from LHS
             return GenericsUtils.parameterizeType(targetType, sourceType.getPlainNodeReference());
         }
-        return targetType != null && sourceType == UNKNOWN_PARAMETER_TYPE ? targetType : sourceType;
+
+        return sourceType != UNKNOWN_PARAMETER_TYPE ? sourceType : targetType;
     }
 
     private static boolean isTypeSource(final Expression expr, final Expression right) {
@@ -4273,6 +4271,32 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 || isTypeSource(expr, ((TernaryExpression) right).getFalseExpression());
         }
         return expr == right;
+    }
+
+    private static boolean isTypeSource(final Expression expr, final MethodNode mNode) {
+        boolean[] returned = new boolean[1];
+
+        mNode.getCode().visit(new CodeVisitorSupport() {
+            @Override
+            public void visitReturnStatement(final ReturnStatement returnStatement) {
+                if (isTypeSource(expr, returnStatement.getExpression())) {
+                    returned[0] = true;
+                }
+            }
+            @Override
+            public void visitClosureExpression(final ClosureExpression expression) {
+            }
+        });
+
+        if (!returned[0]) {
+            new ReturnAdder(returnStatement -> {
+                if (isTypeSource(expr, returnStatement.getExpression())) {
+                    returned[0] = true;
+                }
+            }).visitMethod(mNode);
+        }
+
+        return returned[0];
     }
 
     private static boolean isEmptyCollection(final Expression expr) {
@@ -5630,12 +5654,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private static Map<GenericsTypeName, GenericsType> extractPlaceHolders(final MethodNode method, ClassNode receiver, final ClassNode declaringClass) {
-        if (isObjectType(declaringClass)) {
-            Map<GenericsTypeName, GenericsType> resolvedPlaceholders = new HashMap<>();
-            if (method != null) addMethodLevelDeclaredGenerics(method, resolvedPlaceholders);
-            return resolvedPlaceholders;
-        }
-
         Map<GenericsTypeName, GenericsType> resolvedPlaceholders = null;
         if (isPrimitiveType(receiver) && !isPrimitiveType(declaringClass)) {
             receiver = getWrapper(receiver);

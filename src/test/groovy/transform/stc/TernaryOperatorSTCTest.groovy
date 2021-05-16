@@ -19,111 +19,112 @@
 package groovy.transform.stc
 
 /**
- * Unit tests for static type checking : ternary operator tests.
+ * Unit tests for static type checking : ternary operator.
  */
 class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
 
-    void testByteByteTernary() {
+    void testByteByte() {
         assertScript '''
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == byte_TYPE
             })
             def y = true?(byte)1:(byte)0
         '''
     }
-    void testShortShortTernary() {
+
+    void testShortShort() {
         assertScript '''
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == short_TYPE
             })
             def y = true?(short)1:(short)0
         '''
     }
 
-    void testIntIntTernary() {
+    void testIntInt() {
         assertScript '''
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == int_TYPE
             })
             def y = true?1:0
         '''
     }
 
-    void testLongLongTernary() {
+    void testLongLong() {
         assertScript '''
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == long_TYPE
             })
             def y = true?1L:0L
         '''
     }
 
-    void testFloatFloatTernary() {
+    void testFloatFloat() {
         assertScript '''
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == float_TYPE
             })
             def y = true?1f:0f
         '''
     }
 
-    void testDoubleDoubleTernary() {
+    void testDoubleDouble() {
         assertScript '''
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == double_TYPE
             })
             def y = true?1d:0d
         '''
     }
 
-    void testBoolBoolTernary() {
+    void testBoolBool() {
         assertScript '''
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == boolean_TYPE
             })
             def y = true?true:false
         '''
     }
 
-    void testDoubleFloatTernary() {
+    void testDoubleFloat() {
         assertScript '''
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == double_TYPE
             })
             def y = true?1d:1f
         '''
     }
 
-    void testDoubleDoubleTernaryWithBoxedTypes() {
+    void testDoubleDoubleWithBoxedTypes() {
         assertScript '''
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
             })
             def y = true?new Double(1d):new Double(1f)
         '''
     }
 
-    void testDoubleFloatTernaryWithBoxedTypes() {
+    void testDoubleFloatWithBoxedTypes() {
         assertScript '''
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
             })
             def y = true?new Double(1d):new Float(1f)
         '''
     }
 
-    void testDoubleFloatTernaryWithOneBoxedType() {
+    void testDoubleFloatWithOneBoxedType1() {
         assertScript '''
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
             })
             def y = true?1d:new Float(1f)
         '''
     }
 
-    void testDoubleFloatTernaryWithOneBoxedType2() {
+    void testDoubleFloatWithOneBoxedType2() {
         assertScript '''
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == Double_TYPE
             })
             def y = true?new Double(1d):1f
@@ -131,49 +132,56 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5523
-    void testTernaryOperatorWithNull() {
-        assertScript '''File findFile() {
-            String str = ""
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-                assert node.getNodeMetaData(INFERRED_TYPE) == make(File)
-            })
-            File f = str ? new File(str) : null
-        }
+    void testNull1() {
+        assertScript '''
+            def findFile() {
+                String str = ""
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.getNodeMetaData(INFERRED_TYPE) == make(File)
+                })
+                File f = str ? new File(str) : null
+            }
         '''
-        assertScript '''File findFile() {
-            String str = ""
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-                assert node.getNodeMetaData(INFERRED_TYPE) == make(File)
-            })
-            File f = str ? null : new File(str)
-        }
+        assertScript '''
+            def findFile() {
+                String str = ""
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.getNodeMetaData(INFERRED_TYPE) == make(File)
+                })
+                File f = str ? null : new File(str)
+            }
         '''
-        assertScript '''File findFile() {
-            String str = ""
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-                assert node.getNodeMetaData(INFERRED_TYPE) == make(File)
-            })
-            File f = str ? null : null
-        }
+        assertScript '''
+            def findFile() {
+                String str = ""
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.getNodeMetaData(INFERRED_TYPE) == make(File)
+                })
+                File f = str ? null : null
+            }
         '''
     }
-    void testElvisOperatorWithNull() {
-        assertScript '''String findString() {
-            String str = ""
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-                assert node.getNodeMetaData(INFERRED_TYPE) == STRING_TYPE
-            })
-            String f = str ?: null
-        }
+
+    void testNull2() {
+        assertScript '''
+            def test(String str) {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.getNodeMetaData(INFERRED_TYPE) == STRING_TYPE
+                })
+                String s = str ?: null
+            }
+
+            assert test('x') == 'x'
+            assert test('') == null
         '''
     }
 
     // GROOVY-5734
-    void testNullInTernary() {
+    void testNull3() {
         assertScript '''
-            Integer someMethod() { (false) ? null : 8 }
-            assert someMethod() == 8
+            Integer test() { false ? null : 42 }
+
+            assert test() == 42
         '''
     }
 }
-
