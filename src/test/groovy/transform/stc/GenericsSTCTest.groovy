@@ -547,6 +547,95 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9972
+    void testDiamondInferrenceFromConstructor10() {
+        assertScript '''
+            @groovy.transform.TupleConstructor
+            class C<T> {
+                T p
+            }
+            class D {
+                public String f = 'D#f'
+            }
+            C<D> cd = true ? new C<>(new D()) : new C<>(new D())
+            assert cd.p.f.toLowerCase() == 'd#f'
+        '''
+
+        assertScript '''
+            @groovy.transform.TupleConstructor
+            class C<T> {
+                T p
+            }
+            class D {
+                public String f = 'D#f'
+            }
+            boolean b = false
+            C<D> cd = b ? new C<>(new D()) : (b ? new C<>((D) null) : new C<>(new D()))
+            assert cd.p.f.toLowerCase() == 'd#f'
+        '''
+
+        assertScript '''
+            @groovy.transform.TupleConstructor
+            class C {
+                List<D> list
+            }
+            class D {
+            }
+            List test(C... array) {
+                // old code used "List<D> many" as target for guts of closure
+                List<D> many = array.collectMany { it.list ?: [] }
+            }
+            def result = test(new C(), new C(list:[new D()]))
+            assert result.size() == 1
+        '''
+    }
+
+    // GROOVY-9983
+    void testDiamondInferrenceFromConstructor11() {
+        String types = '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class A<T> {
+                T p
+            }
+            class B {
+            }
+            class C {
+                static m(A<B> a_of_b) {
+                }
+            }
+        '''
+
+        assertScript types + '''
+            class E extends B {
+            }
+            boolean flag = true
+
+            A<B> v = new A<>(null)
+            A<B> w = new A<>(new B())
+            A<B> x = new A<>(new E())
+            A<B> y = flag ? new A<>(new B()) : new A<>(new B())
+            A<B> z = flag ? new A<>(new B()) : new A<>(new E())
+
+            C.m(new A<>(null))
+            C.m(new A<>(new B()))
+            C.m(new A<>(new E()))
+            C.m(flag ? new A<>(new B()) : new A<>(new B()))
+            C.m(flag ? new A<>(new B()) : new A<>(new E())) // Cannot call m(A<B>) with arguments [A<? extends B>]
+        '''
+
+        /*shouldFailWithMessages types + '''
+            A<B> x = new A<>(new Object())
+            A<B> y = true ? new A<>(new B()) : new A<>(new Object())
+
+            C.m(new A<>(new Object()))
+            C.m(true ? new A<>(new B()) : new A<>(new Object()))
+        ''',
+        'Cannot assign A<java.lang.Object> to: A<B>',
+        'Cannot assign A<? extends java.lang.Object> to: A<B>',
+        'Cannot call C#m(A<B>) with arguments [A<java.lang.Object>]',
+        'Cannot call C#m(A<B>) with arguments [A<? extends java.lang.Object>]'*/
+    }
+
     // GROOVY-10280
     void testTypeArgumentPropagation() {
         assertScript '''
