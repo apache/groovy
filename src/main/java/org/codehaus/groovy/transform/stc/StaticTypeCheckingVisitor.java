@@ -177,10 +177,33 @@ import static org.codehaus.groovy.ast.ClassHelper.getNextSuperClass;
 import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.isBigDecimalType;
+import static org.codehaus.groovy.ast.ClassHelper.isBigIntegerType;
+import static org.codehaus.groovy.ast.ClassHelper.isClassType;
+import static org.codehaus.groovy.ast.ClassHelper.isDynamicTyped;
 import static org.codehaus.groovy.ast.ClassHelper.isFunctionalInterface;
+import static org.codehaus.groovy.ast.ClassHelper.isGStringType;
 import static org.codehaus.groovy.ast.ClassHelper.isNumberType;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveByte;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveChar;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveDouble;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveFloat;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveInt;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveShort;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.codehaus.groovy.ast.ClassHelper.isSAMType;
+import static org.codehaus.groovy.ast.ClassHelper.isStringType;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperByte;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperCharacter;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperDouble;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperFloat;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperInteger;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperLong;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperShort;
 import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
@@ -209,29 +232,6 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isNumberCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
 import static org.codehaus.groovy.classgen.AsmClassGenerator.MINIMUM_BYTECODE_VERSION;
-import static org.codehaus.groovy.ast.ClassHelper.isBigDecimalType;
-import static org.codehaus.groovy.ast.ClassHelper.isBigIntegerType;
-import static org.codehaus.groovy.ast.ClassHelper.isClassType;
-import static org.codehaus.groovy.ast.ClassHelper.isDynamicTyped;
-import static org.codehaus.groovy.ast.ClassHelper.isGStringType;
-import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveByte;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveChar;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveDouble;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveFloat;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveInt;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveShort;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
-import static org.codehaus.groovy.ast.ClassHelper.isStringType;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperByte;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperCharacter;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperDouble;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperFloat;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperInteger;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperLong;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperShort;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
 import static org.codehaus.groovy.syntax.Types.COMPARE_EQUAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_EQUAL;
@@ -2512,19 +2512,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected void restoreVariableExpressionMetadata(final Map<VariableExpression, Map<StaticTypesMarker, Object>> typesBeforeVisit) {
         if (typesBeforeVisit != null) {
-            for (Map.Entry<VariableExpression, Map<StaticTypesMarker, Object>> entry : typesBeforeVisit.entrySet()) {
+            typesBeforeVisit.forEach((var, map) -> {
                 for (StaticTypesMarker marker : StaticTypesMarker.values()) {
-                    // GROOVY-9344, GROOVY-9516
+                    // GROOVY-9344, GROOVY-9516: keep type
                     if (marker == INFERRED_TYPE) continue;
 
-                    Object value = entry.getValue().get(marker);
+                    Object value = map.get(marker);
                     if (value == null) {
-                        entry.getKey().removeNodeMetaData(marker);
+                        var.removeNodeMetaData(marker);
                     } else {
-                        entry.getKey().putNodeMetaData(marker, value);
+                        var.putNodeMetaData(marker, value);
                     }
                 }
-            }
+                var.removeNodeMetaData(DECLARATION_INFERRED_TYPE); // GROOVY-8946
+            });
         }
     }
 
