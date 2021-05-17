@@ -61,7 +61,7 @@ import static java.lang.reflect.Modifier.isStrict;
 import static java.lang.reflect.Modifier.isSynchronized;
 import static java.lang.reflect.Modifier.isTransient;
 import static java.lang.reflect.Modifier.isVolatile;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_INTERFACE;

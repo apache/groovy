@@ -19,7 +19,6 @@
 package org.codehaus.groovy.tools.groovydoc.testfiles.anno;
 
 
-import org.junit.runners.Parameterized;
 import picocli.CommandLine;
 
 import java.io.Serializable;

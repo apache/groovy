@@ -78,7 +78,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.transform.ImmutableASTTransformation.makeImmutable;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 

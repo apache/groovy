@@ -58,7 +58,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isClassType;
+import static org.codehaus.groovy.ast.ClassHelper.isClassType;
 
 /**
  * This expression transformer is used internally by the {@link org.codehaus.groovy.transform.trait.TraitASTTransformation

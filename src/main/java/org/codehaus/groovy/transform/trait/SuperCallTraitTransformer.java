@@ -42,9 +42,9 @@ import java.util.function.Function;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isClassType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
+import static org.codehaus.groovy.ast.ClassHelper.isClassType;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;

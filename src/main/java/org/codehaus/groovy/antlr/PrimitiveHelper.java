@@ -22,14 +22,14 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveByte;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveChar;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveFloat;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveInt;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveShort;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveByte;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveChar;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveDouble;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveFloat;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveInt;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveShort;
 
 public class PrimitiveHelper {
     private PrimitiveHelper() {

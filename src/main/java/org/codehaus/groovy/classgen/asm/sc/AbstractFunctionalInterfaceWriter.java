@@ -24,7 +24,6 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
-import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
@@ -117,7 +116,7 @@ public interface AbstractFunctionalInterfaceWriter {
         boolean isParameterTypePrimitive = ClassHelper.isPrimitiveType(parameterType);
         boolean isInferredTypePrimitive = ClassHelper.isPrimitiveType(inferredType);
         if (!isParameterTypePrimitive && isInferredTypePrimitive) {
-            if (TypeUtil.isDynamicTyped(parameterType) && ClassHelper.isPrimitiveType(targetType) // (1)
+            if (ClassHelper.isDynamicTyped(parameterType) && ClassHelper.isPrimitiveType(targetType) // (1)
                     || !parameterType.equals(getUnwrapper(parameterType)) && !inferredType.equals(getWrapper(inferredType)) // (2)
             ) {
                 // GROOVY-9790: bootstrap method initialization exception raised when lambda parameter type is wrong

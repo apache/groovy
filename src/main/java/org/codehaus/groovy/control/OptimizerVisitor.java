@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isGroovyObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isGroovyObjectType;
 
 /**
  * Visitor to produce several optimizations:

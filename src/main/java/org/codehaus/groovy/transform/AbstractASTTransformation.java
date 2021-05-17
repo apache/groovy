@@ -51,7 +51,7 @@ import java.util.Map;
 import static groovy.transform.Undefined.isUndefined;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceNonPropertyFieldNames;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSuperNonPropertyFields;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 
 public abstract class AbstractASTTransformation implements ASTTransformation, ErrorCollecting {
     public static final ClassNode RETENTION_CLASSNODE = ClassHelper.makeWithoutCaching(Retention.class);

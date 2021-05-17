@@ -50,8 +50,9 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperBoolean;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_ANNOTATION;
 import static org.objectweb.asm.Opcodes.ACC_ENUM;
@@ -1132,9 +1133,9 @@ public class ClassNode extends AnnotatedNode {
         boolean booleanReturnOnly = getterName.startsWith("is");
         for (MethodNode method : getDeclaredMethods(getterName)) {
             if (getterName.equals(method.getName())
-                    && ClassHelper.VOID_TYPE != method.getReturnType()
+                    && !isPrimitiveVoid(method.getReturnType())
                     && method.getParameters().length == 0
-                    && (!booleanReturnOnly || ClassHelper.Boolean_TYPE.equals(ClassHelper.getWrapper(method.getReturnType())))) {
+                    && (!booleanReturnOnly || isWrapperBoolean(ClassHelper.getWrapper(method.getReturnType())))) {
                 // GROOVY-7363: There can be multiple matches for a getter returning a generic parameter type, due to
                 // the generation of a bridge method. The real getter is really the non-bridge, non-synthetic one as it
                 // has the most specific and exact return type of the two. Picking the bridge method results in loss of
@@ -1163,7 +1164,7 @@ public class ClassNode extends AnnotatedNode {
     public MethodNode getSetterMethod(String setterName, boolean voidOnly) {
         for (MethodNode method : getDeclaredMethods(setterName)) {
             if (setterName.equals(method.getName())
-                    && (!voidOnly || ClassHelper.VOID_TYPE.equals(method.getReturnType()))
+                    && (!voidOnly || isPrimitiveVoid(method.getReturnType()))
                     && method.getParameters().length == 1) {
                 return method;
             }

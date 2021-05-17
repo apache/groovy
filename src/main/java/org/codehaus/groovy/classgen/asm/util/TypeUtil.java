@@ -26,22 +26,6 @@ import org.objectweb.asm.Type;
 
 import java.util.Map;
 
-import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.BigInteger_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.Boolean_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.Byte_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.CLASS_Type;
-import static org.codehaus.groovy.ast.ClassHelper.Character_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.DYNAMIC_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.Double_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.Float_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.GROOVY_OBJECT_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.GSTRING_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.Integer_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.Long_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.Short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
@@ -51,7 +35,6 @@ import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ARETURN;
 import static org.objectweb.asm.Opcodes.DLOAD;
@@ -114,110 +97,6 @@ public abstract class TypeUtil {
 
     public static boolean isPrimitiveType(ClassNode type) {
         return PRIMITIVE_TYPE_TO_DESCRIPTION_MAP.containsKey(type.redirect());
-    }
-
-    public static boolean isDynamicTyped(ClassNode type) {
-        return type != null && DYNAMIC_TYPE == type.redirect();
-    }
-
-    public static boolean isPrimitiveBoolean(ClassNode type) {
-        return type.redirect() == boolean_TYPE;
-    }
-
-    public static boolean isPrimitiveChar(ClassNode type) {
-        return type.redirect() == char_TYPE;
-    }
-
-    public static boolean isPrimitiveByte(ClassNode type) {
-        return type.redirect() == byte_TYPE;
-    }
-
-    public static boolean isPrimitiveInt(ClassNode type) {
-        return type.redirect() == int_TYPE;
-    }
-
-    public static boolean isPrimitiveLong(ClassNode type) {
-        return type.redirect() == long_TYPE;
-    }
-
-    public static boolean isPrimitiveShort(ClassNode type) {
-        return type.redirect() == short_TYPE;
-    }
-
-    public static boolean isPrimitiveDouble(ClassNode type) {
-        return type.redirect() == double_TYPE;
-    }
-
-    public static boolean isPrimitiveFloat(ClassNode type) {
-        return type.redirect() == float_TYPE;
-    }
-
-    public static boolean isPrimitiveVoid(ClassNode type) {
-        return type.redirect() == VOID_TYPE;
-    }
-
-    public static boolean isWrapperBoolean(ClassNode type) {
-        return type != null && type.redirect() == Boolean_TYPE;
-    }
-
-    public static boolean isWrapperCharacter(ClassNode type) {
-        return type != null && type.redirect() == Character_TYPE;
-    }
-
-    public static boolean isWrapperByte(ClassNode type) {
-        return type != null && type.redirect() == Byte_TYPE;
-    }
-
-    public static boolean isWrapperInteger(ClassNode type) {
-        return type != null && type.redirect() == Integer_TYPE;
-    }
-
-    public static boolean isWrapperLong(ClassNode type) {
-        return type != null && type.redirect() == Long_TYPE;
-    }
-
-    public static boolean isWrapperShort(ClassNode type) {
-        return type != null && type.redirect() == Short_TYPE;
-    }
-
-    public static boolean isWrapperDouble(ClassNode type) {
-        return type != null && type.redirect() == Double_TYPE;
-    }
-
-    public static boolean isWrapperFloat(ClassNode type) {
-        return type != null && type.redirect() == Float_TYPE;
-    }
-
-    public static boolean isWrapperVoid(ClassNode type) {
-        return type != null && type.redirect() == void_WRAPPER_TYPE;
-    }
-
-    public static boolean isBigIntegerType(ClassNode type) {
-        return type != null && type.redirect() == BigInteger_TYPE;
-    }
-
-    public static boolean isBigDecimalType(ClassNode type) {
-        return type != null && type.redirect() == BigDecimal_TYPE;
-    }
-
-    public static boolean isStringType(ClassNode type) {
-        return type != null && type.redirect() == STRING_TYPE;
-    }
-
-    public static boolean isGStringType(ClassNode type) {
-        return type != null && type.redirect() == GSTRING_TYPE;
-    }
-
-    public static boolean isObjectType(ClassNode type) {
-        return OBJECT_TYPE.equals(type);
-    }
-
-    public static boolean isGroovyObjectType(ClassNode type) {
-        return GROOVY_OBJECT_TYPE.equals(type);
-    }
-
-    public static boolean isClassType(ClassNode type) {
-        return CLASS_Type.equals(type);
     }
 
     public static String getDescriptionByType(ClassNode type) {

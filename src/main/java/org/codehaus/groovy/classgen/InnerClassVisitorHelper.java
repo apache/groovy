@@ -43,7 +43,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 
 public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
 

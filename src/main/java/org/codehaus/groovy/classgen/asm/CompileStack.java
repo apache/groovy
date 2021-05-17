@@ -37,9 +37,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveFloat;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveDouble;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveFloat;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.DCONST_0;

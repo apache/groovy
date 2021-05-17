@@ -33,14 +33,14 @@ import org.codehaus.groovy.classgen.Verifier;
 import java.math.BigDecimal;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isBigDecimalType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isStringType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperByte;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperCharacter;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperDouble;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperFloat;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperInteger;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperShort;
+import static org.codehaus.groovy.ast.ClassHelper.isBigDecimalType;
+import static org.codehaus.groovy.ast.ClassHelper.isStringType;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperByte;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperCharacter;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperDouble;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperFloat;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperInteger;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperShort;
 
 /**
  * Visitor to resolve constants in annotation definitions.

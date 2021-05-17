@@ -19,7 +19,6 @@
 package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 
 /**
  * Represents a parameter on a constructor or method call. The type name is
@@ -69,7 +68,7 @@ public class Parameter extends AnnotatedNode implements Variable {
 
     public void setType(ClassNode type) {
         this.type = type;
-        dynamicTyped = dynamicTyped || TypeUtil.isDynamicTyped(type);
+        dynamicTyped = dynamicTyped || ClassHelper.isDynamicTyped(type);
     }
 
     @Override

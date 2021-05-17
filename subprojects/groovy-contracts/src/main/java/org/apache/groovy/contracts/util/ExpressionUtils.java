@@ -19,7 +19,6 @@
 package org.apache.groovy.contracts.util;
 
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -29,9 +28,6 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.Types;
-import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -32,7 +32,7 @@ import java.util.Set;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
 import static org.apache.groovy.util.BeanUtils.decapitalize;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 
 public class BeanUtils {
     static final String GET_PREFIX = "get";

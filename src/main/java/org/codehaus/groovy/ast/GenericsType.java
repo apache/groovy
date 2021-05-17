@@ -28,8 +28,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isGroovyObjectType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isGroovyObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 
 /**
  * This class is used to describe generic type signatures for ClassNodes.

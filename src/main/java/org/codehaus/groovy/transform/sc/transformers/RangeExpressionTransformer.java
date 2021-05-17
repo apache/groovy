@@ -33,7 +33,7 @@ import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 import java.util.List;
 
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 
 /**
  * This transformer focuses on ranges to produce optimized bytecode.

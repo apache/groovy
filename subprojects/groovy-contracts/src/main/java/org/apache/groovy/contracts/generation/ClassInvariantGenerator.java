@@ -49,7 +49,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 
 /**
  * <p>

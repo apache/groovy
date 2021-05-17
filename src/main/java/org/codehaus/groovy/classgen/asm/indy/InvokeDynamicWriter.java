@@ -44,8 +44,8 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 
 import static org.codehaus.groovy.classgen.asm.BytecodeHelper.getTypeDescription;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperBoolean;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperBoolean;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.CAST;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.GET;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.INIT;

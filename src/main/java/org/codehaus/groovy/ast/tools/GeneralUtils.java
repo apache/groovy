@@ -83,7 +83,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import static org.codehaus.groovy.antlr.PrimitiveHelper.getDefaultValueForPrimitive;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 
 /**
  * Handy methods when working with the Groovy AST

@@ -22,7 +22,6 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.Variable;
-import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 
 /**
  * Represents a local variable name, the simplest form of expression. e.g.&#160;"foo".
@@ -123,7 +122,7 @@ public class VariableExpression extends Expression implements Variable {
     @Override
     public void setType(ClassNode cn) {
         super.setType(cn);
-        isDynamicTyped |= TypeUtil.isDynamicTyped(cn);
+        isDynamicTyped |= ClassHelper.isDynamicTyped(cn);
     }
 
     @Override

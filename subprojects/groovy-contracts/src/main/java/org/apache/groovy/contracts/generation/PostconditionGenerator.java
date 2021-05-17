@@ -45,7 +45,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 
 /**
  * <p>

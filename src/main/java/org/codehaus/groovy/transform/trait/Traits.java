@@ -47,7 +47,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isClassType;
+import static org.codehaus.groovy.ast.ClassHelper.isClassType;
 
 /**
  * A collection of utility methods used to deal with traits.

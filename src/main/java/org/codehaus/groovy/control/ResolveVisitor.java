@@ -62,7 +62,6 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.control.ClassNodeResolver.LookupResult;
 import org.codehaus.groovy.runtime.memoize.UnlimitedConcurrentCache;
 import org.codehaus.groovy.syntax.Types;
@@ -84,7 +83,7 @@ import java.util.function.Predicate;
 
 import static groovy.lang.Tuple.tuple;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 
 /**
  * Visitor to resolve Types and convert VariableExpression to
@@ -1558,7 +1557,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     @Override
     public void visitCatchStatement(final CatchStatement cs) {
         resolveOrFail(cs.getExceptionType(), cs);
-        if (TypeUtil.isDynamicTyped(cs.getExceptionType())) {
+        if (ClassHelper.isDynamicTyped(cs.getExceptionType())) {
             cs.getVariable().setType(ClassHelper.make(Exception.class));
         }
         super.visitCatchStatement(cs);

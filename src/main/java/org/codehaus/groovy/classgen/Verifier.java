@@ -114,11 +114,11 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.addMethodGenerics;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.PropertyNodeUtils.adjustPropertyModifiersForMethod;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperBoolean;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveDouble;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperBoolean;
 
 /**
  * Verifies the AST node and adds any default AST code before bytecode generation occurs.

@@ -19,7 +19,6 @@
 package groovy.test;
 
 import groovy.lang.Closure;
-import groovy.test.GroovyAssert;
 import junit.framework.TestCase;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;

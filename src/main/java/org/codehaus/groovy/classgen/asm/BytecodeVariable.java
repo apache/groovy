@@ -20,7 +20,6 @@ package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.objectweb.asm.Label;
 
 /**
@@ -106,7 +105,7 @@ public class BytecodeVariable {
 
     public void setType(ClassNode type) {
         this.type = type;
-        dynamicTyped |= TypeUtil.isDynamicTyped(type);
+        dynamicTyped |= ClassHelper.isDynamicTyped(type);
     }
 
     public void setDynamicTyped(boolean b) {

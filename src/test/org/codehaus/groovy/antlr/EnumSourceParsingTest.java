@@ -20,7 +20,6 @@ package org.codehaus.groovy.antlr;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.test.GroovyTestCase;
-import groovy.test.NotYetImplemented;
 
 import java.io.StringReader;
 

@@ -24,8 +24,8 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 
 import static org.apache.groovy.util.BeanUtils.decapitalize;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 
 /**
  * Utility class for working with MethodNodes

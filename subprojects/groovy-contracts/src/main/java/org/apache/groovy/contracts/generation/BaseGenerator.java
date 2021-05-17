@@ -64,7 +64,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.notX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 
 /**
  * Base class for groovy-contracts code generators.

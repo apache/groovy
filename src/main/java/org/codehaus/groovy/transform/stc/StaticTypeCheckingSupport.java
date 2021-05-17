@@ -84,7 +84,6 @@ import static org.codehaus.groovy.ast.ClassHelper.Character_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Double_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Enum_Type;
 import static org.codehaus.groovy.ast.ClassHelper.Float_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.GROOVY_OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.GSTRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Integer_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Long_TYPE;
@@ -110,14 +109,18 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isBigDecimalType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isClassType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isGStringType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isGroovyObjectType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isStringType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperBoolean;
+import static org.codehaus.groovy.ast.ClassHelper.isBigDecimalType;
+import static org.codehaus.groovy.ast.ClassHelper.isClassType;
+import static org.codehaus.groovy.ast.ClassHelper.isGStringType;
+import static org.codehaus.groovy.ast.ClassHelper.isGroovyObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
+import static org.codehaus.groovy.ast.ClassHelper.isStringType;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperBoolean;
+import static org.codehaus.groovy.ast.tools.WideningCategories.isBigIntCategory;
+import static org.codehaus.groovy.ast.tools.WideningCategories.isFloatingCategory;
+import static org.codehaus.groovy.ast.tools.WideningCategories.isNumberCategory;
+import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuietly;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
@@ -207,7 +210,7 @@ public abstract class StaticTypeCheckingSupport {
             "rightShiftUnsigned", RIGHT_SHIFT_UNSIGNED
     );
 
-    protected static final ClassNode GSTRING_STRING_CLASSNODE = WideningCategories.lowestUpperBound(
+    protected static final ClassNode GSTRING_STRING_CLASSNODE = lowestUpperBound(
             STRING_TYPE,
             GSTRING_TYPE
     );
@@ -692,13 +695,13 @@ public abstract class StaticTypeCheckingSupport {
         if (rightRedirect == void_WRAPPER_TYPE) return leftRedirect == VOID_TYPE;
         if (rightRedirect == VOID_TYPE) return leftRedirect == void_WRAPPER_TYPE;
 
-        if (isNumberType(rightRedirect) || WideningCategories.isNumberCategory(rightRedirect)) {
+        if (isNumberType(rightRedirect) || isNumberCategory(rightRedirect)) {
             if (BigDecimal_TYPE == leftRedirect || Number_TYPE == leftRedirect) {
                 // any number can be assigned to BigDecimal or Number
                 return true;
             }
             if (BigInteger_TYPE == leftRedirect) {
-                return WideningCategories.isBigIntCategory(getUnwrapper(rightRedirect)) || rightRedirect.isDerivedFrom(BigInteger_TYPE);
+                return isBigIntCategory(getUnwrapper(rightRedirect)) || rightRedirect.isDerivedFrom(BigInteger_TYPE);
             }
         }
 
@@ -738,7 +741,7 @@ public abstract class StaticTypeCheckingSupport {
         if (isNumberType(leftRedirect) && isNumberType(rightRedirect)) return true;
 
         // left is a float/double and right is a BigDecimal
-        if (WideningCategories.isFloatingCategory(leftRedirect) && isBigDecimalType(rightRedirect)) {
+        if (isFloatingCategory(leftRedirect) && isBigDecimalType(rightRedirect)) {
             return true;
         }
 
@@ -1503,7 +1506,7 @@ public abstract class StaticTypeCheckingSupport {
                         continue;
                     } else if (!candidate.isPlaceholder() && !candidate.isWildcard()) {
                         // combine "T=Integer" and "T=String" to produce "T=? extends Serializable & Comparable<...>"
-                        ClassNode lub = WideningCategories.lowestUpperBound(candidate.getType(), resolved.getType());
+                        ClassNode lub = lowestUpperBound(candidate.getType(), resolved.getType());
                         resolvedMethodGenerics.put(entry.getKey(), lub.asGenericsType());
                         continue;
                     }

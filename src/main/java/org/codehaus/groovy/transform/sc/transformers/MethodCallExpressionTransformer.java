@@ -38,7 +38,7 @@ import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 import java.util.List;
 
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperInteger;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperInteger;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 

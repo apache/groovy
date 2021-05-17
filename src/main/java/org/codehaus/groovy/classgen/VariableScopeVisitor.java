@@ -58,7 +58,7 @@ import java.util.function.BiConsumer;
 import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isStatic;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 
 /**
  * Initializes the variable scopes for an AST.

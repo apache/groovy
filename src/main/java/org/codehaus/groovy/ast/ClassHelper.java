@@ -71,22 +71,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveByte;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveChar;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveFloat;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveInt;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveShort;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isStringType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperByte;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperDouble;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperFloat;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperInteger;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperLong;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperShort;
-
 /**
  * Helper for {@link ClassNode} and classes handling them.  Contains a set of
  * pre-defined instances for the most used types and some code for cached node
@@ -390,8 +374,7 @@ public class ClassHelper {
      * @see #make(Class)
      * @see #make(String)
      */
-    public static boolean isStaticConstantInitializerType(ClassNode cn) {
-        cn = cn.redirect();
+    public static boolean isStaticConstantInitializerType(final ClassNode cn) {
         return isPrimitiveInt(cn) ||
                 isPrimitiveFloat(cn) ||
                 isPrimitiveLong(cn) ||
@@ -403,8 +386,7 @@ public class ClassHelper {
                 isPrimitiveShort(cn);
     }
 
-    public static boolean isNumberType(ClassNode cn) {
-        cn = cn.redirect();
+    public static boolean isNumberType(final ClassNode cn) {
         return isWrapperByte(cn) ||
                 isWrapperShort(cn) ||
                 isWrapperInteger(cn) ||
@@ -428,6 +410,110 @@ public class ClassHelper {
             if (cachedType == type) return true;
         }
         return false;
+    }
+
+    public static boolean isDynamicTyped(ClassNode type) {
+        return type != null && DYNAMIC_TYPE == type.redirect();
+    }
+
+    public static boolean isPrimitiveBoolean(ClassNode type) {
+        return type.redirect() == boolean_TYPE;
+    }
+
+    public static boolean isPrimitiveChar(ClassNode type) {
+        return type.redirect() == char_TYPE;
+    }
+
+    public static boolean isPrimitiveByte(ClassNode type) {
+        return type.redirect() == byte_TYPE;
+    }
+
+    public static boolean isPrimitiveInt(ClassNode type) {
+        return type.redirect() == int_TYPE;
+    }
+
+    public static boolean isPrimitiveLong(ClassNode type) {
+        return type.redirect() == long_TYPE;
+    }
+
+    public static boolean isPrimitiveShort(ClassNode type) {
+        return type.redirect() == short_TYPE;
+    }
+
+    public static boolean isPrimitiveDouble(ClassNode type) {
+        return type.redirect() == double_TYPE;
+    }
+
+    public static boolean isPrimitiveFloat(ClassNode type) {
+        return type.redirect() == float_TYPE;
+    }
+
+    public static boolean isPrimitiveVoid(ClassNode type) {
+        return type.redirect() == VOID_TYPE;
+    }
+
+    public static boolean isWrapperBoolean(ClassNode type) {
+        return type != null && type.redirect() == Boolean_TYPE;
+    }
+
+    public static boolean isWrapperCharacter(ClassNode type) {
+        return type != null && type.redirect() == Character_TYPE;
+    }
+
+    public static boolean isWrapperByte(ClassNode type) {
+        return type != null && type.redirect() == Byte_TYPE;
+    }
+
+    public static boolean isWrapperInteger(ClassNode type) {
+        return type != null && type.redirect() == Integer_TYPE;
+    }
+
+    public static boolean isWrapperLong(ClassNode type) {
+        return type != null && type.redirect() == Long_TYPE;
+    }
+
+    public static boolean isWrapperShort(ClassNode type) {
+        return type != null && type.redirect() == Short_TYPE;
+    }
+
+    public static boolean isWrapperDouble(ClassNode type) {
+        return type != null && type.redirect() == Double_TYPE;
+    }
+
+    public static boolean isWrapperFloat(ClassNode type) {
+        return type != null && type.redirect() == Float_TYPE;
+    }
+
+    public static boolean isWrapperVoid(ClassNode type) {
+        return type != null && type.redirect() == void_WRAPPER_TYPE;
+    }
+
+    public static boolean isBigIntegerType(ClassNode type) {
+        return type != null && type.redirect() == BigInteger_TYPE;
+    }
+
+    public static boolean isBigDecimalType(ClassNode type) {
+        return type != null && type.redirect() == BigDecimal_TYPE;
+    }
+
+    public static boolean isStringType(ClassNode type) {
+        return type != null && type.redirect() == STRING_TYPE;
+    }
+
+    public static boolean isGStringType(ClassNode type) {
+        return type != null && type.redirect() == GSTRING_TYPE;
+    }
+
+    public static boolean isObjectType(ClassNode type) {
+        return OBJECT_TYPE.equals(type);
+    }
+
+    public static boolean isGroovyObjectType(ClassNode type) {
+        return GROOVY_OBJECT_TYPE.equals(type);
+    }
+
+    public static boolean isClassType(ClassNode type) {
+        return CLASS_Type.equals(type);
     }
 
     static class ClassHelperCache {

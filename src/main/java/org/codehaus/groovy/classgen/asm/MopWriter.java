@@ -35,8 +35,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveDouble;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_BRIDGE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;

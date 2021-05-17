@@ -57,9 +57,9 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersEqual;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isGroovyObjectType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
+import static org.codehaus.groovy.ast.ClassHelper.isGroovyObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 
 /**
  * Generates code for the {@code @AutoImplement} annotation.

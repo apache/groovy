@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.classgen.asm.sc.bugs.support;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 

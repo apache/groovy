@@ -67,7 +67,7 @@ import static org.codehaus.groovy.ast.AnnotationNode.TYPE_USE_TARGET;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.evaluateExpression;
 
 /**

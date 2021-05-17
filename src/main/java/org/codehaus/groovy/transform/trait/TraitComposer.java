@@ -76,8 +76,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isClassType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isClassType;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 
 /**
  * This class contains a static utility method {@link #doExtendTraits(org.codehaus.groovy.ast.ClassNode, org.codehaus.groovy.control.SourceUnit, org.codehaus.groovy.control.CompilationUnit)}
@@ -548,7 +548,7 @@ public abstract class TraitComposer {
                 args
         );
         Statement result;
-        if (ClassHelper.VOID_TYPE.equals(forwarderMethod.getReturnType())) {
+        if (ClassHelper.isPrimitiveVoid(forwarderMethod.getReturnType())) {
             BlockStatement stmt = new BlockStatement();
             stmt.addStatement(new ExpressionStatement(delegateCall));
             stmt.addStatement(new ReturnStatement(new ConstantExpression(null)));

@@ -25,7 +25,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.asm.StatementMetaTypeChooser;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 
 /**
  * A {@link org.codehaus.groovy.classgen.asm.TypeChooser TypeChooser} which reads

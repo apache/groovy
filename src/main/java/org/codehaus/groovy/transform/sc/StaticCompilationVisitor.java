@@ -83,8 +83,8 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.applyGenericsContextTo
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isStringType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperCharacter;
+import static org.codehaus.groovy.ast.ClassHelper.isStringType;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperCharacter;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.BINARY_EXP_TARGET;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.COMPONENT_TYPE;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.DYNAMIC_OUTER_NODE_CALLBACK;

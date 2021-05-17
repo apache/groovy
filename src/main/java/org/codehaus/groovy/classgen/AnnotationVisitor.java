@@ -43,8 +43,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isClassType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isStringType;
+import static org.codehaus.groovy.ast.ClassHelper.isClassType;
+import static org.codehaus.groovy.ast.ClassHelper.isStringType;
 
 /**
  * An Annotation visitor responsible for:

@@ -79,17 +79,17 @@ import java.util.stream.Stream;
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isClassType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveBoolean;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveByte;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveChar;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveDouble;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveFloat;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveInt;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveLong;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveShort;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveVoid;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isStringType;
+import static org.codehaus.groovy.ast.ClassHelper.isClassType;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveByte;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveChar;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveDouble;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveFloat;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveInt;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveShort;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
+import static org.codehaus.groovy.ast.ClassHelper.isStringType;
 
 public class JavaStubGenerator {
     private final boolean java5;

@@ -60,14 +60,14 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isBigDecimalType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isBigIntegerType;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperByte;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperDouble;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperFloat;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperInteger;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperLong;
-import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isWrapperShort;
+import static org.codehaus.groovy.ast.ClassHelper.isBigDecimalType;
+import static org.codehaus.groovy.ast.ClassHelper.isBigIntegerType;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperByte;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperDouble;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperFloat;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperInteger;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperLong;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperShort;
 
 public class BinaryExpressionTransformer {
     private static final MethodNode COMPARE_TO_METHOD = ClassHelper.COMPARABLE_TYPE.getMethods("compareTo").get(0);
