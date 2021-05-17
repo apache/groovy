@@ -34,6 +34,7 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.ParameterUtils;
@@ -126,8 +127,13 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
 
     @Override
     public void visitDeclarationExpression(DeclarationExpression expression) {
-        visitAnnotations(expression, LOCAL_VARIABLE_TARGET);
-        visitTypeAnnotations(expression.getType());
+        VariableExpression varx = expression.getVariableExpression();
+        if (varx != null) {
+            visitAnnotations(expression, LOCAL_VARIABLE_TARGET);
+            ClassNode type = varx.getType();
+            visitTypeAnnotations(type);
+            extractTypeUseAnnotations(expression.getAnnotations(), type, LOCAL_VARIABLE_TARGET);
+        }
     }
 
     @Override
