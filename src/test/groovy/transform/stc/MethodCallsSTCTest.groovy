@@ -1316,6 +1316,17 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9890
+    void testShouldFindInheritedInterfaceDefaultMethodJava() {
+        assertScript '''
+            void test() {
+                def result = new groovy.bugs.groovy9890.ImplJ().foo(42L)
+                assert result.class == Long.class
+            }
+            test()
+        '''
+    }
+
     // GROOVY-5743
     void testClosureAsParameter() {
         assertScript '''
