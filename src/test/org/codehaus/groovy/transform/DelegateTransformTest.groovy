@@ -18,7 +18,9 @@
  */
 package org.codehaus.groovy.transform
 
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
 import java.util.concurrent.locks.Lock
@@ -65,19 +67,19 @@ final class DelegateTransformTest {
     void testDelegateExcludes() {
         assertScript '''
             class MapSet {
-                @Delegate(interfaces=false, excludes=["remove","clear"]) Map m = [a: 1]
+                @Delegate(interfaces=false, excludes=['remove','clear']) Map m = [a: 1]
                 @Delegate Set s = new LinkedHashSet([2, 3, 4] as Set) // HashSet not good enough in JDK 1.5
-                String toString() { m.toString() + " " + s }
+                String toString() { m.toString() + ' ' + s }
             }
 
             def ms = new MapSet()
             assert ms.size() == 1
-            assert ms.toString() == "[a:1] [2, 3, 4]"
+            assert ms.toString() == '[a:1] [2, 3, 4]'
             ms.remove(3)
             assert ms.size() == 1
-            assert ms.toString() == "[a:1] [2, 4]"
+            assert ms.toString() == '[a:1] [2, 4]'
             ms.clear()
-            assert ms.toString() == "[a:1] []"
+            assert ms.toString() == '[a:1] []'
         '''
     }
 
@@ -86,19 +88,19 @@ final class DelegateTransformTest {
         assertScript '''
             @groovy.transform.CompileStatic
             class MapSet {
-                @Delegate(interfaces=false, excludes=["remove","clear"]) Map m = [a: 1]
+                @Delegate(interfaces=false, excludes=['remove','clear']) Map m = [a: 1]
                 @Delegate Set s = new LinkedHashSet([2, 3, 4] as Set)
-                String toString() { m.toString() + " " + s }
+                String toString() { m.toString() + ' ' + s }
             }
 
             def ms = new MapSet()
             assert ms.size() == 1
-            assert ms.toString() == "{a=1} [2, 3, 4]"
+            assert ms.toString() == '{a=1} [2, 3, 4]'
             ms.remove(3)
             assert ms.size() == 1
-            assert ms.toString() == "{a=1} [2, 4]"
+            assert ms.toString() == '{a=1} [2, 4]'
             ms.clear()
-            assert ms.toString() == "{a=1} []"
+            assert ms.toString() == '{a=1} []'
         '''
     }
 
@@ -250,7 +252,7 @@ final class DelegateTransformTest {
             class C {
                 def foo(){"C->foo()"}
             }
-            assert new B().foo() == "C->foo()"
+            assert new B().foo() == 'C->foo()'
         '''
     }
 
@@ -320,19 +322,19 @@ final class DelegateTransformTest {
                 @Delegate private I5729 delegate
             }
             assert I5729.isAssignableFrom(Delegator1)
-            assert Delegator1.methods*.name.contains("aMethod")
+            assert Delegator1.methods*.name.contains('aMethod')
 
             class Delegator2 {
                 @Delegate(interfaces=false) private I5729 delegate
             }
             assert !I5729.isAssignableFrom(Delegator2)
-            assert !Delegator2.methods*.name.contains("aMethod")
+            assert !Delegator2.methods*.name.contains('aMethod')
 
             class Delegator3 {
                 @Delegate(interfaces=false, deprecated=true) private I5729 delegate
             }
             assert !I5729.isAssignableFrom(Delegator3)
-            assert Delegator3.methods*.name.contains("aMethod")
+            assert Delegator3.methods*.name.contains('aMethod')
         '''
     }
 
@@ -355,10 +357,10 @@ final class DelegateTransformTest {
                 A a = new A()
             }
 
-            def originalMethod = A.getMethod("method", [Object.class] as Class[])
+            def originalMethod = A.getMethod('method', [Object.class] as Class[])
             def originalAnno = originalMethod.parameterAnnotations[0][0]
 
-            def delegateMethod = A_Delegate.getMethod("method", [Object.class] as Class[])
+            def delegateMethod = A_Delegate.getMethod('method', [Object.class] as Class[])
             def delegateAnno = delegateMethod.parameterAnnotations[0][0]
             println delegateMethod.parameterAnnotations
 
@@ -387,10 +389,10 @@ final class DelegateTransformTest {
                 A a = new A()
             }
 
-            def originalMethod = A.getMethod("method", [Object.class] as Class[])
+            def originalMethod = A.getMethod('method', [Object.class] as Class[])
             def originalAnno = originalMethod.declaredAnnotations[0]
 
-            def delegateMethod = A_Delegate.getMethod("method", [Object.class] as Class[])
+            def delegateMethod = A_Delegate.getMethod('method', [Object.class] as Class[])
             def delegateAnno = delegateMethod.declaredAnnotations[1]
 
             assert delegateAnno == originalAnno
@@ -419,10 +421,10 @@ final class DelegateTransformTest {
                 A a = new A()
             }
 
-            def originalMethod = A.getMethod("method", [Object.class] as Class[])
+            def originalMethod = A.getMethod('method', [Object.class] as Class[])
             def originalAnno = originalMethod.parameterAnnotations[0][0]
 
-            def delegateMethod = A_Delegate.getMethod("method", [Object.class] as Class[])
+            def delegateMethod = A_Delegate.getMethod('method', [Object.class] as Class[])
             assert delegateMethod.parameterAnnotations[0].length == 0
         '''
     }
@@ -499,7 +501,7 @@ final class DelegateTransformTest {
 
             def f = new Foo()
             f.foo()
-            assert f.bar + f.baz == "barbaz"
+            assert f.bar + f.baz == 'barbaz'
         '''
     }
 
@@ -522,27 +524,27 @@ final class DelegateTransformTest {
             class OwnedBook {
                 String owner
 
-                @Delegate(includes=["author", "getTitleAndAuthor"])
+                @Delegate(includes=['author', 'getTitleAndAuthor'])
                 Book book
             }
 
-            Book book = new Book(title: "Ulysses", author: "James Joyce")
-            OwnedBook ownedBook = new OwnedBook(owner: "John Smith", book: book)
+            Book book = new Book(title: 'Ulysses', author: 'James Joyce')
+            OwnedBook ownedBook = new OwnedBook(owner: 'John Smith', book: book)
 
-            ownedBook.author = "John Smith"
-            assert book.author == "John Smith"
+            ownedBook.author = 'John Smith'
+            assert book.author == 'John Smith'
 
-            assert ownedBook.getTitleAndAuthor() == "Ulysses : John Smith"
+            assert ownedBook.getTitleAndAuthor() == 'Ulysses : John Smith'
 
             try {
                 ownedBook.getAuthorAndTitle()
-                assert false : "Non-included methods should not be delegated"
+                assert false, 'Non-included methods should not be delegated'
             } catch(groovy.lang.MissingMethodException expected) {
             }
 
             try {
-                ownedBook.title = "Finnegans Wake"
-                assert false : "Non-included properties should not be delegated"
+                ownedBook.title = 'Finnegans Wake'
+                assert false, 'Non-included properties should not be delegated'
             } catch(groovy.lang.MissingPropertyException expected) {
             }
         '''
@@ -622,8 +624,8 @@ final class DelegateTransformTest {
     void testLineNumberInStackTrace() {
         def err = shouldFail '''\
             @groovy.transform.ASTTest(phase=CANONICALIZATION, value={
-                def property = node.getDeclaredField("thingie")
-                def method = node.getDeclaredMethod("blowup")
+                def property = node.getDeclaredField('thingie')
+                def method = node.getDeclaredMethod('blowup')
                 def call = method.code.expression
 
                 assert property.lineNumber > 0
@@ -668,7 +670,7 @@ final class DelegateTransformTest {
                 DelegateMap dm = new DelegateMap()
             }
             def foo = new Foo()
-            assert foo.dm.x == "123"
+            assert foo.dm.x == '123'
         '''
     }
 
@@ -709,7 +711,7 @@ final class DelegateTransformTest {
     void testShouldWorkWithLazyTransform() {
         assertScript '''
             class Foo {
-                private @Delegate @Lazy ArrayList list = ["bar", "baz"]
+                private @Delegate @Lazy ArrayList list = ['bar', 'baz']
                 // fragile: $list is an internal implementation detail that may change
                 def getInternalDelegate() { $list }
             }
@@ -717,7 +719,7 @@ final class DelegateTransformTest {
             def f = new Foo()
             assert f.internalDelegate == null
             assert f.size() == 2
-            assert f.internalDelegate == ["bar", "baz"]
+            assert f.internalDelegate == ['bar', 'baz']
         '''
     }
 
@@ -823,7 +825,7 @@ final class DelegateTransformTest {
             class Bar {
                 String pls
             }
-            assert new Foo(pls: "ok").pls == "ok"
+            assert new Foo(pls: 'ok').pls == 'ok'
         '''
     }
 
@@ -831,15 +833,15 @@ final class DelegateTransformTest {
     void testOwnerMethodPreferredToDelegateMethod() {
         assertScript '''
             class Foo {
-                String pls() { "foo pls" }
+                String pls() { 'foo pls' }
                 @groovy.lang.Delegate
                 Bar bar
             }
 
             class Bar {
-                String pls() { "bar pls" }
+                String pls() { 'bar pls' }
             }
-            assert new Foo(bar: new Bar()).pls() == "foo pls"
+            assert new Foo(bar: new Bar()).pls() == 'foo pls'
         '''
     }
 
@@ -848,10 +850,10 @@ final class DelegateTransformTest {
         assertScript '''
             class BugsMe {
                 @Delegate
-                String[] content = ["foo", "bar"]
+                String[] content = ['foo', 'bar']
             }
 
-            assert new BugsMe().content.join() == "foobar"
+            assert new BugsMe().content.join() == 'foobar'
             assert new BugsMe().content.length == 2
             assert new BugsMe().length == 2
         '''
@@ -871,7 +873,7 @@ final class DelegateTransformTest {
                 }
             }
 
-            new WMap("example", [name: "weird"])
+            new WMap('example', [name: 'weird'])
         '''
 
         assert err.message.contains("Error during @Delegate processing: 'excludes' property or method 'name' does not exist.")
@@ -885,7 +887,7 @@ final class DelegateTransformTest {
                 @Delegate(methodAnnotations = true)
                 private final CompiledClass8825 delegate = new CompiledClass8825()
             }
-            assert new B().s == "456"
+            assert new B().s == '456'
         '''
     }
 
@@ -896,9 +898,9 @@ final class DelegateTransformTest {
                 String name
             }
             class BarDelegate {
-                @Delegate(includes = "getName") Bar bar = new Bar(name: "Baz")
+                @Delegate(includes = 'getName') Bar bar = new Bar(name: 'Baz')
             }
-            assert new BarDelegate().name == "Baz"
+            assert new BarDelegate().name == 'Baz'
         '''
     }
 
@@ -923,18 +925,116 @@ final class DelegateTransformTest {
     void testParameterWithDefaultArgument2() {
         assertScript '''
             class C {
-                def m(x = "x", y = "y", int z) {
-                    "" + x + y + z
+                def m(x = 'x', y = 'y', int z) {
+                    '' + x + y + z
                 }
             }
             class D {
                 @Delegate private C c = new C()
             }
 
-            assert new D().m(1) == "xy1"
-            assert new D().m(1,2) == "1y2"
-            assert new D().m(1,2,3) == "123"
+            assert new D().m(1) == 'xy1'
+            assert new D().m(1,2) == '1y2'
+            assert new D().m(1,2,3) == '123'
         '''
+    }
+
+    @Test
+    void testParameterWithDefaultArgument3() {
+        assertScript '''
+            class C {
+                def m(x = 'x', y = why(), int z) {
+                    '' + x + y + z
+                }
+                private why() {
+                    'y'
+                }
+            }
+            class D {
+                @Delegate private C c = new C()
+            }
+
+            assert new D().m(1) == 'xy1'
+            assert new D().m(1,2) == '1y2'
+            assert new D().m(1,2,3) == '123'
+        '''
+    }
+
+    @Test // GROOVY-4320
+    void testParameterWithDefaultArgument4() {
+        assertScript '''
+            interface I {
+                String event(String name)
+                String event(String name, List values)
+            }
+            class C implements I {
+                String event(String name, List values = []) {
+                    return "$name:$values"
+                }
+            }
+            class D {
+                @Delegate private C c = new C() // The method with default parameters "..." defines a method "event(java.lang.String)" that is already defined.
+            }
+
+            String result = new D().event('x')
+            assert result == 'x:[]'
+        '''
+    }
+
+    @Test // GROOVY-4320
+    void testParameterWithDefaultArgument5() {
+        def config = new CompilerConfiguration(
+            targetDirectory: File.createTempDir(),
+            jointCompilationOptions: [memStub: true]
+        )
+        def parentDir = File.createTempDir()
+        try {
+            new File(parentDir, 'p').mkdir()
+
+            def a = new File(parentDir, 'p/I.java')
+            a.write '''
+                package p;
+                import java.util.List;
+                public interface I {
+                    String event(String name);
+                    String event(String name, List values);
+                }
+            '''
+            def b = new File(parentDir, 'p/C.groovy')
+            b.write '''
+                package p
+                class C implements I {
+                    private final I i
+                    C(I i) { this.i = i }
+
+                    String event(String name, List values = []) {
+                        return "$name:$values"
+                    }
+                }
+            '''
+            def c = new File(parentDir, 'p/Main.groovy')
+            c.write '''
+                package p
+                class Main {
+                    @Delegate private C c = new C(this)
+
+                    void test() {
+                        String result = this.event('x')
+                        assert result == 'x:[]'
+                    }
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b, c)
+            cu.compile()
+
+            loader.loadClass('p.Main').newInstance().test()
+        } finally {
+            config.targetDirectory.deleteDir()
+            parentDir.deleteDir()
+        }
     }
 }
 
