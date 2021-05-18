@@ -2207,10 +2207,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             if (isStringType(inferredReturnType) && isGStringOrGStringStringLUB(type)) {
                 type = STRING_TYPE; // GROOVY-9971: convert GString to String at point of return
-            } else if (inferredReturnType != null && !inferredReturnType.isGenericsPlaceHolder()
-                    && !type.isUsingGenerics() && !type.equals(inferredReturnType) && (inferredReturnType.isInterface()
-                            ? type.implementsInterface(inferredReturnType) : type.isDerivedFrom(inferredReturnType))) {
-                type = inferredReturnType; // GROOVY-10082: allow simple covariance
+            } else if (inferredReturnType != null
+                    && !GenericsUtils.hasUnresolvedGenerics(inferredReturnType)
+                    &&  GenericsUtils.buildWildcardType(inferredReturnType).isCompatibleWith(type)) {
+                type = inferredReturnType; // GROOVY-8310, GROOVY-10082, GROOVY-10091: allow simple covariance
             }
             return type;
         }

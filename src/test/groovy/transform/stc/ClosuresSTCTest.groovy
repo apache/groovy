@@ -165,16 +165,36 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             class A {}
             class B extends A {}
-            Closure<A> c = { -> new B() } // Cannot assign Closure<B> to Closure<A>
+            Closure<A> c = { -> new B() }
 
             def result = c()
             assert result instanceof A
             assert result instanceof B
         '''
+        shouldFailWithMessages '''
+            Closure<String> c = { -> 42 }
+        ''',
+        'Cannot assign groovy.lang.Closure<java.lang.Integer> to: groovy.lang.Closure<java.lang.String>'
+    }
+
+    // GROOVY-10091
+    void testClosureReturnTypeInference7() {
+        shouldFailWithMessages '''
+            class A<T> {}
+            class B extends A<Number> {}
+            class X extends A<String> {}
+            class Y<Z> extends A<Number> {}
+
+            Closure<A<Number>> c
+            c = { -> return new B() }
+            c = { -> return new X() }
+            c = { -> return new Y<String>() }
+        ''',
+        'Cannot assign groovy.lang.Closure<X> to: groovy.lang.Closure<A<java.lang.Number>>'
     }
 
     // GROOVY-8427
-    void testClosureReturnTypeInference7() {
+    void testClosureReturnTypeInference8() {
         assertScript '''
             import java.util.function.Consumer
 
@@ -196,7 +216,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8202
-    void testClosureReturnTypeInference8() {
+    void testClosureReturnTypeInference9() {
         assertScript '''
             void proc() {
             }
