@@ -41,13 +41,19 @@ import org.codehaus.groovy.control.SourceUnit;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.stream.Collectors.toSet;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.apache.groovy.util.BeanUtils.capitalize;
+import static org.codehaus.groovy.ast.ClassHelper.isGroovyObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
@@ -67,9 +73,7 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
-import static org.codehaus.groovy.ast.ClassHelper.isGroovyObjectType;
-import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
+import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersEqual;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_NATIVE;
@@ -148,26 +152,24 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                         ". Delegation to own type not supported. Please use a different type.", parent);
                 return;
             }
-            final List<MethodNode> delegateMethods = getAllMethods(delegate.type);
-            for (ClassNode next : delegate.type.getAllInterfaces()) {
-                delegateMethods.addAll(getAllMethods(next));
-            }
 
-            final boolean skipInterfaces = memberHasValue(node, MEMBER_INTERFACES, false);
-            final boolean includeDeprecated = memberHasValue(node, MEMBER_DEPRECATED, true) || (delegate.type.isInterface() && !skipInterfaces);
-            final boolean allNames = memberHasValue(node, MEMBER_ALL_NAMES, true);
+            final boolean skipInterfaces = memberHasValue(node, MEMBER_INTERFACES, Boolean.FALSE);
+            final boolean includeDeprecated = memberHasValue(node, MEMBER_DEPRECATED, Boolean.TRUE) || (delegate.type.isInterface() && !skipInterfaces);
+            final boolean allNames = memberHasValue(node, MEMBER_ALL_NAMES, Boolean.TRUE);
             delegate.excludes = getMemberStringList(node, MEMBER_EXCLUDES);
             delegate.includes = getMemberStringList(node, MEMBER_INCLUDES);
             delegate.excludeTypes = getMemberClassList(node, MEMBER_EXCLUDE_TYPES);
             delegate.includeTypes = getMemberClassList(node, MEMBER_INCLUDE_TYPES);
             checkIncludeExcludeUndefinedAware(node, delegate.excludes, delegate.includes,
                                               delegate.excludeTypes, delegate.includeTypes, MY_TYPE_NAME);
-            if (!checkPropertyOrMethodList(delegate.type, delegate.includes, "includes", node, MY_TYPE_NAME)) return;
             if (!checkPropertyOrMethodList(delegate.type, delegate.excludes, "excludes", node, MY_TYPE_NAME)) return;
+            if (!checkPropertyOrMethodList(delegate.type, delegate.includes, "includes", node, MY_TYPE_NAME)) return;
 
-            final List<MethodNode> ownerMethods = getAllMethods(delegate.owner);
+            final Iterable<MethodNode> ownerMethods = getAllMethods(delegate.owner);
+            final Iterable<MethodNode> delegateMethods = filterMethods(collectMethods(delegate.type), delegate, allNames, includeDeprecated);
+
             for (MethodNode mn : delegateMethods) {
-                addDelegateMethod(delegate, ownerMethods, mn, includeDeprecated, allNames);
+                addDelegateMethod(mn, delegate, ownerMethods);
             }
 
             for (PropertyNode prop : getAllProperties(delegate.type)) {
@@ -177,15 +179,19 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                 addGetterIfNeeded(delegate, prop, name, allNames);
                 addSetterIfNeeded(delegate, prop, name, allNames);
             }
+
             if (delegate.type.isArray()) {
                 boolean skipLength = delegate.excludes != null && (delegate.excludes.contains("length") || delegate.excludes.contains("getLength"));
                 if (!skipLength) {
-                    addGeneratedMethod(delegate.owner, "getLength",
+                    addGeneratedMethod(
+                            delegate.owner,
+                            "getLength",
                             ACC_PUBLIC,
                             ClassHelper.int_TYPE,
                             Parameter.EMPTY_ARRAY,
                             null,
-                            returnS(propX(delegate.getOp, "length")));
+                            returnS(propX(delegate.getOp, "length"))
+                    );
                 }
             }
 
@@ -209,6 +215,69 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                 }
             }
         }
+    }
+
+    private static Collection<MethodNode> collectMethods(final ClassNode type) {
+        List<MethodNode> methods = new java.util.LinkedList<>(getAllMethods(type));
+        // GROOVY-4320, GROOVY-4516
+        for (ListIterator<MethodNode> it = methods.listIterator(); it.hasNext();) {
+            MethodNode next = it.next();
+            if (next.isPublic() && !next.isAbstract() && next.hasDefaultValue()) {
+                int n = 0;
+                for (Parameter p : next.getParameters())
+                    if (p.hasInitialExpression()) n += 1;
+                for (int i = 1; i <= n; i += 1) { // from Verifier#addDefaultParameters
+                    Parameter[] params = new Parameter[next.getParameters().length - i];
+                    int index = 0, j = 1;
+                    for (Parameter parameter : next.getParameters()) {
+                        if (j > n - i && parameter.hasInitialExpression()) {
+                            j += 1;
+                        } else {
+                            params[index++] = parameter;
+                            if (parameter.hasInitialExpression()) j += 1;
+                        }
+                    }
+
+                    if (methods.stream().noneMatch(mn -> mn.getName().equals(next.getName()) && parametersEqual(mn.getParameters(), params))) {
+                        MethodNode mn = new MethodNode(next.getName(), next.getModifiers(), next.getReturnType(), params, next.getExceptions(), null);
+                        mn.setDeclaringClass(next.getDeclaringClass());
+                        mn.setGenericsTypes(next.getGenericsTypes());
+                        mn.addAnnotations(next.getAnnotations());
+                        it.add(mn);
+                    }
+                }
+            }
+        }
+
+        for (ClassNode face : type.getAllInterfaces()) {
+            methods.addAll(face.getMethods());
+        }
+
+        return methods;
+    }
+
+    private static Collection<MethodNode> filterMethods(final Collection<MethodNode> methods, final DelegateDescription delegate, final boolean allNames, final boolean includeDeprecated) {
+        Set<String> groovyObjectMethods = ClassHelper.GROOVY_OBJECT_TYPE.getMethods().stream().map(MethodNode::getTypeDescriptor).collect(toSet());
+        Set<String> javaObjectMethods = ClassHelper.OBJECT_TYPE.getMethods().stream().map(MethodNode::getTypeDescriptor).collect(toSet());
+        Set<String> ownClassMethods = delegate.owner.getMethods().stream().map(MethodNode::getTypeDescriptor).collect(toSet());
+
+        methods.removeIf(candidate -> {
+            if (!candidate.isPublic() || candidate.isStatic() || (candidate.getModifiers () & ACC_SYNTHETIC) != 0) return true;
+
+            if (shouldSkip(candidate.getName(), delegate.excludes, delegate.includes, allNames)) return true;
+
+            if (!includeDeprecated && !candidate.getAnnotations(DEPRECATED_TYPE).isEmpty()) return true;
+
+            if (groovyObjectMethods.contains(candidate.getTypeDescriptor())) return true;
+
+            if (javaObjectMethods.contains(candidate.getTypeDescriptor())) return true;
+
+            if (ownClassMethods.contains(candidate.getTypeDescriptor())) return true;
+
+            return false;
+        });
+
+        return methods;
     }
 
     private boolean checkPropertyOrMethodList(final ClassNode cNode, final List<String> propertyNameList, final String listName, final AnnotationNode anno, final String typeName) {
@@ -247,7 +316,9 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         if ((prop.getModifiers() & ACC_FINAL) == 0
                 && delegate.owner.getSetterMethod(setterName) == null && delegate.owner.getProperty(name) == null
                 && !shouldSkipPropertyMethod(name, setterName, delegate.excludes, delegate.includes, allNames)) {
-            addGeneratedMethod(delegate.owner, setterName,
+            addGeneratedMethod(
+                    delegate.owner,
+                    setterName,
                     ACC_PUBLIC,
                     ClassHelper.VOID_TYPE,
                     params(new Parameter(GenericsUtils.nonGeneric(prop.getType()), "value")),
@@ -284,7 +355,8 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                     GenericsUtils.nonGeneric(prop.getType()),
                     Parameter.EMPTY_ARRAY,
                     null,
-                    returnS(propX(delegate.getOp, name)));
+                    returnS(propX(delegate.getOp, name))
+            );
         }
 
         if (willHaveIsAccessor && !ownerWillHaveIsAccessor.get()
@@ -296,7 +368,8 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                     GenericsUtils.nonGeneric(prop.getType()),
                     Parameter.EMPTY_ARRAY,
                     null,
-                    returnS(propX(delegate.getOp, name)));
+                    returnS(propX(delegate.getOp, name))
+            );
         }
     }
 
@@ -314,17 +387,8 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                     || (includes != null && !includes.isEmpty() && !includes.contains(propertyName) && !includes.contains(methodName)));
     }
 
-    private void addDelegateMethod(final DelegateDescription delegate, final List<MethodNode> ownMethods, final MethodNode candidate, final boolean includeDeprecated, final boolean allNames) {
-        if (!candidate.isPublic() || candidate.isStatic() || 0 != (candidate.getModifiers () & ACC_SYNTHETIC))
-            return;
-
-        if (!candidate.getAnnotations(DEPRECATED_TYPE).isEmpty() && !includeDeprecated)
-            return;
-
-        if (shouldSkip(candidate.getName(), delegate.excludes, delegate.includes, allNames)) return;
-
-        Map<String,ClassNode> genericsSpec = createGenericsSpec(delegate.owner);
-        genericsSpec = addMethodGenerics(candidate, genericsSpec);
+    private void addDelegateMethod(final MethodNode candidate, final DelegateDescription delegate, final Iterable<MethodNode> ownMethods) {
+        Map<String,ClassNode> genericsSpec = addMethodGenerics(candidate, createGenericsSpec(delegate.owner));
         extractSuperClassGenerics(delegate.type, candidate.getDeclaringClass(), genericsSpec);
 
         if ((delegate.excludeTypes != null && !delegate.excludeTypes.isEmpty()) || delegate.includeTypes != null) {
@@ -334,25 +398,11 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                 return;
         }
 
-        // ignore methods from GroovyObject
-        for (MethodNode mn : ClassHelper.GROOVY_OBJECT_TYPE.getMethods()) {
-            if (mn.getTypeDescriptor().equals(candidate.getTypeDescriptor())) {
-                return;
-            }
-        }
-
-        // ignore methods already in owner
-        for (MethodNode mn : delegate.owner.getMethods()) {
-            if (mn.getTypeDescriptor().equals(candidate.getTypeDescriptor())) {
-                return;
-            }
-        }
-
         // give precedence to methods of self (but not abstract or static superclass methods)
         // also allows abstract or static self methods to be selected for overriding but they are ignored later
         MethodNode existingNode = null;
         for (MethodNode mn : ownMethods) {
-            if (mn.getTypeDescriptor().equals(candidate.getTypeDescriptor()) && !mn.isAbstract() && !mn.isStatic()) {
+            if (!mn.isAbstract() && !mn.isStatic() && mn.getTypeDescriptor().equals(candidate.getTypeDescriptor())) {
                 existingNode = mn;
                 break;
             }
@@ -365,12 +415,9 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             for (int i = 0, n = newParams.length; i < n; i += 1) {
                 ClassNode newParamType = correctToGenericsSpecRecurse(genericsSpec, params[i].getType(), currentMethodGenPlaceholders);
                 Parameter newParam = new Parameter(newParamType, getParamName(params, i, delegate.name));
-                newParam.setInitialExpression(params[i].getInitialExpression());
-
-                if (memberHasValue(delegate.annotation, MEMBER_PARAMETER_ANNOTATIONS, true)) {
+                if (memberHasValue(delegate.annotation, MEMBER_PARAMETER_ANNOTATIONS, Boolean.TRUE)) {
                     newParam.addAnnotations(copyAnnotatedNodeAnnotations(params[i], MY_TYPE_NAME));
                 }
-
                 newParams[i] = newParam;
                 args.addExpression(varX(newParam));
             }
@@ -384,14 +431,16 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             mce.setImplicitThis(false); // GROOVY-9938
             mce.setSourcePosition(delegate.delegate); // GROOVY-6542
             ClassNode returnType = correctToGenericsSpecRecurse(genericsSpec, candidate.getReturnType(), currentMethodGenPlaceholders);
-            MethodNode newMethod = addGeneratedMethod(delegate.owner, candidate.getName(),
+            MethodNode newMethod = addGeneratedMethod(
+                    delegate.owner,
+                    candidate.getName(),
                     candidate.getModifiers() & (~ACC_ABSTRACT) & (~ACC_NATIVE),
                     returnType,
                     newParams,
                     candidate.getExceptions(),
-                    candidate.isVoidMethod() ? stmt(mce) : returnS(mce));
+                    candidate.isVoidMethod() ? stmt(mce) : returnS(mce)
+            );
             newMethod.setGenericsTypes(candidate.getGenericsTypes());
-
             if (memberHasValue(delegate.annotation, MEMBER_METHOD_ANNOTATIONS, Boolean.TRUE)) {
                 newMethod.addAnnotations(copyAnnotatedNodeAnnotations(candidate, MY_TYPE_NAME, false));
             }

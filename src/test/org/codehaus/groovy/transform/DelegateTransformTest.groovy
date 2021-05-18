@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform
 
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
 import java.util.concurrent.locks.Lock
@@ -63,58 +65,58 @@ final class DelegateTransformTest {
     @Test // GROOVY-5974
     void testDelegateExcludes() {
         assertScript '''
-          class MapSet {
-            @Delegate(interfaces=false, excludes=['remove','clear']) Map m = [a: 1]
-            @Delegate Set s = new LinkedHashSet([2, 3, 4] as Set) // HashSet not good enough in JDK 1.5
-            String toString() { m.toString() + ' ' + s }
-          }
+            class MapSet {
+                @Delegate(interfaces=false, excludes=['remove','clear']) Map m = [a: 1]
+                @Delegate Set s = new LinkedHashSet([2, 3, 4] as Set) // HashSet not good enough in JDK 1.5
+                String toString() { m.toString() + ' ' + s }
+            }
 
-          def ms = new MapSet()
-          assert ms.size() == 1
-          assert ms.toString() == '[a:1] [2, 3, 4]'
-          ms.remove(3)
-          assert ms.size() == 1
-          assert ms.toString() == '[a:1] [2, 4]'
-          ms.clear()
-          assert ms.toString() == '[a:1] []'
+            def ms = new MapSet()
+            assert ms.size() == 1
+            assert ms.toString() == '[a:1] [2, 3, 4]'
+            ms.remove(3)
+            assert ms.size() == 1
+            assert ms.toString() == '[a:1] [2, 4]'
+            ms.clear()
+            assert ms.toString() == '[a:1] []'
         '''
     }
 
     @Test
     void testDelegateCompileStatic() {
         assertScript '''
-          @groovy.transform.CompileStatic
-          class MapSet {
-            @Delegate(interfaces=false, excludes=['remove','clear']) Map m = [a: 1]
-            @Delegate Set s = new LinkedHashSet([2, 3, 4] as Set)
-            String toString() { m.toString() + ' ' + s }
-          }
+            @groovy.transform.CompileStatic
+            class MapSet {
+                @Delegate(interfaces=false, excludes=['remove','clear']) Map m = [a: 1]
+                @Delegate Set s = new LinkedHashSet([2, 3, 4] as Set)
+                String toString() { m.toString() + ' ' + s }
+            }
 
-          def ms = new MapSet()
-          assert ms.size() == 1
-          assert ms.toString() == '{a=1} [2, 3, 4]'
-          ms.remove(3)
-          assert ms.size() == 1
-          assert ms.toString() == '{a=1} [2, 4]'
-          ms.clear()
-          assert ms.toString() == '{a=1} []'
+            def ms = new MapSet()
+            assert ms.size() == 1
+            assert ms.toString() == '{a=1} [2, 3, 4]'
+            ms.remove(3)
+            assert ms.size() == 1
+            assert ms.toString() == '{a=1} [2, 4]'
+            ms.clear()
+            assert ms.toString() == '{a=1} []'
         '''
     }
 
     @Test
     void testLock() {
         def res = new GroovyShell().evaluate('''
-              import java.util.concurrent.locks.*
+            import java.util.concurrent.locks.*
 
-              class LockableMap {
-                 @Delegate private Map map = [:]
+            class LockableMap {
+               @Delegate private Map map = [:]
 
-                 @Delegate private Lock lock = new ReentrantLock ()
+               @Delegate private Lock lock = new ReentrantLock ()
 
-                 @Delegate(interfaces=false) private List list = new ArrayList ()
-              }
+               @Delegate(interfaces=false) private List list = new ArrayList ()
+            }
 
-              new LockableMap ()
+            new LockableMap ()
         ''')
 
         res.lock()
@@ -141,20 +143,20 @@ final class DelegateTransformTest {
     void testMultiple() {
         def res = new GroovyShell().evaluate('''
             class X {
-              def value = 10
+                def value = 10
             }
 
             class Y {
-              @Delegate X  x  = new X ()
-              @Delegate XX xx = new XX ()
+                @Delegate X  x  = new X ()
+                @Delegate XX xx = new XX ()
 
-              void setValue (v) {
-                this.@x.@value = 12
-              }
+                void setValue (v) {
+                    this.@x.@value = 12
+                }
             }
 
             class XX {
-              def value2 = 11
+                def value2 = 11
             }
 
             new Y ()
@@ -169,10 +171,10 @@ final class DelegateTransformTest {
     @Test
     void testUsingDateCompiles() {
         assertScript '''
-            class Foo {
-                @Delegate Date d = new Date();
+            class C {
+                @Delegate Date d = new Date()
             }
-            Foo
+            new C()
         '''
     }
 
@@ -221,7 +223,7 @@ final class DelegateTransformTest {
     @Test
     void testDelegateToObjectShouldFail() {
         shouldFail '''
-            class B {
+            class C {
                 @Delegate b = new Object()
             }
         '''
@@ -230,11 +232,8 @@ final class DelegateTransformTest {
     @Test
     void testDelegateToSelfTypeShouldFail() {
         shouldFail '''
-            class B {
-                @Delegate B b = new B()
-                static main(args) {
-                    new B()
-                }
+            class C {
+                @Delegate C c = new C()
             }
         '''
     }
@@ -887,6 +886,139 @@ final class DelegateTransformTest {
             }
             assert new BarDelegate().name == 'Baz'
         '''
+    }
+
+    @Test // GROOVY-4516
+    void testParameterWithDefaultArgument1() {
+        assertScript '''
+            class C {
+                def m(boolean b = true) {
+                    b
+                }
+            }
+            class D {
+                @Delegate private C c = new C()
+            }
+
+            assert new D().m() == true
+            assert new D().m(false) == false
+        '''
+    }
+
+    @Test // GROOVY-4516
+    void testParameterWithDefaultArgument2() {
+        assertScript '''
+            class C {
+                def m(x = 'x', y = 'y', int z) {
+                    '' + x + y + z
+                }
+            }
+            class D {
+                @Delegate private C c = new C()
+            }
+
+            assert new D().m(1) == 'xy1'
+            assert new D().m(1,2) == '1y2'
+            assert new D().m(1,2,3) == '123'
+        '''
+    }
+
+    @Test
+    void testParameterWithDefaultArgument3() {
+        assertScript '''
+            class C {
+                def m(x = 'x', y = why(), int z) {
+                    '' + x + y + z
+                }
+                private why() {
+                    'y'
+                }
+            }
+            class D {
+                @Delegate private C c = new C()
+            }
+
+            assert new D().m(1) == 'xy1'
+            assert new D().m(1,2) == '1y2'
+            assert new D().m(1,2,3) == '123'
+        '''
+    }
+
+    @Test // GROOVY-4320
+    void testParameterWithDefaultArgument4() {
+        assertScript '''
+            interface I {
+                String event(String name)
+                String event(String name, List values)
+            }
+            class C implements I {
+                String event(String name, List values = []) {
+                    return "$name:$values"
+                }
+            }
+            class D {
+                @Delegate private C c = new C() // The method with default parameters "..." defines a method "event(java.lang.String)" that is already defined.
+            }
+
+            String result = new D().event('x')
+            assert result == 'x:[]'
+        '''
+    }
+
+    @Test // GROOVY-4320
+    void testParameterWithDefaultArgument5() {
+        def config = new CompilerConfiguration(
+            targetDirectory: File.createTempDir(),
+            jointCompilationOptions: [memStub: true]
+        )
+        def parentDir = File.createTempDir()
+        try {
+            new File(parentDir, 'p').mkdir()
+
+            def a = new File(parentDir, 'p/I.java')
+            a.write '''
+                package p;
+                import java.util.List;
+                public interface I {
+                    String event(String name);
+                    String event(String name, List values);
+                }
+            '''
+            def b = new File(parentDir, 'p/C.groovy')
+            b.write '''
+                package p
+                class C implements I {
+                    private final I i
+                    C(I i) { this.i = i }
+
+                    String event(String name, List values = []) {
+                        return "$name:$values"
+                    }
+                }
+            '''
+            def c = new File(parentDir, 'p/Main.groovy')
+            c.write '''
+                package p
+                class Main {
+                    @Delegate private C c = new C(this)
+
+                    void test() {
+                        String result = this.event('x')
+                        assert result == 'x:[]'
+                    }
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b, c)
+            cu.compile()
+
+            loader.loadClass('p.Main').newInstance().test()
+        } finally {
+            config.targetDirectory.deleteDir()
+            parentDir.deleteDir()
+        }
     }
 }
 
