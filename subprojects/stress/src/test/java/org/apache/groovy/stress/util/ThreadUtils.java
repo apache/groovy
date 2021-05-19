@@ -29,6 +29,7 @@ public class ThreadUtils {
         try {
             latch.await();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new Error(e);
         }
     }
