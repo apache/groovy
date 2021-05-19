@@ -138,19 +138,25 @@ public class DefaultGroovyStaticMethods {
         long start = System.currentTimeMillis();
         long rest = millis;
         long current;
-        while (rest > 0) {
-            try {
-                Thread.sleep(rest);
-                rest = 0;
-            } catch (InterruptedException e) {
-                if (closure != null) {
-                    if (DefaultTypeTransformation.castToBoolean(closure.call(e))) {
-                        return;
+        boolean interrupted = false;
+        try {
+            while (rest > 0) {
+                try {
+                    Thread.sleep(rest);
+                    rest = 0;
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                    if (closure != null) {
+                        if (DefaultTypeTransformation.castToBoolean(closure.call(e))) {
+                            return;
+                        }
                     }
+                    current = System.currentTimeMillis(); // compensate for closure's time
+                    rest = millis + start - current;
                 }
-                current = System.currentTimeMillis(); // compensate for closure's time
-                rest = millis + start - current;
             }
+        } finally {
+            if (interrupted) Thread.currentThread().interrupt();
         }
     }
 

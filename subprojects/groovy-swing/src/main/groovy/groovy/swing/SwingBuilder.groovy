@@ -334,6 +334,7 @@ class SwingBuilder extends FactoryBuilderSupport {
                     continuationData = getContinuationData()
                 }
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new GroovyRuntimeException("interrupted swing interaction", e)
             } catch (InvocationTargetException e) {
                 throw new GroovyRuntimeException("exception in event dispatch thread", e.getTargetException())
