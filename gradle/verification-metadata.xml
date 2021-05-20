@@ -150,7 +150,6 @@
          </trusted-key>
          <trusted-key id="b38e195d438d44a1a8d2d2203575e1c767076ca8" group="javax.xml.bind"/>
          <trusted-key id="b6e73d84ea4fcc47166087253faad2cd5ecbb314" group="commons-beanutils"/>
-         <trusted-key id="b7b6c746bfe0389172eab86faf0a94402ea0a67f" group="org.spockframework"/>
          <trusted-key id="b801e2f8ef035068ec1139cc29579f18fa8fd93b" group="com.google.j2objc" name="j2objc-annotations"/>
          <trusted-key id="b94797af54ae59b1e3c154da8e1ad594207b7fb2" group="org.reflections" name="reflections" version="0.9.12"/>
          <trusted-key id="ba926f64ca647b6d853a38672e2010f8a7ff4a41" group="org.codehaus.plexus"/>
