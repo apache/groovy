@@ -284,44 +284,18 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10646
-    void testReturnTypeInferenceWithMethodGenerics28() {
-        String types = '''
-            class Model {
+    // GROOVY-10098
+    void testReturnTypeInferenceWithMethodGenerics16() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C<T extends Number> {
+              T p
+              T m() {
+                Closure<T> x = { -> p }
+                x() // Cannot return value of type Object on method returning type T
+              }
             }
-            interface Output<T> {
-                T getT()
-            }
-            abstract class WhereDSL<Type> {
-                abstract Type where()
-            }
-            abstract class Input<T> extends WhereDSL<ReferencesOuterClassTP> {
-                class ReferencesOuterClassTP implements Output<T> {
-                    @Override T getT() { return null }
-                }
-            }
-        '''
-        assertScript types + '''
-            void m(Input<Model> input) {
-                def output = input.where()
-                @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                    assert node.getNodeMetaData(INFERRED_TYPE).toString(false) == 'Model'
-                })
-                def result = output.getT()
-            }
-        '''
-        assertScript types + '''
-            @FunctionalInterface
-            interface Xform extends java.util.function.Function<Input<Model>, Output<Model>> {
-            }
-
-            void select(Xform xform) {
-            }
-
-            select { input ->
-                def result = input.where()
-                return result // Cannot return value of type Input$ReferencesOuterClassTP for closure expecting Output<Model>
-            }
+            assert new C<>(42).m() == 42
         '''
     }
 
