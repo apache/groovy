@@ -216,6 +216,7 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
                         SwingUtilities.invokeAndWait(runnable);
                     } catch (InterruptedException e) {
                         LOG.log(Level.WARNING, "Error notifying propertyChangeListener", e);
+                        Thread.currentThread().interrupt();
                         throw new GroovyRuntimeException(e);
                     } catch (InvocationTargetException e) {
                         LOG.log(Level.WARNING, "Error notifying propertyChangeListener", e.getTargetException());

@@ -49,6 +49,7 @@ public class JmxConnectorHelper {
                 try {
                     Thread.sleep(100L * counter);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     throw new RuntimeException(e);
                 }
             }

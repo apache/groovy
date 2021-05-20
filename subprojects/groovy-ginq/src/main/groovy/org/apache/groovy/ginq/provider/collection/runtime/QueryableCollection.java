@@ -299,10 +299,14 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         if (TRUE_STR.equals(originalParallel)) {
             // invoke `collect` to trigger the intermediate operator, which will create `CompletableFuture` instances
             stream = stream.collect(Collectors.toList()).parallelStream().map((U u) -> {
+                boolean interrupted = false;
                 try {
                     return (U) ((CompletableFuture) u).get();
                 } catch (InterruptedException | ExecutionException ex) {
+                    if (ex instanceof InterruptedException) interrupted = true;
                     throw new GroovyRuntimeException(ex);
+                } finally {
+                    if (interrupted) Thread.currentThread().interrupt();
                 }
             });
         }
