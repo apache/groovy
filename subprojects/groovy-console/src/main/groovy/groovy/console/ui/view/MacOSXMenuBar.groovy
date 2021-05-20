@@ -18,22 +18,21 @@
  */
 package groovy.console.ui.view
 
+import groovy.transform.Field
 import org.codehaus.groovy.vmplugin.VMPluginFactory
 
-def handler = false
-def jdk9plus = VMPluginFactory.getPlugin().getVersion() > 8
-// TODO Desktop handlers are supposed to work cross platform, should we do version check at a higher layer
-// TODO there is also an open files handler, should we also be using that?
-if (!handler) {
-    try {
-        handler = build(jdk9plus ? """
+// install handlers for JDK9+
+final String JDK9PLUS_SCRIPT = """
 import java.awt.Desktop
 def handler = Desktop.getDesktop()
 handler.setAboutHandler(controller.&showAbout)
 handler.setQuitHandler(controller.&exitDesktop)
 handler.setPreferencesHandler(controller.&preferences)
 handler
-""" : """
+"""
+
+// install handlers for JDK <= 8, if the "macOS Runtime Support for Java" (MRJ) is present
+final String MRJ_SCRIPT = """
 package groovy.console.ui
 
 import com.apple.mrj.*
@@ -64,15 +63,90 @@ MRJApplicationUtils.registerQuitHandler(handler)
 MRJApplicationUtils.registerPrefsHandler(handler)
 
 return handler
-""", new GroovyClassLoader(this.class.classLoader))
-    } catch (Exception se) {
-        // usually an AccessControlException, sometimes applets and JNLP won't let
-        // you access MRJ classes.
-        // However, in any exceptional case back out and use the BasicMenuBar
-        se.printStackTrace()
+"""
+
+// install handlers for JDK <= 8, if the "Apple AWT Extension" (EAWT) is present
+final String EAWT_SCRIPT = """
+package groovy.console.ui
+
+import com.apple.eawt.*
+import com.apple.eawt.AppEvent.*
+
+class ConsoleMacOsSupport implements QuitHandler, AboutHandler, PreferencesHandler {
+
+    def quitHandler
+    def aboutHandler
+    def prefHandler
+
+    @Override
+    public void handleAbout(AboutEvent ev) {
+        aboutHandler()
+    }
+
+    @Override
+    public void handleQuitRequestWith(QuitEvent ev, QuitResponse resp) {
+        // Console.exit() returns false, if the user chose to stay around
+        if (quitHandler()) {
+            resp.performQuit()
+        } else {
+            resp.cancelQuit()
+        }
+    }
+
+    @Override
+    public void handlePreferences(PreferencesEvent ev) {
+        prefHandler()
+    }
+}
+
+def handler = new ConsoleMacOsSupport(quitHandler:controller.&exit, aboutHandler:controller.&showAbout, prefHandler:controller.&preferences)
+def application = Application.getApplication()
+application.setQuitHandler(handler)
+application.setAboutHandler(handler)
+application.setPreferencesHandler(handler)
+
+return handler
+"""
+
+def jdk9plus = VMPluginFactory.getPlugin().getVersion() > 8
+// JDK <= 8 only
+def macOsRuntimeForJavaPresent = classExists('com.apple.mrj.MRJApplicationUtils')
+        && classExists('com.apple.mrj.MRJQuitHandler')
+        && classExists('com.apple.mrj.MRJAboutHandler')
+        && classExists('com.apple.mrj.MRJPrefsHandler')
+// JDK <= 8 only
+def appleAwtExtensionPresent = classExists('com.apple.eawt.Application')
+        && classExists('com.apple.eawt.QuitHandler')
+        && classExists('com.apple.eawt.AboutHandler')
+        && classExists('com.apple.eawt.PreferencesHandler')
+// TODO Desktop handlers are supposed to work cross platform, should we do version check at a higher layer
+// TODO there is also an open files handler, should we also be using that?
+try {
+    // select handler version
+    def scriptSource = jdk9plus ? JDK9PLUS_SCRIPT :
+            macOsRuntimeForJavaPresent ? MRJ_SCRIPT :
+            appleAwtExtensionPresent ? EAWT_SCRIPT :
+            null
+    @Field
+    static boolean handlersInstalled = false
+
+    if (scriptSource) {
+        if (!handlersInstalled) {
+            build(scriptSource, new GroovyClassLoader(MacOSXMenuBar.class.classLoader))
+            handlersInstalled = true
+        }
+        // else just skip handler installation and continue with the rest of the script
+    } else {
         build(BasicMenuBar)
         return
     }
+} catch (Exception se) {
+    // usually an AccessControlException, sometimes applets and JNLP won't let
+    // you access MRJ classes.
+    // However, in any exceptional case back out and use the BasicMenuBar
+    se.printStackTrace()
+    build(BasicMenuBar)
+    return
 }
 
 menuBar {
@@ -150,5 +224,14 @@ menuBar {
         menuItem(inspectAstAction, icon:null)
         menuItem(inspectCstAction, icon:null)
         menuItem(inspectTokensAction, icon:null)
+    }
+}
+
+static classExists(String className) {
+    try {
+        MacOSXMenuBar.class.classLoader.loadClass(className)
+        true
+    } catch (ClassNotFoundException ignored) {
+        false
     }
 }
