@@ -71,7 +71,7 @@ public class VariableExpressionTest extends TestCase {
         assertFalse(intExpression.isDynamicTyped());
     }
 
-    public void testIsDynamicTyped_DYNMAMIC_TYPE() {
+    public void testIsDynamicTyped_DYNAMIC_TYPE() {
         VariableExpression intExpression = new VariableExpression("foo", ClassHelper.DYNAMIC_TYPE);
         assertTrue(intExpression.isDynamicTyped());
     }
