@@ -874,7 +874,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public List<ClassNode> visitCatchType(final CatchTypeContext ctx) {
         if (!asBoolean(ctx)) {
-            return Collections.singletonList(ClassHelper.DYNAMIC_TYPE);
+            return Collections.singletonList(ClassHelper.makeDynamicType());
         }
 
         return ctx.qualifiedClassName().stream()
@@ -1706,7 +1706,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public ClassNode visitReturnType(final ReturnTypeContext ctx) {
         if (!asBoolean(ctx)) {
-            return ClassHelper.OBJECT_TYPE.getPlainNodeReference();
+            return ClassHelper.makeDynamicType();
         }
 
         if (asBoolean(ctx.type())) {
@@ -3633,7 +3633,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public Parameter[] visitStandardLambdaParameters(final StandardLambdaParametersContext ctx) {
         if (asBoolean(ctx.variableDeclaratorId())) {
             VariableExpression variable = this.visitVariableDeclaratorId(ctx.variableDeclaratorId());
-            Parameter parameter = new Parameter(ClassHelper.OBJECT_TYPE.getPlainNodeReference(), variable.getName());
+            Parameter parameter = new Parameter(ClassHelper.makeDynamicType(), variable.getName());
             configureAST(parameter, variable);
             return new Parameter[]{parameter};
         }
@@ -3859,7 +3859,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public ClassNode visitType(final TypeContext ctx) {
         if (!asBoolean(ctx)) {
-            return ClassHelper.OBJECT_TYPE.getPlainNodeReference();
+            return ClassHelper.makeDynamicType();
         }
 
         ClassNode classNode = null;

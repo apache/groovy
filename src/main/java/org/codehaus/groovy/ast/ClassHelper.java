@@ -100,7 +100,9 @@ public class ClassHelper {
     };
 
     public static final ClassNode
-            DYNAMIC_TYPE = makeCached(Object.class),
+            DYNAMIC_TYPE = makeCached(Object.class).setDynamicTyped(true),
+            // todo OBJECT_TYPE should be make(Object.class.getName()) or similar to clearly distinguish from DYNAMIC_TYPE,
+            //      but there are still usages of OBJECT_TYPE around, that are meant to cover DYNAMIC_TYPE too
             OBJECT_TYPE = DYNAMIC_TYPE,
             CLOSURE_TYPE = makeCached(Closure.class),
             GSTRING_TYPE = makeCached(GString.class),
@@ -288,6 +290,10 @@ public class ClassHelper {
         return makeWithoutCaching(name);
     }
 
+    public static ClassNode makeDynamicType() {
+        return OBJECT_TYPE.getPlainNodeReference().setDynamicTyped(true);
+    }
+
     private static final Map<ClassNode, ClassNode> PRIMITIVE_TYPE_TO_WRAPPER_TYPE_MAP = Maps.of(
             boolean_TYPE, Boolean_TYPE,
             byte_TYPE, Byte_TYPE,
@@ -413,7 +419,7 @@ public class ClassHelper {
     }
 
     public static boolean isDynamicTyped(ClassNode type) {
-        return type != null && DYNAMIC_TYPE == type.redirect();
+        return type != null && type.isDynamicTyped();
     }
 
     public static boolean isPrimitiveBoolean(ClassNode type) {

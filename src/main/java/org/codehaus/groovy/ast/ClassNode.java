@@ -144,6 +144,7 @@ public class ClassNode extends AnnotatedNode {
     private String name;
     private int modifiers;
     private boolean syntheticPublic;
+    private boolean dynamicTyped;
     private ClassNode[] interfaces;
     private MixinNode[] mixins;
     private List<Statement> objectInitializers;
@@ -469,6 +470,15 @@ public class ClassNode extends AnnotatedNode {
         if (properties == null)
             properties = new ArrayList<>();
         return properties;
+    }
+
+    ClassNode setDynamicTyped(boolean dynamicTyped) {
+        this.dynamicTyped = dynamicTyped;
+        return this;
+    }
+
+    boolean isDynamicTyped() {
+        return dynamicTyped;
     }
 
     public List<ConstructorNode> getDeclaredConstructors() {
