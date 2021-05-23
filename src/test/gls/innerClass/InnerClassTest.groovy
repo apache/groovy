@@ -1121,7 +1121,11 @@ final class InnerClassTest {
             class A {
                 static field = 10
 
-                void main(a) {
+                static main(args) {
+                    new A().test()
+                }
+
+                void test() {
                     assert new C().m() == [10,12,14,16]
                 }
 
