@@ -472,11 +472,29 @@ public class ClassNode extends AnnotatedNode {
         return properties;
     }
 
+    /**
+     * Indicate that that ClassNode is dynamically typed, which means it is either weakly typed and
+     * replaced by <em>java.lang.Object</em> or that the type is to be inferred by Groovy.<br />
+     * This can apply to variables, parameters, return types and others.
+     * Usually this happens when the type is absent or in conjunction with the <em>def</em> or <em>var</em> keywords.<br />
+     * The method is package private and should only be accessed through {@link ClassHelper}.
+     * @param dynamicTyped true, if this ClassNode should be treated as dynamically typed.
+     * @return this ClassNode.
+     * @see #isDynamicTyped()
+     * @see ClassHelper#makeDynamicType()
+     */
     ClassNode setDynamicTyped(boolean dynamicTyped) {
         this.dynamicTyped = dynamicTyped;
         return this;
     }
 
+    /**
+     * Inquire, if this ClassNode is indicated to be dynamically typed.<br />
+     * The method is package private and should only be accessed through {@link ClassHelper}.
+     * @return true, if this ClassNode should be treated as dynamically typed.
+     * @see #setDynamicTyped(boolean)
+     * @see ClassHelper#isDynamicTyped(ClassNode)
+     */
     boolean isDynamicTyped() {
         return dynamicTyped;
     }

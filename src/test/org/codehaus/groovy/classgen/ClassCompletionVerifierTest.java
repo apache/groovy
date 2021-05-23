@@ -23,10 +23,14 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.builder.AstBuilder;
+import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+
+import static org.junit.Assert.assertThrows;
 
 public class ClassCompletionVerifierTest extends TestSupport {
     private SourceUnit source;
@@ -73,6 +77,8 @@ public class ClassCompletionVerifierTest extends TestSupport {
             "Method 'prim' is private but should be public in interface 'zzz'.";
     private static final String EXPECTED_ABSTRACT_PRIVATE_METHOD_ERROR_MESSAGE =
             "Method 'y' from class 'X' must not be private as it is declared as an abstract method.";
+    private static final String EXPECTED_CATCH_NOT_THROWABLE_MESSAGE =
+            "Catch statement parameter type is not a subclass of Throwable.";
 
     protected void setUp() throws Exception {
         super.setUp();
@@ -224,5 +230,32 @@ public class ClassCompletionVerifierTest extends TestSupport {
         }
         writer.close();
         return stringWriter.toString();
+    }
+
+    public void testDetectsInvalidCatchType() {
+        assertCompilationOk("def catching() { try {} catch (e) {} }");
+        assertCompilationOk("def catching() { try {} catch (Throwable t) {} }");
+        assertCompilationOk("def catching() { try {} catch (Exception e) {} }");
+        assertCompilationOk("def catching() { try {} catch (RuntimeException e) {} }");
+        assertCompilationOk("def catching() { try {} catch (public e) {} }");
+        assertCompilationOk("def catching() { try {} catch (final e) {} }");
+        assertCompilationOk("def catching() { try {} catch (@NonNull e) {} }");
+        assertCompilationFailure("def catching() { try {} catch (String e) {} }", EXPECTED_CATCH_NOT_THROWABLE_MESSAGE);
+        assertCompilationFailure("def catching() { try {} catch (Object e) {} }", EXPECTED_CATCH_NOT_THROWABLE_MESSAGE);
+        assertCompilationFailure("class C<T> { def catching() { try { 42 / 0 } catch (T ex) { ex.printStackTrace() } } }",
+                EXPECTED_CATCH_NOT_THROWABLE_MESSAGE);
+        // I did not expect this construct to work :-)
+        assertCompilationOk("class C<T extends Throwable> { def catching() { try { 42 / 0 } catch (T ex) { ex.printStackTrace() } } }");
+    }
+
+    private void assertCompilationOk(String source) {
+        new AstBuilder().buildFromString(source);
+    }
+
+    private void assertCompilationFailure(String source, String messagePart) {
+        CompilationFailedException ex = assertThrows(CompilationFailedException.class,
+                () -> new AstBuilder().buildFromString(source));
+        assertTrue(String.format("expected message of exception to contain '%s', but got '%s'", messagePart, ex.getMessage()),
+                ex.getMessage().contains(messagePart));
     }
 }

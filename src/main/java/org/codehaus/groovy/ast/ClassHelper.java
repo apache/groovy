@@ -290,6 +290,11 @@ public class ClassHelper {
         return makeWithoutCaching(name);
     }
 
+    /**
+     * Create a dynamically typed ClassNode wrapping <em>java.lang.Object</em>.<br />
+     * A new instance will be returned to allow to attach annotations as well.
+     * @return the created ClassNode.
+     */
     public static ClassNode makeDynamicType() {
         return OBJECT_TYPE.getPlainNodeReference().setDynamicTyped(true);
     }
