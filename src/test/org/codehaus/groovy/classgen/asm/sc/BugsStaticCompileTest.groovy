@@ -1200,27 +1200,20 @@ assert it.next() == 1G
 
     // GROOVY-6851
     void testShouldNotThrowNPEIfElvisOperatorIsUsedInDefaultArgumentValue() {
-        assertScript '''import org.codehaus.groovy.ast.expr.MethodCallExpression
-
-class GrailsHomeWorkspaceReader {
-    @ASTTest(phase=INSTRUCTION_SELECTION,value={
-        def defaultValue = node.parameters[0].initialExpression
-        assert defaultValue instanceof MethodCallExpression
-        def target = defaultValue.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
-        assert target != null
-    })
-    GrailsHomeWorkspaceReader(String grailsHome = System.getProperty('grails.home')) {
-    }
-}
-new GrailsHomeWorkspaceReader()
-'''
         assertScript '''
-class GrailsHomeWorkspaceReader {
-    GrailsHomeWorkspaceReader(String grailsHome = System.getProperty('grails.home') ?: System.getenv('GRAILS_HOME')) {
-    }
-}
-new GrailsHomeWorkspaceReader()
-'''
+            class GrailsHomeWorkspaceReader {
+                GrailsHomeWorkspaceReader(String grailsHome = System.getProperty('grails.home')) {
+                }
+            }
+            new GrailsHomeWorkspaceReader()
+        '''
+        assertScript '''
+            class GrailsHomeWorkspaceReader {
+                GrailsHomeWorkspaceReader(String grailsHome = System.getProperty('grails.home') ?: System.getenv('GRAILS_HOME')) {
+                }
+            }
+            new GrailsHomeWorkspaceReader()
+            '''
     }
 
     // GROOVY-6342
