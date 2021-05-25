@@ -85,6 +85,7 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.applyGenericsContextTo
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
+import static org.codehaus.groovy.classgen.Verifier.DEFAULT_PARAMETER_GENERATED;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.BINARY_EXP_TARGET;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.COMPONENT_TYPE;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.DYNAMIC_OUTER_NODE_CALLBACK;
@@ -139,13 +140,15 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     }
 
     public static boolean isStaticallyCompiled(final AnnotatedNode node) {
-        if (node.getNodeMetaData(STATIC_COMPILE_NODE) != null) {
-            return (Boolean) node.getNodeMetaData(STATIC_COMPILE_NODE);
+        if (node != null && node.getNodeMetaData(STATIC_COMPILE_NODE) != null) {
+            return Boolean.TRUE.equals(node.getNodeMetaData(STATIC_COMPILE_NODE));
         }
         if (node instanceof MethodNode) {
-            return isStaticallyCompiled(node.getDeclaringClass());
-        }
-        if (node instanceof ClassNode && ((ClassNode) node).getOuterClass() != null) {
+            // GROOVY-6851, GROOVY-9151, GROOVY-10104
+            if (!Boolean.TRUE.equals(node.getNodeMetaData(DEFAULT_PARAMETER_GENERATED))) {
+                return isStaticallyCompiled(node.getDeclaringClass());
+            }
+        } else if (node instanceof ClassNode) {
             return isStaticallyCompiled(((ClassNode) node).getOuterClass());
         }
         return false;
