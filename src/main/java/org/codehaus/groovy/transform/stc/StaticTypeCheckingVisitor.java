@@ -4210,8 +4210,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             expression.getBooleanExpression().visit(this);
         }
         Expression trueExpression = expression.getTrueExpression();
+        ClassNode typeOfTrue = findCurrentInstanceOfClass(trueExpression, null);
         trueExpression.visit(this);
-        ClassNode typeOfTrue = findCurrentInstanceOfClass(trueExpression, getType(trueExpression));
+        if (typeOfTrue == null) typeOfTrue = getType(trueExpression);
         typeCheckingContext.popTemporaryTypeInfo(); // instanceof doesn't apply to false branch
         Expression falseExpression = expression.getFalseExpression();
         falseExpression.visit(this);
