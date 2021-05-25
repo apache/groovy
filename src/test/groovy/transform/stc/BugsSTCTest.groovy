@@ -136,6 +136,40 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10106
+    void testCallStaticOrPrivateMethodInTraitFieldInitializer() {
+        ['private', 'static', 'private static'].each { mods ->
+            assertScript """
+                class C {
+                    String s
+                }
+                trait T {
+                    final C c = new C().tap {
+                        config(it)
+                    }
+                    $mods void config(C c) {
+                        c.s = 'x'
+                    }
+                }
+                class U implements T {
+                }
+                def c = new U().c
+                assert c.s == 'x'
+            """
+        }
+
+        shouldFailWithMessages '''
+            trait T {
+                def obj = new Object().tap {
+                    config(it)
+                }
+                static void config(String s) {
+                }
+            }
+        ''',
+        'Cannot find matching method T$Trait$Helper#config(java.lang.Class, java.lang.Object)'
+    }
+
     void testGroovy5444() {
         assertScript '''
             def millis = { System.currentTimeMillis() }

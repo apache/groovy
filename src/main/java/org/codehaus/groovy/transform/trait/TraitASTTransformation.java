@@ -40,6 +40,7 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.classgen.Verifier;
@@ -221,6 +222,11 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             }
         }
 
+        // add fields
+        for (FieldNode field : fields) {
+            processField(field, initializer, staticInitializer, fieldHelper, helper, staticFieldHelper, cNode, fieldNames);
+        }
+
         // add methods
         List<MethodNode> methods = new ArrayList<>(cNode.getMethods());
         List<MethodNode> nonPublicAPIMethods = new LinkedList<>();
@@ -251,11 +257,6 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         // remove methods which should not appear in the trait interface
         for (MethodNode privateMethod : nonPublicAPIMethods) {
             cNode.removeMethod(privateMethod);
-        }
-
-        // add fields
-        for (FieldNode field : fields) {
-            processField(field, initializer, staticInitializer, fieldHelper, helper, staticFieldHelper, cNode, fieldNames);
         }
 
         // copy statements from static and instance init blocks
@@ -606,10 +607,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         ClassNode type;
         if (isStatic) {
             // Class<TraitClass>
-            type = ClassHelper.CLASS_Type.getPlainNodeReference();
-            type.setGenericsTypes(new GenericsType[]{
-                    new GenericsType(rawType)
-            });
+            type = GenericsUtils.makeClassSafe0(ClassHelper.CLASS_Type, new GenericsType(rawType));
         } else {
             // TraitClass
             type = rawType;
