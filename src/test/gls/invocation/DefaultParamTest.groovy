@@ -139,6 +139,29 @@ final class DefaultParamTest extends GroovyTestCase {
         '''
     }
 
+    // GROOVY-6851, GROOVY-9151, GROOVY-10104
+    void testMethodWithAllParametersDefaultedCS() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            String greet(Object o = 'world', String s = o.toString()) {
+                "hello $s"
+            }
+            assert greet() == 'hello world'
+        '''
+
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Main {
+                static main(args) {
+                    assert new Main().test().isEmpty()
+                }
+                Map test(Map<String, Object> m = new HashMap<>(Collections.emptyMap())) {
+                    return m
+                }
+            }
+        '''
+    }
+
     // GROOVY-9151
     void testConstructorWithAllParametersDefaulted() {
         assertScript '''
