@@ -2558,11 +2558,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // method has already been visited by a static type checking visitor
             return;
         }
-        for (Parameter parameter : node.getParameters()) {
-            if (parameter.getInitialExpression() != null) {
-                parameter.getInitialExpression().visit(this);
-            }
-        }
         super.visitConstructor(node);
     }
 
@@ -2587,23 +2582,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         final boolean osc = typeCheckingContext.isInStaticContext;
         try {
             typeCheckingContext.isInStaticContext = node.isStatic();
+
             super.visitMethod(node);
-            for (Parameter parameter : node.getParameters()) {
-                if (parameter.getInitialExpression() != null) {
-                    parameter.getInitialExpression().visit(this);
-                }
-            }
-/*
-            ClassNode rtype = getInferredReturnType(node);
-            if (rtype == null) {
-                storeInferredReturnType(node, node.getReturnType());
-            }
-            addTypeCheckingInfoAnnotation(node);
-*/
         } finally {
             typeCheckingContext.isInStaticContext = osc;
         }
-
         typeCheckingContext.popErrorCollector();
         node.putNodeMetaData(ERROR_COLLECTOR, collector);
     }
