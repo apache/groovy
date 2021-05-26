@@ -300,13 +300,12 @@ public abstract class Traits {
      * Collects all the self types that a type should extend or implement, given
      * the traits is implements. Collects from interfaces and superclasses too.
      * @param receiver a class node that may implement a trait
-     * @param selfTypes a collection where the list of self types will be written
-     * @return the selfTypes collection itself
+     * @param selfTypes a set where the self types will be put
+     * @return the {@code selfTypes} collection
+     *
      * @since 2.4.0
      */
-    public static LinkedHashSet<ClassNode> collectSelfTypes(
-            ClassNode receiver,
-            LinkedHashSet<ClassNode> selfTypes) {
+    public static LinkedHashSet<ClassNode> collectSelfTypes(final ClassNode receiver, final LinkedHashSet<ClassNode> selfTypes) {
         return collectSelfTypes(receiver, selfTypes, true, true);
     }
 
@@ -314,28 +313,30 @@ public abstract class Traits {
      * Collects all the self types that a type should extend or implement, given
      * the traits is implements.
      * @param receiver a class node that may implement a trait
-     * @param selfTypes a collection where the list of self types will be written
+     * @param selfTypes a set where the self types will be put
      * @param checkInterfaces should the interfaces that the node implements be collected too
-     * @param checkSuper should we collect from the superclass too
-     * @return the selfTypes collection itself
+     * @param checkSuperClass should we collect from the superclass too
+     * @return the {@code selfTypes} collection
+     *
      * @since 2.4.0
      */
-    public static LinkedHashSet<ClassNode> collectSelfTypes(
-            ClassNode receiver,
-            LinkedHashSet<ClassNode> selfTypes,
-            boolean checkInterfaces,
-            boolean checkSuper) {
+    public static LinkedHashSet<ClassNode> collectSelfTypes(final ClassNode receiver, final LinkedHashSet<ClassNode> selfTypes, final boolean checkInterfaces, final boolean checkSuperClass) {
         if (Traits.isTrait(receiver)) {
             List<AnnotationNode> annotations = receiver.getAnnotations(SELFTYPE_CLASSNODE);
             for (AnnotationNode annotation : annotations) {
                 Expression value = annotation.getMember("value");
                 if (value instanceof ClassExpression) {
-                    selfTypes.add(value.getType());
+                    ClassNode selfType = value.getType();
+                    if (selfTypes.add(selfType)) {
+                        collectSelfTypes(selfType, selfTypes, checkInterfaces, checkSuperClass);
+                    }
                 } else if (value instanceof ListExpression) {
-                    List<Expression> expressions = ((ListExpression) value).getExpressions();
-                    for (Expression expression : expressions) {
+                    for (Expression expression : ((ListExpression) value).getExpressions()) {
                         if (expression instanceof ClassExpression) {
-                            selfTypes.add(expression.getType());
+                            ClassNode selfType = expression.getType();
+                            if (selfTypes.add(selfType)) {
+                                collectSelfTypes(selfType, selfTypes, checkInterfaces, checkSuperClass);
+                            }
                         }
                     }
                 }
@@ -343,14 +344,15 @@ public abstract class Traits {
         }
         if (checkInterfaces) {
             ClassNode[] interfaces = receiver.getInterfaces();
-            for (ClassNode anInterface : interfaces) {
-                collectSelfTypes(anInterface, selfTypes, true, checkSuper);
+            for (ClassNode interFace : interfaces) {
+                if (!selfTypes.contains(interFace)) {
+                    collectSelfTypes(interFace, selfTypes, true, checkSuperClass);
+                }
             }
         }
-
-        if (checkSuper) {
+        if (checkSuperClass) {
             ClassNode superClass = receiver.getSuperClass();
-            if (superClass != null) {
+            if (superClass != null && !ClassHelper.isObjectType(superClass)) {
                 collectSelfTypes(superClass, selfTypes, checkInterfaces, true);
             }
         }
