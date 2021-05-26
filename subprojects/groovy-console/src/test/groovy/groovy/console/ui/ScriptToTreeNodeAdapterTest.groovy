@@ -161,16 +161,25 @@ final class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
     }
 
     void testMethodWithParameterAndInitialValue() {
-        assertTreeStructure(
-                ' def foo(String bar = "some_value") { println bar } ',
-                [
-                        startsWith('ClassNode - script'),
-                        eq('Methods'),
-                        eq('MethodNode - foo'),
-                        eq('Parameter - bar'),
-                        eq('Constant - some_value : java.lang.String'),
-                ]
-            )
+        def script = ' def foo(String bar = "some_value") { println bar } '
+        // check Type path for bar
+        assertTreeStructure(script, [
+                startsWith('ClassNode - script'),
+                eq('Methods'),
+                eq('MethodNode - foo'),
+                eq('Parameter - bar'),
+                eq('Type'),
+                startsWith('ClassNode - java.lang.String'),
+        ])
+        // check Initial Value path for bar
+        assertTreeStructure(script, [
+                startsWith('ClassNode - script'),
+                eq('Methods'),
+                eq('MethodNode - foo'),
+                eq('Parameter - bar'),
+                eq('Initial Value'),
+                eq('Constant - some_value : java.lang.String'),
+        ])
     }
 
     void testClosureParameters() {
@@ -187,17 +196,27 @@ final class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
     }
 
     void testClosureParametersWithInitialValue() {
-        assertTreeStructure(
-                ' def x = { parm1 = "some_value" ->  println parm1 } ',
-                [
-                        eq('BlockStatement - (1)'),
-                        startsWith('ExpressionStatement'),
-                        startsWith('Declaration - def x ='),
-                        eq('ClosureExpression'),
-                        startsWith('Parameter - parm1'),
-                        startsWith('Constant - some_value : java.lang.String'),
-                ]
-        )
+        def script = ' def x = { parm1 = "some_value" ->  println parm1 } '
+        // check Type path for parm1
+        assertTreeStructure(script, [
+                eq('BlockStatement - (1)'),
+                startsWith('ExpressionStatement'),
+                startsWith('Declaration - def x ='),
+                eq('ClosureExpression'),
+                startsWith('Parameter - parm1'),
+                eq('Type'),
+                startsWith('ClassNode - java.lang.Object'),
+        ])
+        // check Initial Value path for parm1
+        assertTreeStructure(script, [
+                eq('BlockStatement - (1)'),
+                startsWith('ExpressionStatement'),
+                startsWith('Declaration - def x ='),
+                eq('ClosureExpression'),
+                startsWith('Parameter - parm1'),
+                eq('Initial Value'),
+                startsWith('Constant - some_value : java.lang.String'),
+        ])
     }
 
     void testNamedArgumentListExpression() {

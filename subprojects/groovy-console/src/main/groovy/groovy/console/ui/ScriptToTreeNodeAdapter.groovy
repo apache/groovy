@@ -24,7 +24,6 @@ import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
 import org.apache.groovy.io.StringBuilderWriter
 import org.codehaus.groovy.GroovyBugError
-import org.codehaus.groovy.ast.AnnotatedNode
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
@@ -317,7 +316,7 @@ class TreeNodeBuildingNodeOperation implements CompilationUnit.IPrimaryClassNode
         collectMethodData(child, 'Methods', classNode)
         collectFieldData(child, 'Fields', classNode)
         collectPropertyData(child, 'Properties', classNode)
-        collectAnnotationData(child, 'Annotations', classNode)
+        collectAnnotationData(child, 'Annotations', classNode.annotations)
 
         if (showClosureClasses)  {
             makeClosureClassTreeNodes(classNode)
@@ -341,17 +340,16 @@ class TreeNodeBuildingNodeOperation implements CompilationUnit.IPrimaryClassNode
             collectMethodData(child, 'Methods', innerClassNode)
             collectFieldData(child, 'Fields', innerClassNode)
             collectPropertyData(child, 'Properties', innerClassNode)
-            collectAnnotationData(child, 'Annotations', innerClassNode)
+            collectAnnotationData(child, 'Annotations', innerClassNode.annotations)
         }
     }
 
-    private void collectAnnotationData(parent, String name, AnnotatedNode node) {
-        def allAnnotations = nodeMaker.makeNode(name)
-        if (node.annotations) {
-            parent.add(allAnnotations)
-            node.annotations?.each {AnnotationNode annotationNode ->
-                def ggrandchild = adapter.make(annotationNode)
-                allAnnotations.add(ggrandchild)
+    private void collectAnnotationData(parent, String name, List<AnnotationNode> annotations) {
+        if (annotations) {
+            def header = nodeMaker.makeNode(name)
+            parent.add(header)
+            annotations?.each { AnnotationNode annotationNode ->
+                header.add(adapter.make(annotationNode))
             }
         }
     }
@@ -362,24 +360,34 @@ class TreeNodeBuildingNodeOperation implements CompilationUnit.IPrimaryClassNode
         classNode.properties?.each {PropertyNode propertyNode ->
             def ggrandchild = adapter.make(propertyNode)
             allProperties.add(ggrandchild)
-            TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
-            if (propertyNode.field?.initialValueExpression) {
-                propertyNode.field.initialValueExpression.visit(visitor)
-                ggrandchild.add(visitor.currentNode)
-            }
+            collectTypeData(ggrandchild, 'Type', propertyNode.type)
+            collectInitialValueData(ggrandchild, propertyNode.field?.initialValueExpression)
+            collectAnnotationData(ggrandchild, 'Annotations', propertyNode.annotations)
         }
     }
 
     private void collectFieldData(parent, String name, ClassNode classNode) {
-        def allFields = nodeMaker.makeNode(name)
-        if (classNode.fields) parent.add(allFields)
-        classNode.fields?.each {FieldNode fieldNode ->
-            def ggrandchild = adapter.make(fieldNode)
-            allFields.add(ggrandchild)
+        if (classNode.fields) {
+            def allFields = nodeMaker.makeNode(name)
+            parent.add(allFields)
+            classNode.fields?.each {FieldNode fieldNode ->
+                def ggrandchild = adapter.make(fieldNode)
+                allFields.add(ggrandchild)
+                collectTypeData(ggrandchild, 'Type', fieldNode.type)
+                collectInitialValueData(ggrandchild, fieldNode.initialValueExpression)
+                collectAnnotationData(ggrandchild, 'Annotations', fieldNode.annotations)
+            }
+        }
+    }
+
+    private void collectInitialValueData(parent, Expression init) {
+        if (init) {
             TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
-            if (fieldNode.initialValueExpression) {
-                fieldNode.initialValueExpression.visit(visitor)
-                if (visitor.currentNode) ggrandchild.add(visitor.currentNode)
+            init.visit(visitor)
+            if (visitor.currentNode) {
+                def header = nodeMaker.makeNode('Initial Value')
+                header.add(visitor.currentNode)
+                parent.add(header)
             }
         }
     }
@@ -403,39 +411,46 @@ class TreeNodeBuildingNodeOperation implements CompilationUnit.IPrimaryClassNode
         methods?.each { MethodNode methodNode ->
             def ggrandchild = adapter.make(methodNode)
             allMethods.add(ggrandchild)
-
-            def returnType = nodeMaker.makeNode("Return Type")
-            def gggrandchild = adapter.make(methodNode.returnType)
-            ggrandchild.add(returnType)
-            returnType.add(gggrandchild)
+            collectTypeData(ggrandchild, 'Return Type', methodNode.returnType)
 
             // print out parameters of method
             methodNode.parameters?.each { Parameter parameter ->
-                gggrandchild = adapter.make(parameter)
-                ggrandchild.add(gggrandchild)
-                if (parameter.initialExpression) {
-                    TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
-                    parameter.initialExpression.visit(visitor)
-                    if (visitor.currentNode) gggrandchild.add(visitor.currentNode)
-                }
-                def type = nodeMaker.makeNode("Type")
-                type.add(adapter.make(parameter.type))
-                gggrandchild.add(type)
-                collectAnnotationData(gggrandchild, 'Annotations', parameter)
+                collectParameterData(ggrandchild, parameter)
             }
 
-            // print out code of method
+            collectBodyData(ggrandchild, methodNode.code)
+            collectAnnotationData(ggrandchild, 'Annotations', methodNode.annotations)
+        }
+    }
+
+    private void collectBodyData(ggrandchild, Statement code) {
+        if (code) {
             TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
-            if (methodNode.code) {
-                def body = nodeMaker.makeNode("Body")
-                methodNode.code.visit(visitor)
-                if (visitor.currentNode) {
-                    ggrandchild.add(body)
-                    body.add(visitor.currentNode)
-                }
+            code.visit(visitor)
+            if (visitor.currentNode) {
+                def body = nodeMaker.makeNode('Body')
+                ggrandchild.add(body)
+                body.add(visitor.currentNode)
             }
+        }
+    }
 
-            collectAnnotationData(ggrandchild, 'Annotations', methodNode)
+    private void collectParameterData(parent, Parameter parameter) {
+        def paramChild = adapter.make(parameter)
+        collectTypeData(paramChild, 'Type', parameter.type)
+        collectInitialValueData(paramChild, parameter.initialExpression)
+        collectAnnotationData(paramChild, 'Annotations', parameter.annotations)
+        parent.add(paramChild)
+    }
+
+    private void collectTypeData(parent, String name, ClassNode type) {
+        if (type) {
+            def header = nodeMaker.makeNode(name)
+            def child = adapter.make(type)
+            header.add(child)
+            collectAnnotationData(child, 'Annotations', type.annotations)
+            collectAnnotationData(child, 'Type Annotations', type.typeAnnotations)
+            parent.add(header)
         }
     }
 
@@ -446,12 +461,12 @@ class TreeNodeBuildingNodeOperation implements CompilationUnit.IPrimaryClassNode
 
             def ggrandchild = adapter.make(ctorNode)
             allCtors.add(ggrandchild)
-            TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
-            if (ctorNode.code) {
-                ctorNode.code.visit(visitor)
-                if (visitor.currentNode) ggrandchild.add(visitor.currentNode)
+            ctorNode.parameters?.each { Parameter parameter ->
+                collectParameterData(ggrandchild, parameter)
             }
-            collectAnnotationData(ggrandchild, 'Annotations', ctorNode)
+
+            collectBodyData(ggrandchild, ctorNode.code)
+            collectAnnotationData(ggrandchild, 'Annotations', ctorNode.annotations)
         }
 
     }
@@ -673,7 +688,15 @@ class TreeNodeBuildingVisitor extends CodeVisitorSupport {
      */
     void visitParameter(Parameter node) {
         addNode(node, Parameter, {
+            if (node.type) {
+                def header = adapter.nodeMaker.makeNode('Type')
+                header.add(adapter.make(node.type))
+                currentNode.add(header)
+            }
             if (node.initialExpression) {
+                def header = adapter.nodeMaker.makeNode('Initial Value')
+                currentNode.add(header)
+                currentNode = header
                 node.initialExpression?.visit(this)
             }
         })
