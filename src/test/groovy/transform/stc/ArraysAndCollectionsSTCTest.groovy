@@ -27,10 +27,11 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             String[] strings = ['a','b','c']
             String str = strings[0]
+            assert str == 'a'
         '''
     }
 
-    void testArrayElementReturnType() {
+    void testArrayElementTypeInference() {
         shouldFailWithMessages '''
             String[] strings = ['a','b','c']
             int str = strings[0]
@@ -43,10 +44,43 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot assign value of type java.lang.String into array of type int[]'
     }
 
+    // GROOVY-9985, GROOVY-9994
     void testWrongComponentTypeInArrayInitializer() {
         shouldFailWithMessages '''
-            int[] intArray = new int[]{'a'}
-        ''', 'Cannot assign value of type java.lang.String into array of type int[]'
+            new int['a']
+        ''', 'Cannot convert from java.lang.String to int'
+        shouldFailWithMessages '''
+            new int[]{'a'}
+        ''', 'Cannot convert from java.lang.String to int'
+        shouldFailWithMessages '''
+            new Integer[]{new Object(),1}
+        ''', 'Cannot convert from java.lang.Object to java.lang.Integer'
+    }
+
+    // GROOVY-10111
+    void testBoundedComponentTypeInArrayInitializer() {
+        assertScript '''
+            class C<X, Y> {
+            }
+            def <X extends C<Number, String>> X[] m() {
+                new X[]{new C<Number, String>()}
+            }
+        '''
+        shouldFailWithMessages '''
+            class C<X, Y> {
+            }
+            def <X extends C<Number, String>> X[] m() {
+                new X[]{new C<Object, String>()}
+            }
+        ''', 'Cannot convert from C<java.lang.Object, java.lang.String> to X'
+    }
+
+    void testConvertibleTypesInArrayInitializer() {
+        assertScript '''
+            def strings = new String[]{1,(long)2,(short)3}
+            assert strings.every { it.class == String }
+            assert strings.toString() == '[1, 2, 3]'
+        '''
     }
 
     void testAssignValueInArrayWithCorrectType() {
