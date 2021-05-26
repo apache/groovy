@@ -34,7 +34,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     void testArrayElementTypeInference() {
         shouldFailWithMessages '''
             String[] strings = ['a','b','c']
-            int str = strings[0]
+            int i = strings[0]
         ''',
         'Cannot assign value of type java.lang.String to variable of type int'
     }
@@ -46,69 +46,77 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.String into array of type int[]'
     }
 
+    // GROOVY-9985, GROOVY-9994
+    void testWrongComponentTypeInArrayInitializer() {
+        shouldFailWithMessages '''
+            new int['a']
+        ''',
+        'Cannot convert from java.lang.String to int'
+    }
+
     void testAssignValueInArrayWithCorrectType() {
         assertScript '''
-            int[] arr2 = [1, 2, 3]
-            arr2[1] = 4
+            int[] array = [1, 2, 3]
+            array[1] = 4
         '''
     }
 
     void testAssignValueInArrayWithWrongType() {
         shouldFailWithMessages '''
-            int[] arr2 = [1, 2, 3]
-            arr2[1] = "One"
+            int[] array = [1, 2, 3]
+            array[1] = "One"
         ''',
         'Cannot assign value of type java.lang.String to variable of type int'
     }
 
     void testBidimensionalArray() {
         assertScript '''
-            int[][] arr2 = new int[1][]
-            arr2[0] = [1,2]
+            int[][] array = new int[1][]
+            array[0] = [1,2]
         '''
     }
 
     void testBidimensionalArrayWithInitializer() {
         shouldFailWithMessages '''
-            int[][] arr2 = new Object[1][]
+            int[][] array = new Object[1][]
         ''',
         'Cannot assign value of type java.lang.Object[][] to variable of type int[][]'
     }
 
     void testBidimensionalArrayWithWrongSubArrayType() {
         shouldFailWithMessages '''
-            int[][] arr2 = new int[1][]
-            arr2[0] = ['1']
+            int[][] array = new int[1][]
+            array[0] = ['1']
         ''',
         'Cannot assign value of type java.lang.String into array of type int[]'
     }
 
     void testForLoopWithArrayAndUntypedVariable() {
         assertScript '''
-            String[] arr = ['1','2','3']
-            for (i in arr) { }
+            String[] array = ['1','2','3']
+            for (i in array) { }
         '''
     }
 
     void testForLoopWithArrayAndWrongVariableType() {
         shouldFailWithMessages '''
-            String[] arr = ['1','2','3']
-            for (int i in arr) { }
+            String[] array = ['1','2','3']
+            for (int i in array) { }
         ''',
         'Cannot loop with element of type int with collection of type java.lang.String[]'
     }
 
     void testJava5StyleForLoopWithArray() {
         assertScript '''
-            String[] arr = ['1','2','3']
-            for (String i : arr) { }
+            String[] array = ['1','2','3']
+            for (String i : array) { }
         '''
     }
 
     void testJava5StyleForLoopWithArrayAndIncompatibleType() {
         shouldFailWithMessages '''
-            String[] arr = ['1','2','3']
-            for (int i : arr) { }
+            String[] array = ['1','2','3']
+            for (int i : array) { }
         ''',
         'Cannot loop with element of type int with collection of type java.lang.String[]'
     }
@@ -141,7 +149,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             List<Integer> a = [1, 3, 5]
 
-            @ASTTest(phase = INSTRUCTION_SELECTION, value = {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
                 assert type == make(List)
                 assert type.genericsTypes.length == 1
@@ -162,7 +170,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
 
             def sc = new SpecialCollection()
 
-            @ASTTest(phase = INSTRUCTION_SELECTION, value = {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
                 assert type == make(List)
                 assert type.genericsTypes.length == 1
@@ -446,7 +454,8 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             Serializable[] arr = ['abc']
             arr.putAt(0, new XmlSlurper())
-        ''', 'Cannot call <T,U extends T> java.io.Serializable[]#putAt(int, U) with arguments [int, groovy.util.XmlSlurper]'
+        ''',
+        'Cannot call <T,U extends T> java.io.Serializable[]#putAt(int, U) with arguments [int, groovy.util.XmlSlurper]'
     }
 
     void testArrayGetOnPrimitiveArray() {
@@ -510,6 +519,10 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-10319
     void testArrayClone() {
+        assertScript '''
+            assert (new int[9]).clone().length == 9
+        '''
+
         assertScript '''
             package p // must be in package for protected method check
 
