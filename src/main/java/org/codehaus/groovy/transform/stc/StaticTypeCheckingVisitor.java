@@ -4121,14 +4121,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
-    public void visitArrayExpression(ArrayExpression source) {
-        super.visitArrayExpression(source);
-        ClassNode elementType = source.getElementType();
-        for (Expression expression : source.getExpressions()) {
-            if (!checkCast(elementType, expression)) {
-                addStaticTypeError("Cannot assign value of type " +
-                        prettyPrintType(getType(expression)) + " into array of type " +
-                        prettyPrintType(source.getType()), expression);
+    public void visitArrayExpression(final ArrayExpression expression) {
+        super.visitArrayExpression(expression);
+        ClassNode elementType;
+        List<Expression> expressions;
+        if (expression.hasInitializer()) {
+            elementType = expression.getElementType();
+            expressions = expression.getExpressions();
+        } else {
+            elementType = int_TYPE;
+            expressions = expression.getSizeExpression();
+        }
+        for (Expression elementExpr : expressions) {
+            if (!checkCompatibleAssignmentTypes(elementType, getType(elementExpr), elementExpr, false)) {
+                addStaticTypeError("Cannot convert from " + prettyPrintType(getType(elementExpr)) + " to " + prettyPrintType(elementType), elementExpr);
             }
         }
     }
