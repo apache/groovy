@@ -1020,6 +1020,26 @@ final class DelegateTransformTest {
             parentDir.deleteDir()
         }
     }
+
+    @Test // GROOVY-5204
+    void testParameterWithDefaultArgument6() {
+        assertScript '''
+            class C {
+                def m(p = null) {
+                    'C'
+                }
+            }
+            class D {
+                @Delegate private C c = new C()
+                def m() {
+                    'D'
+                }
+            }
+
+            assert new D().m() == 'D'
+            assert new D().m('') == 'C'
+        '''
+    }
 }
 
 //------------------------------------------------------------------------------
