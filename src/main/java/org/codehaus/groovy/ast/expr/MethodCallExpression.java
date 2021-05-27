@@ -115,9 +115,7 @@ public class MethodCallExpression extends Expression implements MethodCall {
      * calculated method name, but a constant.
      */
     public String getMethodAsString() {
-        if (!(method instanceof ConstantExpression)) return null;
-        ConstantExpression constant = (ConstantExpression) method;
-        return constant.getText();
+        return (method instanceof ConstantExpression ? method.getText() : null);
     }
 
     public Expression getObjectExpression() {
