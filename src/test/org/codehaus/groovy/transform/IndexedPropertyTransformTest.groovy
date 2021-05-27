@@ -26,7 +26,7 @@ import groovy.test.GroovyShellTestCase
 class IndexedPropertyTransformTest extends GroovyShellTestCase {
 
     void testStandardCase() {
-        assertScript """
+        assertScript '''
             import groovy.transform.IndexedProperty
             class Demo {
                 @IndexedProperty List<Integer> foo
@@ -46,11 +46,11 @@ class IndexedPropertyTransformTest extends GroovyShellTestCase {
             d.baz = ['cat']
             d.setBaz(0, 'dog')
             assert d.getBaz(0) == 'dog'
-        """
+        '''
     }
 
     void testWithCompileStatic() {
-        assertScript """
+        assertScript '''
             import groovy.transform.IndexedProperty
             @groovy.transform.CompileStatic
             class Demo {
@@ -71,7 +71,29 @@ class IndexedPropertyTransformTest extends GroovyShellTestCase {
             d.baz = ['cat']
             d.setBaz(0, 'dog')
             assert d.getBaz(0) == 'dog'
-        """
+        '''
+    }
+
+    void testReadOnlyProperty() {
+        assertScript '''
+            import groovy.transform.*
+            import static groovy.test.GroovyAssert.shouldFail
+
+            class Demo1 {
+                @IndexedProperty List<Integer> foo
+            }
+            @Immutable
+            class Demo2 {
+                @IndexedProperty List<Integer> foo
+            }
+
+            assert Demo1.getMethod('getFoo', int)
+            assert Demo1.getMethod('setFoo', int, Integer)
+            assert Demo2.getMethod('getFoo', int)
+            shouldFail(NoSuchMethodException) {
+                Demo2.getMethod('setFoo', int, Integer)
+            }
+        '''
     }
 
 }

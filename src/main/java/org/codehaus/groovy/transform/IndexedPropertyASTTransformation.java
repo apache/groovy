@@ -69,11 +69,14 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
                 return;
             }
             ClassNode fType = fNode.getType();
+            // TODO: consider looking for an initial value expression that is a call to asUnmodifiable() or an
+            // explicit call to Collections.unmodifiableList(). But currently that is processed one stage too early.
+            boolean immutable = Boolean.TRUE.equals(fNode.getNodeMetaData(ImmutableASTTransformation.IMMUTABLE_BREADCRUMB));
             if (fType.isArray()) {
-                addArraySetter(fNode);
+                if (!immutable) addArraySetter(fNode);
                 addArrayGetter(fNode);
             } else if (fType.isDerivedFrom(LIST_TYPE)) {
-                addListSetter(fNode);
+                if (!immutable) addListSetter(fNode);
                 addListGetter(fNode);
             } else {
                 addError("Error during " + MY_TYPE_NAME + " processing. Non-Indexable property '" + fNode.getName() +
