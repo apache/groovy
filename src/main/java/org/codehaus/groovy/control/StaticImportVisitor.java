@@ -59,6 +59,8 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.hasPossibleStaticProper
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasStaticProperty;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isInnerClass;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isValidAccessorName;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
@@ -242,16 +244,16 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         Expression args = transform(mce.getArguments());
 
         if (mce.isImplicitThis()) {
-            if (currentClass.tryFindPossibleMethod(mce.getMethodAsString(), args) == null) {
+            String name = mce.getMethodAsString();
+            if (currentClass.tryFindPossibleMethod(name, args) == null
+                    && currentClass.getOuterClasses().stream().noneMatch(oc -> oc.tryFindPossibleMethod(name, args) != null)) {
                 Expression result = findStaticMethodImportFromModule(method, args);
                 if (result != null) {
                     setSourcePosition(result, mce);
                     return result;
                 }
-                if (method instanceof ConstantExpression && !inLeftExpression) {
-                    // could be a closure field
-                    String methodName = (String) ((ConstantExpression) method).getValue();
-                    result = findStaticFieldOrPropAccessorImportFromModule(methodName);
+                if (name != null && !inLeftExpression) { // maybe a closure field
+                    result = findStaticFieldOrPropAccessorImportFromModule(name);
                     if (result != null) {
                         result = new MethodCallExpression(result, "call", args);
                         result.setSourcePosition(mce);
@@ -259,14 +261,13 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                     }
                 }
             }
-        } else if (currentMethod != null && currentMethod.isStatic() && (object instanceof VariableExpression && ((VariableExpression) object).isSuperExpression())) {
+        } else if (currentMethod != null && currentMethod.isStatic() && isSuperExpression(object)) {
             Expression result = new MethodCallExpression(new ClassExpression(currentClass.getSuperClass()), method, args);
             result.setSourcePosition(mce);
             return result;
         }
 
-        if (method instanceof ConstantExpression && ((ConstantExpression) method).getValue() instanceof String && (mce.isImplicitThis()
-                || (object instanceof VariableExpression && (((VariableExpression) object).isThisExpression() || ((VariableExpression) object).isSuperExpression())))) {
+        if (method instanceof ConstantExpression && ((ConstantExpression) method).getValue() instanceof String && (mce.isImplicitThis() || isThisOrSuper(object))) {
             String methodName = (String) ((ConstantExpression) method).getValue();
 
             boolean foundInstanceMethod = (currentMethod != null && !currentMethod.isStatic() && currentClass.hasPossibleMethod(methodName, args));
@@ -353,8 +354,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
 
     protected Expression transformPropertyExpression(PropertyExpression pe) {
         if (currentMethod != null && currentMethod.isStatic()
-                && pe.getObjectExpression() instanceof VariableExpression
-                && ((VariableExpression) pe.getObjectExpression()).isSuperExpression()) {
+                && isSuperExpression(pe.getObjectExpression())) {
             PropertyExpression pexp = new PropertyExpression(
                     new ClassExpression(currentClass.getUnresolvedSuperClass()),
                     transform(pe.getProperty())
