@@ -28,7 +28,8 @@ import java.lang.annotation.Target;
 /**
  * Field annotation used with properties to provide an indexed getter and setter for the property.
  * Groovy provides nice GPath syntax support for accessing indexed properties but Java tools
- * or frameworks may expect the JavaBean style setters and getters.
+ * or frameworks may expect the JavaBean style getters and setters.
+ * Only the getter is produced when an immutable field can be determined.
  * <p>
  * <em>Example usage:</em> suppose you have a class with the following properties:
  * <pre>

@@ -220,6 +220,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
     private static void adjustPropertyForImmutability(PropertyNode pNode, List<PropertyNode> newNodes, PropertyHandler handler) {
         final FieldNode fNode = pNode.getField();
         fNode.setModifiers((pNode.getModifiers() & (~ACC_PUBLIC)) | ACC_FINAL | ACC_PRIVATE);
+        fNode.setNodeMetaData("_IMMUTABLE_BREADCRUMB", Boolean.TRUE);
         pNode.setSetterBlock(null);
         Statement getter = handler.createPropGetter(pNode);
         if (getter != null) {

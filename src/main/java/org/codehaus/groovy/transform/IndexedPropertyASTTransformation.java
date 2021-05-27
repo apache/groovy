@@ -68,12 +68,13 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
                 return;
             }
             ClassNode fType = fNode.getType();
+            boolean readOnly = Boolean.TRUE.equals(fNode.getNodeMetaData("_IMMUTABLE_BREADCRUMB"));
             if (fType.isArray()) {
-                addArraySetter(fNode);
                 addArrayGetter(fNode);
+                if (!readOnly) addArraySetter(fNode);
             } else if (fType.isDerivedFrom(LIST_TYPE)) {
-                addListSetter(fNode);
                 addListGetter(fNode);
+                if (!readOnly) addListSetter(fNode);
             } else {
                 addError("Error during " + MY_TYPE_NAME + " processing. Non-Indexable property '" + fNode.getName() +
                         "' found. Type must be array or list but found " + fType.getName(), fNode);
