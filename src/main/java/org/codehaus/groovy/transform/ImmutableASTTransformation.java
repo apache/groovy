@@ -95,6 +95,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
     private static final Class<? extends Annotation> MY_CLASS = ImmutableBase.class;
     public static final ClassNode MY_TYPE = makeWithoutCaching(MY_CLASS, false);
     private static final String MY_TYPE_NAME = MY_TYPE.getNameWithoutPackage();
+    public static final String IMMUTABLE_BREADCRUMB = "_IMMUTABLE_BREADCRUMB";
 
     private CompilationUnit compilationUnit;
 
@@ -225,6 +226,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
     private static void adjustPropertyForImmutability(final PropertyNode pNode, final List<PropertyNode> newNodes, final PropertyHandler handler) {
         final FieldNode fNode = pNode.getField();
         fNode.setModifiers((pNode.getModifiers() & (~ACC_PUBLIC)) | ACC_FINAL | ACC_PRIVATE);
+        fNode.setNodeMetaData(IMMUTABLE_BREADCRUMB, Boolean.TRUE);
         pNode.setSetterBlock(null);
         Statement getter = handler.createPropGetter(pNode);
         if (getter != null) {
