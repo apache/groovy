@@ -42,6 +42,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.indexX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.transform.ImmutableASTTransformation.IMMUTABLE_BREADCRUMB;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 
@@ -72,11 +73,14 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
                 return;
             }
             ClassNode fType = fNode.getType();
+            // TODO consider looking for an initial value expression that is a call to asUnmodifiable() or an
+            // explicit call to Collections.unmodifiableList(). But currently that is processed one stage too early.
+            boolean immutable = Boolean.TRUE.equals(fNode.getNodeMetaData(IMMUTABLE_BREADCRUMB));
             if (fType.isArray()) {
-                addArraySetter(fNode);
+                if (!immutable) addArraySetter(fNode);
                 addArrayGetter(fNode);
             } else if (fType.isDerivedFrom(LIST_TYPE)) {
-                addListSetter(fNode);
+                if (!immutable) addListSetter(fNode);
                 addListGetter(fNode);
             } else {
                 addError("Error during " + MY_TYPE_NAME + " processing. Non-Indexable property '" + fNode.getName() +
