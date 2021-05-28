@@ -354,6 +354,23 @@ final class GenericsUsageTest extends CompilableTestSupport {
         ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
     }
 
+    // GROOVY-5441
+    void testCompilationErrorForMismatchedGenericsWithQualifiedTypes() {
+        shouldFailCompilationWithMessages '''
+            groovy.lang.Tuple2<Object> tuple
+        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        shouldFailCompilationWithMessages '''
+            java.util.List<Object,Object> list
+        ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
+        shouldFailCompilationWithMessages '''
+            java.util.Map<Object,Object,Object> map
+        ''', ['(supplied with 3 type parameters)', 'which takes 2 parameters']
+        shouldFailCompilationWithMessages '''
+            def (java.util.Map<Object> x, java.util.List<Object,Object> y) = [null,null]
+        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters',
+              '(supplied with 2 type parameters)', 'which takes 1 parameter']
+    }
+
     // GROOVY-8990
     void testCompilationErrorForMismatchedGenericsWithMultipleBounds() {
         shouldFailCompilationWithMessages '''
