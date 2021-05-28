@@ -171,10 +171,6 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         final boolean abstractType = node.isAbstract();
 
         for (ClassNode cn = node; cn != null && !isObjectType(cn); cn = cn.getSuperClass()) {
-            if (cn.isScript()) {
-                return new DynamicVariable(name, false);
-            }
-
             for (FieldNode fn : cn.getFields()) {
                 if (name.equals(fn.getName())) return fn;
             }
@@ -243,7 +239,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 if (member != null) {
                     boolean staticScope = (crossingStaticContext || inSpecialConstructorCall), staticMember = member.isInStaticContext();
                     // prevent a static context (e.g. a static method) from accessing a non-static variable (e.g. a non-static field)
-                    if (!(staticScope && !staticMember)) {
+                    if (!(staticScope ? !staticMember : node.isScript())) {
                         variable = member;
                     }
                 }
