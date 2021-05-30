@@ -621,6 +621,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private void inheritInterfaceNewMetaMethods(final Set<CachedClass> interfaces) {
+        Method[] theClassMethods = null;
         // add methods declared by DGM for interfaces
         for (CachedClass face : interfaces) {
             for (MetaMethod method : getNewMetaMethods(face)) {
@@ -628,11 +629,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 // skip DGM methods on an interface if the class already has the method
                 // but don't skip for GroovyObject-related methods as it breaks things :-(
                 if (method instanceof GeneratedMetaMethod && !isAssignableFrom(GroovyObject.class, method.getDeclaringClass().getTheClass())) {
-                    for (Method m : theClass.getMethods()) {
-                        if (method.getName().equals(m.getName())
+                    final String generatedMethodName = method.getName();
+                    final CachedClass[] generatedMethodParameterTypes = method.getParameterTypes();
+                    for (Method m : (null == theClassMethods ? theClassMethods = theClass.getMethods() : theClassMethods)) {
+                        if (generatedMethodName.equals(m.getName())
                                 // below not true for DGM#push and also co-variant return scenarios
                                 //&& method.getReturnType().equals(m.getReturnType())
-                                && MetaMethod.equal(method.getParameterTypes(), m.getParameterTypes())) {
+                                && MetaMethod.equal(generatedMethodParameterTypes, m.getParameterTypes())) {
                             skip = true;
                             break;
                         }
