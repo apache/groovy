@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.ast.tools;
 
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
@@ -28,7 +27,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -36,15 +34,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.stream.IntStream.range;
 import static org.codehaus.groovy.ast.ClassHelper.Number_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
-import static org.codehaus.groovy.ast.ClassHelper.isNumberType;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isBigDecimalType;
 import static org.codehaus.groovy.ast.ClassHelper.isBigIntegerType;
+import static org.codehaus.groovy.ast.ClassHelper.isNumberType;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveByte;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveChar;
@@ -53,7 +55,11 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveFloat;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveInt;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveShort;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
+import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
+import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
@@ -74,42 +80,37 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
  */
 public class WideningCategories {
 
-    private static final List<ClassNode> EMPTY_CLASSNODE_LIST = Collections.emptyList();
-
-    private static final Map<ClassNode, Integer> NUMBER_TYPES_PRECEDENCE = Collections.unmodifiableMap(new HashMap<ClassNode, Integer>() {
-        private static final long serialVersionUID = -5178744121420941913L;
-
-        {
-        put(ClassHelper.double_TYPE, 0);
-        put(ClassHelper.float_TYPE, 1);
-        put(ClassHelper.long_TYPE, 2);
-        put(ClassHelper.int_TYPE, 3);
-        put(ClassHelper.short_TYPE, 4);
-        put(ClassHelper.byte_TYPE, 5);
-    }});
+    private static final Map<ClassNode, Integer> NUMBER_TYPES_PRECEDENCE = org.apache.groovy.util.Maps.of(
+        double_TYPE, 0,
+        float_TYPE,  1,
+        long_TYPE,   2,
+        int_TYPE,    3,
+        short_TYPE,  4,
+        byte_TYPE,   5
+    );
 
     /**
      * A comparator which is used in case we generate a virtual lower upper bound class node. In that case,
      * since a concrete implementation should be used at compile time, we must ensure that interfaces are
      * always sorted. It is not important what sort is used, as long as the result is constant.
      */
-    private static final Comparator<ClassNode> INTERFACE_CLASSNODE_COMPARATOR = (o1, o2) -> {
-        int interfaceCountForO1 = o1.getInterfaces().length;
-        int interfaceCountForO2 = o2.getInterfaces().length;
+    private static final Comparator<ClassNode> INTERFACE_CLASSNODE_COMPARATOR = (cn1, cn2) -> {
+        int interfaceCountForO1 = cn1.getInterfaces().length;
+        int interfaceCountForO2 = cn2.getInterfaces().length;
         if (interfaceCountForO1 > interfaceCountForO2) return -1;
         if (interfaceCountForO1 < interfaceCountForO2) return 1;
-        int methodCountForO1 = o1.getMethods().size();
-        int methodCountForO2 = o2.getMethods().size();
+        int methodCountForO1 = cn1.getMethods().size();
+        int methodCountForO2 = cn2.getMethods().size();
         if (methodCountForO1 > methodCountForO2) return -1;
         if (methodCountForO1 < methodCountForO2) return 1;
-        return o1.getName().compareTo(o2.getName());
+        return cn1.getName().compareTo(cn2.getName());
     };
 
     /**
      * Used to check if a type is an int or Integer.
      * @param type the type to check
      */
-    public static boolean isInt(ClassNode type) {
+    public static boolean isInt(final ClassNode type) {
         return isPrimitiveInt(type);
     }
 
@@ -117,7 +118,7 @@ public class WideningCategories {
      * Used to check if a type is an double or Double.
      * @param type the type to check
      */
-    public static boolean isDouble(ClassNode type) {
+    public static boolean isDouble(final ClassNode type) {
         return isPrimitiveDouble(type);
     }
 
@@ -125,7 +126,7 @@ public class WideningCategories {
      * Used to check if a type is a float or Float.
      * @param type the type to check
      */
-    public static boolean isFloat(ClassNode type) {
+    public static boolean isFloat(final ClassNode type) {
         return isPrimitiveFloat(type);
     }
 
@@ -133,7 +134,7 @@ public class WideningCategories {
      * It is of an int category, if the provided type is a
      * byte, char, short, int.
      */
-    public static boolean isIntCategory(ClassNode type) {
+    public static boolean isIntCategory(final ClassNode type) {
         return isPrimitiveByte(type) || isPrimitiveChar(type) || isPrimitiveInt(type) || isPrimitiveShort(type);
     }
 
@@ -141,7 +142,7 @@ public class WideningCategories {
      * It is of a long category, if the provided type is a
      * long, its wrapper or if it is a long category.
      */
-    public static boolean isLongCategory(ClassNode type) {
+    public static boolean isLongCategory(final ClassNode type) {
         return isPrimitiveLong(type) || isIntCategory(type);
     }
 
@@ -149,7 +150,7 @@ public class WideningCategories {
      * It is of a BigInteger category, if the provided type is a
      * long category or a BigInteger.
      */
-    public static boolean isBigIntCategory(ClassNode type) {
+    public static boolean isBigIntCategory(final ClassNode type) {
         return isBigIntegerType(type) || isLongCategory(type);
     }
 
@@ -157,7 +158,7 @@ public class WideningCategories {
      * It is of a BigDecimal category, if the provided type is a
      * BigInteger category or a BigDecimal.
      */
-    public static boolean isBigDecCategory(ClassNode type) {
+    public static boolean isBigDecCategory(final ClassNode type) {
         return isBigDecimalType(type) || isBigIntCategory(type);
     }
 
@@ -165,7 +166,7 @@ public class WideningCategories {
      * It is of a double category, if the provided type is a
      * BigDecimal, a float, double. C(type)=double
      */
-    public static boolean isDoubleCategory(ClassNode type) {
+    public static boolean isDoubleCategory(final ClassNode type) {
         return isPrimitiveFloat(type) || isPrimitiveDouble(type) || isBigDecCategory(type);
     }
 
@@ -173,11 +174,11 @@ public class WideningCategories {
      * It is of a floating category, if the provided type is a
      * a float, double. C(type)=float
      */
-    public static boolean isFloatingCategory(ClassNode type) {
+    public static boolean isFloatingCategory(final ClassNode type) {
         return isPrimitiveFloat(type) || isPrimitiveDouble(type);
     }
 
-    public static boolean isNumberCategory(ClassNode type) {
+    public static boolean isNumberCategory(final ClassNode type) {
         return isBigDecCategory(type) || type.isDerivedFrom(Number_TYPE);
     }
 
@@ -188,7 +189,7 @@ public class WideningCategories {
      * @param nodes the list of nodes for which to find the first common super type.
      * @return first common supertype
      */
-    public static ClassNode lowestUpperBound(List<ClassNode> nodes) {
+    public static ClassNode lowestUpperBound(final List<ClassNode> nodes) {
         if (nodes.size()==1) return nodes.get(0);
         return lowestUpperBound(nodes.get(0), lowestUpperBound(nodes.subList(1, nodes.size())));
     }
@@ -210,7 +211,7 @@ public class WideningCategories {
      * @param b second class node
      * @return first common supertype
      */
-    public static ClassNode lowestUpperBound(ClassNode a, ClassNode b) {
+    public static ClassNode lowestUpperBound(final ClassNode a, final ClassNode b) {
         ClassNode lub = lowestUpperBound(a, b, null, null);
         if (lub==null || !lub.isUsingGenerics()) return lub;
         // types may be parameterized. If so, we must ensure that generic type arguments
@@ -239,7 +240,6 @@ public class WideningCategories {
             return new LowestUpperBoundClassNode(((LowestUpperBoundClassNode)lub).name, psc, pinterfaces);
         } else {
             return parameterizeLowestUpperBound(lub, a, b, lub);
-
         }
     }
 
@@ -265,32 +265,32 @@ public class WideningCategories {
         // let's compare their generics type
         GenericsType[] agt = holderForA == null ? null : holderForA.getGenericsTypes();
         GenericsType[] bgt = holderForB == null ? null : holderForB.getGenericsTypes();
-        if (agt==null || bgt==null || agt.length!=bgt.length) {
+        if (agt == null || bgt == null || agt.length != bgt.length) {
             return lub;
         }
-        GenericsType[] lubgt = new GenericsType[agt.length];
-        for (int i = 0; i < agt.length; i++) {
+        int n = agt.length; GenericsType[] lubGTs = new GenericsType[n];
+        for (int i = 0; i < n; i += 1) {
             ClassNode t1 = agt[i].getType();
             ClassNode t2 = bgt[i].getType();
             ClassNode basicType;
-            if (areEqualWithGenerics(t1, a) && areEqualWithGenerics(t2,b)) {
+            if (areEqualWithGenerics(t1, isPrimitiveType(a)?getWrapper(a):a) && areEqualWithGenerics(t2, isPrimitiveType(b)?getWrapper(b):b)) {
                 // we are facing a self referencing type !
                 basicType = fallback;
             } else {
-                 basicType = lowestUpperBound(t1, t2);
+                basicType = lowestUpperBound(t1, t2);
             }
             if (t1.equals(t2)) {
-                lubgt[i] = new GenericsType(basicType);
+                lubGTs[i] = new GenericsType(basicType);
             } else {
-                lubgt[i] = GenericsUtils.buildWildcardType(basicType);
+                lubGTs[i] = GenericsUtils.buildWildcardType(basicType);
             }
         }
         ClassNode plain = lub.getPlainNodeReference();
-        plain.setGenericsTypes(lubgt);
+        plain.setGenericsTypes(lubGTs);
         return plain;
     }
 
-    private static ClassNode findGenericsTypeHolderForClass(ClassNode source, ClassNode type) {
+    private static ClassNode findGenericsTypeHolderForClass(ClassNode source, final ClassNode type) {
         if (isPrimitiveType(source)) source = getWrapper(source);
         if (source.equals(type)) return source;
         if (type.isInterface()) {
@@ -325,7 +325,7 @@ public class WideningCategories {
         return null;
     }
 
-    private static ClassNode lowestUpperBound(ClassNode a, ClassNode b, List<ClassNode> interfacesImplementedByA, List<ClassNode> interfacesImplementedByB) {
+    private static ClassNode lowestUpperBound(final ClassNode a, final ClassNode b, List<ClassNode> interfacesImplementedByA, List<ClassNode> interfacesImplementedByB) {
         // first test special cases
         if (a==null || b==null) {
             // this is a corner case, you should not
@@ -472,7 +472,7 @@ public class WideningCategories {
         return lowestUpperBound(sa, sb, interfacesImplementedByA, interfacesImplementedByB);
     }
 
-    private static void extractInterfaces(ClassNode node, Set<ClassNode> interfaces) {
+    private static void extractInterfaces(final ClassNode node, final Set<ClassNode> interfaces) {
         if (node==null) return;
         Collections.addAll(interfaces, node.getInterfaces());
         extractInterfaces(node.getSuperClass(), interfaces);
@@ -485,8 +485,8 @@ public class WideningCategories {
      * @param fromB
      * @return the list of the most specific common implemented interfaces
      */
-    private static List<ClassNode> keepLowestCommonInterfaces(List<ClassNode> fromA, List<ClassNode> fromB) {
-        if (fromA==null||fromB==null) return EMPTY_CLASSNODE_LIST;
+    private static List<ClassNode> keepLowestCommonInterfaces(final List<ClassNode> fromA, final List<ClassNode> fromB) {
+        if (fromA == null || fromB == null) return Collections.emptyList();
         Set<ClassNode> common = new HashSet<ClassNode>(fromA);
         common.retainAll(fromB);
         List<ClassNode> result = new ArrayList<ClassNode>(common.size());
@@ -496,7 +496,7 @@ public class WideningCategories {
         return result;
     }
 
-    private static void addMostSpecificInterface(ClassNode interfaceNode, List<ClassNode> nodes) {
+    private static void addMostSpecificInterface(final ClassNode interfaceNode, final List<ClassNode> nodes) {
         if (nodes.isEmpty()) nodes.add(interfaceNode);
         for (int i = 0, nodesSize = nodes.size(); i < nodesSize; i++) {
             final ClassNode node = nodes.get(i);
@@ -538,7 +538,7 @@ public class WideningCategories {
      * @param interfaces interfaces both class nodes share, which their lowest common super class do not implement.
      * @return the class node representing the lowest upper bound
      */
-    private static ClassNode buildTypeWithInterfaces(ClassNode baseType1, ClassNode baseType2, Collection<ClassNode> interfaces) {
+    private static ClassNode buildTypeWithInterfaces(final ClassNode baseType1, final ClassNode baseType2, final Collection<ClassNode> interfaces) {
         boolean noInterface = interfaces.isEmpty();
         if (noInterface) {
             if (baseType1.equals(baseType2)) return baseType1;
@@ -596,9 +596,9 @@ public class WideningCategories {
      *
      */
     public static class LowestUpperBoundClassNode extends ClassNode {
-        private static final Comparator<ClassNode> CLASS_NODE_COMPARATOR = (o1, o2) -> {
-            String n1 = o1 instanceof LowestUpperBoundClassNode?((LowestUpperBoundClassNode)o1).name:o1.getName();
-            String n2 = o2 instanceof LowestUpperBoundClassNode?((LowestUpperBoundClassNode)o2).name:o2.getName();
+        private static final Comparator<ClassNode> CLASS_NODE_COMPARATOR = (cn1, cn2) -> {
+            String n1 = cn1 instanceof LowestUpperBoundClassNode?((LowestUpperBoundClassNode)cn1).name:cn1.getName();
+            String n2 = cn2 instanceof LowestUpperBoundClassNode?((LowestUpperBoundClassNode)cn2).name:cn2.getName();
             return n1.compareTo(n2);
         };
         private final ClassNode compileTimeClassNode;
@@ -608,7 +608,7 @@ public class WideningCategories {
         private final ClassNode upper;
         private final ClassNode[] interfaces;
 
-        public LowestUpperBoundClassNode(String name, ClassNode upper, ClassNode... interfaces) {
+        public LowestUpperBoundClassNode(final String name, final ClassNode upper, final ClassNode... interfaces) {
             super(name, ACC_PUBLIC|ACC_FINAL, upper, interfaces, null);
             this.upper = upper;
             this.interfaces = interfaces;
@@ -683,7 +683,7 @@ public class WideningCategories {
                 ubs = new ClassNode[interfaces.length + 1]; ubs[0] = upper;
                 System.arraycopy(interfaces, 0, ubs, 1, interfaces.length);
             }
-            GenericsType gt = new GenericsType(ClassHelper.makeWithoutCaching("?"), ubs, null);
+            GenericsType gt = new GenericsType(makeWithoutCaching("?"), ubs, null);
             gt.setWildcard(true);
             return gt;
         }
@@ -707,35 +707,30 @@ public class WideningCategories {
      * @param b
      * @return true if the class nodes are equal, false otherwise
      */
-    private static boolean areEqualWithGenerics(ClassNode a, ClassNode b) {
+    private static boolean areEqualWithGenerics(final ClassNode a, final ClassNode b) {
         if (a==null) return b==null;
         if (!a.equals(b)) return false;
         if (a.isUsingGenerics() && !b.isUsingGenerics()) return false;
         GenericsType[] gta = a.getGenericsTypes();
         GenericsType[] gtb = b.getGenericsTypes();
-        if (gta==null && gtb!=null) return false;
-        if (gtb==null && gta!=null) return false;
-        if (gta!=null && gtb!=null) {
-            if (gta.length!=gtb.length) return false;
-            for (int i = 0; i < gta.length; i++) {
-                GenericsType ga = gta[i];
-                GenericsType gb = gtb[i];
-                boolean result = ga.isPlaceholder()==gb.isPlaceholder() && ga.isWildcard()==gb.isWildcard();
-                result = result && ga.isResolved() && gb.isResolved();
-                result = result && ga.getName().equals(gb.getName());
-                result = result && areEqualWithGenerics(ga.getType(), gb.getType());
-                result = result && areEqualWithGenerics(ga.getLowerBound(), gb.getLowerBound());
-                if (result) {
-                    ClassNode[] upA = ga.getUpperBounds();
-                    if (upA!=null) {
-                        ClassNode[] upB = gb.getUpperBounds();
-                        if (upB==null || upB.length!=upA.length) return false;
-                        for (int j = 0; j < upA.length; j++) {
-                            if (!areEqualWithGenerics(upA[j],upB[j])) return false;
-                        }
-                    }
+        if (gta == null && gtb != null) return false;
+        if (gtb == null && gta != null) return false;
+        if (gta != null && gtb != null) {
+            if (gta.length != gtb.length) return false;
+            for (int i = 0, n = gta.length; i < n; i += 1) {
+                GenericsType gta_i = gta[i];
+                GenericsType gtb_i = gtb[i];
+                ClassNode[] upperA = gta_i.getUpperBounds();
+                ClassNode[] upperB = gtb_i.getUpperBounds();
+                if (gta_i.isPlaceholder() != gtb_i.isPlaceholder()
+                        || gta_i.isWildcard() != gtb_i.isWildcard()
+                        || !gta_i.getName().equals(gtb_i.getName())
+                        || !areEqualWithGenerics(gta_i.getType(), gtb_i.getType())
+                        || !areEqualWithGenerics(gta_i.getLowerBound(), gtb_i.getLowerBound())
+                        || (upperA == null ? upperB != null : upperB.length != upperA.length
+                            || range(0, upperA.length).anyMatch(j -> !areEqualWithGenerics(upperA[j], upperB[j])))) {
+                    return false;
                 }
-                if (!result) return false;
             }
         }
         return true;
