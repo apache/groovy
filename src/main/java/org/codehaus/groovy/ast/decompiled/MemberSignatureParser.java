@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.signature.SignatureVisitor;
@@ -96,6 +97,11 @@ class MemberSignatureParser {
             };
             new SignatureReader(method.signature).accept(v);
             typeParameters = v.getTypeParameters();
+        } else {
+            returnType[0] = GenericsUtils.nonGeneric(returnType[0]);
+            for (int i = 0, n = parameterTypes.length; i < n; i += 1) {
+                parameterTypes[i] = GenericsUtils.nonGeneric(parameterTypes[i]);
+            }
         }
 
         Parameter[] parameters = new Parameter[parameterTypes.length];
@@ -165,9 +171,11 @@ class MemberSignatureParser {
                     type[0] = applyErasure(result, type[0]);
                 }
             });
+        } else {
+            // ex: java.util.Collections#EMPTY_LIST/EMPTY_MAP/EMPTY_SET
+            type[0] = GenericsUtils.nonGeneric(type[0]);
         }
         ConstantExpression value = field.value == null ? null : new ConstantExpression(field.value);
         return new FieldNode(field.fieldName, field.accessModifiers, type[0], owner, value);
     }
 }
-
