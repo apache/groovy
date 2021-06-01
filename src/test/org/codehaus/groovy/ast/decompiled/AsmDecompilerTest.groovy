@@ -28,7 +28,7 @@ import org.codehaus.groovy.control.ClassNodeResolver
 import org.codehaus.groovy.control.CompilationUnit
 import org.objectweb.asm.Opcodes
 
-class AsmDecompilerTest extends TestCase {
+final class AsmDecompilerTest extends TestCase {
 
     void "test decompile class"() {
         ClassNode node = decompile()
@@ -198,13 +198,9 @@ class AsmDecompilerTest extends TestCase {
         assert !anno.isTargetAllowed(AnnotationNode.LOCAL_VARIABLE_TARGET)
     }
 
-    static enum TestEnum {
-        SOURCE, CLASS, RUNTIME
-    }
-
     void "test enum field"() {
-        def node = decompile(TestEnum.name).plainNodeReference
-        for (s in ['SOURCE', 'CLASS', 'RUNTIME']) {
+        def node = decompile(SomeEnum.name).plainNodeReference
+        for (s in ['FOO', 'BAR']) {
             def field = node.getDeclaredField(s)
             assert field
             assert field.type == node
@@ -278,10 +274,14 @@ class AsmDecompilerTest extends TestCase {
         assert field.type.toString() == 'V -> java.lang.RuntimeException'
     }
 
-    static class SomeInnerclass {}
-
     void "test static inner class"() {
-        assert (decompile(SomeInnerclass.name).modifiers & Opcodes.ACC_STATIC) != 0
+        ClassNode cn = decompile(AsmDecompilerTestData.InnerStatic.name)
+        assert (cn.modifiers & Opcodes.ACC_STATIC) != 0
+    }
+
+    void "test static inner with dollar"() {
+        ClassNode cn = decompile(AsmDecompilerTestData.Inner$WithDollar.name)
+        assert (cn.modifiers & Opcodes.ACC_STATIC) != 0
     }
 
     void "test static inner classes with same name"() {
@@ -296,10 +296,6 @@ class AsmDecompilerTest extends TestCase {
         cn = decompile(Groovy8632Groovy.Builder.name)
         assert (cn.modifiers & Opcodes.ACC_STATIC) != 0
         assert (cn.modifiers & Opcodes.ACC_ABSTRACT) == 0
-    }
-
-    void "test static inner with dollar"() {
-        assert (decompile(AsmDecompilerTestData.Inner$WithDollar.name).modifiers & Opcodes.ACC_STATIC) != 0
     }
 
     void "test inner classes with same name"() {
@@ -339,14 +335,14 @@ class AsmDecompilerTest extends TestCase {
         assert asmType.genericsTypes.collect { it.name } == jvmType.genericsTypes.collect { it.name }
     }
 
-    private static ClassNode decompile(String cls = AsmDecompilerTestData.name) {
-        def classFileName = cls.replace('.', '/') + '.class'
+    //--------------------------------------------------------------------------
+
+    private static ClassNode decompile(String className = AsmDecompilerTestData.name) {
+        def classFileName = className.replace('.', '/') + '.class'
         def resource = AsmDecompilerTest.classLoader.getResource(classFileName)
         def stub = AsmDecompiler.parseClass(resource)
 
         def unit = new CompilationUnit(new GroovyClassLoader(AsmDecompilerTest.classLoader))
         return new DecompiledClassNode(stub, new AsmReferenceResolver(new ClassNodeResolver(), unit))
     }
-
 }
-
