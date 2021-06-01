@@ -451,17 +451,11 @@ public class GeneralUtils {
     }
 
     public static Set<ClassNode> getInterfacesAndSuperInterfaces(final ClassNode type) {
-        Set<ClassNode> res = new LinkedHashSet<>();
-        if (type.isInterface()) {
-            res.add(type);
-            return res;
+        Set<ClassNode> result = new LinkedHashSet<>();
+        for (ClassNode next = type; next != null; next = next.getSuperClass()) {
+            result.addAll(next.getAllInterfaces());
         }
-        ClassNode next = type;
-        while (next != null) {
-            res.addAll(next.getAllInterfaces());
-            next = next.getSuperClass();
-        }
-        return res;
+        return result;
     }
 
     public static List<FieldNode> getSuperNonPropertyFields(final ClassNode cNode) {
