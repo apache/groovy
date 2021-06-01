@@ -20,11 +20,11 @@ package org.codehaus.groovy.ast.tools
 
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.GenericsTestCase
-import static org.codehaus.groovy.ast.tools.WideningCategories.*
-import static org.codehaus.groovy.ast.ClassHelper.*
-import org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode
 
-class WideningCategoriesTest extends GenericsTestCase {
+import static org.codehaus.groovy.ast.ClassHelper.*
+import static org.codehaus.groovy.ast.tools.WideningCategories.*
+
+final class WideningCategoriesTest extends GenericsTestCase {
 
     void testBuildCommonTypeWithNullClassNode() {
         ClassNode a = null
@@ -113,7 +113,6 @@ class WideningCategoriesTest extends GenericsTestCase {
         }
     }
 
-
     void testBuildCommonTypeWithTwoIdenticalClasses() {
         ClassNode a = make(HashSet)
         ClassNode b = make(HashSet)
@@ -174,6 +173,20 @@ class WideningCategoriesTest extends GenericsTestCase {
         assert type.name =~ /.*Top/
         assert type.superClass == make(Top)
         assert type.interfaces as Set == [make(Serializable)] as Set
+    }
+
+    // GROOVY-8111
+    void testBuildCommonTypeFromTwoClassesWithTwoCommonInterfacesOneIsSelfReferential() {
+        ClassNode a = boolean_TYPE
+        ClassNode b = extractTypesFromCode("${getClass().getName()}.Pair<String,String> type").type
+        ClassNode lub = lowestUpperBound(a, b)
+
+        assert lub.superClass == OBJECT_TYPE
+        assert lub.interfaces as Set == [make(Comparable), make(Serializable)] as Set
+
+        lub = lowestUpperBound(b, a)
+        assert lub.superClass == OBJECT_TYPE
+        assert lub.interfaces as Set == [make(Comparable), make(Serializable)] as Set
     }
 
     void testStringWithGString() {
@@ -270,7 +283,6 @@ class WideningCategoriesTest extends GenericsTestCase {
         assert genericType == Long_TYPE
     }
 
-
     void testCommonAssignableType() {
         def typeA = extractTypesFromCode('LinkedList type').type
         def typeB = extractTypesFromCode('List type').type
@@ -339,6 +351,7 @@ class WideningCategoriesTest extends GenericsTestCase {
     }
 
     // ---------- Classes and Interfaces used in this unit test ----------------
+
     private static interface InterfaceA {}
     private static interface InterfaceB {}
     private static interface InterfaceE {}
@@ -361,5 +374,21 @@ class WideningCategoriesTest extends GenericsTestCase {
 
     private static class PTop<E> {}
     private static class PTopInt extends PTop<Integer> implements Serializable {}
-    private static class PTopLong extends PTop<Long>  implements Serializable {}
+    private static class PTopLong extends PTop<Long  > implements Serializable {}
+
+    private static class Pair<L,R> implements Map.Entry<L,R>, Comparable<Pair<L,R>>, Serializable {
+        public final L left
+        public final R right
+        private Pair(final L left, final R right) {
+            this.left = left
+            this.right = right
+        }
+        static <L, R> Pair<L, R> of(final L left, final R right) {
+            return new Pair<>(left, right)
+        }
+        L getKey() { left }
+        R getValue() { right }
+        R setValue(R value) { right }
+        int compareTo(Pair<L,R> that) { 0 }
+    }
 }
