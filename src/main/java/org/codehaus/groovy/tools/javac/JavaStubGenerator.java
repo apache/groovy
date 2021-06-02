@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.tools.javac;
 
+import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -40,6 +41,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -390,16 +392,7 @@ public class JavaStubGenerator {
     }
 
     private static boolean sameParameterTypes(final Parameter[] firstParams, final Parameter[] secondParams) {
-        boolean sameParams = firstParams.length == secondParams.length;
-        if (sameParams) {
-            for (int i = 0; i < firstParams.length; i++) {
-                if (!firstParams[i].getType().equals(secondParams[i].getType())) {
-                    sameParams = false;
-                    break;
-                }
-            }
-        }
-        return sameParams;
+        return org.codehaus.groovy.ast.tools.ParameterUtils.parametersEqual(firstParams, secondParams);
     }
 
     private void printConstructors(final PrintWriter out, final ClassNode classNode) {
@@ -503,22 +496,24 @@ public class JavaStubGenerator {
 
     private void printConstructor(PrintWriter out, ClassNode clazz, ConstructorNode constructorNode) {
         printAnnotations(out, constructorNode);
-        // printModifiers(out, constructorNode.getModifiers());
-
         out.print("public "); // temporary hack
+        //printModifiers(out, constructorNode.getModifiers());
+
         String className = clazz.getNameWithoutPackage();
         if (clazz instanceof InnerClassNode)
-            className = className.substring(className.lastIndexOf("$") + 1);
+            className = className.substring(className.lastIndexOf('$') + 1);
         out.println(className);
 
         printParams(out, constructorNode);
 
-        ConstructorCallExpression constrCall = getConstructorCallExpression(constructorNode);
-        if (constrCall == null || !constrCall.isSpecialCall()) {
+        printExceptions(out, constructorNode.getExceptions());
+
+        ConstructorCallExpression ctorCall = getConstructorCallExpression(constructorNode);
+        if (ctorCall == null || !ctorCall.isSpecialCall()) {
             out.println(" {}");
         } else {
             out.println(" {");
-            printSpecialConstructorArgs(out, constructorNode, constrCall);
+            printSpecialConstructorArgs(out, constructorNode, ctorCall);
             out.println("}");
         }
     }
@@ -567,9 +562,9 @@ public class JavaStubGenerator {
 
 
         // if all remaining exceptions are used in the stub we are good
-        outer: for (int i=0; i<superExceptions.length; i++) {
-            ClassNode superExc = superExceptions[i];
-            for (ClassNode stub:stubExceptions) {
+        outer:
+        for (ClassNode superExc : superExceptions) {
+            for (ClassNode stub : stubExceptions) {
                 if (stub.isDerivedFrom(superExc)) continue outer;
             }
             // not found
@@ -579,73 +574,64 @@ public class JavaStubGenerator {
         return true;
     }
 
-    private void printSpecialConstructorArgs(PrintWriter out, ConstructorNode node, ConstructorCallExpression constrCall) {
+    private void printSpecialConstructorArgs(final PrintWriter out, final ConstructorNode ctor, final ConstructorCallExpression ctorCall) {
         // Select a constructor from our class, or super-class which is legal to call,
         // then write out an invoke w/nulls using casts to avoid ambiguous calls
-
-        Parameter[] params = selectAccessibleConstructorFromSuper(node);
+        Parameter[] params = selectAccessibleConstructorFromSuper(ctor);
         if (params != null) {
             out.print("super (");
-
             for (int i = 0, n = params.length; i < n; i += 1) {
                 printDefaultValue(out, params[i].getType());
                 if (i + 1 < n) {
                     out.print(", ");
                 }
             }
-
             out.println(");");
             return;
         }
 
         // Otherwise try the older method based on the constructor's call expression
-        Expression arguments = constrCall.getArguments();
-
-        if (constrCall.isSuperCall()) {
+        Expression arguments = ctorCall.getArguments();
+        if (ctorCall.isSuperCall()) {
             out.print("super(");
         } else {
             out.print("this(");
         }
-
-        // Else try to render some arguments
         if (arguments instanceof ArgumentListExpression) {
-            ArgumentListExpression argumentListExpression = (ArgumentListExpression) arguments;
-            List<Expression> args = argumentListExpression.getExpressions();
-
+            List<Expression> args = ((ArgumentListExpression) arguments).getExpressions();
+            int i = 0, n = args.size();
             for (Expression arg : args) {
                 if (arg instanceof ConstantExpression) {
-                    ConstantExpression expression = (ConstantExpression) arg;
-                    Object o = expression.getValue();
-
-                    if (o instanceof String) {
+                    Object value = ((ConstantExpression) arg).getValue();
+                    if (value instanceof String) {
                         out.print("(String)null");
                     } else {
-                        out.print(expression.getText());
+                        out.print(arg.getText());
                     }
                 } else {
-                    ClassNode type = getConstructorArgumentType(arg, node);
-                    printDefaultValue(out, type);
+                    printDefaultValue(out, getConstructorArgumentType(arg, ctor));
                 }
-
-                if (arg != args.get(args.size() - 1)) {
+                if (++i < n) {
                     out.print(", ");
                 }
             }
         }
-
         out.println(");");
     }
 
-    private static ClassNode getConstructorArgumentType(Expression arg, ConstructorNode node) {
-        if (!(arg instanceof VariableExpression)) return arg.getType();
-        VariableExpression vexp = (VariableExpression) arg;
-        String name = vexp.getName();
-        for (Parameter param : node.getParameters()) {
-            if (param.getName().equals(name)) {
-                return param.getType();
-            }
+    private static ClassNode getConstructorArgumentType(final Expression arg, final ConstructorNode ctor) {
+        if (arg instanceof VariableExpression) {
+            return ((VariableExpression) arg).getAccessedVariable().getType();
         }
-        return vexp.getType();
+        if (arg instanceof MethodCallExpression) { // GROOVY-10122
+            MethodCallExpression mce = (MethodCallExpression) arg;
+            if (ExpressionUtils.isThisExpression(mce.getObjectExpression())) {
+                MethodNode mn = ctor.getDeclaringClass().tryFindPossibleMethod(mce.getMethodAsString(), mce.getArguments());
+                if (mn != null) return mn.getReturnType();
+            }
+            return null;
+        }
+        return arg.getType();
     }
 
     private void printMethod(PrintWriter out, ClassNode clazz, MethodNode methodNode) {
@@ -671,15 +657,7 @@ public class JavaStubGenerator {
         printParams(out, methodNode);
 
         ClassNode[] exceptions = methodNode.getExceptions();
-        for (int i = 0; i < exceptions.length; i++) {
-            ClassNode exception = exceptions[i];
-            if (i == 0) {
-                out.print("throws ");
-            } else {
-                out.print(", ");
-            }
-            printType(out, exception);
-        }
+        printExceptions(out, exceptions);
 
         if (Traits.isTrait(clazz)) {
             out.println(";");
@@ -713,6 +691,18 @@ public class JavaStubGenerator {
             ClassNode retType = methodNode.getReturnType();
             printReturn(out, retType);
             out.println("}");
+        }
+    }
+
+    private void printExceptions(PrintWriter out, ClassNode[] exceptions) {
+        for (int i = 0; i < exceptions.length; i++) {
+            ClassNode exception = exceptions[i];
+            if (i == 0) {
+                out.print("throws ");
+            } else {
+                out.print(", ");
+            }
+            printType(out, exception);
         }
     }
 
@@ -769,12 +759,12 @@ public class JavaStubGenerator {
     }
 
     private void printDefaultValue(final PrintWriter out, final ClassNode type) {
-        if (!type.equals(ClassHelper.boolean_TYPE)) {
+        if (type != null && !type.equals(ClassHelper.boolean_TYPE)) {
             out.print("(");
             printType(out, type);
             out.print(")");
         }
-        if (ClassHelper.isPrimitiveType(type)) {
+        if (type != null && ClassHelper.isPrimitiveType(type)) {
             if (type.equals(ClassHelper.boolean_TYPE)) {
                 out.print("false");
             } else {

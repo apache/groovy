@@ -18,37 +18,37 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-final class Groovy7482 extends StringSourcesStubTestCase {
+final class Groovy10122 extends StringSourcesStubTestCase {
 
     @Override
     Map<String, String> provideSources() {
         [
             'A.java': '''
-                abstract class A {
-                    private Object getProperty(String name) {
-                        return null;
+                public abstract class A {
+                    A(Integer i) {
                     }
                 }
             ''',
-
             'C.groovy': '''
                 class C extends A {
+                    C() { super(m()) }
+                    static Integer m() { 42 }
                 }
             ''',
-
             'Main.java': '''
                 public class Main {
                     public static void main(String[] args) {
                         new C();
                     }
                 }
-            '''
+            ''',
         ]
     }
 
     @Override
     void verifyStubs() {
-        String stub = stubJavaSourceFor('C')
-      //assert !stub.contains('getProperty')
+        def stub = stubJavaSourceFor('C')
+        def specialCtorCall = (stub =~ /super\s*\((.*?)\);/)
+        assert specialCtorCall.find() && specialCtorCall.group(1) == '(java.lang.Integer)null'
     }
 }

@@ -17,10 +17,10 @@
  * under the License.
  *
  */
-
 package groovy.bugs
 
 class Groovy7620Bug extends GroovyTestCase {
+
     void testShouldSeeThatMethodIsNotImplemented() {
         def msg = shouldFail '''
             abstract class A {
@@ -34,10 +34,7 @@ class Groovy7620Bug extends GroovyTestCase {
             class B extends A {
                static Object foo
             }
-
-            new B().test()
-            '''
-
+        '''
         assert msg.contains("The method 'java.lang.Object getFoo()' is already defined in class 'B'")
     }
 
@@ -50,10 +47,7 @@ class Groovy7620Bug extends GroovyTestCase {
             class D implements C {
                static Object foo
             }
-
-            new B().test()
-            '''
-
+        '''
         assert msg.contains("The method 'java.lang.Object getFoo()' is already defined in class 'D'")
     }
 }

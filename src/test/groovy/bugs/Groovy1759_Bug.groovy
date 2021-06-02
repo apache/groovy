@@ -16,7 +16,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+package groovy.bugs
+
 class Groovy1759_Bug extends GroovyTestCase {
+
    void testInterception() {
       def benchmarkInterceptor = new BenchmarkInterceptor()
       def proxy = ProxyMetaClass.getInstance(A.class)
@@ -26,14 +29,14 @@ class Groovy1759_Bug extends GroovyTestCase {
          a.a()
          a.b()
       }
-      
+
       def actual = benchmarkInterceptor.statistic().collect{ [ it[0], it[1] ] }
       def expected = [['ctor', 1],['a', 1],['b', 2]]
       assert expected == actual
    }
-}
 
-class A{
-   void a(){ b() }
-   void b(){}
+   static class A {
+       void a() { b() }
+       void b() {     }
+   }
 }
