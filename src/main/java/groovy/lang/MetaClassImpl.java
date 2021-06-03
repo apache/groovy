@@ -2187,61 +2187,30 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return tuple(method, mp);
     }
 
-    private static MetaMethod getCategoryMethodMissing(Class sender) {
-        List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods(METHOD_MISSING);
-        if (possibleGenericMethods != null) {
-            for (Object possibleGenericMethod : possibleGenericMethods) {
-                MetaMethod mmethod = (MetaMethod) possibleGenericMethod;
-                if (!mmethod.getDeclaringClass().getTheClass().isAssignableFrom(sender))
-                    continue;
-
-                CachedClass[] paramTypes = mmethod.getParameterTypes();
-                if (paramTypes.length == 2 && paramTypes[0].getTheClass() == String.class) {
-                    return mmethod;
-                }
-            }
-        }
-        return null;
+    private static CategoryMethod getCategoryMethodMissing(final Class<?> sender) {
+        return findCategoryMethod(METHOD_MISSING, sender, params ->
+            params.length == 2 && params[0].getTheClass() == String.class
+        );
     }
 
-    private static MetaMethod getCategoryMethodGetter(Class sender, String name, boolean useLongVersion) {
-        List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods(name);
-        if (possibleGenericMethods != null) {
-            for (Object possibleGenericMethod : possibleGenericMethods) {
-                MetaMethod mmethod = (MetaMethod) possibleGenericMethod;
-                if (!mmethod.getDeclaringClass().getTheClass().isAssignableFrom(sender))
-                    continue;
-
-                CachedClass[] paramTypes = mmethod.getParameterTypes();
-                if (useLongVersion) {
-                    if (paramTypes.length == 1 && paramTypes[0].getTheClass() == String.class) {
-                        return mmethod;
-                    }
-                } else {
-                    if (paramTypes.length == 0) return mmethod;
-                }
-            }
-        }
-        return null;
+    private static CategoryMethod getCategoryMethodGetter(final Class<?> sender, final String name, final boolean useLongVersion) {
+        return findCategoryMethod(name, sender, params ->
+            useLongVersion ? params.length == 1 && params[0].getTheClass() == String.class : params.length == 0
+        );
     }
 
-    private static MetaMethod getCategoryMethodSetter(Class sender, String name, boolean useLongVersion) {
-        List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods(name);
-        if (possibleGenericMethods != null) {
-            for (Object possibleGenericMethod : possibleGenericMethods) {
-                MetaMethod mmethod = (MetaMethod) possibleGenericMethod;
-                if (!mmethod.getDeclaringClass().getTheClass().isAssignableFrom(sender))
-                    continue;
+    private static CategoryMethod getCategoryMethodSetter(final Class<?> sender, final String name, final boolean useLongVersion) {
+        return findCategoryMethod(name, sender, params ->
+            useLongVersion ? params.length == 2 && params[0].getTheClass() == String.class : params.length == 1
+        );
+    }
 
-                CachedClass[] paramTypes = mmethod.getParameterTypes();
-                if (useLongVersion) {
-                    if (paramTypes.length == 2 && paramTypes[0].getTheClass() == String.class) {
-                        return mmethod;
-                    }
-                } else {
-                    if (paramTypes.length == 1) return mmethod;
-                }
-            }
+    private static CategoryMethod findCategoryMethod(final String name, final Class<?> sender, final java.util.function.Predicate<CachedClass[]> paramFilter) {
+        List<CategoryMethod> categoryMethods = GroovyCategorySupport.getCategoryMethods(name);
+        if (categoryMethods != null) {
+            return categoryMethods.stream().filter(categoryMethod ->
+                categoryMethod.getDeclaringClass().isAssignableFrom(sender) && paramFilter.test(categoryMethod.getParameterTypes())
+            ).sorted().findFirst().orElse(null);
         }
         return null;
     }

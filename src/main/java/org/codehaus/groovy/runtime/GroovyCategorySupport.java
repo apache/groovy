@@ -230,28 +230,18 @@ public class GroovyCategorySupport {
         /**
          * Sort by most specific to least specific.
          *
-         * @param o the object to compare against
+         * @param that the object to compare against
          */
         @Override
-        public int compareTo(Object o) {
-            CategoryMethod thatMethod = (CategoryMethod) o;
+        public int compareTo(final Object that) {
             Class thisClass = metaClass;
-            Class thatClass = thatMethod.metaClass;
-            if (thisClass == thatClass) return 0;
-            if (isChildOfParent(thisClass, thatClass)) return -1;
-            if (isChildOfParent(thatClass, thisClass)) return 1;
-            return 0;
-        }
+            Class thatClass = ((CategoryMethod) that).metaClass;
 
-        private boolean isChildOfParent(Class candidateChild, Class candidateParent) {
-            Class loop = candidateChild;
-            while(loop != null && loop != Object.class) {
-                loop = loop.getSuperclass();
-                if (loop == candidateParent) {
-                    return true;
-                }
-            }
-            return false;
+            if (thisClass == thatClass) return 0;
+            if (thisClass.isAssignableFrom(thatClass)) return 1;
+            if (thatClass.isAssignableFrom(thisClass)) return -1;
+
+            return 0;
         }
     }
 
