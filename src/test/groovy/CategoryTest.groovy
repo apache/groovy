@@ -180,15 +180,15 @@ final class CategoryTest extends GroovyTestCase {
         """
     }
 
-
     def foo(x){x.bar()}
+
     void testMethodHiding1() {
         def x = new X()
         assert foo(x) == 1
         use (XCat) {
-	        assert foo(x) == 2
-	        def t = Thread.start {assert foo(x)==1}
-	        t.join()
+            assert foo(x) == 2
+            def t = Thread.start {assert foo(x)==1}
+            t.join()
         }
         assert foo(x) == 1
         def t = Thread.start {use (XCat2){assert foo(x)==3}}
@@ -200,12 +200,12 @@ final class CategoryTest extends GroovyTestCase {
         def x = new X()
         assert foo(x) == 1
         use (XCat) {
-	        assert foo(x) == 2
-        	def t = Thread.start {use (XCat2){assert foo(x)==3}}
-        	t.join()
-        	assert foo(x) == 2
-	        t = Thread.start {assert foo(x)==1}
-	        t.join()
+            assert foo(x) == 2
+            def t = Thread.start {use (XCat2){assert foo(x)==3}}
+            t.join()
+            assert foo(x) == 2
+            t = Thread.start {assert foo(x)==1}
+            t.join()
         }
         assert foo(x) == 1
         def t = Thread.start {use (XCat2){assert foo(x)==3}}
@@ -244,6 +244,20 @@ final class CategoryTest extends GroovyTestCase {
 
             use(C) {
                 assert new B().baz() == 1
+            }
+        '''
+    }
+
+    // GROOVY-5453
+    void testOverloadedGetterMethod() {
+        assertScript '''
+            class Cat {
+                static getFoo(String s) {'String'}
+                static getFoo(CharSequence s) {'CharSequence'}
+            }
+            use (Cat) {
+                assert 'abc'.getFoo() == 'String'
+                assert 'abc'.foo      == 'String'
             }
         '''
     }
