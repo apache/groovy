@@ -662,6 +662,10 @@ public abstract class StaticTypeCheckingSupport {
      * @see org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#castToType(Object,Class)
      */
     public static boolean checkCompatibleAssignmentTypes(final ClassNode left, final ClassNode right, final Expression rightExpression, final boolean allowConstructorCoercion) {
+        if (!isPrimitiveType(left) && isNullConstant(rightExpression)) {
+            return true;
+        }
+
         // GROOVY-7307, GROOVY-9952, et al.
         if (left.isGenericsPlaceHolder()) {
             GenericsType[] genericsTypes = left.getGenericsTypes();
@@ -705,13 +709,8 @@ public abstract class StaticTypeCheckingSupport {
             }
         }
 
-        boolean rightExpressionIsNull = isNullConstant(rightExpression);
-        if (rightExpressionIsNull && !isPrimitiveType(left)) {
-            return true;
-        }
-
         // anything can be assigned to an Object, String, [Bb]oolean or Class receiver; except null to boolean
-        if (isWildcardLeftHandSide(left) && !(leftRedirect == boolean_TYPE && rightExpressionIsNull)) return true;
+        if (isWildcardLeftHandSide(left) && !(leftRedirect == boolean_TYPE && isNullConstant(rightExpression))) return true;
 
         if (leftRedirect == char_TYPE && rightRedirect == Character_TYPE) return true;
         if (leftRedirect == Character_TYPE && rightRedirect == char_TYPE) return true;
