@@ -644,6 +644,10 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     public static boolean checkCompatibleAssignmentTypes(final ClassNode left, final ClassNode right, final Expression rightExpression, final boolean allowConstructorCoercion) {
+        if (!isPrimitiveType(left) && isNullConstant(rightExpression)) {
+            return true;
+        }
+
         ClassNode leftRedirect = left.redirect();
         ClassNode rightRedirect = right.redirect();
         if (leftRedirect == rightRedirect) return true;
@@ -666,13 +670,8 @@ public abstract class StaticTypeCheckingSupport {
             }
         }
 
-        boolean rightExpressionIsNull = isNullConstant(rightExpression);
-        if (rightExpressionIsNull && !isPrimitiveType(left)) {
-            return true;
-        }
-
         // anything can be assigned to an Object, String, [Bb]oolean or Class receiver; except null to boolean
-        if (isWildcardLeftHandSide(leftRedirect) && !(boolean_TYPE.equals(left) && rightExpressionIsNull)) return true;
+        if (isWildcardLeftHandSide(leftRedirect) && !(boolean_TYPE.equals(left) && isNullConstant(rightExpression))) return true;
 
         if (leftRedirect == char_TYPE && rightRedirect == Character_TYPE) return true;
         if (leftRedirect == Character_TYPE && rightRedirect == char_TYPE) return true;

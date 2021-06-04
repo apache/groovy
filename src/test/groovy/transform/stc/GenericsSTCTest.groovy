@@ -1014,6 +1014,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             Map<String, Integer> foo = null
             Integer result = foo?.get('a')
+            assert result == null
         '''
     }
 
@@ -1021,6 +1022,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             List<Integer> foo = null
             Integer result = foo?.get(0)
+            assert result == null
         '''
     }
 
@@ -1029,8 +1031,20 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<Integer> foo = [1]
             foo = null
             Integer result = foo?.get(0)
+            assert result == null
         '''
+    }
 
+    // GROOVY-10107
+    void testAssignNullTypeParameterWithUpperBounds() {
+        assertScript '''
+            class C<T extends Number> {
+                void m() {
+                    T n = null
+                }
+            }
+            new C<Long>().m()
+        '''
     }
 
     void testMethodCallWithArgumentUsingNestedGenerics() {
