@@ -18,68 +18,69 @@
  */
 package groovy.bugs
 
-import groovy.test.GroovyTestCase
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.junit.Test
 
-class Groovy3904Bug extends GroovyTestCase {
-    
-    void compileAndVerifyCyclicInheritenceCompilationError(script) {
-        try {
-            new GroovyShell().parse(script)
-            fail('The compilation should have failed as it is a cyclic reference')
-        } catch (MultipleCompilationErrorsException e) {
-            def syntaxError = e.errorCollector.getSyntaxError(0)
-            assert syntaxError.message.contains('Cyclic inheritance')
-        }
+import static groovy.test.GroovyAssert.shouldFail
+
+final class Groovy3904 {
+
+    private static void compileAndVerifyCyclicInheritenceCompilationError(String sourceCode) {
+        def err = shouldFail(sourceCode)
+        assert err =~ /Cycle detected/
     }
-    
+
+    @Test
     void testCyclicInheritenceTC1() {
-        compileAndVerifyCyclicInheritenceCompilationError """
+        compileAndVerifyCyclicInheritenceCompilationError '''
             class G3904R1A extends G3904R1A {}
-        """ 
+        '''
     }
 
+    @Test
     void testCyclicInheritenceTC2() {
-        compileAndVerifyCyclicInheritenceCompilationError """
+        compileAndVerifyCyclicInheritenceCompilationError '''
             class G3904R2A extends G3904R2A {
                 public static void main(String []argv) {
                   print 'hey'
                 }
             }
-        """
+        '''
     }
 
     /* next 2 tests are similar but in reverse order */
+
+    @Test
     void testCyclicInheritenceTC3() {
-        compileAndVerifyCyclicInheritenceCompilationError """
+        compileAndVerifyCyclicInheritenceCompilationError '''
             class G3904R3A extends G3904R3B {}
             class G3904R3B extends G3904R3A {}
-        """
+        '''
     }
 
+    @Test
     void testCyclicInheritenceTC4() {
-        compileAndVerifyCyclicInheritenceCompilationError """
+        compileAndVerifyCyclicInheritenceCompilationError '''
             class G3904R4B extends G3904R4A {}
             class G3904R4A extends G3904R4B {}
-        """
+        '''
     }
 
-    // cyclic inheritence is between 2 parent classes
+    @Test // cyclic inheritence is between 2 parent classes
     void testCyclicInheritenceTC5() {
-        compileAndVerifyCyclicInheritenceCompilationError """
+        compileAndVerifyCyclicInheritenceCompilationError '''
             class G3904R5A extends G3904R5B {}
             class G3904R5B extends G3904R5C {}
             class G3904R5C extends G3904R5B {}
-        """
+        '''
     }
 
-    // cyclic inheritence is between 2 parent classes with a normal level in-between
+    @Test // cyclic inheritence is between 2 parent classes with a normal level in-between
     void testCyclicInheritenceTC6() {
-        compileAndVerifyCyclicInheritenceCompilationError """
+        compileAndVerifyCyclicInheritenceCompilationError '''
             class G3904R6A extends G3904R6B {}
             class G3904R6B extends G3904R6C {}
             class G3904R6C extends G3904R6D {}
             class G3904R6D extends G3904R6B {}
-        """
+        '''
     }
 }

@@ -18,30 +18,34 @@
  */
 package groovy.bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class Groovy8048Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy8048 {
+
+    @Test
     void testFinalFieldInPreCompiledTrait() {
-        def shell = new GroovyShell(getClass().classLoader)
-        shell.evaluate('''
-            class Bar implements groovy.bugs.Groovy8048Bug.Groovy8048Trait, BarTrait {
+        assertScript """
+            class C implements ${getClass().getName()}.Foo, Bar {
                 static void main(args) {
-                    assert Bar.otherItems1 && Bar.otherItems1[0] == 'bar1'
-                    assert Bar.items1 && Bar.items1[0] == 'foo1'
-                    new Bar().with {
+                    assert this.otherItems1 && this.otherItems1[0] == 'bar1'
+                    assert this.items1 && this.items1[0] == 'foo1'
+                    new C().with {
                         assert otherItems2 && otherItems2[0] == 'bar2'
                         assert items2 && items2[0] == 'foo2'
                     }
                 }
-                trait BarTrait {
-                    final static List otherItems1 = ['bar1']
-                    final List otherItems2 = ['bar2']
-                }
             }
-        ''', 'testScript')
+
+            trait Bar {
+                final static List otherItems1 = ['bar1']
+                final List otherItems2 = ['bar2']
+            }
+        """
     }
 
-    trait Groovy8048Trait {
+    trait Foo {
         final static List items1 = ['foo1']
         final List items2 = ['foo2']
     }
