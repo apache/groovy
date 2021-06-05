@@ -129,21 +129,30 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(stream);
     }
 
+    private static final class Bucket<E> extends ArrayList<E> {
+        private static final long serialVersionUID = 2813676753531316403L;
+        Bucket() {
+            this(HASHTABLE_BUCKET_INITIAL_SIZE);
+        }
+        Bucket(int initialCapacity) {
+            super(initialCapacity);
+        }
+        static <E> Bucket<E> singletonBucket(E o) {
+            Bucket<E> bucket = new Bucket<>();
+            bucket.add(o);
+            return bucket;
+        }
+    }
+
     private static <U> Supplier<Map<Integer, List<U>>> createHashTableSupplier(Queryable<? extends U> queryable, Function<? super U, ?> fieldsExtractor2) {
         return () -> queryable.stream()
                 .collect(
                         Collectors.toMap(
                                 c -> hash(fieldsExtractor2.apply(c)),
-                                Collections::singletonList,
-                                (oldList, newList) -> {
-                                    if (!(oldList instanceof ArrayList)) {
-                                        List<U> tmpList = new ArrayList<>(HASHTABLE_BUCKET_INITIAL_SIZE);
-                                        tmpList.addAll(oldList);
-                                        oldList = tmpList;
-                                    }
-
-                                    oldList.addAll(newList);
-                                    return oldList;
+                                Bucket::singletonBucket,
+                                (oldBucket, newBucket) -> {
+                                    oldBucket.addAll(newBucket);
+                                    return oldBucket;
                                 }
                         ));
     }
