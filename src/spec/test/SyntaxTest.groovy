@@ -111,6 +111,7 @@ class SyntaxTest extends CompilableTestSupport {
         assert 456G == new BigInteger('456')
         assert 456g == new BigInteger('456')
         assert 123.45 == new BigDecimal('123.45') // default BigDecimal type used
+        assert .321 == new BigDecimal('.321')
         assert 1.200065D == new Double('1.200065')
         assert 1.234F == new Float('1.234')
         assert 1.23E23D == new Double('1.23E23')
