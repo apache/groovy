@@ -73,6 +73,7 @@ import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Modifier;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -1461,19 +1462,59 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
 
         ClassNode sn = node.getUnresolvedSuperClass();
-        if (sn != null) resolveOrFail(sn, "", node, true);
-
-        for (ClassNode anInterface : node.getInterfaces()) {
-            resolveOrFail(anInterface, "", node, true);
+        if (sn != null) {
+            resolveOrFail(sn, "", node, true);
+        }
+        for (ClassNode in : node.getInterfaces()) {
+            resolveOrFail(in, "", node, true);
         }
 
-        checkCyclicInheritance(node, node.getUnresolvedSuperClass(), node.getInterfaces());
+        if (sn != null) checkCyclicInheritance(node, sn);
+        for (ClassNode in : node.getInterfaces()) {
+            checkCyclicInheritance(node, in);
+        }
+        if (node.getGenericsTypes() != null) {
+            for (GenericsType gt : node.getGenericsTypes()) {
+                if (gt != null && gt.getUpperBounds() != null) {
+                    for (ClassNode variant : gt.getUpperBounds()) {
+                        if (variant.isGenericsPlaceHolder()) checkCyclicInheritance(gt.getType().redirect(), variant);
+                    }
+                }
+            }
+        }
 
         super.visitClass(node);
 
         resolveOuterNestedClassFurther(node);
 
         currentClass = oldNode;
+    }
+
+    private void checkCyclicInheritance(final ClassNode node, final ClassNode type) {
+        if (type.redirect() == node || type.getOuterClasses().contains(node)) {
+            addError("Cycle detected: the type " + node.getName() + " cannot extend/implement itself or one of its own member types", type);
+        } else if (type != ClassHelper.OBJECT_TYPE) {
+            Set<ClassNode> done = new HashSet<>();
+            done.add(ClassHelper.OBJECT_TYPE);
+            done.add(null);
+
+            LinkedList<ClassNode> todo = new LinkedList<>();
+            Collections.addAll(todo, type.getInterfaces());
+            todo.add(type.getUnresolvedSuperClass());
+            todo.add(type.getOuterClass());
+            do {
+                ClassNode next = todo.poll();
+                if (!done.add(next)) continue;
+                if (next.redirect() == node) {
+                    ClassNode cn = type; while (cn.getOuterClass() != null) cn = cn.getOuterClass();
+                    addError("Cycle detected: a cycle exists in the type hierarchy between " + node.getName() + " and " + cn.getName(), type);
+                    return;
+                }
+                Collections.addAll(todo, next.getInterfaces());
+                todo.add(next.getUnresolvedSuperClass());
+                todo.add(next.getOuterClass());
+            } while (!todo.isEmpty());
+        }
     }
 
     // GROOVY-7812(#2): Static inner classes cannot be accessed from other files when running by 'groovy' command
@@ -1507,41 +1548,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
     }
 
-    private void checkCyclicInheritance(final ClassNode originalNode, final ClassNode parentToCompare, final ClassNode[] interfacesToCompare) {
-        if (!originalNode.isInterface()) {
-            if (parentToCompare == null) return;
-            if (originalNode == parentToCompare.redirect()) {
-                addError("Cyclic inheritance involving " + parentToCompare.getName() + " in class " + originalNode.getName(), originalNode);
-                return;
-            }
-            if (interfacesToCompare != null && interfacesToCompare.length > 0) {
-                for (ClassNode intfToCompare : interfacesToCompare) {
-                    if (originalNode == intfToCompare.redirect()) {
-                        addError("Cycle detected: the type " + originalNode.getName() + " cannot implement itself" , originalNode);
-                        return;
-                    }
-                }
-            }
-            if (parentToCompare == ClassHelper.OBJECT_TYPE) return;
-            checkCyclicInheritance(originalNode, parentToCompare.getUnresolvedSuperClass(), null);
-        } else {
-            if (interfacesToCompare != null && interfacesToCompare.length > 0) {
-                // check interfaces at this level first
-                for (ClassNode intfToCompare : interfacesToCompare) {
-                    if(originalNode == intfToCompare.redirect()) {
-                        addError("Cyclic inheritance involving " + intfToCompare.getName() + " in interface " + originalNode.getName(), originalNode);
-                        return;
-                    }
-                }
-                // check next level of interfaces
-                for (ClassNode intf : interfacesToCompare) {
-                    checkCyclicInheritance(originalNode, null, intf.getInterfaces());
-                }
-            }
-        }
-    }
-
-    @Override
     public void visitCatchStatement(final CatchStatement cs) {
         resolveOrFail(cs.getExceptionType(), cs);
         if (cs.getExceptionType() == ClassHelper.DYNAMIC_TYPE) {
