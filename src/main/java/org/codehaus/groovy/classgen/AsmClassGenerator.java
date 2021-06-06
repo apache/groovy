@@ -118,6 +118,7 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -783,15 +784,9 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitSpreadMapExpression(SpreadMapExpression expression) {
-        Expression subExpression = expression.getExpression();
-        // to not record the underlying MapExpression twice,
-        // we disable the assertion tracker
-        // see https://issues.apache.org/jira/browse/GROOVY-3421
-        controller.getAssertionWriter().disableTracker();
-        subExpression.visit(this);
-        controller.getOperandStack().box();
-        spreadMap.call(controller.getMethodVisitor());
-        controller.getAssertionWriter().reenableTracker();
+        // GROOVY-3421: SpreadMapExpression is key expression and contains value
+        callX(ClassHelper.make(Collections.class), "emptyMap").visit(this);
+        spreadMap.call(controller.getMethodVisitor()); // dummy SpreadMap
         controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
     }
 
