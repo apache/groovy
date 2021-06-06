@@ -100,18 +100,27 @@ class SpreadMapOperatorTest extends GroovyTestCase {
 
     void testSpecialSpreadMapIndexNotation() {
         assertScript '''
-        @groovy.transform.ToString
-        class Person { String name; int age }
+            @groovy.transform.ToString
+            class Person { String name; int age }
 
-        assert Person[ name:'Dave', age:32 ].toString() == 'Person(Dave, 32)'
+            assert Person[ name:'Dave', age:32 ].toString() == 'Person(Dave, 32)'
 
-        def timMap = [ name:'Tim', age:49 ]
-        assert Person[ *:timMap ].toString() == 'Person(Tim, 49)'
+            def timMap = [ name:'Tim', age:49 ]
+            assert Person[ *:timMap ].toString() == 'Person(Tim, 49)'
 
-        assert Person[ *:[ name:'John', age:29 ] ].toString() == 'Person(John, 29)'
+            assert Person[ *:[ name:'John', age:29 ] ].toString() == 'Person(John, 29)'
 
-        def ppl = [ [ name:'Tim', age:49 ], [ name:'Dave', age:32 ], [ name:'Steve', age:18 ] ]
-        assert ppl.collect { Person [ *:it ] }*.age == [49, 32, 18]
+            def ppl = [ [ name:'Tim', age:49 ], [ name:'Dave', age:32 ], [ name:'Steve', age:18 ] ]
+            assert ppl.collect { Person [ *:it ] }*.age == [49, 32, 18]
+        '''
+    }
+
+    // GROOVY-3421
+    void testSpreadMapSingleEval() {
+        assertScript '''
+            int i = 1
+            Map map = [a:i, *:[b:++i]]
+            assert map == [a: 1, b: 2]
         '''
     }
 
@@ -131,4 +140,3 @@ class SpreadMapOperatorTest extends GroovyTestCase {
         // Call with one usual argument, one named argument, one spread list argument, and one spread map argument
     }
 }
-
