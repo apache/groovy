@@ -119,6 +119,7 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -129,15 +130,6 @@ import java.util.Optional;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
@@ -148,7 +140,16 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveFloat;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveInt;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveShort;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.isStringType;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PROPERTY_OWNER;
 import static org.objectweb.asm.Opcodes.AASTORE;
 import static org.objectweb.asm.Opcodes.ACC_ENUM;
@@ -872,15 +873,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
     @Override
     public void visitSpreadMapExpression(final SpreadMapExpression expression) {
-        Expression subExpression = expression.getExpression();
-        // to not record the underlying MapExpression twice,
-        // we disable the assertion tracker
-        // see https://issues.apache.org/jira/browse/GROOVY-3421
-        controller.getAssertionWriter().disableTracker();
-        subExpression.visit(this);
-        controller.getOperandStack().box();
-        spreadMap.call(controller.getMethodVisitor());
-        controller.getAssertionWriter().reenableTracker();
+        // GROOVY-3421: SpreadMapExpression is key expression and contains value
+        callX(ClassHelper.make(Collections.class), "emptyMap").visit(this);
+        spreadMap.call(controller.getMethodVisitor()); // dummy SpreadMap
         controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
     }
 
