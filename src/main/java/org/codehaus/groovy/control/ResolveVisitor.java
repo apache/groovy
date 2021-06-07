@@ -1477,7 +1477,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             for (GenericsType gt : node.getGenericsTypes()) {
                 if (gt != null && gt.getUpperBounds() != null) {
                     for (ClassNode variant : gt.getUpperBounds()) {
-                        if (variant.isGenericsPlaceHolder()) checkCyclicInheritance(gt.getType().redirect(), variant);
+                        if (variant.isGenericsPlaceHolder()) checkCyclicInheritance(variant, gt.getType());
                     }
                 }
             }
@@ -1492,7 +1492,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     private void checkCyclicInheritance(final ClassNode node, final ClassNode type) {
         if (type.redirect() == node || type.getOuterClasses().contains(node)) {
-            addError("Cycle detected: the type " + node.getName() + " cannot extend/implement itself or one of its own member types", type);
+            addError("Cycle detected: the type " + node.getUnresolvedName() + " cannot extend/implement itself or one of its own member types", type);
         } else if (type != ClassHelper.OBJECT_TYPE) {
             Set<ClassNode> done = new HashSet<>();
             done.add(ClassHelper.OBJECT_TYPE);
