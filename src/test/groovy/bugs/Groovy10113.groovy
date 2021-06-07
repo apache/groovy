@@ -20,17 +20,37 @@ package groovy.bugs
 
 import org.junit.Test
 
+import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 final class Groovy10113 {
 
     @Test
-    void testTypeParamCycle() {
+    void testTypeParamCycle1() {
         def err = shouldFail '''
             class C<T extends T> {
             }
         '''
         assert err =~ /Cycle detected: the type T cannot extend.implement itself or one of its own member types/
+    }
+
+    @Test
+    void testTypeParamCycle2() {
+        def err = shouldFail '''
+            class C<T extends U, U extends T> {
+            }
+        '''
+        // TODO:                 ^ error is here but refers to T; is there a way to move the error or improve it
+        assert err =~ /Cycle detected: the type T cannot extend.implement itself or one of its own member types/
+    }
+
+    @Test // GROOVY-10125
+    void testTypeParamNoCycle() {
+        assertScript '''
+            class C<T, U extends T> {
+            }
+            new C<Number,Integer>()
+        '''
     }
 
     @Test
