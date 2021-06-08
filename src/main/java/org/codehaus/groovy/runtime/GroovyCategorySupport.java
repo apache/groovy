@@ -161,22 +161,25 @@ public class GroovyCategorySupport {
             }
         }
 
-        private void cachePropertyAccessor(CategoryMethod method) {
-             String name = method.getName();
-             int parameterLength = method.getParameterTypes().length;
+        private void cachePropertyAccessor(final CategoryMethod method) {
+             final String name = method.getName();
+             final int nameLength = name.length();
+             final int parameterCount = method.getParameterTypes().length;
 
-             if (name.startsWith("get") && name.length() > 3 && parameterLength == 0) {
+             if (name.startsWith("get") && nameLength > 3 && parameterCount == 0) {
                  propertyGetterMap = putPropertyAccessor(3, name, propertyGetterMap);
-             }
-             else if (name.startsWith("set") && name.length() > 3 && parameterLength == 1) {
+             } else if (name.startsWith("is") && nameLength > 2 && parameterCount == 0
+                     && method.getReturnType().equals(boolean.class)) { // GROOVY-5245
+                 propertyGetterMap = putPropertyAccessor(2, name, propertyGetterMap);
+             } else if (name.startsWith("set") && nameLength > 3 && parameterCount == 1) {
                  propertySetterMap = putPropertyAccessor(3, name, propertySetterMap);
              }
         }
 
         // Precondition: accessorName.length() > prefixLength
-        private Map<String, String> putPropertyAccessor(int prefixLength, String accessorName, Map<String, String> map) {
+        private Map<String, String> putPropertyAccessor(final int prefixLength, final String accessorName, Map<String, String> map) {
             if (map == null) {
-                map = new HashMap<String, String>();
+                map = new HashMap<>();
             }
             String property = BeanUtils.decapitalize(accessorName.substring(prefixLength));
             map.put(property, accessorName);
@@ -199,7 +202,6 @@ public class GroovyCategorySupport {
         public CategoryMethodList getCategoryMethods(String name) {
             return level == 0 ? null : get(name);
         }
-
 
         String getPropertyCategoryGetterName(String propertyName) {
             if (propertyGetterMap == null) return null;
