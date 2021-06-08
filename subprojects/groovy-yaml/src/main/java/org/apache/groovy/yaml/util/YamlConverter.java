@@ -40,10 +40,9 @@ public class YamlConverter {
      */
     public static String convertYamlToJson(Reader yamlReader) {
         try (Reader reader = yamlReader) {
-            final YAMLFactory yamlFactory = new YAMLFactory();
             List<Object> resultList =
                     new ObjectMapper()
-                            .readValues(yamlFactory.createParser(reader), Object.class)
+                            .readValues(new YAMLFactory().createParser(reader), Object.class)
                             .readAll();
             Object yaml = 1 == resultList.size() ? resultList.get(0) : resultList;
             return new ObjectMapper().writeValueAsString(yaml);
