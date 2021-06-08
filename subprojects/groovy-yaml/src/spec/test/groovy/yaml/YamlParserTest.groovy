@@ -105,4 +105,21 @@ matrix:
         assert ['openjdk10', 'oraclejdk9', 'oraclejdk8'] ==  yaml.matrix.include.jdk
 
     }
+
+    void testParseMultiDocs() {
+        def ys = new YamlSlurper()
+        def yaml = ys.parseText '''\
+---
+language: groovy
+version: 4
+---
+language: java
+version: 8
+        '''
+
+        assert 'groovy' == yaml[0].language
+        assert 4 == yaml[0].version
+        assert 'java' == yaml[1].language
+        assert 8 == yaml[1].version
+    }
 }
