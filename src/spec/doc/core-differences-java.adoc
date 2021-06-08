@@ -490,7 +490,7 @@ Groovy expands greatly on this.
 | BigDecimal    | T         | T         | D      | D      | D       | D       | D      | D           | D     | D         | D      | D      | D            | T       | D       | T        | D        | -
 |=================================================================================================================================================================================================================
 ^*^ 'Y' indicates a conversion Groovy can make, 'D' indicates a conversion Groovy can make when compiled dynamically or
-explicitly cast, 'T` indicates a conversion Groovy can make but data is truncated, 'B' indicates a boxing/unboxing
+explicitly cast, 'T' indicates a conversion Groovy can make but data is truncated, 'B' indicates a boxing/unboxing
 operation, 'N' indicates a conversion Groovy can't make.
 
 The truncation uses <<{core-semantics}#the-groovy-truth,Groovy Truth>> when converting to `boolean`/`Boolean`. Converting
