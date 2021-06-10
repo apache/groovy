@@ -68,6 +68,24 @@ final class CategoryTest extends GroovyTestCase {
         }
     }
 
+    // GROOVY-5245
+    void testCategoryDefinedProperties2() {
+        assertScript '''
+            class Isser {
+                boolean isWorking() { true }
+            }
+            class IsserCat {
+                static boolean getWorking2(Isser b) { true }
+                static boolean isNotWorking(Isser b) { true }
+            }
+            use (IsserCat) {
+                assert new Isser().working
+                assert new Isser().working2
+                assert new Isser().notWorking // MissingPropertyException
+            }
+        '''
+    }
+
     void testCategoryReplacedPropertyAccessMethod() {
         def cth = new CategoryTestHelper()
         cth.aProperty = "aValue"
