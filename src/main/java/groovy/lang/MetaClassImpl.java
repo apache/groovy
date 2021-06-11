@@ -2595,7 +2595,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         });
     }
 
-    private static MetaProperty makeReplacementMetaProperty(MetaProperty mp, String propName, boolean isGetter, MetaMethod propertyMethod) {
+    private static MetaProperty makeReplacementMetaProperty(final MetaProperty mp, final String propName, final boolean isGetter, final MetaMethod propertyMethod) {
         if (mp == null) {
             if (isGetter) {
                 return new MetaBeanProperty(propName,
@@ -2625,7 +2625,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         } else if (mp instanceof MetaBeanProperty) {
             MetaBeanProperty mbp = (MetaBeanProperty) mp;
             if (isGetter) {
-                mbp.setGetter(propertyMethod);
+                // GROOVY-10133: do not replace "getPropName()" with "isPropName()" or ...
+                if (mbp.getGetter() == null || !mbp.getGetter().getName().startsWith("get")) {
+                    mbp.setGetter(propertyMethod);
+                }
                 return mbp;
             } else if (mbp.getSetter() == null || mbp.getSetter() == propertyMethod) {
                 mbp.setSetter(propertyMethod);
