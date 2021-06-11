@@ -29,8 +29,6 @@ final class Groovy6742 {
     @Test
     void test1() {
         assertScript '''
-            package groovy.bugs.groovy6742
-
             @groovy.transform.TypeChecked
             class Issue1 {
                 public void issue(){
@@ -50,8 +48,6 @@ final class Groovy6742 {
     @Test
     void test2() {
         assertScript '''
-            package groovy.bugs.groovy6742
-
             @groovy.transform.TypeChecked
             class Issue2 {
                 public void issue() {
@@ -74,8 +70,6 @@ final class Groovy6742 {
     @Test
     void test3() {
         assertScript '''
-            package groovy.bugs.groovy6742
-
             @groovy.transform.TypeChecked
             class Issue3 {
                 public static <F, T> FutureCallback<F> deferredCallback(DeferredResult<T> deferredResult, final Function<F, T> function) {

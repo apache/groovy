@@ -23,7 +23,6 @@ import groovy.test.GroovyTestCase
 class Groovy9204 extends GroovyTestCase {
     void testGenerics() {
         assertScript '''
-            package groovy.bugs.groovy9204
             @groovy.transform.CompileStatic
             class ArrayListTest extends Three {
                 def test() {

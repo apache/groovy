@@ -30,8 +30,6 @@ final class Groovy8531 {
     @Test
     void testVisibleInnerTypes() {
         assertScript '''
-            package groovy.bugs.groovy8531
-
             class Example extends Reducer {
                 public void reduce1(PublicContext context) {}
                 public void reduce2(ProtectedContext context) {}
@@ -77,7 +75,6 @@ final class Groovy8531 {
     @Test
     void testPrivateInnerType1() {
         def err = shouldFail '''
-            package groovy.bugs.groovy8531
             class Example extends Reducer {
                 void reduce(PrivateContext context) {}
             }
@@ -89,7 +86,6 @@ final class Groovy8531 {
     @Test
     void testPrivateInnerType2() {
         def err = shouldFail '''
-            package groovy.bugs.groovy8531
             class Example extends Reducer {
                 void reduce(PrivateBaseContext context) {}
             }
@@ -101,8 +97,6 @@ final class Groovy8531 {
     @Test
     void testPackagePrivateInnerType() {
         def err = shouldFail '''
-            package groovy.bugs.groovy9281
-
             import groovy.bugs.groovy8531.Reducer
 
             class Example extends Reducer {
