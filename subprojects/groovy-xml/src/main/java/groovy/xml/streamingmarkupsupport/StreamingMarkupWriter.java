@@ -175,8 +175,9 @@ public class StreamingMarkupWriter extends Writer {
                 // High surrogate
                 this.surrogatePair.append((char) c);
                 this.haveHighSurrogate = true;
-
-            } else if (!this.encoder.canEncode((char) c)) {
+                return;
+            }
+            if (!this.encoder.canEncode((char) c)) {
                 this.writer.write("&#x");
                 this.writer.write(Integer.toHexString(c));
                 this.writer.write(';');
