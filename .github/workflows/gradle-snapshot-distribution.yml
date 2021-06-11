@@ -32,7 +32,7 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
       - name: Build and package
-        run: ./gradlew clean dist --no-build-cache --no-scan
+        run: ./gradlew clean dist --no-build-cache --no-scan --refresh-dependencies
         timeout-minutes: 60
       - name: Move binary distribution
         run:  mkdir -p build/distributions/binary/ && mv subprojects/groovy-binary/build/distributions/apache-groovy-binary-*.zip build/distributions/binary/
