@@ -45,6 +45,15 @@ class XmlUtilTest extends GroovyTestCase {
         assertXmlEquals(xml, XmlUtil.serialize(new XmlSlurper().parse(source)))
     }
 
+    def xml2 = '<?xml version="1.0" encoding="UTF-8"?><Name>🎁4</Name>'
+
+    // GROOVY-10132
+    void testSerializeOfSurrogate() {
+        def source = new InputSource(new StringReader(xml2))
+        source.encoding = "UTF-8"
+        assertXmlEquals(xml2, XmlUtil.serialize(new XmlSlurper().parse(source)))
+    }
+
     // GROOVY-5361
     void testSchemaValidationUtilityMethod() {
         Locale dl = Locale.getDefault()
