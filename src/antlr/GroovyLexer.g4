@@ -633,7 +633,7 @@ FloatingPointLiteral
 
 fragment
 DecimalFloatingPointLiteral
-    :   Digits Dot Digits ExponentPart? FloatTypeSuffix?
+    :   Digits? Dot Digits ExponentPart? FloatTypeSuffix?
     |   Digits ExponentPart FloatTypeSuffix?
     |   Digits FloatTypeSuffix
     ;
