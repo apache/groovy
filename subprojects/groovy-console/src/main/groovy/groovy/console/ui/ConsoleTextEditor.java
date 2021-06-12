@@ -140,12 +140,14 @@ public class ConsoleTextEditor extends JScrollPane {
 
     private TextUndoManager undoManager;
 
+    private final Preferences preferences;
+
     /**
      * Creates a new instance of ConsoleTextEditor
      */
     public ConsoleTextEditor() {
-        textEditor.setFont(new Font(defaultFamily, Font.PLAIN,
-		        Preferences.userNodeForPackage(Console.class).getInt("fontSize", 12)));
+        preferences = Preferences.userNodeForPackage(Console.class);
+        textEditor.setFont(new Font(defaultFamily, Font.PLAIN, preferences.getInt("fontSize", 12)));
 
         setViewportView(new JPanel(new BorderLayout()) {{
             add(numbersPanel, BorderLayout.WEST);
@@ -165,7 +167,6 @@ public class ConsoleTextEditor extends JScrollPane {
         // add a document listener, to hint whether the line number gutter has to be repainted
         // when the number of lines changes
         doc.addDocumentListener(new DocumentListener() {
-            private Preferences preferences;
             private int width;
 
             @Override
@@ -181,7 +182,6 @@ public class ConsoleTextEditor extends JScrollPane {
             @Override
             public void changedUpdate(DocumentEvent documentEvent) {
                 documentChangedSinceLastRepaint = true;
-                if (null == preferences) preferences = Preferences.userNodeForPackage(Console.class);
                 int width = 3 * preferences.getInt("fontSize", 12);
                 if (width != this.width) {
                     this.width = width;
