@@ -60,6 +60,10 @@ import java.util.prefs.Preferences;
  * Component which provides a styled editor for the console.
  */
 public class ConsoleTextEditor extends JScrollPane {
+    private static final Preferences PREFERENCES = Preferences.userNodeForPackage(Console.class);
+    private static final String PREFERENCE_FONT_SIZE = "fontSize";
+    private static final int DEFAULT_FONT_SIZE = 12;
+
     public String getDefaultFamily() {
         return defaultFamily;
     }
@@ -71,7 +75,7 @@ public class ConsoleTextEditor extends JScrollPane {
     private class LineNumbersPanel extends JPanel {
 
         public LineNumbersPanel() {
-            int initialSize = 3 * Preferences.userNodeForPackage(Console.class).getInt("fontSize", 12);
+            int initialSize = 3 * PREFERENCES.getInt(PREFERENCE_FONT_SIZE, DEFAULT_FONT_SIZE);
             setMinimumSize(new Dimension(initialSize, initialSize));
             setPreferredSize(new Dimension(initialSize, initialSize));
         }
@@ -139,15 +143,25 @@ public class ConsoleTextEditor extends JScrollPane {
     private boolean editable = true;
 
     private TextUndoManager undoManager;
-
-    private final Preferences preferences;
+    private int fontSize;
 
     /**
      * Creates a new instance of ConsoleTextEditor
      */
     public ConsoleTextEditor() {
-        preferences = Preferences.userNodeForPackage(Console.class);
-        textEditor.setFont(new Font(defaultFamily, Font.PLAIN, preferences.getInt("fontSize", 12)));
+        fontSize = PREFERENCES.getInt(PREFERENCE_FONT_SIZE, DEFAULT_FONT_SIZE);
+        PREFERENCES.addPreferenceChangeListener(evt -> {
+            if (PREFERENCE_FONT_SIZE.equals(evt.getKey())) {
+                int fs;
+                try {
+                    fs = Integer.parseInt(evt.getNewValue());
+                } catch (NumberFormatException e) {
+                    fs = DEFAULT_FONT_SIZE;
+                }
+                fontSize = fs;
+            }
+        });
+        textEditor.setFont(new Font(defaultFamily, Font.PLAIN, fontSize));
 
         setViewportView(new JPanel(new BorderLayout()) {{
             add(numbersPanel, BorderLayout.WEST);
@@ -182,7 +196,7 @@ public class ConsoleTextEditor extends JScrollPane {
             @Override
             public void changedUpdate(DocumentEvent documentEvent) {
                 documentChangedSinceLastRepaint = true;
-                int width = 3 * preferences.getInt("fontSize", 12);
+                int width = 3 * fontSize;
                 if (width != this.width) {
                     this.width = width;
                     numbersPanel.setPreferredSize(new Dimension(width, width));
