@@ -159,6 +159,9 @@ public class ConsoleTextEditor extends JScrollPane {
                     fs = DEFAULT_FONT_SIZE;
                 }
                 fontSize = fs;
+
+                int width = 3 * fontSize;
+                numbersPanel.setPreferredSize(new Dimension(width, width));
             }
         });
         textEditor.setFont(new Font(defaultFamily, Font.PLAIN, fontSize));
@@ -181,8 +184,6 @@ public class ConsoleTextEditor extends JScrollPane {
         // add a document listener, to hint whether the line number gutter has to be repainted
         // when the number of lines changes
         doc.addDocumentListener(new DocumentListener() {
-            private int width;
-
             @Override
             public void insertUpdate(DocumentEvent documentEvent) {
                 documentChangedSinceLastRepaint = true;
@@ -196,11 +197,6 @@ public class ConsoleTextEditor extends JScrollPane {
             @Override
             public void changedUpdate(DocumentEvent documentEvent) {
                 documentChangedSinceLastRepaint = true;
-                int width = 3 * fontSize;
-                if (width != this.width) {
-                    this.width = width;
-                    numbersPanel.setPreferredSize(new Dimension(width, width));
-                }
             }
         });
 
