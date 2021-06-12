@@ -29,6 +29,7 @@ import org.apache.groovy.parser.antlr4.GroovyLangLexer;
 import org.apache.groovy.parser.antlr4.GroovySyntaxError;
 import org.apache.groovy.parser.antlr4.util.PositionConfigureUtils;
 import org.apache.groovy.parser.antlr4.util.StringUtils;
+import org.apache.groovy.util.ReversedList;
 
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -40,7 +41,6 @@ import javax.swing.text.StyleContext;
 import java.awt.Color;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -256,13 +256,13 @@ public class SmartDocumentFilter extends DocumentFilter {
         }
 
         List<Token> tmpTokenList = filterNewlines(tokenList);
-        int tokenListSize = tmpTokenList.size();
-        if (0 == tokenListSize) {
+        int tmpTokenListSize = tmpTokenList.size();
+        if (0 == tmpTokenListSize) {
             return tokenList;
         }
 
         int startTokenIndex = 0;
-        int minSize = Math.min(tokenListSize, latestTokenListSize);
+        int minSize = Math.min(tmpTokenListSize, latestTokenListSize);
         for (int i = 0; i < minSize; i++) {
             Token token = tmpTokenList.get(i);
             Token latestToken = tmpLatestTokenList.get(i);
@@ -277,13 +277,10 @@ public class SmartDocumentFilter extends DocumentFilter {
             break;
         }
 
-        List<Token> newTokenList = new ArrayList<>(tmpTokenList);
-        List<Token> newLatestTokenList = new ArrayList<>(tmpLatestTokenList);
+        List<Token> newTokenList = new ReversedList<>(tmpTokenList);
+        List<Token> newLatestTokenList = new ReversedList<>(tmpLatestTokenList);
 
-        Collections.reverse(newTokenList);
-        Collections.reverse(newLatestTokenList);
-
-        int stopTokenIndex = tokenListSize;
+        int stopTokenIndex = tmpTokenListSize;
 
         Token lastToken = newTokenList.get(0);
         Token lastLatestToken = newLatestTokenList.get(0);
@@ -298,11 +295,13 @@ public class SmartDocumentFilter extends DocumentFilter {
                 continue;
             }
 
-            stopTokenIndex = tokenListSize - i;
+            stopTokenIndex = tmpTokenListSize - i;
             break;
         }
 
-        if (startTokenIndex <= stopTokenIndex) {
+        if (startTokenIndex == stopTokenIndex) {
+            return tmpTokenListSize != latestTokenListSize ? tokenList : Collections.emptyList();
+        } else if (startTokenIndex < stopTokenIndex) {
             return tmpTokenList.subList(startTokenIndex, stopTokenIndex);
         }
 
