@@ -127,16 +127,19 @@ class QueryableHelper {
     private QueryableHelper() {}
 
     private static class ThreadPoolHolder {
-        static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-            private int seq
-            @Override
-            Thread newThread(Runnable r) {
-                Thread t = new Thread(r)
-                t.setName("ginq-thread-" + seq++)
-                t.setDaemon(true)
-                return t
-            }
-        })
+        static final ExecutorService THREAD_POOL
+        static {
+            THREAD_POOL = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+                private int seq
+                @Override
+                Thread newThread(Runnable r) {
+                    Thread t = new Thread(r)
+                    t.setName("ginq-thread-" + seq++)
+                    t.setDaemon(true)
+                    return t
+                }
+            })
+        }
         private ThreadPoolHolder() {}
     }
 }
