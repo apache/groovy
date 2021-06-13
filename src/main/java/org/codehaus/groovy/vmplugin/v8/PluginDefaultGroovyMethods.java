@@ -432,11 +432,12 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Provides similar functionality to JDK9 {@code or} on JDK8.
+     *
      * <pre class="groovyTestCase">
      * def x = Optional.empty()
      * def y = Optional.of('y')
-     * assert y.orOptional(() -> Optional.of('z')).get() == 'y'
-     * assert x.orOptional(() -> Optional.of('z')).get() == 'z'
+     * assert y.orOptional(() -&gt; Optional.of('z')).get() == 'y'
+     * assert x.orOptional(() -&gt; Optional.of('z')).get() == 'z'
      * </pre>
      *
      * @since 3.0.6
