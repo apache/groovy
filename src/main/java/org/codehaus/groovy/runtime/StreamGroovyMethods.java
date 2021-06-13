@@ -62,7 +62,7 @@ public class StreamGroovyMethods {
      *
      * <pre class="groovyTestCase">
      * import java.util.stream.Stream
-     * assert (Stream.of(1) + Stream.&lt;Integer>empty()).toList() == [1]
+     * assert (Stream.of(1) + Stream.&lt;Integer&gt;empty()).toList() == [1]
      * assert (Stream.of(1) + Stream.of(2)).toList() == [1,2]
      * assert (Stream.of(1) + [2].stream()).toList() == [1,2]
      * </pre>
@@ -243,7 +243,7 @@ public class StreamGroovyMethods {
      *
      * <pre class="groovyTestCase">
      * class Items implements Iterable<String> {
-     *   Iterator&lt;String> iterator() {
+     *   Iterator&lt;String&gt; iterator() {
      *     ['one', 'two'].iterator()
      *   }
      * }
