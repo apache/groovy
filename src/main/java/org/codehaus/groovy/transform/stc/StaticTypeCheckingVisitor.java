@@ -145,7 +145,6 @@ import static org.apache.groovy.util.BeanUtils.decapitalize;
 import static org.codehaus.groovy.ast.ClassHelper.AUTOCLOSEABLE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.BigInteger_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.Boolean_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Byte_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.CLASS_Type;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
@@ -215,6 +214,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
@@ -1562,11 +1562,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
 
-                MethodNode getter = findGetter(current, "get" + capName, pexp.isImplicitThis());
+                MethodNode getter = findGetter(current, "is" + capName, pexp.isImplicitThis());
                 getter = allowStaticAccessToMember(getter, staticOnly);
-                if (getter == null) getter = findGetter(current, "is" + capName, pexp.isImplicitThis());
+                if (getter == null) getter = findGetter(current, getGetterName(propertyName), pexp.isImplicitThis());
                 getter = allowStaticAccessToMember(getter, staticOnly);
-                List<MethodNode> setters = findSetters(current, getSetterName(propertyName), false);
+                List<MethodNode> setters = findSetters(current, getSetterName(propertyName), /*enforce void:*/false);
                 setters = allowStaticAccessToMember(setters, staticOnly);
 
                 // need to visit even if we only look for setters for compatibility
@@ -1632,7 +1632,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             for (ClassNode dgmReceiver : isPrimitiveType(receiverType) ? new ClassNode[]{receiverType, getWrapper(receiverType)} : new ClassNode[]{receiverType}) {
                 List<MethodNode> methods = findDGMMethodsByNameAndArguments(getSourceUnit().getClassLoader(), dgmReceiver, "get" + capName, ClassNode.EMPTY_ARRAY);
                 for (MethodNode method : findDGMMethodsByNameAndArguments(getSourceUnit().getClassLoader(), dgmReceiver, "is" + capName, ClassNode.EMPTY_ARRAY)) {
-                    if (Boolean_TYPE.equals(getWrapper(method.getReturnType()))) methods.add(method);
+                    if (isPrimitiveBoolean(method.getReturnType())) methods.add(method);
                 }
                 if (isUsingGenericsOrIsArrayUsingGenerics(dgmReceiver)) {
                     methods.removeIf(method -> // GROOVY-10075: "List<Integer>" vs "List<String>"

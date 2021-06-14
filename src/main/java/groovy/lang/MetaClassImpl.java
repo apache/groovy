@@ -2291,37 +2291,33 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         Object ret = null;
 
         if (methodOrList instanceof MetaMethod) {
-            MetaMethod element = (MetaMethod) methodOrList;
-            int parameterCount = element.getParameterTypes().length;
-            if (!isGetter &&
-                    //(element.getReturnType() == Void.class || element.getReturnType() == Void.TYPE) &&
-                    parameterCount == 1) {
-                ret = element;
+            MetaMethod method = (MetaMethod) methodOrList;
+            int parameterCount = method.getParameterTypes().length;
+            Class<?> returnType = method.getReturnType();
+            if (!isGetter && parameterCount == 1
+                    //&& returnType == Void.TYPE
+            ) {
+                ret = method;
             }
-            Class returnType = element.getReturnType();
-            if (isGetter &&
-                    !(returnType == Void.class || returnType == Void.TYPE) &&
-                    (!booleanGetter || returnType == Boolean.class || returnType == Boolean.TYPE) &&
-                    parameterCount == 0) {
-                ret = element;
+            if (isGetter && parameterCount == 0 && (booleanGetter ? returnType == Boolean.TYPE
+                    : returnType != Void.TYPE && returnType != Void.class)) {
+                ret = method;
             }
-        }
-        if (methodOrList instanceof FastArray) {
+        } else if (methodOrList instanceof FastArray) {
             FastArray methods = (FastArray) methodOrList;
-            final int len = methods.size();
+            final int n = methods.size();
             final Object[] data = methods.getArray();
-            for (int i = 0; i != len; ++i) {
+            for (int i = 0; i < n; i += 1) {
                 MetaMethod element = (MetaMethod) data[i];
                 int parameterCount = element.getParameterTypes().length;
-                if (!isGetter &&
-                        //(element.getReturnType() == Void.class || element.getReturnType() == Void.TYPE) &&
-                        parameterCount == 1) {
+                Class<?> returnType = element.getReturnType();
+                if (!isGetter && parameterCount == 1
+                        //&& returnType == Void.TYPE
+                ) {
                     ret = addElementToList(ret, element);
                 }
-                Class returnType = element.getReturnType();
-                if (isGetter &&
-                        !(returnType == Void.class || returnType == Void.TYPE) &&
-                        parameterCount == 0) {
+                if (isGetter && parameterCount == 0 && (booleanGetter ? returnType == Boolean.TYPE
+                        : returnType != Void.TYPE && returnType != Void.class)) {
                     ret = addElementToList(ret, element);
                 }
             }
@@ -2554,17 +2550,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private void applyStrayPropertyMethods(LinkedList<CachedClass> superClasses, Map<CachedClass, LinkedHashMap<String, MetaProperty>> classPropertyIndex, boolean isThis) {
         // now look for any stray getters that may be used to define a property
-        for (CachedClass klass : superClasses) {
-            MetaMethodIndex.Header header = metaMethodIndex.getHeader(klass.getTheClass());
-            Map<String, MetaProperty> propertyIndex = classPropertyIndex.computeIfAbsent(klass, k -> new LinkedHashMap<>());
+        for (CachedClass superClass : superClasses) {
+            MetaMethodIndex.Header header = metaMethodIndex.getHeader(superClass.getTheClass());
+            Map<String, MetaProperty> propertyIndex = classPropertyIndex.computeIfAbsent(superClass, sc -> new LinkedHashMap<>());
             for (MetaMethodIndex.Entry e = header.head; e != null; e = e.nextClassEntry) {
                 String methodName = e.name;
-                // name too short?
-                final int methodNameLength = methodName.length();
-                if (methodNameLength < 3 ||
-                        (methodNameLength < 4 && !methodName.startsWith("is"))) continue;
-                // possible getter/setter?
+                int methodNameLength = methodName.length();
                 boolean isBooleanGetter = methodName.startsWith("is");
+                if (methodNameLength < (isBooleanGetter ? 3 : 4)) continue;
+
                 boolean isGetter = methodName.startsWith("get") || isBooleanGetter;
                 boolean isSetter = methodName.startsWith("set");
                 if (!isGetter && !isSetter) continue;
@@ -2576,8 +2570,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 if (propertyMethods instanceof MetaMethod) {
                     createMetaBeanProperty(propertyIndex, propName, isGetter, (MetaMethod) propertyMethods);
                 } else {
-                    LinkedList<MetaMethod> methods = (LinkedList<MetaMethod>) propertyMethods;
-                    for (MetaMethod m : methods) {
+                    for (MetaMethod m : (Iterable<MetaMethod>) propertyMethods) {
                         createMetaBeanProperty(propertyIndex, propName, isGetter, m);
                     }
                 }
@@ -2619,13 +2612,19 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         } else if (mp instanceof MultipleSetterProperty) {
             MultipleSetterProperty msp = (MultipleSetterProperty) mp;
             if (isGetter) {
-                msp.setGetter(propertyMethod);
+                // GROOVY-10133: do not replace "isPropName()" with "getPropName()" or ...
+                if (msp.getGetter() == null || !msp.getGetter().getName().startsWith("is")) {
+                    msp.setGetter(propertyMethod);
+                }
             }
             return msp;
         } else if (mp instanceof MetaBeanProperty) {
             MetaBeanProperty mbp = (MetaBeanProperty) mp;
             if (isGetter) {
-                mbp.setGetter(propertyMethod);
+                // GROOVY-10133: do not replace "isPropName()" with "getPropName()" or ...
+                if (mbp.getGetter() == null || !mbp.getGetter().getName().startsWith("is")) {
+                    mbp.setGetter(propertyMethod);
+                }
                 return mbp;
             } else if (mbp.getSetter() == null || mbp.getSetter() == propertyMethod) {
                 mbp.setSetter(propertyMethod);

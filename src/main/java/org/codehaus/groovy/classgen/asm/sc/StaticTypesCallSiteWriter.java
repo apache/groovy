@@ -58,7 +58,6 @@ import java.util.Map;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.apache.groovy.util.BeanUtils.capitalize;
-import static org.codehaus.groovy.ast.ClassHelper.Boolean_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.CLASS_Type;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.GROOVY_OBJECT_TYPE;
@@ -71,8 +70,15 @@ import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.isBigDecimalType;
+import static org.codehaus.groovy.ast.ClassHelper.isBigIntegerType;
+import static org.codehaus.groovy.ast.ClassHelper.isClassType;
 import static org.codehaus.groovy.ast.ClassHelper.isGeneratedFunction;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+import static org.codehaus.groovy.ast.ClassHelper.isStringType;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperInteger;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperLong;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
@@ -84,13 +90,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
-import static org.codehaus.groovy.ast.ClassHelper.isBigDecimalType;
-import static org.codehaus.groovy.ast.ClassHelper.isBigIntegerType;
-import static org.codehaus.groovy.ast.ClassHelper.isClassType;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
-import static org.codehaus.groovy.ast.ClassHelper.isStringType;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperInteger;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperLong;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
@@ -200,13 +199,14 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, propertyName, safe, implicitThis)) return;
 
         // GROOVY-5580: it is still possible that we're calling a superinterface property
+        String isserName = "is" + capitalize(propertyName);
         String getterName = "get" + capitalize(propertyName);
-        String altGetterName = "is" + capitalize(propertyName);
         if (receiverType.isInterface()) {
             MethodNode getterMethod = null;
             for (ClassNode anInterface : receiverType.getAllInterfaces()) {
-                getterMethod = anInterface.getGetterMethod(getterName);
-                if (getterMethod == null) getterMethod = anInterface.getGetterMethod(altGetterName);
+                getterMethod = anInterface.getGetterMethod(isserName);
+                if (getterMethod == null)
+                    getterMethod = anInterface.getGetterMethod(getterName);
                 if (getterMethod != null) break;
             }
             // GROOVY-5585
@@ -225,12 +225,9 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         }
 
         // GROOVY-5568: we would be facing a DGM call, but instead of foo.getText(), have foo.text
-        List<MethodNode> methods = findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), receiverType, getterName, ClassNode.EMPTY_ARRAY);
-        for (MethodNode dgm : findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), receiverType, altGetterName, ClassNode.EMPTY_ARRAY)) {
-            if (Boolean_TYPE.equals(getWrapper(dgm.getReturnType()))) {
-                methods.add(dgm);
-            }
-        }
+        List<MethodNode> methods = findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), receiverType, isserName, ClassNode.EMPTY_ARRAY);
+        methods.removeIf(dgm -> !isPrimitiveBoolean(dgm.getReturnType()));
+        findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), receiverType, getterName, ClassNode.EMPTY_ARRAY, methods);
         if (!methods.isEmpty()) {
             List<MethodNode> methodNodes = chooseBestMethod(receiverType, methods, ClassNode.EMPTY_ARRAY);
             if (methodNodes.size() == 1) {
@@ -466,11 +463,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
     }
 
     private boolean makeGetPropertyWithGetter(final Expression receiver, final ClassNode receiverType, final String propertyName, final boolean safe, final boolean implicitThis) {
-        // does a getter exist?
-        String getterName = "get" + capitalize(propertyName);
+        // check for an accessor method
+        String getterName = "is" + capitalize(propertyName);
         MethodNode getterNode = receiverType.getGetterMethod(getterName);
         if (getterNode == null) {
-            getterName = "is" + capitalize(propertyName);
+            getterName = "get" + capitalize(propertyName);
             getterNode = receiverType.getGetterMethod(getterName);
         }
         if (getterNode != null && receiver instanceof ClassExpression && !isClassType(receiverType) && !getterNode.isStatic()) {
@@ -482,11 +479,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         // generated by the compiler yet (generated by the Verifier)
         PropertyNode propertyNode = receiverType.getProperty(propertyName);
         if (getterNode == null && propertyNode != null) {
-            // it is possible to use a getter
-            String prefix = "get";
-            if (isPrimitiveBoolean(propertyNode.getOriginType())) {
-                prefix = "is";
-            }
+            // it is possible to use an accessor method
+            String prefix = isPrimitiveBoolean(propertyNode.getOriginType()) ? "is" : "get";
             getterName = prefix + capitalize(propertyName);
             getterNode = new MethodNode(
                     getterName,

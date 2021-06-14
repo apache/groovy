@@ -58,7 +58,7 @@ import java.util.function.BiConsumer;
 import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isStatic;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
-import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 
 /**
  * Initializes the variable scopes for an AST.
@@ -170,7 +170,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     private Variable findClassMember(final ClassNode node, final String name) {
         final boolean abstractType = node.isAbstract();
 
-        for (ClassNode cn = node; cn != null && !isObjectType(cn); cn = cn.getSuperClass()) {
+        for (ClassNode cn = node; cn != null && !ClassHelper.isObjectType(cn); cn = cn.getSuperClass()) {
             for (FieldNode fn : cn.getFields()) {
                 if (name.equals(fn.getName())) return fn;
             }
@@ -181,12 +181,18 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
             for (MethodNode mn : cn.getMethods()) {
                 if ((abstractType || !mn.isAbstract()) && name.equals(getPropertyName(mn))) {
+                    // check for super property before returning a pseudo-property
+                    for (PropertyNode pn : getAllProperties(cn.getSuperClass())) {
+                        if (name.equals(pn.getName())) return pn;
+                    }
+
                     FieldNode fn = new FieldNode(name, mn.getModifiers() & 0xF, ClassHelper.OBJECT_TYPE, cn, null);
                     fn.setHasNoRealSourcePosition(true);
                     fn.setDeclaringClass(cn);
                     fn.setSynthetic(true);
 
                     PropertyNode pn = new PropertyNode(fn, fn.getModifiers(), null, null);
+                    pn.putNodeMetaData("access.method", mn);
                     pn.setDeclaringClass(cn);
                     return pn;
                 }
