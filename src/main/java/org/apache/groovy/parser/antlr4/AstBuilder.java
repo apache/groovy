@@ -3250,13 +3250,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         anonymousInnerClass.setAnonymous(true);
         anonymousInnerClass.putNodeMetaData(CLASS_NAME, innerClassName);
         configureAST(anonymousInnerClass, ctx);
+        classNodeList.add(anonymousInnerClass);
 
         classNodeStack.push(anonymousInnerClass);
         ctx.classBody().putNodeMetaData(CLASS_DECLARATION_CLASS_NODE, anonymousInnerClass);
         this.visitClassBody(ctx.classBody());
         classNodeStack.pop();
-
-        classNodeList.add(anonymousInnerClass);
 
         return anonymousInnerClass;
     }

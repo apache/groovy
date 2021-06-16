@@ -1758,6 +1758,26 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-10141
+    void testInnerClassIn2xAIC() {
+        assertScript '''
+            class Outer {
+                class Inner {
+                }
+                def obj = new Object() {
+                    String toString() {
+                        new Object() {
+                            String toString() {
+                                new Inner()
+                            }
+                        }
+                    }
+                }
+            }
+            new Outer().obj.toString()
+        '''
+    }
+
     @Test // GROOVY-8274
     void testMissingMethodHandling() {
         assertScript '''
