@@ -39,7 +39,7 @@ public class ConstantExpression extends Expression {
     public static final ConstantExpression VOID = new ConstantExpression(Void.class);
     public static final ConstantExpression EMPTY_EXPRESSION = new ConstantExpression(null);
 
-    private final Object value;
+    private Object value;
     private String constantName;
 
     public ConstantExpression(Object value) {
@@ -121,5 +121,9 @@ public class ConstantExpression extends Expression {
 
     public boolean isEmptyStringExpression() {
         return "".equals(value);
+    }
+
+    public void setValue(Object value) {
+        this.value = value;
     }
 }

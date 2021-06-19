@@ -16,19 +16,33 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
+import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
 import org.junit.Test
 
-import static groovy.test.GroovyAssert.assertScript
-
 @CompileStatic
-final class Groovy8948 {
+final class Groovy8488 extends GroovyTestCase{
+
     @Test
-    void test1() {
-        assertScript '''
-            assert 1.0 == Math.ceil(1/2)
+    void testMethodStaticCheckWithDecimalParameter(){
+        def shell = new GroovyShell()
+        shell.parse '''
+        import groovy.transform.CompileStatic
+
+        @CompileStatic
+        class Static {
+
+            def main() {
+                meth(1.0) // STC error
+            }
+
+            def meth(double val) {
+            }
+        }
         '''
     }
+
+
 }
