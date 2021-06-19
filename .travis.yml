@@ -25,6 +25,8 @@ install:
 
 matrix:
   include:
+    - env: BC='indy' FEATURE='16' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
+      jdk: openjdk11
     - env: BC='indy'
       jdk: openjdk15
     - env: BC='indy'
@@ -50,7 +52,9 @@ before_script:
 
 script:
   - ./gradlew -version
-  - if [ "$BC" == "indy" ]; then travis_wait 60 ./gradlew test; elif [ "$BC" == "sonar" ]; then travis_wait 60 ./gradlew sonarqube -Dsonar.login=$SONAR_LOGIN -Pcoverage=true; fi
+  - if [ "$TARGET_JAVA_HOME" != "" ]; then wget https://github.com/sormuras/bach/raw/master/install-jdk.sh -P /tmp/ && chmod 755 /tmp/install-jdk.sh; fi
+  - if [ "$TARGET_JAVA_HOME" != "" ]; then /tmp/install-jdk.sh --target "$TARGET_JAVA_HOME" --workspace "/home/travis/.cache/install-jdk" --feature "$FEATURE" --license "$LICENSE" --cacerts; fi
+  - if [ "$BC" == "indy" ]; then travis_wait 60 ./gradlew test -Ptarget.java.home=$TARGET_JAVA_HOME; elif [ "$BC" == "sonar" ]; then travis_wait 60 ./gradlew sonarqube -Dsonar.login=$SONAR_LOGIN -Pcoverage=true; fi
 
 # As recommended in:
 # https://docs.travis-ci.com/user/languages/java/#Caching

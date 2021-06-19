@@ -42,6 +42,9 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -210,7 +213,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         this.classList.add(superClass);
         if (generateDelegateField) {
             classList.add(delegateClass);
-            Collections.addAll(this.classList, delegateClass.getInterfaces());
+            Collections.addAll(this.classList, Arrays.stream(delegateClass.getInterfaces()).filter(c -> !isSealed(c)).toArray(Class[]::new));
         }
         if (interfaces != null) {
             Collections.addAll(this.classList, interfaces);
@@ -941,4 +944,24 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         }
     }
 
+    private static final MethodHandle IS_SEALED_METHODHANDLE;
+    static {
+        MethodHandle mh = null;
+        try {
+            mh = MethodHandles.lookup().findVirtual(Class.class, "isSealed", MethodType.methodType(boolean.class, new Class[0]));
+        } catch (NoSuchMethodException | IllegalAccessException ignored) {
+        }
+        IS_SEALED_METHODHANDLE = mh;
+    }
+
+    private static boolean isSealed(Class<?> clazz) {
+        if (null == IS_SEALED_METHODHANDLE) return false;
+
+        boolean sealed = false;
+        try {
+            sealed = (boolean) IS_SEALED_METHODHANDLE.bindTo(clazz).invokeExact();
+        } catch (Throwable ignored) {
+        }
+        return sealed;
+    }
 }

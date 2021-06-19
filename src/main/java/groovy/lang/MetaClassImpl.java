@@ -19,6 +19,7 @@
 package groovy.lang;
 
 import org.apache.groovy.internal.util.UncheckedThrow;
+import org.apache.groovy.lang.GroovyObjectHelper;
 import org.apache.groovy.util.BeanUtils;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
@@ -35,8 +36,10 @@ import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.reflection.android.AndroidSupport;
 import org.codehaus.groovy.runtime.ArrayTypeUtils;
+import org.codehaus.groovy.runtime.ArrayUtil;
 import org.codehaus.groovy.runtime.ConvertedClosure;
 import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -85,6 +88,8 @@ import java.beans.BeanInfo;
 import java.beans.EventSetDescriptor;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -106,6 +111,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -115,6 +121,7 @@ import static java.lang.Character.isUpperCase;
 import static org.apache.groovy.util.Arrays.concat;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.reflection.ReflectionCache.isAssignableFrom;
+import static org.codehaus.groovy.reflection.ReflectionUtils.parameterTypeMatches;
 
 /**
  * Allows methods to be dynamically added to existing classes at runtime
@@ -1127,6 +1134,138 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     @Override
     public Object invokeMethod(Class sender, Object object, String methodName, Object[] originalArguments, boolean isCallToSuper, boolean fromInsideClass) {
+        try {
+            return doInvokeMethod(sender, object, methodName, originalArguments, isCallToSuper, fromInsideClass);
+        } catch (MissingMethodException mme) {
+            return doInvokeMethodFallback(sender, object, methodName, originalArguments, isCallToSuper, mme);
+        }
+    }
+
+    private static class MethodHandleHolder {
+        private static final MethodHandle CLONE_ARRAY_METHOD_HANDLE;
+        static {
+            Optional<Method> methodOptional = Arrays.stream(ArrayUtil.class.getDeclaredMethods()).filter(m -> "cloneArray".equals(m.getName())).findFirst();
+            if (!methodOptional.isPresent()) {
+                throw new GroovyBugError("Failed to find `cloneArray` method in class `" + ArrayUtil.class.getName() + "`");
+            }
+            Method cloneArrayMethod = methodOptional.get();
+
+            try {
+                CLONE_ARRAY_METHOD_HANDLE = MethodHandles.lookup().in(ArrayUtil.class).unreflect(cloneArrayMethod);
+            } catch (IllegalAccessException e) {
+                throw new GroovyBugError("Failed to create method handle for " + cloneArrayMethod);
+            }
+        }
+        private MethodHandleHolder() {}
+    }
+
+    private static final ClassValue<Map<String, Set<Method>>> SPECIAL_METHODS_MAP = new ClassValue<Map<String, Set<Method>>>() {
+        @Override
+        protected Map<String, Set<Method>> computeValue(Class<?> type) {
+            return new ConcurrentHashMap<>(4);
+        }
+    };
+
+    private Object doInvokeMethodFallback(Class sender, Object object, String methodName, Object[] originalArguments, boolean isCallToSuper, MissingMethodException mme) {
+        MethodHandles.Lookup lookup = null;
+        if (object instanceof GroovyObject) {
+            Optional<MethodHandles.Lookup> lookupOptional = GroovyObjectHelper.lookup((GroovyObject) object);
+            if (!lookupOptional.isPresent()) throw mme;
+            lookup = lookupOptional.get();
+        }
+
+        final Class<?> receiverClass = object.getClass();
+        if (isCallToSuper) {
+            if (null == lookup) throw mme;
+            Class[] argTypes = MetaClassHelper.castArgumentsToClassArray(originalArguments);
+            Method superMethod = findMethod(sender, methodName, argTypes);
+            if (null == superMethod) throw mme;
+            MethodHandle superMethodHandle;
+            try {
+                superMethodHandle = lookup.unreflectSpecial(superMethod, receiverClass);
+            } catch (IllegalAccessException e) {
+                throw mme;
+            }
+            cacheMethod(sender, superMethod);
+            try {
+                return superMethodHandle.bindTo(object).invokeWithArguments(originalArguments);
+            } catch (Throwable t) {
+                throw new GroovyRuntimeException(t);
+            }
+        } else {
+            if (receiverClass.isArray()) {
+                if ("clone".equals(methodName) && 0 == originalArguments.length) {
+                    try {
+                        Object[] array = (Object[]) object;
+                        Object[] result = (Object[]) MethodHandleHolder.CLONE_ARRAY_METHOD_HANDLE.invokeExact(array);
+                        return result;
+                    } catch (Throwable t) {
+                        throw new GroovyRuntimeException(t);
+                    }
+                }
+                throw mme;
+            }
+
+            if (null == lookup) {
+                try {
+                    lookup = MethodHandles.lookup().in(receiverClass);
+                } catch (IllegalArgumentException e) {
+                    throw mme;
+                }
+            }
+            Class[] argTypes = MetaClassHelper.castArgumentsToClassArray(originalArguments);
+            Method thisMethod = findMethod(receiverClass, methodName, argTypes);
+            if (null == thisMethod) throw mme;
+            MethodHandle thisMethodHandle;
+            try {
+                thisMethodHandle = lookup.unreflect(thisMethod);
+            } catch (IllegalAccessException e) {
+                throw mme;
+            }
+            cacheMethod(receiverClass, thisMethod);
+            try {
+                return thisMethodHandle.bindTo(object).invokeWithArguments(originalArguments);
+            } catch (Throwable t) {
+                throw new GroovyRuntimeException(t);
+            }
+        }
+    }
+
+    private static void cacheMethod(Class clazz, Method method) {
+        SPECIAL_METHODS_MAP.get(clazz)
+                .computeIfAbsent(method.getName(), k -> Collections.newSetFromMap(new ConcurrentHashMap<>(2)))
+                .add(method);
+    }
+
+    private static Method findMethod(Class clazz, String methodName, Class[] argTypes) {
+        Set<Method> methods = SPECIAL_METHODS_MAP.get(clazz).get(methodName);
+
+        if (null != methods) {
+            for (Method method : methods) {
+                if (parameterTypeMatches(method.getParameterTypes(), argTypes)) {
+                    return method;
+                }
+            }
+        }
+
+        return doFindMethod(clazz, methodName, argTypes);
+    }
+
+    private static Method doFindMethod(Class clazz, String messageName, Class[] argTypes) {
+        for (Class<?> c = clazz; null != c; c = c.getSuperclass()) {
+            List<Method> declaredMethodList = ReflectionUtils.getDeclaredMethods(c, messageName, argTypes);
+            if (!declaredMethodList.isEmpty()) {
+                Method superMethod = declaredMethodList.get(0);
+                if (Modifier.isAbstract(superMethod.getModifiers())) {
+                    continue;
+                }
+                return superMethod;
+            }
+        }
+        return null;
+    }
+
+    private Object doInvokeMethod(Class sender, Object object, String methodName, Object[] originalArguments, boolean isCallToSuper, boolean fromInsideClass) {
         checkInitalised();
         if (object == null) {
             throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");

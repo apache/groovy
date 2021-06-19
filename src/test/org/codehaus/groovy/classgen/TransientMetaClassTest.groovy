@@ -27,11 +27,11 @@ class TransientMetaClassTest extends GroovyTestCase {
             def gcl = new GroovyClassLoader()
             def fooClass = gcl.parseClass('class Foo {}')
             def fooInfo = java.beans.Introspector.getBeanInfo(fooClass)
-            assert fooInfo.propertyDescriptors.find{ it.name == 'metaClass' }.transient
+            assert fooInfo.propertyDescriptors.find{ it.name == 'metaClass' }.getValue('transient')
 
             Closure c = { -> }
             def cInfo = java.beans.Introspector.getBeanInfo(c.getClass())
-            assert cInfo.propertyDescriptors.find{ it.name == 'metaClass' }.transient
+            assert cInfo.propertyDescriptors.find{ it.name == 'metaClass' }.getValue('transient')
         '''
     }
 }

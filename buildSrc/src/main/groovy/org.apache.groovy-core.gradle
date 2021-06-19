@@ -50,6 +50,10 @@ sourceSets {
                 exclude '**/v10/*'
                 exclude '**/vm10/*'
             }
+            if (!JavaVersion.current().isJava11Compatible()) {
+                exclude '**/v16/*'
+                exclude '**/vm16/*'
+            }
         }
         groovy {
             if (!JavaVersion.current().isJava9Compatible()) {
@@ -59,6 +63,10 @@ sourceSets {
             if (!JavaVersion.current().isJava10Compatible()) {
                 exclude '**/v10/*'
                 exclude '**/vm10/*'
+            }
+            if (!JavaVersion.current().isJava11Compatible()) {
+                exclude '**/v16/*'
+                exclude '**/vm16/*'
             }
         }
         antlr {
@@ -78,6 +86,10 @@ sourceSets {
             if (!JavaVersion.current().isJava10Compatible()) {
                 exclude '**/v10/*'
                 exclude '**/vm10/*'
+            }
+            if (!JavaVersion.current().isJava11Compatible()) {
+                exclude '**/v16/*'
+                exclude '**/vm16/*'
             }
         }
         resources {

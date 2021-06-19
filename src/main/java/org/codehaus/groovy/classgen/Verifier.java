@@ -74,7 +74,9 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 import java.beans.Transient;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -139,6 +141,7 @@ import static org.codehaus.groovy.ast.tools.PropertyNodeUtils.adjustPropertyModi
  *     <li>Property accessor methods</li>
  *     <li>Covariant methods</li>
  *     <li>Additional methods/constructors as needed for default parameters</li>
+ *     <li>{@link java.lang.invoke.MethodHandles.Lookup} getter</li>
  * </ul>
  */
 public class Verifier implements GroovyClassVisitor, Opcodes {
@@ -252,6 +255,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
             addFastPathHelperFieldsAndHelperMethod(node, classInternalName, knownSpecialCase);
             if (!knownSpecialCase) addGroovyObjectInterfaceAndMethods(node, classInternalName);
+
+            addGetLookupMethod(node);
         }
 
         addDefaultConstructor(node);
@@ -352,6 +357,30 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         constructor.setHasNoRealSourcePosition(true);
         markAsGenerated(node, constructor);
         node.addConstructor(constructor);
+    }
+
+    private void addGetLookupMethod(final ClassNode node) {
+        int modifiers = ACC_PUBLIC;
+        boolean nonStaticInnerClass = null != node.getOuterClass() && !Modifier.isStatic(node.getModifiers());
+        if (!nonStaticInnerClass) {
+            // static method cannot be declared in non-static inner class util Java 16
+            modifiers |= ACC_STATIC;
+        }
+
+        node.addSyntheticMethod(
+                "$getLookup",
+                modifiers,
+                ClassHelper.make(MethodHandles.Lookup.class),
+                Parameter.EMPTY_ARRAY,
+                ClassNode.EMPTY_ARRAY,
+                new BytecodeSequence(new BytecodeInstruction() {
+                    @Override
+                    public void visit(final MethodVisitor mv) {
+                        mv.visitMethodInsn(INVOKESTATIC, "java/lang/invoke/MethodHandles", "lookup", "()Ljava/lang/invoke/MethodHandles$Lookup;", false);
+                        mv.visitInsn(ARETURN);
+                    }
+                })
+        );
     }
 
     private void addStaticMetaClassField(final ClassNode node, final String classInternalName) {

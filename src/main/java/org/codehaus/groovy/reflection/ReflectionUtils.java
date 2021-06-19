@@ -145,33 +145,42 @@ public class ReflectionUtils {
     private static List<Method> doGetMethods(final Class<?> type, final String name, final Class<?>[] parameterTypes, final Function<? super Class<?>, ? extends Method[]> f) {
         List<Method> methodList = new LinkedList<>();
 
-        out:
         for (Method m : f.apply(type)) {
             if (!m.getName().equals(name)) {
                 continue;
             }
-
             Class<?>[] methodParameterTypes = m.getParameterTypes();
-            if (methodParameterTypes.length != parameterTypes.length) {
+            if (!parameterTypeMatches(methodParameterTypes, parameterTypes)) {
                 continue;
-            }
-
-            for (int i = 0, n = methodParameterTypes.length; i < n; i += 1) {
-                Class<?> parameterType = TypeUtil.autoboxType(parameterTypes[i]);
-                if (null == parameterType) {
-                    continue out;
-                }
-
-                Class<?> methodParameterType = TypeUtil.autoboxType(methodParameterTypes[i]);
-                if (!methodParameterType.isAssignableFrom(parameterType)) {
-                    continue out;
-                }
             }
 
             methodList.add(m);
         }
 
         return methodList;
+    }
+
+    public static boolean parameterTypeMatches(final Class<?>[] parameterTypes, final Class<?>[] argTypes) {
+        if (parameterTypes.length != argTypes.length) {
+            return false;
+        }
+
+        for (int i = 0, n = parameterTypes.length; i < n; i += 1) {
+            Class<?> parameterType = parameterTypes[i];
+            if (Object.class == parameterType) continue;
+
+            Class<?> argType = argTypes[i];
+            if (null == argType) return false;
+            if (parameterType == argType) continue;
+
+            Class<?> boxedArgType = TypeUtil.autoboxType(argType);
+            Class<?> boxedParameterType = TypeUtil.autoboxType(parameterType);
+            if (!boxedParameterType.isAssignableFrom(boxedArgType)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public static boolean checkCanSetAccessible(final AccessibleObject accessibleObject, final Class<?> caller) {

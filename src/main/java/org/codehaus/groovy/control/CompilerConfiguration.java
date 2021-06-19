@@ -134,7 +134,7 @@ public class CompilerConfiguration {
     /**
      * The ASM API version used when loading/parsing classes and generating proxy adapter classes.
      */
-    public static final int ASM_API_VERSION = Opcodes.ASM8;
+    public static final int ASM_API_VERSION = Opcodes.ASM9;
 
     /**
      * The default source encoding.
