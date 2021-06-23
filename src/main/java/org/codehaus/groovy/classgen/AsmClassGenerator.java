@@ -1596,9 +1596,7 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
 
         int i = 0;
-        for (Object object : entries) {
-            MapEntryExpression entry = (MapEntryExpression) object;
-
+        for (MapEntryExpression entry : entries) {
             mv.visitInsn(DUP);
             BytecodeHelper.pushConstant(mv, i++);
             entry.getKeyExpression().visit(this);
