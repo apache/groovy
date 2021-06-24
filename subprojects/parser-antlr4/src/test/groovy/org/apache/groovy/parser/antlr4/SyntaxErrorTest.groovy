@@ -83,7 +83,7 @@ final class SyntaxErrorTest extends GroovyTestCase {
         // TODO: Could the character be escaped in the error message?
         assert err == '''\
             |startup failed:
-            |test.groovy: 1: Unexpected input: 'def \u200B' @ line 1, column 5.
+            |test.groovy: 1: Unexpected character: '\u200B' @ line 1, column 5.
             |   def \u200Bname = null
             |       ^
             |
@@ -99,7 +99,7 @@ final class SyntaxErrorTest extends GroovyTestCase {
         // TODO: Could the character be escaped in the error message?
         assert err == '''\
             |startup failed:
-            |test.groovy: 1: Unexpected input: '\u200B' @ line 1, column 7.
+            |test.groovy: 1: Unexpected character: '\u200B' @ line 1, column 7.
             |   def na\u200Bme = null
             |         ^
             |
@@ -115,9 +115,26 @@ final class SyntaxErrorTest extends GroovyTestCase {
         // TODO: Could the character be escaped in the error message?
         assert err == '''\
             |startup failed:
-            |test.groovy: 1: Unexpected input: '\u000C' @ line 1, column 7.
+            |test.groovy: 1: Unexpected character: '\u000C' @ line 1, column 7.
             |   def na\u000Cme = null
             |         ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    void 'test groovy core - UnexpectedCharacter 3'() {
+        def err = expectParseError '''\
+            |foo.bar {
+            |  println 'Hello
+            |}
+            |'''.stripMargin()
+
+        assert err == '''\
+            |startup failed:
+            |test.groovy: 2: Unexpected character: '\\'' @ line 2, column 11.
+            |     println 'Hello
+            |             ^
             |
             |1 error
             |'''.stripMargin()

@@ -966,5 +966,5 @@ SH_COMMENT
 
 // Unexpected characters will be handled by groovy parser later.
 UNEXPECTED_CHAR
-    :   .
+    :   . { require(false, "Unexpected character: '" + getText().replace("'", "\\'") + "'", -1, false); }
     ;
