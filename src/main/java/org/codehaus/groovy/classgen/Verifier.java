@@ -98,6 +98,11 @@ import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
 import static org.codehaus.groovy.ast.AnnotationNode.METHOD_TARGET;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveDouble;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperBoolean;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
@@ -114,11 +119,6 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.addMethodGenerics;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.PropertyNodeUtils.adjustPropertyModifiersForMethod;
-import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveDouble;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperBoolean;
 
 /**
  * Verifies the AST node and adds any default AST code before bytecode generation occurs.
