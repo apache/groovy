@@ -18,9 +18,11 @@
  */
 package org.codehaus.groovy.vmplugin.v8;
 
+import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
+import org.apache.groovy.lang.GroovyObjectHelper;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -68,6 +70,7 @@ import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Java 8 based functions.
@@ -623,11 +626,27 @@ public class Java8 implements VMPlugin {
         IndyInterface.invalidateSwitchPoints();
     }
 
+    protected MethodHandles.Lookup getLookup(Object receiver) {
+        MethodHandles.Lookup lookup = null;
+        if (receiver instanceof GroovyObject) {
+            Optional<MethodHandles.Lookup> lookupOptional = GroovyObjectHelper.lookup((GroovyObject) receiver);
+            if (lookupOptional.isPresent()) {
+                lookup = lookupOptional.get();
+            }
+        }
+        if (null == lookup) {
+            final Class<?> receiverType = receiver.getClass();
+            lookup = newLookup(receiverType);
+        }
+        return lookup;
+    }
+
     @Override
     public Object getInvokeSpecialHandle(Method method, Object receiver) {
-        final Class<?> receiverType = receiver.getClass();
         try {
-            return newLookup(receiverType).unreflectSpecial(method, receiverType).bindTo(receiver);
+            MethodHandles.Lookup lookup = getLookup(receiver);
+            Class<?> receiverType = receiver.getClass();
+            return lookup.unreflectSpecial(method, receiverType).bindTo(receiver);
         } catch (ReflectiveOperationException e) {
             return getInvokeSpecialHandleFallback(method, receiver);
         }

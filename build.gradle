@@ -229,7 +229,7 @@ tasks.named('test') {
     dependsOn testExtensionModuleJar
 }
 
-if (!JavaVersion.current().java10Compatible) {
+if (!JavaVersion.current().java11Compatible) {
     logger.lifecycle '''
 **************************************** WARNING ********************************************
 ******   You are running the build with an older JDK. NEVER try to release with 1.8.   ******

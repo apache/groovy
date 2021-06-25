@@ -22,10 +22,17 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
+import static groovy.test.GroovyAssert.isAtLeastJdk
+import static org.junit.Assume.assumeTrue
+
 final class Groovy8815 {
 
     @Test
     void testGenerics() {
+        // illegal access to `java.lang.reflect.Method.getGenericSignature`, i.e. `method.genericSignature` in the test
+        // but illegal access is not allowed by default since JDK 16
+        assumeTrue(!isAtLeastJdk('16.0'))
+
         def config = new CompilerConfiguration(
             targetDirectory: File.createTempDir(),
             jointCompilationOptions: [memStub: true]

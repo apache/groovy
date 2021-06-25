@@ -53,8 +53,11 @@ package org.codehaus.groovy.runtime;
 * absolutely no sense in normal Java. But it is not used in normal Java, but from the bytecode. 
 */ 
 public class ArrayUtil {
-    private static final Object[] EMPTY = new Object[0]
-            ;
+    private static final Object[] EMPTY = new Object[0];
+
+    public static <T> T[] cloneArray(T[] array) {
+        return array.clone();
+    }
 
     public static Object[] createArray() {
         return EMPTY;

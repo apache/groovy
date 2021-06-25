@@ -169,11 +169,11 @@ public class Java9 extends Java8 {
         return of(declaringClass);
     }
 
-    private static Constructor<MethodHandles.Lookup> getLookupConstructor() {
+    protected static Constructor<MethodHandles.Lookup> getLookupConstructor() {
         return LookupHolder.LOOKUP_Constructor;
     }
 
-    private static Method getPrivateLookup() {
+    protected static Method getPrivateLookup() {
         return LookupHolder.PRIVATE_LOOKUP;
     }
 
@@ -354,8 +354,8 @@ public class Java9 extends Java8 {
     private static List<CachedMethod> getMetaMethods(CachedMethod metaMethod, Class<?>[] params, Class<?> sc, boolean declared) {
         String metaMethodName = metaMethod.getName();
         List<Method> optionalMethodList = declared
-                                            ? ReflectionUtils.getDeclaredMethods(sc, metaMethodName, params)
-                                            : ReflectionUtils.getMethods(sc, metaMethodName, params);
+                ? ReflectionUtils.getDeclaredMethods(sc, metaMethodName, params)
+                : ReflectionUtils.getMethods(sc, metaMethodName, params);
         return optionalMethodList.stream().map(CachedMethod::new).collect(Collectors.toList());
     }
 

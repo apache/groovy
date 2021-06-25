@@ -30,14 +30,14 @@ import static org.junit.Assume.assumeTrue
  * Java via means such as reflection.
  *
  * In JDK versions < 9, Groovy supports permissive access and no warnings are given by the JDK.
- * In JDK versions >= 9, Groovy supports permissive access but the JDK gives illegal access warnings.
+ * In 9 <= JDK versions < 16, Groovy supports permissive access but the JDK gives illegal access warnings.
  * At some point, the JDK may further restrict permissive access and Groovy's support for this feature may be limited.
  */
 final class IllegalAccessTests {
 
     @Before
     void setUp() {
-        assumeTrue(isAtLeastJdk('9.0') && !Boolean.getBoolean('groovy.force.illegal.access'))
+        assumeTrue(!isAtLeastJdk('16.0') && isAtLeastJdk('9.0') && !Boolean.getBoolean('groovy.force.illegal.access'))
     }
 
     @Test
