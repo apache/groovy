@@ -22,6 +22,9 @@ import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
@@ -235,6 +238,17 @@ public class ReflectionUtils {
         }
     }
 
+    public static boolean isSealed(Class<?> clazz) {
+        if (null == IS_SEALED_METHODHANDLE) return false;
+
+        boolean sealed = false;
+        try {
+            sealed = (boolean) IS_SEALED_METHODHANDLE.bindTo(clazz).invokeExact();
+        } catch (Throwable ignored) {
+        }
+        return sealed;
+    }
+
     private static boolean classShouldBeIgnored(final Class c, final Collection<String> extraIgnoredPackages) {
         return (c != null
                 && (c.isSynthetic()
@@ -248,5 +262,15 @@ public class ReflectionUtils {
         public Class[] getClassContext() {
             return super.getClassContext();
         }
+    }
+
+    private static final MethodHandle IS_SEALED_METHODHANDLE;
+    static {
+        MethodHandle mh = null;
+        try {
+            mh = MethodHandles.lookup().findVirtual(Class.class, "isSealed", MethodType.methodType(boolean.class, new Class[0]));
+        } catch (NoSuchMethodException | IllegalAccessException ignored) {
+        }
+        IS_SEALED_METHODHANDLE = mh;
     }
 }
