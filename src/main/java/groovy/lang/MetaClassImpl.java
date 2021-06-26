@@ -1259,10 +1259,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             cacheMethod(clazz, foundMethod);
         }
 
-        MethodHandle methodHandle = mhFunc.apply(foundMethod);
-        if (null == methodHandle) return null;
-
-        return methodHandle;
+        return mhFunc.apply(foundMethod);
     }
 
     private static Method doFindMethod(Class clazz, String messageName, Class[] argTypes) {
