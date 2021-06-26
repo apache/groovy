@@ -1207,7 +1207,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 throw mme;
             }
 
-            if (null == lookup) {
+            final boolean spyFound = null != lookup;
+            if (!spyFound) {
                 try {
                     lookup = MethodHandles.lookup().in(receiverClass);
                 } catch (IllegalArgumentException e) {
@@ -1217,6 +1218,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             MethodHandles.Lookup tmpLookup = lookup;
             MethodHandle thisMethodHandle = findMethod(receiverClass, methodName, castArgumentsToClassArray(originalArguments), thisMethod -> {
                 try {
+                    if (spyFound) return tmpLookup.unreflectSpecial(thisMethod, receiverClass);
+
                     return tmpLookup.unreflect(thisMethod);
                 } catch (IllegalAccessException e) {
                     return null;
