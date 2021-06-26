@@ -115,6 +115,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 import static groovy.lang.Tuple.tuple;
 import static java.lang.Character.isUpperCase;
@@ -122,6 +123,7 @@ import static org.apache.groovy.util.Arrays.concat;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.reflection.ReflectionCache.isAssignableFrom;
 import static org.codehaus.groovy.reflection.ReflectionUtils.parameterTypeMatches;
+import static org.codehaus.groovy.runtime.MetaClassHelper.castArgumentsToClassArray;
 
 /**
  * Allows methods to be dynamically added to existing classes at runtime
@@ -262,7 +264,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     @Override
     public List respondsTo(final Object obj, final String name, final Object[] argTypes) {
-        Class[] classes = MetaClassHelper.castArgumentsToClassArray(argTypes);
+        Class[] classes = castArgumentsToClassArray(argTypes);
         MetaMethod m = getMetaMethod(name, classes);
         if (m != null) {
             return Collections.singletonList(m);
@@ -322,7 +324,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     @Override
     public MetaMethod getStaticMetaMethod(final String name, final Object[] argTypes) {
-        Class[] classes = MetaClassHelper.castArgumentsToClassArray(argTypes);
+        Class[] classes = castArgumentsToClassArray(argTypes);
         return pickStaticMethod(name, classes);
     }
 
@@ -331,7 +333,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     @Override
     public MetaMethod getMetaMethod(final String name, final Object[] argTypes) {
-        Class[] classes = MetaClassHelper.castArgumentsToClassArray(argTypes);
+        Class[] classes = castArgumentsToClassArray(argTypes);
         return pickMethod(name, classes);
     }
 
@@ -926,7 +928,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (theClass != instanceKlazz && theClass.isAssignableFrom(instanceKlazz))
             instanceKlazz = theClass;
 
-        Class<?>[] argClasses = MetaClassHelper.castArgumentsToClassArray(arguments);
+        Class<?>[] argClasses = castArgumentsToClassArray(arguments);
 
         MetaMethod method = findMixinMethod(methodName, argClasses);
         if (method != null) {
@@ -1177,16 +1179,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         final Class<?> receiverClass = object.getClass();
         if (isCallToSuper) {
             if (null == lookup) throw mme;
-            Class[] argTypes = MetaClassHelper.castArgumentsToClassArray(originalArguments);
-            Method superMethod = findMethod(sender, methodName, argTypes);
-            if (null == superMethod) throw mme;
-            MethodHandle superMethodHandle;
-            try {
-                superMethodHandle = lookup.unreflectSpecial(superMethod, receiverClass);
-            } catch (IllegalAccessException e) {
-                throw mme;
-            }
-            cacheMethod(sender, superMethod);
+            MethodHandles.Lookup tmpLookup = lookup;
+            MethodHandle superMethodHandle = findMethod(sender, methodName, castArgumentsToClassArray(originalArguments), superMethod -> {
+                try {
+                    return tmpLookup.unreflectSpecial(superMethod, receiverClass);
+                } catch (IllegalAccessException e) {
+                    return null;
+                }
+            });
+            if (null == superMethodHandle) throw mme;
             try {
                 return superMethodHandle.bindTo(object).invokeWithArguments(originalArguments);
             } catch (Throwable t) {
@@ -1213,16 +1214,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     throw mme;
                 }
             }
-            Class[] argTypes = MetaClassHelper.castArgumentsToClassArray(originalArguments);
-            Method thisMethod = findMethod(receiverClass, methodName, argTypes);
-            if (null == thisMethod) throw mme;
-            MethodHandle thisMethodHandle;
-            try {
-                thisMethodHandle = lookup.unreflect(thisMethod);
-            } catch (IllegalAccessException e) {
-                throw mme;
-            }
-            cacheMethod(receiverClass, thisMethod);
+            MethodHandles.Lookup tmpLookup = lookup;
+            MethodHandle thisMethodHandle = findMethod(receiverClass, methodName, castArgumentsToClassArray(originalArguments), thisMethod -> {
+                try {
+                    return tmpLookup.unreflect(thisMethod);
+                } catch (IllegalAccessException e) {
+                    return null;
+                }
+            });
+            if (null == thisMethodHandle) throw mme;
             try {
                 return thisMethodHandle.bindTo(object).invokeWithArguments(originalArguments);
             } catch (Throwable t) {
@@ -1231,24 +1231,35 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private static void cacheMethod(Class clazz, Method method) {
+    private static void cacheMethod(Class<?> clazz, Method method) {
         SPECIAL_METHODS_MAP.get(clazz)
                 .computeIfAbsent(method.getName(), k -> Collections.newSetFromMap(new ConcurrentHashMap<>(2)))
                 .add(method);
     }
 
-    private static Method findMethod(Class clazz, String methodName, Class[] argTypes) {
+    private static MethodHandle findMethod(Class<?> clazz, String methodName, Class[] argTypes, Function<Method, MethodHandle> mhFunc) {
         Set<Method> methods = SPECIAL_METHODS_MAP.get(clazz).get(methodName);
 
+        Method foundMethod = null;
         if (null != methods) {
             for (Method method : methods) {
                 if (parameterTypeMatches(method.getParameterTypes(), argTypes)) {
-                    return method;
+                    foundMethod = method;
+                    break;
                 }
             }
         }
 
-        return doFindMethod(clazz, methodName, argTypes);
+        if (null == foundMethod) {
+            foundMethod = doFindMethod(clazz, methodName, argTypes);
+            if (null == foundMethod) return null;
+            cacheMethod(clazz, foundMethod);
+        }
+
+        MethodHandle methodHandle = mhFunc.apply(foundMethod);
+        if (null == methodHandle) return null;
+
+        return methodHandle;
     }
 
     private static Method doFindMethod(Class clazz, String messageName, Class[] argTypes) {
