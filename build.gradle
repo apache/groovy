@@ -233,7 +233,7 @@ if (!JavaVersion.current().java11Compatible) {
     logger.lifecycle '''
 **************************************** WARNING ********************************************
 ******   You are running the build with an older JDK. NEVER try to release with 1.8.   ******
-******   You must use a JDK 10+ in order to compile all features of the language.      ******
+******   You must use a JDK 11+ in order to compile all features of the language.      ******
 *********************************************************************************************
 '''
 }
