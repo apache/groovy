@@ -198,7 +198,7 @@ final class TestUtils {
     }
 
     static void doRunAndTestAntlr4(String path, CompilerConfiguration compilerConfiguration = CompilerConfiguration.DEFAULT) {
-        assert executeScript(createAntlr4Shell(compilerConfiguration), "$RESOURCES_PATH/$path")
+        assert executeScript(createAntlr4Shell(compilerConfiguration), path)
     }
 
     static void doRunAndTestAntlr2(String path, CompilerConfiguration compilerConfiguration = CompilerConfiguration.DEFAULT) {
@@ -255,7 +255,8 @@ final class TestUtils {
     }
 
     private static boolean executeScript(GroovyShell shell, String path) {
-        def file = new File(path)
+        File file = new File("$RESOURCES_PATH/$path")
+        assert file.exists() : "Test resource not found: $file.absolutePath"
         try {
             shell.evaluate(file.text)
             return true

@@ -912,6 +912,13 @@ GINQ does not support `with` clause for now. We could define a temporary variabl
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_12,indent=0]
 ----
 
+==== Alternative for `case-when`
+`case-when` of SQL could be replaced with switch expression:
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_13,indent=0]
+----
+
 ==== Query JSON
 [source, groovy]
 ----

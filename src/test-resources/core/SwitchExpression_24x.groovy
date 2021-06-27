@@ -16,30 +16,29 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy
 
-import gls.CompilableTestSupport
+import java.time.Month
+import static java.time.Month.*
 
-class MethodInBadPositionTest extends CompilableTestSupport {
-    /** GROOVY-4215 */
-    void testMethodDefinitionInClosure() {
-        def msg = shouldNotCompile('''
-            { ->
-                def say(String msg) {
-                  println(msg)
-                }
-            }()
-        ''')
-        assert msg.contains('Method definition not expected here') || msg.contains("Unexpected input: '('")
-    }
-
-    /** GROOVY-4215 */
-    void testXMethodDefinitionInSwitch() {
-        def msg = shouldNotCompile('''
-            switch(1) {
-                case 1: def say(){}
-            }
-        ''')
-        assert msg.contains('Method definition not expected here')  || msg.contains("Unexpected input: '('") || msg.contains("Unexpected input: 'switch(1)")
-    }
+Month month = JUNE
+String quarter = switch (month) {
+    case JANUARY:
+    case FEBRUARY:
+    case MARCH:
+        yield "First Quarter"
+    case APRIL:
+    case MAY:
+    case JUNE:
+        yield "Second Quarter"
+    case JULY:
+    case AUGUST:
+    case SEPTEMBER:
+        yield "Third Quarter"
+    case OCTOBER:
+    case NOVEMBER:
+    case DECEMBER:
+        yield "Forth Quarter"
+    default:
+        yield "Unknown Quarter"
 }
+assert 'Second Quarter' == quarter
