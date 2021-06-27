@@ -27,9 +27,10 @@ import static org.apache.groovy.util.BeanUtils.capitalize;
  */
 public abstract class MetaProperty {
 
+    public static final String PROPERTY_SET_PREFIX = "set";
+
     protected final String name;
     protected Class type;
-    public static final String PROPERTY_SET_PREFIX = "set";
 
     /**
      * Constructor that sets the property name and type (class)
@@ -47,7 +48,7 @@ public abstract class MetaProperty {
 
     /**
      * Sets the property on the given object to the new value
-     * 
+     *
      * @param object on which to set the property
      * @param newValue the new value of the property
      * @throws RuntimeException if the property could not be set
@@ -69,7 +70,7 @@ public abstract class MetaProperty {
     public Class getType() {
         return type;
     }
-    
+
     /**
      * Returns the access modifier.
      * @return Modifier.PUBLIC
@@ -84,8 +85,8 @@ public abstract class MetaProperty {
      * @return The name of the property. The name is "get" + the capitalized propertyName
      *         or, in the case of boolean values, "is" + the capitalized propertyName
      */
-    public static String getGetterName(String propertyName, Class type) {
-        String prefix = type == boolean.class || type == Boolean.class ? "is" : "get";
+    public static String getGetterName(final String propertyName, final Class type) {
+        String prefix = type == Boolean.TYPE ? "is" : "get";
         return prefix + capitalize(propertyName);
     }
 
@@ -94,7 +95,7 @@ public abstract class MetaProperty {
      *
      * @return The name of the property. The name is "set"+ the capitalized propertyName.
      */
-    public static String getSetterName(String propertyName) {
+    public static String getSetterName(final String propertyName) {
         return PROPERTY_SET_PREFIX + capitalize(propertyName);
     }
 }

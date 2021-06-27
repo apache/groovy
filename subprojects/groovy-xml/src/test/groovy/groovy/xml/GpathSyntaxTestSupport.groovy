@@ -87,7 +87,7 @@ class GpathSyntaxTestSupport {
             // additional DOM long-hand syntax
             // for illustrative purposes only
             assert likes.item(0).nodeName == 'likes'
-            assert wallaceLikes.firstChild.nodeValue == 'cheese'
+            assert wallaceLikes.getFirstChild().nodeValue == 'cheese'
             if (wallaceLikes.class.name.contains('xerces')) {
                 assert 'cheese' == wallaceLikes.textContent
             }

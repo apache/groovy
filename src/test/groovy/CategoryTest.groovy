@@ -68,8 +68,21 @@ final class CategoryTest extends GroovyTestCase {
         }
     }
 
-    // GROOVY-5245
+    // GROOVY-10133
     void testCategoryDefinedProperties2() {
+        assertScript '''
+            class Cat {
+                static boolean isAbc(self) { true }
+                static boolean getAbc(self) { false }
+            }
+            use (Cat) {
+                assert abc // should select "isAbc()"
+            }
+        '''
+    }
+
+    // GROOVY-5245
+    void testCategoryDefinedProperties3() {
         assertScript '''
             class Isser {
                 boolean isWorking() { true }

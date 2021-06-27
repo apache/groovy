@@ -230,6 +230,35 @@ final class StaticImportTest extends groovy.test.GroovyTestCase {
         }
     }
 
+    // GROOVY-9382, GROOVY-10133
+    void testStaticImportPropertyWithChoices() {
+        assertScript '''
+            import static Foo.isX
+            import static Foo.getX
+            class Foo {
+                static boolean isX() { true }
+                static boolean getX() { false }
+            }
+            assert x
+        '''
+
+        def err = shouldFail '''
+            import static Foo.isX
+            class Foo { static isX() {} }
+
+            x
+        '''
+        assert err =~ /No such property: x for class/
+
+        err = shouldFail '''
+            import static Foo.isX as isY
+            class Foo { static isX() {} }
+
+            y
+        '''
+        assert err =~ /No such property: y for class/
+    }
+
     void testConstructorArgsAliasing() {
         // not recommended style to use statics in constructors but supported
         assertScript '''

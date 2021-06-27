@@ -18,19 +18,30 @@
  */
 package groovy.bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class Groovy4206Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy4206 {
+
+    @Test
     void testIsNamesForBooleanProps() {
-        assert Bar4206.isValid()
-        assert Bar4206.valid
-        assert '1.1E2'.isBigDecimal()
-        assert '1.1E2'.bigDecimal
-        assert '    '.isAllWhitespace()
-        assert '    '.allWhitespace
-    }
-}
+        assertScript '''
+            class C {
+                static boolean isValid() { true }
+            }
 
-class Bar4206 {
-    static Boolean isValid() { true }
+            assert C.isValid()
+            assert C.valid
+
+            assert !3.14f.isNaN()
+            assert !3.14f.NaN
+
+            assert '1.1E2'.isBigDecimal()
+            assert '1.1E2'.bigDecimal
+
+            assert '     '.isAllWhitespace()
+            assert '     '.allWhitespace
+        '''
+    }
 }
