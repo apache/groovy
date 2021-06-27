@@ -925,7 +925,7 @@ Parallel querying is especially efficient when querying big data sources. It is 
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_08,indent=0]
 ----
 
-As parallel querying will use a shared thread pool, the following code should be executed to release resources after all GINQ statements execution are completed, otherwise JVM will not exit. The code will wait util all tasks of theads are completed.
+As parallel querying will use a shared thread pool, the following code can release resources after all GINQ statements execution are completed, and it will wait util all tasks of threads are completed.
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_09,indent=0]

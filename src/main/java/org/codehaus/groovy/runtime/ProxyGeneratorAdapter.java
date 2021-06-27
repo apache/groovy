@@ -60,6 +60,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.codehaus.groovy.reflection.ReflectionUtils.isSealed;
 import static org.objectweb.asm.Opcodes.AASTORE;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -210,7 +211,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         this.classList.add(superClass);
         if (generateDelegateField) {
             classList.add(delegateClass);
-            Collections.addAll(this.classList, delegateClass.getInterfaces());
+            Collections.addAll(this.classList, Arrays.stream(delegateClass.getInterfaces()).filter(c -> !isSealed(c)).toArray(Class[]::new));
         }
         if (interfaces != null) {
             Collections.addAll(this.classList, interfaces);
@@ -940,5 +941,4 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
             return value;
         }
     }
-
 }

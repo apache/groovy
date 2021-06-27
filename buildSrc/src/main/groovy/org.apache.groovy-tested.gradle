@@ -55,6 +55,13 @@ tasks.withType(Test).configureEach {
             'gradle.home': gradle.gradleHomeDir, // this is needed by the security.policy
             'user.home': temporaryDir.absolutePath // make sure tests are isolated from real user home or tests using Grape may fail
 
+    if (rootProject.hasProperty('target.java.home')) {
+        String targetJavaHome = rootProject.property('target.java.home')
+        if (targetJavaHome?.trim()) {
+            executable = "${targetJavaHome}/bin/java"
+        }
+    }
+
     forkEvery = 50
     maxParallelForks = sharedConfiguration.isRunningOnCI ? 1 : Runtime.runtime.availableProcessors().intdiv(2) ?: 1
     scanForTestClasses = true

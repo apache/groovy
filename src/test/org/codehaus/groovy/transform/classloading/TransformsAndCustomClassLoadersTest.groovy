@@ -137,7 +137,10 @@ class TransformsAndCustomClassLoadersTest extends GroovyTestCase {
             }
             if (name.startsWith("java.") || name.startsWith("groovy.")
                     || name.startsWith("org.codehaus.groovy.") || name.startsWith("org.apache.groovy.")) {
-                return getClass().classLoader.loadClass(name, resolve)
+                def loader = getClass().classLoader
+                def result = loader.loadClass(name)
+                if (resolve) loader.resolveClass(result)
+                return result
             }
             throw new ClassNotFoundException(name)
         }

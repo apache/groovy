@@ -56,6 +56,7 @@ options {
 @members {
     private static final Logger LOGGER = Logger.getLogger(GroovyLexer.class.getName());
 
+    private boolean errorIgnored;
     private long tokenIndex;
     private int  lastTokenType;
     private int  invalidDigitCount;
@@ -237,6 +238,14 @@ options {
 
     private static boolean isJavaIdentifierPartAndNotIdentifierIgnorable(int codePoint) {
         return Character.isJavaIdentifierPart(codePoint) && !Character.isIdentifierIgnorable(codePoint);
+    }
+
+    public boolean isErrorIgnored() {
+        return errorIgnored;
+    }
+
+    public void setErrorIgnored(boolean errorIgnored) {
+        this.errorIgnored = errorIgnored;
     }
 }
 
@@ -486,10 +495,10 @@ IntegerLiteral
         |   HexIntegerLiteral
         |   OctalIntegerLiteral
         |   BinaryIntegerLiteral
-        ) (Underscore { require(false, "Number ending with underscores is invalid", -1, true); })?
+        ) (Underscore { require(errorIgnored, "Number ending with underscores is invalid", -1, true); })?
 
     // !!! Error Alternative !!!
-    |   Zero ([0-9] { invalidDigitCount++; })+ { require(false, "Invalid octal number", -(invalidDigitCount + 1), true); } IntegerTypeSuffix?
+    |   Zero ([0-9] { invalidDigitCount++; })+ { require(errorIgnored, "Invalid octal number", -(invalidDigitCount + 1), true); } IntegerTypeSuffix?
     ;
 
 fragment
@@ -628,7 +637,7 @@ BinaryDigitOrUnderscore
 FloatingPointLiteral
     :   (   DecimalFloatingPointLiteral
         |   HexadecimalFloatingPointLiteral
-        ) (Underscore { require(false, "Number ending with underscores is invalid", -1, true); })?
+        ) (Underscore { require(errorIgnored, "Number ending with underscores is invalid", -1, true); })?
     ;
 
 fragment
@@ -972,10 +981,10 @@ SL_COMMENT
 // Script-header comments.
 // The very first characters of the file may be "#!".  If so, ignore the first line.
 SH_COMMENT
-    :   '#!' { require(0 == this.tokenIndex, "Shebang comment should appear at the first line", -2, true); } ShCommand (LineTerminator '#!' ShCommand)* -> skip
+    :   '#!' { require(errorIgnored || 0 == this.tokenIndex, "Shebang comment should appear at the first line", -2, true); } ShCommand (LineTerminator '#!' ShCommand)* -> skip
     ;
 
 // Unexpected characters will be handled by groovy parser later.
 UNEXPECTED_CHAR
-    :   .
+    :   . { require(errorIgnored, "Unexpected character: '" + getText().replace("'", "\\'") + "'", -1, false); }
     ;

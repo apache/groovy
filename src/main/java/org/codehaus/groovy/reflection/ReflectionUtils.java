@@ -22,6 +22,9 @@ import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
@@ -145,33 +148,42 @@ public class ReflectionUtils {
     private static List<Method> doGetMethods(final Class<?> type, final String name, final Class<?>[] parameterTypes, final Function<? super Class<?>, ? extends Method[]> f) {
         List<Method> methodList = new LinkedList<>();
 
-        out:
         for (Method m : f.apply(type)) {
             if (!m.getName().equals(name)) {
                 continue;
             }
-
             Class<?>[] methodParameterTypes = m.getParameterTypes();
-            if (methodParameterTypes.length != parameterTypes.length) {
+            if (!parameterTypeMatches(methodParameterTypes, parameterTypes)) {
                 continue;
-            }
-
-            for (int i = 0, n = methodParameterTypes.length; i < n; i += 1) {
-                Class<?> parameterType = TypeUtil.autoboxType(parameterTypes[i]);
-                if (null == parameterType) {
-                    continue out;
-                }
-
-                Class<?> methodParameterType = TypeUtil.autoboxType(methodParameterTypes[i]);
-                if (!methodParameterType.isAssignableFrom(parameterType)) {
-                    continue out;
-                }
             }
 
             methodList.add(m);
         }
 
         return methodList;
+    }
+
+    public static boolean parameterTypeMatches(final Class<?>[] parameterTypes, final Class<?>[] argTypes) {
+        if (parameterTypes.length != argTypes.length) {
+            return false;
+        }
+
+        for (int i = 0, n = parameterTypes.length; i < n; i += 1) {
+            Class<?> parameterType = parameterTypes[i];
+            if (Object.class == parameterType) continue;
+
+            Class<?> argType = argTypes[i];
+            if (null == argType) return false;
+            if (parameterType == argType) continue;
+
+            Class<?> boxedArgType = TypeUtil.autoboxType(argType);
+            Class<?> boxedParameterType = TypeUtil.autoboxType(parameterType);
+            if (!boxedParameterType.isAssignableFrom(boxedArgType)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public static boolean checkCanSetAccessible(final AccessibleObject accessibleObject, final Class<?> caller) {
@@ -226,6 +238,17 @@ public class ReflectionUtils {
         }
     }
 
+    public static boolean isSealed(Class<?> clazz) {
+        if (null == IS_SEALED_METHODHANDLE) return false;
+
+        boolean sealed = false;
+        try {
+            sealed = (boolean) IS_SEALED_METHODHANDLE.bindTo(clazz).invokeExact();
+        } catch (Throwable ignored) {
+        }
+        return sealed;
+    }
+
     private static boolean classShouldBeIgnored(final Class c, final Collection<String> extraIgnoredPackages) {
         return (c != null
                 && (c.isSynthetic()
@@ -239,5 +262,15 @@ public class ReflectionUtils {
         public Class[] getClassContext() {
             return super.getClassContext();
         }
+    }
+
+    private static final MethodHandle IS_SEALED_METHODHANDLE;
+    static {
+        MethodHandle mh = null;
+        try {
+            mh = MethodHandles.lookup().findVirtual(Class.class, "isSealed", MethodType.methodType(boolean.class, new Class[0]));
+        } catch (NoSuchMethodException | IllegalAccessException ignored) {
+        }
+        IS_SEALED_METHODHANDLE = mh;
     }
 }

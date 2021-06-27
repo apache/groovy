@@ -16,35 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.vmplugin.v10;
-
-import org.codehaus.groovy.vmplugin.v9.Java9;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+package org.codehaus.groovy.vmplugin.v16;
 
 /**
- * Additional Java 10 based functions will be added here as needed.
+ * Defines new Groovy methods which appear on normal JDK 16
+ * classes inside the Groovy environment.
+ *
+ * @since 4.0.0
  */
-public class Java10 extends Java9 {
-    private final Class<?>[] PLUGIN_DGM;
+public class PluginDefaultGroovyMethods {
 
-    public Java10() {
-        super();
-        List<Class<?>> dgmClasses = new ArrayList<>();
-        Collections.addAll(dgmClasses, super.getPluginDefaultGroovyMethods());
-        dgmClasses.add(PluginDefaultGroovyMethods.class);
-        PLUGIN_DGM = dgmClasses.toArray(new Class<?>[0]);
-    }
-
-    @Override
-    public Class<?>[] getPluginDefaultGroovyMethods() {
-        return PLUGIN_DGM;
-    }
-
-    @Override
-    public int getVersion() {
-        return 10;
-    }
 }

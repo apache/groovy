@@ -346,6 +346,7 @@ public class SmartDocumentFilter extends DocumentFilter {
         CharStream charStream = CharStreams.fromReader(new StringReader(text));
         GroovyLangLexer lexer = new GroovyLangLexer(charStream);
 
+        lexer.setErrorIgnored(true);
         lexer.removeErrorListener(ConsoleErrorListener.INSTANCE);
 
         return lexer;

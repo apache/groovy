@@ -241,6 +241,9 @@ public class SecurityTest extends GroovyTestCase {
 
 
     public void testChecksCreateClassLoaderPermissionForClassLoaderProtectedMethodAccess() throws Exception {
+        // Illegal access to java.lang.ClassLoader.defineClass(java.lang.String,java.nio.ByteBuffer,java.security.ProtectionDomain)
+        if (isAtLeastJdk("16.0")) return;
+
         cachedMethodUnderTest = createCachedMethod(ClassLoader.class, "defineClass", new Class[]{String.class, ByteBuffer.class, ProtectionDomain.class});
         forbidden = new Permissions();
         forbidden.add(new RuntimePermission("createClassLoader"));

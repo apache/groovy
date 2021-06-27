@@ -907,6 +907,9 @@ pathExpression returns [int t]
 pathElement returns [int t]
     :   nls
         (
+            DOT nls NEW creator[1]
+            { $t = 6; }
+        |
             // AT: foo.@bar selects the field (or attribute), not property
             (
                 (   DOT                 // The all-powerful dot.
@@ -921,9 +924,6 @@ pathElement returns [int t]
             )
             namePart
             { $t = 1; }
-        |
-            DOT nls NEW creator[1]
-            { $t = 6; }
 
             // Can always append a block, as foo{bar}
         |   closureOrLambdaExpression

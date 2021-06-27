@@ -109,7 +109,7 @@ class NumberMathTest extends GroovyTestCase {
         def BD1 = new BigDecimal("1.0")
         def BD2 = new BigDecimal("2.0")
         def BD20 = new BigDecimal("2.00")
-        def BD100 = new BigDecimal(new BigInteger(1), -2) // 100
+        def BD100 = new BigDecimal(new BigInteger("1"), -2) // 100
 
         assert I1 / I2 instanceof BigDecimal
         assert I1 / I2 == new BigDecimal("0.5")

@@ -39,6 +39,7 @@ public class VMPluginFactory {
     private static final Logger LOGGER = Logger.getLogger(VMPluginFactory.class.getName());
     private static final Map<BigDecimal, String> PLUGIN_MAP = Maps.of(
             // Note: list the vm plugin entries in *descending* order:
+            new BigDecimal("16"), "org.codehaus.groovy.vmplugin.v16.Java16",
             new BigDecimal("10"), "org.codehaus.groovy.vmplugin.v10.Java10",
             new BigDecimal("9"), "org.codehaus.groovy.vmplugin.v9.Java9",
             new BigDecimal("1.8"), "org.codehaus.groovy.vmplugin.v8.Java8"
