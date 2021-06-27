@@ -45,6 +45,7 @@ options {
 }
 
 @members {
+    private int inSwitchExpressionLevel = 0;
 
     public static class GroovyParserRuleContext extends ParserRuleContext implements NodeMetaDataHandler {
         private Map metaDataMap = null;
@@ -614,6 +615,11 @@ breakStatement
         identifier?
     ;
 
+yieldStatement
+    :   YIELD
+        expression
+    ;
+
 tryCatchStatement
     :   TRY resources? nls block
         (nls catchClause)*
@@ -634,6 +640,8 @@ statement
     |   THROW expression                                                                                    #throwStmtAlt
     |   breakStatement                                                                                      #breakStmtAlt
     |   continueStatement                                                                                   #continueStmtAlt
+    |   { inSwitchExpressionLevel > 0 }?
+        yieldStatement                                                                                      #yieldStmtAlt
     |   identifier COLON nls statement                                                                      #labeledStmtAlt
     |   assertStatement                                                                                     #assertStmtAlt
     |   localVariableDeclaration                                                                            #localVariableDeclarationStmtAlt
@@ -717,7 +725,7 @@ expressionInPar
     ;
 
 expressionList[boolean canSpread]
-    :   expressionListElement[$canSpread] (COMMA expressionListElement[$canSpread])*
+    :   expressionListElement[$canSpread] (COMMA nls expressionListElement[$canSpread])*
     ;
 
 expressionListElement[boolean canSpread]
@@ -737,12 +745,34 @@ postfixExpression
     :   pathExpression op=(INC | DEC)?
     ;
 
+switchExpression
+@init {
+    inSwitchExpressionLevel++;
+}
+@after {
+    inSwitchExpressionLevel--;
+}
+    :   SWITCH expressionInPar nls LBRACE nls switchBlockStatementExpressionGroup* nls RBRACE
+    ;
+
+switchBlockStatementExpressionGroup
+    :   (switchExpressionLabel nls)+ blockStatements
+    ;
+
+switchExpressionLabel
+    :   (   CASE expressionList[true]
+        |   DEFAULT
+        ) ac=(ARROW | COLON)
+    ;
+
 expression
     // must come before postfixExpression to resovle the ambiguities between casting and call on parentheses expression, e.g. (int)(1 / 2)
     :   castParExpression castOperandExpression                                             #castExprAlt
 
     // qualified names, array expressions, method invocation, post inc/dec
     |   postfixExpression                                                                   #postfixExprAlt
+
+    |   switchExpression                                                                    #switchExprAlt
 
     // ~(BNOT)/!(LNOT) (level 1)
     |   (BITNOT | NOT) nls expression                                                       #unaryNotExprAlt
@@ -1177,6 +1207,7 @@ identifier
 //  |   DEF
     |   TRAIT
     |   AS
+    |   YIELD
     ;
 
 builtInType
@@ -1229,6 +1260,7 @@ keywords
     |   VAR
     |   VOLATILE
     |   WHILE
+    |   YIELD
 
     |   NullLiteral
     |   BooleanLiteral

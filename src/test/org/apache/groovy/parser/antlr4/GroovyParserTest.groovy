@@ -412,15 +412,42 @@ final class GroovyParserTest extends GroovyTestCase {
     }
 
     void "test groovy core - var"() {
-        doRunAndTestAntlr4('core/Var_01x.groovy');
+        doRunAndTestAntlr4('core/Var_01x.groovy')
     }
 
     void "test groovy core - String"() {
-        doRunAndTestAntlr4('core/String_01x.groovy');
+        doRunAndTestAntlr4('core/String_01x.groovy')
     }
 
     void "test groovy core - NonStaticClass"() {
-        doRunAndTestAntlr4('core/NonStaticClass_01x.groovy');
+        doRunAndTestAntlr4('core/NonStaticClass_01x.groovy')
+    }
+
+    void "test groovy core - SwitchExpression"() {
+        doRunAndTestAntlr4('core/SwitchExpression_01x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_02x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_03x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_04x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_05x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_06x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_07x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_08x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_09x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_10x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_11x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_12x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_13x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_14x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_15x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_16x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_17x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_18x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_19x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_20x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_21x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_22x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_23x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_24x.groovy')
     }
 
     void "test groovy core - BUG"() {
@@ -445,30 +472,30 @@ final class GroovyParserTest extends GroovyTestCase {
     }
 
     void "test groovy core - GROOVY-9427"() {
-        doTest('bugs/BUG-GROOVY-9427.groovy');
+        doTest('bugs/BUG-GROOVY-9427.groovy')
     }
 
     void "test groovy core - GROOVY-9433"() {
-        doTest('bugs/BUG-GROOVY-9433.groovy');
+        doTest('bugs/BUG-GROOVY-9433.groovy')
     }
 
     void "test groovy core - GROOVY-9449"() {
-        doTest('bugs/BUG-GROOVY-9449.groovy');
+        doTest('bugs/BUG-GROOVY-9449.groovy')
     }
 
     void "test groovy core - GROOVY-9511"() {
-        doTest('bugs/BUG-GROOVY-9511.groovy', [MethodNode]);
+        doTest('bugs/BUG-GROOVY-9511.groovy', [MethodNode])
     }
 
     void "test groovy core - GROOVY-9507"() {
-        doTest('bugs/BUG-GROOVY-9507.groovy');
+        doTest('bugs/BUG-GROOVY-9507.groovy')
     }
 
     void "test groovy core - GROOVY-9522"() {
-        doTest('bugs/BUG-GROOVY-9522.groovy');
+        doTest('bugs/BUG-GROOVY-9522.groovy')
     }
 
     void "test groovy core - GROOVY-9692"() {
-        doTest('bugs/BUG-GROOVY-9692.groovy');
+        doTest('bugs/BUG-GROOVY-9692.groovy')
     }
 }

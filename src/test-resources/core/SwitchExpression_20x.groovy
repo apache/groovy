@@ -16,30 +16,25 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy
 
-import gls.CompilableTestSupport
+import groovy.transform.CompileStatic
 
-class MethodInBadPositionTest extends CompilableTestSupport {
-    /** GROOVY-4215 */
-    void testMethodDefinitionInClosure() {
-        def msg = shouldNotCompile('''
-            { ->
-                def say(String msg) {
-                  println(msg)
-                }
-            }()
-        ''')
-        assert msg.contains('Method definition not expected here') || msg.contains("Unexpected input: '('")
-    }
+@CompileStatic
+String same(String s) { s }
 
-    /** GROOVY-4215 */
-    void testXMethodDefinitionInSwitch() {
-        def msg = shouldNotCompile('''
-            switch(1) {
-                case 1: def say(){}
+@CompileStatic
+def meth() {
+    def a = 1
+    def r = switch (a) {
+        case 1 -> {
+            if (true) {
+                same 'a'
+            } else {
+                same 'b'
             }
-        ''')
-        assert msg.contains('Method definition not expected here')  || msg.contains("Unexpected input: '('") || msg.contains("Unexpected input: 'switch(1)")
+        }
     }
+    r + 'z'
 }
+
+assert 'az' == meth()

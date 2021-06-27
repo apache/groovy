@@ -5886,6 +5886,22 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - switch - 1"() {
+        assertGinqScript '''
+// tag::ginq_tips_13[]
+            assert ['a', 'b', 'c', 'c'] == GQ {
+                from n in [1, 2, 3, 4]
+                select switch (n) {
+                    case 1 -> 'a'
+                    case 2 -> 'b'
+                    default -> 'c'
+                }
+            }.toList()
+// end::ginq_tips_13[]
+        '''
+    }
+
+    @Test
     void "testGinq - shutdown - 0"() {
         assertScript '''
             import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper

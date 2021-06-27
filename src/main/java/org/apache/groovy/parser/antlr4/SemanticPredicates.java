@@ -42,6 +42,7 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.PathExpressionContext
 import static org.apache.groovy.parser.antlr4.GroovyParser.PostfixExprAltContext;
 import static org.apache.groovy.parser.antlr4.GroovyParser.PostfixExpressionContext;
 import static org.apache.groovy.parser.antlr4.GroovyParser.StringLiteral;
+import static org.apache.groovy.parser.antlr4.GroovyParser.YIELD;
 import static org.apache.groovy.parser.antlr4.util.StringUtils.matches;
 
 /**
@@ -141,7 +142,7 @@ public class SemanticPredicates {
     public static boolean isInvalidMethodDeclaration(TokenStream ts) {
         int tokenType = ts.LT(1).getType();
 
-        return (Identifier == tokenType || CapitalizedIdentifier == tokenType || StringLiteral == tokenType)
+        return (Identifier == tokenType || CapitalizedIdentifier == tokenType || StringLiteral == tokenType || YIELD == tokenType)
                 && LPAREN == (ts.LT(2).getType());
     }
 
