@@ -18,33 +18,44 @@
  */
 package org.apache.groovy.ast.tools
 
-
-import groovy.transform.AutoFinal
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
-import org.junit.Assert
+import org.junit.Test
+
+import static org.junit.Assert.assertEquals
 
 /**
  * Testing expressions of ExpressionUtils.
  */
-@AutoFinal
-final class ExpressionUtilsTest extends GroovyTestCase {
-
-    void 'test transformBinaryConstantExpression - null'() {
-        try {
-            ExpressionUtils.transformBinaryConstantExpression(null, null)
-        } catch(NullPointerException npe) {
-            // Pass
-            return
-        }
-        Assert.fail('Should throw NullPointerException')
+final class ExpressionUtilsTest {
+    @Test
+    void 'test transformBinaryConstantExpression - null + string'() {
+        ConstantExpression left = new ConstantExpression(null)
+        ConstantExpression right = new ConstantExpression('abc')
+        Token token = new Token(Types.PLUS, '+', 1, 1)
+        BinaryExpression be = new BinaryExpression(left, token, right)
+        ClassNode targetType = ClassHelper.make(String)
+        ConstantExpression actual = ExpressionUtils.transformBinaryConstantExpression(be, targetType)
+        assertEquals('nullabc', actual.value)
     }
 
-    void 'test transformBinaryConstantExpression - string PLUS string'() {
+    @Test
+    void 'test transformBinaryConstantExpression - string + null'() {
+        ConstantExpression left = new ConstantExpression('abc')
+        ConstantExpression right = new ConstantExpression(null)
+        Token token = new Token(Types.PLUS, '+', 1, 1)
+        BinaryExpression be = new BinaryExpression(left, token, right)
+        ClassNode targetType = ClassHelper.make(String)
+        ConstantExpression actual = ExpressionUtils.transformBinaryConstantExpression(be, targetType)
+        assertEquals('abcnull', actual.value)
+    }
+
+    @Test
+    void 'test transformBinaryConstantExpression - string + string'() {
         ConstantExpression left = new ConstantExpression('hello, ')
         ConstantExpression right = new ConstantExpression('world!')
         Token token = new Token(Types.PLUS, '+', 1, 1)
@@ -54,7 +65,8 @@ final class ExpressionUtilsTest extends GroovyTestCase {
         assertEquals('hello, world!', actual.value)
     }
 
-    void 'test transformBinaryConstantExpression - long PLUS long'() {
+    @Test
+    void 'test transformBinaryConstantExpression - long + long'() {
         ConstantExpression left = new ConstantExpression(11111111L)
         ConstantExpression right = new ConstantExpression(11111111L)
         Token token = new Token(Types.PLUS, '+', 1, 1)
