@@ -18,7 +18,6 @@
  */
 package groovy.console.ui;
 
-import groovy.console.ui.text.GroovyFilter;
 import groovy.console.ui.text.MatchingHighlighter;
 import groovy.console.ui.text.SmartDocumentFilter;
 import groovy.console.ui.text.StructuredSyntaxResources;
@@ -178,7 +177,7 @@ public class ConsoleTextEditor extends JScrollPane {
         initActions();
 
         DefaultStyledDocument doc = new DefaultStyledDocument();
-        doc.setDocumentFilter(new GroovyFilter(doc));
+        doc.setDocumentFilter(new SmartDocumentFilter(doc));
         textEditor.setDocument(doc);
 
         // add a document listener, to hint whether the line number gutter has to be repainted
