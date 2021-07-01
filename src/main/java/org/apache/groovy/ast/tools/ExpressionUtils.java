@@ -84,7 +84,7 @@ public final class ExpressionUtils {
                 Expression left = transformInlineConstants(be.getLeftExpression(), targetType);
                 Expression right = transformInlineConstants(be.getRightExpression(), targetType);
                 if (left instanceof ConstantExpression && right instanceof ConstantExpression) {
-                    return configure(be, new ConstantExpression((String) ((ConstantExpression) left).getValue() + ((ConstantExpression) right).getValue()));
+                    return configure(be, new ConstantExpression(String.valueOf(((ConstantExpression) left).getValue()) + ((ConstantExpression) right).getValue()));
                 }
             }
         } else if (isNumberOrArrayOfNumber(wrapperType, false)) {
