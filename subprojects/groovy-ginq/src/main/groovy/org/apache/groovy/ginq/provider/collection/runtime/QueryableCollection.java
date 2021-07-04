@@ -160,7 +160,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     private static final int HASHTABLE_MAX_SIZE = SystemUtil.getIntegerSafe("groovy.ginq.hashtable.max.size", 128);
     private static final int HASHTABLE_BUCKET_INITIAL_SIZE = SystemUtil.getIntegerSafe("groovy.ginq.hashtable.bucket.initial.size", 16);
     private static Integer hash(Object obj) {
-        return Objects.hash(obj) % HASHTABLE_MAX_SIZE; // mod `HASHTABLE_MAX_SIZE` to limit the size of hash table
+        return Integer.remainderUnsigned(Objects.hash(obj), HASHTABLE_MAX_SIZE); // mod `HASHTABLE_MAX_SIZE` to limit the size of hash table
     }
 
     @Override
