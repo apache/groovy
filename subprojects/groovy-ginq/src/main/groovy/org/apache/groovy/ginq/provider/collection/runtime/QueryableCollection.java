@@ -138,7 +138,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
             super(initialCapacity);
         }
         static <E> Bucket<E> singletonBucket(E o) {
-            Bucket<E> bucket = new Bucket<>();
+            Bucket<E> bucket = new Bucket<>(1);
             bucket.add(o);
             return bucket;
         }
