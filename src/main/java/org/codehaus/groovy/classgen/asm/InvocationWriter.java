@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
@@ -47,6 +48,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -80,6 +82,8 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Opcodes.POP;
 import static org.objectweb.asm.Opcodes.SWAP;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
 
 public class InvocationWriter {
 
@@ -388,11 +392,87 @@ public class InvocationWriter {
         operandStack.replace(ClassHelper.OBJECT_TYPE, operandsToRemove);
     }
 
+    private boolean shouldWrapLastArg(final Expression argument) {
+        ClassNode type = null;
+        if (isNullConstant(argument)) {
+            return true;
+        }
+        if (argument instanceof CastExpression) {
+            type = argument.getType();
+        } else if (argument instanceof MethodCallExpression) {
+            MethodNode candidateMethod = ((MethodCallExpression)argument).getMethodTarget();
+            if (candidateMethod == null) {
+                candidateMethod = argument.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+            }
+            if (candidateMethod != null) {
+                type = candidateMethod.getReturnType();
+            }
+        } else if (argument instanceof PropertyExpression) {
+            type = argument.getNodeMetaData(INFERRED_TYPE);
+        }
+        if (type == null) {
+            type = controller.getTypeChooser().resolveType(argument, controller.getClassNode());
+            if (ClassHelper.isDynamicTyped(type)) {
+                return false;
+            }
+        }
+        return !type.isArray();
+    }
+
+    /**
+     * GROOVY-10099
+     */
+    protected Expression wrapSingleVarargArgument(Expression origin, Expression arguments) {
+        MethodNode candidate = origin.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        if (candidate != null) {
+            // we're (probably) in @TypeChecked and we have the candidate method
+            // is it varargs?
+            Parameter[] parameters = candidate.getParameters();
+            if (parameters != null && parameters.length > 0) {
+                Parameter param = parameters[parameters.length-1];
+                if (!param.isDynamicTyped()) {
+                    ClassNode lastParamType = param.getOriginType();
+                    if (lastParamType != null && lastParamType.isArray()) {
+                        // yes, it is varargs.
+                        // do we have the exact same number of arguments?
+                        // (thus, only one argument to the varargs parameter)?
+                        ArgumentListExpression ale = makeArgumentList(arguments);
+                        List<Expression> args = ale.getExpressions();
+                        if (parameters.length == args.size()) {
+                            // yes, we have one varargs arg, and this is it:
+                            Expression lastArg = args.get(args.size()-1);
+                            // should we wrap it? It's a complex question so put it in its own method:
+                            if (shouldWrapLastArg(lastArg)) {
+                                // yes we should. so here, finally, we do it.
+                                arguments = ale.transformExpression(expr -> {
+                                    if (expr == lastArg) {
+                                        return new ArrayExpression(lastParamType.getComponentType(), Collections.singletonList(expr));
+                                    }
+                                    return expr;
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return arguments;
+    }
+
     protected void makeCall(Expression origin, ClassExpression sender, Expression receiver, Expression message, Expression arguments, MethodCallerMultiAdapter adapter, boolean safe, boolean spreadSafe, boolean implicitThis) {
         // direct method call paths
         boolean containsSpreadExpression = AsmClassGenerator.containsSpreadExpression(arguments);
 
         if (makeDirectCall(origin, receiver, message, arguments, adapter, implicitThis, containsSpreadExpression)) return;
+
+        // GROOVY-10099
+        //     Find the case where a varargs parameter is being given a single argument expression,
+        //     that looks like it's not an array type, but might evaluate to null
+        //     (so whether it might be an array type or not will be lost at runtime)
+        //     and wrap it in an ArrayExpression.
+        if (!containsSpreadExpression && origin instanceof MethodCall) {
+            arguments = wrapSingleVarargArgument(origin, arguments);
+        }
 
         // normal path
         if (makeCachedCall(origin, sender, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis, containsSpreadExpression)) return;
@@ -571,6 +651,14 @@ public class InvocationWriter {
 
     protected void writeNormalConstructorCall(final ConstructorCallExpression call) {
         Expression arguments = call.getArguments();
+
+        // GROOVY-10099
+        //     Find the case where a varargs parameter is being given a single argument expression,
+        //     that looks like it's not an array type, but might evaluate to null
+        //     (so whether it might be an array type or not will be lost at runtime)
+        //     and wrap it in an ArrayExpression.
+        arguments = wrapSingleVarargArgument(call, arguments);
+
         if (arguments instanceof TupleExpression) {
             TupleExpression tupleExpression = (TupleExpression) arguments;
             int size = tupleExpression.getExpressions().size();
