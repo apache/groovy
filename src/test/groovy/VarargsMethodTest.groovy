@@ -19,6 +19,7 @@
 package groovy
 
 import groovy.test.GroovyTestCase
+import junit.framework.AssertionFailedError
 
 /**
  * VarargsMethodTest.groovy
@@ -26,8 +27,12 @@ import groovy.test.GroovyTestCase
  *   1) Test to fix the Jira issues GROOVY-1023 and GROOVY-1026.
  *   2) Test the feature that the length of arguments can be variable
  *      when invoking methods with or without parameters.
+ *   3) Test that in type-checked mode, single non-array args
+ *      are wrapped in an array using compiletime metadata (GROOVY-10099)
  */
 class VarargsMethodTest extends GroovyTestCase {
+
+    String testNullProperty = null
 
     void testVarargsOnly() {  
         assertEquals 1, varargsOnlyMethod('')
@@ -42,6 +47,58 @@ class VarargsMethodTest extends GroovyTestCase {
 
         // GROOVY-1026
         assertEquals(-1, varargsOnlyMethod(null))
+
+        // GROOVY-10099
+        // cast to non-array
+        shouldFail(AssertionFailedError) { assertEquals(1, varargsOnlyMethod((Object)null)) }
+        // cast to array
+        assertEquals(-1, varargsOnlyMethod((Object[])null))
+        // non-array typed variable == null
+        String arg = null
+        shouldFail(AssertionFailedError) { assertEquals(1, varargsOnlyMethod(arg)) }
+        // array-typed variable == null
+        Object[] argArray = null
+        assertEquals(-1, varargsOnlyMethod(argArray))
+        // non-array typed POGO property == null
+        shouldFail(AssertionFailedError) { assertEquals(1, varargsOnlyMethod(this.testNullProperty)) }
+        // non-array typed POJO property (ie: via getter) returns null
+        shouldFail(AssertionFailedError) { assertEquals(1, varargsOnlyMethod(java.net.URI.create('http://example.com').query)) }
+        // non-array returning method returns null
+        shouldFail(AssertionFailedError) { assertEquals(1, varargsOnlyMethod(Objects.toString(null, null))) }
+
+        assertEquals(2, varargsOnlyMethod(null, null))
+    }
+
+    @groovy.transform.TypeChecked
+    void testVarargsOnlyTypeChecked() {  
+        assertEquals 1, varargsOnlyMethod('')
+        assertEquals 1, varargsOnlyMethod(1)
+        assertEquals 2, varargsOnlyMethod('','')
+        assertEquals 1, varargsOnlyMethod( ['',''] )
+        assertEquals 2, varargsOnlyMethod( ['',''] as Object[])
+
+        // GROOVY-1023
+        assertEquals 0, varargsOnlyMethod()
+
+        // GROOVY-10099
+        assertEquals(1, varargsOnlyMethod(null))
+        // cast to non-array
+        assertEquals(1, varargsOnlyMethod((Object)null))
+        // cast to array
+        assertEquals(-1, varargsOnlyMethod((Object[])null))
+        // non-array typed variable == null
+        String arg = null
+        assertEquals(1, varargsOnlyMethod(arg))
+        // array-typed variable == null
+        Object[] argArray = null
+        assertEquals(-1, varargsOnlyMethod(argArray))
+        // non-array typed POGO property == null
+        assertEquals(1, varargsOnlyMethod(this.testNullProperty))
+        // non-array typed POJO property (ie: via getter) returns null
+        assertEquals(1, varargsOnlyMethod(java.net.URI.create('http://example.com').query))
+        // non-array returning method returns null
+        assertEquals(1, varargsOnlyMethod(Objects.toString(null, null)))
+        
         assertEquals(2, varargsOnlyMethod(null, null))
     }
 
@@ -68,6 +125,20 @@ class VarargsMethodTest extends GroovyTestCase {
 
         // GROOVY-1026
         assertEquals(-1, varargsLastMethod('', null))
+        assertEquals(2, varargsLastMethod('', null, null))
+    }
+
+    @groovy.transform.TypeChecked
+     void testVarargsLastTypeChecked() {
+         assertEquals 0, varargsLastMethod('')
+         assertEquals 0, varargsLastMethod(1)
+         assertEquals 1, varargsLastMethod('','')
+         assertEquals 2, varargsLastMethod('','','')
+         assertEquals 1, varargsLastMethod('', ['',''] )
+         assertEquals 2, varargsLastMethod('', ['',''] as Object[])
+
+        // GROOVY-10099
+        assertEquals(1, varargsLastMethod('', null))
         assertEquals(2, varargsLastMethod('', null, null))
     }
 
