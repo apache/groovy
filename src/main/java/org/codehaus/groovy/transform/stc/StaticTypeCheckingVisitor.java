@@ -3478,6 +3478,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     ClassNode receiverType = currentReceiver.getType();
                     mn = findMethod(receiverType, name, args);
 
+                    if (mn.isEmpty()){
+                        // fix GROOVY-9999 and GROOVY-8488
+                        // if mn empty, it is possible that decimal literal such as "4.0" is java.math.BigDecimal and can not cast to double or float,
+                        // this question is caused by org.apache.groovy.parser.antlr4.AstBuilder:3466 and unable to solve this question there.
+                        // so I add code here to try cast decimal literal to double or float
+                        mn = bigDecimalCast(argumentList.getExpressions(),args,receiverType,name);
+                    }
                     // if the receiver is "this" or "implicit this", then we must make sure that the compatible
                     // methods are only static if we are in a static context
                     // if we are not in a static context but the current receiver is a static class, we must
@@ -3648,6 +3655,68 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             typeCheckingContext.popEnclosingMethodCall();
             extension.afterMethodCall(call);
         }
+    }
+
+    private List<MethodNode> bigDecimalCast(List<Expression> expressions, ClassNode[] args,ClassNode receiverType,String name){
+        List<MethodNode> methods = receiverType.getMethods(name);
+        for (MethodNode method:methods){
+            HashMap<Integer,ClassNode> castMap = new HashMap<>();
+            boolean flag =true;
+            Parameter[] parameters = method.getParameters();
+            if (args.length==parameters.length){
+                for (int i=0;i<parameters.length;i++){
+                    ClassNode methodParameter = parameters[i].getType();
+                    if (!args[i].equals(methodParameter)){
+                        Expression expression =expressions.get(i);
+                        if (isFloatLiteral(expression)&& methodParameter.equals(double_TYPE)){
+                            double temp;
+                            temp = Double.parseDouble(expression.getText());
+                            // if temp is infinite or cast will lose precision, literal should not cast to double.
+                            if (Double.isFinite(temp) && String.valueOf(temp).equals(expression.getText())){
+                                castMap.put(i,double_TYPE);
+                                continue;
+                            }
+                        }
+                        if (isFloatLiteral(expression)&& methodParameter.equals(float_TYPE)){
+                            float temp;
+                            temp = Float.parseFloat(expression.getText());
+                            // if temp is infinite or cast will lose precision, literal should not cast to float
+                            if (Float.isFinite(temp) && String.valueOf(temp).equals(expression.getText())){
+                                castMap.put(i,float_TYPE);
+                                continue;
+                            }
+                        }
+                        flag = false;
+                        break;
+                    }
+                }
+                if (flag){
+                    castMap.forEach((k, v) -> {
+                                ConstantExpression expression = (ConstantExpression) expressions.get(k);
+                                if (v.equals(double_TYPE)) {
+                                    args[k] = double_TYPE;
+                                    expression.setValue(Double.valueOf(expression.getText()));
+                                    expression.setType(double_TYPE);
+                                } else {
+                                    expression.setValue(Float.valueOf(expression.getText()));
+                                    expression.setType(float_TYPE);
+                                    args[k] = float_TYPE;
+                                }
+                            }
+                    );
+                    return findMethod(receiverType,name,args);
+                }
+            }
+        }
+        return new ArrayList<>();
+    }
+
+    private boolean isFloatLiteral(Expression expression){
+        String text = expression.getNodeMetaData("_FLOATING_POINT_LITERAL_TEXT");
+        if (text==null){
+            return false;
+        }
+        return text.charAt(text.length() - 1) >= '0' && text.charAt(text.length() - 1) <= '9';
     }
 
     private int getResolveStrategy(final Parameter parameter) {
