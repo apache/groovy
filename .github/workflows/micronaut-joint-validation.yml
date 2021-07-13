@@ -17,10 +17,10 @@ name: "Micronaut Joint Validation Build"
 on:
   push:
     branches:
-      - GROOVY_3_0_X
+      - master
   pull_request:
     branches:
-      - GROOVY_3_0_X
+      - master
 jobs:
   build:
     strategy:
