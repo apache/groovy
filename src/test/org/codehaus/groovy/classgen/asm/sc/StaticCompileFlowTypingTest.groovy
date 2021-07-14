@@ -88,7 +88,7 @@ final class StaticCompileFlowTypingTest {
                 @Grab('javax.servlet:javax.servlet-api:3.0.1'),
                 @Grab('org.grails.plugins:converters:3.3.+'),
                 @Grab('org.grails:grails-web:3.3.+'),
-                @Grab('org.slf4j:slf4j-nop:1.7.30')
+                @Grab('org.slf4j:slf4j-nop:1.7.31')
             ])
             @GrabExclude('org.codehaus.groovy:*')
             import static grails.converters.JSON.parse
