@@ -33,7 +33,7 @@ class Groovy8060Bug extends GroovyTestCase {
         while (retry++ < MAX_RETRIES && !success) {
             try {
                 assertScript '''
-                    @Grab('org.slf4j:slf4j-simple:1.7.30')
+                    @Grab('org.slf4j:slf4j-simple:1.7.31')
                     import groovy.util.logging.Slf4j
 
                     @Slf4j
