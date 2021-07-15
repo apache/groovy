@@ -27,7 +27,7 @@ dependencies {
     testImplementation 'net.javacrumbs.json-unit:json-unit:2.27.0'
     testRuntimeOnly "org.slf4j:slf4j-api:${versions.slf4j}"
     testRuntimeOnly project(':groovy-ant') // for JavadocAssertionTests
-    testRuntimeOnly 'com.google.code.gson:gson:2.8.6' // json-unit requires gson, jackson1, or jackson2
+    testRuntimeOnly 'com.google.code.gson:gson:2.8.7' // json-unit requires gson, jackson1, or jackson2
 }
 
 plugins.withId('eclipse') {
