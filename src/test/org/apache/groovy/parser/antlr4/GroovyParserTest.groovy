@@ -448,6 +448,8 @@ final class GroovyParserTest extends GroovyTestCase {
         doRunAndTestAntlr4('core/SwitchExpression_22x.groovy')
         doRunAndTestAntlr4('core/SwitchExpression_23x.groovy')
         doRunAndTestAntlr4('core/SwitchExpression_24x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_25x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_26x.groovy')
     }
 
     void "test groovy core - BUG"() {

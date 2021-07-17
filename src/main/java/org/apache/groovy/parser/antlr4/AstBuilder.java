@@ -641,7 +641,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public Statement visitLoopStmtAlt(final LoopStmtAltContext ctx) {
         visitingLoopStatementCount += 1;
-        Statement result = configureAST((Statement) this.visit(ctx.loopStatement()), ctx);
+        switchExpressionRuleContextStack.push(ctx);
+        Statement result;
+        try {
+            result = configureAST((Statement) this.visit(ctx.loopStatement()), ctx);
+        } finally {
+            switchExpressionRuleContextStack.pop();
+        }
         visitingLoopStatementCount -= 1;
 
         return result;
@@ -906,42 +912,48 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public SwitchStatement visitSwitchStatement(final SwitchStatementContext ctx) {
         visitingSwitchStatementCount += 1;
+        switchExpressionRuleContextStack.push(ctx);
 
-        List<Statement> statementList =
-                ctx.switchBlockStatementGroup().stream()
-                        .map(this::visitSwitchBlockStatementGroup)
-                        .reduce(new LinkedList<>(), (r, e) -> {
-                            r.addAll(e);
-                            return r;
-                        });
+        SwitchStatement result;
+        try {
+            List<Statement> statementList =
+                    ctx.switchBlockStatementGroup().stream()
+                            .map(this::visitSwitchBlockStatementGroup)
+                            .reduce(new LinkedList<>(), (r, e) -> {
+                                r.addAll(e);
+                                return r;
+                            });
 
-        List<CaseStatement> caseStatementList = new LinkedList<>();
-        List<Statement> defaultStatementList = new LinkedList<>();
+            List<CaseStatement> caseStatementList = new LinkedList<>();
+            List<Statement> defaultStatementList = new LinkedList<>();
 
-        statementList.forEach(e -> {
-            if (e instanceof CaseStatement) {
-                caseStatementList.add((CaseStatement) e);
-            } else if (isTrue(e, IS_SWITCH_DEFAULT)) {
-                defaultStatementList.add(e);
+            statementList.forEach(e -> {
+                if (e instanceof CaseStatement) {
+                    caseStatementList.add((CaseStatement) e);
+                } else if (isTrue(e, IS_SWITCH_DEFAULT)) {
+                    defaultStatementList.add(e);
+                }
+            });
+
+            int defaultStatementListSize = defaultStatementList.size();
+            if (defaultStatementListSize > 1) {
+                throw createParsingFailedException("a switch must only have one default branch", defaultStatementList.get(0));
             }
-        });
 
-        int defaultStatementListSize = defaultStatementList.size();
-        if (defaultStatementListSize > 1) {
-            throw createParsingFailedException("a switch must only have one default branch", defaultStatementList.get(0));
+            if (defaultStatementListSize > 0 && last(statementList) instanceof CaseStatement) {
+                throw createParsingFailedException("a default branch must only appear as the last branch of a switch", defaultStatementList.get(0));
+            }
+
+            result = configureAST(
+                    new SwitchStatement(
+                            this.visitExpressionInPar(ctx.expressionInPar()),
+                            caseStatementList,
+                            defaultStatementListSize == 0 ? EmptyStatement.INSTANCE : defaultStatementList.get(0)
+                    ),
+                    ctx);
+        } finally {
+            switchExpressionRuleContextStack.pop();
         }
-
-        if (defaultStatementListSize > 0 && last(statementList) instanceof CaseStatement) {
-            throw createParsingFailedException("a default branch must only appear as the last branch of a switch", defaultStatementList.get(0));
-        }
-
-        SwitchStatement result = configureAST(
-                new SwitchStatement(
-                        this.visitExpressionInPar(ctx.expressionInPar()),
-                        caseStatementList,
-                        defaultStatementListSize == 0 ? EmptyStatement.INSTANCE : defaultStatementList.get(0)
-                ),
-                ctx);
 
         visitingSwitchStatementCount -= 1;
 
@@ -1128,9 +1140,21 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         switchExpressionRuleContextStack.push(ctx);
         try {
             validateSwitchExpressionLabels(ctx);
-            List<Statement> statementList =
+            List<Tuple3<List<Statement>, Boolean, Boolean>> statementInfoList =
                     ctx.switchBlockStatementExpressionGroup().stream()
                             .map(e -> this.visitSwitchBlockStatementExpressionGroup(e))
+                            .collect(Collectors.toList());
+
+            Boolean isArrow = statementInfoList.get(0).getV2();
+            if (!isArrow && statementInfoList.stream().noneMatch(e -> {
+                Boolean hasYieldOrThrowStatement = e.getV3();
+                return hasYieldOrThrowStatement;
+            })) {
+                throw createParsingFailedException("`yield` or `throw` is expected", ctx);
+            }
+
+            List<Statement> statementList =
+                    statementInfoList.stream().map(e -> e.getV1())
                             .reduce(new LinkedList<>(), (r, e) -> {
                                 r.addAll(e);
                                 return r;
@@ -1179,18 +1203,21 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     @SuppressWarnings("unchecked")
-    public List<Statement> visitSwitchBlockStatementExpressionGroup(SwitchBlockStatementExpressionGroupContext ctx) {
+    public Tuple3<List<Statement>, Boolean, Boolean> visitSwitchBlockStatementExpressionGroup(SwitchBlockStatementExpressionGroupContext ctx) {
         int labelCnt = ctx.switchExpressionLabel().size();
         List<Token> firstLabelHolder = new ArrayList<>(1);
         final int[] arrowCntHolder = new int[1];
 
-        return (List<Statement>) ctx.switchExpressionLabel().stream()
+        boolean[] isArrowHolder = new boolean[1];
+        boolean[] hasResultStmtHolder = new boolean[1];
+        List<Statement> result = (List<Statement>) ctx.switchExpressionLabel().stream()
                 .map(e -> (Object) this.visitSwitchExpressionLabel(e))
                 .reduce(new ArrayList<Statement>(4), (r, e) -> {
                     List<Statement> statementList = (List<Statement>) r;
                     Tuple3<Token, List<Expression>, Integer> tuple = (Tuple3<Token, List<Expression>, Integer>) e;
 
                     boolean isArrow = ARROW == tuple.getV3();
+                    isArrowHolder[0] = isArrow;
                     if (isArrow) {
                         if (++arrowCntHolder[0] > 1 && !firstLabelHolder.isEmpty()) {
                             throw createParsingFailedException("`case ... ->` does not support falling through cases", firstLabelHolder.get(0));
@@ -1206,8 +1233,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                         throw createParsingFailedException("`yield` is expected", ctx.blockStatements());
                     }
 
-                    if (statementsCnt > 1) {
-                        throw new GroovyBugError("statements count should be 1, but the count is actually: " + statementsCnt);
+                    if (isArrow && statementsCnt > 1) {
+                        throw createParsingFailedException("Expect only 1 statement, but " + statementsCnt + " statements found", ctx.blockStatements());
                     }
 
                     if (!isArrow) {
@@ -1229,9 +1256,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                                 hasThrowHolder[0] = true;
                             }
                         });
-                        if (!(hasYieldHolder[0] || hasThrowHolder[0])) {
-                            throw createParsingFailedException("`yield` or `throw` is expected", ctx.blockStatements());
+
+                        if (hasYieldHolder[0] || hasThrowHolder[0]) {
+                            hasResultStmtHolder[0] = true;
                         }
+
                     }
 
                     Statement exprOrBlockStatement = statements.get(0);
@@ -1244,24 +1273,25 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     }
 
                     if (!(exprOrBlockStatement instanceof ReturnStatement || exprOrBlockStatement instanceof ThrowStatement)) {
-                        MethodCallExpression callClosure = callX(
-                                configureAST(
-                                        closureX(null, exprOrBlockStatement),
-                                        exprOrBlockStatement
-                                ), "call");
-                        callClosure.setImplicitThis(false);
+                        if (isArrow) {
+                            MethodCallExpression callClosure = callX(
+                                    configureAST(
+                                            closureX(null, exprOrBlockStatement),
+                                            exprOrBlockStatement
+                                    ), "call");
+                            callClosure.setImplicitThis(false);
+                            Expression resultExpr = exprOrBlockStatement instanceof ExpressionStatement
+                                    ? ((ExpressionStatement) exprOrBlockStatement).getExpression()
+                                    : callClosure;
 
-                        codeBlock = configureAST(
-                                createBlockStatement(configureAST(
-                                        returnS(
-                                                exprOrBlockStatement instanceof ExpressionStatement
-                                                        ? ((ExpressionStatement) exprOrBlockStatement).getExpression()
-                                                        : callClosure
-                                        ),
-                                        exprOrBlockStatement
-                                )),
-                                exprOrBlockStatement
-                        );
+                            codeBlock = configureAST(
+                                    createBlockStatement(configureAST(
+                                            returnS(resultExpr),
+                                            exprOrBlockStatement
+                                    )),
+                                    exprOrBlockStatement
+                            );
+                        }
                     }
 
                     switch (tuple.getV1().getType()) {
@@ -1301,6 +1331,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
                     return statementList;
                 });
+
+        return tuple(result, isArrowHolder[0], hasResultStmtHolder[0]);
     }
 
     private void validateSwitchExpressionLabels(SwitchExpressionContext ctx) {
