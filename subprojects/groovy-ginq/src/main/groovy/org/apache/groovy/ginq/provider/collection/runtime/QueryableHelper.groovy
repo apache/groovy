@@ -31,6 +31,7 @@ import java.util.function.Function
 import java.util.function.Supplier
 import java.util.stream.Collectors
 
+import static groovy.lang.Tuple.tuple
 import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from
 /**
  * Helper for {@link Queryable}
@@ -112,15 +113,20 @@ class QueryableHelper {
      * @param mode 0: immediate, 1: abort
      * @return list of tasks that never commenced execution
      */
-    static List<Runnable> shutdown(int mode) {
+    static Tuple2<List<Runnable>, List<Runnable>> shutdown(int mode) {
         if (0 == mode) {
+            ThreadPoolHolder.FORKJOIN_POOL.shutdown()
             ThreadPoolHolder.THREAD_POOL.shutdown()
+
+            while (!ThreadPoolHolder.FORKJOIN_POOL.awaitTermination(250, TimeUnit.MILLISECONDS)) {
+                // do nothing, just wait to terminate
+            }
             while (!ThreadPoolHolder.THREAD_POOL.awaitTermination(250, TimeUnit.MILLISECONDS)) {
                 // do nothing, just wait to terminate
             }
-            return Collections.emptyList()
+            return tuple(Collections.emptyList(), Collections.emptyList())
         } else if (1 == mode) {
-            return ThreadPoolHolder.THREAD_POOL.shutdownNow()
+            return tuple(ThreadPoolHolder.FORKJOIN_POOL.shutdownNow(), ThreadPoolHolder.THREAD_POOL.shutdownNow())
         } else {
             throw new IllegalArgumentException("Invalid mode: $mode")
         }
