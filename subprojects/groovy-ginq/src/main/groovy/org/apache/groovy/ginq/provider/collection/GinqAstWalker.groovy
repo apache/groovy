@@ -214,10 +214,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
         def resultLambda = lambdaX(block(statementList as Statement[]))
         def result = parallelEnabled
-                        ? callX(
-                                callX(QUERYABLE_HELPER_TYPE, 'submit', args(resultLambda)),
-                    "get"
-                            )
+                        ? callX(callX(QUERYABLE_HELPER_TYPE, 'submit', args(resultLambda)), "get")
                         : callX(resultLambda, "call")
 
         ginqExpressionStack.pop()
