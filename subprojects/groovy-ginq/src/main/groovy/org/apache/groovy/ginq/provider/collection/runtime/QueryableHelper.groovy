@@ -19,6 +19,7 @@
 package org.apache.groovy.ginq.provider.collection.runtime
 
 import groovy.transform.CompileStatic
+import groovy.transform.Internal
 
 import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
@@ -37,6 +38,7 @@ import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from
  *
  * @since 4.0.0
  */
+@Internal
 @CompileStatic
 class QueryableHelper {
     /**
