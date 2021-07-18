@@ -342,10 +342,10 @@ GINQ provides some built-in aggregate functions:
 |java.math.BigDecimal
 |the statistical variance for the population for all non-null values
 
-|agg(_expression_)
-|any
-|any
-|customizes the aggregation logic in _expression_ and returns single value
+//|agg(_expression_)
+//|any
+//|any
+//|customizes the aggregation logic in _expression_ and returns single value
 
 |===
 
@@ -379,6 +379,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_11,in
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_12,indent=0]
 ----
 
+////
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_03,indent=0]
@@ -386,7 +387,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_03,in
 [NOTE]
 `_g` is an implicit variable for `agg` aggregate function,
 it represents the grouped `Queryable` object and its record(e.g. `r`) could reference the data source by alias(e.g. `n`)
-
+////
 
 Also, we could apply the aggregate functions for the whole GINQ result, i.e. no `groupby` clause is needed:
 [source, groovy]
@@ -394,10 +395,12 @@ Also, we could apply the aggregate functions for the whole GINQ result, i.e. no 
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_aggfunction_02,indent=0]
 ----
 
+////
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_aggfunction_01,indent=0]
 ----
+////
 
 [source, groovy]
 ----
