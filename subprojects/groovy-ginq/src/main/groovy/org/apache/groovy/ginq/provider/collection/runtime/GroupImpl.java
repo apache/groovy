@@ -11,10 +11,6 @@ import java.util.stream.Stream;
 class GroupImpl<T> extends QueryableCollection<T> implements Group<T> {
     private static final long serialVersionUID = 5737735821215711785L;
 
-    GroupImpl(Iterable<T> sourceIterable) {
-        super(sourceIterable);
-    }
-
     GroupImpl(Stream<T> sourceStream) {
         super(sourceStream);
     }
