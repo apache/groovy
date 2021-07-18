@@ -222,6 +222,19 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from select - 12"() {
+        assertGinqScript '''
+// tag::ginq_tips_14[]
+            def result = GQ {
+                from n in [1, 2, 2, 3, 3, 3]
+                select n
+            }.distinct()
+            assert [1, 2, 3] == result.toList()
+// end::ginq_tips_14[]
+        '''
+    }
+
+    @Test
     void "testGinq - from where select - 1"() {
         assertGinqScript '''
             def numbers = [0, 1, 2, 3, 4, 5]

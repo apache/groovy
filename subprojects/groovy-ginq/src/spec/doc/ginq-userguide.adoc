@@ -875,6 +875,13 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_38
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_05,indent=0]
 ----
 
+==== Distinct
+GINQ does not support `distinct` of SQL for now, but we could invoke `distinct()` method to workaround:
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_14,indent=0]
+----
+
 ==== List Comprehension
 
 List comprehension is an elegant way to define and create lists based on existing lists:
@@ -909,7 +916,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_07,indent
 ----
 
 ==== Alternative for `with` clause
-GINQ does not support `with` clause for now. We could define a temporary variable to workaround:
+GINQ does not support `with` clause for now, but we could define a temporary variable to workaround:
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_12,indent=0]
