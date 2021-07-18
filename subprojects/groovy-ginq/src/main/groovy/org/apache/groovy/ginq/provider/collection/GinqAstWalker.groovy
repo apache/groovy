@@ -98,6 +98,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
+
 /**
  * Visit AST of GINQ to generate target method calls for GINQ
  *
@@ -211,7 +212,13 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         }
         statementList << returnS(varX(resultName))
 
-        def result = callX(lambdaX(block(statementList as Statement[])), "call")
+        def resultLambda = lambdaX(block(statementList as Statement[]))
+        def result = parallelEnabled
+                        ? callX(
+                                callX(QUERYABLE_HELPER_TYPE, 'submit', args(resultLambda)),
+                    "get"
+                            )
+                        : callX(resultLambda, "call")
 
         ginqExpressionStack.pop()
         return result
