@@ -116,14 +116,14 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public <U> Queryable<Tuple2<T, U>> innerHashJoin(Queryable<? extends U> queryable, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
-        final ConcurrentObjectHolder<Map<Integer, List<U>>> hashTableHolder = new ConcurrentObjectHolder<>();
-        final Supplier<Map<Integer, List<U>>> hashTableSupplier = createHashTableSupplier(queryable, fieldsExtractor2);
+        final ConcurrentObjectHolder<Map<Integer, List<Candidate<U>>>> hashTableHolder = new ConcurrentObjectHolder<>();
+        final Supplier<Map<Integer, List<Candidate<U>>>> hashTableSupplier = createHashTableSupplier(queryable, fieldsExtractor2);
         Stream<Tuple2<T, U>> stream = this.stream().flatMap(p -> {
             // build hash table
-            Map<Integer, List<U>> hashTable = buildHashTable(hashTableHolder, hashTableSupplier);
+            Map<Integer, List<Candidate<U>>> hashTable = buildHashTable(hashTableHolder, hashTableSupplier);
 
             // probe the hash table
-            return probeHashTable(hashTable, p, fieldsExtractor1, fieldsExtractor2);
+            return probeHashTable(hashTable, p, fieldsExtractor1);
         });
 
         return from(stream);
@@ -141,11 +141,22 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         }
     }
 
-    private static <U> Supplier<Map<Integer, List<U>>> createHashTableSupplier(Queryable<? extends U> queryable, Function<? super U, ?> fieldsExtractor2) {
+    private static class Candidate<U> {
+        private final U original;
+        private final Object extracted;
+
+        private Candidate(U original, Object extracted) {
+            this.original = original;
+            this.extracted = extracted;
+        }
+    }
+
+    private static <U> Supplier<Map<Integer, List<Candidate<U>>>> createHashTableSupplier(Queryable<? extends U> queryable, Function<? super U, ?> fieldsExtractor2) {
         return () -> queryable.stream()
+                .map(e -> new Candidate<U>(e, fieldsExtractor2.apply(e)))
                 .collect(
                         Collectors.toMap(
-                                c -> hash(fieldsExtractor2.apply(c)),
+                                c -> hash(c.extracted),
                                 Bucket::singletonBucket,
                                 (oldBucket, newBucket) -> {
                                     oldBucket.addAll(newBucket);
@@ -512,15 +523,15 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     private static <T, U> Queryable<Tuple2<T, U>> outerHashJoin(Queryable<? extends T> queryable1, Queryable<? extends U> queryable2, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
-        final ConcurrentObjectHolder<Map<Integer, List<U>>> hashTableHolder = new ConcurrentObjectHolder<>();
-        final Supplier<Map<Integer, List<U>>> hashTableSupplier = createHashTableSupplier(queryable2, fieldsExtractor2);
+        final ConcurrentObjectHolder<Map<Integer, List<Candidate<U>>>> hashTableHolder = new ConcurrentObjectHolder<>();
+        final Supplier<Map<Integer, List<Candidate<U>>>> hashTableSupplier = createHashTableSupplier(queryable2, fieldsExtractor2);
         Stream<Tuple2<T, U>> stream = queryable1.stream().flatMap(p -> {
             // build hash table
-            Map<Integer, List<U>> hashTable = buildHashTable(hashTableHolder, hashTableSupplier);
+            Map<Integer, List<Candidate<U>>> hashTable = buildHashTable(hashTableHolder, hashTableSupplier);
 
             // probe the hash table
             List<Tuple2<T, U>> joinResultList =
-                    probeHashTable(hashTable, (T) p, fieldsExtractor1, fieldsExtractor2).collect(Collectors.toList());
+                    probeHashTable(hashTable, (T) p, fieldsExtractor1).collect(Collectors.toList());
 
             return joinResultList.isEmpty() ? Stream.of(tuple(p, null)) : joinResultList.stream();
         });
@@ -528,19 +539,20 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(stream);
     }
 
-    private static <U> Map<Integer, List<U>> buildHashTable(final ConcurrentObjectHolder<Map<Integer, List<U>>> hashTableHolder, final Supplier<Map<Integer, List<U>>> hashTableSupplier) {
+    private static <U> Map<Integer, List<Candidate<U>>> buildHashTable(final ConcurrentObjectHolder<Map<Integer, List<Candidate<U>>>> hashTableHolder, final Supplier<Map<Integer, List<Candidate<U>>>> hashTableSupplier) {
         return hashTableHolder.getObject(hashTableSupplier);
     }
 
-    private static <T, U> Stream<Tuple2<T, U>> probeHashTable(Map<Integer, List<U>> hashTable, T p, Function<? super T, ?> fieldsExtractor1, Function<? super U, ?> fieldsExtractor2) {
+    private static <T, U> Stream<Tuple2<T, U>> probeHashTable(Map<Integer, List<Candidate<U>>> hashTable, T p, Function<? super T, ?> fieldsExtractor1) {
         final Object otherFields = fieldsExtractor1.apply(p);
+        final Integer h = hash(otherFields);
         return hashTable.entrySet().stream()
-                .filter(entry -> hash(otherFields).equals(entry.getKey()))
+                .filter(entry -> h.equals(entry.getKey()))
                 .flatMap(entry -> {
-                    List<U> candidateList = entry.getValue();
+                    List<Candidate<U>> candidateList = entry.getValue();
                     return candidateList.stream()
-                            .filter(c -> Objects.equals(otherFields, fieldsExtractor2.apply(c)))
-                            .map(c -> tuple(p, c));
+                            .filter(c -> Objects.equals(otherFields, c.extracted))
+                            .map(c -> tuple(p, c.original));
                 });
     }
 
