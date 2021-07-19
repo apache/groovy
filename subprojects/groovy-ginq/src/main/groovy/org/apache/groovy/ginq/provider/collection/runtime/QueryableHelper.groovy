@@ -20,6 +20,7 @@ package org.apache.groovy.ginq.provider.collection.runtime
 
 import groovy.transform.CompileStatic
 import groovy.transform.Internal
+import org.apache.groovy.util.SystemUtil
 
 import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
@@ -27,6 +28,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.ForkJoinTask
+import java.util.concurrent.ForkJoinWorkerThread
 import java.util.concurrent.TimeUnit
 import java.util.function.Function
 import java.util.function.Supplier
@@ -139,14 +141,20 @@ class QueryableHelper {
     private QueryableHelper() {}
 
     private static class ThreadPoolHolder {
+        static int fjSeq
         static int seq
-        static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() + 1, (Runnable r) -> {
+        static final int PARALLELISM = SystemUtil.getIntegerSafe("groovy.ginq.parallelism", Runtime.getRuntime().availableProcessors() + 1);
+        static final ForkJoinPool FORKJOIN_POOL = new ForkJoinPool(PARALLELISM, (ForkJoinPool pool) -> {
+            ForkJoinWorkerThread worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool)
+            worker.setName("ginq-fj-thread-${fjSeq++}")
+            return worker
+        }, null, false)
+        static final ExecutorService THREAD_POOL = Executors.newFixedThreadPool(PARALLELISM, (Runnable r) -> {
             Thread t = new Thread(r)
-            t.setName("ginq-thread-" + seq++)
+            t.setName("ginq-thread-${seq++}")
             t.setDaemon(true)
             return t
         })
-        static final ForkJoinPool FORKJOIN_POOL = new ForkJoinPool(Runtime.getRuntime().availableProcessors() + 1)
         private ThreadPoolHolder() {}
     }
 }
