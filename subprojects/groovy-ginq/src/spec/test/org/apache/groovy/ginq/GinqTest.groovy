@@ -275,6 +275,21 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from select distinct - 4"() {
+        assertGinqScript '''
+            def result = GQ {
+                from v in (
+                    from n in [1, 2, 2, 3, 3, 3]
+                    select distinct(n)
+                )
+                join m in [1, 1, 2, 2, 3, 3] on m == v
+                select v, m
+            }
+            assert [[1, 1], [1, 1], [2, 2], [2, 2], [3, 3], [3, 3]] == result.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - from where select - 1"() {
         assertGinqScript '''
             def numbers = [0, 1, 2, 3, 4, 5]
