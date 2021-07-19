@@ -120,7 +120,7 @@ class SemanticsTest extends CompilableTestSupport {
         def x = 1.23
         def result = ""
 
-        switch ( x ) {
+        switch (x) {
             case "foo":
                 result = "found foo"
                 // lets fall through
@@ -158,6 +158,19 @@ class SemanticsTest extends CompilableTestSupport {
 
         assert result == "number"
         // end::switch_case_example[]
+    }
+
+    void testSwitchExpression() {
+        def person = 'Romeo'
+        // tag::switch_expression[]
+        def partner = switch(person) {
+            case 'Romeo'  -> 'Juliet'
+            case 'Adam'   -> 'Eve'
+            case 'Antony' -> 'Cleopatra'
+            case 'Bonnie' -> 'Clyde'
+        }
+        // end::switch_expression[]
+        assert partner == 'Juliet'
     }
 
     void testClassicForLoop() {
