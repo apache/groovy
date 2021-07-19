@@ -141,6 +141,18 @@ Construct new objects as column values:
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_projection_02,indent=0]
 ----
 
+===== Distinct
+`distinct` is equivalent to SQL's `DISTINCT`
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_distinct_1,indent=0]
+----
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_distinct_2,indent=0]
+----
+
 ==== Filtering
 `where` is equivalent to SQL's `WHERE`
 
@@ -875,15 +887,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_38
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_05,indent=0]
 ----
 
-==== Distinct
-GINQ does not support `distinct` of SQL for now, but we could invoke `distinct()` method to workaround:
-[source, groovy]
-----
-include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_14,indent=0]
-----
-
 ==== List Comprehension
-
 List comprehension is an elegant way to define and create lists based on existing lists:
 [source, groovy]
 ----

@@ -49,6 +49,17 @@ class GinqErrorTest {
     }
 
     @Test
+    void "testGinq - from select distinct - 1"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 2, 2, 3, 3, 3]
+                select n, distinct(n + 1)
+            }
+        '''
+        assert err.toString().contains('Invalid usage of `distinct` @ line 3, column 27.')
+    }
+
+    @Test
     void "testGinq - select from - 1"() {
         def err = shouldFail '''\
             GQ {

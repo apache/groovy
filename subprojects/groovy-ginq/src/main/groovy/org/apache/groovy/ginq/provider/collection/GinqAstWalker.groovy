@@ -202,6 +202,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         }
 
         final resultName = "__r${System.nanoTime()}"
+
+        Boolean distinct = ginqExpression.getNodeMetaData(GinqAstBuilder.GINQ_SELECT_DISTINCT)
+        if (distinct) {
+            selectMethodCallExpression = callX(selectMethodCallExpression, "distinct")
+        }
         statementList << declS(localVarX(resultName).tap {it.modifiers |= Opcodes.ACC_FINAL}, selectMethodCallExpression)
 
         if (parallelEnabled) {

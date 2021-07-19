@@ -235,6 +235,46 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - from select distinct - 1"() {
+        assertGinqScript '''
+// tag::ginq_distinct_1[]
+            def result = GQ {
+                from n in [1, 2, 2, 3, 3, 3]
+                select distinct(n)
+            }
+            assert [1, 2, 3] == result.toList()
+// end::ginq_distinct_1[]
+        '''
+    }
+
+    @Test
+    void "testGinq - from select distinct - 2"() {
+        assertGinqScript '''
+// tag::ginq_distinct_2[]
+            def result = GQ {
+                from n in [1, 2, 2, 3, 3, 3]
+                select distinct(n, n + 1)
+            }
+            assert [[1, 2], [2, 3], [3, 4]] == result.toList()
+// end::ginq_distinct_2[]
+        '''
+    }
+
+    @Test
+    void "testGinq - from select distinct - 3"() {
+        assertGinqScript '''
+            def result = GQ {
+                from v in (
+                    from n in [1, 2, 2, 3, 3, 3]
+                    select distinct(n)
+                )
+                select v
+            }
+            assert [1, 2, 3] == result.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - from where select - 1"() {
         assertGinqScript '''
             def numbers = [0, 1, 2, 3, 4, 5]
