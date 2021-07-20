@@ -546,7 +546,11 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     private static <T, U> Stream<Tuple2<T, U>> probeHashTable(Map<Integer, List<Candidate<U>>> hashTable, T p, Function<? super T, ?> fieldsExtractor1) {
         final Object otherFields = fieldsExtractor1.apply(p);
         final Integer h = hash(otherFields);
-        return hashTable.entrySet().stream()
+
+        Stream<Map.Entry<Integer, List<Candidate<U>>>> stream = hashTable.entrySet().stream();
+        if (isParallel()) stream = stream.parallel();
+
+        return stream
                 .filter(entry -> h.equals(entry.getKey()))
                 .flatMap(entry -> {
                     List<Candidate<U>> candidateList = entry.getValue();
