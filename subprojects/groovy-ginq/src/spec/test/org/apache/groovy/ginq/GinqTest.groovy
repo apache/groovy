@@ -5429,7 +5429,7 @@ class GinqTest {
                 from n in [1, 1, 2, 2, 3, 3]
                 select n, (count() over(partitionby n)),
                           (count(n) over(partitionby n)),
-                          (sum(n) over(partitionby n)), 
+                          (sum(n) over(partitionby n)),
                           (avg(n) over(partitionby n)),
                           (median(n) over(partitionby n))
             }.toList()
@@ -6002,6 +6002,42 @@ class GinqTest {
                     (denseRank() over(orderby n)),
                     (percentRank() over(orderby n)),
                     (cumeDist() over(orderby n))
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 88"() {
+        assertGinqScript '''
+            assert [[1, 3], [2, 3]] == GQ {
+                from n in [1, 2]
+                select n,
+                    (agg(_g.stream().map(r -> r.n).reduce(BigDecimal.ZERO, BigDecimal::add)) over())
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 89"() {
+        assertGinqScript '''
+// tag::ginq_winfunction_42[]
+            assert [[1, 4], [2, 2], [3, 4]] == GQ {
+                from n in [1, 2, 3]
+                select n,
+                       (agg(_g.stream().map(r -> r.n).reduce(BigDecimal.ZERO, BigDecimal::add)) over(partitionby n % 2))
+            }.toList()
+// end::ginq_winfunction_42[]
+        '''
+    }
+
+    @Test
+    void "testGinq - window - 90"() {
+        assertGinqScript'''
+            assert [[1, 4], [2, 2], [3, 4]] == GQ {
+                from n in [1, 2, 3]
+                join m in [1, 2, 3] on m == n
+                select n,
+                       (agg(_g.stream().map(r -> r.n).reduce(BigDecimal.ZERO, BigDecimal::add)) over(partitionby n % 2))
             }.toList()
         '''
     }

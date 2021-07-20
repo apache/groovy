@@ -769,12 +769,24 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                                         @Override
                                         Expression transform(Expression expr) {
                                             if (expr instanceof VariableExpression) {
+                                                def isJoin = dataSourceExpression instanceof JoinExpression
                                                 if (rootObjectExpression.text == expr.text) {
-                                                    if (dataSourceExpression instanceof JoinExpression) {
-                                                        return correctVars(dataSourceExpression, windowFunctionLambdaName=getLambdaParamName(dataSourceExpression, expr), expr)
-                                                    } else {
-                                                        return new VariableExpression(windowFunctionLambdaName)
+                                                    if (isJoin) {
+                                                        windowFunctionLambdaName = getLambdaParamName(dataSourceExpression, expr)
+                                                        return correctVars(dataSourceExpression, windowFunctionLambdaName, expr)
                                                     }
+
+                                                    return new VariableExpression(windowFunctionLambdaName)
+                                                } else if (FUNCTION_AGG == windowFunctionMethodCallExpression.methodAsString && _G == expr.text) {
+                                                    if (isJoin) {
+                                                        windowFunctionLambdaName = getLambdaParamName(dataSourceExpression, expr)
+                                                    }
+
+                                                    return callX(
+                                                            classX(QUERYABLE_HELPER_TYPE),
+                                                            "navigate",
+                                                            args(new VariableExpression(windowFunctionLambdaName), getMetaDataMethodCall(MD_ALIAS_NAME_LIST))
+                                                    )
                                                 }
                                             }
                                             return expr.transformExpression(this)
@@ -1575,7 +1587,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final String FUNCTION_PERCENT_RANK = 'percentRank'
     private static final String FUNCTION_CUME_DIST = 'cumeDist'
     private static final String FUNCTION_NTILE = 'ntile'
-    private static final List<String> WINDOW_FUNCTION_LIST = [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_MEDIAN, FUNCTION_STDEV, FUNCTION_STDEVP, FUNCTION_VAR, FUNCTION_VARP,
+    private static final List<String> WINDOW_FUNCTION_LIST = [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_MEDIAN, FUNCTION_STDEV, FUNCTION_STDEVP, FUNCTION_VAR, FUNCTION_VARP, FUNCTION_AGG,
                                                               FUNCTION_ROW_NUMBER, FUNCTION_LEAD, FUNCTION_LAG, FUNCTION_FIRST_VALUE, FUNCTION_LAST_VALUE, FUNCTION_NTH_VALUE, FUNCTION_RANK, FUNCTION_DENSE_RANK, FUNCTION_PERCENT_RANK, FUNCTION_CUME_DIST, FUNCTION_NTILE]
 
     private static final String NAMEDRECORD_CLASS_NAME = NamedRecord.class.name
