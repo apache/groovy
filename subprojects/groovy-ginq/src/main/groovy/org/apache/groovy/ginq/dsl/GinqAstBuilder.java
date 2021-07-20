@@ -467,22 +467,23 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
     private static final String __LATEST_GINQ_EXPRESSION_CLAUSE = "__latestGinqExpressionClause";
 
     private static final String KW_FROM = "from";
-    private static final String KW_WHERE = "where";
+    private static final String KW_IN = "in";
     private static final String KW_ON = "on";
-    private static final String KW_HAVING = "having";
+    private static final String KW_WHERE = "where";
     private static final String KW_EXISTS = "exists";
     private static final String KW_GROUPBY = "groupby";
+    private static final String KW_HAVING = "having";
     private static final String KW_ORDERBY = "orderby";
     private static final String KW_LIMIT = "limit";
     private static final String KW_SELECT = "select";
     private static final String KW_DISTINCT = "distinct";
+    private static final String KW_WITHINGROUP = "withingroup";   // reserved keyword
     private static final String KW_OVER = "over";
-    private static final String KW_WITHIN = "within";   // reserved keyword
-    private static final String KW_GROUP = "group";     // reserved keyword
     private static final String KW_SHUTDOWN = "shutdown";
     private static final Set<String> KEYWORD_SET = new HashSet<>();
     static {
-        KEYWORD_SET.addAll(Arrays.asList(KW_FROM, KW_WHERE, KW_ON, KW_HAVING, KW_EXISTS, KW_GROUPBY, KW_ORDERBY, KW_LIMIT, KW_SELECT, KW_DISTINCT, KW_OVER, KW_WITHIN, KW_GROUP, KW_SHUTDOWN));
+        KEYWORD_SET.addAll(Arrays.asList(KW_FROM, KW_IN, KW_ON, KW_WHERE, KW_EXISTS, KW_GROUPBY, KW_HAVING, KW_ORDERBY,
+                                         KW_LIMIT, KW_SELECT, KW_DISTINCT, KW_WITHINGROUP, KW_OVER, KW_SHUTDOWN));
         KEYWORD_SET.addAll(JoinExpression.JOIN_NAME_LIST);
     }
 }
