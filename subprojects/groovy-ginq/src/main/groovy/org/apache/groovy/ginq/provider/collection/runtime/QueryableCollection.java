@@ -547,17 +547,14 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         final Object otherFields = fieldsExtractor1.apply(p);
         final Integer h = hash(otherFields);
 
-        Stream<Map.Entry<Integer, List<Candidate<U>>>> stream = hashTable.entrySet().stream();
+        List<Candidate<U>> candidateList = hashTable.get(h);
+        if (null == candidateList) return Stream.empty();
+
+        Stream<Candidate<U>> stream = candidateList.stream();
         if (isParallel()) stream = stream.parallel();
 
-        return stream
-                .filter(entry -> h.equals(entry.getKey()))
-                .flatMap(entry -> {
-                    List<Candidate<U>> candidateList = entry.getValue();
-                    return candidateList.stream()
-                            .filter(c -> Objects.equals(otherFields, c.extracted))
-                            .map(c -> tuple(p, c.original));
-                });
+        return stream.filter(c -> Objects.equals(otherFields, c.extracted))
+                     .map(c -> tuple(p, c.original));
     }
 
     @Override
