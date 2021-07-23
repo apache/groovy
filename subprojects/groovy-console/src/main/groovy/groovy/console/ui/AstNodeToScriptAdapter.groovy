@@ -18,9 +18,9 @@
  */
 package groovy.console.ui
 
+import groovy.transform.AutoFinal
 import groovy.transform.CompileStatic
 import org.apache.groovy.io.StringBuilderWriter
-import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
@@ -108,7 +108,7 @@ import java.security.CodeSource
  * back to the groovy source. It is used by GroovyConsole's AST Browser, but can also be invoked from
  * the command line.
  */
-@CompileStatic
+@AutoFinal @CompileStatic
 class AstNodeToScriptAdapter {
 
     /**
@@ -154,22 +154,16 @@ and [compilephase] is a valid Integer based org.codehaus.groovy.control.CompileP
      *    optional compiler configuration
      * @returns the source code from the AST state
      */
-
     String compileToScript(String script, int compilePhase, ClassLoader classLoader = null, boolean showScriptFreeForm = true, boolean showScriptClass = true, CompilerConfiguration config = null) {
-
         def writer = new StringBuilderWriter()
-
-        classLoader = classLoader ?: new GroovyClassLoader(getClass().classLoader)
-
         def scriptName = 'script' + System.currentTimeMillis() + '.groovy'
         GroovyCodeSource codeSource = new GroovyCodeSource(script, scriptName, '/groovy/script')
-        CompilationUnit cu = new CompilationUnit((CompilerConfiguration) (config ?: CompilerConfiguration.DEFAULT), (CodeSource) codeSource.codeSource, (GroovyClassLoader) classLoader)
+        CompilationUnit cu = new CompilationUnit((CompilerConfiguration) (config ?: CompilerConfiguration.DEFAULT), (CodeSource) codeSource.codeSource, (GroovyClassLoader) classLoader ?: new GroovyClassLoader(this.class.classLoader))
         cu.addPhaseOperation(new AstNodeToScriptVisitor(writer, showScriptFreeForm, showScriptClass), compilePhase)
         cu.addSource(codeSource.getName(), script)
         try {
             cu.compile(compilePhase)
         } catch (CompilationFailedException cfe) {
-
             writer.println 'Unable to produce AST for this phase due to earlier compilation error:'
             cfe.message.eachLine {
                 writer.println it
@@ -187,11 +181,11 @@ and [compilephase] is a valid Integer based org.codehaus.groovy.control.CompileP
 /**
  * An adapter from ASTNode tree to source code.
  */
-@CompileStatic
+@AutoFinal @CompileStatic
 class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperation, GroovyClassVisitor, GroovyCodeVisitor {
 
     private final Writer _out
-    Stack<String> classNameStack = new Stack<String>()
+    Stack<String> classNameStack = new Stack<>()
     String _indent = ''
     boolean readyToIndent = true
     boolean showScriptFreeForm
@@ -685,12 +679,11 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
 
     @Override
     void visitMethodCallExpression(MethodCallExpression expression) {
-
-        Expression objectExp = expression.getObjectExpression()
-        if (objectExp instanceof VariableExpression) {
-            visitVariableExpression(objectExp, false)
+        Expression objectExpr = expression.objectExpression
+        if (objectExpr instanceof VariableExpression) {
+            visitVariableExpression(objectExpr, false)
         } else {
-            objectExp.visit(this)
+            objectExpr.visit(this)
         }
         if (expression.spreadSafe) {
             print '*'
@@ -699,25 +692,23 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
             print '?'
         }
         print '.'
-        Expression method = expression.getMethod()
+        Expression method = expression.method
         if (method instanceof ConstantExpression) {
             visitConstantExpression(method, true)
         } else {
             method.visit(this)
         }
-        expression.getArguments().visit(this)
+        expression.arguments.visit(this)
     }
 
     @Override
     void visitStaticMethodCallExpression(StaticMethodCallExpression expression) {
+        boolean parens = expression?.arguments instanceof MethodCallExpression
+                || expression?.arguments instanceof VariableExpression
         print expression?.ownerType?.name + '.' + expression?.method
-        if (expression?.arguments instanceof VariableExpression || expression?.arguments instanceof MethodCallExpression) {
-            print '('
-            expression?.arguments?.visit this
-            print ')'
-        } else {
-            expression?.arguments?.visit this
-        }
+        if (parens) print '('
+        expression?.arguments?.visit(this)
+        if (parens) print ')'
     }
 
     @Override
@@ -761,7 +752,6 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
         expression?.expression?.visit this
         print ')'
     }
-
 
     @Override
     void visitClosureExpression(ClosureExpression expression) {
@@ -959,7 +949,6 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
         printLineBreak()
     }
 
-
     @Override
     void visitMapExpression(MapExpression expression) {
         print '['
@@ -974,7 +963,7 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
     @Override
     void visitMapEntryExpression(MapEntryExpression expression) {
         if (expression?.keyExpression instanceof SpreadMapExpression) {
-            print '*'            // is this correct? 
+            print '*'            // is this correct?
         } else {
             expression?.keyExpression?.visit this
         }
@@ -1143,14 +1132,16 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
         print ']'
     }
 
-    private void visitExpressionsAndCommaSeparate(List<? super Expression> expressions) {
-        boolean first = true
-        expressions?.each {
-            if (!first) {
-                print ', '
+    private void visitExpressionsAndCommaSeparate(List<? extends Expression> expressions) {
+        if (expressions) {
+            boolean first = true
+            for (e in expressions) {
+                if (!first) {
+                    print ', '
+                }
+                first = false
+                e.visit(this)
             }
-            first = false
-            ((ASTNode) it).visit this
         }
     }
 
@@ -1178,5 +1169,4 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
         }
         return true
     }
-
 }
