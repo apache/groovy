@@ -128,9 +128,9 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5587
-    void testMapEntryInForInLoop() {
+    void testForInLoopOnMap1() {
         assertScript '''
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 lookup('forLoop').each {
                     assert it instanceof org.codehaus.groovy.ast.stmt.ForStatement
                     def collection = it.collectionExpression // MethodCallExpression
@@ -154,6 +154,67 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
                 assert sum == 4
             }
             test()
+        '''
+    }
+
+    // GROOVY-6240
+    void testForInLoopOnMap2() {
+        assertScript '''
+            Map<String, Integer> map = [foo: 123, bar: 456]
+            for (entry in map) {
+                assert entry.key.reverse() in ['oof','rab']
+                assert entry.value * 2 in [246, 912]
+            }
+        '''
+    }
+
+    void testForInLoopOnMap3() {
+        assertScript '''
+            class MyMap extends LinkedHashMap<String,Integer> {
+            }
+            def map = new MyMap([foo: 123, bar: 456])
+            for (entry in map) {
+                assert entry.key.reverse() in ['oof','rab']
+                assert entry.value * 2 in [246, 912]
+            }
+        '''
+    }
+
+    // GROOVY-10179
+    void testForInLoopOnMap4() {
+        assertScript '''
+            void test(args) {
+                if (args instanceof Map) {
+                    for (e in args) {
+                        print "$e.key $e.value"
+                    }
+                }
+            }
+            test(a:1,b:2,c:3.14)
+        '''
+    }
+
+    // GROOVY-6123
+    void testForInLoopOnEnumeration() {
+        assertScript '''
+            Vector<String> v = new Vector<>()
+            v.add('ooo')
+            def en = v.elements()
+            for (e in en) {
+                assert e.toUpperCase() == 'OOO'
+            }
+            v.add('groovy')
+            en = v.elements()
+            for (e in en) {
+                assert e.toUpperCase() == 'OOO'
+                break
+            }
+
+            en = v.elements()
+            for (e in en) {
+                assert e.toUpperCase() in ['OOO','GROOVY']
+                if (e=='ooo') continue
+            }
         '''
     }
 
@@ -233,4 +294,3 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 }
-
