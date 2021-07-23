@@ -1925,7 +1925,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             super.visitForLoop(forLoop);
         } else {
             collectionExpression.visit(this);
-            ClassNode collectionType = getType(collectionExpression);
+            ClassNode collectionType;
+            if (collectionExpression instanceof VariableExpression && hasInferredReturnType(collectionExpression)) {
+                collectionType = getInferredReturnType(collectionExpression);
+            } else {
+                collectionType = getType(collectionExpression);
+            }
             ClassNode forLoopVariableType = forLoop.getVariableType();
             ClassNode componentType;
             if (isWrapperCharacter(getWrapper(forLoopVariableType)) && isStringType(collectionType)) {
