@@ -22,21 +22,40 @@ package groovy.transform.stc
  * Unit tests for static type checking : closure parameter type inference.
  */
 class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
-    void testInferenceForDGM_CollectUsingExplicitIt() {
+
+    void testInferenceForDGM_collectUsingExplicitIt() {
         assertScript '''
             ['a','b'].collect { it -> it.toUpperCase() }
         '''
-    }
-
-    void testInferenceForDGM_CollectUsingExplicitItAndIncorrectType() {
         shouldFailWithMessages '''
             ['a','b'].collect { Date it -> it.toUpperCase() }
         ''', 'Expected parameter of type java.lang.String but got java.util.Date'
     }
 
-    void testInferenceForDGM_CollectUsingImplicitIt() {
+    void testInferenceForDGM_collectUsingImplicitIt() {
         assertScript '''
             ['a','b'].collect { it.toUpperCase() }
+        '''
+        assertScript '''
+            def items = []
+            ['a','b','c'].collect(items) { it.toUpperCase() }
+        '''
+        assertScript '''
+            String[] array = ['foo', 'bar', 'baz']
+            assert array.collect { it.startsWith('ba') } == [false, true, true]
+        '''
+        assertScript '''
+            List<Boolean> answer = [true]
+            String[] array = ['foo', 'bar', 'baz']
+            array.collect(answer){it.startsWith('ba')}
+            assert answer == [true, false, true, true]
+        '''
+        assertScript '''
+            Iterator<String> iter = ['foo', 'bar', 'baz'].iterator()
+            assert iter.collect { it.startsWith('ba') } == [false, true, true]
+        '''
+        assertScript '''
+            assert [1234, 3.14].collect { it.intValue() } == [1234,3]
         '''
     }
 
@@ -49,12 +68,6 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     void testInferenceForDGM_eachUsingImplicitIt() {
         assertScript '''
             ['a','b'].each { it.toUpperCase() }
-        '''
-    }
-
-    void testInferenceForDGM_CollectUsingImplicitItAndLUB() {
-        assertScript '''
-            assert [1234, 3.14].collect { it.intValue() } == [1234,3]
         '''
     }
 
@@ -100,13 +113,6 @@ assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
 def map = [bread:3, milk:5, butter:2]
 def result = map.collectMany{ it.key.startsWith('b') ? it.key.toList() : [] }
 assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
-'''
-    }
-
-    void testInferenceForDGM_Collect2() {
-        assertScript '''
-def items = []
-['a','b','c'].collect(items) { it.toUpperCase() }
 '''
     }
 
@@ -219,23 +225,6 @@ def items = []
             Integer[] arr = (0..5) as Integer[]
             assert arr.collectMany { [it, 2*it ]} == [0,0,1,2,2,4,3,6,4,8,5,10]
 '''
-    }
-
-    void testDGM_collectOnArray() {
-        assertScript '''
-            String[] arr = ['foo', 'bar', 'baz']
-            assert arr.collect { it.startsWith('ba') } == [false, true, true]
-            List<Boolean> answer = [true]
-            arr.collect(answer) { it.startsWith('ba') }
-            assert answer == [true, false, true, true]
-        '''
-    }
-
-    void testDGM_collectOnIterator() {
-        assertScript '''
-            Iterator<String> itr = ['foo', 'bar', 'baz'].iterator()
-            assert itr.collect { it.startsWith('ba') } == [false, true, true]
-        '''
     }
 
     void testInferenceOnNonExtensionMethod() {
@@ -1495,6 +1484,26 @@ method()
             def iterable = new Type([new Pogo('x'), new Pogo('y'), new Pogo('z')])
             assert iterable.collect { Pogo p -> p.prop } == ['x', 'y', 'z']
             assert iterable.collect { it.prop } == ['x', 'y', 'z']
+        '''
+    }
+
+    void testGroovy10180() {
+        assertScript '''
+            void test(args) {
+                if (args instanceof Map) {
+                    args.each { e ->
+                        def k = e.key, v = e.value
+                    }
+                }
+            }
+        '''
+        assertScript '''
+            void test(args) {
+                if (args instanceof Map) {
+                    args.each { k, v ->
+                    }
+                }
+            }
         '''
     }
 }

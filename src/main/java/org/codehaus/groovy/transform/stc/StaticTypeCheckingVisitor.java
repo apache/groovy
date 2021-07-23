@@ -3812,40 +3812,40 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected List<Receiver<String>> makeOwnerList(final Expression objectExpression) {
         ClassNode receiver = getType(objectExpression);
         List<Receiver<String>> owners = new ArrayList<>();
-        if (isClassClassNodeWrappingConcreteType(receiver)) {
-            ClassNode staticType = receiver.getGenericsTypes()[0].getType();
-            owners.add(Receiver.make(staticType)); // Type from Class<Type>
-            addTraitType(staticType, owners); // T in Class<T$Trait$Helper>
-            owners.add(Receiver.make(receiver)); // Class<Type>
-        } else {
-            owners.add(Receiver.make(receiver));
-            if (receiver.isInterface()) {
-                owners.add(Receiver.make(OBJECT_TYPE));
-            }
-            addSelfTypes(receiver, owners);
-            addTraitType(receiver, owners);
-        }
-        if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
-            List<ClassNode> potentialReceiverType = getTemporaryTypesForExpression(objectExpression);
-            if (potentialReceiverType != null && !potentialReceiverType.isEmpty()) {
-                for (ClassNode node : potentialReceiverType) {
-                    owners.add(Receiver.make(node));
-                }
-            }
-        }
-        if (typeCheckingContext.lastImplicitItType != null
-                && objectExpression instanceof VariableExpression
-                && ((VariableExpression) objectExpression).getName().equals("it")) {
-            owners.add(Receiver.make(typeCheckingContext.lastImplicitItType));
-        }
         if (typeCheckingContext.delegationMetadata != null
                 && objectExpression instanceof VariableExpression
                 && ((VariableExpression) objectExpression).getName().equals("owner")
                 && /*isNested:*/typeCheckingContext.delegationMetadata.getParent() != null) {
-            owners.clear();
             List<Receiver<String>> enclosingClass = Collections.singletonList(
                     Receiver.make(typeCheckingContext.getEnclosingClassNode()));
             addReceivers(owners, enclosingClass, typeCheckingContext.delegationMetadata.getParent(), "owner.");
+        } else {
+            if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
+                List<ClassNode> potentialReceiverType = getTemporaryTypesForExpression(objectExpression);
+                if (potentialReceiverType != null && !potentialReceiverType.isEmpty()) {
+                    for (ClassNode node : potentialReceiverType) {
+                        owners.add(Receiver.make(node));
+                    }
+                }
+            }
+            if (typeCheckingContext.lastImplicitItType != null
+                    && objectExpression instanceof VariableExpression
+                    && ((VariableExpression) objectExpression).getName().equals("it")) {
+                owners.add(Receiver.make(typeCheckingContext.lastImplicitItType));
+            }
+            if (isClassClassNodeWrappingConcreteType(receiver)) {
+                ClassNode staticType = receiver.getGenericsTypes()[0].getType();
+                owners.add(Receiver.make(staticType)); // Type from Class<Type>
+                addTraitType(staticType, owners); // T in Class<T$Trait$Helper>
+                owners.add(Receiver.make(receiver)); // Class<Type>
+            } else {
+                owners.add(Receiver.make(receiver));
+                addSelfTypes(receiver, owners);
+                addTraitType(receiver, owners);
+                if (receiver.isInterface()) {
+                    owners.add(Receiver.make(OBJECT_TYPE));
+                }
+            }
         }
         return owners;
     }
