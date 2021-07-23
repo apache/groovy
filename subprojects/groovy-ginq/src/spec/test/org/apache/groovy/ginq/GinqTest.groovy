@@ -33,6 +33,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.syntax.Types
+import org.junit.AfterClass
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -2479,6 +2480,32 @@ class GinqTest {
                 limit 1, 3
                 select n
             }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from join where select - 1"() {
+        assertGinqScript '''
+            def result = GQ(optimize:false, parallel:true) {
+                from n1 in 1..100_000
+                join n2 in 1..100_000 on n2 == n1
+                where n1 < 10 && n2 < 20
+                select n1, n2
+            }.toList()
+            assert [[1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 7], [8, 8], [9, 9]] == result
+        '''
+    }
+
+    @Test
+    void "testGinq - from join where select - 2"() {
+        assertGinqScript '''
+            def result = GQ(optimize:false, parallel:false) {
+                from n1 in 1..100_000
+                join n2 in 1..100_000 on n2 == n1
+                where n1 < 10 && n2 < 20
+                select n1, n2
+            }.toList()
+            assert [[1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 7], [8, 8], [9, 9]] == result
         '''
     }
 
@@ -6058,8 +6085,8 @@ class GinqTest {
         '''
     }
 
-    @Test
-    void "testGinq - shutdown - 0"() {
+    @AfterClass
+    static void "testGinq - shutdown - 0"() {
         assertScript '''
             import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper
 // tag::ginq_tips_09[]
@@ -6071,8 +6098,8 @@ class GinqTest {
         '''
     }
 
-    @Test
-    void "testGinq - shutdown - 1"() {
+    @AfterClass
+    static void "testGinq - shutdown - 1"() {
         assertScript '''
             import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper
 // tag::ginq_tips_10[]
@@ -6084,8 +6111,8 @@ class GinqTest {
         '''
     }
 
-    @Test
-    void "testGinq - shutdown - 2"() {
+    @AfterClass
+    static void "testGinq - shutdown - 2"() {
         assertScript '''
             import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper
 // tag::ginq_tips_11[]
