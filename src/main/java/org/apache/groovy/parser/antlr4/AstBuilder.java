@@ -1145,7 +1145,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         switchExpressionRuleContextStack.push(ctx);
         try {
             validateSwitchExpressionLabels(ctx);
-            final String variableName = "__$$sev" + switchExpressionVariableSeq++;
+            final String variableName = SWITCH_EXPRESSION_VARIABLE_NAME_PREFIX + switchExpressionVariableSeq++;
             List<Tuple3<List<Statement>, Boolean, Boolean>> statementInfoList =
                     ctx.switchBlockStatementExpressionGroup().stream()
                             .map(e -> {
@@ -1211,6 +1211,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
     }
     private int switchExpressionVariableSeq;
+    private int switchExpressionCastedVariableSeq;
 
     @Override
     @SuppressWarnings("unchecked")
@@ -1318,14 +1319,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                                 MethodCallExpression mce = expr.getNodeMetaData(SWITCH_EXPRESSION_DECONSTRUCTED);
                                 BlockStatement newCodeBlock = codeBlock;
                                 if (null != mce) {
-                                    String methodName = mce.getMethodAsString();
+                                    final String methodName = mce.getMethodAsString();
+                                    final String castedVariableName = SWITCH_EXPRESSION_CASTED_VARIABLE_NAME_PREFIX + switchExpressionCastedVariableSeq++;
+                                    Statement declarationCastStatement = declS(localVarX(castedVariableName), castX(ClassHelper.make(methodName), switchExpressionVar));
                                     List<Statement> declarationStatementList = ((TupleExpression) mce.getArguments()).getExpressions().stream().map(arg -> {
                                         String argName = arg.getText();
-                                        return declS(localVarX(argName), propX(castX(ClassHelper.make(methodName), switchExpressionVar), argName));
+                                        return declS(localVarX(argName), propX(varX(castedVariableName), argName));
                                     }).collect(Collectors.toList());
                                     newCodeBlock =
                                             createBlockStatement(
-                                                    Stream.concat(declarationStatementList.stream(), Stream.of(codeBlock))
+                                                    Stream.concat(Stream.of(declarationCastStatement),
+                                                            Stream.concat(declarationStatementList.stream(), Stream.of(codeBlock)))
                                                             .collect(Collectors.toList()));
                                 }
 
@@ -5086,4 +5090,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private static final String IS_YIELD_STATEMENT = "_IS_YIELD_STATEMENT";
     private static final String SWITCH_EXPRESSION_DECONSTRUCTED = "_SWITCH_EXPRESSION_DECONSTRUCTED";
     private static final String SWITCH_EXPRESSION_VARIABLE_NAME = "_SWITCH_EXPRESSION_VARIABLE_NAME";
+    private static final String SWITCH_EXPRESSION_VARIABLE_NAME_PREFIX = "__$$sev";
+    private static final String SWITCH_EXPRESSION_CASTED_VARIABLE_NAME_PREFIX = "__$$sevc";
 }
