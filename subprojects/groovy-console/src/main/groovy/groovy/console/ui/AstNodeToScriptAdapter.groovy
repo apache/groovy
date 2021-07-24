@@ -777,7 +777,7 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
 
     @Override
     void visitLambdaExpression(LambdaExpression expression) {
-        print '( '
+        print '('
         if (expression?.parameters) {
             visitParameters(expression?.parameters)
         }
