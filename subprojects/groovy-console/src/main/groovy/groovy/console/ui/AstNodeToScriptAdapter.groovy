@@ -913,11 +913,20 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
     @Override
     void visitCastExpression(CastExpression expression) {
         print '(('
-        expression?.expression?.visit this
-        print ') as '
-        visitType(expression?.type)
+        if (expression?.coerce) {
+            expression?.expression?.visit this
+            print ') as '
+            visitType(expression?.type)
+        } else {
+            visitType(expression?.type)
+            print ') '
+            if (expression?.expression instanceof VariableExpression) {
+                visitVariableExpression((VariableExpression) expression?.expression, false)
+            } else {
+                expression?.expression?.visit this
+            }
+        }
         print ')'
-
     }
 
     /**

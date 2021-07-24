@@ -71,7 +71,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
             println "File $args[0] cannot be found." '''
         String result = compileToScript(script)
         assert result.contains('println("File $args[0] cannot be found.")')
-        assert result.contains('file = new java.io.File(((args[0]) as java.lang.String))')
+        assert result.contains('file = new java.io.File(((java.lang.String) args[0]))')
     }
 
     void testMethods() {
@@ -190,7 +190,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
                             def y = 2
                             (boolean) !(-x + (+y--)) '''
         String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
-        assert result.contains('((!(-( x ) + +(( y )--))) as boolean)')
+        assert result.contains('((boolean) !(-( x ) + +(( y )--)))')
     }
 
     void testArrayHandling() {
@@ -589,7 +589,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         assert result.contains("_result = org.codehaus.groovy.util.HashCodeHelper.updateHash(_result, this.getColor())")
 
         // assert clones
-        assert result.contains("((org.codehaus.groovy.runtime.ReflectionMethodInvoker.invoke(when, 'clone', new java.lang.Object[][])) as java.util.Date)")
+        assert result.contains("((java.util.Date) org.codehaus.groovy.runtime.ReflectionMethodInvoker.invoke(when, 'clone', new java.lang.Object[][]))")
     }
 
     void testAnonymousInnerClass() {
