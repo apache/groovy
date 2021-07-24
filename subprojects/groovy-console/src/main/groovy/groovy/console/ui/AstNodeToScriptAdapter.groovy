@@ -19,6 +19,7 @@
 package groovy.console.ui
 
 import groovy.transform.AutoFinal
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import org.apache.groovy.io.StringBuilderWriter
 import org.codehaus.groovy.ast.AnnotationNode
@@ -889,25 +890,33 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
         expression?.expression?.visit this
     }
 
+    @CompileDynamic
+    private void printUnaryExpression(String opText, Expression expression) {
+        print opText
+        if (expression?.expression instanceof VariableExpression) {
+            visitVariableExpression((VariableExpression) expression?.expression, false)
+        } else if (expression?.expression instanceof PropertyExpression)  {
+            expression?.expression?.visit this
+        } else {
+            print '('
+            expression?.expression?.visit this
+            print ')'
+        }
+    }
+
     @Override
     void visitNotExpression(NotExpression expression) {
-        print '!('
-        expression?.expression?.visit this
-        print ')'
+        printUnaryExpression('!', expression)
     }
 
     @Override
     void visitUnaryMinusExpression(UnaryMinusExpression expression) {
-        print '-('
-        expression?.expression?.visit this
-        print ')'
+        printUnaryExpression('-', expression)
     }
 
     @Override
     void visitUnaryPlusExpression(UnaryPlusExpression expression) {
-        print '+('
-        expression?.expression?.visit this
-        print ')'
+        printUnaryExpression('+', expression)
     }
 
     @Override
@@ -1061,7 +1070,11 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
 
     @Override
     void visitBooleanExpression(BooleanExpression expression) {
-        expression?.expression?.visit this
+        if (expression?.expression instanceof VariableExpression) {
+            visitVariableExpression((VariableExpression) expression?.expression, false)
+        } else {
+            expression?.expression?.visit this
+        }
     }
 
     @Override

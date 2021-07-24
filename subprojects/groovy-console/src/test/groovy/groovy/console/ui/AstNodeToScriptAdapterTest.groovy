@@ -190,7 +190,22 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
                             def y = 2
                             (boolean) !(-x + (+y--)) '''
         String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
-        assert result.contains('((boolean) !(-( x ) + +(( y )--)))')
+        assert result.contains('((boolean) !(-x + +(( y )--)))')
+
+        script = '''boolean x = false
+                    !x'''
+        result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        assert result.contains('!x')
+
+        script = '''int x = 0
+                    -x'''
+        result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        assert result.contains('-x')
+
+        script = '''int x = 0
+                    +x'''
+        result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        assert result.contains('+x')
     }
 
     void testArrayHandling() {
