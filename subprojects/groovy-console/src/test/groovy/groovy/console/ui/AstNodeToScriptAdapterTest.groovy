@@ -308,6 +308,14 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
         assert result.contains('switch (this.someMethod())')
         assert result =~ /case 1:\s*case 2:\s*break/
+
+        script = '''\
+            switch (1) {
+                case 1: break;
+            }
+        '''
+        result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        assert !result.contains('default:')
     }
 
     void testLogAnnotation() {

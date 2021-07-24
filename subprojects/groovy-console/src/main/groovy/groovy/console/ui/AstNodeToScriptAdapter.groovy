@@ -638,7 +638,7 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
             statement?.caseStatements?.each {
                 visitCaseStatement it
             }
-            if (statement?.defaultStatement) {
+            if (statement?.defaultStatement !instanceof EmptyStatement) {
                 print 'default: '
                 printLineBreak()
                 statement?.defaultStatement?.visit this
