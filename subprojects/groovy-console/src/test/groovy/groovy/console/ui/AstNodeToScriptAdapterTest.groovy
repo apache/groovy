@@ -71,7 +71,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
             println "File $args[0] cannot be found." '''
         String result = compileToScript(script)
         assert result.contains('println("File $args[0] cannot be found.")')
-        assert result.contains('file = new java.io.File((( args [ 0]) as java.lang.String))')
+        assert result.contains('file = new java.io.File(((args[0]) as java.lang.String))')
     }
 
     void testMethods() {
