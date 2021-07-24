@@ -727,8 +727,10 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
 
     @Override
     void visitBinaryExpression(BinaryExpression expression) {
-        boolean isSubscriptOp = expression?.operation?.text == '['
-        if (isSubscriptOp && expression?.leftExpression instanceof VariableExpression) {
+        String opText = expression?.operation?.text
+        boolean isInstanceofOp = opText?.endsWith('instanceof')
+        boolean isSubscriptOp = opText == '['
+        if ((isSubscriptOp || isInstanceofOp) && expression?.leftExpression instanceof VariableExpression) {
             visitVariableExpression((VariableExpression) expression?.leftExpression, false)
         } else {
             expression?.leftExpression?.visit this

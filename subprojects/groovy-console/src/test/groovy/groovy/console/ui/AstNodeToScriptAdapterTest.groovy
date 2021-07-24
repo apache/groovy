@@ -1011,4 +1011,10 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         assert result =~ /(?s)oi:.*?\{.*?v \+= 2.*?\}/
     }
 
+    void testVisitIfElse() {
+        String script = '''String a = 'foo'
+                            if (a instanceof String) {}'''
+        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        assert result.contains('if (a instanceof java.lang.String) {')
+    }
 }
