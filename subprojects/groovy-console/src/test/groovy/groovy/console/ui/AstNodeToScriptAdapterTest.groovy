@@ -799,7 +799,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         '''
         String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains('java.lang.Object x = (([4, 5, 6]) as java.lang.String[])')
-        assert result.contains('[1, 2, 3] << new java.lang.Integer[ x .length]')
+        assert result.contains('[1, 2, 3] << new java.lang.Integer[x.length]')
     }
 
     void testSpreadDot() {
@@ -810,8 +810,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         '''
         String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains("java.lang.Object x = [['a': 11, 'b': 12], ['a': 21, 'b': 22]]")
-        assert result.contains('assert x .a == [11, 21] : null')
-        assert result.contains('assert x *.a == [11, 21] : null')
+        assert result.contains('assert x.a == [11, 21] : null')
+        assert result.contains('assert x*.a == [11, 21] : null')
     }
 
     void testSpreadNotationNullHandling() {
@@ -823,9 +823,9 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
         String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains("java.lang.Object x = [['a': 11, 'b': 12], ['a': 21, 'b': 22], null]")
-        assert result.contains('assert x *.a == [11, 21, null] : null')
-        assert result.contains('assert x *.a == x.collect({ ')
-        assert result.contains('it ?.a')
+        assert result.contains('assert x*.a == [11, 21, null] : null')
+        assert result.contains('assert x*.a == x.collect({ ')
+        assert result.contains('it?.a')
         assert result.contains('}) : null')
     }
 
@@ -837,7 +837,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         '''
         String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains("java.lang.Object x = [['a': 21, 'b': 22], null, new MyClass()]")
-        assert result.contains("assert x *.a == [21, null, 'abc'] : null")
+        assert result.contains("assert x*.a == [21, null, 'abc'] : null")
     }
 
     void testSpreadNotationForMethodsOnLists() {

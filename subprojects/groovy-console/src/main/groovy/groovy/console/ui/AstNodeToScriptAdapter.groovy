@@ -799,7 +799,12 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
 
     @Override
     void visitPropertyExpression(PropertyExpression expression) {
-        expression?.objectExpression?.visit this
+        if (expression?.objectExpression instanceof VariableExpression) {
+            visitVariableExpression((VariableExpression) expression?.objectExpression, false)
+        } else {
+            expression?.objectExpression?.visit this
+        }
+
         if (expression?.spreadSafe) {
             print '*'
         } else if (expression?.isSafe()) {
@@ -838,8 +843,8 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
         print expression.text
     }
 
+    @Override
     void visitVariableExpression(VariableExpression expression, boolean spacePad = true) {
-
         if (spacePad) {
             print ' ' + expression.name + ' '
         } else {
