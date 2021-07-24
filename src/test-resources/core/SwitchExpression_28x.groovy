@@ -1,3 +1,5 @@
+import groovy.transform.CompileStatic
+
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -31,19 +33,39 @@ class MulExpr implements Expr {
     Expr left, right
 }
 
-int eval(Expr expr) {
+@CompileStatic
+int evalStatic(Expr expr) {
     int result = switch(expr) {
         case IntExpr(i) -> i
-        case NegExpr(n) -> -eval(n)
-        case AddExpr(left, right) -> eval(left) + eval(right)
-        case MulExpr(left, right) -> eval(left) * eval(right)
+        case NegExpr(n) -> -evalStatic(n)
+        case AddExpr(left, right) -> evalStatic(left) + evalStatic(right)
+        case MulExpr(left, right) -> evalStatic(left) * evalStatic(right)
         default -> throw new IllegalStateException()
     }
     return result
 }
 
 // -2 * 5 + 4
-assert -6 == eval(new AddExpr(
+assert -6 == evalStatic(new AddExpr(
+        left: new MulExpr(
+                left: new NegExpr(n: new IntExpr(i: 2)),
+                right: new IntExpr(i: 5)
+        ),
+        right: new IntExpr(i: 4)
+))
+
+int evalDynamic(Expr expr) {
+    int result = switch(expr) {
+        case IntExpr(i) -> i
+        case NegExpr(n) -> -evalDynamic(n)
+        case AddExpr(left, right) -> evalDynamic(left) + evalDynamic(right)
+        case MulExpr(left, right) -> evalDynamic(left) * evalDynamic(right)
+        default -> throw new IllegalStateException()
+    }
+    return result
+}
+// -2 * 5 + 4
+assert -6 == evalDynamic(new AddExpr(
         left: new MulExpr(
                 left: new NegExpr(n: new IntExpr(i: 2)),
                 right: new IntExpr(i: 5)

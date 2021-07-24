@@ -350,6 +350,7 @@ import static org.apache.groovy.parser.antlr4.util.PositionConfigureUtils.config
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.closureX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
@@ -1317,9 +1318,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                                 MethodCallExpression mce = expr.getNodeMetaData(SWITCH_EXPRESSION_DECONSTRUCTED);
                                 BlockStatement newCodeBlock = codeBlock;
                                 if (null != mce) {
+                                    String methodName = mce.getMethodAsString();
                                     List<Statement> declarationStatementList = ((TupleExpression) mce.getArguments()).getExpressions().stream().map(arg -> {
                                         String argName = arg.getText();
-                                        return declS(localVarX(argName), propX(switchExpressionVar, argName));
+                                        return declS(localVarX(argName), propX(castX(ClassHelper.make(methodName), switchExpressionVar), argName));
                                     }).collect(Collectors.toList());
                                     newCodeBlock =
                                             createBlockStatement(
