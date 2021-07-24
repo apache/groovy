@@ -661,6 +661,15 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         assert result.contains('catch (java.lang.Exception e) {')
         assert result.contains('catch (java.lang.RuntimeException e) {')
         assert result.contains('finally {')
+
+        script = '''\
+            try {
+                println 123
+            } catch (e) {
+                println 234
+            }'''
+        result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        assert !result.contains('finally {')
     }
 
     void testSuperAndThisCalls() {

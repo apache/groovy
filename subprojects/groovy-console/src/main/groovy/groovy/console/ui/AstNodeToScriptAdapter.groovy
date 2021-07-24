@@ -992,13 +992,15 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
         statement?.catchStatements?.each { CatchStatement catchStatement ->
             visitCatchStatement(catchStatement)
         }
-        print 'finally { '
-        printLineBreak()
-        indented {
-            statement?.finallyStatement?.visit this
+        if (statement?.finallyStatement !instanceof EmptyStatement) {
+            print 'finally { '
+            printLineBreak()
+            indented {
+                statement?.finallyStatement?.visit this
+            }
+            print '} '
+            printLineBreak()
         }
-        print '} '
-        printLineBreak()
     }
 
     @Override
