@@ -351,6 +351,8 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.closureX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -1180,9 +1182,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 throw createParsingFailedException("default case should appear at last", defaultStatementList.get(0));
             }
 
+            String variableName = "__$$sev" + switchExpressionVariableSeq++;
+            Statement declarationStatement = declS(localVarX(variableName), this.visitExpressionInPar(ctx.expressionInPar()));
             SwitchStatement switchStatement = configureAST(
                     new SwitchStatement(
-                            this.visitExpressionInPar(ctx.expressionInPar()),
+                            varX(variableName),
                             caseStatementList,
                             defaultStatementListSize == 0 ? EmptyStatement.INSTANCE : defaultStatementList.get(0)
                     ),
@@ -1190,7 +1194,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
             MethodCallExpression callClosure = callX(
                     configureAST(
-                            closureX(null, createBlockStatement(switchStatement)),
+                            closureX(null, createBlockStatement(declarationStatement, switchStatement)),
                             ctx
                     ), "call");
             callClosure.setImplicitThis(false);
@@ -1200,6 +1204,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             switchExpressionRuleContextStack.pop();
         }
     }
+    private int switchExpressionVariableSeq;
 
     @Override
     @SuppressWarnings("unchecked")
