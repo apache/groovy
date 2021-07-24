@@ -189,11 +189,16 @@ Switch supports the following kinds of comparisons:
 
 NOTE: When using a closure case value, the default `it` parameter is actually the switch value (in our example, variable `x`).
 
-Groovy also supports switch expressions as shown in the following example:
+Groovy also supports switch expressions as shown in the following examples:
 
 [source,groovy]
 ----
-include::../test/SemanticsTest.groovy[tags=switch_expression,indent=0]
+include::../test/SemanticsTest.groovy[tags=switch_expression_01,indent=0]
+----
+
+[source,groovy]
+----
+include::../test/SemanticsTest.groovy[tags=switch_expression_02,indent=0]
 ----
 
 ==== Looping structures

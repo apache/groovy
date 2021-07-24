@@ -162,15 +162,51 @@ class SemanticsTest extends CompilableTestSupport {
 
     void testSwitchExpression() {
         def person = 'Romeo'
-        // tag::switch_expression[]
+        // tag::switch_expression_01[]
         def partner = switch(person) {
             case 'Romeo'  -> 'Juliet'
             case 'Adam'   -> 'Eve'
             case 'Antony' -> 'Cleopatra'
             case 'Bonnie' -> 'Clyde'
         }
-        // end::switch_expression[]
+        // end::switch_expression_01[]
         assert partner == 'Juliet'
+
+
+        assertScript '''\
+import groovy.transform.Immutable
+
+interface Expr { }
+@Immutable class IntExpr implements Expr { int i }
+@Immutable class NegExpr implements Expr { Expr n }
+@Immutable class AddExpr implements Expr { Expr left, right }
+@Immutable class MulExpr implements Expr { Expr left, right }
+
+int eval(Expr e) {
+// tag::switch_expression_02[]
+    switch(e) {
+        case IntExpr(i) -> i
+        case NegExpr(n) -> -eval(n)
+        case AddExpr(left, right) -> eval(left) + eval(right)
+        case MulExpr(left, right) -> eval(left) * eval(right)
+        default -> throw new IllegalStateException()
+    }
+// end::switch_expression_02[]
+}
+
+@Newify(pattern=".*Expr")
+def test() {
+    def exprs = [
+        IntExpr(4),
+        NegExpr(IntExpr(4)),
+        AddExpr(IntExpr(4), MulExpr(IntExpr(3), IntExpr(2))), // 4 + (3*2)
+        MulExpr(IntExpr(4), AddExpr(IntExpr(3), IntExpr(2)))  // 4 * (3+2)
+    ]
+    assert exprs.collect { eval(it) } == [4, -4, 10, 20]
+}
+
+test()
+        '''
     }
 
     void testClassicForLoop() {
