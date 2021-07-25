@@ -6246,6 +6246,64 @@ class GinqTest {
         '''
     }
 
+    @Test
+    void "testGinqMethod - GQ - 9"() {
+        assertScript '''
+            import groovy.ginq.transform.GQ
+            
+            @GQ
+            def ginq1(x) {
+                from n in [1, 2, 3]
+                where n < x
+                select n
+            }
+            
+            @GQ
+            def ginq2(x) {
+                from n in [2, 3, 4]
+                where n > x
+                select n
+            }
+            
+            assert [1] == ginq1(2).toList()
+            assert [3, 4] == ginq2(2).toList()
+        '''
+    }
+
+    @Test
+    void "testGinqMethod - GQ - 10"() {
+        assertScript '''
+            import groovy.ginq.transform.GQ
+            
+            abstract class AbstractGinqClass {
+                abstract def ginq1(x)
+                abstract def ginq2(x)
+            }
+            
+            class GinqClass extends AbstractGinqClass {
+                @Override
+                @GQ
+                def ginq1(x) {
+                    from n in [1, 2, 3]
+                    where n < x
+                    select n
+                }
+                
+                @Override
+                @GQ
+                def ginq2(x) {
+                    from n in [2, 3, 4]
+                    where n > x
+                    select n
+                }
+            }
+            
+            def gc = new GinqClass()
+            assert [1] == gc.ginq1(2).toList()
+            assert [3, 4] == gc.ginq2(2).toList()
+        '''
+    }
+
     @AfterClass
     static void "testGinq - shutdown - 0"() {
         assertScript '''

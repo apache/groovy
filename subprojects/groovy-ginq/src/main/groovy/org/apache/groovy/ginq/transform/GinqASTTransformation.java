@@ -22,10 +22,10 @@ import groovy.ginq.transform.GQ;
 import org.apache.groovy.ginq.GinqGroovyMethods;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
@@ -37,7 +37,6 @@ import org.codehaus.groovy.transform.AbstractASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -58,30 +57,27 @@ public class GinqASTTransformation extends AbstractASTTransformation {
 
     @Override
     public void visit(ASTNode[] nodes, SourceUnit sourceUnit) {
-        ModuleNode moduleNode = sourceUnit.getAST();
-        List<ClassNode> classNodeList = moduleNode.getClasses();
-        if (classNodeList == null) return;
+        init(nodes, sourceUnit);
+        AnnotatedNode parent = (AnnotatedNode) nodes[1];
+        AnnotationNode node = (AnnotationNode) nodes[0];
+        if (!GQ_CLASS_NODE.equals(node.getClassNode())) return;
 
-        classNodeList.stream().flatMap(c -> c.getMethods().stream())
-                .filter(m -> !m.getAnnotations(GQ_CLASS_NODE).isEmpty())
-                .map(m -> {
-                    if (m.isAbstract()) {
-                        addError("Error during " + GQ_CLASS_NODE.getName() + " processing: annotation not allowed on abstract method '" + m.getName() + "'", m);
-                        return m.getDeclaringClass();
-                    }
-                    BlockStatement origCode = (BlockStatement) m.getCode();
-                    MapExpression ginqConfigurationMapExpression = makeGinqConfigurationMapExpression(m);
-                    BlockStatement newCode = block(
-                            returnS(transformGinqCode(sourceUnit, ginqConfigurationMapExpression, origCode))
-                    );
-                    newCode.setSourcePosition(origCode);
-                    m.setCode(newCode);
-                    return m.getDeclaringClass();
-                }).distinct()
-                .forEach(c -> {
-                    VariableScopeVisitor variableScopeVisitor = new VariableScopeVisitor(sourceUnit);
-                    variableScopeVisitor.visitClass(c);
-                });
+        if (parent instanceof MethodNode) {
+            MethodNode methodNode = (MethodNode) parent;
+            if (methodNode.isAbstract()) {
+                addError("Error during " + GQ_CLASS_NODE.getName() + " processing: annotation not allowed on abstract method '" + methodNode.getName() + "'", methodNode);
+                return;
+            }
+            BlockStatement origCode = (BlockStatement) methodNode.getCode();
+            MapExpression ginqConfigurationMapExpression = makeGinqConfigurationMapExpression(methodNode);
+            BlockStatement newCode = block(
+                    returnS(transformGinqCode(sourceUnit, ginqConfigurationMapExpression, origCode))
+            );
+            newCode.setSourcePosition(origCode);
+            methodNode.setCode(newCode);
+            VariableScopeVisitor variableScopeVisitor = new VariableScopeVisitor(sourceUnit);
+            variableScopeVisitor.visitClass(methodNode.getDeclaringClass());
+        }
     }
 
     private MapExpression makeGinqConfigurationMapExpression(MethodNode m) {

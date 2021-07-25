@@ -103,9 +103,7 @@ class GinqGroovyMethods {
 
     static Expression transformGinqCode(SourceUnit sourceUnit, MapExpression ginqConfigurationMapExpression, Statement code) {
         GinqAstBuilder ginqAstBuilder = new GinqAstBuilder(sourceUnit)
-
         AbstractGinqExpression ginqExpression = ginqAstBuilder.buildAST(code)
-
         Map<String, String> configuration = createConfiguration(sourceUnit, ginqConfigurationMapExpression)
 
         if (ginqExpression instanceof GinqExpression && TRUE_STR == configuration.get(CONF_OPTIMIZE, TRUE_STR)) {
