@@ -95,18 +95,25 @@ def someGinqMethod() {
 }
 ```
 For example,
+
+* Mark the `ginq` method as a GINQ method with `@GQ` annotation:
+
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_method_01,indent=0]
 ----
 
-Specify the return type as `List`:
+* Specify the return type as `List`:
+
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_method_03,indent=0]
 ----
+[NOTE]
+GINQ supports many return types, e.g. `List`, `Set`, `Collection`, `Iterable`, `Iterator`, `java.util.stream.Stream` and array types.
 
-Enable parallel querying:
+* Enable parallel querying:
+
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_method_02,indent=0]
