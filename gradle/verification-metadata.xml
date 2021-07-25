@@ -989,6 +989,11 @@
             <pgp value="dc98224c6421a7a5bb87f346ed2378cd09a08cde"/>
          </artifact>
       </component>
+      <component group="org.fusesource.jansi" name="jansi" version="2.3.4">
+         <artifact name="jansi-2.3.4.jar">
+            <pgp value="dc98224c6421a7a5bb87f346ed2378cd09a08cde"/>
+         </artifact>
+      </component>
       <component group="org.gmetrics" name="GMetrics" version="1.1">
          <artifact name="GMetrics-1.1.jar">
             <pgp value="851264c36365d4ff9427625f38362fd5cfa2668b"/>
