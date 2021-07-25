@@ -70,7 +70,7 @@ class GinqGroovyMethods {
      */
     @Macro
     static Expression GQL(final MacroContext ctx, final ClosureExpression ginqClosureExpression) {
-        callX(GQ(ctx, ginqClosureExpression), 'toList')
+        GQL(ctx, null, ginqClosureExpression)
     }
 
     /**
@@ -84,7 +84,7 @@ class GinqGroovyMethods {
      */
     @Macro
     static Expression GQ(final MacroContext ctx, final MapExpression ginqConfigurationMapExpression, final ClosureExpression ginqClosureExpression) {
-        return transformGinqCode(ctx.sourceUnit, ginqConfigurationMapExpression, ginqClosureExpression.code)
+        transformGinqCode(ctx.sourceUnit, ginqConfigurationMapExpression, ginqClosureExpression.code)
     }
 
     /**
