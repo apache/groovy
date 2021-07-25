@@ -4180,7 +4180,7 @@ class GinqTest {
     void "testGinq - asType - 1"() {
         assertGinqScript '''
             def result = GQ {from n in [1] select n} as Collection
-            assert result instanceof List
+            assert result instanceof Collection
             assert 1 == result[0]
         '''
     }
@@ -4218,7 +4218,7 @@ class GinqTest {
     void "testGinq - asType - 5"() {
         assertGinqScript '''
             def result = GQ {from n in [1] select n} as Iterable
-            assert result instanceof List
+            assert result instanceof Iterable
             assert 1 == result[0]
         '''
     }
@@ -4257,6 +4257,69 @@ class GinqTest {
         assertGinqScript '''
             def result = GQ {from n in [1] select n} as List
             assert result instanceof List
+            assert 1 == result[0]
+        '''
+    }
+
+    @Test
+    void "testGinq - asType - 10"() {
+        assertGinqScript '''
+            def result = GQ {from n in [1] select n} as ArrayList
+            assert result instanceof ArrayList
+            assert 1 == result[0]
+        '''
+    }
+
+    @Test
+    void "testGinq - asType - 11"() {
+        assertGinqScript '''
+            def result = GQ {from n in [1] select n} as LinkedList
+            assert result instanceof LinkedList
+            assert 1 == result[0]
+        '''
+    }
+
+    @Test
+    void "testGinq - asType - 12"() {
+        assertGinqScript '''
+            def result = GQ {from n in [1] select n} as HashSet
+            assert result instanceof HashSet
+            assert 1 == result[0]
+        '''
+    }
+
+    @Test
+    void "testGinq - asType - 13"() {
+        assertGinqScript '''
+            def result = GQ {from n in [1] select n} as TreeSet
+            assert result instanceof TreeSet
+            assert 1 == result[0]
+        '''
+    }
+
+    @Test
+    void "testGinq - asType - 14"() {
+        assertGinqScript '''
+            def result = GQ {from n in [1] select n} as LinkedHashSet
+            assert result instanceof LinkedHashSet
+            assert 1 == result[0]
+        '''
+    }
+
+    @Test
+    void "testGinq - asType - 15"() {
+        assertGinqScript '''
+            def result = GQ {from n in [1] select n} as Queue
+            assert result instanceof Queue
+            assert 1 == result[0]
+        '''
+    }
+
+    @Test
+    void "testGinq - asType - 16"() {
+        assertGinqScript '''
+            def result = GQ {from n in [1] select n} as Deque
+            assert result instanceof Deque
             assert 1 == result[0]
         '''
     }
@@ -6117,13 +6180,13 @@ class GinqTest {
         assertScript '''
 // tag::ginq_method_01[]
             @groovy.ginq.transform.GQ
-            def ginq(b, e) {
-                from n in [1, 2, 3, 4, 5, 6]
+            def ginq(list, b, e) {
+                from n in list
                 where b < n && n < e
                 select n
             }
             
-            assert [3, 4] == ginq(2, 5).toList()
+            assert [3, 4] == ginq([1, 2, 3, 4, 5, 6], 2, 5).toList()
 // end::ginq_method_01[]
         '''
     }
