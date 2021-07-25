@@ -190,7 +190,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
                             def y = 2
                             (boolean) !(-x + (+y--)) '''
         String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
-        assert result.contains('((boolean) !(-x + +(( y )--)))')
+        assert result.contains('((boolean) !(-x + +(y--)))')
 
         script = '''boolean x = false
                     !x'''
@@ -243,7 +243,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
                         }'''
 
         String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
-        assert result.contains('for (java.lang.Integer x = 0; x < 10;( x )++) {')
+        assert result.contains('for (java.lang.Integer x = 0; x < 10; x++) {')
         assert result.contains('continue')
     }
 
@@ -263,7 +263,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         String script = '''def x = 1, y = 2
                             x++ + --y - --x++'''
         String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
-        assert result.contains('( x )++ + --( y ) - --(( x )++)')
+        assert result.contains('x++ + --y - --(x++)')
     }
 
     void testMultipleAssignments() {
@@ -629,7 +629,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
         assert result =~ /Lazy\s*private java\.util\.ArrayList .*speakers /
         assert result.contains('public java.util.ArrayList getSpeakers() {')
-        assert result.contains('if ( $speakers != null) {')
+        assert result.contains('if ($speakers != null) {')
         assert result.contains('$speakers = new java.util.ArrayList()')
     }
 
@@ -1016,5 +1016,12 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
                             if (a instanceof String) {}'''
         String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains('if (a instanceof java.lang.String) {')
+    }
+
+    void testVisitCastExpression() {
+        String script = '''String a = 'foo'
+                           a as String'''
+        String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
+        assert result.contains('(a as java.lang.String)')
     }
 }

@@ -681,11 +681,7 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
     @Override
     void visitMethodCallExpression(MethodCallExpression expression) {
         Expression objectExpr = expression.objectExpression
-        if (objectExpr instanceof VariableExpression) {
-            visitVariableExpression(objectExpr, false)
-        } else {
-            objectExpr.visit(this)
-        }
+        printExpression(objectExpr)
         if (expression.spreadSafe) {
             print '*'
         }
@@ -727,19 +723,18 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
 
     @Override
     void visitBinaryExpression(BinaryExpression expression) {
-        String opText = expression?.operation?.text
-        boolean isInstanceofOp = opText?.endsWith('instanceof')
-        boolean isSubscriptOp = opText == '['
-        if ((isSubscriptOp || isInstanceofOp) && expression?.leftExpression instanceof VariableExpression) {
+        if (expression !instanceof DeclarationExpression && expression?.leftExpression instanceof VariableExpression) {
             visitVariableExpression((VariableExpression) expression?.leftExpression, false)
         } else {
             expression?.leftExpression?.visit this
         }
         if (!(expression.rightExpression instanceof EmptyExpression) || expression.operation.type != Types.ASSIGN) {
+            String opText = expression?.operation?.text
+            boolean isSubscriptOp = opText == '['
             if (isSubscriptOp) {
                 print "["
             } else {
-                print " $expression.operation.text "
+                print " $opText "
             }
             expression.rightExpression.visit this
             if (isSubscriptOp) {
@@ -750,18 +745,26 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
 
     @Override
     void visitPostfixExpression(PostfixExpression expression) {
-        print '('
-        expression?.expression?.visit this
-        print ')'
+        if (expression?.expression instanceof VariableExpression) {
+            visitVariableExpression((VariableExpression) expression?.expression, false)
+        } else {
+            print '('
+            expression?.expression?.visit this
+            print ')'
+        }
         print expression?.operation?.text
     }
 
     @Override
     void visitPrefixExpression(PrefixExpression expression) {
         print expression?.operation?.text
-        print '('
-        expression?.expression?.visit this
-        print ')'
+        if (expression?.expression instanceof VariableExpression) {
+            visitVariableExpression((VariableExpression) expression?.expression, false)
+        } else {
+            print '('
+            expression?.expression?.visit this
+            print ')'
+        }
     }
 
     @Override
@@ -810,11 +813,7 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
 
     @Override
     void visitPropertyExpression(PropertyExpression expression) {
-        if (expression?.objectExpression instanceof VariableExpression) {
-            visitVariableExpression((VariableExpression) expression?.objectExpression, false)
-        } else {
-            expression?.objectExpression?.visit this
-        }
+        printExpression(expression?.objectExpression)
 
         if (expression?.spreadSafe) {
             print '*'
@@ -923,19 +922,24 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
 
     @Override
     void visitCastExpression(CastExpression expression) {
-        print '(('
+        print '('
         if (expression?.coerce) {
-            expression?.expression?.visit this
-            print ') as '
+            boolean isVariableExpressionOrPropertyExpression =
+                    expression?.expression instanceof VariableExpression || expression?.expression instanceof PropertyExpression
+            if (!isVariableExpressionOrPropertyExpression) {
+                print '('
+            }
+            printExpression(expression?.expression)
+            if (!isVariableExpressionOrPropertyExpression) {
+                print ')'
+            }
+            print ' as '
             visitType(expression?.type)
         } else {
+            print '('
             visitType(expression?.type)
             print ') '
-            if (expression?.expression instanceof VariableExpression) {
-                visitVariableExpression((VariableExpression) expression?.expression, false)
-            } else {
-                expression?.expression?.visit this
-            }
+            printExpression(expression?.expression)
         }
         print ')'
     }
@@ -1072,11 +1076,7 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
 
     @Override
     void visitBooleanExpression(BooleanExpression expression) {
-        if (expression?.expression instanceof VariableExpression) {
-            visitVariableExpression((VariableExpression) expression?.expression, false)
-        } else {
-            expression?.expression?.visit this
-        }
+        printExpression(expression?.expression)
     }
 
     @Override
@@ -1142,6 +1142,9 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
         expression?.expressions?.each {
             if (!first) {
                 print ';'
+                if (it !instanceof EmptyExpression) {
+                    print ' '
+                }
             }
             first = false
             it.visit this
@@ -1207,5 +1210,13 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
             printLineBreak()
         }
         return true
+    }
+
+    private void printExpression(Expression expression) {
+        if (expression instanceof VariableExpression) {
+            visitVariableExpression((VariableExpression) expression, false)
+        } else {
+            expression?.visit this
+        }
     }
 }
