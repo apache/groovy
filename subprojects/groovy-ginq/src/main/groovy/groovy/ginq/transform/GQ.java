@@ -38,7 +38,18 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD})
 @GroovyASTTransformationClass("org.apache.groovy.ginq.transform.GinqASTTransformation")
 public @interface GQ {
+    /**
+     * Whether to optimize the GINQ AST
+     */
     boolean optimize() default true;
+
+    /**
+     * Whether to enable parallel querying
+     */
     boolean parallel() default false;
+
+    /**
+     * Specify the GINQ AST walker to customize GINQ behaviour
+     */
     String astWalker() default "org.apache.groovy.ginq.provider.collection.GinqAstWalker";
 }

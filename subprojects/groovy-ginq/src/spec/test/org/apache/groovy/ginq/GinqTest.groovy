@@ -6113,6 +6113,22 @@ class GinqTest {
     }
 
     @Test
+    void "testGinqMethod - GQ - 0"() {
+        assertScript '''
+// tag::ginq_method_01[]
+            @groovy.ginq.transform.GQ
+            def ginq(b, e) {
+                from n in [1, 2, 3, 4, 5, 6]
+                where b < n && n < e
+                select n
+            }
+            
+            assert [3, 4] == ginq(2, 5).toList()
+// end::ginq_method_01[]
+        '''
+    }
+
+    @Test
     void "testGinqMethod - GQ - 1"() {
         assertScript '''
             import groovy.ginq.transform.GQ
@@ -6185,6 +6201,7 @@ class GinqTest {
     @Test
     void "testGinqMethod - GQ - 5"() {
         assertScript '''
+// tag::ginq_method_02[]
             import groovy.ginq.transform.GQ
             
             @GQ(parallel=true)
@@ -6195,6 +6212,7 @@ class GinqTest {
             }
             
             assert [1] == ginq(2).toList()
+// end::ginq_method_02[]
         '''
     }
 
