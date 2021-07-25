@@ -6112,6 +6112,140 @@ class GinqTest {
         '''
     }
 
+    @Test
+    void "testGinqMethod - GQ - 1"() {
+        assertScript '''
+            import groovy.ginq.transform.GQ
+            
+            @GQ
+            def ginq(x) {
+                from n in [1, 2, 3]
+                where n < x
+                select n
+            }
+            
+            assert [1] == ginq(2).toList()
+        '''
+    }
+
+    @Test
+    void "testGinqMethod - GQ - 2"() {
+        assertScript '''
+            import groovy.ginq.transform.GQ
+            
+            class GinqClass {
+                @GQ
+                def ginq(x) {
+                    from n in [1, 2, 3]
+                    where n < x
+                    select n
+                }
+            }
+            
+            assert [1, 2] == new GinqClass().ginq(3).toList()
+        '''
+    }
+
+    @Test
+    void "testGinqMethod - GQ - 3"() {
+        assertScript '''
+            import groovy.ginq.transform.GQ
+            
+            class GinqClass {
+                static class Holder {
+                    @GQ
+                    def ginq(x) {
+                        from n in [1, 2, 3]
+                        where n < x
+                        select n
+                    }
+                }
+            }
+            
+            assert [1, 2] == new GinqClass.Holder().ginq(3).toList()
+        '''
+    }
+
+    @Test
+    void "testGinqMethod - GQ - 4"() {
+        assertScript '''
+            import groovy.ginq.transform.GQ
+            
+            @GQ(optimize=false)
+            def ginq(x) {
+                from n in [1, 2, 3]
+                where n < x
+                select n
+            }
+            
+            assert [1] == ginq(2).toList()
+        '''
+    }
+
+    @Test
+    void "testGinqMethod - GQ - 5"() {
+        assertScript '''
+            import groovy.ginq.transform.GQ
+            
+            @GQ(parallel=true)
+            def ginq(x) {
+                from n in [1, 2, 3]
+                where n < x
+                select n
+            }
+            
+            assert [1] == ginq(2).toList()
+        '''
+    }
+
+    @Test
+    void "testGinqMethod - GQ - 6"() {
+        assertScript '''
+            import groovy.ginq.transform.GQ
+            
+            @GQ(astWalker='org.apache.groovy.ginq.provider.collection.GinqAstWalker')
+            def ginq(x) {
+                from n in [1, 2, 3]
+                where n < x
+                select n
+            }
+            
+            assert [1] == ginq(2).toList()
+        '''
+    }
+
+    @Test
+    void "testGinqMethod - GQ - 7"() {
+        assertScript '''
+            import groovy.ginq.transform.GQ
+            
+            @GQ(optimize=false, parallel=true)
+            def ginq(x) {
+                from n in [1, 2, 3]
+                where n < x
+                select n
+            }
+            
+            assert [1] == ginq(2).toList()
+        '''
+    }
+
+    @Test
+    void "testGinqMethod - GQ - 8"() {
+        assertScript '''
+            import groovy.ginq.transform.GQ
+            
+            @GQ(optimize=false, parallel=true, astWalker='org.apache.groovy.ginq.provider.collection.GinqAstWalker')
+            def ginq(x) {
+                from n in [1, 2, 3]
+                where n < x
+                select n
+            }
+            
+            assert [1] == ginq(2).toList()
+        '''
+    }
+
     @AfterClass
     static void "testGinq - shutdown - 0"() {
         assertScript '''

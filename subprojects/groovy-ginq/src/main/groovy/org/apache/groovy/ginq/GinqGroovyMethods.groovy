@@ -146,10 +146,10 @@ class GinqGroovyMethods {
 
     private GinqGroovyMethods() {}
 
+    public static final List<String> CONF_LIST = [CONF_PARALLEL, CONF_AST_WALKER, CONF_OPTIMIZE]
     public static final String CONF_PARALLEL = 'parallel'
     private static final String CONF_AST_WALKER = 'astWalker'
     private static final String CONF_OPTIMIZE = 'optimize'
-    private static final List<String> CONF_LIST = [CONF_PARALLEL, CONF_AST_WALKER, CONF_OPTIMIZE]
     private static final String DEFAULT_AST_WALKER_CLASS_NAME = GinqAstWalker.class.name
     private static final String TRUE_STR = 'true'
 }
