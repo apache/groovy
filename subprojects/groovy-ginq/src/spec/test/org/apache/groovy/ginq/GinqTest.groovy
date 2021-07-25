@@ -4150,6 +4150,33 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - GQL - 3"() {
+        assertGinqScript '''
+            def result = GQL(optimize: false) {from n in [1] select n}
+            assert result instanceof List
+            assert 1 == result[0]
+        '''
+    }
+
+    @Test
+    void "testGinq - GQL - 4"() {
+        assertGinqScript '''
+            def result = GQL(parallel: true) {from n in [1] select n}
+            assert result instanceof List
+            assert 1 == result[0]
+        '''
+    }
+
+    @Test
+    void "testGinq - GQL - 5"() {
+        assertGinqScript '''
+            def result = GQL(optimize: false, parallel: true) {from n in [1] select n}
+            assert result instanceof List
+            assert 1 == result[0]
+        '''
+    }
+
+    @Test
     void "testGinq - asType - 1"() {
         assertGinqScript '''
             def result = GQ {from n in [1] select n} as Collection

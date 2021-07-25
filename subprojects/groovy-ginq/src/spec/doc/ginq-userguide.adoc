@@ -911,7 +911,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_02,indent
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_06,indent=0]
 ----
 [NOTE]
-`GQL {...}` is the abbreviation of `GQ {...} as List`
+`GQL {...}` is the abbreviation of `GQ {...}.toList()`
 
 GINQ could be used as list comprehension in the loops directly:
 [source, groovy]
