@@ -712,6 +712,10 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     public Object asType(Class<?> clazz) {
+        if (Queryable.class == clazz || QueryableCollection.class == clazz) {
+            return this;
+        }
+
         if (List.class == clazz || Collection.class == clazz || Iterable.class == clazz) {
             return toList();
         }

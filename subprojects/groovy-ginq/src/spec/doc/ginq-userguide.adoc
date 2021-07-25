@@ -100,6 +100,13 @@ For example,
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_method_01,indent=0]
 ----
 
+Specify the return type as `List`:
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_method_03,indent=0]
+----
+
+Enable parallel querying:
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_method_02,indent=0]

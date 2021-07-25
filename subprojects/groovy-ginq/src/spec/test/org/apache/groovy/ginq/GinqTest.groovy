@@ -6343,6 +6343,69 @@ class GinqTest {
         '''
     }
 
+    @Test
+    void "testGinqMethod - GQ - 12"() {
+        assertScript '''
+            import groovy.ginq.transform.GQ
+            import groovy.transform.CompileStatic
+            import groovy.transform.CompileDynamic
+            
+            @CompileStatic
+            class GinqClass {
+                private static final int F = 6
+                private int e = 3
+                
+                List<Integer> biz(b) {
+                    (List<Integer>) ginq(b)
+                }
+                
+                @GQ(List)
+                @CompileDynamic
+                def ginq(b) {
+                    from n in [1, 2, 3]
+                    where b < n && n < e
+                    select n + F
+                }
+            }
+            
+            assert [8] == new GinqClass().ginq(1)
+        '''
+    }
+
+    @Test
+    void "testGinqMethod - GQ - 13"() {
+        assertScript '''
+// tag::ginq_method_03[]
+            import groovy.ginq.transform.GQ
+            
+            @GQ(List)
+            def ginq(b, e) {
+                from n in [1, 2, 3, 4, 5, 6]
+                where b < n && n < e
+                select n
+            }
+            
+            assert [3, 4] == ginq(2, 5)
+// end::ginq_method_03[]
+        '''
+    }
+
+    @Test
+    void "testGinqMethod - GQ - 14"() {
+        assertScript '''
+            import groovy.ginq.transform.GQ
+            
+            @GQ(value=List, parallel=true)
+            def ginq(b, e) {
+                from n in [1, 2, 3, 4, 5, 6]
+                where b < n && n < e
+                select n
+            }
+            
+            assert [3, 4] == ginq(2, 5)
+        '''
+    }
+
     @AfterClass
     static void "testGinq - shutdown - 0"() {
         assertScript '''

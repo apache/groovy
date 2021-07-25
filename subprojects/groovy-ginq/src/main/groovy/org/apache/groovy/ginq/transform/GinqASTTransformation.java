@@ -23,8 +23,11 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.expr.CastExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
@@ -44,6 +47,7 @@ import static org.apache.groovy.ginq.GinqGroovyMethods.CONF_LIST;
 import static org.apache.groovy.ginq.GinqGroovyMethods.transformGinqCode;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
@@ -54,8 +58,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class GinqASTTransformation extends AbstractASTTransformation {
-    private static final ClassNode GQ_CLASS_NODE = make(GQ.class);
-
     @Override
     public void visit(ASTNode[] nodes, SourceUnit sourceUnit) {
         init(nodes, sourceUnit);
@@ -71,7 +73,20 @@ public class GinqASTTransformation extends AbstractASTTransformation {
             }
             BlockStatement origCode = (BlockStatement) methodNode.getCode();
             MapExpression ginqConfigurationMapExpression = makeGinqConfigurationMapExpression(annotationNode);
-            BlockStatement newCode = block(stmt(transformGinqCode(sourceUnit, ginqConfigurationMapExpression, origCode)));
+            Expression valueExpression = annotationNode.getMember(VALUE);
+
+            ClassNode targetType = DEFAULT_RESULT_TYPE;
+            if (valueExpression instanceof ClassExpression) {
+                ClassNode type = valueExpression.getType();
+                if (!targetType.equals(type)) {
+                    targetType = type;
+                }
+            }
+
+            CastExpression castExpression = castX(targetType, transformGinqCode(sourceUnit, ginqConfigurationMapExpression, origCode));
+            castExpression.setCoerce(true);
+
+            BlockStatement newCode = block(stmt(castExpression));
             newCode.setSourcePosition(origCode);
             methodNode.setCode(newCode);
             VariableScopeVisitor variableScopeVisitor = new VariableScopeVisitor(sourceUnit);
@@ -81,13 +96,27 @@ public class GinqASTTransformation extends AbstractASTTransformation {
 
     private MapExpression makeGinqConfigurationMapExpression(AnnotationNode annotationNode) {
         Map<String, Expression> resultMembers = new HashMap<>(DEFAULT_OPTION_MAP);
-        resultMembers.putAll(annotationNode.getMembers());
+        Map<String, Expression> currentMembers = new HashMap<>(annotationNode.getMembers());
+        currentMembers.remove(VALUE);
+        resultMembers.putAll(currentMembers);
 
         return mapX(resultMembers.entrySet().stream()
                     .map(e -> new MapEntryExpression(constX(e.getKey()), constX(e.getValue().getText())))
                     .collect(Collectors.toList()));
     }
 
+    private static final String VALUE = "value";
+    private static final ClassNode GQ_CLASS_NODE = make(GQ.class);
+    private static final ClassNode DEFAULT_RESULT_TYPE;
+    static {
+        Class<?> c;
+        try {
+            c = (Class<?>) GQ_CLASS_NODE.getTypeClass().getMethod(VALUE).getDefaultValue();
+        } catch (NoSuchMethodException e) {
+            throw new GroovyBugError(e);
+        }
+        DEFAULT_RESULT_TYPE = ClassHelper.make(c);
+    }
     private static final Map<String, Expression> DEFAULT_OPTION_MAP = unmodifiableMap(CONF_LIST.stream().collect(Collectors.toMap(
             c -> c,
             c -> {

@@ -18,6 +18,7 @@
  */
 package groovy.ginq.transform;
 
+import org.apache.groovy.ginq.provider.collection.runtime.Queryable;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
@@ -38,6 +39,11 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD})
 @GroovyASTTransformationClass("org.apache.groovy.ginq.transform.GinqASTTransformation")
 public @interface GQ {
+    /**
+     * Specify the result type
+     */
+    Class<?> value() default Queryable.class;
+
     /**
      * Whether to optimize the GINQ AST
      */
