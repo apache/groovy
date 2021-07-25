@@ -19,7 +19,6 @@
 package org.apache.groovy.ginq.transform;
 
 import groovy.ginq.transform.GQ;
-import org.apache.groovy.ginq.GinqGroovyMethods;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -40,12 +39,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.unmodifiableMap;
+import static org.apache.groovy.ginq.GinqGroovyMethods.CONF_LIST;
 import static org.apache.groovy.ginq.GinqGroovyMethods.transformGinqCode;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 
 /**
  * Handles generation of code for the {@code @GQ} annotation.
@@ -58,21 +59,19 @@ public class GinqASTTransformation extends AbstractASTTransformation {
     @Override
     public void visit(ASTNode[] nodes, SourceUnit sourceUnit) {
         init(nodes, sourceUnit);
-        AnnotatedNode parent = (AnnotatedNode) nodes[1];
-        AnnotationNode node = (AnnotationNode) nodes[0];
-        if (!GQ_CLASS_NODE.equals(node.getClassNode())) return;
+        AnnotatedNode annotatedNode = (AnnotatedNode) nodes[1];
+        AnnotationNode annotationNode = (AnnotationNode) nodes[0];
+        if (!GQ_CLASS_NODE.equals(annotationNode.getClassNode())) return;
 
-        if (parent instanceof MethodNode) {
-            MethodNode methodNode = (MethodNode) parent;
+        if (annotatedNode instanceof MethodNode) {
+            MethodNode methodNode = (MethodNode) annotatedNode;
             if (methodNode.isAbstract()) {
                 addError("Error during " + GQ_CLASS_NODE.getName() + " processing: annotation not allowed on abstract method '" + methodNode.getName() + "'", methodNode);
                 return;
             }
             BlockStatement origCode = (BlockStatement) methodNode.getCode();
-            MapExpression ginqConfigurationMapExpression = makeGinqConfigurationMapExpression(methodNode);
-            BlockStatement newCode = block(
-                    returnS(transformGinqCode(sourceUnit, ginqConfigurationMapExpression, origCode))
-            );
+            MapExpression ginqConfigurationMapExpression = makeGinqConfigurationMapExpression(annotationNode);
+            BlockStatement newCode = block(stmt(transformGinqCode(sourceUnit, ginqConfigurationMapExpression, origCode)));
             newCode.setSourcePosition(origCode);
             methodNode.setCode(newCode);
             VariableScopeVisitor variableScopeVisitor = new VariableScopeVisitor(sourceUnit);
@@ -80,29 +79,23 @@ public class GinqASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private MapExpression makeGinqConfigurationMapExpression(MethodNode m) {
-        Map<String, Expression> resultMembers = new HashMap<>();
-        Map<String, Expression> defaultMembers = GinqGroovyMethods.CONF_LIST.stream().collect(Collectors.toMap(
-                c -> c,
-                c -> {
-                    try {
-                        return constX(GQ_CLASS_NODE.getTypeClass().getMethod(c).getDefaultValue());
-                    } catch (NoSuchMethodException e) {
-                        throw new GroovyBugError("Unknown GINQ option: " + c, e);
-                    }
-                }
-        ));
-        resultMembers.putAll(defaultMembers);
+    private MapExpression makeGinqConfigurationMapExpression(AnnotationNode annotationNode) {
+        Map<String, Expression> resultMembers = new HashMap<>(DEFAULT_OPTION_MAP);
+        resultMembers.putAll(annotationNode.getMembers());
 
-        AnnotationNode gqAnnotationNode = m.getAnnotations(GQ_CLASS_NODE).get(0);
-        Map<String, Expression> members = gqAnnotationNode.getMembers();
-        resultMembers.putAll(members);
-
-        MapExpression ginqConfigurationMapExpression =
-                        mapX(resultMembers.entrySet().stream()
-                                .map(e -> new MapEntryExpression(constX(e.getKey()), constX(e.getValue().getText())))
-                                .collect(Collectors.toList()));
-
-        return ginqConfigurationMapExpression;
+        return mapX(resultMembers.entrySet().stream()
+                    .map(e -> new MapEntryExpression(constX(e.getKey()), constX(e.getValue().getText())))
+                    .collect(Collectors.toList()));
     }
+
+    private static final Map<String, Expression> DEFAULT_OPTION_MAP = unmodifiableMap(CONF_LIST.stream().collect(Collectors.toMap(
+            c -> c,
+            c -> {
+                try {
+                    return constX(GQ_CLASS_NODE.getTypeClass().getMethod(c).getDefaultValue());
+                } catch (NoSuchMethodException e) {
+                    throw new GroovyBugError("Unknown GINQ option: " + c, e);
+                }
+            }
+    )));
 }
