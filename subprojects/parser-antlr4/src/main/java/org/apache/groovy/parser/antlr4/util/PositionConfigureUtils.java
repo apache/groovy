@@ -99,7 +99,7 @@ public class PositionConfigureUtils {
             astNode.setLastLineNumber(stop.getLastLineNumber());
             astNode.setLastColumnNumber(stop.getLastColumnNumber());
         } else {
-            configureEndPosition(astNode, start);
+            configureEndPosition(astNode, ctx.getStop());
         }
 
         return astNode;
