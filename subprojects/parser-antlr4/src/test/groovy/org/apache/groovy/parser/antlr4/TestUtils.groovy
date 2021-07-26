@@ -189,7 +189,7 @@ final class TestUtils {
     }
 
     static void doRunAndShouldFail(String path) {
-        assert !executeScript(createAntlr4Shell(), path)
+        assert !executeScript(createAntlr4Shell(), "$RESOURCES_PATH/$path")
     }
 
     static void doRunAndTest(String path) {
@@ -262,6 +262,7 @@ final class TestUtils {
 
     private static boolean executeScript(GroovyShell shell, String path) {
         def file = new File(path)
+        assert file.exists() : "Test resource not found: $file.absolutePath"
         try {
             shell.evaluate(file.text)
             return true
@@ -274,7 +275,7 @@ final class TestUtils {
     private static String readZipEntry(String path, String entryName) {
         String result = ''
 
-        try (zf = new ZipFile(new File(path))) {
+        try (def zf = new ZipFile(new File(path))) {
             def is = new BufferedInputStream(zf.getInputStream(new ZipEntry(entryName)))
             result = is.getText('UTF-8')
         } catch (e) {
