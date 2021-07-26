@@ -66,6 +66,7 @@ import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.EmptyStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.syntax.Types
@@ -76,6 +77,7 @@ import java.util.function.Consumer
 import java.util.stream.Collectors
 
 import static groovy.lang.Tuple.tuple
+import static org.apache.groovy.ginq.dsl.GinqAstBuilder.GINQ_SELECT_DISTINCT
 import static org.codehaus.groovy.ast.ClassHelper.DYNAMIC_TYPE
 import static org.codehaus.groovy.ast.ClassHelper.makeCached
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching
@@ -97,8 +99,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.params
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt
+import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
-
 /**
  * Visit AST of GINQ to generate target method calls for GINQ
  *
@@ -201,21 +203,20 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             statementList << declS(localVarX(rowNumberName), ctorX(ATOMIC_LONG_TYPE, constX(-1L)))
         }
 
+        Boolean distinct = ginqExpression.getNodeMetaData(GINQ_SELECT_DISTINCT)
+        if (distinct) selectMethodCallExpression = callX(selectMethodCallExpression, "distinct")
+
         final resultName = "__r${System.nanoTime()}"
-
-        Boolean distinct = ginqExpression.getNodeMetaData(GinqAstBuilder.GINQ_SELECT_DISTINCT)
-        if (distinct) {
-            selectMethodCallExpression = callX(selectMethodCallExpression, "distinct")
-        }
-        statementList << declS(localVarX(resultName).tap {it.modifiers |= Opcodes.ACC_FINAL}, selectMethodCallExpression)
-
-        if (parallelEnabled) {
-            statementList << stmt(callX(QUERYABLE_HELPER_TYPE, 'removeVar', args(constX(PARALLEL))))
-        }
-        if (useWindowFunction) {
-            statementList << stmt(callX(QUERYABLE_HELPER_TYPE, 'removeVar', args(constX(USE_WINDOW_FUNCTION))))
-        }
-        statementList << returnS(varX(resultName))
+        statementList << tryCatchS(
+                block(
+                        declS(localVarX(resultName).tap {it.modifiers |= Opcodes.ACC_FINAL}, selectMethodCallExpression),
+                        returnS(varX(resultName))
+                ),
+                block(
+                        parallelEnabled ? invokeRemoveVarMethod(PARALLEL) : EmptyStatement.INSTANCE,
+                        useWindowFunction ? invokeRemoveVarMethod(USE_WINDOW_FUNCTION) : EmptyStatement.INSTANCE
+                )
+        )
 
         def resultLambda = lambdaX(null, block(statementList as Statement[]))
         def result = parallelEnabled
@@ -224,6 +225,10 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
         ginqExpressionStack.pop()
         return result
+    }
+
+    private static Statement invokeRemoveVarMethod(String varName) {
+        stmt(callX(QUERYABLE_HELPER_TYPE, 'removeVar', args(constX(varName))))
     }
 
     private boolean isParallel() {
