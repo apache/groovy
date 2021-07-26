@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
  */
 public class GinqExpression extends AbstractGinqExpression {
     private FromExpression fromExpression;
-    private final List<JoinExpression> joinExpressionList = new ArrayList<>();
+    private final List<JoinExpression> joinExpressionList = new ArrayList<>(2);
     private WhereExpression whereExpression;
     private GroupExpression groupExpression;
     private OrderExpression orderExpression;
