@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.classgen;
 
+import groovy.transform.NonSealed;
+import groovy.transform.Sealed;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
@@ -46,6 +48,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.trait.Traits;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -74,6 +77,7 @@ import static org.objectweb.asm.Opcodes.ACC_STRICT;
 import static org.objectweb.asm.Opcodes.ACC_SYNCHRONIZED;
 import static org.objectweb.asm.Opcodes.ACC_TRANSIENT;
 import static org.objectweb.asm.Opcodes.ACC_VOLATILE;
+
 /**
  * Checks that a class satisfies various conditions including:
  * <ul>
@@ -109,7 +113,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
             checkClassForIncorrectModifiers(node);
             checkInterfaceMethodVisibility(node);
             checkAbstractMethodVisibility(node);
-            checkClassForOverwritingFinal(node);
+            checkClassForExtendingFinalOrSealed(node);
             checkMethodsForIncorrectModifiers(node);
             checkMethodsForIncorrectName(node);
             checkMethodsForWeakerAccess(node);
@@ -309,23 +313,79 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
                 methodNode.getTypeDescriptor() + "' must not be abstract.", methodNode);
     }
 
-    private void checkClassForOverwritingFinal(ClassNode cn) {
+    private void checkClassForExtendingFinalOrSealed(ClassNode cn) {
+        boolean sealed = Boolean.TRUE.equals(cn.getNodeMetaData(Sealed.class));
+        if (sealed && cn.getPermittedSubclasses().isEmpty()) {
+            addError("Sealed " + getDescription(cn) + " has no explicit or implicit permitted classes.", cn);
+            return;
+        }
+        boolean isFinal = isFinal(cn.getModifiers());
+        if (sealed && isFinal) {
+            addError("The " + getDescription(cn) + " cannot be both final and sealed.", cn);
+            return;
+        }
+        boolean explicitNonSealed = nonSealed(cn);
         ClassNode superCN = cn.getSuperClass();
-        if (superCN == null) return;
-        if (!isFinal(superCN.getModifiers())) return;
-        String msg = "You are not allowed to overwrite the final " + getDescription(superCN) + ".";
-        addError(msg, cn);
+        boolean sealedSuper = superCN != null && superCN.isSealed();
+        boolean sealedInterface = Arrays.stream(cn.getInterfaces()).anyMatch(ClassNode::isSealed);
+        boolean nonSealedSuper = superCN != null && nonSealed(superCN);
+        boolean nonSealedInterface = Arrays.stream(cn.getInterfaces()).anyMatch(this::nonSealed);
+
+        if (explicitNonSealed && !(sealedSuper || sealedInterface || nonSealedSuper || nonSealedInterface)) {
+            addError("The " + getDescription(cn) + " cannot be non-sealed as it has no sealed parent.", cn);
+            return;
+        }
+        if (sealedSuper || sealedInterface) {
+            if (sealed && explicitNonSealed) {
+                addError("The " + getDescription(cn) + " cannot be both sealed and non-sealed.", cn);
+                return;
+            }
+            if (isFinal && explicitNonSealed) {
+                addError("The " + getDescription(cn) + " cannot be both final and non-sealed.", cn);
+                return;
+            }
+            if (sealedSuper) {
+                checkSealedParent(cn, superCN);
+            }
+            if (sealedInterface) {
+                for (ClassNode candidate : cn.getInterfaces()) {
+                    if (candidate.isSealed()) {
+                        checkSealedParent(cn, candidate);
+                    }
+                }
+            }
+        }
+        if (superCN == null || !isFinal(superCN.getModifiers())) return;
+        addError("You are not allowed to extend the final " + getDescription(superCN) + ".", cn);
+    }
+
+    private boolean nonSealed(ClassNode node) {
+        return Boolean.TRUE.equals(node.getNodeMetaData(NonSealed.class));
+    }
+
+    private void checkSealedParent(ClassNode cn, ClassNode parent) {
+        boolean found = false;
+        for (ClassNode permitted : parent.getPermittedSubclasses()) {
+            if (permitted.equals(cn)) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            addError("The " + getDescription(cn) + " is not a permitted subclass of the sealed " + getDescription(parent) + ".", cn);
+        }
     }
 
     private void checkImplementsAndExtends(ClassNode node) {
-        ClassNode cn = node.getSuperClass();
-        if (cn.isInterface() && !node.isInterface()) {
-            addError("You are not allowed to extend the " + getDescription(cn) + ", use implements instead.", node);
+        ClassNode sn = node.getSuperClass();
+        if (sn != null && sn.isInterface() && !node.isInterface()) {
+            addError("You are not allowed to extend the " + getDescription(sn) + ", use implements instead.", node);
         }
         for (ClassNode anInterface : node.getInterfaces()) {
-            cn = anInterface;
-            if (!cn.isInterface()) {
-                addError("You are not allowed to implement the " + getDescription(cn) + ", use extends instead.", node);
+            if (!anInterface.isInterface()) {
+                addError("You are not allowed to implement the " + getDescription(anInterface) + ", use extends instead.", node);
+            } else if (anInterface.isSealed()) {
+                checkSealedParent(node, anInterface);
             }
         }
     }

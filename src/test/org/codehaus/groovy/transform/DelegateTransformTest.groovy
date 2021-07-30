@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform
 
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
@@ -601,6 +602,20 @@ final class DelegateTransformTest {
             }
 
             assert new B().foo(10) == 20
+        '''
+    }
+
+    @Test
+    void testUnknownTypes() {
+        shouldFail MultipleCompilationErrorsException, '''
+            class Foo {
+                @Delegate(includeTypes=XYZZY) List a = []
+            }
+        '''
+        shouldFail MultipleCompilationErrorsException, '''
+            class Foo {
+                @Delegate(excludeTypes=42) List a = []
+            }
         '''
     }
 

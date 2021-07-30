@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.decompiled;
 
+import groovy.transform.Sealed;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
@@ -27,11 +28,14 @@ import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.MixinNode;
 import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.function.Supplier;
+
+import static org.codehaus.groovy.ast.ClassHelper.make;
 
 /**
  * A {@link ClassNode} kind representing the classes coming from *.class files decompiled using ASM.
@@ -43,6 +47,7 @@ public class DecompiledClassNode extends ClassNode {
     private final AsmReferenceResolver resolver;
     private volatile boolean supersInitialized;
     private volatile boolean membersInitialized;
+    private static final ClassNode SEALED_TYPE = make(Sealed.class);
 
     public DecompiledClassNode(ClassStub data, AsmReferenceResolver resolver) {
         super(data.className, getFullModifiers(data), null, null, MixinNode.EMPTY_ARRAY);
@@ -170,6 +175,27 @@ public class DecompiledClassNode extends ClassNode {
     @Override
     public boolean isResolved() {
         return true;
+    }
+
+    @Override
+    public boolean isSealed() {
+        List<AnnotationStub> annotations = classData.annotations;
+        if (annotations != null) {
+            for (AnnotationStub stub : annotations) {
+                if (stub.className.equals("groovy.transform.Sealed")) {
+                    return true;
+                }
+            }
+        }
+        return isSealedSafe();
+    }
+
+    private boolean isSealedSafe() {
+        try {
+            return ReflectionUtils.isSealed(getTypeClass());
+        } catch (NoClassDefFoundError ignored) {
+        }
+        return false;
     }
 
     @Override

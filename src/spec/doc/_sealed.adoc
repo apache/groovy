@@ -1,0 +1,98 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Sealed hierarchies (incubating)
+
+Sealed classes, interfaces and traits restrict which subclasses can extend/implement them.
+A final class allows no extension. A public non-final class allows extension by anyone.
+Access modifiers like protected and package-private give some ability to restrict inheritance
+hierarchies but often at the expense of flexible use of those hierarchies.
+
+Sealed hierarchies provide full inheritance within a known hierarchy of classes, interfaces and traits
+but disable or only provide controlled inheritance outside the hierarchy.
+
+For example, suppose we want to create a shape hierarchy containing
+only circles and squares. We also want a shape interface to
+be able to refer to instances in our hierarchy. We can create the
+hierarchy as follows:
+
+[source,groovy]
+----
+include::../test/SealedSpecificationTest.groovy[tags=simple_interface,indent=0]
+----
+
+We can have a reference of type `ShapeI` which can point to either a `Circle` or `Square`
+and, since our classes are `final`, we know no additional classes will be added to our hierarchy in the future.
+At least not without changing the `permittedSubclasses` and recompiling.
+
+In general, we might want to have some parts of our class hierarchy
+immediately locked down like we have here, where we marked the
+subclasses as `final` but other times we might want to allow further
+controlled inheritance.
+
+[source,groovy]
+----
+include::../test/SealedSpecificationTest.groovy[tags=general_sealed_class,indent=0]
+----
+
+In this example, our permitted subclasses for `Shape` are `Circle`, `Polygon`, and `Rectangle`.
+`Circle` is `final` and hence that part of the hierarchy cannot be extended.
+`Polygon` is implicitly non-sealed and `RegularPolygon` is explicitly marked as `@NonSealed`.
+That means our heiarchy is open to any further extension by subclassing,
+as seen with `Polygon -> RegularPolygon` and `RegularPolygon -> Hexagon`.
+`Rectangle` is itself sealed which means that part of the hierarchy can be extended
+but only in a controlled way (only `Square` is permitted).
+
+Sealed classes are useful for creating enum-like related classes
+which need to contain instance specific data. For instance, we might have the following enum:
+
+[source,groovy]
+----
+include::../test/SealedSpecificationTest.groovy[tags=weather_enum,indent=0]
+----
+
+but we now wish to also add weather specific instance data to weather forecasts.
+We can alter our abstraction as follows:
+
+[source,groovy]
+----
+include::../test/SealedSpecificationTest.groovy[tags=weather_sealed,indent=0]
+----
+
+Sealed hierarchies are also useful when specifying Algebraic or Abstract Data Types (ADTs) as shown in the following example:
+
+[source,groovy]
+----
+include::../test/SealedSpecificationTest.groovy[tags=sealed_ADT,indent=0]
+----
+
+== Differences to Java
+
+* Java provides no default modifier for subclasses of sealed classes
+and requires that one of `final`, `sealed` or `non-sealed` be specified.
+Groovy defaults to _non-sealed_ but you can still use `@NonSealed` if you wish.
+We anticipate the style checking tool CodeNarc will eventually have a rule that
+looks for the presence of `@Nonsealed` so developers wanting that stricter
+style will be able to use CodeNarc and that rule if they want.
+
+* Currently, Groovy doesn't check that all classes mentioned in `permittedSubclasses`
+are available at compile-time and compiled along with the base sealed class.
+This may change in a future version of Groovy.

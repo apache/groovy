@@ -143,10 +143,10 @@ public abstract class AbstractASTTransformation implements ASTTransformation, Er
             if (member instanceof ClassExpression) {
                 if (!isUndefined(member.getType())) return member.getType();
             } else if (member instanceof VariableExpression) {
-                addError("Error expecting to find class value for '" + name + "' but found variable: " + member.getText() + ". Missing import?", node);
+                addError("Expecting to find a class value for '" + name + "' but found variable: " + member.getText() + ". Missing import?", node);
                 return null;
             } else if (member instanceof ConstantExpression) {
-                addError("Error expecting to find class value for '" + name + "' but found constant: " + member.getText() + "!", node);
+                addError("Expecting to find a class value for '" + name + "' but found constant: " + member.getText() + "!", node);
                 return null;
             }
         }
@@ -204,29 +204,37 @@ public abstract class AbstractASTTransformation implements ASTTransformation, Er
             if (isUndefinedMarkerList(listExpression)) {
                 return null;
             }
-            list = getTypeList(listExpression);
+            list = getTypeList(anno, name, listExpression);
         } else if (expr instanceof ClassExpression) {
             ClassNode cn = expr.getType();
             if (isUndefined(cn)) return null;
             if (cn != null) list.add(cn);
+        } else if (expr instanceof VariableExpression) {
+            addError("Expecting to find a class value for '" + name + "' but found variable: " + expr.getText() + ". Missing import or unknown class?", anno);
+        } else if (expr instanceof ConstantExpression) {
+            addError("Expecting to find a class value for '" + name + "' but found constant: " + expr.getText() + "!", anno);
         }
         return list;
     }
 
-    private static List<ClassNode> getTypeList(ListExpression listExpression) {
+    private List<ClassNode> getTypeList(AnnotationNode anno, String name, ListExpression listExpression) {
         List<ClassNode> list = new ArrayList<>();
         for (Expression itemExpr : listExpression.getExpressions()) {
             if (itemExpr instanceof ClassExpression) {
                 ClassNode cn = itemExpr.getType();
                 if (cn != null) list.add(cn);
+            } else if (itemExpr instanceof VariableExpression) {
+                addError("Expecting a list of class values for '" + name + "' but found variable: " + itemExpr.getText() + ". Missing import or unknown class?", anno);
+            } else if (itemExpr instanceof ConstantExpression) {
+                addError("Expecting a list of class values for '" + name + "' but found constant: " + itemExpr.getText() + "!", anno);
             }
         }
         return list;
     }
 
     @Override
-    public void addError(String msg, ASTNode expr) {
-        sourceUnit.getErrorCollector().addErrorAndContinue(msg + '\n', expr, sourceUnit);
+    public void addError(String msg, ASTNode node) {
+        sourceUnit.getErrorCollector().addErrorAndContinue(msg + '\n', node, sourceUnit);
     }
 
     protected boolean checkNotInterface(ClassNode cNode, String annotationName) {

@@ -829,6 +829,39 @@ class SecurityService {
         assert message.contains("class 'MyDevice' implements trait 'Communicating' but does not extend self type class 'Device'")
     }
 
+    void testSelfTypeWithSealed() {
+        assertScript '''
+import groovy.transform.*
+
+// tag::selftype_sealed_volume[]
+interface HasHeight { double getHeight() }
+interface HasArea { double getArea() }
+
+@SelfType([HasHeight, HasArea])                       // <1>
+@Sealed(permittedSubclasses=[UnitCylinder,UnitCube])  // <2>
+trait HasVolume {
+    double getVolume() { height * area }
+}
+
+final class UnitCube implements HasVolume, HasHeight, HasArea {
+    // for the purposes of this example: h=1, w=1, l=1
+    double height = 1d
+    double area = 1d
+}
+
+final class UnitCylinder implements HasVolume, HasHeight, HasArea {
+    // for the purposes of this example: h=1, diameter=1
+    // radius=diameter/2, area=PI * r^2
+    double height = 1d
+    double area = Math.PI * 0.5d**2
+}
+
+assert new UnitCube().volume == 1d
+assert new UnitCylinder().volume == 0.7853981633974483d
+// end::selftype_sealed_volume[]
+'''
+    }
+
     static class PrintCategory {
         static StringBuilder BUFFER = new StringBuilder()
         static void println(Object self, String message) {
