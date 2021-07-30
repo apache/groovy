@@ -2128,7 +2128,7 @@ final class TraitASTTransformationTest {
             assert v.currentLevel == 3
         '''
 
-        assert err =~ 'Postfix expressions on trait fields/properties  are not supported in traits'
+        assert err =~ 'Postfix expressions on trait fields/properties are not supported in traits'
     }
 
     @Test

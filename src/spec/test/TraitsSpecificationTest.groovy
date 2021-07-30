@@ -537,7 +537,7 @@ def c = new Counter()
 c.inc()
 // end::prefix_postfix[]
         '''
-        assert message.contains('Postfix expressions on trait fields/properties  are not supported')
+        assert message.contains('Postfix expressions on trait fields/properties are not supported')
         assert message.contains('Prefix expressions on trait fields/properties are not supported')
     }
 
