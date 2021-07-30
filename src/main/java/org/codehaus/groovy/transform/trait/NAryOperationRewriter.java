@@ -97,7 +97,7 @@ class NAryOperationRewriter extends ClassCodeExpressionTransformer {
     private Expression transformPostfixExpression(final PostfixExpression exp) {
         if (isInternalFieldAccess(exp.getExpression())) {
             Token operation = exp.getOperation();
-            sourceUnit.addError(new SyntaxException("Postfix expressions on trait fields/properties  are not supported in traits.", operation.getStartLine(), operation.getStartColumn()));
+            sourceUnit.addError(new SyntaxException("Postfix expressions on trait fields/properties are not supported in traits.", operation.getStartLine(), operation.getStartColumn()));
             return exp;
         } else {
             return super.transform(exp);
