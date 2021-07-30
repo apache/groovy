@@ -42,6 +42,12 @@ class ClassSignatureParser {
             interfaces[i] = resolver.resolveClass(AsmDecompiler.fromInternalName(stub.interfaceNames[i]));
         }
         classNode.setInterfaces(interfaces);
+        if (!stub.permittedSubclasses.isEmpty()) {
+            List<ClassNode> permittedSubclasses = classNode.getPermittedSubclasses();
+            for (String name : stub.permittedSubclasses) {
+                permittedSubclasses.add(resolver.resolveClass(AsmDecompiler.fromInternalName(name)));
+            }
+        }
     }
 
     private static void parseClassSignature(final ClassNode classNode, String signature, final AsmReferenceResolver resolver) {

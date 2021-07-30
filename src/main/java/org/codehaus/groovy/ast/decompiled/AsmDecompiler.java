@@ -187,6 +187,11 @@ public abstract class AsmDecompiler {
         }
 
         @Override
+        public void visitPermittedSubclass(final String permittedSubclass) {
+            result.permittedSubclasses.add(permittedSubclass);
+        }
+
+        @Override
         public FieldVisitor visitField(final int access, final String name, final String desc, final String signature, final Object value) {
             FieldStub stub = new FieldStub(name, access, desc, signature, value);
             if (result.fields == null) result.fields = new ArrayList<>(1);

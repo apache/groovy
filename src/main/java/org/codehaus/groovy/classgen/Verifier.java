@@ -25,6 +25,8 @@ import groovy.lang.MetaClass;
 import groovy.transform.CompileStatic;
 import groovy.transform.Generated;
 import groovy.transform.Internal;
+import groovy.transform.NonSealed;
+import groovy.transform.Sealed;
 import groovy.transform.stc.POJO;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.apache.groovy.util.BeanUtils;
@@ -54,6 +56,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -104,11 +107,13 @@ import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveDouble;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
+import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
@@ -154,10 +159,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     private static final Class<?> GENERATED_ANNOTATION = Generated.class;
     private static final Class<?> INTERNAL_ANNOTATION = Internal.class;
     private static final Class<?> TRANSIENT_ANNOTATION = Transient.class;
+    private static final ClassNode SEALED_TYPE = make(Sealed.class);
 
     // NOTE: timeStamp constants shouldn't belong to Verifier but kept here for binary compatibility
     public static final String __TIMESTAMP = "__timeStamp";
     public static final String __TIMESTAMP__ = "__timeStamp__239_neverHappen";
+    public static final Class<Sealed> SEALED_CLASS = Sealed.class;
+    public static final Class<NonSealed> NON_SEALED_CLASS = NonSealed.class;
 
     private ClassNode classNode;
     private MethodNode methodNode;
@@ -227,6 +235,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             if (classNode.getNodeMetaData(ClassNodeSkip.class) == null) {
                 classNode.setNodeMetaData(ClassNodeSkip.class, true);
             }
+            addDetectedSealedClasses(node);
             return;
         }
 
@@ -266,8 +275,50 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         node.visitContents(this);
         checkForDuplicateMethods(node);
         addCovariantMethods(node);
+        detectNonSealedClasses(node);
+        addDetectedSealedClasses(node);
 
         checkFinalVariables(node);
+    }
+
+    private void detectNonSealedClasses(ClassNode node) {
+        if (isFinal(node.getModifiers())) return;
+        if (Boolean.TRUE.equals(node.getNodeMetaData(SEALED_CLASS))) return;
+        if (Boolean.TRUE.equals(node.getNodeMetaData(NON_SEALED_CLASS))) return;
+        ClassNode sn = node.getSuperClass();
+        boolean found = false;
+        while (sn != null && !sn.equals(ClassHelper.OBJECT_TYPE)) {
+            if (sn.isSealed()) {
+                found = true;
+                break;
+            }
+            sn = sn.getSuperClass();
+        }
+        if (found) {
+            node.putNodeMetaData(NON_SEALED_CLASS, Boolean.TRUE);
+        }
+    }
+
+    private void addDetectedSealedClasses(ClassNode node) {
+        boolean sealed = Boolean.TRUE.equals(node.getNodeMetaData(SEALED_CLASS));
+        List<ClassNode> permitted = node.getPermittedSubclasses();
+        if (!sealed || !permitted.isEmpty() || node.getModule() == null) return;
+        for (ClassNode possibleSubclass : node.getModule().getClasses()) {
+            if (possibleSubclass.getSuperClass().equals(node)) {
+                permitted.add(possibleSubclass);
+            }
+            for (ClassNode iface : possibleSubclass.getInterfaces()) {
+                if (iface.equals(node)) {
+                    permitted.add(possibleSubclass);
+                }
+            }
+        }
+        List<Expression> names = new ArrayList<>();
+        for (ClassNode next : permitted) {
+            names.add(classX(ClassHelper.make(next.getName())));
+        }
+        AnnotationNode an = node.getAnnotations(SEALED_TYPE).get(0);
+        an.addMember("permittedSubclasses", new ListExpression(names));
     }
 
     private void checkFinalVariables(final ClassNode node) {

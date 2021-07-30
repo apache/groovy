@@ -34,6 +34,7 @@ public class ClassStub extends MemberStub {
     final String[] interfaceNames;
     List<MethodStub> methods;
     List<FieldStub> fields;
+    final List<String> permittedSubclasses = new ArrayList<>(1);
 
     // Used to store the real access modifiers for inner classes
     int innerClassModifiers = -1;

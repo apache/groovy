@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast;
 
+import groovy.transform.Sealed;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
@@ -53,6 +54,7 @@ import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
+import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_ANNOTATION;
 import static org.objectweb.asm.Opcodes.ACC_ENUM;
@@ -140,6 +142,7 @@ public class ClassNode extends AnnotatedNode {
     public static final ClassNode[] EMPTY_ARRAY = new ClassNode[0];
     public static final ClassNode THIS = new ClassNode(Object.class);
     public static final ClassNode SUPER = new ClassNode(Object.class);
+    private static final ClassNode SEALED_TYPE = make(Sealed.class);
 
     private String name;
     private int modifiers;
@@ -161,6 +164,7 @@ public class ClassNode extends AnnotatedNode {
     private ClassNode superClass;
     protected boolean isPrimaryNode;
     protected List<InnerClassNode> innerClasses;
+    final private List<ClassNode> permittedSubclasses = new ArrayList<>();
     private List<AnnotationNode> typeAnnotations = Collections.emptyList();
 
     /**
@@ -238,6 +242,10 @@ public class ClassNode extends AnnotatedNode {
      */
     public boolean isPrimaryClassNode() {
         return redirect().isPrimaryNode || (componentType != null && componentType.isPrimaryClassNode());
+    }
+
+    public List<ClassNode> getPermittedSubclasses() {
+        return redirect().permittedSubclasses;
     }
 
     /**
@@ -1338,6 +1346,10 @@ public class ClassNode extends AnnotatedNode {
 
     public boolean isAbstract() {
         return (getModifiers() & ACC_ABSTRACT) != 0;
+    }
+
+    public boolean isSealed() {
+        return !getAnnotations(SEALED_TYPE).isEmpty() || !permittedSubclasses.isEmpty();
     }
 
     public boolean isResolved() {

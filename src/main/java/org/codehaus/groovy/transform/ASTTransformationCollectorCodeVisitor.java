@@ -294,7 +294,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
             source.getErrorCollector().addError(new SimpleMessage(error, source));
         }
 
-        if (!Traits.isTrait(classNode) || transformClass == TraitASTTransformation.class) {
+        if (!Traits.isTrait(classNode) || transformClass == TraitASTTransformation.class || transformClass == SealedASTTransformation.class) {
             classNode.addTransform((Class<? extends ASTTransformation>) transformClass, annotation);
         }
     }

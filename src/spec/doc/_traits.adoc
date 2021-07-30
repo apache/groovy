@@ -838,6 +838,44 @@ class 'MyDevice' implements trait 'Communicating' but does not extend self type 
 In conclusion, self types are a powerful way of declaring constraints on traits without having to declare the contract
 directly in the trait or having to use casts everywhere, maintaining separation of concerns as tight as it should be.
 
+=== Differences with Sealed annotation (incubating)
+
+Both `@Sealed` and `@SelfType` restrict classes which use a trait but in orthogonal ways.
+Consider the following example:
+
+[source,groovy]
+----
+include::../test/TraitsSpecificationTest.groovy[tags=selftype_sealed_volume,indent=0]
+----
+<1> All usages of the `HasVolume` trait must implement or extend both `HasHeight` and `HasArea`
+<2> Only `UnitCube` or `UnitCylinder` can use the trait
+
+For the degenerate case where a single class implements a trait, e.g.:
+
+[source,groovy]
+----
+final class Foo implements FooTrait {}
+----
+
+Then, either:
+
+[source,groovy]
+----
+@SelfType(Foo)
+trait FooTrait {}
+----
+
+or:
+
+[source,groovy]
+----
+@Sealed(permittedSubclasses='Foo') // <1>
+trait FooTrait {}
+----
+<1> Or just `@Sealed` if `Foo` and `FooTrait` are in the same source file
+
+could express this constraint. Generally, the former of these is preferred.
+
 == Limitations
 === Compatibility with AST transformations
 
