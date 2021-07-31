@@ -54,6 +54,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
@@ -156,17 +157,21 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     private static <U> Supplier<Map<Integer, List<Candidate<U>>>> createHashTableSupplier(Queryable<? extends U> queryable, Function<? super U, ?> fieldsExtractor2) {
-        return () -> queryable.stream()
-                .map(e -> new Candidate<U>(e, fieldsExtractor2.apply(e)))
-                .collect(
-                        Collectors.toMap(
-                                c -> hash(c.extracted),
-                                Bucket::singletonBucket,
-                                (oldBucket, newBucket) -> {
-                                    oldBucket.addAll(newBucket);
-                                    return oldBucket;
-                                }
-                        ));
+        return () -> {
+            Function<Candidate<U>, Integer> keyMapper = c -> hash(c.extracted);
+            Function<Candidate<U>, List<Candidate<U>>> valueMapper = Bucket::singletonBucket;
+            BinaryOperator<List<Candidate<U>>> mergeFunction = (oldBucket, newBucket) -> {
+                oldBucket.addAll(newBucket);
+                return oldBucket;
+            };
+            Collector<Candidate<U>, ?, ? extends Map<Integer, List<Candidate<U>>>> candidateMapCollector =
+                    isParallel() ? Collectors.toConcurrentMap(keyMapper, valueMapper, mergeFunction)
+                                 : Collectors.toMap(keyMapper, valueMapper, mergeFunction);
+            
+            return queryable.stream()
+                    .map(e -> new Candidate<U>(e, fieldsExtractor2.apply(e)))
+                    .collect(candidateMapCollector);
+        };
     }
 
     private static Integer hash(Object obj) {
