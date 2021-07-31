@@ -6469,6 +6469,22 @@ class GinqTest {
         '''
     }
 
+    @Test
+    void "testGinqMethod - GQ - 15"() {
+        assertScript '''
+            import groovy.ginq.transform.GQ
+            
+            @GQ(Set)
+            def ginq(b, e) {
+                from n in [1, 2, 3, 3, 4, 4, 5, 6]
+                where b < n && n < e
+                select n
+            }
+            
+            assert [3, 4] as Set == ginq(2, 5)
+        '''
+    }
+
     @AfterClass
     static void "testGinq - shutdown - 0"() {
         assertScript '''
