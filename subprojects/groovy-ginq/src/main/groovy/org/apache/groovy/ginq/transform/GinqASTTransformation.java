@@ -97,34 +97,27 @@ public class GinqASTTransformation extends AbstractASTTransformation {
     private MapExpression makeGinqConfigurationMapExpression(AnnotationNode annotationNode) {
         Map<String, Expression> resultMembers = new HashMap<>(DEFAULT_OPTION_MAP);
         Map<String, Expression> currentMembers = new HashMap<>(annotationNode.getMembers());
-        currentMembers.remove(VALUE);
         resultMembers.putAll(currentMembers);
+        resultMembers.remove(VALUE);
 
         return mapX(resultMembers.entrySet().stream()
                     .map(e -> new MapEntryExpression(constX(e.getKey()), constX(e.getValue().getText())))
                     .collect(Collectors.toList()));
     }
 
+    private static Object getDefaultOptionValue(String optionName) {
+        try {
+            return GQ_CLASS_NODE.getTypeClass().getMethod(optionName).getDefaultValue();
+        } catch (NoSuchMethodException e) {
+            throw new GroovyBugError("Unknown GINQ option: " + optionName, e);
+        }
+    }
+
     private static final String VALUE = "value";
     private static final ClassNode GQ_CLASS_NODE = make(GQ.class);
-    private static final ClassNode DEFAULT_RESULT_TYPE;
-    static {
-        Class<?> c;
-        try {
-            c = (Class<?>) GQ_CLASS_NODE.getTypeClass().getMethod(VALUE).getDefaultValue();
-        } catch (NoSuchMethodException e) {
-            throw new GroovyBugError(e);
-        }
-        DEFAULT_RESULT_TYPE = ClassHelper.make(c);
-    }
+    private static final ClassNode DEFAULT_RESULT_TYPE = ClassHelper.make((Class<?>) getDefaultOptionValue(VALUE));
     private static final Map<String, Expression> DEFAULT_OPTION_MAP = unmodifiableMap(CONF_LIST.stream().collect(Collectors.toMap(
             c -> c,
-            c -> {
-                try {
-                    return constX(GQ_CLASS_NODE.getTypeClass().getMethod(c).getDefaultValue());
-                } catch (NoSuchMethodException e) {
-                    throw new GroovyBugError("Unknown GINQ option: " + c, e);
-                }
-            }
+            c -> constX(getDefaultOptionValue(c))
     )));
 }
