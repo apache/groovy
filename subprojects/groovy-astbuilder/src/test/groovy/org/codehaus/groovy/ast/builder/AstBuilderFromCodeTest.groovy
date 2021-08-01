@@ -46,6 +46,7 @@ import org.codehaus.groovy.ast.expr.NamedArgumentListExpression
 import org.codehaus.groovy.ast.expr.NotExpression
 import org.codehaus.groovy.ast.expr.PostfixExpression
 import org.codehaus.groovy.ast.expr.PrefixExpression
+import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.RangeExpression
 import org.codehaus.groovy.ast.expr.SpreadMapExpression
 import org.codehaus.groovy.ast.expr.TernaryExpression
@@ -622,6 +623,21 @@ class AstBuilderFromCodeTest extends GroovyTestCase {
                         new GStringExpression('$foo',
                                 [new ConstantExpression(''), new ConstantExpression('')],
                                 [new VariableExpression('foo')])
+                )], new VariableScope())
+
+        AstAssert.assertSyntaxTree([expected], result)
+    }
+
+    void testGStringExpression2() {
+        def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
+            "${foo.bar}"
+        }
+
+        def expected = new BlockStatement(
+                [new ExpressionStatement(
+                        new GStringExpression('${foo.bar}',
+                                [new ConstantExpression(''), new ConstantExpression('')],
+                                [new PropertyExpression(new VariableExpression('foo'), 'bar')])
                 )], new VariableScope())
 
         AstAssert.assertSyntaxTree([expected], result)
