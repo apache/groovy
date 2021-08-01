@@ -3826,8 +3826,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 continue;
             }
 
+            boolean isVariableExpression = value instanceof VariableExpression;
             verbatimText.append(DOLLAR_STR);
+            if (!isVariableExpression) verbatimText.append("{");
             verbatimText.append(value.getText());
+            if (!isVariableExpression) verbatimText.append("}");
         }
 
         return configureAST(new GStringExpression(verbatimText.toString(), stringLiteralList, values), ctx);
