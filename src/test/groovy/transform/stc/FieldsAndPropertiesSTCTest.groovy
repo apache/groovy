@@ -247,6 +247,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             assert Public.VALUE == 'YY'
             Public.@VALUE = 'ZZ'
             assert Public.@VALUE == 'ZZ'
+            Public.VALUE = null
         '''
     }
 
