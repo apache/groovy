@@ -121,7 +121,7 @@ public class AnnotationCollectorTransform {
                 // force no interfaces implemented
                 helper.setInterfaces(ClassNode.EMPTY_ARRAY);
             } else {
-                helper = new InnerClassNode(cn.getPlainNodeReference(), cn.getName() + "$CollectorHelper",
+                helper = new InnerClassNode(cn, cn.getName() + "$CollectorHelper",
                         ACC_PUBLIC | ACC_STATIC | ACC_FINAL, ClassHelper.OBJECT_TYPE.getPlainNodeReference());
                 cn.getModule().addClass(helper);
                 helper.addAnnotation(new AnnotationNode(COMPILESTATIC_CLASSNODE));
