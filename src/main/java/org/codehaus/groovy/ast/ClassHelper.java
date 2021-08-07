@@ -46,6 +46,7 @@ import groovy.lang.Tuple6;
 import groovy.lang.Tuple7;
 import groovy.lang.Tuple8;
 import groovy.lang.Tuple9;
+import groovy.transform.Sealed;
 import org.apache.groovy.util.Maps;
 import org.apache.groovy.util.concurrent.ManagedIdentityConcurrentMap;
 import org.codehaus.groovy.classgen.asm.util.TypeUtil;
@@ -139,6 +140,7 @@ public class ClassHelper {
             AUTOCLOSEABLE_TYPE = makeCached(AutoCloseable.class),
             SERIALIZABLE_TYPE = makeCached(Serializable.class),
             SERIALIZEDLAMBDA_TYPE = makeCached(SerializedLambda.class),
+            SEALED_TYPE = makeCached(Sealed.class),
 
             // uncached constants
             MAP_TYPE = makeWithoutCaching(Map.class),

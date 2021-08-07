@@ -103,11 +103,11 @@ import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
 import static org.codehaus.groovy.ast.AnnotationNode.METHOD_TARGET;
+import static org.codehaus.groovy.ast.ClassHelper.SEALED_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveDouble;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
-import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
@@ -159,7 +159,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     private static final Class<?> GENERATED_ANNOTATION = Generated.class;
     private static final Class<?> INTERNAL_ANNOTATION = Internal.class;
     private static final Class<?> TRANSIENT_ANNOTATION = Transient.class;
-    private static final ClassNode SEALED_TYPE = make(Sealed.class);
 
     // NOTE: timeStamp constants shouldn't belong to Verifier but kept here for binary compatibility
     public static final String __TIMESTAMP = "__timeStamp";

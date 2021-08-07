@@ -19,7 +19,6 @@
 package org.codehaus.groovy.transform.trait;
 
 import groovy.transform.CompilationUnitAware;
-import groovy.transform.Sealed;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -105,7 +104,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
     private static final ClassNode INVOKERHELPER_CLASSNODE = ClassHelper.make(InvokerHelper.class);
     private static final ClassNode OVERRIDE_CLASSNODE = ClassHelper.make(Override.class);
-    private static final ClassNode SEALED_CLASSNODE = ClassHelper.make(Sealed.class);
+    private static final ClassNode SEALED_CLASSNODE = ClassHelper.SEALED_TYPE;
 
     private SourceUnit sourceUnit;
     private CompilationUnit compilationUnit;
