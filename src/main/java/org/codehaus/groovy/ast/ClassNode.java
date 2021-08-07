@@ -153,7 +153,7 @@ public class ClassNode extends AnnotatedNode {
     private MixinNode[] mixins;
     private List<Statement> objectInitializers;
     private List<ConstructorNode> constructors;
-    private MapOfLists methods;
+    private final MapOfLists methods;
     private List<MethodNode> methodsList;
     private List<FieldNode> fields;
     private List<PropertyNode> properties;
