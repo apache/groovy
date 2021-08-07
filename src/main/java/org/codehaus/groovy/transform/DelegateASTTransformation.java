@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toSet;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
@@ -197,7 +198,10 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
 
             if (skipInterfaces) return;
 
-            final Set<ClassNode> allInterfaces = getInterfacesAndSuperInterfaces(delegate.type);
+            final Set<ClassNode> allInterfaces =
+                    getInterfacesAndSuperInterfaces(delegate.type).stream()
+                            .filter(c -> !c.redirect().isSealed())
+                            .collect(Collectors.toSet());
             final Set<ClassNode> ownerIfaces = delegate.owner.getAllInterfaces();
             Map<String,ClassNode> genericsSpec = createGenericsSpec(delegate.owner);
             genericsSpec = createGenericsSpec(delegate.type, genericsSpec);
