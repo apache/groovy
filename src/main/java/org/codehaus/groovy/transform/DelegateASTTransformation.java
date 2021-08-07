@@ -52,6 +52,7 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.apache.groovy.util.BeanUtils.capitalize;
+import static org.codehaus.groovy.ast.ClassHelper.DEPRECATED_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isGroovyObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
@@ -90,7 +91,6 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
     private static final Class<?> MY_CLASS = Delegate.class;
     private static final ClassNode MY_TYPE = make(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode DEPRECATED_TYPE = make(Deprecated.class);
     private static final ClassNode LAZY_TYPE = make(Lazy.class);
 
     private static final String MEMBER_DEPRECATED = "deprecated";

@@ -142,6 +142,7 @@ public class ClassHelper {
             SERIALIZEDLAMBDA_TYPE = makeCached(SerializedLambda.class),
             SEALED_TYPE = makeCached(Sealed.class),
             OVERRIDE_TYPE = makeCached(Override.class),
+            DEPRECATED_TYPE = makeCached(Deprecated.class),
 
             // uncached constants
             MAP_TYPE = makeWithoutCaching(Map.class),
