@@ -121,6 +121,7 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
  * @see org.codehaus.groovy.ast.ClassHelper
  */
 public class ClassNode extends AnnotatedNode {
+    private static final String CLINIT = "<clinit>";
 
     private static class MapOfLists {
         Map<Object, List<MethodNode>> map;
@@ -804,9 +805,9 @@ public class ClassNode extends AnnotatedNode {
 
     private MethodNode getOrAddStaticConstructorNode() {
         MethodNode method;
-        List<MethodNode> declaredMethods = getDeclaredMethods("<clinit>");
+        List<MethodNode> declaredMethods = getDeclaredMethods(CLINIT);
         if (declaredMethods.isEmpty()) {
-            method = addMethod("<clinit>", ACC_STATIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
+            method = addMethod(CLINIT, ACC_STATIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
             method.setSynthetic(true);
         } else {
             method = declaredMethods.get(0);
