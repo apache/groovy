@@ -162,6 +162,8 @@ classOrInterfaceModifier
           |   PRIVATE    // class or interface
           |   STATIC     // class or interface
           |   ABSTRACT   // class or interface
+          |   SEALED     // class or interface
+          |   NON_SEALED // class or interface
           |   FINAL      // class only -- does not apply to interfaces
           |   STRICTFP   // class or interface
           |   DEFAULT    // interface only -- does not apply to classes
@@ -227,6 +229,7 @@ locals[ int t ]
         (nls typeParameters)?
         (nls EXTENDS nls scs=typeList)?
         (nls IMPLEMENTS nls is=typeList)?
+        (nls PERMITS nls ps=typeList)?
         nls classBody[$t]
     ;
 
@@ -1208,6 +1211,7 @@ identifier
     |   TRAIT
     |   AS
     |   YIELD
+    |   PERMITS
     ;
 
 builtInType
@@ -1243,8 +1247,11 @@ keywords
     |   INTERFACE
     |   NATIVE
     |   NEW
+    |   NON_SEALED
     |   PACKAGE
+    |   PERMITS
     |   RETURN
+    |   SEALED
     |   STATIC
     |   STRICTFP
     |   SUPER

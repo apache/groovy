@@ -361,6 +361,10 @@ final class GroovyParserTest extends GroovyTestCase {
         doTest('core/AnnotationDeclaration_01.groovy')
     }
 
+    void "test groovy core - SealedTypeDeclaration"() {
+        doRunAndTestAntlr4('core/SealedTypeDeclaration_01x.groovy')
+    }
+
     void "test groovy core - Command"() {
         doTest('core/Command_01.groovy')
         doTest('core/Command_02.groovy')

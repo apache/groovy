@@ -464,11 +464,16 @@ LONG          : 'long';
 
 NATIVE        : 'native';
 NEW           : 'new';
+NON_SEALED    : 'non-sealed';
+
 PACKAGE       : 'package';
+PERMITS       : 'permits';
 PRIVATE       : 'private';
 PROTECTED     : 'protected';
 PUBLIC        : 'public';
 RETURN        : 'return';
+
+SEALED        : 'sealed';
 
 fragment
 SHORT         : 'short';

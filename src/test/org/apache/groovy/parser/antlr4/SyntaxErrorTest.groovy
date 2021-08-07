@@ -306,6 +306,18 @@ final class SyntaxErrorTest extends GroovyTestCase {
             |'''.stripMargin()
     }
 
+    void 'test groovy core - SealedTypeDeclaration'() {
+        TestUtils.doRunAndShouldFail('fail/SealedTypeDeclaration_01x.groovy')
+        TestUtils.doRunAndShouldFail('fail/SealedTypeDeclaration_02x.groovy')
+        TestUtils.doRunAndShouldFail('fail/SealedTypeDeclaration_03x.groovy')
+        TestUtils.doRunAndShouldFail('fail/SealedTypeDeclaration_04x.groovy')
+        TestUtils.doRunAndShouldFail('fail/SealedTypeDeclaration_05x.groovy')
+        TestUtils.doRunAndShouldFail('fail/SealedTypeDeclaration_06x.groovy')
+        TestUtils.doRunAndShouldFail('fail/SealedTypeDeclaration_07x.groovy')
+        TestUtils.doRunAndShouldFail('fail/SealedTypeDeclaration_08x.groovy')
+        TestUtils.doRunAndShouldFail('fail/SealedTypeDeclaration_09x.groovy')
+    }
+
     void 'test groovy core - MethodDeclaration'() {
         TestUtils.shouldFail('fail/MethodDeclaration_01.groovy')
         TestUtils.doRunAndShouldFail('fail/MethodDeclaration_02x.groovy')
