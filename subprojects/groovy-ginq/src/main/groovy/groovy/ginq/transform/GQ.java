@@ -35,7 +35,7 @@ import java.lang.annotation.Target;
  */
 @Incubating
 @Documented
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.METHOD})
 @GroovyASTTransformationClass("org.apache.groovy.ginq.transform.GinqASTTransformation")
 public @interface GQ {
