@@ -803,7 +803,7 @@ public class ClassNode extends AnnotatedNode {
     }
 
     private MethodNode getOrAddStaticConstructorNode() {
-        MethodNode method = null;
+        MethodNode method;
         List<MethodNode> declaredMethods = getDeclaredMethods("<clinit>");
         if (declaredMethods.isEmpty()) {
             method = addMethod("<clinit>", ACC_STATIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
