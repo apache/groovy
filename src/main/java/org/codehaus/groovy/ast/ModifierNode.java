@@ -29,9 +29,11 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.DEF;
 import static org.apache.groovy.parser.antlr4.GroovyParser.DEFAULT;
 import static org.apache.groovy.parser.antlr4.GroovyParser.FINAL;
 import static org.apache.groovy.parser.antlr4.GroovyParser.NATIVE;
+import static org.apache.groovy.parser.antlr4.GroovyParser.NON_SEALED;
 import static org.apache.groovy.parser.antlr4.GroovyParser.PRIVATE;
 import static org.apache.groovy.parser.antlr4.GroovyParser.PROTECTED;
 import static org.apache.groovy.parser.antlr4.GroovyParser.PUBLIC;
+import static org.apache.groovy.parser.antlr4.GroovyParser.SEALED;
 import static org.apache.groovy.parser.antlr4.GroovyParser.STATIC;
 import static org.apache.groovy.parser.antlr4.GroovyParser.STRICTFP;
 import static org.apache.groovy.parser.antlr4.GroovyParser.SYNCHRONIZED;
@@ -66,6 +68,8 @@ public class ModifierNode extends ASTNode {
             PRIVATE, Opcodes.ACC_PRIVATE,
             STATIC, Opcodes.ACC_STATIC,
             ABSTRACT, Opcodes.ACC_ABSTRACT,
+            SEALED, 0,
+            NON_SEALED, 0,
             FINAL, Opcodes.ACC_FINAL,
             STRICTFP, Opcodes.ACC_STRICT,
             DEFAULT, 0 // no flag for specifying a default method in the JVM spec, hence no ACC_DEFAULT flag in ASM

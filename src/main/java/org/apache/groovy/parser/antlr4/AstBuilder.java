@@ -21,6 +21,8 @@ package org.apache.groovy.parser.antlr4;
 import groovy.lang.Tuple2;
 import groovy.lang.Tuple3;
 import groovy.transform.CompileStatic;
+import groovy.transform.NonSealed;
+import groovy.transform.Sealed;
 import groovy.transform.Trait;
 import org.antlr.v4.runtime.ANTLRErrorListener;
 import org.antlr.v4.runtime.CharStream;
@@ -328,6 +330,7 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.CASE;
 import static org.apache.groovy.parser.antlr4.GroovyParser.DEC;
 import static org.apache.groovy.parser.antlr4.GroovyParser.DEF;
 import static org.apache.groovy.parser.antlr4.GroovyParser.DEFAULT;
+import static org.apache.groovy.parser.antlr4.GroovyParser.FINAL;
 import static org.apache.groovy.parser.antlr4.GroovyParser.GE;
 import static org.apache.groovy.parser.antlr4.GroovyParser.GT;
 import static org.apache.groovy.parser.antlr4.GroovyParser.IN;
@@ -335,6 +338,7 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.INC;
 import static org.apache.groovy.parser.antlr4.GroovyParser.INSTANCEOF;
 import static org.apache.groovy.parser.antlr4.GroovyParser.LE;
 import static org.apache.groovy.parser.antlr4.GroovyParser.LT;
+import static org.apache.groovy.parser.antlr4.GroovyParser.NON_SEALED;
 import static org.apache.groovy.parser.antlr4.GroovyParser.NOT_IN;
 import static org.apache.groovy.parser.antlr4.GroovyParser.NOT_INSTANCEOF;
 import static org.apache.groovy.parser.antlr4.GroovyParser.PRIVATE;
@@ -343,6 +347,7 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.RANGE_EXCLUSIVE_LEFT;
 import static org.apache.groovy.parser.antlr4.GroovyParser.RANGE_EXCLUSIVE_RIGHT;
 import static org.apache.groovy.parser.antlr4.GroovyParser.RANGE_INCLUSIVE;
 import static org.apache.groovy.parser.antlr4.GroovyParser.SAFE_INDEX;
+import static org.apache.groovy.parser.antlr4.GroovyParser.SEALED;
 import static org.apache.groovy.parser.antlr4.GroovyParser.STATIC;
 import static org.apache.groovy.parser.antlr4.GroovyParser.SUB;
 import static org.apache.groovy.parser.antlr4.GroovyParser.VAR;
@@ -352,6 +357,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.closureX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
@@ -1439,6 +1445,34 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         List<ModifierNode> modifierNodeList = ctx.getNodeMetaData(TYPE_DECLARATION_MODIFIERS);
         Objects.requireNonNull(modifierNodeList, "modifierNodeList should not be null");
         ModifierManager modifierManager = new ModifierManager(this, modifierNodeList);
+
+        Optional<ModifierNode> finalModifierNodeOptional = modifierManager.get(FINAL);
+        Optional<ModifierNode> sealedModifierNodeOptional = modifierManager.get(SEALED);
+        Optional<ModifierNode> nonSealedModifierNodeOptional = modifierManager.get(NON_SEALED);
+        boolean isFinal = finalModifierNodeOptional.isPresent();
+        boolean isSealed = sealedModifierNodeOptional.isPresent();
+        boolean isNonSealed = nonSealedModifierNodeOptional.isPresent();
+        if (isSealed && isNonSealed) {
+            throw createParsingFailedException("type cannot be defined with both `sealed` and `non-sealed`", nonSealedModifierNodeOptional.get());
+        }
+
+        if (isFinal && (isSealed || isNonSealed)) {
+            throw createParsingFailedException("type cannot be defined with both " + (isSealed ? "`sealed`" : "`non-sealed`") + " and `final`", finalModifierNodeOptional.get());
+        }
+
+        if ((isAnnotation || isEnum) && (isSealed || isNonSealed)) {
+            ModifierNode mn = isSealed ? sealedModifierNodeOptional.get() : nonSealedModifierNodeOptional.get();
+            throw createParsingFailedException("modifier `" + mn.getText() + "` is not allowed here", mn);
+        }
+
+        boolean hasPermits = asBoolean(ctx.PERMITS());
+        if (isSealed && !hasPermits) {
+            throw createParsingFailedException("sealed type declaration should have `permits` clause", ctx);
+        }
+        if (isNonSealed && hasPermits) {
+            throw createParsingFailedException("non-sealed type declaration should not have `permits` clause", ctx);
+        }
+
         int modifiers = modifierManager.getClassModifiersOpValue();
 
         boolean syntheticPublic = ((modifiers & Opcodes.ACC_SYNTHETIC) != 0);
@@ -1474,6 +1508,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         classNode.setGenericsTypes(this.visitTypeParameters(ctx.typeParameters()));
         boolean isInterfaceWithDefaultMethods = (isInterface && this.containsDefaultMethods(ctx));
 
+        if (isSealed) {
+            AnnotationNode sealedAnnotationNode = new AnnotationNode(ClassHelper.makeCached(Sealed.class));
+            ListExpression permittedSubclassesListExpression =
+                    listX(Arrays.stream(this.visitTypeList(ctx.ps))
+                            .map(ClassExpression::new)
+                            .collect(Collectors.toList()));
+            sealedAnnotationNode.setMember("permittedSubclasses", permittedSubclassesListExpression);
+            classNode.addAnnotation(sealedAnnotationNode);
+        } else if (isNonSealed) {
+            classNode.addAnnotation(new AnnotationNode(ClassHelper.makeCached(NonSealed.class)));
+        }
         if (isInterfaceWithDefaultMethods || asBoolean(ctx.TRAIT())) {
             classNode.addAnnotation(new AnnotationNode(ClassHelper.makeCached(Trait.class)));
         }
