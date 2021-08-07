@@ -103,7 +103,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     public static final String POST_TYPECHECKING_REPLACEMENT = TraitReceiverTransformer.class + ".replacement";
 
     private static final ClassNode INVOKERHELPER_CLASSNODE = ClassHelper.make(InvokerHelper.class);
-    private static final ClassNode OVERRIDE_CLASSNODE = ClassHelper.make(Override.class);
+    private static final ClassNode OVERRIDE_CLASSNODE = ClassHelper.OVERRIDE_TYPE;
     private static final ClassNode SEALED_CLASSNODE = ClassHelper.SEALED_TYPE;
 
     private SourceUnit sourceUnit;

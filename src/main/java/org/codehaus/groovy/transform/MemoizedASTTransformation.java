@@ -71,7 +71,7 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
     private static final String MAX_CACHE_SIZE_NAME = "maxCacheSize";
     private static final String CLOSURE_LABEL = "Closure";
     private static final String METHOD_LABEL = "Priv";
-    private static final ClassNode OVERRIDE_CLASSNODE = make(Override.class);
+    private static final ClassNode OVERRIDE_CLASSNODE = ClassHelper.OVERRIDE_TYPE;
 
     @Override
     public void visit(ASTNode[] nodes, final SourceUnit source) {
