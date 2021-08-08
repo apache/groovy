@@ -56,6 +56,16 @@ public class ClassNodeTest extends TestCase implements Opcodes {
         if (!isAtLeastJdk("17.0")) return;
 
         Class<?> clazz = Class.forName("java.lang.constant.ConstantDesc");
-        assertTrue(!new ClassNode(clazz).getPermittedSubclasses().isEmpty());
+        ClassNode cn = new ClassNode(clazz);
+        assertTrue(!cn.getPermittedSubclasses().isEmpty());
+        assertTrue(cn.isSealed());
+
+        cn = ClassHelper.make(clazz);
+        assertTrue(!cn.getPermittedSubclasses().isEmpty());
+        assertTrue(cn.isSealed());
+
+        cn = ClassHelper.make("java.lang.constant.ConstantDesc");
+        assertTrue(!cn.getPermittedSubclasses().isEmpty());
+        assertTrue(cn.isSealed());
     }
 }
