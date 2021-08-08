@@ -1234,14 +1234,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private static void cacheMethod(Class<?> clazz, Method method) {
-        SPECIAL_METHODS_MAP.get(clazz)
-                .computeIfAbsent(method.getName(), k -> Collections.newSetFromMap(new ConcurrentHashMap<>(2)))
-                .add(method);
-    }
-
     private static MethodHandle findMethod(Class<?> clazz, String methodName, Class[] argTypes, Function<Method, MethodHandle> mhFunc) {
-        Set<Method> methods = SPECIAL_METHODS_MAP.get(clazz).get(methodName);
+        final Map<String, Set<Method>> methodMap = SPECIAL_METHODS_MAP.get(clazz);
+        final Set<Method> methods = methodMap.get(methodName);
 
         Method foundMethod = null;
         if (null != methods) {
@@ -1256,7 +1251,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (null == foundMethod) {
             foundMethod = doFindMethod(clazz, methodName, argTypes);
             if (null == foundMethod) return null;
-            cacheMethod(clazz, foundMethod);
+            methodMap.computeIfAbsent(
+                            methodName,
+                            k -> Collections.newSetFromMap(new ConcurrentHashMap<>(2))
+                        ).add(foundMethod);
         }
 
         return mhFunc.apply(foundMethod);
