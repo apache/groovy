@@ -51,6 +51,8 @@ public class ReflectionUtils {
 
     /** The packages in the call stack that are only part of the Groovy MOP. */
     private static final Set<String> IGNORED_PACKAGES;
+    private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
+
     static {
         Set<String> set = new HashSet<>();
 
@@ -240,6 +242,7 @@ public class ReflectionUtils {
 
     public static boolean isSealed(Class<?> clazz) {
         if (null == IS_SEALED_METHODHANDLE) return false;
+        if (null == clazz) return false;
 
         boolean sealed = false;
         try {
@@ -247,6 +250,18 @@ public class ReflectionUtils {
         } catch (Throwable ignored) {
         }
         return sealed;
+    }
+
+    public static Class<?>[] getPermittedSubclasses(Class<?> clazz) {
+        if (null == GET_PERMITTED_SUBCLASSES_METHODHANDLE) return EMPTY_CLASS_ARRAY;
+        if (null == clazz) return EMPTY_CLASS_ARRAY;
+
+        Class<?>[] result = EMPTY_CLASS_ARRAY;
+        try {
+            result = (Class<?>[]) GET_PERMITTED_SUBCLASSES_METHODHANDLE.bindTo(clazz).invokeExact();
+        } catch (Throwable ignored) {
+        }
+        return result;
     }
 
     private static boolean classShouldBeIgnored(final Class c, final Collection<String> extraIgnoredPackages) {
@@ -265,12 +280,20 @@ public class ReflectionUtils {
     }
 
     private static final MethodHandle IS_SEALED_METHODHANDLE;
+    private static final MethodHandle GET_PERMITTED_SUBCLASSES_METHODHANDLE;
     static {
-        MethodHandle mh = null;
+        MethodHandle isSealedMethodHandle = null;
         try {
-            mh = MethodHandles.lookup().findVirtual(Class.class, "isSealed", MethodType.methodType(boolean.class, new Class[0]));
+            isSealedMethodHandle = MethodHandles.lookup().findVirtual(Class.class, "isSealed", MethodType.methodType(boolean.class, new Class[0]));
         } catch (NoSuchMethodException | IllegalAccessException ignored) {
         }
-        IS_SEALED_METHODHANDLE = mh;
+        IS_SEALED_METHODHANDLE = isSealedMethodHandle;
+
+        MethodHandle getPermittedSubclassesMethodHandle = null;
+        try {
+            getPermittedSubclassesMethodHandle = MethodHandles.lookup().findVirtual(Class.class, "getPermittedSubclasses", MethodType.methodType(Class[].class, new Class[0]));
+        } catch (NoSuchMethodException | IllegalAccessException ignored) {
+        }
+        GET_PERMITTED_SUBCLASSES_METHODHANDLE = getPermittedSubclassesMethodHandle;
     }
 }

@@ -200,7 +200,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
 
             final Set<ClassNode> allInterfaces =
                     getInterfacesAndSuperInterfaces(delegate.type).stream()
-                            .filter(c -> !c.redirect().isSealed())
+                            .filter(c -> !c.isSealed())
                             .collect(Collectors.toSet());
             final Set<ClassNode> ownerIfaces = delegate.owner.getAllInterfaces();
             Map<String,ClassNode> genericsSpec = createGenericsSpec(delegate.owner);

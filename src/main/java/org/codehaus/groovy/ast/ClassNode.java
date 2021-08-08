@@ -29,7 +29,6 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.control.CompilePhase;
-import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
@@ -148,6 +147,7 @@ public class ClassNode extends AnnotatedNode {
     private int modifiers;
     private boolean syntheticPublic;
     private ClassNode[] interfaces;
+    private List<ClassNode> permittedSubclasses = new ArrayList<>(4);
     private MixinNode[] mixins;
     private List<Statement> objectInitializers;
     private List<ConstructorNode> constructors;
@@ -164,7 +164,6 @@ public class ClassNode extends AnnotatedNode {
     private ClassNode superClass;
     protected boolean isPrimaryNode;
     protected List<InnerClassNode> innerClasses;
-    private final List<ClassNode> permittedSubclasses = new ArrayList<>(4);
     private List<AnnotationNode> typeAnnotations = Collections.emptyList();
 
     /**
@@ -242,10 +241,6 @@ public class ClassNode extends AnnotatedNode {
      */
     public boolean isPrimaryClassNode() {
         return redirect().isPrimaryNode || (componentType != null && componentType.isPrimaryClassNode());
-    }
-
-    public List<ClassNode> getPermittedSubclasses() {
-        return redirect().permittedSubclasses;
     }
 
     /**
@@ -389,6 +384,24 @@ public class ClassNode extends AnnotatedNode {
             redirect.setInterfaces(interfaces);
         } else {
             this.interfaces = interfaces;
+        }
+    }
+
+    /**
+     * @return permitted subclasses of sealed type
+     */
+    public List<ClassNode> getPermittedSubclasses() {
+        if (redirect != null)
+            return redirect.getPermittedSubclasses();
+        lazyClassInit();
+        return permittedSubclasses;
+    }
+
+    public void setPermittedSubclasses(List<ClassNode> permittedSubclasses) {
+        if (redirect != null) {
+            redirect.setPermittedSubclasses(permittedSubclasses);
+        } else {
+            this.permittedSubclasses = permittedSubclasses;
         }
     }
 
@@ -1349,7 +1362,7 @@ public class ClassNode extends AnnotatedNode {
     }
 
     public boolean isSealed() {
-        return !getAnnotations(SEALED_TYPE).isEmpty() || !permittedSubclasses.isEmpty() || (null != clazz && ReflectionUtils.isSealed(clazz));
+        return !getAnnotations(SEALED_TYPE).isEmpty() || !getPermittedSubclasses().isEmpty();
     }
 
     public boolean isResolved() {

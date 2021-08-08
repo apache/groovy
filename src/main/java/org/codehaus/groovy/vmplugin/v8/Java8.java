@@ -69,8 +69,10 @@ import java.lang.reflect.WildcardType;
 import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Java 8 based functions.
@@ -456,6 +458,7 @@ public class Java8 implements VMPlugin {
             Class<?> sc = clazz.getSuperclass();
             if (sc != null) classNode.setUnresolvedSuperClass(makeClassNode(compileUnit, clazz.getGenericSuperclass(), sc));
             makeInterfaceTypes(compileUnit, classNode, clazz);
+            makePermittedSubclasses(compileUnit, classNode, clazz);
             setAnnotationMetaData(clazz.getAnnotations(), classNode);
 
             PackageNode packageNode = classNode.getPackage();
@@ -512,6 +515,14 @@ public class Java8 implements VMPlugin {
             return adjusted;
         }
         return annotations;
+    }
+
+    private void makePermittedSubclasses(CompileUnit cu, ClassNode classNode, Class<?> clazz) {
+        if (!ReflectionUtils.isSealed(clazz)) return;
+        List<ClassNode> permittedSubclasses = Arrays.stream(ReflectionUtils.getPermittedSubclasses(clazz))
+                .map(c -> makeClassNode(cu, c, c))
+                .collect(Collectors.toList());
+        classNode.setPermittedSubclasses(permittedSubclasses);
     }
 
     private void makeInterfaceTypes(CompileUnit cu, ClassNode classNode, Class<?> clazz) {
