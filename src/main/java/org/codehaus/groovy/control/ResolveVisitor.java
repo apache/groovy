@@ -943,6 +943,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
             Tuple2<StringBuilder, Boolean> classNameInfo = makeClassName(doInitialClassTest, name, property);
             name = classNameInfo.getV1();
+            if (name == null) return null;
             doInitialClassTest = classNameInfo.getV2();
         }
 

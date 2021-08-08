@@ -98,6 +98,17 @@ class PropertyMissingTest extends GroovyTestCase {
 
     }
 
+    void testClassDotProperty() {
+        assert shouldFail(MissingPropertyException, "Integer.xxx") ==
+                'No such property: xxx for class: java.lang.Integer'
+    }
+
+    void testClassDotPropertyInClosure() {
+        // GROOVY-10188: strange looking parameter in Closure to force a particular edge case
+        assert shouldFail(NullPointerException, "{ Integer -> Integer.xxx }()") ==
+                "Cannot get property 'xxx' on null object"
+    }
+
 }
 
 class PMTest1 {
