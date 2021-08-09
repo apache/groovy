@@ -316,7 +316,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     private void checkClassForExtendingFinalOrSealed(ClassNode cn) {
         boolean sealed = Boolean.TRUE.equals(cn.getNodeMetaData(Sealed.class));
         if (sealed && cn.getPermittedSubclasses().isEmpty()) {
-            addError("Sealed " + getDescription(cn) + " has no explicit or implicit permitted classes.", cn);
+            addError("Sealed " + getDescription(cn) + " has no explicit or implicit permitted subclasses.", cn);
             return;
         }
         boolean isFinal = isFinal(cn.getModifiers());

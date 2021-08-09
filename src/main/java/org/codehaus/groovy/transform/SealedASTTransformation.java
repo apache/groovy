@@ -49,6 +49,14 @@ public class SealedASTTransformation extends AbstractASTTransformation {
 
         if (parent instanceof ClassNode) {
             ClassNode cNode = (ClassNode) parent;
+            if (cNode.isEnum()) {
+                addError("@" + SEALED_CLASS.getSimpleName() + " not allowed for enum", cNode);
+                return;
+            }
+            if (cNode.isAnnotationDefinition()) {
+                addError("@" + SEALED_CLASS.getSimpleName() + " not allowed for annotation definition", cNode);
+                return;
+            }
             cNode.putNodeMetaData(SEALED_CLASS, Boolean.TRUE);
             List<ClassNode> newSubclasses = getMemberClassList(anno, "permittedSubclasses");
             if (newSubclasses != null) {

@@ -120,6 +120,35 @@ class SealedTransformTest {
     }
 
     @Test
+    void testInvalidSealedEnum() {
+        assert shouldFail(MultipleCompilationErrorsException, '''
+            import groovy.transform.Sealed
+
+            @Sealed enum Shape { SQUARE, CIRCLE }
+        ''').message.contains("@Sealed not allowed for enum")
+    }
+
+    @Test
+    void testInvalidSealedAnnotationDefinition() {
+        assert shouldFail(MultipleCompilationErrorsException, '''
+            import groovy.transform.Sealed
+
+            @Sealed @interface Shape { }
+        ''').message.contains("@Sealed not allowed for annotation definition")
+    }
+
+    @Test
+    void testNoSubclasses() {
+        def message = shouldFail(MultipleCompilationErrorsException, '''
+            import groovy.transform.Sealed
+
+            @Sealed class Shape { }
+        ''').message
+        assert message.contains("Sealed class 'Shape' has no")
+        assert message.contains("permitted subclasses")
+    }
+
+    @Test
     void testUnknownType() {
         assert shouldFail(MultipleCompilationErrorsException, '''
             @groovy.transform.Sealed(permittedSubclasses=Rhomboid) class Shape { }
