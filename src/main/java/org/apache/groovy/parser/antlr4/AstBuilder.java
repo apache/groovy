@@ -1462,15 +1462,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         if ((isAnnotation || isEnum) && (isSealed || isNonSealed)) {
             ModifierNode mn = isSealed ? sealedModifierNodeOptional.get() : nonSealedModifierNodeOptional.get();
-            throw createParsingFailedException("modifier `" + mn.getText() + "` is not allowed here", mn);
+            throw createParsingFailedException("modifier `" + mn.getText() + "` is not allowed for " +
+                    (isEnum ? "enum" : "annotation definition"), mn);
         }
 
         boolean hasPermits = asBoolean(ctx.PERMITS());
-        if (isSealed && !hasPermits) {
-            throw createParsingFailedException("sealed type declaration should have `permits` clause", ctx);
-        }
-        if (isNonSealed && hasPermits) {
-            throw createParsingFailedException("non-sealed type declaration should not have `permits` clause", ctx);
+        if (!isSealed && hasPermits) {
+            throw createParsingFailedException("only sealed type declarations should have `permits` clause", ctx);
         }
 
         int modifiers = modifierManager.getClassModifiersOpValue();
@@ -1510,11 +1508,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         if (isSealed) {
             AnnotationNode sealedAnnotationNode = new AnnotationNode(ClassHelper.makeCached(Sealed.class));
-            ListExpression permittedSubclassesListExpression =
-                    listX(Arrays.stream(this.visitTypeList(ctx.ps))
-                            .map(ClassExpression::new)
-                            .collect(Collectors.toList()));
-            sealedAnnotationNode.setMember("permittedSubclasses", permittedSubclassesListExpression);
+            if (asBoolean(ctx.ps)) {
+                ListExpression permittedSubclassesListExpression =
+                        listX(Arrays.stream(this.visitTypeList(ctx.ps))
+                                .map(ClassExpression::new)
+                                .collect(Collectors.toList()));
+                sealedAnnotationNode.setMember("permittedSubclasses", permittedSubclassesListExpression);
+            }
             classNode.addAnnotation(sealedAnnotationNode);
         } else if (isNonSealed) {
             classNode.addAnnotation(new AnnotationNode(ClassHelper.makeCached(NonSealed.class)));
