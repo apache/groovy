@@ -1914,6 +1914,7 @@ The `@Immutable` meta-annotation combines the following annotations:
 * <<xform-EqualsAndHashCode,@EqualsAndHashCode>>
 * <<xform-TupleConstructor,@TupleConstructor>>
 * <<xform-MapConstructor,@MapConstructor>>
+* <<xform-Final,@Final>>
 * <<xform-ImmutableBase,@ImmutableBase>>
 * <<xform-ImmutableOptions,@ImmutableOptions>>
 * <<xform-PropertyOptions,@PropertyOptions>>
@@ -2678,6 +2679,19 @@ include::../test/CompilerDirectivesASTTransformsTest.groovy[tags=packagescope_pr
 The `@PackageScope` annotation is seldom used as part of normal Groovy conventions but is sometimes useful
 for factory methods that should be visible internally within a package or for methods or constructors provided
 for testing purposes, or when integrating with third-party libraries which require such visibility conventions.
+
+[[xform-Final]]
+===== `@groovy.transform.Final`
+
+`@Final` is essentially an alias for the `final` modifier.
+The intention is that you would almost never use the `@Final` annotation directly (just use `final`).
+However, when creating meta-annotations that should apply
+the final modifier to the node being annotated, you can mix in `@Final`, e.g..
+
+[source,groovy]
+----
+include::../test/CompilerDirectivesASTTransformsTest.groovy[tags=final_annotation,indent=0]
+----
 
 [[xform-AutoFinal]]
 ===== `@groovy.transform.AutoFinal`

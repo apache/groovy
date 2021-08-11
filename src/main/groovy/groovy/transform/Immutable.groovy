@@ -183,6 +183,7 @@ import java.lang.annotation.Target
  * @see PropertyOptions
  * @see TupleConstructor
  * @see MapConstructor
+ * @see Final
  * @see KnownImmutable
  * @see Canonical
  * @since 1.7
@@ -190,6 +191,7 @@ import java.lang.annotation.Target
 @ToString(cache = true, includeSuperProperties = true)
 @EqualsAndHashCode(cache = true)
 @ImmutableBase
+@Final
 @ImmutableOptions
 @PropertyOptions(propertyHandler = ImmutablePropertyHandler)
 @TupleConstructor(defaults = false)
