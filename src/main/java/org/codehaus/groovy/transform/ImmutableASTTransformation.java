@@ -129,7 +129,6 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
 
         String cName = cNode.getName();
         if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
-        makeClassFinal(this, cNode);
 
         final List<PropertyNode> pList = getInstanceProperties(cNode);
         for (PropertyNode pNode : pList) {
@@ -169,17 +168,6 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
             return true;
         }
         return false;
-    }
-
-    private static void makeClassFinal(final AbstractASTTransformation xform, final ClassNode cNode) {
-        int modifiers = cNode.getModifiers();
-        if ((modifiers & ACC_FINAL) == 0) {
-            if ((modifiers & (ACC_ABSTRACT | ACC_SYNTHETIC)) == (ACC_ABSTRACT | ACC_SYNTHETIC)) {
-                xform.addError("Error during " + MY_TYPE_NAME + " processing: annotation found on inappropriate class " + cNode.getName(), cNode);
-                return;
-            }
-            cNode.setModifiers(modifiers | ACC_FINAL);
-        }
     }
 
     static boolean isSpecialNamedArgCase(final List<PropertyNode> list, final boolean checkSize) {

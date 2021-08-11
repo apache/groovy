@@ -144,6 +144,23 @@ assert calc.mult(3, 6) == 18
 '''
     }
 
+    void testFinalAnnotation() {
+        assertScript '''
+import groovy.transform.*
+import java.lang.reflect.Modifier
+// tag::final_annotation[]
+@AnnotationCollector([Singleton,Final]) @interface MySingleton {}
+
+@MySingleton
+class GreetingService {
+    String greeting(String name) { "Hello, $name!" }
+}
+assert GreetingService.instance.greeting('Bob') == 'Hello, Bob!'
+assert Modifier.isFinal(GreetingService.modifiers)
+// end::final_annotation[]
+'''
+    }
+
     void testPackageScope() {
         assertScript '''import java.lang.reflect.Modifier
 // tag::packagescope_property[]
