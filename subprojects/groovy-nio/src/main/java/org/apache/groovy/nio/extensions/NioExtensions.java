@@ -1636,7 +1636,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @throws java.io.IOException if an IOException occurs.
      * @since 2.3.0
      */
-    public static <T> T withWriter(Path self, @ClosureParams(value = SimpleType.class, options = "java.io.Writer") Closure<T> closure) throws IOException {
+    public static <T> T withWriter(Path self, @ClosureParams(value = SimpleType.class, options = "java.io.BufferedWriter") Closure<T> closure) throws IOException {
         return withWriter(self, Charset.defaultCharset().name(), closure);
     }
 
@@ -1652,7 +1652,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @throws java.io.IOException if an IOException occurs.
      * @since 2.3.0
      */
-    public static <T> T withWriter(Path self, String charset, @ClosureParams(value = SimpleType.class, options = "java.io.Writer") Closure<T> closure) throws IOException {
+    public static <T> T withWriter(Path self, String charset, @ClosureParams(value = SimpleType.class, options = "java.io.BufferedWriter") Closure<T> closure) throws IOException {
         return withWriter(self, charset, false, closure);
     }
 
@@ -1672,7 +1672,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @throws java.io.IOException if an IOException occurs.
      * @since 2.5.0
      */
-    public static <T> T withWriter(Path self, String charset, boolean writeBom, @ClosureParams(value = SimpleType.class, options = "java.io.Writer") Closure<T> closure) throws IOException {
+    public static <T> T withWriter(Path self, String charset, boolean writeBom, @ClosureParams(value = SimpleType.class, options = "java.io.BufferedWriter") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withWriter(newWriter(self, charset, false, writeBom), closure);
     }
 
@@ -1689,7 +1689,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @throws java.io.IOException if an IOException occurs.
      * @since 2.3.0
      */
-    public static <T> T withWriterAppend(Path self, String charset, @ClosureParams(value = SimpleType.class, options = "java.io.Writer") Closure<T> closure) throws IOException {
+    public static <T> T withWriterAppend(Path self, String charset, @ClosureParams(value = SimpleType.class, options = "java.io.BufferedWriter") Closure<T> closure) throws IOException {
         return withWriterAppend(self, charset, false, closure);
     }
 
@@ -1709,7 +1709,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @throws java.io.IOException if an IOException occurs.
      * @since 2.5.0
      */
-    public static <T> T withWriterAppend(Path self, String charset, boolean writeBom, @ClosureParams(value = SimpleType.class, options = "java.io.Writer") Closure<T> closure) throws IOException {
+    public static <T> T withWriterAppend(Path self, String charset, boolean writeBom, @ClosureParams(value = SimpleType.class, options = "java.io.BufferedWriter") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withWriter(newWriter(self, charset, true, writeBom), closure);
     }
 
@@ -1724,7 +1724,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @throws java.io.IOException if an IOException occurs.
      * @since 2.3.0
      */
-    public static <T> T withWriterAppend(Path self, @ClosureParams(value = SimpleType.class, options = "java.io.Writer") Closure<T> closure) throws IOException {
+    public static <T> T withWriterAppend(Path self, @ClosureParams(value = SimpleType.class, options = "java.io.BufferedWriter") Closure<T> closure) throws IOException {
         return withWriterAppend(self, Charset.defaultCharset().name(), closure);
     }
 
