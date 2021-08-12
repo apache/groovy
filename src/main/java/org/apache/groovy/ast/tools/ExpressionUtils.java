@@ -234,7 +234,7 @@ public final class ExpressionUtils {
                             ce3.setSourcePosition(exp);
                             return ce3;
                         }
-                    } catch(Exception e) {
+                    } catch (Exception | LinkageError e) {
                         // ignore, leave property expression in place and we'll report later
                     }
                 }
@@ -276,7 +276,7 @@ public final class ExpressionUtils {
                 Expression transformed = transformInlineConstants(e, attrType);
                 newList.addExpression(transformed);
                 if (transformed != e) changed = true;
-            } catch(Exception ignored) {
+            } catch (Exception ignored) {
                 newList.addExpression(e);
             }
         }
