@@ -135,7 +135,8 @@ class ASTTestTransformation implements ASTTransformation, CompilationUnitAware {
 
             def config = new CompilerConfiguration()
             config.addCompilationCustomizers(customizer)
-            new GroovyShell(binding, config).evaluate(testSource)
+            def loader = compilationUnit.transformLoader
+            new GroovyShell(loader, binding, config).evaluate(testSource)
         }
     }
 
