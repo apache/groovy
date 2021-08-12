@@ -19,9 +19,8 @@
 package org.codehaus.groovy.transform.tailrec;
 
 import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
-import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 class UsedVariableTracker implements VariableReplacedListener {
@@ -34,5 +33,5 @@ class UsedVariableTracker implements VariableReplacedListener {
         return usedVariableNames;
     }
 
-    private final Set<String> usedVariableNames = DefaultGroovyMethods.asType(new ArrayList(), Set.class);
+    private final Set<String> usedVariableNames = new LinkedHashSet<>();
 }
