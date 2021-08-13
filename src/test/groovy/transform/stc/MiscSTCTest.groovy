@@ -172,7 +172,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
             1
         '''
     }
-    
+
     void testCompareEnumToNull() {
         assertScript '''
             enum MyEnum { a,b }
@@ -180,6 +180,28 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
             if (val == null) {
                 val = MyEnum.a
             }
+        '''
+    }
+
+    // GROOVY-10197
+    void testEnumMethodOverride() {
+        assertScript '''
+            enum E {
+                CONST {
+                    int getValue() { 1 }
+                }
+                int getValue() { -1 }
+            }
+            assert E.CONST.value == 1
+        '''
+        assertScript '''
+            enum E {
+                CONST {
+                    final int value = 1
+                }
+                int getValue() { -1 }
+            }
+            assert E.CONST.value == 1
         '''
     }
 
