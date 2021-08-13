@@ -36,6 +36,7 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
@@ -333,11 +334,10 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         for (PropertyNode pNode : cNode.getProperties()) {
             if (pNode.isStatic()) continue;
 
-            // if namedArgs.containsKey(propertyName) setProperty(propertyName, namedArgs.get(propertyName));
-            Statement ifStatement = ifS(
-                    callX(namedArgs, "containsKey", constX(pNode.getName())),
-                    assignS(varX(pNode), propX(namedArgs, pNode.getName())));
-            block.addStatement(ifStatement);
+            // if (namedArgs.containsKey(propertyName)) propertyNode= namedArgs.propertyName;
+            MethodCallExpression containsProperty = callX(namedArgs, "containsKey", constX(pNode.getName()));
+            containsProperty.setImplicitThis(false);
+            block.addStatement(ifS(containsProperty, assignS(varX(pNode), propX(namedArgs, pNode.getName()))));
             props.add(pNode);
         }
         boolean pojo = !cNode.getAnnotations(POJO_TYPE).isEmpty();

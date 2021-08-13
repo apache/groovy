@@ -31,17 +31,9 @@ class MiscStaticCompileTest extends MiscSTCTest implements StaticCompilationTest
             for(int i in 1..3){
               new File(dir, "testEachFileRecurse${i}.txt").createNewFile()
             }
-
             dir.eachFileRecurse(FileType.FILES) { File spec ->
             }
-
             dir.deleteDir()
         '''
     }
-
-    @Override
-    void testCompareEnumToNull() {
-        super.testCompareEnumToNull()
-    }
 }
-
