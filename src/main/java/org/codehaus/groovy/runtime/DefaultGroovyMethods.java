@@ -3368,24 +3368,27 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.4.0
      */
     public static <T> List<List<T>> collate(Iterable<T> self, int size, int step, boolean keepRemainder) {
-        List<T> selfList = asList(self);
-        List<List<T>> answer = new ArrayList<>();
+        final List<T> selfList = asList(self);
+        final List<List<T>> answer;
         if (size <= 0) {
+            answer = new ArrayList<>(1);
             answer.add(selfList);
         } else {
             if (step == 0) throw new IllegalArgumentException("step cannot be zero");
-            for (int pos = 0; pos < selfList.size() && pos > -1; pos += step) {
-                if (!keepRemainder && pos > selfList.size() - size) {
-                    break ;
+            final int selfListSize = selfList.size();
+            answer = new ArrayList<>(step < 0 ? 1 : (selfListSize / step + 1));
+            for (int pos = 0; pos < selfListSize && pos > -1; pos += step) {
+                if (!keepRemainder && pos > selfListSize - size) {
+                    break;
                 }
-                List<T> element = new ArrayList<>() ;
-                for (int offs = pos; offs < pos + size && offs < selfList.size(); offs++) {
+                List<T> element = new ArrayList<>(size);
+                for (int offs = pos; offs < pos + size && offs < selfListSize; offs++) {
                     element.add(selfList.get(offs));
                 }
-                answer.add( element ) ;
+                answer.add(element);
             }
         }
-        return answer ;
+        return answer;
     }
 
     /**
