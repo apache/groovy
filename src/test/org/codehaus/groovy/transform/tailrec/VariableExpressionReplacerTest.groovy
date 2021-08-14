@@ -53,7 +53,7 @@ class VariableExpressionReplacerTest {
 
     @Before
     void init() {
-        replacer = new VariableExpressionReplacer(when: when, replaceWith: replaceWith)
+        replacer = new VariableExpressionReplacer(when, replaceWith)
     }
 
     @Test

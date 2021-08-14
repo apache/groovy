@@ -25,7 +25,15 @@ import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.ast.expr.BooleanExpression
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
-import org.codehaus.groovy.ast.stmt.*
+import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.DoWhileStatement
+import org.codehaus.groovy.ast.stmt.EmptyStatement
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.ForStatement
+import org.codehaus.groovy.ast.stmt.IfStatement
+import org.codehaus.groovy.ast.stmt.ReturnStatement
+import org.codehaus.groovy.ast.stmt.Statement
+import org.codehaus.groovy.ast.stmt.WhileStatement
 import org.junit.Before
 import org.junit.Test
 
@@ -38,7 +46,7 @@ class StatementReplacerTest {
 
     @Before
     void init() {
-        replacer = new StatementReplacer(when: when, replaceWith: replaceWith)
+        replacer = new StatementReplacer(when, replaceWith)
     }
 
     @Test
@@ -81,7 +89,7 @@ class StatementReplacerTest {
         block.addStatement(toReplace)
         block.addStatement(aReturnStatement("after"))
 
-        replacer = new StatementReplacer(when: { it == toReplace }, replaceWith: {
+        replacer = new StatementReplacer({ it == toReplace }, {
             assert it == toReplace
             replacement
         })
@@ -187,8 +195,8 @@ class StatementReplacerTest {
         }[0]
 
         def replacer = new StatementReplacer(
-                when: { node, inClosure -> inClosure && node instanceof ExpressionStatement },
-                replaceWith: { new ExpressionStatement(aConstant('new')) }
+                { node, inClosure -> inClosure && node instanceof ExpressionStatement },
+                { new ExpressionStatement(aConstant('new')) }
         )
         replacer.replaceIn(closure)
 
@@ -206,8 +214,8 @@ class StatementReplacerTest {
         }[0]
 
         def replacer = new StatementReplacer(
-                when: { node, inClosure -> inClosure && node instanceof ExpressionStatement },
-                replaceWith: { assert false, 'Must not get here' }
+                { node, inClosure -> inClosure && node instanceof ExpressionStatement },
+                { assert false, 'Must not get here' }
         )
         replacer.replaceIn(block)
     }
