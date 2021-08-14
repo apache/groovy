@@ -19,6 +19,7 @@
 package org.codehaus.groovy.control.customizers
 
 import groovy.transform.CompilationUnitAware
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
@@ -82,6 +83,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX
  * @since 1.8.0
  * 
  */
+@CompileStatic
 class ASTTransformationCustomizer extends CompilationCustomizer implements CompilationUnitAware {
     private final AnnotationNode annotationNode
     final ASTTransformation transformation
@@ -206,7 +208,7 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
         if (classes.length + classesAsStrings.length > 1) {
             throw new IllegalArgumentException("AST transformation customizer doesn't support AST transforms with multiple classes")
         }
-        classes ? classes[0] : Class.forName(classesAsStrings[0], true, transformationClassLoader ?: anAnnotationClass.classLoader)
+        classes ? classes[0] : (Class) Class.forName(classesAsStrings[0], true, transformationClassLoader ?: anAnnotationClass.classLoader)
     }
 
     @SuppressWarnings('ClassForName')
@@ -289,7 +291,7 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
     @SuppressWarnings('Instanceof')
     void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
         if (transformation instanceof CompilationUnitAware) {
-            transformation.compilationUnit = compilationUnit
+            ((CompilationUnitAware) transformation).compilationUnit = compilationUnit
         }
         if (annotationNode != null) {
             // this is a local ast transformation which is applied on every class node

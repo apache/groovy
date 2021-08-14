@@ -19,6 +19,7 @@
 
 package org.codehaus.groovy.control.customizers.builder
 
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 
@@ -32,28 +33,22 @@ import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
  *
  * @since 2.1.0
  */
+@CompileStatic
 class ASTTransformationCustomizerFactory extends AbstractFactory {
 
     @Override
-    @CompileStatic
     boolean isLeaf() {
         true
     }
 
     @Override
-    @CompileStatic
     boolean onHandleNodeAttributes(final FactoryBuilderSupport builder, final Object node, final Map attributes) {
         false
     }
 
     @Override
+    @CompileDynamic
     Object newInstance(final FactoryBuilderSupport builder, final Object name, final Object value, final Map attributes) throws InstantiationException, IllegalAccessException {
-        ASTTransformationCustomizer customizer
-        if (attributes) {
-            customizer = new ASTTransformationCustomizer(attributes, value)
-        } else {
-            customizer = new ASTTransformationCustomizer(value)
-        }
-        customizer
+        attributes ? new ASTTransformationCustomizer(attributes, value) : new ASTTransformationCustomizer(value)
     }
 }
