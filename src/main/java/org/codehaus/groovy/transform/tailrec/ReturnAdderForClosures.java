@@ -16,31 +16,30 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.transform.tailrec
+package org.codehaus.groovy.transform.tailrec;
 
-import org.codehaus.groovy.ast.ClassHelper
-import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.CodeVisitorSupport
-import org.codehaus.groovy.ast.MethodNode
-import org.codehaus.groovy.ast.Parameter
-import org.codehaus.groovy.ast.expr.ClosureExpression
-import org.codehaus.groovy.classgen.ReturnAdder
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.classgen.ReturnAdder;
 
 /**
  * Adds explicit return statements to implicit return points in a closure. This is necessary since
  * tail-recursion is detected by having the recursive call within the return statement.
  */
 class ReturnAdderForClosures extends CodeVisitorSupport {
-
-    synchronized void visitMethod(MethodNode method) {
-        method.code.visit(this)
+    public synchronized void visitMethod(MethodNode method) {
+        method.getCode().visit(this);
     }
 
-    void visitClosureExpression(ClosureExpression expression) {
+    @Override
+    public void visitClosureExpression(ClosureExpression expression) {
         //Create a dummy method with the closure's code as the method's code. Then user ReturnAdder, which only works for methods.
-        MethodNode node = new MethodNode('dummy', 0, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, expression.code)
-        new ReturnAdder().visitMethod(node)
-        super.visitClosureExpression(expression)
+        MethodNode node = new MethodNode("dummy", 0, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, expression.getCode());
+        new ReturnAdder().visitMethod(node);
+        super.visitClosureExpression(expression);
     }
-
 }

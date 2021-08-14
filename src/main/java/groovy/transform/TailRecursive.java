@@ -16,14 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.transform
+package groovy.transform;
 
-import org.codehaus.groovy.transform.GroovyASTTransformationClass
+import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
-import java.lang.annotation.ElementType
-import java.lang.annotation.Retention
-import java.lang.annotation.RetentionPolicy
-import java.lang.annotation.Target
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Method annotation used to transform methods with tail recursive calls into iterative methods automagically
@@ -44,9 +44,9 @@ import java.lang.annotation.Target
  * assert target.sumUp(100) == 5050
  * assert target.sumUp(1000000) == 500000500000 //will blow the stack on most machines when used without {@code @TailRecursive}
  * </pre>
- *
+ * <p>
  * {@code @TailRecursive} is supposed to work in combination with {@code @CompileStatic}
- *
+ * <p>
  * Known shortcomings:
  * <ul>
  * <li>Only non-void methods are currently being handled. Void methods will fail compilation.
@@ -58,7 +58,7 @@ import java.lang.annotation.Target
  * <li>Non trivial continuation passing style examples do not work.
  * <li>Probably many unrecognized edge cases.
  * </ul>
- * 
+ *
  * <p>More examples:</p>
  * <pre class="groovyTestCase">
  * import groovy.transform.TailRecursive
@@ -68,7 +68,7 @@ import java.lang.annotation.Target
  *     if (list.size() == 0) {
  *         counter
  *     } else {
- *        sizeOfList(list.tail(), counter + 1) 
+ *        sizeOfList(list.tail(), counter + 1)
  *     }
  * }
  *
@@ -80,7 +80,7 @@ import java.lang.annotation.Target
  * @since 2.3
  */
 @Retention(RetentionPolicy.SOURCE)
-@Target([ElementType.METHOD])
-@GroovyASTTransformationClass(['org.codehaus.groovy.transform.tailrec.TailRecursiveASTTransformation'])
-@interface TailRecursive {
+@Target({ElementType.METHOD})
+@GroovyASTTransformationClass({"org.codehaus.groovy.transform.tailrec.TailRecursiveASTTransformation"})
+public @interface TailRecursive {
 }
