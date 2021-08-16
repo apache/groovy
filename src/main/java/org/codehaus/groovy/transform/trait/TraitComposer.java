@@ -548,7 +548,7 @@ public abstract class TraitComposer {
                 args
         );
         Statement result;
-        if (ClassHelper.isPrimitiveVoid(forwarderMethod.getReturnType())) {
+        if (forwarderMethod.isVoidMethod()) {
             BlockStatement stmt = new BlockStatement();
             stmt.addStatement(new ExpressionStatement(delegateCall));
             stmt.addStatement(new ReturnStatement(new ConstantExpression(null)));

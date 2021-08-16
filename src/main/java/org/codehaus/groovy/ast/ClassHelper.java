@@ -184,8 +184,8 @@ public class ClassHelper {
     public static final String OBJECT = "java.lang.Object";
 
     public static ClassNode makeCached(Class c) {
-        final SoftReference<ClassNode> classNodeSoftReference = ClassHelperCache.classCache.get(c);
         ClassNode classNode;
+        final SoftReference<ClassNode> classNodeSoftReference = ClassHelperCache.classCache.get(c);
         if (classNodeSoftReference == null || (classNode = classNodeSoftReference.get()) == null) {
             classNode = new ClassNode(c);
             ClassHelperCache.classCache.put(c, new SoftReference<ClassNode>(classNode));
@@ -493,19 +493,19 @@ public class ClassHelper {
     }
 
     public static boolean isBigIntegerType(ClassNode type) {
-        return type != null && type.redirect() == BigInteger_TYPE;
+        return BigInteger_TYPE.equals(type);
     }
 
     public static boolean isBigDecimalType(ClassNode type) {
-        return type != null && type.redirect() == BigDecimal_TYPE;
+        return BigDecimal_TYPE.equals(type);
     }
 
     public static boolean isStringType(ClassNode type) {
-        return type != null && type.redirect() == STRING_TYPE;
+        return STRING_TYPE.equals(type);
     }
 
     public static boolean isGStringType(ClassNode type) {
-        return type != null && type.redirect() == GSTRING_TYPE;
+        return GSTRING_TYPE.equals(type);
     }
 
     public static boolean isObjectType(ClassNode type) {

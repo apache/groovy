@@ -18,11 +18,6 @@
  */
 package org.codehaus.groovy.control;
 
-//import antlr.CharScanner;
-//import antlr.MismatchedCharException;
-//import antlr.MismatchedTokenException;
-//import antlr.NoViableAltException;
-//import antlr.NoViableAltForCharException;
 import groovy.lang.GroovyClassLoader;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -31,7 +26,6 @@ import org.codehaus.groovy.control.io.FileReaderSource;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.control.io.StringReaderSource;
 import org.codehaus.groovy.control.io.URLReaderSource;
-import org.codehaus.groovy.control.messages.Message;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.Reduction;
@@ -146,32 +140,34 @@ public class SourceUnit extends ProcessingUnit {
         // to report an unexpected EOF. Perhaps this implementation misses some.
         // If you find another way, please add it.
         if (getErrorCollector().hasErrors()) {
+            /*
             Message last = (Message) getErrorCollector().getLastError();
             Throwable cause = null;
             if (last instanceof SyntaxErrorMessage) {
                 cause = ((SyntaxErrorMessage) last).getCause().getCause();
             }
-//            if (cause != null) {
-//                if (cause instanceof NoViableAltException) {
-//                    return isEofToken(((NoViableAltException) cause).token);
-//                } else if (cause instanceof NoViableAltForCharException) {
-//                    char badChar = ((NoViableAltForCharException) cause).foundChar;
-//                    return badChar == CharScanner.EOF_CHAR;
-//                } else if (cause instanceof MismatchedCharException) {
-//                    char badChar = (char) ((MismatchedCharException) cause).foundChar;
-//                    return badChar == CharScanner.EOF_CHAR;
-//                } else if (cause instanceof MismatchedTokenException) {
-//                    return isEofToken(((MismatchedTokenException) cause).token);
-//                }
-//            }
+            if (cause != null) {
+                if (cause instanceof groovyjarjarantlr.NoViableAltException) {
+                    return isEofToken(((groovyjarjarantlr.NoViableAltException) cause).token);
+                } else if (cause instanceof groovyjarjarantlr.NoViableAltForCharException) {
+                    char badChar = ((groovyjarjarantlr.NoViableAltForCharException) cause).foundChar;
+                    return badChar == groovyjarjarantlr.CharScanner.EOF_CHAR;
+                } else if (cause instanceof groovyjarjarantlr.MismatchedCharException) {
+                    char badChar = (char) ((groovyjarjarantlr.MismatchedCharException) cause).foundChar;
+                    return badChar == groovyjarjarantlr.CharScanner.EOF_CHAR;
+                } else if (cause instanceof groovyjarjarantlr.MismatchedTokenException) {
+                    return isEofToken(((groovyjarjarantlr.MismatchedTokenException) cause).token);
+                }
+            }
+            */
             return true;
         }
         return false;
     }
 
-//    protected boolean isEofToken(antlr.Token token) {
-//        return token.getType() == antlr.Token.EOF_TYPE;
-//    }
+    /*protected boolean isEofToken(groovyjarjarantlr.Token token) {
+        return token.getType() == groovyjarjarantlr.Token.EOF_TYPE;
+    }*/
 
     //---------------------------------------------------------------------------
     // FACTORIES
@@ -238,33 +234,28 @@ public class SourceUnit extends ProcessingUnit {
             throw new GroovyBugError("SourceUnit not ready for convert()");
         }
 
-        //
-        // Build the AST
         buildAST();
 
-        String property = (String) AccessController.doPrivileged((PrivilegedAction) () -> System.getProperty("groovy.ast"));
-
-        if ("xml".equals(property)) {
+        if ("xml".equals(AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty("groovy.ast")))) {
             XStreamUtils.serialize(name, ast);
         }
     }
 
+    /**
+     * Builds the AST.
+     */
     public ModuleNode buildAST() {
-        if (null != this.ast) {
-            return this.ast;
-        }
-
+        if (this.ast == null)
         try {
             this.ast = parserPlugin.buildAST(this, this.classLoader, this.cst);
             this.ast.setDescription(this.name);
         } catch (SyntaxException e) {
             if (this.ast == null) {
-                // Create a dummy ModuleNode to represent a failed parse - in case a later phase attempts to use the ast
+                // create an empty ModuleNode to represent a failed parse, in case a later phase attempts to use the AST
                 this.ast = new ModuleNode(this);
             }
             getErrorCollector().addError(new SyntaxErrorMessage(e, this));
         }
-
         return this.ast;
     }
 

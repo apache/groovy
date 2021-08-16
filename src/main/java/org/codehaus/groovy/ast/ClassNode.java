@@ -46,9 +46,9 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toList;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
 import static org.codehaus.groovy.ast.ClassHelper.SEALED_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
@@ -119,7 +119,6 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
  * @see org.codehaus.groovy.ast.ClassHelper
  */
 public class ClassNode extends AnnotatedNode {
-    private static final String CLINIT = "<clinit>";
 
     private static class MapOfLists {
         Map<Object, List<MethodNode>> map;
@@ -147,7 +146,6 @@ public class ClassNode extends AnnotatedNode {
     private int modifiers;
     private boolean syntheticPublic;
     private ClassNode[] interfaces;
-    private List<ClassNode> permittedSubclasses = new ArrayList<>(4);
     private MixinNode[] mixins;
     private List<Statement> objectInitializers;
     private List<ConstructorNode> constructors;
@@ -164,6 +162,7 @@ public class ClassNode extends AnnotatedNode {
     private ClassNode superClass;
     protected boolean isPrimaryNode;
     protected List<InnerClassNode> innerClasses;
+    private List<ClassNode> permittedSubclasses = new ArrayList<>(4);
     private List<AnnotationNode> typeAnnotations = Collections.emptyList();
 
     /**
@@ -431,7 +430,7 @@ public class ClassNode extends AnnotatedNode {
      */
     public List<MethodNode> getAbstractMethods() {
         return getDeclaredMethodsMap().values().stream()
-            .filter(MethodNode::isAbstract).collect(Collectors.toList());
+            .filter(MethodNode::isAbstract).collect(toList());
     }
 
     public List<MethodNode> getAllDeclaredMethods() {
@@ -816,9 +815,10 @@ public class ClassNode extends AnnotatedNode {
 
     private MethodNode getOrAddStaticConstructorNode() {
         MethodNode method;
-        List<MethodNode> declaredMethods = getDeclaredMethods(CLINIT);
+        final String classInitializer = "<clinit>";
+        List<MethodNode> declaredMethods = getDeclaredMethods(classInitializer);
         if (declaredMethods.isEmpty()) {
-            method = addMethod(CLINIT, ACC_STATIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
+            method = addMethod(classInitializer, ACC_STATIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
             method.setSynthetic(true);
         } else {
             method = declaredMethods.get(0);
@@ -1183,8 +1183,8 @@ public class ClassNode extends AnnotatedNode {
     public MethodNode getSetterMethod(String setterName, boolean voidOnly) {
         for (MethodNode method : getDeclaredMethods(setterName)) {
             if (setterName.equals(method.getName())
-                    && (!voidOnly || isPrimitiveVoid(method.getReturnType()))
-                    && method.getParameters().length == 1) {
+                    && method.getParameters().length == 1
+                    && (!voidOnly || method.isVoidMethod())) {
                 return method;
             }
         }
@@ -1246,7 +1246,7 @@ public class ClassNode extends AnnotatedNode {
             ret.append('>');
         }
         if (showRedirect && redirect != null) {
-            ret.append(" -> ").append(redirect.toString());
+            ret.append(" -> ").append(redirect);
         }
         return ret.toString();
     }

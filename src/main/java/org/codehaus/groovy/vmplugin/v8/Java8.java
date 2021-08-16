@@ -81,16 +81,11 @@ import java.util.stream.Collectors;
  */
 public class Java8 implements VMPlugin {
 
-    private static final Class<?>[] PLUGIN_DGM = {PluginDefaultGroovyMethods.class};
     private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
     private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
     private static final Permission ACCESS_PERMISSION = new ReflectPermission("suppressAccessChecks");
 
-    public Java8() {
-        super();
-    }
-
-    public static GenericsType configureTypeVariableDefinition(ClassNode base, ClassNode[] cBounds) {
+    public static GenericsType configureTypeVariableDefinition(final ClassNode base, final ClassNode[] cBounds) {
         ClassNode redirect = base.redirect();
         base.setRedirect(null);
         GenericsType gt;
@@ -105,7 +100,7 @@ public class Java8 implements VMPlugin {
         return gt;
     }
 
-    private static ClassNode configureClass(Class<?> c) {
+    private static ClassNode configureClass(final Class<?> c) {
         if (c.isPrimitive()) {
             return ClassHelper.make(c);
         } else {
@@ -113,7 +108,7 @@ public class Java8 implements VMPlugin {
         }
     }
 
-    public static ClassNode configureTypeVariableReference(String name) {
+    public static ClassNode configureTypeVariableReference(final String name) {
         ClassNode cn = ClassHelper.makeWithoutCaching(name);
         cn.setGenericsPlaceHolder(true);
         ClassNode cn2 = ClassHelper.makeWithoutCaching(name);
@@ -124,7 +119,7 @@ public class Java8 implements VMPlugin {
         return cn;
     }
 
-    private static void setRetentionPolicy(RetentionPolicy value, AnnotationNode node) {
+    private static void setRetentionPolicy(final RetentionPolicy value, final AnnotationNode node) {
         switch (value) {
             case RUNTIME:
                 node.setRuntimeRetention(true);
@@ -140,23 +135,20 @@ public class Java8 implements VMPlugin {
         }
     }
 
-    private static void setMethodDefaultValue(MethodNode mn, Method m) {
+    private static void setMethodDefaultValue(final MethodNode mn, final Method m) {
         ConstantExpression cExp = new ConstantExpression(m.getDefaultValue());
         mn.setCode(new ReturnStatement(cExp));
         mn.setAnnotationDefault(true);
     }
 
-    protected MethodHandles.Lookup newLookup(final Class<?> declaringClass) {
-        return of(declaringClass);
-    }
-
-    private static Constructor<MethodHandles.Lookup> getLookupConstructor() {
-        return LookupHolder.LOOKUP_Constructor;
+    @Override
+    public Class<?>[] getPluginDefaultGroovyMethods() {
+        return new Class[]{PluginDefaultGroovyMethods.class};
     }
 
     @Override
-    public Class<?>[] getPluginDefaultGroovyMethods() {
-        return PLUGIN_DGM;
+    public Class<?>[] getPluginStaticGroovyMethods() {
+        return MetaClassHelper.EMPTY_TYPE_ARRAY;
     }
 
     @Override
@@ -164,7 +156,7 @@ public class Java8 implements VMPlugin {
         return 8;
     }
 
-    protected int getElementCode(ElementType value) {
+    protected int getElementCode(final ElementType value) {
         switch (value) {
             case TYPE:
                 return AnnotationNode.TYPE_TARGET;
@@ -186,63 +178,52 @@ public class Java8 implements VMPlugin {
                 return AnnotationNode.TYPE_PARAMETER_TARGET;
             case TYPE_USE:
                 return AnnotationNode.TYPE_USE_TARGET;
+            default:
+                // falls through
         }
-        if ("MODULE".equals(value.name())) {
+        if ("MODULE".equals(value.name())) { // JDK 9+
             return AnnotationNode.TYPE_TARGET;
         } else {
             throw new GroovyBugError("unsupported Target " + value);
         }
     }
 
-    protected Parameter[] processParameters(CompileUnit compileUnit, Method m) {
-        java.lang.reflect.Parameter[] parameters = m.getParameters();
-        Type[] types = m.getGenericParameterTypes();
-        Parameter[] params = Parameter.EMPTY_ARRAY;
-        if (types.length > 0) {
-            params = new Parameter[types.length];
-            for (int i = 0; i < params.length; i++) {
-                java.lang.reflect.Parameter p = parameters[i];
-                String name = p.isNamePresent() ? p.getName() : "param" + i;
-                params[i] = makeParameter(compileUnit, types[i], m.getParameterTypes()[i], m.getParameterAnnotations()[i], name);
-            }
-        }
-        return params;
-    }
-
     @Override
-    public void setAdditionalClassInformation(ClassNode cn) {
+    public void setAdditionalClassInformation(final ClassNode cn) {
         setGenericsTypes(cn);
     }
 
-    private void setGenericsTypes(ClassNode cn) {
+    private void setGenericsTypes(final ClassNode cn) {
         TypeVariable[] tvs = cn.getTypeClass().getTypeParameters();
         GenericsType[] gts = configureTypeVariable(tvs);
         cn.setGenericsTypes(gts);
     }
 
-    private GenericsType[] configureTypeVariable(TypeVariable[] tvs) {
-        if (tvs.length == 0) return null;
-        GenericsType[] gts = new GenericsType[tvs.length];
-        for (int i = 0; i < tvs.length; i++) {
+    private GenericsType[] configureTypeVariable(final TypeVariable[] tvs) {
+        final int n = tvs.length;
+        if (n == 0) return null;
+        GenericsType[] gts = new GenericsType[n];
+        for (int i = 0; i < n; i += 1) {
             gts[i] = configureTypeVariableDefinition(tvs[i]);
         }
         return gts;
     }
 
-    private GenericsType configureTypeVariableDefinition(TypeVariable tv) {
+    private GenericsType configureTypeVariableDefinition(final TypeVariable tv) {
         return configureTypeVariableDefinition(configureTypeVariableReference(tv.getName()), configureTypes(tv.getBounds()));
     }
 
-    private ClassNode[] configureTypes(Type[] types) {
-        if (types.length == 0) return null;
-        ClassNode[] nodes = new ClassNode[types.length];
-        for (int i = 0; i < types.length; i++) {
+    private ClassNode[] configureTypes(final Type[] types) {
+        final int n = types.length;
+        if (n == 0) return null;
+        ClassNode[] nodes = new ClassNode[n];
+        for (int i = 0; i < n; i += 1) {
             nodes[i] = configureType(types[i]);
         }
         return nodes;
     }
 
-    private ClassNode configureType(Type type) {
+    private ClassNode configureType(final Type type) {
         if (type instanceof WildcardType) {
             return configureWildcardType((WildcardType) type);
         } else if (type instanceof ParameterizedType) {
@@ -260,7 +241,7 @@ public class Java8 implements VMPlugin {
         }
     }
 
-    private ClassNode configureGenericArray(GenericArrayType genericArrayType) {
+    private ClassNode configureGenericArray(final GenericArrayType genericArrayType) {
         Type component = genericArrayType.getGenericComponentType();
         ClassNode node = configureType(component);
         return node.makeArray();
@@ -285,17 +266,18 @@ public class Java8 implements VMPlugin {
         return wt;
     }
 
-    private ClassNode configureParameterizedType(ParameterizedType parameterizedType) {
+    private ClassNode configureParameterizedType(final ParameterizedType parameterizedType) {
         ClassNode base = configureType(parameterizedType.getRawType());
         GenericsType[] gts = configureTypeArguments(parameterizedType.getActualTypeArguments());
         base.setGenericsTypes(gts);
         return base;
     }
 
-    private GenericsType[] configureTypeArguments(Type[] ta) {
-        if (ta.length == 0) return null;
-        GenericsType[] gts = new GenericsType[ta.length];
-        for (int i = 0; i < ta.length; i++) {
+    private GenericsType[] configureTypeArguments(final Type[] ta) {
+        final int n = ta.length;
+        if (n == 0) return null;
+        GenericsType[] gts = new GenericsType[n];
+        for (int i = 0; i < n; i += 1) {
             ClassNode t = configureType(ta[i]);
             if (ta[i] instanceof WildcardType) {
                 GenericsType[] gen = t.getGenericsTypes();
@@ -307,12 +289,7 @@ public class Java8 implements VMPlugin {
         return gts;
     }
 
-    @Override
-    public Class<?>[] getPluginStaticGroovyMethods() {
-        return MetaClassHelper.EMPTY_TYPE_ARRAY;
-    }
-
-    private void setAnnotationMetaData(Annotation[] annotations, AnnotatedNode an) {
+    private void setAnnotationMetaData(final Annotation[] annotations, final AnnotatedNode an) {
         for (Annotation annotation : annotations) {
             AnnotationNode node = new AnnotationNode(ClassHelper.make(annotation.annotationType()));
             configureAnnotation(node, annotation);
@@ -321,7 +298,7 @@ public class Java8 implements VMPlugin {
     }
 
     @Override
-    public void configureAnnotationNodeFromDefinition(AnnotationNode definition, AnnotationNode root) {
+    public void configureAnnotationNodeFromDefinition(final AnnotationNode definition, final AnnotationNode root) {
         ClassNode type = definition.getClassNode();
         final String typeName = type.getName();
         if ("java.lang.annotation.Retention".equals(typeName)) {
@@ -348,7 +325,7 @@ public class Java8 implements VMPlugin {
     }
 
     @Override
-    public void configureAnnotation(AnnotationNode node) {
+    public void configureAnnotation(final AnnotationNode node) {
         ClassNode type = node.getClassNode();
         VMPlugin plugin = VMPluginFactory.getPlugin();
         List<AnnotationNode> annotations = type.getAnnotations();
@@ -360,7 +337,7 @@ public class Java8 implements VMPlugin {
         }
     }
 
-    private void configureAnnotation(AnnotationNode node, Annotation annotation) {
+    private void configureAnnotation(final AnnotationNode node, final Annotation annotation) {
         Class<?> type = annotation.annotationType();
         if (type == Retention.class) {
             Retention r = (Retention) annotation;
@@ -398,7 +375,7 @@ public class Java8 implements VMPlugin {
         }
     }
 
-    private Expression annotationValueToExpression (Object value) {
+    private Expression annotationValueToExpression(final Object value) {
         if (value == null || value instanceof String || value instanceof Number || value instanceof Character || value instanceof Boolean)
             return new ConstantExpression(value);
 
@@ -408,7 +385,7 @@ public class Java8 implements VMPlugin {
         if (value.getClass().isArray()) {
             ListExpression elementExprs = new ListExpression();
             int len = Array.getLength(value);
-            for (int i = 0; i != len; ++i)
+            for (int i = 0; i != len; i += 1)
                 elementExprs.addExpression(annotationValueToExpression(Array.get(value, i)));
             return elementExprs;
         }
@@ -417,7 +394,7 @@ public class Java8 implements VMPlugin {
     }
 
     @Override
-    public void configureClassNode(CompileUnit compileUnit, ClassNode classNode) {
+    public void configureClassNode(final CompileUnit compileUnit, final ClassNode classNode) {
         try {
             Class<?> clazz = classNode.getTypeClass();
             Field[] fields = clazz.getDeclaredFields();
@@ -430,7 +407,7 @@ public class Java8 implements VMPlugin {
             Method[] methods = clazz.getDeclaredMethods();
             for (Method m : methods) {
                 ClassNode ret = makeClassNode(compileUnit, m.getGenericReturnType(), m.getReturnType());
-                Parameter[] params = processParameters(compileUnit, m);
+                Parameter[] params = makeParameters(compileUnit, m.getGenericParameterTypes(), m.getParameterTypes(), m.getParameterAnnotations(), m);
                 ClassNode[] exceptions = makeClassNodes(compileUnit, m.getGenericExceptionTypes(), m.getExceptionTypes());
                 MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), ret, params, exceptions, null);
                 mn.setSynthetic(m.isSynthetic());
@@ -441,15 +418,7 @@ public class Java8 implements VMPlugin {
             }
             Constructor[] constructors = clazz.getDeclaredConstructors();
             for (Constructor ctor : constructors) {
-                Type[] types = ctor.getGenericParameterTypes();
-                Parameter[] params1 = Parameter.EMPTY_ARRAY;
-                if (types.length > 0) {
-                    params1 = new Parameter[types.length];
-                    for (int i = 0; i < params1.length; i++) {
-                        params1[i] = makeParameter(compileUnit, types[i], ctor.getParameterTypes()[i], getConstructorParameterAnnotations(ctor)[i], "param" + i);
-                    }
-                }
-                Parameter[] params = params1;
+                Parameter[] params = makeParameters(compileUnit, ctor.getGenericParameterTypes(), ctor.getParameterTypes(), getConstructorParameterAnnotations(ctor), ctor);
                 ClassNode[] exceptions = makeClassNodes(compileUnit, ctor.getGenericExceptionTypes(), ctor.getExceptionTypes());
                 ConstructorNode cn = classNode.addConstructor(ctor.getModifiers(), params, exceptions, null);
                 setAnnotationMetaData(ctor.getAnnotations(), cn);
@@ -466,9 +435,9 @@ public class Java8 implements VMPlugin {
                 setAnnotationMetaData(clazz.getPackage().getAnnotations(), packageNode);
             }
         } catch (NoClassDefFoundError e) {
-            throw new NoClassDefFoundError("Unable to load class "+classNode.toString(false)+" due to missing dependency "+e.getMessage());
+            throw new NoClassDefFoundError("Unable to load class " + classNode.toString(false) + " due to missing dependency " + e.getMessage());
         } catch (MalformedParameterizedTypeException e) {
-            throw new RuntimeException("Unable to configure class node for class "+classNode.toString(false)+" due to malformed parameterized types", e);
+            throw new RuntimeException("Unable to configure class node for class " + classNode.toString(false) + " due to malformed parameterized types", e);
         }
     }
 
@@ -487,7 +456,7 @@ public class Java8 implements VMPlugin {
      * @param constructor the Constructor for which to return parameter annotations
      * @return array of arrays containing the annotations on the parameters of the given Constructor
      */
-    private Annotation[][] getConstructorParameterAnnotations(Constructor<?> constructor) {
+    private Annotation[][] getConstructorParameterAnnotations(final Constructor<?> constructor) {
         /*
          * TODO: Remove after JDK9 is the minimum JDK supported
          *
@@ -508,7 +477,7 @@ public class Java8 implements VMPlugin {
                 );
             }
             Annotation[][] adjusted = new Annotation[parameterCount][];
-            for (int i = 0; i < diff; i++) {
+            for (int i = 0; i < diff; i += 1) {
                 adjusted[i] = EMPTY_ANNOTATION_ARRAY;
             }
             System.arraycopy(annotations, 0, adjusted, diff, annotations.length);
@@ -517,7 +486,7 @@ public class Java8 implements VMPlugin {
         return annotations;
     }
 
-    private void makePermittedSubclasses(CompileUnit cu, ClassNode classNode, Class<?> clazz) {
+    private void makePermittedSubclasses(final CompileUnit cu, final ClassNode classNode, final Class<?> clazz) {
         if (!ReflectionUtils.isSealed(clazz)) return;
         List<ClassNode> permittedSubclasses = Arrays.stream(ReflectionUtils.getPermittedSubclasses(clazz))
                 .map(c -> makeClassNode(cu, c, c))
@@ -525,20 +494,20 @@ public class Java8 implements VMPlugin {
         classNode.setPermittedSubclasses(permittedSubclasses);
     }
 
-    private void makeInterfaceTypes(CompileUnit cu, ClassNode classNode, Class<?> clazz) {
+    private void makeInterfaceTypes(final CompileUnit cu, final ClassNode classNode, final Class<?> clazz) {
         Type[] interfaceTypes = clazz.getGenericInterfaces();
-        if (interfaceTypes.length == 0) {
+        final int n = interfaceTypes.length;
+        if (n == 0) {
             classNode.setInterfaces(ClassNode.EMPTY_ARRAY);
         } else {
-            ClassNode[] ret = new ClassNode[interfaceTypes.length];
-            for (int i = 0; i < interfaceTypes.length; i++) {
+            ClassNode[] ret = new ClassNode[n];
+            for (int i = 0; i < n; i += 1) {
                 Type type = interfaceTypes[i];
                 while (!(type instanceof Class)) {
                     ParameterizedType pt = (ParameterizedType) type;
                     Type t2 = pt.getRawType();
-                    if (t2==type) {
-                        throw new GroovyBugError("Cannot transform generic signature of "+clazz+
-                                " with generic interface "+interfaceTypes[i]+" to a class.");
+                    if (t2 == type) {
+                        throw new GroovyBugError("Cannot transform generic signature of " + clazz + " with generic interface " + interfaceTypes[i] + " to a class.");
                     }
                     type = t2;
                 }
@@ -548,15 +517,16 @@ public class Java8 implements VMPlugin {
         }
     }
 
-    private ClassNode[] makeClassNodes(CompileUnit cu, Type[] types, Class<?>[] cls) {
-        ClassNode[] nodes = new ClassNode[types.length];
-        for (int i = 0; i < nodes.length; i++) {
+    private ClassNode[] makeClassNodes(final CompileUnit cu, final Type[] types, final Class<?>[] cls) {
+        final int n = types.length;
+        ClassNode[] nodes = new ClassNode[n];
+        for (int i = 0; i < n; i += 1) {
             nodes[i] = makeClassNode(cu, types[i], cls[i]);
         }
         return nodes;
     }
 
-    private ClassNode makeClassNode(CompileUnit cu, Type t, Class<?> c) {
+    private ClassNode makeClassNode(final CompileUnit cu, final Type t, final Class<?> c) {
         ClassNode back = null;
         if (cu != null) back = cu.getClass(c.getName());
         if (back == null) back = ClassHelper.make(c);
@@ -568,11 +538,30 @@ public class Java8 implements VMPlugin {
         return back.getPlainNodeReference();
     }
 
-    protected Parameter makeParameter(CompileUnit cu, Type type, Class<?> cl, Annotation[] annotations, String name) {
-        ClassNode cn = makeClassNode(cu, type, cl);
-        Parameter parameter = new Parameter(cn, name);
-        setAnnotationMetaData(annotations, parameter);
-        return parameter;
+    private Parameter[] makeParameters(final CompileUnit cu, final Type[] types, final Class<?>[] cls, final Annotation[][] parameterAnnotations, final java.lang.reflect.Member member) {
+        Parameter[] params = Parameter.EMPTY_ARRAY;
+        final int n = types.length;
+        if (n > 0) {
+            params = new Parameter[n];
+            String[] names = new String[n];
+            fillParameterNames(names, member);
+            for (int i = 0; i < n; i += 1) {
+                setAnnotationMetaData(parameterAnnotations[i],
+                        params[i] = new Parameter(makeClassNode(cu, types[i], cls[i]), names[i]));
+            }
+        }
+        return params;
+    }
+
+    protected void fillParameterNames(final String[] names, final java.lang.reflect.Member member) {
+        try {
+            java.lang.reflect.Parameter[] parameters = ((java.lang.reflect.Executable) member).getParameters();
+            for (int i = 0, n = names.length; i < n; i += 1) {
+                names[i] = parameters[i].getName();
+            }
+        } catch (RuntimeException e) {
+            throw new GroovyBugError(e);
+        }
     }
 
     /**
@@ -585,7 +574,7 @@ public class Java8 implements VMPlugin {
      * @return the check result
      */
     @Override
-    public boolean checkCanSetAccessible(AccessibleObject accessibleObject, Class<?> callerClass) {
+    public boolean checkCanSetAccessible(final AccessibleObject accessibleObject, final Class<?> callerClass) {
         SecurityManager sm = System.getSecurityManager();
         try {
             if (sm != null) {
@@ -596,7 +585,7 @@ public class Java8 implements VMPlugin {
         }
 
         if (accessibleObject instanceof Constructor) {
-            Constructor c = (Constructor) accessibleObject;
+            Constructor<?> c = (Constructor<?>) accessibleObject;
             if (c.getDeclaringClass() == Class.class) {
                 return false; // Cannot make a java.lang.Class constructor accessible
             }
@@ -606,12 +595,12 @@ public class Java8 implements VMPlugin {
     }
 
     @Override
-    public boolean checkAccessible(Class<?> callerClass, Class<?> declaringClass, int memberModifiers, boolean allowIllegalAccess) {
+    public boolean checkAccessible(final Class<?> callerClass, final Class<?> declaringClass, final int memberModifiers, final boolean allowIllegalAccess) {
         return true;
     }
 
     @Override
-    public boolean trySetAccessible(AccessibleObject ao) {
+    public boolean trySetAccessible(final AccessibleObject ao) {
         try {
             ao.setAccessible(true);
             return true;
@@ -623,12 +612,12 @@ public class Java8 implements VMPlugin {
     }
 
     @Override
-    public MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?> caller) {
+    public MetaMethod transformMetaMethod(final MetaClass metaClass, final MetaMethod metaMethod, final Class<?> caller) {
         return metaMethod;
     }
 
     @Override
-    public MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod) {
+    public MetaMethod transformMetaMethod(final MetaClass metaClass, final MetaMethod metaMethod) {
         return transformMetaMethod(metaClass, metaMethod, null);
     }
 
@@ -637,33 +626,26 @@ public class Java8 implements VMPlugin {
         IndyInterface.invalidateSwitchPoints();
     }
 
-    protected MethodHandles.Lookup getLookup(Object receiver) {
-        MethodHandles.Lookup lookup = null;
+    protected MethodHandles.Lookup getLookup(final Object receiver) {
+        Optional<MethodHandles.Lookup> lookup = Optional.empty();
         if (receiver instanceof GroovyObject) {
-            Optional<MethodHandles.Lookup> lookupOptional = GroovyObjectHelper.lookup((GroovyObject) receiver);
-            if (lookupOptional.isPresent()) {
-                lookup = lookupOptional.get();
-            }
+            lookup = GroovyObjectHelper.lookup((GroovyObject) receiver);
         }
-        if (null == lookup) {
-            final Class<?> receiverType = receiver.getClass();
-            lookup = newLookup(receiverType);
-        }
-        return lookup;
+        return lookup.orElseGet(() -> newLookup(receiver.getClass()));
     }
 
     @Override
-    public Object getInvokeSpecialHandle(Method method, Object receiver) {
+    public Object getInvokeSpecialHandle(final Method method, final Object receiver) {
         try {
-            MethodHandles.Lookup lookup = getLookup(receiver);
-            Class<?> receiverType = receiver.getClass();
-            return lookup.unreflectSpecial(method, receiverType).bindTo(receiver);
+            return getLookup(receiver)
+                    .unreflectSpecial(method, receiver.getClass())
+                    .bindTo(receiver);
         } catch (ReflectiveOperationException e) {
             return getInvokeSpecialHandleFallback(method, receiver);
         }
     }
 
-    private Object getInvokeSpecialHandleFallback(Method method, Object receiver) {
+    private Object getInvokeSpecialHandleFallback(final Method method, final Object receiver) {
         if (!method.isAccessible()) {
             AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
                 ReflectionUtils.trySetAccessible(method);
@@ -672,23 +654,24 @@ public class Java8 implements VMPlugin {
         }
         Class<?> declaringClass = method.getDeclaringClass();
         try {
-            return newLookup(declaringClass).
-                    unreflectSpecial(method, declaringClass).
-                    bindTo(receiver);
+            return newLookup(declaringClass).unreflectSpecial(method, declaringClass).bindTo(receiver);
         } catch (ReflectiveOperationException e) {
             throw new GroovyBugError(e);
         }
     }
 
     @Override
-    public Object invokeHandle(Object handle, Object[] args) throws Throwable {
-        MethodHandle mh = (MethodHandle) handle;
-        return mh.invokeWithArguments(args);
+    public Object invokeHandle(final Object handle, final Object[] args) throws Throwable {
+        return ((MethodHandle) handle).invokeWithArguments(args);
+    }
+
+    protected MethodHandles.Lookup newLookup(final Class<?> declaringClass) {
+        return of(declaringClass);
     }
 
     public static MethodHandles.Lookup of(final Class<?> declaringClass) {
         try {
-            return getLookupConstructor().newInstance(declaringClass, MethodHandles.Lookup.PRIVATE).in(declaringClass);
+            return LookupHolder.LOOKUP_Constructor.newInstance(declaringClass, MethodHandles.Lookup.PRIVATE).in(declaringClass);
         } catch (final IllegalAccessException | InstantiationException e) {
             throw new IllegalArgumentException(e);
         } catch (final InvocationTargetException e) {
@@ -703,21 +686,21 @@ public class Java8 implements VMPlugin {
             Constructor<MethodHandles.Lookup> lookup;
             try {
                 lookup = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, Integer.TYPE);
-            } catch (final NoSuchMethodException ex) {
-                throw new IllegalStateException("Incompatible JVM", ex);
+            } catch (final NoSuchMethodException e) {
+                throw new IllegalStateException("Incompatible JVM", e);
             }
             try {
                 if (!lookup.isAccessible()) {
-                    final Constructor tmp = lookup;
+                    final Constructor<MethodHandles.Lookup> finalReference = lookup;
                     AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
-                        ReflectionUtils.trySetAccessible(tmp);
+                        ReflectionUtils.trySetAccessible(finalReference);
                         return null;
                     });
                 }
             } catch (SecurityException ignore) {
                 lookup = null;
-            } catch (RuntimeException re) {
-                throw re;
+            } catch (RuntimeException e) {
+                throw e;
             }
             LOOKUP_Constructor = lookup;
         }

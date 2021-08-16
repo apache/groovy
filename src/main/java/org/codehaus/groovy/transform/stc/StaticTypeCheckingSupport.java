@@ -75,7 +75,6 @@ import static java.lang.Math.min;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
-import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.BigInteger_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Byte_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
@@ -103,6 +102,7 @@ import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isBigDecimalType;
+import static org.codehaus.groovy.ast.ClassHelper.isBigIntegerType;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
 import static org.codehaus.groovy.ast.ClassHelper.isGStringType;
 import static org.codehaus.groovy.ast.ClassHelper.isGroovyObjectType;
@@ -177,7 +177,7 @@ public abstract class StaticTypeCheckingSupport {
     protected static final ClassNode ArrayList_TYPE = makeWithoutCaching(ArrayList.class);
     protected static final ClassNode BaseStream_TYPE = makeWithoutCaching(BaseStream.class);
     protected static final ClassNode Collection_TYPE = COLLECTION_TYPE; // TODO: deprecate?
-    protected static final ClassNode Deprecated_TYPE = DEPRECATED_TYPE;
+    protected static final ClassNode Deprecated_TYPE = DEPRECATED_TYPE; // TODO: deprecate?
     protected static final ClassNode LinkedHashMap_TYPE = makeWithoutCaching(LinkedHashMap.class);
     protected static final ClassNode LinkedHashSet_TYPE = makeWithoutCaching(LinkedHashSet.class);
 
@@ -701,11 +701,11 @@ public abstract class StaticTypeCheckingSupport {
         if (rightRedirect == VOID_TYPE) return leftRedirect == void_WRAPPER_TYPE;
 
         if (isNumberType(rightRedirect) || isNumberCategory(rightRedirect)) {
-            if (BigDecimal_TYPE == leftRedirect || Number_TYPE == leftRedirect) {
+            if (isBigDecimalType(leftRedirect) || Number_TYPE.equals(leftRedirect)) {
                 // any number can be assigned to BigDecimal or Number
                 return true;
             }
-            if (BigInteger_TYPE == leftRedirect) {
+            if (isBigIntegerType(leftRedirect)) {
                 return isBigIntCategory(getUnwrapper(rightRedirect)) || rightRedirect.isDerivedFrom(BigInteger_TYPE);
             }
         }
@@ -720,7 +720,7 @@ public abstract class StaticTypeCheckingSupport {
         }
 
         // if left is an enum and right is String or GString we do valueOf
-        if (leftRedirect.isDerivedFrom(Enum_Type) && (rightRedirect == STRING_TYPE || rightRedirect == GSTRING_TYPE)) {
+        if (leftRedirect.isDerivedFrom(Enum_Type) && (rightRedirect == STRING_TYPE || isGStringType(rightRedirect))) {
             return true;
         }
 

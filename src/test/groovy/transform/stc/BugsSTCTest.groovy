@@ -100,7 +100,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
                     x()
                 }
             }
-        ''', 'Cannot find matching method <UnionType:C+T>#x'
+        ''', 'Cannot find matching method T#x'
     }
 
     // GROOVY-10102

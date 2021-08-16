@@ -113,12 +113,12 @@ public class CompilationUnit extends ProcessingUnit {
         }
     }
 
-    /** Controls behavior of {@link #classgen} and other routines. */
+    /** Controls behavior of {@link #classgen()} and other routines. */
     protected boolean debug;
     /** True after the first {@link #configure(CompilerConfiguration)} operation. */
     protected boolean configured;
 
-    /** A callback for use during {@link #classgen} */
+    /** A callback for use during {@link #classgen()} */
     protected ClassgenCallback classgenCallback;
     /** A callback for use during {@link #compile()} */
     protected ProgressCallback progressCallback;
@@ -625,9 +625,8 @@ public class CompilationUnit extends ProcessingUnit {
                 resolve.doPhaseOperation(this);
                 if (dequeued()) continue;
             } else if (phase == Phases.CONVERSION) {
-                Collection<SourceUnit> sourceUnits = sources.values();
-                (sourceUnits.size() > 1 && Boolean.TRUE.equals(configuration.getOptimizationOptions().get(CompilerConfiguration.PARALLEL_PARSE))
-                        ? sourceUnits.parallelStream() : sourceUnits.stream()
+                (sources.size() > 1 && Boolean.TRUE.equals(configuration.getOptimizationOptions().get(CompilerConfiguration.PARALLEL_PARSE))
+                        ? sources.values().parallelStream() : sources.values().stream()
                 ).forEach(SourceUnit::buildAST);
             }
 
@@ -726,7 +725,7 @@ public class CompilationUnit extends ProcessingUnit {
     };
 
     /**
-     * Runs class generation on a single {@code ClassNode}.
+     * Runs {@link #classgen()} on a single {@code ClassNode}.
      */
     private final IPrimaryClassNodeOperation classgen = new IPrimaryClassNodeOperation() {
         @Override

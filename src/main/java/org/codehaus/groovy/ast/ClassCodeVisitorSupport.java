@@ -54,10 +54,14 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     }
 
     public void visitAnnotations(AnnotatedNode node) {
-        for (AnnotationNode annotation : node.getAnnotations()) {
+        visitAnnotations(node.getAnnotations());
+    }
+
+    protected final void visitAnnotations(Iterable<AnnotationNode> nodes) {
+        for (AnnotationNode node : nodes) {
             // skip built-in properties
-            if (!annotation.isBuiltIn()) {
-                visitAnnotation(annotation);
+            if (!node.isBuiltIn()) {
+                visitAnnotation(node);
             }
         }
     }

@@ -95,11 +95,11 @@ public class ErrorCollector implements Serializable {
         errors.add(message);
     }
 
-    public void addErrorAndContinue(String error, ASTNode node, SourceUnit source) {
+    public void addErrorAndContinue(final String error, final ASTNode node, final SourceUnit source) {
         addErrorAndContinue(new SyntaxErrorMessage(
-                new SyntaxException(error,
-                        node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()),
-                source));
+                new SyntaxException(error, node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()),
+                source)
+        );
     }
 
     /**

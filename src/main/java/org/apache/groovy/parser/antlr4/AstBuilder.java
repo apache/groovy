@@ -2199,12 +2199,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
 
         @Override
-        protected Statement createSetterBlock(PropertyNode propertyNode, FieldNode field) {
+        protected Statement createSetterBlock(final PropertyNode propertyNode, final FieldNode field) {
             return stmt(assignX(varX(field), varX(VALUE_STR, field.getType())));
         }
 
         @Override
-        protected Statement createGetterBlock(PropertyNode propertyNode, FieldNode field) {
+        protected Statement createGetterBlock(final PropertyNode propertyNode, final FieldNode field) {
             return stmt(varX(field));
         }
     }
@@ -3721,8 +3721,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
 
         final VariableExpression variableExpression = new VariableExpression(text);
-        variableExpression.setNodeMetaData(IS_BUILT_IN_TYPE, true);
-
+        variableExpression.setNodeMetaData(IS_BUILT_IN_TYPE, Boolean.TRUE);
         return configureAST(variableExpression, ctx);
     }
 
@@ -3873,9 +3872,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
             boolean isVariableExpression = value instanceof VariableExpression;
             verbatimText.append(DOLLAR_STR);
-            if (!isVariableExpression) verbatimText.append("{");
+            if (!isVariableExpression) verbatimText.append('{');
             verbatimText.append(value.getText());
-            if (!isVariableExpression) verbatimText.append("}");
+            if (!isVariableExpression) verbatimText.append('}');
         }
 
         return configureAST(new GStringExpression(verbatimText.toString(), stringLiteralList, values), ctx);
@@ -4235,10 +4234,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
 
         if (!asBoolean(classNode)) {
-            if (VOID_STR.equals(ctx.getText())) { // TODO refine error message for `void`
+            if (VOID_STR.equals(ctx.getText())) {
                 throw createParsingFailedException("void is not allowed here", ctx);
             }
-
             throw createParsingFailedException("Unsupported type: " + ctx.getText(), ctx);
         }
 
@@ -4426,7 +4424,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         List<Tuple2<String, Expression>> annotationElementValues = this.visitElementValues(ctx.elementValues());
 
         annotationElementValues.forEach(e -> annotationNode.addMember(e.getV1(), e.getV2()));
-
+        configureAST(annotationNode.getClassNode(), ctx.annotationName());
         return configureAST(annotationNode, ctx);
     }
 
@@ -4812,9 +4810,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     private boolean isBuiltInType(final Expression expression) {
-        if (!(expression instanceof VariableExpression)) return false;
-
-        return isTrue(expression, IS_BUILT_IN_TYPE);
+        return (expression instanceof VariableExpression && isTrue(expression, IS_BUILT_IN_TYPE));
     }
 
     private org.codehaus.groovy.syntax.Token createGroovyTokenByType(final Token token, final int type) {

@@ -109,6 +109,7 @@ public class GroovyCodeVisitorAdapter implements GroovyCodeVisitor {
     public void visitDoWhileLoop(DoWhileStatement statement) {
     }
 
+    @Override
     public void visitEmptyStatement(EmptyStatement statement) {
     }
 

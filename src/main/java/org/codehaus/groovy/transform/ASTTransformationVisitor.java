@@ -273,8 +273,8 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
             Enumeration<URL> globalServices = transformLoader.getResources("META-INF/services/org.codehaus.groovy.transform.ASTTransformation");
             while (globalServices.hasMoreElements()) {
                 URL service = globalServices.nextElement();
-                String className;
                 try (BufferedReader svcIn = new BufferedReader(new InputStreamReader(URLStreams.openUncachedStream(service), StandardCharsets.UTF_8))) {
+                    String className;
                     try {
                         className = svcIn.readLine();
                     } catch (IOException ioe) {

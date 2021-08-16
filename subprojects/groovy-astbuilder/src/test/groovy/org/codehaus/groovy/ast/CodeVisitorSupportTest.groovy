@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.ast
 
+import groovy.transform.AutoFinal
+import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
 import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.ast.expr.BooleanExpression
@@ -113,35 +115,42 @@ final class CodeVisitorSupportTest {
  * This would be better implemented using invokeMethod but it is called from Java so it
  * won't dispatch correctly.
  */
-@PackageScope
+@AutoFinal @CompileStatic @PackageScope
 class RecordingCodeVisitorSupport extends CodeVisitorSupport implements GroovyInterceptable {
-    def history = []
 
+    List history = []
+
+    @Override
     void visitBlockStatement(BlockStatement node) {
         history << node.getClass()
         super.visitBlockStatement(node)
     }
 
+    @Override
     void visitIfElse(IfStatement node) {
         history << node.getClass()
         super.visitIfElse(node)
     }
 
+    @Override
     void visitBooleanExpression(BooleanExpression node) {
         history << node.getClass()
         super.visitBooleanExpression(node)
     }
 
+    @Override
     void visitEmptyStatement(EmptyStatement node) {
         history << EmptyStatement
         super.visitEmptyStatement(node)
     }
 
+    @Override
     void visitTryCatchFinally(TryCatchStatement node) {
         history << node.getClass()
         super.visitTryCatchFinally(node);
     }
 
+    @Override
     void visitCatchStatement(CatchStatement node) {
         history << node.getClass()
         super.visitCatchStatement(node);

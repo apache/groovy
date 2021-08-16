@@ -265,7 +265,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     @Override
-    public void visitMethod(MethodNode node) {
+    public void visitMethod(final MethodNode node) {
         super.visitMethod(node);
         visitGenericsTypeAnnotations(node);
         visitTypeAnnotations(node.getReturnType());
@@ -921,9 +921,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private static String lookupClassName(final PropertyExpression pe) {
         boolean doInitialClassTest = true;
         StringBuilder name = new StringBuilder(32);
-        // this loop builds a name from right to left each name part
-        // separated by "."
-        for (Expression expr = pe; expr != null; expr = ((PropertyExpression) expr).getObjectExpression()) {
+        // this loop builds a name from right to left each name part separated by "."
+        for (Expression expr = pe; expr != null && name != null; expr = ((PropertyExpression) expr).getObjectExpression()) {
             if (expr instanceof VariableExpression) {
                 VariableExpression ve = (VariableExpression) expr;
                 // stop at super and this
@@ -951,11 +950,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
             Tuple2<StringBuilder, Boolean> classNameInfo = makeClassName(doInitialClassTest, name, property);
             name = classNameInfo.getV1();
-            if (name == null) return null;
             doInitialClassTest = classNameInfo.getV2();
         }
 
-        if (null == name || name.length() == 0) return null;
+        if (name == null || name.length() == 0) return null;
 
         return name.toString();
     }
@@ -1335,11 +1333,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return ace;
     }
 
-    @Override
-    public void visitAnnotations(final AnnotatedNode node) {
-        visitAnnotations(node.getAnnotations());
-    }
-
     private void visitTypeAnnotations(final ClassNode node) {
         visitAnnotations(node.getTypeAnnotations());
         visitGenericsTypeAnnotations(node);
@@ -1365,19 +1358,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
     }
 
-    private void visitAnnotations(List<AnnotationNode> annotations) {
-        if (annotations == null || annotations.isEmpty()) return;
-        for (AnnotationNode an : annotations) {
-            // skip built-in properties
-            if (an.isBuiltIn()) continue;
-            ClassNode annType = an.getClassNode();
-            resolveOrFail(annType, " for annotation", an);
-            for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
-                Expression newValue = transform(member.getValue());
-                Expression adjusted = transformInlineConstants(newValue);
-                member.setValue(adjusted);
-                checkAnnotationMemberValue(adjusted);
-            }
+    @Override
+    protected void visitAnnotation(final AnnotationNode node) {
+        resolveOrFail(node.getClassNode(), " for annotation", node);
+
+        for (Map.Entry<String, Expression> member : node.getMembers().entrySet()) {
+            Expression value = transformInlineConstants(transform(member.getValue()));
+            checkAnnotationMemberValue(value);
+            member.setValue(value);
         }
     }
 
@@ -1464,13 +1452,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
             for (ImportNode importNode : module.getStaticImports().values()) {
                 ClassNode type = importNode.getType();
-                if (resolve(type, true, true, true)) continue;
-                addError("unable to resolve class " + type.getName(), type);
+                if (!resolve(type, true, true, true))
+                    addError("unable to resolve class " + type.getName(), type);
             }
             for (ImportNode importNode : module.getStaticStarImports().values()) {
                 ClassNode type = importNode.getType();
-                if (resolve(type, true, true, true)) continue;
-                addError("unable to resolve class " + type.getName(), type);
+                if (!resolve(type, true, true, true))
+                    addError("unable to resolve class " + type.getName(), type);
             }
             module.setImportsResolved(true);
         }

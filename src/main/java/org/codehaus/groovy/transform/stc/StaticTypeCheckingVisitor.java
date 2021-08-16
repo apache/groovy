@@ -997,7 +997,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         Function<MethodNode, ClassNode> setterType = setter -> {
             ClassNode type = setter.getParameters()[0].getOriginType();
-            if (!setter.isStatic() && GenericsUtils.hasUnresolvedGenerics(type)) {
+            if (!setter.isStatic() && !(setter instanceof ExtensionMethodNode) && GenericsUtils.hasUnresolvedGenerics(type)) {
                 Map<GenericsTypeName, GenericsType> spec = extractPlaceHolders(null, setterInfo.receiverType, setter.getDeclaringClass());
                 type = applyGenericsContext(spec, type);
             }
@@ -3368,7 +3368,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         objectExpression.visit(this);
         call.getMethod().visit(this);
 
-        ClassNode receiver = getType(objectExpression);
+        ClassNode receiver;
+        if (objectExpression instanceof VariableExpression && hasInferredReturnType(objectExpression)) {
+            receiver = getInferredReturnType(objectExpression);
+        } else {
+            receiver = getType(objectExpression);
+        }
         // if it's a spread operator call, then make sure receiver is array or collection
         if (call.isSpreadSafe()) {
             if (!receiver.isArray() && !implementsInterfaceOrIsSubclassOf(receiver, Collection_TYPE)) {
@@ -4757,7 +4762,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else { // GROOVY-9890: always search for default methods
             List<MethodNode> interfaceMethods = new ArrayList<>();
             collectAllInterfaceMethodsByName(receiver, name, interfaceMethods);
-            interfaceMethods.stream().filter(MethodNode::isDefault).forEach(methods::add);
+            interfaceMethods.stream().filter(mn -> mn.isDefault() || (mn.isPublic()
+                && !mn.isStatic() && !mn.isAbstract() && Traits.isTrait(mn.getDeclaringClass()))
+            ).forEach(methods::add);
         }
         if (receiver.isInterface()) {
             methods.addAll(OBJECT_TYPE.getMethods(name));
