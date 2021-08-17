@@ -37,12 +37,14 @@ class GroovyObjectHelperTest {
                 class Inner {}
                 class Inner2 extends Inner3 {}
                 class Inner3 extends Base {}
+                class Inner4 extends StaticInner2 {}
             }
             
             assert Outer.class === GroovyObjectHelper.lookup(new Outer()).get().lookupClass()
             assert Outer.Inner.class === GroovyObjectHelper.lookup(new Outer().new Inner()).get().lookupClass()
             assert Outer.Inner2.class === GroovyObjectHelper.lookup(new Outer().new Inner2()).get().lookupClass()
             assert Outer.Inner3.class === GroovyObjectHelper.lookup(new Outer().new Inner3()).get().lookupClass()
+            assert Outer.Inner4.class === GroovyObjectHelper.lookup(new Outer().new Inner4()).get().lookupClass()
             assert Outer.StaticInner.class === GroovyObjectHelper.lookup(new Outer.StaticInner()).get().lookupClass()
             assert Outer.StaticInner2.class === GroovyObjectHelper.lookup(new Outer.StaticInner2()).get().lookupClass()
             assert Outer.StaticInner.StaticInnest.class === GroovyObjectHelper.lookup(new Outer.StaticInner.StaticInnest()).get().lookupClass()
