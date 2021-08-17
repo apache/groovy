@@ -2522,6 +2522,27 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10196
+    void testShouldFindMethodEvenWithRepeatNames() {
+        assertScript '''
+            interface M<K,V> {
+            }
+            interface MM<K,V> extends M<K,List<V>> {
+                void add(K key, V val)
+            }
+            class MMA<K,V> implements MM<K,V> {
+                @Override
+                void add(K key, V val) {
+                }
+            }
+            class LMM<K,V> extends MMA<K,V> {
+            }
+
+            MM<String,String> map = new LMM<>()
+            map.add('foo','bar')
+        '''
+    }
+
     // GROOVY-5893
     void testPlusInClosure() {
         ['def', 'var', 'Object', 'Number', 'Integer', 'Comparable'].each { type ->
