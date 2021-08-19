@@ -18,81 +18,99 @@
  */
 package groovy.lang
 
-import groovy.test.GroovyShellTestCase
 import org.codehaus.groovy.reflection.ReflectionCache
+import org.junit.After
+import org.junit.Test
 
-class MixinAnnotationTest extends GroovyShellTestCase {
+import static groovy.test.GroovyAssert.assertScript
 
-    void testSingleMixinAnnotation () {
-        evaluate """
+final class MixinAnnotationTest {
 
-interface Mixed {
-  def getA ()
-}
+    @Test
+    void testSingleMixinAnnotation() {
+        assertScript '''
+            interface Mixed {
+                def getA()
+            }
 
-@Category(Mixed)
-class CategoryToUse {
-    static def msg = "under category: "
+            @Category(Mixed)
+            class CategoryToUse {
+                private static String msg = 'under category: '
+                String asText() {
+                    msg + this + ': ' + a
+                }
+            }
 
-    def asText () {
-        msg + this + ": " + a
-    }
-}
+            @Mixin(CategoryToUse)
+            class ClassToExtend implements Mixed {
+                String toString() {
+                    'object of ClassToExtend'
+                }
+                def a = 'blah'
+            }
 
-@Mixin(CategoryToUse)
-class ClassToExtend implements Mixed{
-    String toString () {
-        "object of ClassToExtend"
-    }
-
-    def a = "blah"
-}
-
-        groovy.test.GroovyTestCase.assertEquals("under category: object of ClassToExtend: blah", new ClassToExtend().asText ())
-
-        boolean failed = false;
-        try {
-            new Object().asText ()
-        }
-        catch (MissingMethodException e) {
-          failed = true;
-        }
-        assert failed
-
-        """
+            def result = new ClassToExtend().asText()
+            assert result == 'under category: object of ClassToExtend: blah'
+            groovy.test.GroovyAssert.shouldFail(MissingMethodException) {
+                new Object().asText()
+            }
+        '''
     }
 
+    @Test
     void testMultipleMixinAnnotation () {
-        evaluate """
-@Category(Object)
-class CategoryToUse1 {
-    def asText () {
-        "under category: " + asBiggerText ()
-    }
-}
+        assertScript '''
+            @Category(Object)
+            class CategoryToUse1 {
+                def asText() {
+                    'under category: ' + asBiggerText()
+                }
+            }
 
-@Category(Object)
-class CategoryToUse2 {
-    def asBiggerText () {
-        "under BIG category: " + this
-    }
-}
+            @Category(Object)
+            class CategoryToUse2 {
+                def asBiggerText() {
+                    'under BIG category: ' + this
+                }
+            }
 
-@Mixin([CategoryToUse1, CategoryToUse2])
-class ClassToExtend {
-    String toString () {
-        "object of ClassToExtend"
-    }
-}
+            @Mixin([CategoryToUse1, CategoryToUse2])
+            class ClassToExtend {
+                String toString() {
+                    'object of ClassToExtend'
+                }
+            }
 
-        groovy.test.GroovyTestCase.assertEquals("under category: under BIG category: object of ClassToExtend", new ClassToExtend().asText ())
-        """
+            def result = new ClassToExtend().asText()
+            assert result == 'under category: under BIG category: object of ClassToExtend'
+        '''
     }
 
-    protected void tearDown() {
-        super.tearDown()
-        ReflectionCache.getCachedClass(ArrayList).setNewMopMethods (null)
-        ReflectionCache.getCachedClass(List).setNewMopMethods (null)
+    @Test // GROOVY-10200
+    void testStaticInnerMixinAnnotation() {
+        assertScript '''
+            class A {
+                def getB() {
+                    'works'
+                }
+            }
+            class C {
+                @Mixin(A)
+                static class D {
+                    def test() {
+                        return b
+                    }
+                }
+            }
+            def result = new C.D().test()
+            assert result == 'works'
+        '''
+    }
+
+    @After
+    void tearDown() {
+        ReflectionCache.getCachedClass(ArrayList).setNewMopMethods(null)
+        ReflectionCache.getCachedClass(List).setNewMopMethods(null)
     }
 
 //    void testOneClass () {
