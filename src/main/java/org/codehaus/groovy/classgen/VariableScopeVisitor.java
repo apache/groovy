@@ -238,19 +238,19 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             ClassNode node = scope.getClassScope();
             if (node != null) {
                 Variable member = findClassMember(node, name);
+                boolean requireStatic = (crossingStaticContext || inSpecialConstructorCall);
                 while (member == null && node.getOuterClass() != null && !isAnonymous(node)) {
-                    crossingStaticContext = (crossingStaticContext || isStatic(node.getModifiers()));
+                    requireStatic = requireStatic || isStatic(node.getModifiers());
                     member = findClassMember((node = node.getOuterClass()), name);
                 }
                 if (member != null) {
-                    boolean staticScope = (crossingStaticContext || inSpecialConstructorCall), staticMember = member.isInStaticContext();
-                    // prevent a static context (e.g. a static method) from accessing a non-static variable (e.g. a non-static field)
-                    if (!(staticScope ? !staticMember : node.isScript())) {
+                    // prevent a static context (e.g. a static method) from accessing a non-static member (e.g. a non-static field)
+                    if (requireStatic ? member.isInStaticContext() : !node.isScript()) {
                         variable = member;
                     }
                 }
-                // GROOVY-5961
-                if (!isAnonymous(scope.getClassScope())) break;
+
+                if (!isAnonymous(scope.getClassScope())) break; // GROOVY-5961
             }
             scope = scope.getParent();
         }
