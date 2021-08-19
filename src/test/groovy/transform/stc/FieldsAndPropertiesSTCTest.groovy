@@ -562,7 +562,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             }
             def i = new Outer.Inner()
             def x = i.m()
-        ''', "Apparent variable 'p' was found in a static scope but doesn't refer to a local variable, static field or class."
+        ''', 'The variable [p] is undeclared.'
     }
 
     void testOuterPropertyAccess3() {
