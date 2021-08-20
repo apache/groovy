@@ -245,16 +245,17 @@ public class SourceUnit extends ProcessingUnit {
      * Builds the AST.
      */
     public ModuleNode buildAST() {
-        if (this.ast == null)
-        try {
-            this.ast = parserPlugin.buildAST(this, this.classLoader, this.cst);
-            this.ast.setDescription(this.name);
-        } catch (SyntaxException e) {
-            if (this.ast == null) {
-                // create an empty ModuleNode to represent a failed parse, in case a later phase attempts to use the AST
-                this.ast = new ModuleNode(this);
+        if (this.ast == null) {
+            try {
+                this.ast = parserPlugin.buildAST(this, this.classLoader, this.cst);
+                this.ast.setDescription(this.name);
+            } catch (SyntaxException e) {
+                if (this.ast == null) {
+                    // create an empty ModuleNode to represent a failed parse, in case a later phase attempts to use the AST
+                    this.ast = new ModuleNode(this);
+                }
+                getErrorCollector().addError(new SyntaxErrorMessage(e, this));
             }
-            getErrorCollector().addError(new SyntaxErrorMessage(e, this));
         }
         return this.ast;
     }
