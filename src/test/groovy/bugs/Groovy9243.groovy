@@ -21,11 +21,12 @@ package groovy.bugs
 
 import groovy.transform.CompileStatic
 import org.apache.groovy.util.ScriptRunner
+import org.junit.Ignore
 import org.junit.Test
 
 @CompileStatic
 final class Groovy9243 {
-    @Test
+    @Ignore @Test
     void testResolveNestedClassFromBaseType() {
         ScriptRunner.runScript('/groovy/bugs/groovy9243/Main.groovy')
     }

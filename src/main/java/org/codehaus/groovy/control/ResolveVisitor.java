@@ -41,7 +41,6 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -112,7 +111,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean inPropertyExpression = false;
     private boolean inClosure = false;
 
-    private final Map<ClassNode, ClassNode> possibleOuterClassNodeMap = new HashMap<>();
     private Map<GenericsTypeName, GenericsType> genericParameterNames = new HashMap<>();
     private final Set<FieldNode> fieldTypesChecked = new HashSet<>();
     private boolean checkingVariableTypeInDeclaration;
@@ -526,10 +524,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if (setRedirect(type, cn)) return true;
             // GROOVY-9866: unresolvable interfaces
         }
-
-        // GROOVY-8947: non-static inner class outside of outer class
-        cn = possibleOuterClassNodeMap.get(type);
-        if (cn != null && setRedirect(type, cn)) return true;
 
         // Another case we want to check here is if we are in a
         // nested class A$B$C and want to access B without
@@ -1234,8 +1228,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     protected Expression transformConstructorCallExpression(final ConstructorCallExpression cce) {
-        findPossibleOuterClassNodeForNonStaticInnerClassInstantiation(cce);
-
         ClassNode type = cce.getType();
         if (cce.isUsingAnonymousInnerClass()) { // GROOVY-9642
             resolveOrFail(type.getUnresolvedSuperClass(false), type);
@@ -1247,28 +1239,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
 
         return cce.transformExpression(this);
-    }
-
-    private void findPossibleOuterClassNodeForNonStaticInnerClassInstantiation(final ConstructorCallExpression cce) {
-        // GROOVY-8947: Fail to resolve non-static inner class outside of outer class
-        // `new Computer().new Cpu(4)` will be parsed to `new Cpu(new Computer(), 4)`
-        // so non-static inner class instantiation expression's first argument is a constructor call of outer class
-        // but the first argument is constructor call can not be non-static inner class instantiation expression, e.g.
-        // `new HashSet(new ArrayList())`, so we add "possible" to the variable name
-        Expression argumentExpression = cce.getArguments();
-        if (argumentExpression instanceof ArgumentListExpression) {
-            ArgumentListExpression argumentListExpression = (ArgumentListExpression) argumentExpression;
-            List<Expression> expressionList = argumentListExpression.getExpressions();
-            if (!expressionList.isEmpty()) {
-                Expression firstExpression = expressionList.get(0);
-
-                if (firstExpression instanceof ConstructorCallExpression) {
-                    ConstructorCallExpression constructorCallExpression = (ConstructorCallExpression) firstExpression;
-                    ClassNode possibleOuterClassNode = constructorCallExpression.getType();
-                    possibleOuterClassNodeMap.put(cce.getType(), possibleOuterClassNode);
-                }
-            }
-        }
     }
 
     private static String getDescription(final ClassNode node) {
@@ -1679,6 +1649,5 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             genericsType.setResolved(genericsType.getType().isResolved());
         }
         return genericsType.isResolved();
-
     }
 }
