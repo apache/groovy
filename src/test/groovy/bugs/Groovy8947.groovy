@@ -30,73 +30,90 @@ final class Groovy8947 {
     @Test
     void testResolvingNonStaticInnerClass() {
         assertScript '''
-            public class Computer {
-                public class Cpu {
-                    int coreNumber
-                    public Cpu(int coreNumber) {
-                        this.coreNumber = coreNumber
-                    }
+            class Foo {
+                @groovy.transform.TupleConstructor(defaults=false)
+                class Bar {
+                    def baz
                 }
-                public static newCpuInstance(int coreNumber) {
-                    return new Computer().new Cpu(coreNumber)
+                static newBar(def baz) {
+                    new Foo().new Bar(baz)
                 }
             }
 
-            assert 4 == new Computer().new Cpu(4).coreNumber
-            assert 4 == Computer.newCpuInstance(4).coreNumber
-            assert 0 == new HashSet(new ArrayList()).size()
-
-            def coreNumber = new Computer().new Cpu(4).coreNumber
-            assert 4 == coreNumber
-            def cpu = new Computer().new Cpu(4)
-            assert 4 == cpu.coreNumber
+            assert Foo.newBar('baz').baz == 'baz'
+            assert new Foo().new Bar('baz').baz == 'baz'
         '''
     }
 
     @Test
     void testResolvingNonStaticInnerClass2() {
         assertScript '''
-            public class Computer {
-                public class Cpu {
-                    int coreNumber
-                    public Cpu(int coreNumber) {
-                        this.coreNumber = coreNumber
-                    }
+            class Foo {
+                @groovy.transform.TupleConstructor(defaults=false)
+                class Bar {
+                    def baz
                 }
-                static newComputerInstance() {
-                    return new Computer()
+                static newFoo() {
+                    new Foo()
                 }
-                static newCpuInstance(int coreNumber) {
-                    // `new Cpu(coreNumber)` is inside of the outer class `Computer`, so we can resolve `Cpu`
-                    return newComputerInstance().new Cpu(coreNumber)
+                static newBar(def baz) {
+                    return newFoo().new Bar(baz)
                 }
             }
 
-            assert 4 == Computer.newCpuInstance(4).coreNumber
+            assert Foo.newBar('baz').baz == 'baz'
         '''
     }
 
     @Test
     void testResolvingNonStaticInnerClass3() {
-        def err = shouldFail '''
-            public class Computer {
-                public class Cpu {
-                    int coreNumber
+        assertScript '''
+            class Foo {
+                @groovy.transform.TupleConstructor(defaults=false)
+                class Bar {
+                    def baz
+                }
+                static newFoo() {
+                    new Foo()
+                }
+            }
 
-                    public Cpu(int coreNumber) {
-                        this.coreNumber = coreNumber
+            assert Foo.newFoo().new Foo.Bar('baz').baz == 'baz'
+        '''
+    }
+
+    @Test
+    void testResolvingNonStaticInnerClass4() {
+        def err = shouldFail '''
+            class Foo {
+                @groovy.transform.TupleConstructor(defaults=false)
+                class Bar {
+                    def baz
+                }
+                static newFoo() {
+                    new Foo()
+                }
+            }
+
+            // this form isn't supported outside of enclosing class
+            Foo.newFoo().new Bar('baz')
+        '''
+
+        assert err =~ 'unable to resolve class Bar'
+    }
+
+    @Test
+    void testResolvingNonStaticInnerClass5() {
+        assertScript '''
+            class Foo {
+                class Bar {
+                    class Baz {
+                        final int n = 42
                     }
                 }
             }
-            def newComputerInstance() {
-                return new Computer()
-            }
 
-            // `new Cpu(4)` is outside of outer class `Computer` and the return type of `newComputerInstance()` can not be resolved,
-            // so we does not support this syntax outside of outer class
-            assert 4 == newComputerInstance().new Cpu(4).coreNumber
+            assert new Foo().new Bar().new Baz().getN() == 42
         '''
-
-        assert err =~ 'unable to resolve class Cpu'
     }
 }
