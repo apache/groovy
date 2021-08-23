@@ -1,5 +1,5 @@
 // $Id: ackermann.java,v 1.2 2005-05-13 16:24:17 igouy-guest Exp $
-// http://www.bagley.org/~doug/shootout/ 
+// http://www.bagley.org/~doug/shootout/
 
 public class ackermann {
     public static void main(String[] args) {

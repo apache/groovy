@@ -10,7 +10,7 @@ import java.lang.*;
 import java.util.regex.*;
 
 public class regexdna {
-    
+
     public regexdna() {
     }
 
@@ -20,19 +20,19 @@ public class regexdna {
         char[] cbuf = new char[10240];
         int charsRead = 0;
         try {
-            while ((charsRead = r.read(cbuf, 0, 10240)) != -1) 
+            while ((charsRead = r.read(cbuf, 0, 10240)) != -1)
                 sb.append(cbuf, 0, charsRead);
         } catch (java.io.IOException e) {
             return;
         }
         String sequence = sb.toString();
-        
+
         int initialLength = sequence.length();
         sequence = Pattern.compile(">.*\n|\n").matcher(sequence).replaceAll("");
         int codeLength = sequence.length();
-        
-        String[] variants = { "agggtaaa|tttaccct" ,"[cgt]gggtaaa|tttaccc[acg]", "a[act]ggtaaa|tttacc[agt]t", 
-                 "ag[act]gtaaa|tttac[agt]ct", "agg[act]taaa|ttta[agt]cct", "aggg[acg]aaa|ttt[cgt]ccct",                     
+
+        String[] variants = { "agggtaaa|tttaccct" ,"[cgt]gggtaaa|tttaccc[acg]", "a[act]ggtaaa|tttacc[agt]t",
+                 "ag[act]gtaaa|tttac[agt]ct", "agg[act]taaa|ttta[agt]cct", "aggg[acg]aaa|ttt[cgt]ccct",
                  "agggt[cgt]aa|tt[acg]accct", "agggta[cgt]a|t[acg]taccct", "agggtaa[cgt]|[acg]ttaccct" };
         for (int i = 0; i < variants.length; i++) {
             int count = 0;
@@ -41,7 +41,7 @@ public class regexdna {
                 count++;
             System.out.println(variants[i] + " " + count);
         }
-        
+
         sequence = Pattern.compile("B").matcher(sequence).replaceAll("(c|g|t)");
         sequence = Pattern.compile("D").matcher(sequence).replaceAll("(a|g|t)");
         sequence = Pattern.compile("H").matcher(sequence).replaceAll("(a|c|t)");
@@ -53,7 +53,7 @@ public class regexdna {
         sequence = Pattern.compile("V").matcher(sequence).replaceAll("(a|c|g)");
         sequence = Pattern.compile("W").matcher(sequence).replaceAll("(a|t)");
         sequence = Pattern.compile("Y").matcher(sequence).replaceAll("(c|t)");
-        
+
         System.out.println();
         System.out.println(initialLength);
         System.out.println(codeLength);

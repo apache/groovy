@@ -39,7 +39,7 @@ codeLength = seq.length()
    V: '(a|c|g)',
    W: '(a|t)',
    Y: '(c|t)'
-].each { f, r -> 
+].each { f, r ->
    seq = (seq =~ f).replaceAll(r)
 }
 

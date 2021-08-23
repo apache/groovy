@@ -1,6 +1,6 @@
 /* The Great Computer Language Shootout
    http://shootout.alioth.debian.org/
- 
+
    contributed by Isaac Gouy
 */
 
@@ -12,9 +12,9 @@ public class pidigits {
    public static void main(String args[]) { 
       int n = Integer.parseInt(args[0]);
       int j = 0;
-   
+
       PiDigitSpigot digits = new PiDigitSpigot();
-      
+
       while (n > 0){
          if (n >= L){
             for (int i=0; i<L; i++) System.out.print( digits.next() );
@@ -33,13 +33,13 @@ public class pidigits {
 
 class PiDigitSpigot {
    Transformation z, x, inverse;            
-       
+
    public PiDigitSpigot(){
       z = new Transformation(1,0,0,1);
       x = new Transformation(0,0,0,0);
       inverse = new Transformation(0,0,0,0);
    }   
-   
+
    public int next(){
       int y = digit();
       if (isSafe(y)){ 
@@ -48,19 +48,19 @@ class PiDigitSpigot {
          z = consume( x.next() ); return next();   
       }
    }    
-      
+
    public int digit(){
       return z.extract(3);
    }        
-   
+
    public boolean isSafe(int digit){
       return digit == z.extract(4);
    }   
-   
+
    public Transformation produce(int i){
       return ( inverse.qrst(10,-10*i,0,1) ).compose(z);
    }     
-      
+
    public Transformation consume(Transformation a){
       return z.compose(a);
    }                   
@@ -70,7 +70,7 @@ class PiDigitSpigot {
 class Transformation {
    BigInteger q, r, s, t;
    int k;              
-       
+
    public Transformation(int q, int r, int s, int t){
       this.q = BigInteger.valueOf(q);
       this.r = BigInteger.valueOf(r);
@@ -78,7 +78,7 @@ class Transformation {
       this.t = BigInteger.valueOf(t);                  
       k = 0;
    }
-   
+
    public Transformation(BigInteger q, BigInteger r, BigInteger s, BigInteger t){
       this.q = q;
       this.r = r;
@@ -86,7 +86,7 @@ class Transformation {
       this.t = t;                  
       k = 0;
    }        
-   
+
    public Transformation next(){
       k++;
       q = BigInteger.valueOf(k);
@@ -95,14 +95,14 @@ class Transformation {
       t = BigInteger.valueOf(2 * k + 1); 
       return this;                 
    }      
-   
+
    public int extract(int j){
       BigInteger bigj = BigInteger.valueOf(j);
       BigInteger numerator = (q.multiply(bigj)).add(r);
       BigInteger denominator = (s.multiply(bigj)).add(t);                  
       return ( numerator.divide(denominator) ).intValue();                    
    }     
-   
+
    public Transformation qrst(int q, int r, int s, int t){
       this.q = BigInteger.valueOf(q);
       this.r = BigInteger.valueOf(r);
@@ -111,7 +111,7 @@ class Transformation {
       k = 0;  
       return this;                             
    }         
-  
+
    public Transformation compose(Transformation a){      
       return new Transformation(
          q.multiply(a.q)
@@ -123,4 +123,4 @@ class Transformation {
 }
 
 
-  
+

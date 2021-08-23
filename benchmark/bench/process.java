@@ -1,6 +1,6 @@
 /* The Great Computer Language Shootout
    http://shootout.alioth.debian.org/
- 
+
    contributed by Isaac Gouy 
 */
 
@@ -13,7 +13,7 @@ public class process {
       EndLink chainEnd = new EndLink(null, n);
       chainEnd.start();
       Link chain = chainEnd;
-         
+
       for (int i=2; i<=n; i++){
          Link link = new Link(chain);             
          link.start();
@@ -33,7 +33,7 @@ class Link extends Thread {
    Link next;
    int message = -1;
    boolean busy = false;
-   
+
    Link(Link t){
       next = t;
    }
@@ -70,7 +70,7 @@ class Link extends Thread {
 class EndLink extends Link {
    public int count = 0;
    private int finalcount;
-   
+
    EndLink(Link t, int i){
       super(t);
       finalcount = i;

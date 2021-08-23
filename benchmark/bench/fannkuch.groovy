@@ -35,7 +35,7 @@ def fannkuch(int n) {
             check++
         }
 
-        while (r != 1) { 
+        while (r != 1) {
             count[r - 1] = r
             r--
         }
@@ -43,15 +43,15 @@ def fannkuch(int n) {
             for (i in 0..<n) {
                 perm[i] = perm1[i]
             }
-            
+
             int flipsCount = 0
             int k
 
             while (!((k = perm[0]) == 0)) {
                 int k2 = (k + 1) >> 1
                 for (i in 0..<k2) {
-                    int temp = perm[i] 
-                    perm[i] = perm[k - i] 
+                    int temp = perm[i]
+                    perm[i] = perm[k - i]
                     perm[k - i] = temp
                 }
                 flipsCount++

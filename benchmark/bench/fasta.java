@@ -39,7 +39,7 @@ class fasta {
             new frequency('c', 0.12),
             new frequency('g', 0.12), 
             new frequency('t', 0.27),
-            
+
             new frequency('B', 0.02), 
             new frequency('D', 0.02),
             new frequency('H', 0.02), 
@@ -99,7 +99,7 @@ class fasta {
         }
         if(index != 0) writer.write(bbuffer, 0, index);
     }    
-    
+
     static final void makeRepeatFasta(String id, String desc, String alu, int n, OutputStream writer) throws IOException
     {
         index = 0;
@@ -124,7 +124,7 @@ class fasta {
         }
         if(index != 0) writer.write(bbuffer, 0, index);
     }
-    
+
     public static void main(String[] args) throws IOException {
         makeCumulative(HomoSapiens);
         makeCumulative(IUB);

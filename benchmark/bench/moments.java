@@ -49,7 +49,7 @@ public class moments {
         skew /= (n * variance * standard_deviation);
         kurtosis = kurtosis/(n * variance * variance) - 3.0;
     }
-    
+
     Collections.sort(nums);
 
     mid = (n/2);
@@ -57,7 +57,7 @@ public class moments {
         ((Double)nums.get(mid)).doubleValue() :
         (((Double)nums.get(mid)).doubleValue() +
          ((Double)nums.get(mid-1)).doubleValue())/2;
-    
+
     NumberFormat nf = NumberFormat.getInstance();
     nf.setMaximumFractionDigits(13);
     nf.setGroupingUsed(false);

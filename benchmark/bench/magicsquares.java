@@ -10,10 +10,10 @@ import java.lang.*;
 import java.util.*;
 
 public class magicsquares {
-    
+
     static int n;
     static int mn;
-    
+
     public static class FfmResult {
         public int x;
         public int y;
@@ -24,13 +24,13 @@ public class magicsquares {
             moves = (int[]) imoves.clone();
         }
     }
-    
+
     public static class PQNode implements Comparable {
         public int [] grid;
         boolean priorityCalculated;
         private int priority;
         private FfmResult ffm;
-        
+
         public PQNode() {
             grid = new int [n * n];
             int i;
@@ -75,7 +75,7 @@ public class magicsquares {
 
         public int[] possibleMoves(int x, int y) {
             int zerocount, sum, highest, j, i;
-            
+
             if (grid[x + y * n] != 0)
                 return ( new int [] { });
             ArrayList<int[]> cellGroups = new ArrayList<int[]>();
@@ -150,7 +150,7 @@ public class magicsquares {
             ffm = new FfmResult(mx, my, minmoves);
             return ffm;
         }
-        
+
         public void calculatePriority()
         {
             int i, zerocount;
@@ -161,7 +161,7 @@ public class magicsquares {
             priority = zerocount + findFewestMoves().moves.length;
             priorityCalculated = true;
         }
-        
+
         public int getPriority()
         {
             if (priorityCalculated)
@@ -171,7 +171,7 @@ public class magicsquares {
                 return priority;
             }
         }
-        
+
         public int compareTo(Object anotherMSquare) throws ClassCastException {
             if (!(anotherMSquare instanceof PQNode))
                 throw new ClassCastException();
@@ -202,11 +202,11 @@ public class magicsquares {
             return sb.toString();
         }
 
-        
+
     }
-    
+
     public magicsquares() { }
-    
+
     public static void main(String[] args) {
         n = 3;
         if (args.length > 0) 
@@ -229,6 +229,6 @@ public class magicsquares {
                 pq.offer(newSquare);
             }
         }
-                
+
     }
 }

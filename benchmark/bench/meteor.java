@@ -25,10 +25,10 @@ import java.util.TreeSet;
   * @author Tony Seebregts
   *
   */
-  
+
 public class meteor
    { // CONSTANTS
-       
+
      private static final int[]    SHIFT = { 0,6,11,17,22,28,33,39,44,50 };
      private static final long[][] MASK  = { { 0x01L,      0x02L,      0x04L,      0x08L,      0x10L   },
                      { 0x01L << 6, 0x02L << 6, 0x04L << 6, 0x08L <<  6,0x10L << 6  },
@@ -41,13 +41,13 @@ public class meteor
                      { 0x01L << 44,0x02L << 44,0x04L << 44,0x08L << 44,0x10L << 44 },
                      { 0x01L << 50,0x02L << 50,0x04L << 50,0x08L << 50,0x10L << 50 }
                        };
-     
+
      private static final boolean DEBUG = false;
 
      // CLASS VARIABLES
-     
+
      // INSTANCE VARIABLES
-     
+
      private SortedSet<String> solutions = new TreeSet<String>();
      private Entry[]       solution  = new Entry[10];
      private int       depth     = 0;
@@ -62,7 +62,7 @@ public class meteor
                      new Piece(PIECE8),
                      new Piece(PIECE9)
                        };
-       
+
      // CLASS METHODS
 
      /** Application entry point.
@@ -72,31 +72,31 @@ public class meteor
        *      <li> solution limit
        *      </ul>
        */
-     
+
      public static void main(String[] args)
         { int N = 2098;
-        
+
           // ... parse command line arguments
-        
+
           if (args.length > 0)
          if (args[0].matches("\\d+"))
             N = Integer.parseInt(args[0]);
-            
+
           // ... solve puzzle
-          
+
           meteor        puzzle = new meteor ();
           Date      start;
           Date      end;
           long      time;
           SortedSet<String> solutions;
-          
+
           start     = new Date();
           solutions = puzzle.solve();
           end   = new Date();
           time      = end.getTime() - start.getTime();      
-          
+
           // ... print result
-            
+
           if (solutions.size() > N)
          System.out.println("ERROR");
          else if (solutions.size() < N)
@@ -111,7 +111,7 @@ public class meteor
             System.out.println("LAST     : " + solutions.last ());
             System.out.println();
               }
-           
+
            System.out.print(solutions.size () + " solutions found\n\n");
            print(solutions.first());
            System.out.print("\n");
@@ -124,7 +124,7 @@ public class meteor
        * 
        * 
        */
-    
+
      private static void print (String solution)
          { System.out.print(solution.replaceAll("(\\d{5})(\\d{5})","$1 $2")
                     .replaceAll("(\\d{5})","$1\n")
@@ -132,7 +132,7 @@ public class meteor
          }
 
      // CONSTRUCTORS
-     
+
      /** Initialises the puzzle.
        * 
        */
@@ -141,20 +141,20 @@ public class meteor
         { for (int i=0; i<10; i++)
           solution[i] = new Entry();
         }
-     
+
      // INSTANCE METHODS
-     
+
      /** Initialises the puzzle and solution set at [0,0]
        *
        * @return Sorted list of solution strings.
        */ 
-     
+
      private SortedSet<String> solve()
          { solve(0x0002004008010020L,0,0);
-         
+
            return solutions;
          }
-     
+
      /** Recursively solves the puzzle by fitting pieces into the 
        * next available hexagon.
        * 
@@ -163,122 +163,122 @@ public class meteor
        * @param col     Column next available hexagon. 
        * 
        */
-      
+
      private void solve (long puzzle,int row,int col)
          { for (int ix=0; ix<pieces.length; ix++)
            { Piece   piece;
              Shape[] list;
- 
+
              // ... find shapes that fit
-             
+
              if ((piece = pieces[ix]) == null)
             continue;
             else
             list  = pieces[ix].shapes(row,col);
-               
+
              for (Shape shape: list)
              { // ... fits badly ?
-          
+
                if ((shape.bitmap & puzzle) != 0)
                   continue;
-               
+
                // ... try piece in puzzle
- 
+
                long clone = puzzle | shape.bitmap;
- 
+
                // ... find next position
-                
+
                int irow = row;
                int icol = col/2 + 1;
-                
+
                next:
                while (irow < 10)
                  { while (icol < 5)
                      { if ((clone & MASK[irow][icol]) == 0)
                       break next;
-                              
+
                        icol++;
                      }
-                         
+
                    irow++;
                    icol = 0;
                  }
-                 
+
                // ... solve next
-               
+
                Entry entry;
-                 
+
                pieces[ix]  = null;
                entry   = solution[depth++];
                entry.row   = row;
                entry.col   = col;
                entry.shape = shape;
- 
+
                if (depth == 10)
                   solutions.add(serialize(solution));
                   else
                   solve (clone,irow,2*icol + (irow % 2));
-                
+
                depth--;
                pieces[ix] = piece;
              }
            }
          }
-      
+
      /** Serializes the current solution to a string.
        * 
        */
-      
+
      private String serialize (Entry[] solution)
          { char[] puzzle = new char[50];
            Shape   shape;
            int     row;
            int     col;
-           
+
            for (Entry entry: solution)
            { shape = entry.shape;
              row   = entry.row;
              col   = entry.col;
-             
+
              for (int[] xy: shape.vector)
              puzzle[5 * (row + xy[0]) + (col + xy[1])/2] = shape.symbol;
            }
-      
+
            return new String(puzzle);
          }
-    
+
      // INNER CLASSES
-     
+
      /** Container class for a solution set entry.
        * 
        */
-     
+
      private static class Entry
          { public int   row;
            public int   col;
            public Shape shape; 
          }
-     
+
      /** Container class for the shapes for a single puzzle piece.
        * 
        * 
        */
-     
+
      private static class Piece
          { private Shape[][][] shapes = new Shape[10][10][];
-         
+
            @SuppressWarnings("unchecked")
            private Piece (Shape[] list)
                { // ... initialise
-               
+
              ArrayList[][] array = new ArrayList[10][10];
-             
+
              for (int i=0; i<10; i++)
                  for (int j=0; j<10; j++)
                  array[i][j] = new ArrayList<Shape>();
-             
+
              // ... generate list
-             
+
              for (Shape mutant: list)
                  for (int row=0; row<=mutant.maxRow; row++)
                  for (int col=mutant.minCol; col<=mutant.maxCol; col++)
@@ -287,35 +287,35 @@ public class meteor
                       else if ((row != 0) || (col != 0))
                       array[row][col].add(new Shape(mutant,row,col));
                      }
-             
+
              for (int row=0; row<10; row++)
                  for (int col=0; col<10; col++)
                  shapes[row][col] = (Shape[]) array[row][col].toArray(new Shape[0]);
                }
-           
+
            @SuppressWarnings("unchecked")
            private Shape[] shapes(int row,int col)
                { return shapes[row][col];
                }
-         
+
          }
 
      /** Container class for the shape vector and bitmap single puzzle piece mutation.
        * 
        * 
        */
-     
+
      private static class Shape
         { private char    symbol;
           private int[][] vector;
           private long    bitmap;
           private int     shift;
-          
+
           private boolean islet;
           private int     maxRow;
           private int     minCol;
           private int     maxCol;
-          
+
           private Shape (char    symbol,
                  int[][] vector,
                  long    bitmap,
@@ -328,27 +328,27 @@ public class meteor
             this.vector  = vector;
             this.bitmap  = bitmap;
             this.shift   = shift;
-            
+
             this.islet   = islet;
             this.maxRow  = maxRow;
             this.minCol  = minCol;
             this.maxCol  = maxCol;
               }
-          
+
           private Shape (Shape shape,
                  int   row,
                  int   col)
               { this.symbol  = shape.symbol;
             this.vector  = shape.vector;
             this.bitmap  = shape.bitmap << ((SHIFT[row] + (col - (row % 2))/2) - shape.shift);
-            
+
             this.islet   = shape.islet;
             this.maxRow  = shape.maxRow;
             this.minCol  = shape.minCol;
             this.maxCol  = shape.maxCol;
               }
         }
-     
+
      // PIECES
 
      private static final Shape[] PIECE0 = { new Shape ('0',new int[][] {{3, 5},{2, 4},{1, 3},{0, 2},{0, 0}},0x0000000000082083L,0,false,6,0,4),
@@ -490,5 +490,5 @@ public class meteor
                      new Shape ('9',new int[][] {{3,-1},{2, 0},{1, 1},{0, 2},{0, 0}},0x0000000000021086L,1,false,6,1,7),
                      new Shape ('9',new int[][] {{1,-5},{1,-3},{1,-1},{1, 1},{0, 0}},0x00000000000003C8L,3,false,8,5,8)
                        };
-                       
+
     }

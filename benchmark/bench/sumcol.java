@@ -1,5 +1,5 @@
 // $Id: sumcol.java,v 1.5 2007-06-20 03:32:39 bfulgham Exp $
-// http://www.bagley.org/~doug/shootout/ 
+// http://www.bagley.org/~doug/shootout/
 
 import java.io.*;
 import java.util.*;

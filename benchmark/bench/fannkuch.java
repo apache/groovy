@@ -15,21 +15,21 @@ public final class fannkuch implements Runnable
     private final int n;
     private final int[] flip_max_arr;
     private final AtomicInteger remain_task = new AtomicInteger(0);
-    
+
     public static void main(String[] args)
     {
         int x = (args.length > 0) ? Integer.parseInt(args[0]) : 7;
         fannkuch f = new fannkuch(x);
         System.out.format("Pfannkuchen(%d) = %d\n", x, f.fank_game());
     }
-    
+
     public fannkuch(int N)
     {
         n = N;
         // hold flip_count result for each swap index
         flip_max_arr = new int[n];
     }
-    
+
     private final int fank_game()
     {
         Thread[] th = new Thread[Runtime.getRuntime().availableProcessors()];
@@ -38,9 +38,9 @@ public final class fannkuch implements Runnable
             th[i] = new Thread(this);
             th[i].start();
         }
-        
+
         print_30_permut();
-        
+
         for (Thread t : th)
         {
             try {
@@ -49,14 +49,14 @@ public final class fannkuch implements Runnable
             catch (InterruptedException ie)
             {   }
         }
-        
+
         int mx = 0;
         for (int i : flip_max_arr)
             if (mx < i)
                 mx = i;
         return mx;
     }
-    
+
     // In order to divide tasks 'equally' for many threads, permut generation
     // strategy is different than that of original single thread.
     // this function will 'correctly' print first 30 permutations
@@ -70,11 +70,11 @@ public final class fannkuch implements Runnable
             System.out.print((1 + i));
         }
         System.out.println();
-        
+
         final int[] perm_remain = new int[n];
         for ( int i = 1; i <= n; i++ )
             perm_remain[i -1] = i;
-        
+
         int numPermutationsPrinted = 1;
         for ( int pos_right = 2; pos_right <= n; pos_right++ )
         {
@@ -83,7 +83,7 @@ public final class fannkuch implements Runnable
             {
                 // rotate down perm[0..prev] by one
                 next_perm(permutation, pos_left);
-                
+
                 if (--perm_remain[pos_left] > 0)
                 {
                     if (numPermutationsPrinted++ < 30)
@@ -94,7 +94,7 @@ public final class fannkuch implements Runnable
                     }
                     else
                         return;
-                    
+
                     for ( ; pos_left != 1; --pos_left)
                         perm_remain[pos_left -1] = pos_left;
                 }
@@ -103,7 +103,7 @@ public final class fannkuch implements Runnable
             } while (pos_left < pos_right);
         }
     }
-    
+
     public void run()
     {
         final int[] permutation = new int[n];

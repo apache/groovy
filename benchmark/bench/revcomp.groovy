@@ -2,7 +2,7 @@
  * The Computer Language Benchmarks Game
  * http://shootout.alioth.debian.org/
  *
- * contributed by James Durbin 
+ * contributed by James Durbin
  * slightly modified from Java version from
  * Anthony Donnefort and Razii
  */
