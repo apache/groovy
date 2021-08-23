@@ -73,7 +73,7 @@ class JsonBuilderTest extends GroovyTestCase {
 
         assert json.toString() == '{"a":1,"b":true,"c":null}'
     }
-    
+
     void testNestedObjects() {
         def json = new JsonBuilder()
         json {

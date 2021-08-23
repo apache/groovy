@@ -152,7 +152,7 @@ class ASTTransformationCustomizerTest extends GroovyTestCase {
                 throw new Exception("Global AST transformation should only be applied once")
             }
         }
-        
+
     }
 
 }

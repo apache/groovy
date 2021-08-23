@@ -44,13 +44,13 @@ class FileTreeBuilderTest extends GroovyTestCase {
             }
          }
          // end::example[]
-         
+
          // tag::example_assert[]
          assert new File(tmpDir, '/src/main/groovy/Foo.groovy').text == 'println "Hello"'
          assert new File(tmpDir, '/src/test/groovy/FooTest.groovy').text == 'class FooTest extends groovy.test.GroovyTestCase {}'
          // end::example_assert[]
     }
-    
+
     void testFileTreeBuilderShortHandSyntax() {
         // tag::shorthand_syntax[]
         tmpDir = File.createTempDir()
@@ -68,7 +68,7 @@ class FileTreeBuilderTest extends GroovyTestCase {
             }
          }
          // end::shorthand_syntax[]
-         
+
          // tag::shorthand_syntax_assert[]
          assert new File(tmpDir, '/src/main/groovy/Foo.groovy').text == 'println "Hello"'
          assert new File(tmpDir, '/src/test/groovy/FooTest.groovy').text == 'class FooTest extends groovy.test.GroovyTestCase {}'

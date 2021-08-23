@@ -43,7 +43,7 @@ class TernaryOperatorsTest extends GroovyTestCase {
         println "called with param ${param}"
         assert param == "foo"
     }
-    
+
     void testWithBoolean(){
         def a = 1
         def x = a!=null ? a!=2 : a!=1
@@ -63,7 +63,7 @@ class TernaryOperatorsTest extends GroovyTestCase {
         a = null
         x = a?:2
         assert x==2
-        
+
         def list = ['a','b','c']
         def index = 0
         def ret = list[index++]?:"something else"
@@ -73,13 +73,13 @@ class TernaryOperatorsTest extends GroovyTestCase {
           ?: "something else entirely"
         assert ret2 == 'b'
     }
-    
+
     void testForType() {
         boolean b = false
         int anInt = b ? 100 : 100 / 3
         assert anInt.class == Integer
     }
-    
+
     void testBytecodeRegisters() {
         // this code will blow up if the true and false parts
         // are not handled correctly in regards to the registers.
@@ -119,4 +119,4 @@ class TernaryOperatorsTest extends GroovyTestCase {
                 : "cow"
         assert bar == 'cow'
     }
-}   
+}

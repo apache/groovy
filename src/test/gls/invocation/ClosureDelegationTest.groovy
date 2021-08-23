@@ -63,7 +63,7 @@ assert closure() == "A"
 assert visited==true
         """
     }
-    
+
     void testMissingMethodInvokeMethod() {
       assertScript """
 class A {
@@ -84,7 +84,7 @@ assert closure() == "A"
 assert visited==true
         """
     }
-    
+
     void testInvokeMethodInvokeMethod() {
       assertScript """
 class A {

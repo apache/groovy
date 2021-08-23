@@ -29,13 +29,13 @@ class Groovy4121Bug extends GroovyTestCase {
                 class Account4121 {
                     BigDecimal balance
                     String customer
-                    
+
                     Account4121 deposit(amount) {
                         balance = balance + amount
                         this
                     }
                 }
-                
+
                 def acc = new Account4121(0.0, "Test")
                 acc.deposit(3.1)
                 assert 3.1 == acc.balance

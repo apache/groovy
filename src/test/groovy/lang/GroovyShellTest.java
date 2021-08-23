@@ -115,7 +115,7 @@ public class GroovyShellTest extends GroovyTestCase {
                         "assert evaluate('XXXX') == XXXX\n"+
                         "'''";
         shell.evaluate(script);
-     
+
     }
 
     public void testWithGCSWithURL() throws Exception {
@@ -131,7 +131,7 @@ public class GroovyShellTest extends GroovyTestCase {
             assertEquals("GROOVY3934Helper script called", result);
         }
     }
-    
+
     public void testLaunchesJUnitTestSuite() throws Exception {
         // create a valid (empty) test suite on disk
         String testName = "GroovyShellTestJUnit3Test"+System.currentTimeMillis();
@@ -143,7 +143,7 @@ public class GroovyShellTest extends GroovyTestCase {
                 "    } \r\n" +
                 "} \r\n");
         testSuite.deleteOnExit();
-        
+
         PrintStream out = System.out;
         System.setOut( new PrintStream(new ByteArrayOutputStream()) );
         try {

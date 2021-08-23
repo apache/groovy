@@ -24,7 +24,7 @@ class Groovy3238Bug extends GroovyTestCase {
     def void testRelativeExactnessToMatchForBigIntegerParam() {
         def obj = new Groovy3238Bug()
         def bi = new BigInteger("1")
-        
+
         Groovy3238Bug.metaClass.m = {Double val -> "Double"}; obj.metaClass = null
         assert obj.m(bi) == "Double"
         Groovy3238Bug.metaClass.m = {double val -> "double"}; obj.metaClass = null

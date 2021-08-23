@@ -26,7 +26,7 @@ import javax.swing.table.TableColumn;
 public class DefaultTableColumn extends TableColumn {
 
     private ValueModel valueModel;    
-    
+
     public DefaultTableColumn(ValueModel valueModel) {
         this.valueModel = valueModel;
     }
@@ -45,7 +45,7 @@ public class DefaultTableColumn extends TableColumn {
     public String toString() {
         return super.toString() + "[header:" + getHeaderValue() + " valueModel:" + valueModel + "]";
     }
-    
+
     /**
      * Evaluates the value of a cell
      *

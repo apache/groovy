@@ -24,9 +24,9 @@ class Groovy4169Bug extends CompilableTestSupport {
     void testClosureParameterWithAnnotations() {
         shouldCompile """
             import java.lang.annotation.*
-            
+
             def newClassImpl = { @MyDescription("Whether the class is abstract") boolean abstr ->}
-            
+
             @Retention(RetentionPolicy.RUNTIME)
             @Target([ElementType.TYPE, ElementType.PARAMETER])
             public @interface MyDescription {

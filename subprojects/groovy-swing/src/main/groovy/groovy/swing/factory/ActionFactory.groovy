@@ -65,7 +65,7 @@ class ActionFactory extends AbstractFactory {
             }
             action.putValue(Action.MNEMONIC_KEY, mnemonic as Integer)
         }
-        
+
         for (entry in attributes.entrySet()) {
             String propertyName = (String) entry.getKey()
             // first attempt to set as a straight property

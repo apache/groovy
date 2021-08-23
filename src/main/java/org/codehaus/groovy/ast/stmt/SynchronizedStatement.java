@@ -29,16 +29,16 @@ public class SynchronizedStatement extends Statement {
 
     private Statement code;
     private Expression expression;
-    
+
     public SynchronizedStatement(Expression expression, Statement code) {
         this.expression = expression;
         this.code = code;
     }
-    
+
     public Statement getCode() {
         return code;
     }
-    
+
     public void setCode(Statement statement) {
         code = statement;
     }

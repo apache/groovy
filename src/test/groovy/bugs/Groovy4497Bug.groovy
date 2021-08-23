@@ -24,17 +24,17 @@ class Groovy4497Bug extends GroovyTestCase {
     void testAccessSuperPrivateField() {
         assertScript """
             class Base4497 {
-                def x = 1   
+                def x = 1
             }
-            
+
             class Derived4497 extends Base4497 {
-                def x = 2 
-              
-                def foo() { 
+                def x = 2
+
+                def foo() {
                     super.x
                 }
             }
-            
+
             assert new Derived4497().foo() == 1
         """
     }

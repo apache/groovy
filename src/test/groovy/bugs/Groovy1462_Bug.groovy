@@ -25,7 +25,7 @@ import groovy.test.GroovyTestCase
  */
 
 class Groovy1462_Bug extends GroovyTestCase {
- 
+
     void testShort() {
         def smn = new StringMethodName()
         assert smn.foo0() == 'foo0'
@@ -39,7 +39,7 @@ class Groovy1462_Bug extends GroovyTestCase {
         assert !smn.fooFalse()
         assert smn.fooDef() == null
     }
-    
+
 }
 
 class StringMethodName {

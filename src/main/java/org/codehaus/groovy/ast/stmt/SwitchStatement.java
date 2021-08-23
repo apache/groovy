@@ -32,7 +32,7 @@ public class SwitchStatement extends Statement {
     private Expression expression;
     private List<CaseStatement> caseStatements = new ArrayList<CaseStatement>();
     private Statement defaultStatement;
-    
+
 
     public SwitchStatement(Expression expression) {
         this(expression, EmptyStatement.INSTANCE);
@@ -53,7 +53,7 @@ public class SwitchStatement extends Statement {
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitSwitch(this);
     }
-    
+
     public List<CaseStatement> getCaseStatements() {
         return caseStatements;
     }
@@ -65,7 +65,7 @@ public class SwitchStatement extends Statement {
     public void setExpression(Expression e) {
         expression=e;
     }
-    
+
     public Statement getDefaultStatement() {
         return defaultStatement;
     }

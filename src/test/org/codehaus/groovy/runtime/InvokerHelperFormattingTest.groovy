@@ -61,7 +61,7 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         assert 'a\'b' == InvokerHelper.format('a\'b', false)
         assert 'a\\b' + '' == InvokerHelper.format('a\\b', false)
         assert '\'a\\\'b\'' == InvokerHelper.format('a\'b', true)
-        
+
         assert 'null' == InvokerHelper.format(null, true)
         assert '0.5' == InvokerHelper.format(0.5, true)
         assert '2' == InvokerHelper.format(2, true)
@@ -69,7 +69,7 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         assert '\'a\'' == InvokerHelper.format('a', true)
         assert '\'a\\\'b\'' + '' == InvokerHelper.format('a\'b', true)
         assert '\'a\\\\b\'' + '' == InvokerHelper.format('a\\b', true)
-        
+
         Object eObject = new ExceptionOnToString()
         shouldFail(UnsupportedOperationException) {
             InvokerHelper.format(eObject, false)

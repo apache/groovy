@@ -55,10 +55,10 @@ class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
     @Test
     void testAutoFinalClassMethodDefaultParameters() {
         final String classPart = """
-        String foo(String param0 = 'XyZ', param1 = Closure.IDENTITY) { 
+        String foo(String param0 = 'XyZ', param1 = Closure.IDENTITY) {
             assert param0.equals('XyZ')
             assert param1.is(Closure.IDENTITY)
-            return param0 
+            return param0
         }
         """
         final script = autoFinalTestScript(true, [:], classPart, "final foo = new $autoFinalTestClassName(); foo.foo()")
@@ -132,7 +132,7 @@ class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
             ${hasAnnotation ? "@AutoFinal${annotationParametersTerm}" : ''}
             class $autoFinalTestClassName {
                 $classPart
-            } 
+            }
 
             $scriptPart
         """

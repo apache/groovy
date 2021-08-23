@@ -29,14 +29,14 @@ class MultipleAssignmentDeclarationTest extends CompilableTestSupport {
       assert b==2
     """
   }
-  
+
   void testDefWithoutLiteral() {
     def list = [1, 2]
     def (c, d) = list
     assert c==1
     assert d==2
   }
-  
+
   void testMixedTypes() {
     assertScript """
       def x = "foo"
@@ -48,7 +48,7 @@ class MultipleAssignmentDeclarationTest extends CompilableTestSupport {
       assert j instanceof String
     """
   }
-  
+
   void testMixedTypesWithConversion() {
     assertScript '''
       def x = "foo"
@@ -60,7 +60,7 @@ class MultipleAssignmentDeclarationTest extends CompilableTestSupport {
       assert j instanceof String
     '''
   }
-  
+
   void testDeclarationOrder() {
     assertScript """
       try {
@@ -71,7 +71,7 @@ class MultipleAssignmentDeclarationTest extends CompilableTestSupport {
       }
     """
   }
-  
+
   void testNestedScope() {
     assertScript """
        def c = {
@@ -80,26 +80,26 @@ class MultipleAssignmentDeclarationTest extends CompilableTestSupport {
          assert j==2
        }
        c()
-       
+
        try {
          println i
          assert false
        } catch (MissingPropertyException mpe) {
          assert true
        }
-       
+
        try {
          println j
          assert false
        } catch (MissingPropertyException mpe) {
          assert true
        }
-              
+
        def (i,j) = [2,3]
        assert i==2
        assert j==3
        c()
-       
+
        assert i==2
        assert j==3
     """   

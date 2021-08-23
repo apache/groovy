@@ -27,16 +27,16 @@ class SyntaxTest extends CompilableTestSupport {
 
         short xShort = 011
         assert xShort == 9 as short
-        
+
         byte xByte = 032
         assert xByte == 26 as byte
 
         long xLong = 0246
         assert xLong == 166l
-        
+
         BigInteger xBigInteger = 01111
         assert xBigInteger == 585g
-        
+
         int xNegativeInt = -077
         assert xNegativeInt == -63
         // end::octal_literal_example[]
@@ -49,16 +49,16 @@ class SyntaxTest extends CompilableTestSupport {
 
         short xShort = 0xaa
         assert xShort == 170 as short
-        
+
         byte xByte = 0x3a
         assert xByte == 58 as byte
 
         long xLong = 0xffff
         assert xLong == 65535l
-        
+
         BigInteger xBigInteger = 0xaaaa
         assert xBigInteger == 43690g
-        
+
         Double xDouble = new Double('0x1.0p0')
         assert xDouble == 1.0d
 
@@ -74,13 +74,13 @@ class SyntaxTest extends CompilableTestSupport {
 
         short xShort = 0b11001001
         assert xShort == 201 as short
-        
+
         byte xByte = 0b11
         assert xByte == 3 as byte
 
         long xLong = 0b101101101101
         assert xLong == 2925l
-        
+
         BigInteger xBigInteger = 0b111100100001
         assert xBigInteger == 3873g
 

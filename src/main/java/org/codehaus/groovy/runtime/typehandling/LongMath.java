@@ -26,12 +26,12 @@ public final class LongMath extends NumberMath {
     public static final LongMath INSTANCE = new LongMath();
 
     private LongMath() {}
-                    
+
     @Override
     protected Number absImpl(Number number) {
         return Math.abs(number.longValue());
     }
-    
+
     @Override
     public Number addImpl(Number left, Number right) {
         return left.longValue() + right.longValue();
@@ -51,7 +51,7 @@ public final class LongMath extends NumberMath {
     public Number divideImpl(Number left, Number right) {
         return BigDecimalMath.INSTANCE.divideImpl(left, right);
     }
-    
+
     @Override
     public int compareToImpl(Number left, Number right) {
         long leftVal = left.longValue();
@@ -63,12 +63,12 @@ public final class LongMath extends NumberMath {
     protected Number intdivImpl(Number left, Number right) {
         return left.longValue() / right.longValue();
     }
-    
+
     @Override
     protected Number modImpl(Number left, Number right) {
         return left.longValue() % right.longValue();
     }
-    
+
     @Override
     protected Number unaryMinusImpl(Number left) {
         return -left.longValue();
@@ -83,7 +83,7 @@ public final class LongMath extends NumberMath {
     protected Number bitwiseNegateImpl(Number left) {
         return ~left.longValue();
     }
-    
+
     @Override
     protected Number orImpl(Number left, Number right) {
         return left.longValue() | right.longValue();
@@ -93,12 +93,12 @@ public final class LongMath extends NumberMath {
     protected Number andImpl(Number left, Number right) {
         return left.longValue() & right.longValue();
     }
-    
+
     @Override
     protected Number xorImpl(Number left, Number right) {
         return left.longValue() ^ right.longValue();
     }
-    
+
     @Override
     protected Number leftShiftImpl(Number left, Number right) {
         return left.longValue() << right.longValue();

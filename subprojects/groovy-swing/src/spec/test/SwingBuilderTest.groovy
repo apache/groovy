@@ -25,7 +25,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         // tag::simple_example[]
         import groovy.swing.SwingBuilder
         import java.awt.BorderLayout as BL
-        
+
         count = 0
         new SwingBuilder().edt {
           frame(title: 'Frame', size: [250, 75], show: true) {
@@ -75,7 +75,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         // end::more_involved_example[]
         '''
     }
-    
+
     void testObservableBindingExample() {
         shouldCompile '''
         // tag::observable_binding_example[]

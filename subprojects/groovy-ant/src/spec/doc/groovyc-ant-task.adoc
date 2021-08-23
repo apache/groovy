@@ -161,7 +161,6 @@ the compilation fails. |No
          fork="true" includeantruntime="false" configscript="config.groovy" targetBytecode="1.8"/>
 -----------------------------------------------------------------------
 
-
 [[groovyc-ant-task-nested-elements]]
 === <groovyc> Nested Elements
 

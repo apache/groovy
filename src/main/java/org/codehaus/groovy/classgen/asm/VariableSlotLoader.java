@@ -26,18 +26,18 @@ public class VariableSlotLoader extends BytecodeExpression {
 
     private final int idx;
     private final OperandStack operandStack;
-    
+
     public VariableSlotLoader(ClassNode type, int index, OperandStack os) {
         super(type);
         this.idx = index;
         this.operandStack = os;
     }
-    
+
     public VariableSlotLoader(int index, OperandStack os) {
         this.idx = index;
         this.operandStack = os;
     }
-    
+
     @Override
     public void visit(MethodVisitor mv) {
         operandStack.load(this.getType(), idx);

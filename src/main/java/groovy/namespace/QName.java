@@ -287,4 +287,4 @@ public class QName implements Serializable {
         result = 29 * result + localPart.hashCode();
         return result;
     }
-} 
+}

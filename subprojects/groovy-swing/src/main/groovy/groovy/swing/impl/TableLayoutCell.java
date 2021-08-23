@@ -22,13 +22,13 @@ import java.awt.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/** 
+/**
  * Represents a cell in a table layout.
  */
 public class TableLayoutCell {
 
     protected static final Logger LOG = Logger.getLogger(TableLayoutCell.class.getName());
-    
+
     private TableLayoutRow parent;
     private Component component;
     private GridBagConstraints constraints;
@@ -48,7 +48,7 @@ public class TableLayoutCell {
     private boolean colfill;
     private boolean rowfill;
 
-        
+
     public TableLayoutCell(TableLayoutRow parent) {
         this.parent = parent;
     }
@@ -60,7 +60,7 @@ public class TableLayoutCell {
         this.component = component;
         parent.addCell(this);
     }
-    
+
     public Component getComponent() {
         return component;
     }
@@ -81,7 +81,7 @@ public class TableLayoutCell {
         this.valign = valign;
     }
 
-    
+
     /**
      * Sets the number of columns that this cell should span. The default value is 1
      * @param colspan The default is 1
@@ -140,10 +140,10 @@ public class TableLayoutCell {
         }
         return constraints;
     }
-    
+
     // Implementation methods
-    //-------------------------------------------------------------------------                    
-    
+    //-------------------------------------------------------------------------
+
     protected GridBagConstraints createConstraints() {
         GridBagConstraints answer = new GridBagConstraints();
         answer.anchor = getAnchor();
@@ -155,12 +155,12 @@ public class TableLayoutCell {
         }
         if (isColfill())  {
             answer.fill = isRowfill()
-                ? GridBagConstraints.BOTH 
+                ? GridBagConstraints.BOTH
                 : GridBagConstraints.HORIZONTAL;
         }
         else {
             answer.fill = isRowfill()
-                ? GridBagConstraints.VERTICAL 
+                ? GridBagConstraints.VERTICAL
                 : GridBagConstraints.NONE;
         }
         answer.weightx = 0.2;
@@ -169,14 +169,14 @@ public class TableLayoutCell {
         answer.gridheight = rowspan;
         return answer;
     }
-    
+
     /**
      * @return the GridBagConstraints enumeration for anchor
      */
     protected int getAnchor() {
         boolean isTop = "top".equalsIgnoreCase(valign);
         boolean isBottom = "bottom".equalsIgnoreCase(valign);
-        
+
         if ("center".equalsIgnoreCase(align)) {
             if (isTop) {
                 return GridBagConstraints.NORTH;

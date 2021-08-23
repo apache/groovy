@@ -24,7 +24,7 @@ import groovy.test.GroovyTestCase
  * Test for fixing the Jira issue GROOVY-831
  */
 class Groovy831_Bug extends GroovyTestCase {
-    
+
     String[] cities = ['Seoul', 'London', 'Wasington']
     int[] intArrayData = [1, 3, 5]
 

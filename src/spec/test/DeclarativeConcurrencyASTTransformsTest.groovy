@@ -75,7 +75,7 @@ import java.util.concurrent.TimeUnit
 class Counter {
     int cpt
     private final Object myLock = new Object()
-    
+
     @Synchronized('myLock')
     int incrementAndGet() {
         cpt++

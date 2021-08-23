@@ -21,7 +21,7 @@ package gls.ch03.s01
 import groovy.test.GroovyTestCase
 
 /**
- * Except for comments, identifiers and the contents of ... string 
+ * Except for comments, identifiers and the contents of ... string
  * literals, all input elements are formed from ASCII characters.
  */
 class Unicode2 extends GroovyTestCase {

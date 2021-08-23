@@ -29,7 +29,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
     void testPlus() {
         x = 2 + 2
         assert x == 4
-        
+
         y = x + 1
         assert y == 5
 
@@ -57,10 +57,10 @@ class IntegerOperatorsTest extends GroovyTestCase {
 
         x = c2 + c2
         assert x == 4
-          
+
         y = x + c1
         assert y == 5
-          
+
         y = c1 + x
         assert y == 5
 
@@ -73,11 +73,11 @@ class IntegerOperatorsTest extends GroovyTestCase {
         z = y + x + c1 + c2
         assert z == 12
     }
-    
+
     void testMinus() {
         x = 6 - 2
         assert x == 4
-        
+
         y = x - 1
         assert y == 3
     }
@@ -111,39 +111,39 @@ class IntegerOperatorsTest extends GroovyTestCase {
 
         x = c6 - c2
         assert x == 4
-        
+
         y = x - c1
         assert y == 3
     }
-    
+
     void testMultiply() {
         x = 3 * 2
         assert x == 6
-        
+
         y = x * 2
-        assert y == 12        
+        assert y == 12
     }
-    
+
     void testDivide() {
         x = 80 / 4
         assert x == 20.0 , "x = " + x
-        
+
         y = x / 2
         assert y == 10.0 , "y = " + y
     }
-    
+
     void testIntegerDivide() {
         x = 52.intdiv(3)
         assert x == 17 , "x = " + x
-        
+
         y = x.intdiv(2)
-        assert y == 8 , "y = " + y 
-        
+        assert y == 8 , "y = " + y
+
         y = 11
         y = y.intdiv(3)
-        assert y == 3       
+        assert y == 3
     }
-    
+
     void testMod() {
         x = 100 % 3
 
@@ -153,7 +153,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
         y %= 3
         assert y == 2
     }
-    
+
     void testAnd() {
         x = 1 & 3
 
@@ -163,7 +163,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
 
         assert x == 1
     }
-     
+
      void testOr() {
          x = 1 | 3
 
@@ -181,7 +181,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
 
          assert x ==5
     }
-    
+
     void testShiftOperators() {
 
         x = 8 >> 1
@@ -233,7 +233,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
             def checkResponse() {return null}
 
             Integer responseCode = checkResponse()
-            if (responseCode == 200) { 
+            if (responseCode == 200) {
                 proceed()
             }
         """
@@ -247,7 +247,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
 
                 Integer.metaClass.foo = {1}
                 Integer responseCode = checkResponse()
-                if (responseCode == 200) { 
+                if (responseCode == 200) {
                     proceed()
                 }
             """

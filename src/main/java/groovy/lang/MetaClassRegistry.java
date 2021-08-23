@@ -33,14 +33,14 @@ import java.util.Iterator;
  *
  */
 public interface MetaClassRegistry {
-    
+
     /**
      * The main function of the registry
      * If a meta class exists then return it
      * otherwise create one, put it in the registry and return it
      */
     MetaClass getMetaClass(Class theClass);
-    
+
     /**
      * Adds a metaclass to the registry for the given class
      *
@@ -76,9 +76,9 @@ public interface MetaClassRegistry {
      * @param listener - the update listener
      */
     void addMetaClassRegistryChangeEventListener(MetaClassRegistryChangeEventListener listener);
-    
+
     /**
-     * Adds a meta class change listener for constant meta classes. 
+     * Adds a meta class change listener for constant meta classes.
      * This listener cannot be removed!
      *
      * @param listener - the update listener
@@ -112,8 +112,8 @@ public interface MetaClassRegistry {
      *
      * @return Iterator for the constant meta classes
      */
-    Iterator iterator();    
-    
+    Iterator iterator();
+
     /**
      * Class used as base for the creation of MetaClass implementations.
      * The Class defaults to MetaClassImpl, if the class loading fails to
@@ -121,12 +121,12 @@ public interface MetaClassRegistry {
      * the class name it is created for with the prefix
      * "groovy.runtime.metaclass." By replacing the handle in the registry
      * you can have any control over the creation of what MetaClass is used
-     * for a class that you want to have. 
+     * for a class that you want to have.
      * WARNING: experimental code, likely to change soon
      */
     class MetaClassCreationHandle {
         private boolean disableCustomMetaClassLookup;
-         
+
         /**
          * Creates a metaclass implementation for theClass.
          * @param theClass The class to create a metaclass for

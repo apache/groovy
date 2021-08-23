@@ -38,20 +38,20 @@ import java.util.Map;
 
 /**
  * This class is used as a pluggable way to resolve class names.
- * An instance of this class has to be added to {@link CompilationUnit} using 
- * {@link CompilationUnit#setClassNodeResolver(ClassNodeResolver)}. The 
- * CompilationUnit will then set the resolver on the {@link ResolveVisitor} each 
+ * An instance of this class has to be added to {@link CompilationUnit} using
+ * {@link CompilationUnit#setClassNodeResolver(ClassNodeResolver)}. The
+ * CompilationUnit will then set the resolver on the {@link ResolveVisitor} each
  * time new. The ResolveVisitor will prepare name lookup and then finally ask
- * the resolver if the class exists. This resolver then can return either a 
+ * the resolver if the class exists. This resolver then can return either a
  * SourceUnit or a ClassNode. In case of a SourceUnit the compiler is notified
  * that a new source is to be added to the compilation queue. In case of a
  * ClassNode no further action than the resolving is done. The lookup result
  * is stored in the helper class {@link LookupResult}. This class provides a
  * class cache to cache lookups. If you don't want this, you have to override
- * the methods {@link ClassNodeResolver#cacheClass(String, ClassNode)} and 
+ * the methods {@link ClassNodeResolver#cacheClass(String, ClassNode)} and
  * {@link ClassNodeResolver#getFromClassCache(String)}. Custom lookup logic is
- * supposed to go into the method 
- * {@link ClassNodeResolver#findClassNode(String, CompilationUnit)} while the 
+ * supposed to go into the method
+ * {@link ClassNodeResolver#findClassNode(String, CompilationUnit)} while the
  * entry method is {@link ClassNodeResolver#resolveName(String, CompilationUnit)}
  */
 public class ClassNodeResolver {
@@ -93,8 +93,8 @@ public class ClassNodeResolver {
     // Map to store cached classes
     private final Map<String, ClassNode> cachedClasses = new HashMap<>();
     /**
-     * Internal helper used to indicate a cache hit for a class that does not exist. 
-     * This way further lookups through a slow {@link #findClassNode(String, CompilationUnit)} 
+     * Internal helper used to indicate a cache hit for a class that does not exist.
+     * This way further lookups through a slow {@link #findClassNode(String, CompilationUnit)}
      * path can be avoided.
      * WARNING: This class is not to be used outside of ClassNodeResolver.
      */
@@ -104,17 +104,17 @@ public class ClassNodeResolver {
             throw new GroovyBugError("This is a dummy class node only! Never use it for real classes.");
         }
     };
-    
+
     /**
      * Resolves the name of a class to a SourceUnit or ClassNode. If no
      * class or source is found this method returns null. A lookup is done
      * by first asking the cache if there is an entry for the class already available
-     * to then call {@link #findClassNode(String, CompilationUnit)}. The result 
+     * to then call {@link #findClassNode(String, CompilationUnit)}. The result
      * of that method call will be cached if a ClassNode is found. If a SourceUnit
      * is found, this method will not be asked later on again for that class, because
      * ResolveVisitor will first ask the CompilationUnit for classes in the
      * compilation queue and it will find the class for that SourceUnit there then.
-     * method return a ClassNode instead of a SourceUnit, the res 
+     * method return a ClassNode instead of a SourceUnit, the res
      * @param name - the name of the class
      * @param compilationUnit - the current CompilationUnit
      * @return the LookupResult
@@ -132,7 +132,7 @@ public class ClassNodeResolver {
             return null;
         }
     }
-    
+
     /**
      * caches a ClassNode
      * @param name - the name of the class
@@ -141,7 +141,7 @@ public class ClassNodeResolver {
     public void cacheClass(String name, ClassNode res) {
         cachedClasses.put(name, res);
     }
-    
+
     /**
      * returns whatever is stored in the class cache for the given name
      * @param name - the name of the class
@@ -154,14 +154,14 @@ public class ClassNodeResolver {
         ClassNode cached = cachedClasses.get(name);
         return cached;
     }
-    
+
     /**
      * Extension point for custom lookup logic of finding ClassNodes. Per default
      * this will use the CompilationUnit class loader to do a lookup on the class
-     * path and load the needed class using that loader. Or if a script is found 
-     * and that script is seen as "newer", the script will be used instead of the 
+     * path and load the needed class using that loader. Or if a script is found
+     * and that script is seen as "newer", the script will be used instead of the
      * class.
-     * 
+     *
      * @param name - the name of the class
      * @param compilationUnit - the current compilation unit
      * @return the lookup result
@@ -282,11 +282,11 @@ public class ClassNodeResolver {
         if (oldClass!=null) {
             lr = new LookupResult(null, oldClass);
         }
-        
+
         if (name.startsWith("java.")) return lr;
         //TODO: don't ignore inner static classes completely
         if (name.indexOf('$') != -1) return lr;
-        
+
         // try to find a script from classpath*/
         GroovyClassLoader gcl = compilationUnit.getClassLoader();
         URL url = null;

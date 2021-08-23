@@ -26,12 +26,12 @@ public final class IntegerMath extends NumberMath {
     public static final IntegerMath INSTANCE = new IntegerMath();
 
     private IntegerMath() {}
-                    
+
     @Override
     protected Number absImpl(Number number) {
         return Math.abs(number.intValue());
     }
-    
+
     @Override
     public Number addImpl(Number left, Number right) {
         return left.intValue() + right.intValue();
@@ -51,7 +51,7 @@ public final class IntegerMath extends NumberMath {
     public Number divideImpl(Number left, Number right) {
         return BigDecimalMath.INSTANCE.divideImpl(left, right);
     }
-    
+
     @Override
     public int compareToImpl(Number left, Number right) {
         int leftVal = left.intValue();
@@ -78,7 +78,7 @@ public final class IntegerMath extends NumberMath {
     protected Number intdivImpl(Number left, Number right) {
         return left.intValue() / right.intValue();
     }
-    
+
     @Override
     protected Number modImpl(Number left, Number right) {
         return left.intValue() % right.intValue();

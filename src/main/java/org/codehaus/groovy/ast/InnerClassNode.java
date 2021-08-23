@@ -74,11 +74,11 @@ public class InnerClassNode extends ClassNode {
     public FieldNode getOuterField(String name) {
         return outerClass.getDeclaredField(name);
     }
-    
+
     public VariableScope getVariableScope() {
-        return scope;        
+        return scope;
     }
-    
+
     public void setVariableScope(VariableScope scope) {
         this.scope = scope;
     }

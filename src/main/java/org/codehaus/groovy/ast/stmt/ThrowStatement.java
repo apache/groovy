@@ -28,11 +28,11 @@ import org.codehaus.groovy.ast.expr.Expression;
 public class ThrowStatement extends Statement {
 
     private Expression expression;
-    
+
     public ThrowStatement(Expression expression) {
         this.expression = expression;
     }
-    
+
     public Expression getExpression() {
         return expression;
     }

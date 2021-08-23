@@ -26,7 +26,7 @@ class FileReaderTest extends GroovyTestCase {
     void testFileBOM() {
         def file = File.createTempFile("encoding", ".groovy")
         file.deleteOnExit()
-        
+
         def fos = new FileOutputStream(file)
         // first write the byteorder mark for UTF-8
         fos.write(0xEF)
@@ -35,7 +35,7 @@ class FileReaderTest extends GroovyTestCase {
         fos.write("return 1".getBytes("US-ASCII"))
         fos.flush()
         fos.close()
-        
+
         def config = new CompilerConfiguration()
         config.sourceEncoding = "UTF-8"
         def gcl = new GroovyClassLoader(this.class.classLoader, config)

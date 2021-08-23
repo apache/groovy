@@ -198,7 +198,7 @@ class WorkerThread {
                     }
                 }
                 finally {
-                    return 
+                    return
                 }
             }
         }

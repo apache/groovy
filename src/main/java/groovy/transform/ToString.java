@@ -107,7 +107,7 @@ import java.lang.annotation.Target;
  * </pre>
  * <p>More examples:</p>
  * <pre class="groovyTestCase">
- * //--------------------------------------------------------------------------    
+ * //--------------------------------------------------------------------------
  * // Most simple implementation of toString.
  * import groovy.transform.ToString
  *
@@ -123,7 +123,7 @@ import java.lang.annotation.Target;
  * assert person.toString() == 'Person(mrhaki, [Groovy, Java])'
  * </pre>
  * <pre class="groovyTestCase">
- * //--------------------------------------------------------------------------    
+ * //--------------------------------------------------------------------------
  * // includeNames to output the names of the properties.
  * import groovy.transform.ToString
  *
@@ -155,7 +155,7 @@ import java.lang.annotation.Target;
  * assert person.toString() == 'Person(name:mrhaki, likes:[Groovy, Java], active:false)'
  * </pre>
  * <pre>
- * //--------------------------------------------------------------------------    
+ * //--------------------------------------------------------------------------
  * // Use includeSuper to include properties from super class in output.
  * import groovy.transform.ToString
  *
@@ -176,7 +176,7 @@ import java.lang.annotation.Target;
  * assert student.toString() == 'Student(courses:[IT, Business], super:Person(name:mrhaki, likes:[Groovy, Java]))'
  * </pre>
  * <pre class="groovyTestCase">
- * //--------------------------------------------------------------------------    
+ * //--------------------------------------------------------------------------
  * // excludes active field and likes property from output
  * import groovy.transform.ToString
  *
@@ -247,7 +247,7 @@ import java.lang.annotation.Target;
  *
  * assert course.toString() == 'com.mrhaki.blog.groovy.Course(Groovy 101, 200)'
  * assert course.title == 'Grails with REST'
- * </pre> 
+ * </pre>
  *
  * @see groovy.transform.Immutable
  * @see groovy.transform.Canonical

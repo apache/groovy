@@ -34,7 +34,7 @@ public class IndyCallSiteWriter extends CallSiteWriter {
         super(controller);
         this.controller = controller;
     }
-    
+
     @Override
     public void generateCallSiteArray() {}
     @Override
@@ -49,7 +49,7 @@ public class IndyCallSiteWriter extends CallSiteWriter {
     public void makeSiteEntry() {}
     @Override
     public void makeCallSiteArrayInitializer() {}
-    
+
     @Override
     public void makeGetPropertySite(Expression receiver, String name, boolean safe, boolean implicitThis) {
         InvokeDynamicWriter idw = (InvokeDynamicWriter)controller.getInvocationWriter();
@@ -60,5 +60,5 @@ public class IndyCallSiteWriter extends CallSiteWriter {
         InvokeDynamicWriter idw = (InvokeDynamicWriter)controller.getInvocationWriter();
         idw.writeGetProperty(receiver, name, safe, implicitThis, true);
     }
-    
+
 }

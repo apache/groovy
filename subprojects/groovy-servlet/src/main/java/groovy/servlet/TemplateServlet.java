@@ -210,7 +210,7 @@ public class TemplateServlet extends AbstractHttpServlet {
         if (verbose) {
             log("Looking for cached template by key \"" + key + "\"");
         }
-        
+
         TemplateCacheEntry entry = (TemplateCacheEntry) cache.get(key);
         if (entry != null) {
             if (entry.validate(file)) {
@@ -422,7 +422,7 @@ public class TemplateServlet extends AbstractHttpServlet {
         Template template;
         long getMillis;
         String name;
-        
+
         File file = getScriptUriAsFile(request);
         if (file != null) {
             name = file.getName();

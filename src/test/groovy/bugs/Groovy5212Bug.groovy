@@ -28,7 +28,7 @@ import org.codehaus.groovy.antlr.EnumHelper
 
 class Groovy5212Bug extends GroovyTestCase implements Opcodes {
     File outputDir
-    
+
     @Override
     protected void setUp() {
         super.setUp()
@@ -50,7 +50,7 @@ class Groovy5212Bug extends GroovyTestCase implements Opcodes {
         PrintWriter out = new PrintWriter(wrt)
         JavaStubGenerator generator = new StringJavaStubGenerator(outputDir, out)
         generator.generateClass(cn)
-        
+
         String stub = wrt.toString()
         assert !(stub =~ /final/)
     }

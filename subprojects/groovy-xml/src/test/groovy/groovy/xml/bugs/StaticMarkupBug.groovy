@@ -26,7 +26,7 @@ class StaticMarkupBug extends GroovyTestCase {
     void testBug() {
         doMarkup(new MarkupBuilder())
     }
-    
+
     static void doMarkup(builder) {
         builder.html {
             head {

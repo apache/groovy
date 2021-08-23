@@ -104,7 +104,6 @@ public class DescriptiveErrorStrategy extends BailErrorStrategy {
         notifyErrorListeners(recognizer, this.createInputMismatchErrorMessage(recognizer, e), e);
     }
 
-
     protected String createFailedPredicateErrorMessage(Parser recognizer,
                                                        FailedPredicateException e) {
         return e.getMessage();

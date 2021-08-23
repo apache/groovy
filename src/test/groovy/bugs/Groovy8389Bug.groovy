@@ -24,20 +24,20 @@ class Groovy8389Bug extends GroovyTestCase {
     void testLocalMethodInvoked() {
         assertScript '''
             import static A.bar
-            
+
             class A {
               static bar = "A"
             }
-            
+
             def bar() {
               "bar"
             }
-            
+
             @groovy.transform.CompileStatic
             def usage() {
               bar()
             }
-            
+
             assert "bar" == usage() 
         '''
     }
@@ -45,20 +45,20 @@ class Groovy8389Bug extends GroovyTestCase {
     void testLocalMethodInvoked2() {
         assertScript '''
             import static A.bar
-            
+
             class A {
               static bar = "A"
             }
-            
+
             static bar() {
               "bar"
             }
-            
+
             @groovy.transform.CompileStatic
             def usage() {
               bar()
             }
-            
+
             assert "bar" == usage() 
         '''
     }
@@ -67,21 +67,21 @@ class Groovy8389Bug extends GroovyTestCase {
         assertScript '''
             import static A.baz
             import static A.bar
-            
+
             class A {
               static bar() { "Abar" }
               static baz() { "Abaz" }
             }
-            
+
             def bar() {
               "bar"
             }
-            
+
             @groovy.transform.CompileStatic
             def usage() {
               "${bar()}${baz()}"
             }
-            
+
             assert usage() == 'barAbaz'
         '''
     }
@@ -90,21 +90,21 @@ class Groovy8389Bug extends GroovyTestCase {
         assertScript '''
             import static A.baz
             import static A.bar
-            
+
             class A {
               static bar() { "Abar" }
               static baz() { "Abaz" }
             }
-            
+
             static bar() {
               "bar"
             }
-            
+
             @groovy.transform.CompileStatic
             def usage() {
               "${bar()}${baz()}"
             }
-            
+
             assert usage() == 'barAbaz'
         '''
     }

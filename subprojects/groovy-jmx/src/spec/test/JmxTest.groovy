@@ -28,7 +28,7 @@ class JmxTest extends CompilableTestSupport {
 
             MBeanServerConnection server = null
             String beanName = 'Person'
-            
+
             // tag::introduction_example[]
             println server.getAttribute(beanName, 'Age')
             server.setAttribute(beanName, new Attribute('Name', 'New name'))
@@ -126,7 +126,7 @@ class JmxTest extends CompilableTestSupport {
                 }
             }
             // end::the_jvm[]
-        '''   
+        '''
     }
 
     void testTomcat() {
@@ -177,7 +177,7 @@ class JmxTest extends CompilableTestSupport {
             frame.show()
             chart.draw(swing.canvas.graphics, swing.canvas.bounds)
             // end::tomcat[]
-        '''   
+        '''
     }
 
     void testWebLogic() {
@@ -207,7 +207,7 @@ class JmxTest extends CompilableTestSupport {
                 println "JMS Destination: name=$jms.Name, type=$jms.DestinationType, messages=$jms.MessagesReceivedCount"
             }
             // end::weblogic[]
-        '''   
+        '''
     }
 
     void testSpringClasses() {
@@ -258,7 +258,7 @@ class JmxTest extends CompilableTestSupport {
                 }
             }
             // end::spring_classes[]
-        '''   
+        '''
     }
 
     void testSpringUsage() {
@@ -295,7 +295,7 @@ class JmxTest extends CompilableTestSupport {
             sleep 2000
             assert '20' == calc.addStrings('1f', '1')
             // end::spring_usage[]
-        '''   
+        '''
     }
 
     void testTroubleshooting() {
@@ -312,7 +312,7 @@ class JmxTest extends CompilableTestSupport {
             }
             def connector = JMXConnectorFactory.connect(new JMXServiceURL(serverUrl), jmxEnv)
             // end::troubleshooting[]
-        '''   
+        '''
     }
 
     void testJmxBuilder() {
@@ -381,7 +381,7 @@ class JmxTest extends CompilableTestSupport {
             }
             // end::request_controller[]
 
-            if (true) {            
+            if (true) {
                 // tag::implicit_export[]
                 jmx.export {
                     bean(new RequestController(resource: "Hello World"))
@@ -566,7 +566,7 @@ class JmxTest extends CompilableTestSupport {
                     attributes: "*"
                 ]
             }
-            
+
             // export
             jmx.export(
                 bean(new RequestControllerGroovy())

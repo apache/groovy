@@ -31,17 +31,17 @@ public class CatchStatement extends Statement {
     private Parameter variable;
 
     private Statement code;
-    
+
     public CatchStatement(Parameter variable, Statement code) {
         this.variable = variable;
         this.code = code;
     }
-    
+
     @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitCatchStatement(this);
     }
-    
+
     public Statement getCode() {
         return code;
     }

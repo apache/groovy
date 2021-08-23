@@ -371,7 +371,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
             }
             B b = new B();
             b.v = 3
-            
+
             clos = {
                 if (it!=null) {
                     a[it.v] += 3
@@ -429,7 +429,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
             public boolean someCall() {
                 return true;
             }
-            
+
             public boolean someCode() {
                 boolean val = someCall()
             }        

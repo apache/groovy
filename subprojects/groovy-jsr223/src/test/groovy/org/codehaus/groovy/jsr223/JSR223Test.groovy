@@ -63,7 +63,7 @@ class JSR223Test extends GroovyTestCase {
     void testCheckParameters() {
         ScriptEngine engine = manager.getEngineByName("groovy")
         assertNotNull(engine)
-        
+
         ScriptEngineFactory factory = engine.getFactory()
         assertNotNull(factory)
 

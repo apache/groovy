@@ -28,14 +28,14 @@ class StaticMethodInvocationTest extends CompilableTestSupport {
 class Test { 
   // all errors go away if method is declared non-private 
   private static foo() {} 
-  
+
   static callFooFromStaticMethod() { 
     Test.foo()         
     foo()              
     this.foo()         
     new Test().foo()   
   } 
-  
+
   def callFooFromInstanceMethod() { 
     Test.foo()        
     foo()             
@@ -48,14 +48,14 @@ Test.callFooFromStaticMethod()
 new Test().callFooFromInstanceMethod()          
         """
     }
-    
+
     //GROOVY-6662
     void testStaticMethodNotWronglyCached() {
         assertScript '''
             class A { static bar() {1} }
             class B { static bar() {2} }
             static foo(Class c) { c.bar() }
-            
+
             assert foo(A) == 1
             assert foo(B) == 2
         '''

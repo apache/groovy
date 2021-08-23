@@ -339,7 +339,6 @@ class AstSpecificationCompiler implements GroovyInterceptable {
         makeNodeWithStringParameter(GStringExpression, 'gString', [String, List, List], argBlock, verbatimText)
     }
 
-
     /**
      * Creates a methodPointer.
      */

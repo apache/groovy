@@ -48,7 +48,7 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
     private final ThreadBoundSetter setter;
     private Object initialValue;
     private Closure initialValueCreator;
-    
+
     private static final ReferenceBundle SOFT_BUNDLE = ReferenceBundle.getSoftBundle();
 
     /**

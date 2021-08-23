@@ -37,14 +37,14 @@ public interface ReaderSource extends HasCleanup {
     * @return the reader to the resource
     */
     Reader getReader() throws IOException;
-    
+
    /**
     *  Returns true if the source can be restarted (ie. if getReader()
     *  will return non-null on subsequent calls.
     * @return true if the resource can be reopened for reading
     */
     boolean canReopenSource();
-    
+
    /**
     *  Returns a line from the source, or null, if unavailable.  If
     *  you supply a Janitor, resources will be cached.
@@ -53,7 +53,7 @@ public interface ReaderSource extends HasCleanup {
     * @return the line of interest
     */
     String getLine( int lineNumber, Janitor janitor );
-    
+
    /**
     *  Cleans up any cached resources used by getLine().
     */

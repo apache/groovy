@@ -38,7 +38,7 @@ public class BooleanClosureWrapper {
     private final BooleanReturningMethodInvoker bmi;
     private final Closure wrapped;
     private final int numberOfArguments;
-    
+
     public BooleanClosureWrapper(Closure wrapped) {
         this.wrapped = wrapped;
         this.bmi = new BooleanReturningMethodInvoker("call");
@@ -51,7 +51,7 @@ public class BooleanClosureWrapper {
     public boolean call(Object... args) {
         return bmi.invoke(wrapped, args);
     }
-    
+
     /**
      * Bridge for a call based on a map entry. If the call is done on a {@link Closure}
      * taking one argument, then we give in the {@link Entry}, otherwise we will

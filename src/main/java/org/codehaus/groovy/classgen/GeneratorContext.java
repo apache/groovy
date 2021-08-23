@@ -34,7 +34,7 @@ public class GeneratorContext {
     private int closureClassIdx = 1;
     private int syntheticMethodIdx = 0;
     private final CompileUnit compileUnit;
-    
+
     public GeneratorContext(CompileUnit compileUnit) {
         this.compileUnit = compileUnit;
     }

@@ -36,7 +36,7 @@ public class Duration extends BaseDuration {
     public Duration(final int days, final int hours, final int minutes, final int seconds, final int millis) {
         super(days, hours, minutes, seconds, millis);
     }
-    
+
     public Duration plus(final Duration rhs) {
         return new Duration(this.getDays() + rhs.getDays(), this.getHours() + rhs.getHours(),
                             this.getMinutes() + rhs.getMinutes(), this.getSeconds() + rhs.getSeconds(),
@@ -46,42 +46,42 @@ public class Duration extends BaseDuration {
     public Duration plus(final TimeDuration rhs) {
         return rhs.plus(this);
     }
-    
+
     public DatumDependentDuration plus(final DatumDependentDuration rhs) {
         return rhs.plus(this);
     }
-    
+
     public Duration minus(final Duration rhs) {
         return new Duration(this.getDays() - rhs.getDays(), this.getHours() - rhs.getHours(),
                             this.getMinutes() - rhs.getMinutes(), this.getSeconds() - rhs.getSeconds(),
                             this.getMillis() - rhs.getMillis());
     }
-    
+
     public TimeDuration minus(final TimeDuration rhs) {
         return new TimeDuration(this.getDays() - rhs.getDays(), this.getHours() - rhs.getHours(),
                                 this.getMinutes() - rhs.getMinutes(), this.getSeconds() - rhs.getSeconds(),
                                 this.getMillis() - rhs.getMillis());
     }
-    
+
     public DatumDependentDuration minus(final DatumDependentDuration rhs) {
         return new DatumDependentDuration(-rhs.getYears(), -rhs.getMonths(),
                                           this.getDays() - rhs.getDays(), this.getHours() - rhs.getHours(),
                                           this.getMinutes() - rhs.getMinutes(), this.getSeconds() - rhs.getSeconds(),
                                           this.getMillis() - rhs.getMillis());
     }
-    
+
     public TimeDatumDependentDuration minus(final TimeDatumDependentDuration rhs) {
         return new TimeDatumDependentDuration(-rhs.getYears(), -rhs.getMonths(),
                                               this.getDays() - rhs.getDays(), this.getHours() - rhs.getHours(),
                                               this.getMinutes() - rhs.getMinutes(), this.getSeconds() - rhs.getSeconds(),
                                               this.getMillis() - rhs.getMillis());
     }
-    
+
     @Override
     public long toMilliseconds() {
         return ((((((long)(this.getDays() * 24 ) + this.getHours()) * 60 + this.getMinutes()) * 60) + this.getSeconds()) * 1000) + this.getMillis();
     }
-    
+
     @Override
     public Date getAgo() {
     final Calendar cal = Calendar.getInstance();
@@ -96,10 +96,10 @@ public class Duration extends BaseDuration {
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
-        
+
         return new Date(cal.getTimeInMillis());
     }
-     
+
     @Override
     public From getFrom() {
         return new From() {

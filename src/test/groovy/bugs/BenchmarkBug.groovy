@@ -24,7 +24,7 @@ import groovy.test.GroovyTestCase
  * A little performance test
  */
 class BenchmarkBug extends GroovyTestCase {
-    
+
     void testPerformance() {
         def start = System.currentTimeMillis()
 
@@ -44,7 +44,7 @@ class BenchmarkBug extends GroovyTestCase {
         // assert total == size * 10 + 10
         assert total == 100010
     }
-    
+
     def callSomeMethod(text, total) {
         return 10
     }

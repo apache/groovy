@@ -26,25 +26,25 @@ class MethodCallWithoutParenthesisTest extends GroovyTestCase {
 
     void testMethodCallWithOneParam() {
         flag = false
-        
+
         methodWithOneParam "hello"
-        
+
         assert flag
     }
-    
+
     void testMethodCallWithOneParamUsingThis() {
         flag = false
-        
+
         this.methodWithOneParam "hello"
-        
+
         assert flag
     }
-    
+
     void methodWithOneParam(text) {
         assert text == "hello"
         flag = true
     }
-    
+
     void testMethodCallWithTwoParams() {
         methodWithTwoParams 5, 6
 
@@ -54,10 +54,10 @@ class MethodCallWithoutParenthesisTest extends GroovyTestCase {
 
         assert value == 11
     }
-    
+
     void testMethodCallWithTwoParamsUsingThis() {
         def value = this.methodWithTwoParams(5, 6)
-        
+
         assert value == 11
     }
 

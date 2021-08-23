@@ -22,7 +22,7 @@ public class ClassWithAnonymousInnerClass {
 }
 
 class AnonymusInnerClass  {
-    
+
     public void innerClassMethod(){
     }
 }

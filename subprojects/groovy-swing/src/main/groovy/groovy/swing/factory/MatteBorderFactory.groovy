@@ -32,7 +32,7 @@ class MatteBorderFactory extends SwingBorderFactory {
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
         builder.context.applyBorderToParent = attributes.remove('parent')
-        
+
         def matte
         def border
         if (attributes.containsKey('icon'))  {

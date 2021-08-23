@@ -208,7 +208,7 @@ class MemoizedASTTransformationTest extends GroovyTestCase {
     // GROOVY-8326
     void testMemoizedMethodWithOverrideAnnotation() {
         assertScript '''
-            class A {            
+            class A {
                 @groovy.transform.Memoized
                 @Override
                 String toString() {

@@ -78,7 +78,7 @@ public class SpreadMap extends HashMap {
     }
 
     public boolean equals(SpreadMap that) {
-        if (that == null) return false;        
+        if (that == null) return false;
 
         if (size() == that.size()) {
             for (Object e : entrySet()) {

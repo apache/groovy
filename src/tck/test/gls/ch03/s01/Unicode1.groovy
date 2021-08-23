@@ -21,7 +21,7 @@ package gls.ch03.s01
 import groovy.test.GroovyTestCase
 
 /**
- * Except for comments, identifiers and the contents of ... string 
+ * Except for comments, identifiers and the contents of ... string
  * literals, all input elements are formed from ASCII characters.
  *
  * TODO: Find a better way to test these things
@@ -53,7 +53,7 @@ class Unicode1 extends GroovyTestCase {
         char b = "x"
         def c = "x".charAt(0)
         assert a == b
-        assert a == c 
+        assert a == c
     }
 
 }

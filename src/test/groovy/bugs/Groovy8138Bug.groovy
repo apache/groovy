@@ -24,9 +24,9 @@ class Groovy8138Bug extends GroovyTestCase {
     void test() {
         assertScript '''
             import groovy.transform.CompileStatic
-            
+
             import static java.util.stream.Collectors.toList
-            
+
             @CompileStatic
             class Test {
                 static void main(String[] args) {

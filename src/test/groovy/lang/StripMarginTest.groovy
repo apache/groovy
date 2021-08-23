@@ -80,7 +80,7 @@ def method() {
                 return 'bar'
             }
         """.stripIndent(true)
-        
+
         def expected = """\
     return 'foo'
 }

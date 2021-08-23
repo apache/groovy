@@ -21,15 +21,15 @@ package org.codehaus.groovy.util
 import groovy.test.GroovyTestCase
 
 class ManagedLinkedListTest extends GroovyTestCase {
-  
+
   def list
-  
+
   void setUp() {
     def manager = ReferenceManager.createIdlingManager(null)
     def bundle = new ReferenceBundle(manager, ReferenceType.HARD)
     list = new ManagedLinkedList(bundle)
   }
- 
+
   void testElementAdd() {
     list.add(1)
     def i = 0
@@ -39,11 +39,11 @@ class ManagedLinkedListTest extends GroovyTestCase {
     }
     assert i ==1 
   }
-  
+
   void testEmptylist() {
     assert list.isEmpty()
   }
-  
+
   void testRemoveinTheMiddle() {
     list.add(1)
     list.add(2)
@@ -57,7 +57,7 @@ class ManagedLinkedListTest extends GroovyTestCase {
     def val = list.inject(0){value, it-> value+it}
     assert val == 12
   }
-  
+
   void testAddRemove() {
     10.times {
        list.add(it)

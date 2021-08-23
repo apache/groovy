@@ -47,7 +47,7 @@ class ClassTest extends GroovyTestCase {
             class Computer {
                 class Cpu {
                     int coreNumber
-            
+
                     Cpu(int coreNumber) {
                         this.coreNumber = coreNumber
                     }

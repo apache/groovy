@@ -30,7 +30,7 @@ public class ArgumentListExpression extends TupleExpression {
 
     public static final Object[] EMPTY_ARRAY = {
     };
-    
+
     public static final ArgumentListExpression EMPTY_ARGUMENTS = new ArgumentListExpression();
 
     public ArgumentListExpression() {
@@ -49,7 +49,7 @@ public class ArgumentListExpression extends TupleExpression {
             addExpression(new VariableExpression(parameter));
         }
     }
-    
+
     public ArgumentListExpression(Expression expr) {
         super(expr);
     }
@@ -69,7 +69,7 @@ public class ArgumentListExpression extends TupleExpression {
         ret.copyNodeMetaData(this);
         return ret;
     }
-    
+
     @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitArgumentlistExpression(this);

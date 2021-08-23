@@ -559,7 +559,7 @@ class GStringTest extends GroovyTestCase {
     void testGStringArgumentForStringParameter() {
         def a = 1
         def b = "$a"
-        assert foo(b) == 1 
+        assert foo(b) == 1
     }
 
     /**

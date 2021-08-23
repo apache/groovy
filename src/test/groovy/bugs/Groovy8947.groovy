@@ -45,7 +45,7 @@ final class Groovy8947 {
             assert 4 == new Computer().new Cpu(4).coreNumber
             assert 4 == Computer.newCpuInstance(4).coreNumber
             assert 0 == new HashSet(new ArrayList()).size()
-            
+
             def coreNumber = new Computer().new Cpu(4).coreNumber
             assert 4 == coreNumber
             def cpu = new Computer().new Cpu(4)

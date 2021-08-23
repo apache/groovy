@@ -90,7 +90,7 @@ final class Groovy8444 {
         def err = shouldFail '''\
             enum SomeEnum {
                 A, B
-                
+
                 static final String C = 'C'
             }
             @groovy.transform.CompileStatic
@@ -111,7 +111,7 @@ final class Groovy8444 {
         def err = shouldFail '''\
             enum SomeEnum {
                 A, B
-                
+
                 SomeEnum C = A
             }
             @groovy.transform.CompileStatic
@@ -132,7 +132,7 @@ final class Groovy8444 {
         def err = shouldFail '''\
             enum SomeEnum {
                 A, B
-                
+
                 static SomeEnum C = A
             }
             @groovy.transform.CompileStatic
@@ -153,7 +153,7 @@ final class Groovy8444 {
         def err = shouldFail '''\
             enum SomeEnum {
                 A, B
-                
+
                 static final SomeEnum C = A
             }
             @groovy.transform.CompileStatic

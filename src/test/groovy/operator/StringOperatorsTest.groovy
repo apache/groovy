@@ -64,7 +64,7 @@ class StringOperatorsTest extends GroovyTestCase {
     void testBitwiseNegate() {
         String value="test"
         String s = "^\\S+$value\$"
-        def p = ~s 
+        def p = ~s
         assert p instanceof java.util.regex.Pattern
     }
 }

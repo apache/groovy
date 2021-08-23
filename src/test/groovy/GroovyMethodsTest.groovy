@@ -25,22 +25,22 @@ import java.nio.CharBuffer
 import java.util.concurrent.LinkedBlockingQueue
 import org.codehaus.groovy.util.StringUtil
 
-/** 
+/**
  * Tests various GDK methods
  */
 class GroovyMethodsTest extends GroovyTestCase {
-    
+
     void testAbs() {
         def absoluteNumberOne = 1
         def negativeDouble = -1d
         def negativeFloat = -1f
         def negativeLong = -1l
-        
-        assert absoluteNumberOne == negativeDouble.abs()   
-        assert absoluteNumberOne == negativeFloat.abs()   
-        assert absoluteNumberOne == negativeLong.abs()   
+
+        assert absoluteNumberOne == negativeDouble.abs()
+        assert absoluteNumberOne == negativeFloat.abs()
+        assert absoluteNumberOne == negativeLong.abs()
     }
-    
+
     void testCollect() {
         assert [2, 4, 6].collect {it * 2} == [4, 8, 12]
         def answer = [2, 4, 6].collect(new Vector()) {it * 2}
@@ -566,7 +566,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         def nums = [42, 35, 17, 100]
         assert [].min{ it } == null
         assert nums.min{ it } == 17
-        assert nums.min{ null } in nums 
+        assert nums.min{ null } in nums
         assert nums.min{ it.toString().toList()*.toInteger().sum() } == 100
     }
 
@@ -855,7 +855,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         def f = new File('gradle.properties')
         def u = f.toURL()
         def buf = new byte[f.size()]
-        assert buf.size() == u.withInputStream { i -> i.read(buf) } 
+        assert buf.size() == u.withInputStream { i -> i.read(buf) }
     }
 
     void testMinus() {

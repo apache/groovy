@@ -30,7 +30,7 @@ class Groovy4111Bug extends GroovyTestCase {
                         def obj = new I4111()
                     }
                 }
-                
+
                 interface I4111 {}
             """
             fail('The compilation should have failed as the constructor call is on an interface')

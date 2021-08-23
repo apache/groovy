@@ -29,7 +29,7 @@ class DelegateGeneratedTest extends AbstractGeneratedAstTestCase {
               void m1() { }
               void m2() { }
           }
-          
+
           @Delegate
           D delegate = new D()
       }''')
@@ -40,10 +40,10 @@ class DelegateGeneratedTest extends AbstractGeneratedAstTestCase {
               void m1() { }
               void m2() { }
           }
-          
+
           @Delegate
           D delegate = new D()
-          
+
           void m1() { }
           // void m2() { }
       }''')

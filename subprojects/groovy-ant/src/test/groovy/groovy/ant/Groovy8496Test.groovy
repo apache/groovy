@@ -36,7 +36,7 @@ class Groovy8496Test extends AntTestCase {
                     public class OverrideGetProperty extends GroovyClass8496 {
                         @Override
                         public Object getProperty(String propertyName) {
-                            return super.getProperty(propertyName).toString().toLowerCase(); 
+                            return super.getProperty(propertyName).toString().toLowerCase();
                         }
                         public static void main(String[] args) {
                             System.out.println(new OverrideGetProperty().getProperty("bar"));

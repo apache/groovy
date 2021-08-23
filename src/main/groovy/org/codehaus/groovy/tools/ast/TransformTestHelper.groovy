@@ -52,7 +52,7 @@ class TransformTestHelper {
      * @param transform
      *      the transform to run when compiling the file later
      * @param phase
-     *      the phase to run the transform in 
+     *      the phase to run the transform in
      */
     TransformTestHelper(ASTTransformation transform, CompilePhase phase) {
         this.transform = transform

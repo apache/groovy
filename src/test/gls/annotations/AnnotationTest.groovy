@@ -535,13 +535,13 @@ final class AnnotationTest extends CompilableTestSupport {
         scriptStr = """
             import java.lang.annotation.Retention
             import java.lang.annotation.RetentionPolicy
-            
+
             @Retention(RetentionPolicy.RUNTIME)
             @interface Annot3454V2 {
                 String x() default 'xxx'
                 String y()
             }
-            
+
             @Annot3454V2
             class Bar {}
         """
@@ -552,16 +552,16 @@ final class AnnotationTest extends CompilableTestSupport {
         scriptStr = """
             import java.lang.annotation.Retention
             import java.lang.annotation.RetentionPolicy
-            
+
             @Retention(RetentionPolicy.RUNTIME)
             @interface Annot3454V3 {
                 String x() default 'xxx'
                 String y()
             }
-            
+
             @Annot3454V3(y = 'yyy')
             class Bar {}
-            
+
             def anno = Bar.class.getAnnotation(Annot3454V3)
             assert anno.x() == 'xxx'
             assert anno.y() == 'yyy'
@@ -652,7 +652,7 @@ final class AnnotationTest extends CompilableTestSupport {
     void testAnnotationOnEnumConstant() {
         assertScript '''import gls.annotations.XmlEnum
             import gls.annotations.XmlEnumValue
-            
+
             @XmlEnum
             enum GroovyEnum {
                 @XmlEnumValue("good")
@@ -868,7 +868,7 @@ final class AnnotationTest extends CompilableTestSupport {
 
             @ConstAnnotation(ints = 42)
             class Child1 extends Base3278 {}
-            
+
             class OtherConstants {
                 static final Integer CONST3 = 3278
             }

@@ -1369,7 +1369,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         throw createParsingFailedException("Unsupported switch expression label: " + ctx.getText(), ctx);
     }
 
-
     // } statement -------------------------------------------------------------
 
     @Override
@@ -2418,7 +2417,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         Expression baseExpr = (Expression) this.visit(ctx.expression());
 
-
         if (hasArgumentList || hasCommandArgument) {
             if (baseExpr instanceof BinaryExpression) {
                 if (!"[".equals(((BinaryExpression) baseExpr).getOperation().getText()) && !isInsideParentheses(baseExpr)) {
@@ -2633,7 +2631,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         if (asBoolean(ctx.namePart())) {
             Expression namePartExpr = this.visitNamePart(ctx.namePart());
             GenericsType[] genericsTypes = this.visitNonWildcardTypeArguments(ctx.nonWildcardTypeArguments());
-
 
             if (asBoolean(ctx.DOT())) {
                 boolean isSafeChain = this.isTrue(baseExpr, PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN);

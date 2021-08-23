@@ -28,11 +28,11 @@ class Groovy4116Bug extends GroovyTestCase {
                 class C4116 implements I4116 {
                     protected foo() {}
                 }
-                
+
                 interface I4116 {
                     def foo()
                 }
-                
+
                 def c = new C4116()
                 c.foo()
             """
@@ -50,11 +50,11 @@ class Groovy4116Bug extends GroovyTestCase {
                 class C4116V2 extends S4116V2 {
                     protected foo() {}
                 }
-                
+
                 interface I4116V2 {
                     def foo()
                 }
-                
+
                 def c = new C4116V2()
                 c.foo()
             """

@@ -42,7 +42,7 @@ public class ReflectorLoader extends ClassLoader {
     private final ClassLoader delegatationLoader;
 
     private static final String REFLECTOR = Reflector.class.getName();
-    
+
     /**
      * Tries to find a Groovy class.
      * 
@@ -54,7 +54,7 @@ public class ReflectorLoader extends ClassLoader {
         if (delegatationLoader==null) return super.findClass(name);
         return delegatationLoader.loadClass(name);
     }
-    
+
     /**
      * Loads a class per name. Unlike a normal loadClass this version
      * behaves different during a class definition. In that case it
@@ -74,7 +74,7 @@ public class ReflectorLoader extends ClassLoader {
         }
         return super.loadClass(name, resolve);
     }
-    
+
     /**
      * helper method to define Reflector classes.
      * @param name of the Reflector
@@ -90,7 +90,7 @@ public class ReflectorLoader extends ClassLoader {
         inDefine = false;
         return c;
     }
-    
+
     /**
      * creates a ReflectorLoader.
      * @param parent the parent loader. This should never be null!
@@ -99,7 +99,7 @@ public class ReflectorLoader extends ClassLoader {
         super(parent);
         delegatationLoader = getClass().getClassLoader();
     }
-    
+
     /**
      * try to load one of the defined Reflector classes by name.
      * @param name of the Reflector class

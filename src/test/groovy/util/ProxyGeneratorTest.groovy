@@ -85,7 +85,7 @@ class ProxyGeneratorTest extends GroovyTestCase {
         assert testClass.myMethodX() == "the injected X"
         assert testClass.myMethodE() == "the injected E"
     }
-    
+
     void testDelegateForGROOVY_2705() {
         def delegate = [1, 2, 3, 4, 5]
         def testClass = generator.instantiateDelegate([List], delegate)
@@ -126,7 +126,7 @@ class ProxyGeneratorTest extends GroovyTestCase {
         def proxy = gen.instantiateAggregateFromBaseClass(map, Object)
         assert proxy.toString() == 'hello'
     }
-    
+
     void testProxyWithClosureChangedAfterCreation() {
         def map = [ toString: { 'hello'} ]
         def gen = new ProxyGenerator()
@@ -135,7 +135,7 @@ class ProxyGeneratorTest extends GroovyTestCase {
         map.toString = { 'world' }
         assert proxy.toString() == 'world'
     }
-    
+
     void testProxyMethodUsingLongAsParameter() {
         def map = [ foo: { a,b -> a*b }]
         def gen = new ProxyGenerator()

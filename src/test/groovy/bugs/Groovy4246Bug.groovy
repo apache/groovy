@@ -28,7 +28,7 @@ class Groovy4246Bug extends GroovyTestCase {
                 static void main(args) {
                     new Bug4246()    
                 }
-            
+
                 Bug4246() {
                     def num = 10
                     def arr = [0, 0, 0]
@@ -38,7 +38,7 @@ class Groovy4246Bug extends GroovyTestCase {
                     assert (arr[0] + arr[1] + arr[2] == num)
                     assert randCallCount == 10
                 }
-            
+
                 int rand() {
                     randCallCount++
                     return new Random().nextInt(3)    

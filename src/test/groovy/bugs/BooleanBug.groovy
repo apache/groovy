@@ -23,7 +23,7 @@ import groovy.test.GroovyTestCase
 /**
  */
 class BooleanBug extends GroovyTestCase {
-    
+
     void testBug() {
         def x = new BooleanBean(name:'James', foo:true)
         def y = new BooleanBean(name:'Bob', foo:false)
@@ -33,17 +33,17 @@ class BooleanBug extends GroovyTestCase {
         y.foo = true
         assert y.foo
     }
-    
+
     void testBug2() {
         BooleanBean bean = new BooleanBean(name:'Gromit', foo:false)
         def value = isApplicableTo(bean)
         assert value
     }
-    
+
     public boolean isApplicableTo(BooleanBean field) {
         return !field.isFoo();
     }
-    
+
     public testBooleanAsMethodArgumentFromCompare() {
         assertScript """
             def foo(x){x}

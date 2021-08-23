@@ -27,7 +27,7 @@ import java.util.Map;
 
 public abstract class Builder extends GroovyObjectSupport {
     protected final Map namespaceMethodMap = new HashMap();
-    
+
     public Builder(final Map namespaceMethodMap) {
         for (Object e : namespaceMethodMap.entrySet()) {
             Map.Entry entry = (Map.Entry) e;
@@ -38,7 +38,7 @@ public abstract class Builder extends GroovyObjectSupport {
             this.namespaceMethodMap.put(key, new Object[] { value.get(0), dg, fettleMethodMap(dg, (Map) value.get(2)) });
         }
     }
-    
+
     private static Map fettleMethodMap(final Closure defaultGenerator, final Map methodMap) {
     final Map newMethodMap = new HashMap();
 
@@ -52,21 +52,21 @@ public abstract class Builder extends GroovyObjectSupport {
                 newMethodMap.put(key, defaultGenerator.curry((Object[]) value));
             }
         }
-        
+
         return newMethodMap;
     }
-    
+
     public abstract Object bind(Closure root);
-    
+
     protected abstract static class Built extends GroovyObjectSupport {
     protected final Closure root;
     protected final Map namespaceSpecificTags = new HashMap();
-        
+
         public Built(final Closure root, final Map namespaceTagMap) {
             this.namespaceSpecificTags.putAll(namespaceTagMap);
-        
+
             this.root = (Closure)root.clone();
-            
+
             this.root.setDelegate(this);
         }
     }

@@ -21,7 +21,7 @@ package groovy.bugs
 import groovy.test.GroovyTestCase
 
 class NullCompareBug extends GroovyTestCase {
-    
+
     void testBug() {
         assert "dog" > null
         assert null < "dog"

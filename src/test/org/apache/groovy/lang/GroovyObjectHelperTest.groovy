@@ -39,7 +39,7 @@ class GroovyObjectHelperTest {
                 class Inner3 extends Base {}
                 class Inner4 extends StaticInner2 {}
             }
-            
+
             assert Outer.class === GroovyObjectHelper.lookup(new Outer()).get().lookupClass()
             assert Outer.Inner.class === GroovyObjectHelper.lookup(new Outer().new Inner()).get().lookupClass()
             assert Outer.Inner2.class === GroovyObjectHelper.lookup(new Outer().new Inner2()).get().lookupClass()

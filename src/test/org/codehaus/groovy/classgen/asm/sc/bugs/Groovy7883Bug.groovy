@@ -27,7 +27,7 @@ class Groovy7883Bug extends GroovyTestCase {
         void doIt() {
             throw new AssertionError("abc")
         }
-        
+
         try {
             doIt()
             assert false: "should never reach here"
@@ -43,12 +43,12 @@ class Groovy7883Bug extends GroovyTestCase {
         class A {
             private void doIt() {}
         }
-        
+
         @groovy.transform.CompileStatic
         class B {
             public void m() { new A().doIt() }
         }
-        
+
         new B().m()
         '''
 
@@ -61,12 +61,12 @@ class Groovy7883Bug extends GroovyTestCase {
         class A {
             private void doIt() {}
         }
-        
+
         @groovy.transform.CompileStatic
         class B extends A {
             public void m() { doIt() }
         }
-        
+
         new B().m()
         '''
 
@@ -84,12 +84,12 @@ class Groovy7883Bug extends GroovyTestCase {
             private void doIt2() {}
             public void doIt3() { doIt() }
         }
-        
+
         @groovy.transform.CompileStatic
         class B extends A {
             public void m() { doIt() }
         }
-        
+
         new B().m()
         new B().doIt3()
         '''
@@ -102,12 +102,12 @@ class Groovy7883Bug extends GroovyTestCase {
             protected void doIt(ArrayList al) { doIt2(al) }
             private void doIt2(List list, String x = "abc") {}
         }
-        
+
         @groovy.transform.CompileStatic
         class B extends A {
             public void m() { doIt(new ArrayList()) }
         }
-        
+
         new B().m()
         '''
     }
@@ -120,7 +120,7 @@ class Groovy7883Bug extends GroovyTestCase {
             private void doIt2(List list, String x = "abc") {}
             public void doIt3() { }
         }
-        
+
         @groovy.transform.CompileStatic
         class B extends A {
             class C {
@@ -129,9 +129,9 @@ class Groovy7883Bug extends GroovyTestCase {
                     doIt3();
                 }
             }
-            
+
         }
-        
+
         assert true
         '''
     }
@@ -143,15 +143,15 @@ class Groovy7883Bug extends GroovyTestCase {
             protected void doIt(ArrayList al) { doIt2(al) }
             private void doIt2(List list, String x = "abc") {}
         }
-        
+
         @groovy.transform.CompileStatic
         class B extends A {
             class C {
                 public void m() { doIt2(new ArrayList()) }
             }
-            
+
         }
-        
+
         '''
 
         assert errMsg.contains('[Static type checking] - Cannot find matching method B$C#doIt2(java.util.ArrayList)')

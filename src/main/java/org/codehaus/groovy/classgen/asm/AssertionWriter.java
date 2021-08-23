@@ -50,7 +50,7 @@ import static org.objectweb.asm.Opcodes.POP;
 public class AssertionWriter {
     // assert
     private static final MethodCaller assertFailedMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "assertFailed");
-    
+
     private static class AssertionTracker {
         int recorderIndex;
         SourceText sourceText;
@@ -59,11 +59,11 @@ public class AssertionWriter {
     private final WriterController controller;
     private AssertionTracker assertionTracker;
     private AssertionTracker disabledTracker;
-    
+
     public AssertionWriter(WriterController wc) {
         this.controller = wc;
     }
-    
+
     public void writeAssertStatement(AssertStatement statement) {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
@@ -93,7 +93,7 @@ public class AssertionWriter {
                 rewriteAssert = false;
             }
         }
-        
+
         statement.getBooleanExpression().visit(controller.getAcg());
 
         Label exceptionThrower = operandStack.jump(IFEQ);
@@ -107,7 +107,7 @@ public class AssertionWriter {
         Label afterAssert = new Label();
         mv.visitJumpInsn(GOTO, afterAssert);
         mv.visitLabel(exceptionThrower);
-        
+
         if (rewriteAssert) {
             mv.visitLdcInsn(assertionTracker.sourceText.getNormalizedText());
             mv.visitVarInsn(ALOAD, assertionTracker.recorderIndex);
@@ -118,13 +118,13 @@ public class AssertionWriter {
         operandStack.push(ClassHelper.STRING_TYPE);
         AssertionTracker savedTracker = assertionTracker;
         assertionTracker = null;
-        
+
         // now the optional exception expression
         statement.getMessageExpression().visit(controller.getAcg());
         operandStack.box();
         assertFailedMethod.call(mv);
-        operandStack.remove(2); // assertFailed called static with 2 arguments 
-        
+        operandStack.remove(2); // assertFailed called static with 2 arguments
+
         if (rewriteAssert) {
             final Label tryEnd = new Label();
             mv.visitLabel(tryEnd);
@@ -138,13 +138,13 @@ public class AssertionWriter {
             // add catch any block to exception table
             controller.getCompileStack().addExceptionBlock(tryStart, tryEnd, catchAny, null);
         }
-        
+
         mv.visitLabel(afterAssert);
         if (rewriteAssert) {
             controller.getCompileStack().removeVar(savedTracker.recorderIndex);
         }
         assertionTracker = oldTracker;
-        // close possibly open file handles from getting a sample for 
+        // close possibly open file handles from getting a sample for
         // power asserts
         janitor.cleanup();
     }
@@ -156,7 +156,7 @@ public class AssertionWriter {
     private void writeSourcelessAssertText(AssertStatement statement) {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
-        
+
         BooleanExpression booleanExpression = statement.getBooleanExpression();
         // push expression string onto stack
         String expressionText = booleanExpression.getText();
@@ -201,7 +201,7 @@ public class AssertionWriter {
             controller.getCompileStack().removeVar(tempIndex);
         }
     }
-    
+
     public void record(Expression expression) {
         if (assertionTracker==null) return;
         record(assertionTracker.sourceText.getNormalizedColumn(expression.getLineNumber(), expression.getColumnNumber()));
@@ -211,16 +211,16 @@ public class AssertionWriter {
         if (assertionTracker==null) return;
         record(assertionTracker.sourceText.getNormalizedColumn(op.getStartLine(), op.getStartColumn()));
     }
-    
+
     private void record(int normalizedColumn) {
         if (assertionTracker==null) return;
-        
+
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
-        
+
         operandStack.dup();
         operandStack.box();
-        
+
         mv.visitVarInsn(ALOAD, assertionTracker.recorderIndex);
         operandStack.push(ClassHelper.OBJECT_TYPE);
         //helper.swapWithObject(ClassHelper.OBJECT_TYPE);
@@ -230,7 +230,7 @@ public class AssertionWriter {
         mv.visitInsn(POP);
         operandStack.remove(2);
     }
-    
+
     private void addVariableNames(Expression expression, List<String> list) {
         if (expression instanceof BooleanExpression) {
             BooleanExpression boolExp = (BooleanExpression) expression;

@@ -31,7 +31,7 @@ package groovy.transform
  *     int age
  *     Date since
  *     Collection favItems = ['Food']
- *     def object 
+ *     def object
  * }
  * def d = new Date()
  * def anyObject = new Object()
@@ -76,7 +76,7 @@ package groovy.transform
  * <p>
  * If you want similar functionality to what this annotation provides but also require immutability, see the
  * {@code @}{@link Immutable} annotation.
- * 
+ *
  * <p>More examples:</p>
  * <pre class="groovyTestCase">
  * import groovy.transform.*
@@ -106,8 +106,8 @@ package groovy.transform
  * assert anotherOfficeSpace == officeSpace
  *
  * // equals() and hashCode() are added, so duplicate is not in Set.
- * def offices = [officeSpace, anotherOfficeSpace, theOffice] as Set  
- * assert offices.size() == 2 
+ * def offices = [officeSpace, anotherOfficeSpace, theOffice] as Set
+ * assert offices.size() == 2
  * assert offices.name.join(',') == 'Initech office,Wernham Hogg Paper Company'
  *
  * &#64;Canonical

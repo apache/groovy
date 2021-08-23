@@ -33,7 +33,7 @@ public interface BindingUpdatable {
     /**
      * Causes automatic updating of bound values to be turned off.
      * This is idempotent between calls to bind and rebind; i.e. multiple calls
-     * to unbind will have only the effect of the first call. 
+     * to unbind will have only the effect of the first call.
      */
     void unbind();
 
@@ -51,7 +51,7 @@ public interface BindingUpdatable {
 
     /**
      * If supported, Causes the values to be propagated from the target to the source,
-     * If not supported, an exception may be thrown 
+     * If not supported, an exception may be thrown
      */
     void reverseUpdate();
 }

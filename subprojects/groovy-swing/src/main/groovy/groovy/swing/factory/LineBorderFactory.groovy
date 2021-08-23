@@ -30,7 +30,7 @@ class LineBorderFactory extends SwingBorderFactory {
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
         builder.context.applyBorderToParent = attributes.remove('parent')
-        
+
         def color = attributes.remove("color")
         if (color == null) {
             throw new RuntimeException("color: is a required attribute for $name")

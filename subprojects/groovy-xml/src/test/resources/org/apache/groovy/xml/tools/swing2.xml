@@ -27,4 +27,3 @@
         <button text="Cancel" action="close()"/>
     </panel>
 </frame>
- 

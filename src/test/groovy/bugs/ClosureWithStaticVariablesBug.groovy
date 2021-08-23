@@ -19,9 +19,9 @@
 package groovy.bugs
 
 class ClosureWithStaticVariablesBug extends TestSupport {
-    
+
     static def y = [:]
-    
+
     void testBug() {
         def c = { x ->
             return {

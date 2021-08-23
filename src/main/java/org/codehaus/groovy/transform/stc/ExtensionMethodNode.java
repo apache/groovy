@@ -30,7 +30,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 public class ExtensionMethodNode extends MethodNode {
     private final MethodNode extensionMethodNode;
     private final boolean isStaticExtension; // true if it's a static method
-    
+
     public ExtensionMethodNode(
             MethodNode extensionMethodNode,
             String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code, boolean isStaticExtension) {

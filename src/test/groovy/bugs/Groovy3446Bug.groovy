@@ -31,4 +31,3 @@ class Groovy3446Bug extends GroovyTestCase {
         "local method called"
     }
 }
-

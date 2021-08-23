@@ -26,7 +26,7 @@ class Groovy4273Bug extends GroovyShellTestCase {
         try {
             shell.parse """
                 import java.lang.annotation.*
-                
+
                 @Retention(RetentionPolicy.Runtime)
                 @interface MyAnn {
                   String foo()  
@@ -43,17 +43,17 @@ class Groovy4273Bug extends GroovyShellTestCase {
         try {
             shell.parse """
                 import java.lang.annotation.*
-                
+
                 enum RetentionPolicy4273 {
                     SOURCE, CLASS, RUNTIME
                 }
-                
+
                 @Retention(RetentionPolicy.RUNTIME)
                 @Target(ElementType.TYPE)
                 @interface Retention4273 {
                     RetentionPolicy4273 value();
                 }
-                
+
                 @Retention4273(RetentionPolicy4273.Runtime)
                 class Foo {}
             """

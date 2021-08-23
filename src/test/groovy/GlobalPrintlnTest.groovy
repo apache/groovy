@@ -30,7 +30,7 @@ class GlobalPrintlnTest extends GroovyTestCase {
         print("Hello ")
         println("World!")
     }
-    
+
     void testWriterTest() {
         def sw = new StringWriter()
         sw.print("foo")

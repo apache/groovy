@@ -20,31 +20,31 @@ package groovy
 
 import groovy.test.GroovyTestCase
 
-/** 
+/**
  * Tests the use of classes as variable expressions
  */
 class ClassExpressionTest extends GroovyTestCase {
 
     void testUseOfClass() {
         def x = String
-        
+
         assert x != null
 
         assert x.getName().endsWith('String')
         assert x.name.endsWith('String')
 
         x = Integer
-        
+
         assert x != null
         assert x.name.endsWith('Integer')
-        
+
         x = GroovyTestCase
-        
+
         assert x != null
         assert x.name.endsWith('GroovyTestCase')
-        
+
         x = ClassExpressionTest
-        
+
         assert x != null
     }
 
@@ -56,7 +56,7 @@ class ClassExpressionTest extends GroovyTestCase {
 
         assert x.class == x.getClass();
     }
-    
+
     void testPrimitiveClasses() {
         assert void == Void.TYPE
         assert int == Integer.TYPE
@@ -67,7 +67,7 @@ class ClassExpressionTest extends GroovyTestCase {
         assert long == Long.TYPE
         assert short == Short.TYPE
     }
-    
+
     void testArrayClassReference() {
        def foo = int[]
        assert foo.name == "[I"

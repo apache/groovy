@@ -27,17 +27,17 @@ class TheGroovyTruthTest extends GroovyTestCase {
         assert true
         assert !false
         // end::boolean_truth[]
-        
+
         // tag::matcher_truth[]
         assert ('a' =~ /a/)
         assert !('a' =~ /b/)
         // end::matcher_truth[]
-        
+
         // tag::collection_truth[]
         assert [1, 2, 3]
         assert ![]
         // end::collection_truth[]
-        
+
         // tag::iterator_enumeration_truth[]
         assert [0].iterator()
         assert ![].iterator()
@@ -47,12 +47,12 @@ class TheGroovyTruthTest extends GroovyTestCase {
         enumeration.nextElement()
         assert !enumeration
         // end::iterator_enumeration_truth[]
-        
+
         // tag::map_truth[]
         assert ['one' : 1]
         assert ![:]
         // end::map_truth[]
-        
+
         // tag::string_truth[]
         assert 'a'
         assert !''
@@ -61,25 +61,25 @@ class TheGroovyTruthTest extends GroovyTestCase {
         def empty = ''
         assert !"$empty"
         // end::string_truth[]
-        
+
         // tag::number_truth[]
         assert 1
         assert 3.5
         assert !0
         // end::number_truth[]
-        
+
         // tag::object_truth[]
         assert new Object()
         assert !null
         // end::object_truth[]
     }
-    
+
     void testAsBoolean() {
         assertScript '''
             // tag::asBoolean_object[]
             class Color {
                 String name
-                
+
                 boolean asBoolean(){
                     name == 'green' ? true : false 
                 }

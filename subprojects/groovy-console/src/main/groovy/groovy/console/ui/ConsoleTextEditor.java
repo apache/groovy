@@ -237,7 +237,7 @@ public class ConsoleTextEditor extends JScrollPane {
     }
 
     public void setEditable(boolean editable) {
-        textEditor.setEditable(editable); 
+        textEditor.setEditable(editable);
     }
 
     public boolean clipBoardAvailable() {

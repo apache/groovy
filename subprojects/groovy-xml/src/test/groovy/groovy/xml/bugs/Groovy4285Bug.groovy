@@ -30,7 +30,7 @@ class Groovy4285Bug extends GroovyShellTestCase {
             <foo>bar</foo>
           </properties>
         </stuff>"""
-        
+
         def gpr = new XmlSlurper().parseText(xmlStr)
         def serializedXml = XmlUtil.serialize(gpr)
 

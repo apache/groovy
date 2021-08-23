@@ -94,7 +94,7 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
     // script-string-to-generated Class map
     private final ManagedConcurrentValueMap<String, Class<?>> classMap = new ManagedConcurrentValueMap<>(ReferenceBundle.getSoftBundle());
     // global closures map - this is used to simulate a single
-    // global functions namespace 
+    // global functions namespace
     private final ManagedConcurrentValueMap<String, Closure<?>> globalClosures = new ManagedConcurrentValueMap<>(ReferenceBundle.getHardBundle());
     // class loader for Groovy generated classes
     private GroovyClassLoader loader;
@@ -178,7 +178,7 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         return factory;
     }
 
-    // javax.script.Compilable methods 
+    // javax.script.Compilable methods
     @Override
     public CompiledScript compile(String scriptSource) throws ScriptException {
         try {
@@ -404,7 +404,7 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         if (closure != null) {
             return closure.call(args);
         } else {
-            // Look for closure valued variable in the 
+            // Look for closure valued variable in the
             // given ScriptContext. If available, call it.
             Object value = ctx.getAttribute(name);
             if (value instanceof Closure) {
@@ -469,4 +469,4 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         }
         return buf.toString();
     }
-} 
+}

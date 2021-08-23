@@ -28,7 +28,7 @@ class StaticMethodCallBug extends GroovyTestCase {
         def value = TestSupport.mockStaticMethod()
         assert value == "cheese"
     }
-    
+
     void testStaticProperty() {
         def value = TestSupport.mockStaticProperty
         assert value == "cheese"

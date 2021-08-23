@@ -31,7 +31,7 @@ class GroovyCastTest extends CompilableTestSupport {
             assert t.foo() == 2
         """
     }
-    
+
     void testSAMProperty() {
         assertScript """
             interface SAM { def foo(); }
@@ -42,7 +42,7 @@ class GroovyCastTest extends CompilableTestSupport {
             assert x.s.foo() == 1
         """
     }
-    
+
     void testSAMAttribute() {
         assertScript """
             interface SAM { def foo(); }
@@ -57,7 +57,7 @@ class GroovyCastTest extends CompilableTestSupport {
             assert x.s.foo() == 2
         """
     }
-    
+
     void testSAMType() {
         assertScript """
             interface Foo {int foo()}

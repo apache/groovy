@@ -24,13 +24,13 @@ import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
  * This class contains methods special to optimizations used directly from bytecode in Groovy 1.8
  */
 public class BytecodeInterface8 {
-    
+
     public static boolean disabledStandardMetaClass() {
         return DefaultMetaClassInfo.disabledStandardMetaClass();
     }
-    
+
     // ------------------ int ------------------
-    
+
     /**
      * @return true if integer has its default MetaClass
      */
@@ -39,15 +39,15 @@ public class BytecodeInterface8 {
     }
 
     // ------------------ int[] ------------------
-    
+
     /**
      * @return true if integer array has its default MetaClass
      */
     public static boolean isOrigIntArray(){
        return DefaultMetaClassInfo.isOrigIntArray(); 
     }
-    
-    
+
+
     /**
      * get value from int[] using normalized index
      */
@@ -58,7 +58,7 @@ public class BytecodeInterface8 {
             return a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)];
         }
     }
-    
+
     /**
      * set value from int[] using normalized index
      */
@@ -69,9 +69,9 @@ public class BytecodeInterface8 {
             a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)]=v;
         }
     }
-    
+
     // ------------------ byte ------------------
-    
+
     /**
      * @return true if byte has its default MetaClass
      */
@@ -80,15 +80,15 @@ public class BytecodeInterface8 {
     }
 
     // ------------------ byte[] ------------------
-    
+
     /**
      * @return true if byte array has its default MetaClass
      */
     public static boolean isOrigBArray(){
        return false; 
     }
-    
-    
+
+
     /**
      * get value from byte[] using normalized index
      */
@@ -99,7 +99,7 @@ public class BytecodeInterface8 {
             return a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)];
         }
     }
-    
+
     /**
      * set value from byte[] using normalized index
      */
@@ -110,9 +110,9 @@ public class BytecodeInterface8 {
             a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)]=v;
         }
     }
-    
+
     // ------------------ short ------------------
-    
+
     /**
      * @return true if short has its default MetaClass
      */
@@ -121,15 +121,15 @@ public class BytecodeInterface8 {
     }
 
     // ------------------ short[] ------------------
-    
+
     /**
      * @return true if short array has its default MetaClass
      */
     public static boolean isOrigSArray(){
        return false; 
     }
-    
-    
+
+
     /**
      * get value from short[] using normalized index
      */
@@ -140,7 +140,7 @@ public class BytecodeInterface8 {
             return a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)];
         }
     }
-    
+
     /**
      * set value from short[] using normalized index
      */
@@ -151,9 +151,9 @@ public class BytecodeInterface8 {
             a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)]=v;
         }
     }
-    
+
     // ------------------ char ------------------
-    
+
     /**
      * @return true if char has its default MetaClass
      */
@@ -162,15 +162,15 @@ public class BytecodeInterface8 {
     }
 
     // ------------------ char[] ------------------
-    
+
     /**
      * @return true if char array has its default MetaClass
      */
     public static boolean isOrigCArray(){
        return false; 
     }
-    
-    
+
+
     /**
      * get value from char[] using normalized index
      */
@@ -181,7 +181,7 @@ public class BytecodeInterface8 {
             return a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)];
         }
     }
-    
+
     /**
      * set value from char[] using normalized index
      */
@@ -192,9 +192,9 @@ public class BytecodeInterface8 {
             a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)]=v;
         }
     }
-    
+
     // ------------------ long ------------------
-    
+
     /**
      * @return true if long has its default MetaClass
      */
@@ -203,15 +203,15 @@ public class BytecodeInterface8 {
     }
 
     // ------------------ long[] ------------------
-    
+
     /**
      * @return true if long array has its default MetaClass
      */
     public static boolean isOrigLArray(){
        return false; 
     }
-    
-    
+
+
     /**
      * get value from long[] using normalized index
      */
@@ -222,7 +222,7 @@ public class BytecodeInterface8 {
             return a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)];
         }
     }
-    
+
     /**
      * set value from long[] using normalized index
      */
@@ -233,9 +233,9 @@ public class BytecodeInterface8 {
             a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)]=v;
         }
     }
-    
+
     // ------------------ boolean ------------------
-    
+
     /**
      * @return true if boolean has its default MetaClass
      */
@@ -244,14 +244,14 @@ public class BytecodeInterface8 {
     }
 
     // ------------------ boolean[] ------------------
-    
+
     /**
      * @return true if boolean array has its default MetaClass
      */
     public static boolean isOrigZArray(){
        return false; 
     }
-    
+
     /**
      * get value from boolean[] using normalized index
      */
@@ -262,7 +262,7 @@ public class BytecodeInterface8 {
             return a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)];
         }
     }
-    
+
     /**
      * set value from boolean[] using normalized index
      */
@@ -273,9 +273,9 @@ public class BytecodeInterface8 {
             a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)]=v;
         }
     }
-    
+
     // ------------------ float ------------------
-    
+
     /**
      * @return true if float has its default MetaClass
      */
@@ -284,14 +284,14 @@ public class BytecodeInterface8 {
     }
 
     // ------------------ float[] ------------------
-    
+
     /**
      * @return true if float array has its default MetaClass
      */
     public static boolean isOrigFArray(){
        return false; 
     }
-    
+
     /**
      * get value from float[] using normalized index
      */
@@ -302,7 +302,7 @@ public class BytecodeInterface8 {
             return a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)];
         }
     }
-    
+
     /**
      * set value from float[] using normalized index
      */
@@ -313,9 +313,9 @@ public class BytecodeInterface8 {
             a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)]=v;
         }
     }
-    
+
     // ------------------ double ------------------
-    
+
     /**
      * @return true if double has its default MetaClass
      */
@@ -324,14 +324,14 @@ public class BytecodeInterface8 {
     }
 
     // ------------------ double[] ------------------
-    
+
     /**
      * @return true if double array has its default MetaClass
      */
     public static boolean isOrigDArray(){
        return false; 
     }
-    
+
     /**
      * get value from double[] using normalized index
      */
@@ -342,7 +342,7 @@ public class BytecodeInterface8 {
             return a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)];
         }
     }
-    
+
     /**
      * set value from double[] using normalized index
      */
@@ -353,7 +353,7 @@ public class BytecodeInterface8 {
             a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)]=v;
         }
     }
-    
+
     // ------------------ Object[] ------------------
     public static Object objectArrayGet(Object[] a, int i) {
         try {
@@ -362,7 +362,7 @@ public class BytecodeInterface8 {
             return a[DefaultGroovyMethodsSupport.normaliseIndex(i,a.length)];
         }
     }
-    
+
     /**
      * set value from double[] using normalized index
      */

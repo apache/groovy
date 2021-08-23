@@ -24,14 +24,14 @@ class Groovy8090Bug extends CompilableTestSupport {
     void testGroovy8090() {
         assertScript '''
         import static java.util.Arrays.asList
-        
+
         @groovy.transform.CompileStatic
         class Main {
             final <T> Iterable<T> foo(T instance) { asList(instance) }
             final <U> Iterable<U> bar(U instance) { asList(instance) }
             final Iterable<String> baz(String instance) { asList(instance) }
         }
-        
+
         new Main().with {
             assert foo('A') + bar('B') + baz('C') == ['A', 'B', 'C']
         }
@@ -44,7 +44,7 @@ class Groovy8090Bug extends CompilableTestSupport {
         class Main {
             final <U> Iterable<U> bar(U instance) { Arrays.asList(instance) }
         }
-        
+
         assert new Main().bar('B') == ['B']
         '''
     }
@@ -57,12 +57,12 @@ class Groovy8090Bug extends CompilableTestSupport {
                 return [a]
             }
         }
-        
+
         @groovy.transform.CompileStatic
         class Main {
             final <U> Iterable<U> bar(U instance) { Arraysx.asList(instance) }
         }
-        
+
         assert new Main().bar('B') == ['B']
         '''
     }

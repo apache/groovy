@@ -18,7 +18,7 @@
      under the License.
 
 -->
-<!-- 
+<!--
 does exactly the same as the AntBuilder in AntTest... just to be sure that ant behaves the same
 as what we expect from the AntBuilder
  -->

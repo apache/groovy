@@ -33,12 +33,12 @@ public class GroovyStarter {
         System.out.println("possible programs are 'groovyc','groovy','console', and 'groovysh'");
         System.exit(1);
     }
-    
-    
+
+
     public static void rootLoader(String[] args) {
         String conf = System.getProperty("groovy.starter.conf",null);
         final LoaderConfiguration lc = new LoaderConfiguration();
-        
+
         // evaluate parameters
         boolean hadMain=false, hadConf=false, hadCP=false;
         int argsOffset = 0;
@@ -85,7 +85,7 @@ public class GroovyStarter {
         if (lc.getMainClass()==null && conf==null) {
             exit("no configuration file or main class specified");
         }
-        
+
         // copy arguments for main class 
         String[] newArgs = new String[args.length-argsOffset];
         System.arraycopy(args, 0 + argsOffset, newArgs, 0, newArgs.length);
@@ -113,17 +113,17 @@ public class GroovyStarter {
             exit(e3);
         }
     }
-    
+
     private static void exit(Exception e) {
         e.printStackTrace();
         System.exit(1);
     }
-    
+
     private static void exit(String msg) {
         System.err.println(msg);
         System.exit(1);
     }
-    
+
     public static void main(String[] args) {
         try {
             rootLoader(args);

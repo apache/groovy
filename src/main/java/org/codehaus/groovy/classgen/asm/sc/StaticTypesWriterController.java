@@ -111,13 +111,13 @@ public class StaticTypesWriterController extends DelegatingController {
         updateStaticCompileFlag(cn);
         super.setConstructorNode(cn);
     }
-    
+
     @Override
     public boolean isFastPath() {
         if (isInStaticallyCheckedMethod) return true;
         return super.isFastPath();
     }
-    
+
     @Override
     public CallSiteWriter getCallSiteWriter() {
         MethodNode methodNode = getMethodNode();
@@ -142,7 +142,7 @@ public class StaticTypesWriterController extends DelegatingController {
             return super.getStatementWriter();            
         }
     }
-    
+
     @Override
     public TypeChooser getTypeChooser() {
         if (isInStaticallyCheckedMethod) {

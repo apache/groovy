@@ -24,20 +24,20 @@ class Groovy8055Bug extends GroovyTestCase {
     void test1() {
         assertScript '''
         import groovy.transform.CompileStatic
-        
+
         @CompileStatic
         class Foo {
             void isEqualTo(Number number) { println "Number"; assert true }
             void isEqualTo(Object number) { println "Object"; assert false: 'wrong method invoked' }
         }
-        
+
         @CompileStatic
         class Runner {
             void run() {
                 new Foo().isEqualTo(4)
             }
         }
-        
+
         new Runner().run()
         '''
     }

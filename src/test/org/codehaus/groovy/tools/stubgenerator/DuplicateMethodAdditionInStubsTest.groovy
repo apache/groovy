@@ -28,9 +28,9 @@ class DuplicateMethodAdditionInStubsTest extends StringSourcesStubTestCase {
         [
             'de/me/App4453.java': '''
                 package de.me;
-                
+
                 import de.app.User4453;
-                
+
                 public class App4453 {
                     public void make() {
                         User4453 u = new User4453();
@@ -41,7 +41,7 @@ class DuplicateMethodAdditionInStubsTest extends StringSourcesStubTestCase {
                 package de.app
                 class User4453 {
                     String name
-                
+
                     public void setName(String name, String t = "") {
                           this.name = name
                     }

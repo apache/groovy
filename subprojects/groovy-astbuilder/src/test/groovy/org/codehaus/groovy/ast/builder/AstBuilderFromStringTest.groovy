@@ -48,7 +48,7 @@ import org.codehaus.groovy.syntax.Types
 import org.objectweb.asm.Opcodes
 
 /**
- * Unit test for the AstBuilder class. Shows the usage of how to create AST from string input.  
+ * Unit test for the AstBuilder class. Shows the usage of how to create AST from string input.
  */
 class AstBuilderFromStringTest extends GroovyTestCase {
 
@@ -62,7 +62,7 @@ class AstBuilderFromStringTest extends GroovyTestCase {
 
     /**
      * This shows how to compile a simple script that returns a constant,
-     * discarding the generated Script subclass. 
+     * discarding the generated Script subclass.
      */
     void testSimpleConstant() {
         List<ASTNode> result = factory.buildFromString(CompilePhase.CONVERSION, " \"Some String\" ")
@@ -147,7 +147,7 @@ class AstBuilderFromStringTest extends GroovyTestCase {
     }
 
     /**
-     * Proves default value is CLASS_GENERATION and statementsOnly = true. 
+     * Proves default value is CLASS_GENERATION and statementsOnly = true.
      */
     void testDefaultValues() {
         List<ASTNode> result = factory.buildFromString(" \"Some String\" ")

@@ -62,15 +62,15 @@ public class ReleaseInfo {
             }
         }
     }
-    
+
     public static String getVersion() {
         return get(KEY_IMPLEMENTATION_VERSION);
     }
-    
+
     public static Properties getAllProperties() {
         return RELEASE_INFO;
     }
-    
+
     private static String get(String propName) {
         String propValue = RELEASE_INFO.getProperty(propName);
         return (propValue == null ? "" : propValue);

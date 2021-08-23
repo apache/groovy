@@ -34,7 +34,7 @@ class VerifierTest {
                 }
                 class Inner {}
             }
-            
+
             {
                 def getLookupMethod = Outer.getDeclaredMethods().grep(m -> '$getLookup' == m.name)[0]
                 def modifiers = getLookupMethod.getModifiers()
@@ -42,7 +42,7 @@ class VerifierTest {
                 assert Modifier.isStatic(modifiers)
                 assert getLookupMethod.synthetic
             }
-            
+
             {
                 def getLookupMethod = Outer.StaticInner.getDeclaredMethods().grep(m -> '$getLookup' == m.name)[0]
                 def modifiers = getLookupMethod.getModifiers()
@@ -50,7 +50,7 @@ class VerifierTest {
                 assert Modifier.isStatic(modifiers)
                 assert getLookupMethod.synthetic
             }
-            
+
             {
                 def getLookupMethod = Outer.StaticInner.StaticInnest.getDeclaredMethods().grep(m -> '$getLookup' == m.name)[0]
                 def modifiers = getLookupMethod.getModifiers()
@@ -58,7 +58,7 @@ class VerifierTest {
                 assert Modifier.isStatic(modifiers)
                 assert getLookupMethod.synthetic
             }
-            
+
             {
                 def getLookupMethod = Outer.Inner.getDeclaredMethods().grep(m -> '$getLookup' == m.name)[0]
                 def modifiers = getLookupMethod.getModifiers()

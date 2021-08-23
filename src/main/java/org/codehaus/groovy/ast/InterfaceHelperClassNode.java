@@ -27,7 +27,7 @@ import java.util.List;
 public class InterfaceHelperClassNode extends InnerClassNode {
 
     private List callSites = new ArrayList();
-    
+
     /**
      * @param name is the full name of the class
      * @param modifiers the modifiers, @see org.objectweb.asm.Opcodes
@@ -38,11 +38,11 @@ public class InterfaceHelperClassNode extends InnerClassNode {
         super(outerClass, name, modifiers, superClass, ClassHelper.EMPTY_TYPE_ARRAY, MixinNode.EMPTY_ARRAY);
         setCallSites(callSites);
     }
-    
+
     public void setCallSites(List<String> cs) {
         callSites = (cs != null) ? cs : new ArrayList<String>();
     }
-    
+
     public List<String> getCallSites() {
         return callSites;
     }

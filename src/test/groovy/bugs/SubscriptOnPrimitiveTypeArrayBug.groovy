@@ -24,19 +24,19 @@ class SubscriptOnPrimitiveTypeArrayBug extends TestSupport {
 
     void testBug() {
         def array = getIntArray() // this function returns [I, true primitive array
-        
+
         def value = array[2]
-        
+
         assert value == 3
-        
+
         array[2] = 8
 
         value = array[2]
         assert value == 8
-        
+
         // lets test a range
         def range = array[1..2]
-        
+
         assert range == [2, 8]
     }
 

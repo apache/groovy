@@ -23,25 +23,25 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
 class JavadocAssertionTestBuilderTest extends GroovyTestCase {
     def builder
-    
+
     void setUp() {
         builder = new JavadocAssertionTestBuilder()
     }
-    
+
     void testBuildsTest() {
         Class test = builder.buildTest("SomeClass.java", '/** <pre class="groovyTestCase"> assert true </pre> */ public class SomeClass { }')
         assert test.newInstance() instanceof TestCase
         assert test.simpleName == "SomeClassJavadocAssertionTest"
         test.newInstance().testAssertionFromSomeClassLine1()
     }
-    
+
     void testAssertionsAreCalled() {
         Class test = builder.buildTest("SomeClass.java", '/** <pre class="groovyTestCase"> assert false </pre> */ public class SomeClass { }')
         shouldFail(AssertionError) {
             test.newInstance().testAssertionFromSomeClassLine1()
         }
     }
-    
+
     void testLineNumbering() {
         Class test = builder.buildTest("SomeClass.java", '''
             /** <pre class="groovyTestCase"> assert true </pre>
@@ -55,12 +55,12 @@ class JavadocAssertionTestBuilderTest extends GroovyTestCase {
         test.newInstance().testAssertionFromSomeClassLine4a()
         test.newInstance().testAssertionFromSomeClassLine4b()
     }
-    
+
     void testNoTestBuiltWhenThereAreNoAssertions() {
         Class test = builder.buildTest("SomeClass.java", "/** .. */ public class SomeClass { }")
         assert test == null
     }
-    
+
     void testAssertionsMaySpanMultipleLines() {
         Class test = builder.buildTest("SomeClass.java", '''
             /** <pre class="groovyTestCase"> assert(
@@ -71,21 +71,21 @@ class JavadocAssertionTestBuilderTest extends GroovyTestCase {
         ''')
         test.newInstance().testAssertionFromSomeClassLine2()
     }
-    
+
     void testTagMustBeInsideJavadoc() {
         Class test = builder.buildTest("SomeClass.java", '''
             /** <pre class="groovyTestCase"> assert true </pre>
              */
             public class SomeClass {
                  public static void main(String[] args) {
-                    // <pre class="groovyTestCase"> assert false </pre>        
+                    // <pre class="groovyTestCase"> assert false </pre>
                  }
             }
         ''')
         assert test.methods.findAll { it.name =~ /test.*/ }.size() == 1
         test.newInstance().testAssertionFromSomeClassLine2()
     }
-    
+
     void testClassNamesMayBeReusedAcrossPackages() {
         Class package1Test = builder.buildTest("./test/com/someplace/package1/SomeClass.java", '''
             /** <pre class="groovyTestCase"> assert true </pre>
@@ -99,7 +99,7 @@ class JavadocAssertionTestBuilderTest extends GroovyTestCase {
         ''')
         assert package1Test.simpleName == "SomeClassJavadocAssertionTest"
         assert package2Test.simpleName == "SomeClassJavadocAssertionTest"
-        assert package1Test != package2Test    
+        assert package1Test != package2Test
     }
 
     void testClassNeedNotBeAPreTag() {
@@ -110,7 +110,7 @@ class JavadocAssertionTestBuilderTest extends GroovyTestCase {
         ''')
         test.newInstance().testAssertionFromSomeClassLine2()
     }
-    
+
     void testAssertionSyntaxErrorsReportedAtTestTime() {
         Class test = builder.buildTest("SomeClass.java", '''
             /** <pre class="groovyTestCase"> assert #@$@ </pre> */
@@ -120,7 +120,7 @@ class JavadocAssertionTestBuilderTest extends GroovyTestCase {
             test.newInstance().testAssertionFromSomeClassLine2()
         }
     }
-    
+
     void testDecodesCommonHtml() {
         Class test = builder.buildTest("SomeClass.java", '''
             /** <pre class="groovyTestCase"> assert 3 &lt; 5

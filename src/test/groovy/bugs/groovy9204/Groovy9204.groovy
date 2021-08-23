@@ -41,7 +41,7 @@ class Groovy9204 extends GroovyTestCase {
                     field[0]
                 }
             }
-            
+
             assert new ArrayListTest().test() == 'hello'
             assert new LinkedListTest().test() == 'hello'
         '''

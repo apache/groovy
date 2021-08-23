@@ -76,7 +76,7 @@ class Groovy5272Bug extends GroovyTestCase {
             '''
         }
     }
-    
+
     void testResolveConstantInSuperInterfaceWithExpando() {
         assertScript '''
             ExpandoMetaClass.enableGlobally()

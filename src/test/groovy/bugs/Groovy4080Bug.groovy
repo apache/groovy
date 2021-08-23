@@ -26,13 +26,13 @@ class Groovy4080Bug extends GroovyTestCase {
         shell.evaluate """
             @Grab(group='commons-primitives', module='commons-primitives', version='1.0')
             import java.lang.annotation.*
-            
+
             @Retention(RetentionPolicy.RUNTIME)
             @interface Require {
                 String value()
             }
-            
+
             assert Require.name == 'Require' // cause loading of the class
         """
-    }    
+    }
 }

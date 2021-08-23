@@ -43,7 +43,6 @@ public abstract class AtnManager {
         DFA_CACHE_THRESHOLD = t;
     }
 
-
     public abstract ATN getATN();
 
     protected abstract boolean shouldClearDfaCache();

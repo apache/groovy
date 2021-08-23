@@ -19,7 +19,7 @@
 package gls.syntax
 
 class AssertTest extends gls.CompilableTestSupport {
-  
+
   void testAssignment() {
     // don't allow "=" here, it most certainly must be a "=="
     shouldNotCompile """

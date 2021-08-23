@@ -20,7 +20,6 @@ package groovy.bugs
 
 /**
  * A base class for testing constructors
- * 
  */
 
  class TestDerived extends TestBase {
@@ -28,7 +27,7 @@ package groovy.bugs
      TestDerived(String aFoo) {
          super(aFoo)
      }
-     
+
      def doSomething() {
          "TestDerived" + super.doSomething()
      }

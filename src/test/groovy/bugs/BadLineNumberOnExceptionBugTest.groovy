@@ -61,7 +61,7 @@ class BadLineNumberOnExceptionBugTest extends GroovyTestCase {
                 integer.metaClass = null
                 integer.metaClass = null
             }
-            
+
             try {
                 foo()
 

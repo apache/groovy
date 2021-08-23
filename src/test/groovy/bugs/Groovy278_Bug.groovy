@@ -21,20 +21,18 @@ package groovy.bugs
 import groovy.test.GroovyTestCase
 
 class Groovy278_Bug extends GroovyTestCase {
-    
+
     void testBug() {
         assertScript '''
-class MyRange extends IntRange {
-    MyRange() {
-        super(1, 2)
-    }
-}
-       def value = new MyRange()
+        class MyRange extends IntRange {
+            MyRange() {
+                super(1, 2)
+            }
+        }
+
+        def value = new MyRange()
         println value
         assert value != null
-
-'''
+        '''
     }
 }
-
-

@@ -31,20 +31,20 @@ public class BinaryObjectExpressionHelper extends BinaryExpressionWriter {
     public BinaryObjectExpressionHelper(WriterController controller) {
         super(controller, arraySet, arrayGet);
     }
-    
+
     // dummy methods
     @Override
     public boolean writePostOrPrefixMethod(int operation, boolean simulate) {
         if (simulate) return false;
         throw new GroovyBugError("should not reach here");
     }
-    
+
     @Override
     public boolean write(int operation, boolean simulate) {
         if (simulate) return false;
         throw new GroovyBugError("should not reach here");
     }
-    
+
     @Override
     protected boolean writeDivision(boolean simulate) {
         if (simulate) return false;
@@ -55,32 +55,32 @@ public class BinaryObjectExpressionHelper extends BinaryExpressionWriter {
     protected int getBitwiseOperationBytecode(int type) {
         return -1;
     }
-    
+
     @Override
     protected int getCompareCode() {
         return -1;
     }
-    
+
     @Override
     protected ClassNode getNormalOpResultType() {
         return null;
     }
-    
+
     @Override
     protected ClassNode getDevisionOpResultType() {
         return null;
     }
-    
+
     @Override
     protected int getShiftOperationBytecode(int type) {
         return -1;
     }
-    
+
     @Override
     protected int getStandardOperationBytecode(int type) {
         return -1;
     }
-    
+
     @Override
     protected void removeTwoOperands(MethodVisitor mv) {}
     @Override
@@ -89,7 +89,7 @@ public class BinaryObjectExpressionHelper extends BinaryExpressionWriter {
     protected void writeMinusMinus(MethodVisitor mv) {}
     @Override
     protected void doubleTwoOperands(MethodVisitor mv) {}
-    
+
     @Override
     protected ClassNode getArrayGetResultType() {
     	return ClassHelper.OBJECT_TYPE.getPlainNodeReference();

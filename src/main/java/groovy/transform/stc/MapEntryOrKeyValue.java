@@ -85,7 +85,7 @@ public class MapEntryOrKeyValue extends ClosureSignatureHint {
         }
         return Arrays.asList(firstSig, secondSig);
     }
-    
+
     private static final class Options {
         final int parameterIndex;
         final boolean generateIndex;
@@ -94,7 +94,7 @@ public class MapEntryOrKeyValue extends ClosureSignatureHint {
             this.parameterIndex = parameterIndex;
             this.generateIndex = generateIndex;
         }
-        
+
         static Options parse(MethodNode mn, ASTNode source, String[] options) throws IncorrectTypeHintException {
             int pIndex = 0;
             boolean generateIndex = false;
@@ -116,5 +116,5 @@ public class MapEntryOrKeyValue extends ClosureSignatureHint {
             }
             return new Options(pIndex, generateIndex);
         }
-    } 
+    }
 }

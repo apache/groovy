@@ -29,9 +29,9 @@ abcd
 efg
 
 hijk
-     
+
 hello ${name}
-        
+
 """
         assert s != null
         assert s instanceof GString

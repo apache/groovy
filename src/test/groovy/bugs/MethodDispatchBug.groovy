@@ -45,11 +45,11 @@ class MethodDispatchBug extends GroovyTestCase {
         assert "OB" == o.doit(9, true);
         assert "OO" == o.doit(9, 9);
     }
-    
+
     def methodWithDefaults(a,b,c=1000) {
       a+b+c
     }
-    
+
     void testListExpansion() {
        // there was a bug discovered while looking at GROOVY-1803
        // a list expansion was cached like 

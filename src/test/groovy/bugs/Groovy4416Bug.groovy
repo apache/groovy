@@ -33,7 +33,7 @@ class Groovy4416Bug extends GroovyTestCase {
                def bean = new Bean()
             }
             def b = new Dummy4416().bean
-            
+
             assert b.property1 == "property_value"
             assert b.property2 == "foo()"
         """

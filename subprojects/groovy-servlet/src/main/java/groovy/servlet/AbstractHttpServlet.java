@@ -255,7 +255,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
 
         //
         // NOTE: This piece of code is heavily inspired by Apaches Jasper2!
-        // 
+        //
         // http://cvs.apache.org/viewcvs.cgi/jakarta-tomcat-jasper/jasper2/ \
         //        src/share/org/apache/jasper/servlet/JspServlet.java?view=markup
         //
@@ -272,7 +272,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
         uri = (String) request.getAttribute(INC_SERVLET_PATH);
         if (uri != null) {
             //
-            // Requested script/template file has been target of 
+            // Requested script/template file has been target of
             // RequestDispatcher.include(). Its path is assembled from the relevant
             // javax.servlet.include.* request attributes and returned!
             //
@@ -284,7 +284,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
         }
 
         //
-        // Requested script/template file has not been the target of a 
+        // Requested script/template file has not been the target of a
         // RequestDispatcher.include(). Reconstruct its path from the request's
         // getServletPath() and getPathInfo() results.
         //
@@ -324,7 +324,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
 
     /**
      * Parses the http request for the real script or template source file.
-     * 
+     *
      * @param request
      *            the http request to analyze
      * @return a file object using an absolute file path name, or <code>null</code> if the

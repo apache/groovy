@@ -130,7 +130,7 @@ public class NullObject extends GroovyObjectSupport {
 
     /**
      * Fallback for null+null.
-     * The result is always a NPE. The plus(String) version will catch 
+     * The result is always a NPE. The plus(String) version will catch
      * the case of adding a non null String to null.
      *
      * @param o - the Object
@@ -164,7 +164,7 @@ public class NullObject extends GroovyObjectSupport {
 
     /**
      * A null object always coerces to false.
-     * 
+     *
      * @return false
      */
     public boolean asBoolean() {

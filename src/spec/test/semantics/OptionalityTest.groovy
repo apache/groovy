@@ -28,30 +28,30 @@ class OptionalityTest extends CompilableTestSupport {
         def maximum = Math.max 5, 10
         // end::optional_parentheses[]
     }
-    
+
     void testRequiredParentheses() {
         // tag::required_parentheses[]
         println()
         println(Math.max(5, 10))
         // end::required_parentheses[]
     }
-    
+
     void testOptionalSemicolons() {
         // tag::single_statement_with_semicolon[]
         assert true;
         // end::single_statement_with_semicolon[]
-        
+
         // tag::single_statement_without_semicolon[]
         assert true
         // end::single_statement_without_semicolon[]
     }
-    
+
     void testRequiredSemicolons() {
         // tag::statements_separated_by_semicolon[]
         boolean a = true; assert a
         // end::statements_separated_by_semicolon[]
     }
-    
+
     void testOptionalReturn() {
         assertScript '''
             // tag::return_keyword[]
@@ -70,7 +70,7 @@ class OptionalityTest extends CompilableTestSupport {
             // end::omitted_return_keyword[]
         '''
     }
-    
+
     void testOptionalPublic() {
         shouldCompile '''
             // tag::public_keyword[]

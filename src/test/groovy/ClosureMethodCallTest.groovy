@@ -100,7 +100,7 @@ class ClosureMethodCallTest extends GroovyTestCase {
             class Y {
                 def m() {1}
             }
-            
+
             ref = Y.&m
             assert ref(new Y()) == 1
         '''

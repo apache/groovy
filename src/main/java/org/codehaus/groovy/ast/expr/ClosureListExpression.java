@@ -32,43 +32,43 @@ import java.util.List;
  * </code>
  * The right side is a ClosureListExpression consisting of
  * two ConstantExpressions for the values 1 and 2, and two
- * EmptyStatement entries. The ClosureListExpression defines a new 
+ * EmptyStatement entries. The ClosureListExpression defines a new
  * variable scope. All created Closures share this scope.
  */
 public class ClosureListExpression extends ListExpression {
 
     private VariableScope scope;
-    
+
     public ClosureListExpression(List<Expression> expressions) {
         super(expressions);
         scope = new VariableScope();
     }
-    
+
     public ClosureListExpression() {
         this(new ArrayList<Expression>(3));
     }
-    
+
     @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitClosureListExpression(this);
     }
-    
+
     @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new ClosureListExpression(transformExpressions(getExpressions(), transformer));
         ret.setSourcePosition(this);
         ret.copyNodeMetaData(this);
-        return ret;       
+        return ret;
     }
-    
+
     public void setVariableScope(VariableScope scope) {
         this.scope = scope;
     }
-    
+
     public VariableScope getVariableScope() {
         return scope;
     }
-    
+
     @Override
     public String getText() {
         StringBuilder buffer = new StringBuilder("(");
@@ -79,7 +79,7 @@ public class ClosureListExpression extends ListExpression {
             } else {
                 buffer.append("; ");
             }
-            
+
             buffer.append(expression.getText());
         }
         buffer.append(")");

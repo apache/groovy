@@ -36,7 +36,7 @@ public class MissingClassException extends GroovyRuntimeException {
         super("No such class: " + type + " " + message, node);
         this.type = type;
     }
-    
+
     public MissingClassException(ClassNode type, String message){
         super("No such class: " + type.getName() + " " + message);
         this.type = type.getName();

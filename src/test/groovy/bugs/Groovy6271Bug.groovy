@@ -47,32 +47,32 @@ TestScripttestTraitWithCompileStaticAndCoercedClosure0.groovy: 33: [Static type 
             import static fj.data.hlist.HList.HAppend;
             import static fj.data.hlist.HList.nil;
             import groovy.transform.CompileStatic
-            
+
             @CompileStatic
             public class HListExample {
               public static void main(String[] args) {
                 final HCons<String, HCons<Integer, HCons<Boolean, HNil>>> a =
                   nil().extend(true).extend(3).extend("Foo");
-            
+
                 final HCons<Double, HCons<String, HCons<Integer[], HNil>>> b =
                   nil().extend([1, 2] as Integer[]).extend("Bar").extend(4.0);
             //      nil().extend(new Integer[]{1, 2}).extend("Bar").extend(4.0);
-            
+
                 final HAppend<HNil, HCons<Double, HCons<String, HCons<Integer[], HNil>>>,
                   HCons<Double, HCons<String, HCons<Integer[], HNil>>>> zero = append();
-            
+
                 final HAppend<HCons<Boolean, HNil>, HCons<Double, HCons<String, HCons<Integer[], HNil>>>,
                   HCons<Boolean, HCons<Double, HCons<String, HCons<Integer[], HNil>>>>> one = append(zero);
-            
+
                 final HAppend<HCons<Integer, HCons<Boolean, HNil>>, HCons<Double, HCons<String, HCons<Integer[], HNil>>>,
                   HCons<Integer, HCons<Boolean, HCons<Double, HCons<String, HCons<Integer[], HNil>>>>>> two = append(one);
-            
+
                 final HAppend<HCons<String, HCons<Integer, HCons<Boolean, HNil>>>,
                   HCons<Double, HCons<String, HCons<Integer[], HNil>>>,
                     HCons<String, HCons<Integer, HCons<Boolean, HCons<Double, HCons<String, HCons<Integer[], HNil>>>>>>> three = append(two);
-            
+
                 final HCons<String, HCons<Integer, HCons<Boolean, HCons<Double, HCons<String, HCons<Integer[], HNil>>>>>> x = three.append(a, b);
-            
+
                 System.out.println(x.head()); // Foo
                 System.out.println(x.tail().tail().tail().tail().head()); // Bar
               }

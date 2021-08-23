@@ -29,7 +29,7 @@ class ReturnTest extends CompilableTestSupport {
          }      
       """
   }
-  
+
   void testStaticInitializer() {
       assertScript """
          class A {

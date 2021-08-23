@@ -23,9 +23,9 @@ import groovy.test.GroovyTestCase
 class VerbatimGStringTest extends GroovyTestCase {
 
     void testWithOneVariable() {
-        
+
         def name = "Bob"
-        
+
         def template = """
 hello ${name} how are you?
 """
@@ -42,7 +42,7 @@ hello ${name} how are you?
         def string = template.toString().trim()
         assert string == "hello Bob how are you?"
     }
-    
+
     void testWithVariableAtEnd() {
         def name = "Bob"
 
@@ -51,10 +51,10 @@ hello ${name}
 """
 
         def string = template.toString().trim()
-        
+
         assert string == "hello Bob"
     }
-    
+
     void testWithVariableAtBeginning() {
         def name = "Bob"
 
@@ -63,7 +63,7 @@ ${name} hey,
 hello
 """
         def string = template.toString().trim()
-        
+
         assert fixEOLs(string) == "Bob hey,\nhello"
     }
 
@@ -74,7 +74,7 @@ hello
 ${name}
 """
         def string = template.toString().trim()
-        
+
         assert string == "Bob"
     }
 }

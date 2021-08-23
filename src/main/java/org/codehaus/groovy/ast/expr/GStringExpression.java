@@ -33,7 +33,7 @@ public class GStringExpression extends Expression {
     private final String verbatimText;
     private final List<ConstantExpression> strings;
     private final List<Expression> values;
-    
+
     public GStringExpression(String verbatimText) {
         this.verbatimText = verbatimText;
         super.setType(ClassHelper.GSTRING_TYPE);

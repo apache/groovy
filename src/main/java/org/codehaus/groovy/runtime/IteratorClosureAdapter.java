@@ -33,7 +33,7 @@ public class IteratorClosureAdapter<T> extends Closure {
     private static final long serialVersionUID = -7485077849389539770L;
     private final List<T> list = new ArrayList<T>();
     private MetaClass metaClass = InvokerHelper.getMetaClass(getClass());
-    
+
     public IteratorClosureAdapter(Object delegate) {
         super(delegate);
     }
@@ -47,7 +47,7 @@ public class IteratorClosureAdapter<T> extends Closure {
     public void setMetaClass(MetaClass metaClass) {
         this.metaClass = metaClass;
     }
-    
+
     public List<T> asList() {
         return list;
     }

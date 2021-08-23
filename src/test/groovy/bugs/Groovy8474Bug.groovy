@@ -26,13 +26,13 @@ class Groovy8474Bug extends GroovyTestCase {
             class T {
               String group
             }
-            
+
             class S extends T {
               S() {
                 super.group = 'Hello'
               }
             }
-            
+
             assert 'Hello' == new S().group
         '''
     }
@@ -44,7 +44,7 @@ class Groovy8474Bug extends GroovyTestCase {
               String group2
               String group3
             }
-            
+
             class S extends T {
               S() {
                 super.group = 'Hello'
@@ -52,7 +52,7 @@ class Groovy8474Bug extends GroovyTestCase {
                 super.group3 = 'Hello3'
               }
             }
-            
+
             assert 'Hello' == new S().group
             assert 'Hello2' == new S().group2
             assert 'Hello3' == new S().group3
@@ -65,14 +65,14 @@ class Groovy8474Bug extends GroovyTestCase {
                 String group
             }
             class T extends K {
-              
+
             }
             class S extends T {
               S() {
                 super.group = 'Hello'
               }
             }
-            
+
             assert 'Hello' == new S().group
         '''
     }
@@ -96,12 +96,12 @@ class Groovy8474Bug extends GroovyTestCase {
                 super.group = 'Hello'
                 super.name = 'World'
               }
-              
+
               public String helloWorld() {
                 "$group, $name"
               }
             }
-            
+
             assert 'Hello, World' == new S().helloWorld()
         '''
     }
@@ -111,13 +111,13 @@ class Groovy8474Bug extends GroovyTestCase {
             class T {
               Integer group
             }
-            
+
             class S extends T {
               S() {
                 super.group = 1
               }
             }
-            
+
             assert 1 == new S().group
         '''
     }
@@ -127,13 +127,13 @@ class Groovy8474Bug extends GroovyTestCase {
             class T {
               Long group
             }
-            
+
             class S extends T {
               S() {
                 super.group = 1
               }
             }
-            
+
             assert 1 == new S().group
         '''
     }
@@ -143,13 +143,13 @@ class Groovy8474Bug extends GroovyTestCase {
             class T {
               Long group
             }
-            
+
             class S extends T {
               S() {
                 super.group = Long.MAX_VALUE
               }
             }
-            
+
             assert Long.MAX_VALUE == new S().group
         '''
     }
@@ -159,13 +159,13 @@ class Groovy8474Bug extends GroovyTestCase {
             class T {
               int group
             }
-            
+
             class S extends T {
               S() {
                 super.group = Integer.MAX_VALUE
               }
             }
-            
+
             assert Integer.MAX_VALUE == new S().group
         '''
     }
@@ -175,13 +175,13 @@ class Groovy8474Bug extends GroovyTestCase {
             class T {
               long group
             }
-            
+
             class S extends T {
               S() {
                 super.group = Long.MAX_VALUE
               }
             }
-            
+
             assert Long.MAX_VALUE == new S().group
         '''
     }
@@ -191,13 +191,13 @@ class Groovy8474Bug extends GroovyTestCase {
             class T {
               int group
             }
-            
+
             class S extends T {
               S() {
                 super.group = 1
               }
             }
-            
+
             assert 1 == new S().group
         '''
     }
@@ -207,13 +207,13 @@ class Groovy8474Bug extends GroovyTestCase {
             class T {
               long group
             }
-            
+
             class S extends T {
               S() {
                 super.group = 123456789123456789
               }
             }
-            
+
             assert 123456789123456789 == new S().group
         '''
     }
@@ -223,13 +223,13 @@ class Groovy8474Bug extends GroovyTestCase {
             class T {
               boolean group
             }
-            
+
             class S extends T {
               S() {
                 super.group = true
               }
             }
-            
+
             assert true == new S().group
         '''
     }
@@ -239,13 +239,13 @@ class Groovy8474Bug extends GroovyTestCase {
             class T {
               protected String group
             }
-            
+
             class S extends T {
               S() {
                 super.group = 'Hello'
               }
             }
-            
+
             assert 'Hello' == new S().group
         '''
     }
@@ -257,7 +257,7 @@ class Groovy8474Bug extends GroovyTestCase {
               protected String group2
               protected String group3
             }
-            
+
             class S extends T {
               S() {
                 super.group = 'Hello'
@@ -265,7 +265,7 @@ class Groovy8474Bug extends GroovyTestCase {
                 super.group3 = 'Hello3'
               }
             }
-            
+
             assert 'Hello' == new S().group
             assert 'Hello2' == new S().group2
             assert 'Hello3' == new S().group3
@@ -278,15 +278,15 @@ class Groovy8474Bug extends GroovyTestCase {
                 protected String group
             }
             class T extends K {
-              
+
             }
-            
+
             class S extends T {
               S() {
                 super.group = 'Hello'
               }
             }
-            
+
             assert 'Hello' == new S().group
         '''
     }
@@ -296,13 +296,13 @@ class Groovy8474Bug extends GroovyTestCase {
             class T {
               public String group
             }
-            
+
             class S extends T {
               S() {
                 super.group = 'Hello'
               }
             }
-            
+
             assert 'Hello' == new S().group
         '''
     }
@@ -314,7 +314,7 @@ class Groovy8474Bug extends GroovyTestCase {
               public String group2
               public String group3
             }
-            
+
             class S extends T {
               S() {
                 super.group = 'Hello'
@@ -322,7 +322,7 @@ class Groovy8474Bug extends GroovyTestCase {
                 super.group3 = 'Hello3'
               }
             }
-            
+
             assert 'Hello' == new S().group
             assert 'Hello2' == new S().group2
             assert 'Hello3' == new S().group3
@@ -335,15 +335,15 @@ class Groovy8474Bug extends GroovyTestCase {
                 public String group
             }
             class T extends K {
-              
+
             }
-            
+
             class S extends T {
               S() {
                 super.group = 'Hello'
               }
             }
-            
+
             assert 'Hello' == new S().group
         '''
     }
@@ -353,7 +353,7 @@ class Groovy8474Bug extends GroovyTestCase {
             class T {
               private String group
             }
-            
+
             class S extends T {
               S() {
                 super.group = 'Hello'
@@ -367,12 +367,12 @@ class Groovy8474Bug extends GroovyTestCase {
         def errMsg = shouldFail '''
             class T {
               private String group
-              
+
               public String getGroup() {
                 return group
               }
             }
-            
+
             class S extends T {
               S() {
                 super.group = 'Hello'
@@ -387,12 +387,12 @@ class Groovy8474Bug extends GroovyTestCase {
         def errMsg = shouldFail '''
             class T {
               private String group
-              
+
               public void setGroup(String group) {
                 this.group = group
               }
             }
-            
+
             class S extends T {
               S() {
                 super.group = 'Hello'
@@ -407,7 +407,7 @@ class Groovy8474Bug extends GroovyTestCase {
         def errMsg = shouldFail '''
             class K {
               private String group
-              
+
               public void setGroup(String group) {
                 this.group = group
               }
@@ -417,7 +417,7 @@ class Groovy8474Bug extends GroovyTestCase {
                 return group
               }
             }
-            
+
             class S extends T {
               S() {
                 super.group = 'Hello'
@@ -433,7 +433,7 @@ class Groovy8474Bug extends GroovyTestCase {
             class T {
               protected final String group = 'Hi'
             }
-            
+
             class S extends T {
               S() {
                 super.group = 'Hello'

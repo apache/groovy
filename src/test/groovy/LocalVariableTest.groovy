@@ -29,10 +29,10 @@ class LocalVariableTest extends GroovyTestCase {
         assert x !=  null
         assert x != "def"
         assert x == "abc"
-        
+
         assert x.equals("abc")
     }
-    
+
     void testUnknownVariable() {
 
         shouldFail {

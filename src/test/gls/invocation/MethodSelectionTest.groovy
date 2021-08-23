@@ -41,7 +41,7 @@ class MethodSelectionTest extends CompilableTestSupport {
       assert m(new C()) == 2
       assert m(new E()) == 2
     """   
-    
+
     assertScript """
       class A implements I1 {}
       class B extends A implements I2 {}
@@ -60,7 +60,7 @@ class MethodSelectionTest extends CompilableTestSupport {
       assert foo(new C())==3
     """
   }
-  
+
   void testMostGeneralForNull() {
     // we use the same signatures with different method orders,
     // because we want to catch method ordering bugs
@@ -68,17 +68,17 @@ class MethodSelectionTest extends CompilableTestSupport {
       def m(String x){1}
       def m(Integer x){2}
       assert m(null) == 1
-      
+
       def n(Integer x){2}
       def n(String x){1}
       assert n(null) == 1
     """
-    
+
     // Exception defines Throwable and String versions, which are both equal
     shouldFail """
         new Exception(null)
     """
-    
+
     shouldFail """
         class A {
             public A(String a){}
@@ -87,7 +87,7 @@ class MethodSelectionTest extends CompilableTestSupport {
         }
         new A()
     """
-    
+
     shouldFail """
         class A{}
         class B{}
@@ -102,14 +102,14 @@ class MethodSelectionTest extends CompilableTestSupport {
         new A()
     """
   }
-  
+
   void testMethodSelectionException() {
     assertScript """
       import org.codehaus.groovy.runtime.metaclass.MethodSelectionException as MSE
-    
+
       def foo(int x) {}
       def foo(Number x) {}
-      
+
       try {
         foo()
         assert false
@@ -118,7 +118,7 @@ class MethodSelectionTest extends CompilableTestSupport {
         assert mse.message.indexOf("#foo(int)") >0
         assert mse.message.indexOf("#foo(java.lang.Number)") >0
       }
-    
+
     """  
   }
 
@@ -210,12 +210,12 @@ class MethodSelectionTest extends CompilableTestSupport {
         assert Mark.log == "BazApplication.onRequestStart(PortletRequest, PortletResponse)FooApplication.onRequestStart(PortletRequest, PortletResponse)"
     """
   }
-  
+
   void testNullUsageForPrimitivesWithExplicitNull() {
     [byte,int,short,float,double,boolean,char].each { type ->
       assertScript """
          def foo($type x) {}
-         
+
          boolean catched = false
          try {
            foo(null)
@@ -228,12 +228,12 @@ class MethodSelectionTest extends CompilableTestSupport {
       """
     }
   }
-  
+
   void testNullUsageForPrimitivesWithImplicitNull() {
     [byte,int,short,float,double,boolean,char].each { type ->
       assertScript """
          def foo($type x) {}
-         
+
          boolean catched = false
          try {
            foo()
@@ -246,19 +246,19 @@ class MethodSelectionTest extends CompilableTestSupport {
       """
     }
   }
-  
+
   void testNullUsageForPrimitivesAndOverloading() {
     [byte,int,short,float,double].each { type ->
       assertScript """
          def foo(String x){1}
          def foo($type x) {2}
-         
+
          def txt = "foo($type) was called where foo(String) should have been called"
          assert foo(null)==1, txt
       """
     } 
   }
-  
+
   void testPrivateMethodSelectionFromClosure(){
       assertScript """
           class I1 {
@@ -273,10 +273,10 @@ class MethodSelectionTest extends CompilableTestSupport {
           }
           def i = new I2()
           assert i.bar()() == 1
-      
+
       """
   }
-  
+
   void testCachingForNullAndPrimitive(){
       assertScript """
           boolean shaky(boolean defaultValue) {false}
@@ -289,7 +289,7 @@ class MethodSelectionTest extends CompilableTestSupport {
           }
       """
   }
-  
+
   void testSpreadOperatorAndVarargs(){
       assertScript """
           class SpreadBug {
@@ -302,64 +302,64 @@ class MethodSelectionTest extends CompilableTestSupport {
           assert sb.foo("1","42")==2  
       """
   }
-  
+
   void testBDandBIToFloatAutoConversionInMethodSelection() {
     def foo = new Foo3977()
-    
+
     // double examples were working already but float ones were not
     // adding both here just to make sure the inconsistency doesn't creep in again
     foo.setMyDouble1 1.0
     assert foo.getMyDouble1() == 1.0
-    
+
     foo.setMyDouble1 new BigInteger('1')
     assert foo.getMyDouble1() == 1.0
 
     foo.setMyDouble2 1.0
     assert foo.getMyDouble2() == 1.0
-    
+
     foo.setMyDouble2 new BigInteger('1')
     assert foo.getMyDouble2() == 1.0
 
     foo.setMyFloat1 1.0
     assert foo.getMyFloat1() == 1.0
-    
+
     foo.setMyFloat1 new BigInteger('1')
     assert foo.getMyFloat1() == 1.0
 
     foo.setMyFloat2 1.0
     assert foo.getMyFloat2() == 1.0
-    
+
     foo.setMyFloat2 new BigInteger('1')
     assert foo.getMyFloat2() == 1.0
   }
-  
+
   void testCallWithExendedBigDecimal() {
       assertScript """
         BigDecimal f (BigDecimal x) {
             return x
         }
-        
+
         public class ExtendedBigDecimal extends java.math.BigDecimal {
             public ExtendedBigDecimal (int i) {
                 super (i)
             }
         }
-        
+
         assert f(new ExtendedBigDecimal(1)) == 1      
       """
   }
-  
+
   void testVargsClass() {
       assertScript """
         interface Parent {}
         interface Child extends Parent {}
-        
+
         class Child1 implements Child { }
         def a = new Child1()
-        
+
         class Child2 implements Child { }
         def b = new Child2()
-        
+
         def foo(Parent... values) { 
           assert values.class == Parent[]
         }
@@ -373,7 +373,7 @@ class MethodSelectionTest extends CompilableTestSupport {
           private String[] getStringArrayDirectly() { ["string_00", "string_01"] }   
           private String[] getStringArrayIndirectlyWithType(String[] stringarray) { stringarray }    
           private String[] getStringArrayIndirectlyWithoutType(stringarray) { stringarray }
-        
+
           public int getStringArrayDirectly_Length() { getStringArrayDirectly().length }            
           public int getStringArrayIndirectlyWithType_Length() { getStringArrayIndirectlyWithType(getStringArrayDirectly()).length }
           public int getStringArrayIndirectlyWithoutType_Length() { getStringArrayIndirectlyWithoutType(getStringArrayDirectly()).length }
@@ -383,7 +383,7 @@ class MethodSelectionTest extends CompilableTestSupport {
           assert getStringArrayIndirectlyWithType_Length() == getStringArrayIndirectlyWithoutType_Length()
       """
   }
-  
+
   // GROOVY-6189, GROOVY-9852
   void testSAMs() {
       // simple direct case
@@ -418,7 +418,7 @@ class MethodSelectionTest extends CompilableTestSupport {
           """
       }
   }
-  
+
   // GROOVY-6431
   void testBigDecAndBigIntSubClass() {
       assertScript'''

@@ -34,5 +34,5 @@ class AClassWithMethodMissingMethod {
         count++
         throw new MissingMethodException(name, AClassWithMethodMissingMethod, args)        
     }
-    
+
 }

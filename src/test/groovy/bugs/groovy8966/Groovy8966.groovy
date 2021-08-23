@@ -28,7 +28,7 @@ final class Groovy8966 extends GroovyTestCase {
     void test() {
         assertScript '''
             def array = [0, 1, 2]
-            int a = 2 
+            int a = 2
             long b = 3
             assert array[a..<b] == [2]
         '''

@@ -43,7 +43,7 @@ class ProxyGeneratorAdapterTest extends GroovyTestCase {
         assert obj instanceof Foo
         assert obj.m() == 'HELLO'
     }
-    
+
     void testImplementSingleAbstractMethodReturningVoid() {
         def map = ['bar': { println 'HELLO' }]
         ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Bar, null, this.class.classLoader, false, null)
@@ -96,7 +96,7 @@ class ProxyGeneratorAdapterTest extends GroovyTestCase {
         obj.bar()
         assert x == 'WORLD'
     }
-    
+
     void testImplementMethodFromInterfaceWithPrimitiveTypes() {
         def map = ['calc': { x -> x*2 } ]
         ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Bar, [OtherInterface] as Class[], this.class.classLoader, false, null)
@@ -105,7 +105,7 @@ class ProxyGeneratorAdapterTest extends GroovyTestCase {
         assert obj instanceof OtherInterface
         assert obj.calc(3) == 6
     }
-    
+
     void testWildcardProxy() {
         def map = ['*': { '1' } ]
         ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Foo, null, this.class.classLoader, false, null)
@@ -218,11 +218,11 @@ class ProxyGeneratorAdapterTest extends GroovyTestCase {
     abstract static class Bar {
         abstract void bar()
     }
-    
+
     static interface FooInterface {
         String foo()
     }
-    
+
     static interface OtherInterface {
         int calc(int x)
     }

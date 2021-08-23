@@ -253,7 +253,7 @@ and add it to the Groovy Shell environment.
 
 ----
 groovy:000> :grab 'com.google.guava:guava:19.0'
-groovy:000> import com.google.common.collect.BiMap 
+groovy:000> import com.google.common.collect.BiMap
 ===\> com.google.common.collect.BiMap
 ----
 

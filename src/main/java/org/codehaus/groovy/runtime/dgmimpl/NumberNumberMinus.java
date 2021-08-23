@@ -45,7 +45,6 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
         return NumberMath.subtract(left, right);
     }
 
-
     @Override
     public CallSite createIntegerInteger(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         return new IntegerInteger(site, metaClass, metaMethod, params, receiver, args);

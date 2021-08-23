@@ -31,7 +31,7 @@ public class FormModel {
     public FormModel() {
         this(new HashMap<>());
     }
-    
+
     public FormModel(Map<String, Object> fieldModels) {
         this.fieldModels = fieldModels;
     }
@@ -39,7 +39,7 @@ public class FormModel {
     public void addModel(String name, Object model) {
         fieldModels.put(name, model);
     }
-    
+
     public Object getModel(String name) {
         return fieldModels.get(name);
     }

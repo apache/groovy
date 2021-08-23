@@ -132,12 +132,12 @@ import java.lang.annotation.Target;
 @Target({ ElementType.METHOD })
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.MemoizedASTTransformation")
 public @interface Memoized {
-    
+
     /**
      * Number of cached return values to protect from garbage collection.
      */
     int protectedCacheSize() default 0;
-    
+
     /**
      * The maximum size the cache can grow to.
      */

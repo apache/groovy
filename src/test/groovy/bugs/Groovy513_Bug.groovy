@@ -25,7 +25,7 @@ import groovy.test.GroovyTestCase
  */
 
 class Groovy513_Bug extends GroovyTestCase {
- 
+
     void testMinMaxValueComparison() {
         assertTrue(8 < Integer.MAX_VALUE);
         assertTrue(8 > Integer.MIN_VALUE);
@@ -34,5 +34,5 @@ class Groovy513_Bug extends GroovyTestCase {
         assertTrue(8.0 < Double.MAX_VALUE);
         assertTrue(8.0 > Double.MIN_VALUE);
     }
-    
+
 }

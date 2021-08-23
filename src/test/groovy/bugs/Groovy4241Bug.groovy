@@ -29,10 +29,10 @@ class Groovy4241Bug extends GroovyTestCase {
             }
         }
         def f = new Foo4241()
-        
+
         def bar = [key: 'foo'] as Bar4241
         f.echo(bar) // this used to work
-        
+
         f.echo([key: 'foo'] as Bar4241) // this used to fail with NPE
     }
 }

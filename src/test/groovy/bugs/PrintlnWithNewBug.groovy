@@ -22,7 +22,7 @@ import groovy.Foo
 import groovy.test.GroovyTestCase
 
 class PrintlnWithNewBug extends GroovyTestCase {
-    
+
     void testBug() {
         println(new Foo(name:'abc')) 
         println new Foo(name:'def') 

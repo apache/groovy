@@ -348,12 +348,12 @@ class ToStringTransformTest extends GroovyShellTestCase {
 
         toString = evaluate("""
                 package my.company
-                
+
                 import groovy.transform.ToString
-                
+
                 @ToString(includePackage = false)
                 class Person {}
-                
+
                 new Person().toString()
             """)
 

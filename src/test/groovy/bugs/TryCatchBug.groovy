@@ -21,7 +21,7 @@ package groovy.bugs
 import groovy.test.GroovyTestCase
 
 class TryCatchBug extends GroovyTestCase {
-    
+
     void testBug() {
         try {
             println("Hello")

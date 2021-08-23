@@ -246,7 +246,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
             assert list == ['a','b','d','e','f','b','b','a']
             // end::list_gdk_remove_index[]
         '''
-        
+
         assertScript '''
             // tag::list_gdk4[]
             def list = [1,2,3,4,5,6,2,2,1]

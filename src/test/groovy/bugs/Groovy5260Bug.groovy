@@ -30,7 +30,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression
 
 class Groovy5260Bug extends GroovyTestCase implements Opcodes {
     File outputDir
-    
+
     @Override
     protected void setUp() {
         super.setUp()

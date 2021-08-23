@@ -31,7 +31,7 @@ class Groovy8426Test {
         def result = new AstBuilder().buildFromString CONVERSION, false, '''
             def method() {
                 'return value'
-                
+
             }
         '''
 

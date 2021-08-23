@@ -21,16 +21,16 @@ package gls.annotations.closures
 import groovy.test.GroovyTestCase
 
 class AnnotationClosureWithNonLocalVariable extends GroovyTestCase {
-    
+
     void testVanillaVariable() {
         assertScript """
             import java.lang.annotation.*
-            
+
             @Retention(RetentionPolicy.RUNTIME)
             @interface Foo {
                 Class value()
             }
-            
+
             class X {
                 @Foo({ value })
                 def doit(value) {}

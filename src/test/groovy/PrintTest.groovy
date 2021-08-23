@@ -26,13 +26,13 @@ import java.text.NumberFormat
 class PrintTest extends GroovyTestCase {
     PrintStream savedSystemOut
     private locale
-    
+
     void setUp() {
         savedSystemOut = System.out
         locale = Locale.getDefault()
         Locale.setDefault(Locale.US)
     }
-    
+
     void tearDown() {
         Locale.setDefault(locale)
         System.setOut(savedSystemOut)        
@@ -107,7 +107,7 @@ void doTest(def param) {
     ByteArrayOutputStream baos1 = new ByteArrayOutputStream()
     ByteArrayOutputStream baos2 = new ByteArrayOutputStream()
     ByteArrayOutputStream baos3 = new ByteArrayOutputStream()
-    
+
     sw1.write(param as String)
     sw2.print(param)
     sw3.withPrintWriter { it.print param }
@@ -126,7 +126,7 @@ void doTest(def param) {
     def t6 = baos1.toString()
     def t7 = baos2.toString()
     def t8 = baos3.toString()
-    
+
     assert t1 == t2
     assert t1 == t3
     assert t1 == t4
@@ -163,7 +163,7 @@ void doTest(def param) {
     t6 = baos1.toString()
     t7 = baos2.toString()
     t8 = baos3.toString()
-    
+
     assert t1 == t2
     assert t1 == t3
     assert t1 == t4

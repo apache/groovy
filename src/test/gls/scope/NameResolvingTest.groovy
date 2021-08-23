@@ -63,13 +63,13 @@ class NameResolvingTest extends CompilableTestSupport {
             }
         """
     }
-    
+
     void testSuperClassVariableAccess() {
         assertScript """
             class U {
                 public static final int uint
             }
-        
+
             class A extends U {
                 def foo ( ) {
                     id  "A" + ( ( uint < 7 ) ? "B" : "C" ) + '\\n'

@@ -26,12 +26,12 @@ class Groovy3679Bug extends GroovyTestCase {
         def map1 = new HashMap()
         map1["table"] = "Some table"
         assert map1["table"] != null
-        
+
         // map entry should win over a private field
         def map2 = [:]
         map2["header"] = "Some header"
         assert map2["header"] != null
-        
+
         // following is to verify that setting of private fields with .@"$x" syntax is not
         // broken by the fix introduced
         def x = new X3679()

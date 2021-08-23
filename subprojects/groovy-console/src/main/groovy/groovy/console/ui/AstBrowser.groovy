@@ -58,10 +58,10 @@ import static java.awt.GridBagConstraints.NORTHWEST
 import static java.awt.GridBagConstraints.WEST
 
 /**
- * This object is a GUI for looking at the AST that Groovy generates. 
+ * This object is a GUI for looking at the AST that Groovy generates.
  *
  * Usage: java groovy.console.ui.AstBrowser [filename]
- *         where [filename] is an existing Groovy script. 
+ *         where [filename] is an existing Groovy script.
  */
 class AstBrowser {
 
@@ -609,7 +609,7 @@ class TreeNodeWithProperties extends DefaultMutableTreeNode {
 }
 
 /**
- * This interface is used to create tree nodes of various types 
+ * This interface is used to create tree nodes of various types
  */
 @CompileStatic
 interface AstBrowserNodeMaker<T> {
@@ -619,7 +619,7 @@ interface AstBrowserNodeMaker<T> {
 }
 
 /**
- * Creates tree nodes for swing UI  
+ * Creates tree nodes for swing UI
  */
 @CompileStatic
 class SwingTreeNodeMaker implements AstBrowserNodeMaker<DefaultMutableTreeNode> {

@@ -29,15 +29,15 @@ class UnAmbigousSuperConstructorCallStubsTest extends StringSourcesStubTestCase 
             'UserAuthException.groovy': '''
                 public class UserAuthException extends java.lang.Exception {
                   private static String message = "User Authentication Failed";
-                
+
                   public UserAuthException() {
                     super(message);
                   }
-                
+
                   public String getError() {
                     return message;
                   }
-                
+
                 }
             ''',
             'Dummy.java': 'interface Dummy{}'

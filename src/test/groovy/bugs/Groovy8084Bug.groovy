@@ -29,10 +29,10 @@ class Groovy8084Bug extends CompilableTestSupport {
 
             @CompileStatic
             static def method(List<? extends Serializable> captured) {
-                captured.add('some string') // though the test passes now, but I expect a STC error here because of adding an element to a producer, which is not allowed in Java 
+                captured.add('some string') // though the test passes now, but I expect a STC error here because of adding an element to a producer, which is not allowed in Java
                 return captured
             }
-            
+
             println method(new ArrayList<Integer>())
         '''
     }

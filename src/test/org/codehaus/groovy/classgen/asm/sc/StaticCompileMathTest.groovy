@@ -95,7 +95,7 @@ class StaticCompileMathTest extends AbstractBytecodeTestCase {
             assert m()==11d
         '''
     }
-    
+
     void testIntMinusDouble() {
         assertScript '''
             @groovy.transform.CompileStatic

@@ -30,7 +30,7 @@ import junit.textui.TestRunner
  *
  * Source files will be read from the directory specified by the <code>javadocAssertion.src.dir</code>
  * system property, including all files matching <code>javadocAssertion.src.pattern</code> and
- * excluding files matching the <code>javadocAssertion.src.excludesPattern</code>. 
+ * excluding files matching the <code>javadocAssertion.src.excludesPattern</code>.
  *
  * By default all <code>.java</code> and <code>.groovy</code> source files from <code>./src</code> will
  * be scanned for assertions.
@@ -59,7 +59,7 @@ class JavadocAssertionTestSuite extends TestSuite {
      * Defaults to including all <code>.java</code> and <code>.groovy</code> files.
      */
     public static final String SYSPROP_SRC_PATTERN = "javadocAssertion.src.pattern";
-    
+
     /** The System Property to set as a filename excludes pattern for collection of Classes.
      * When non-empty, the pattern will be used as Regular Expression pattern applied with the
      * find operator against each candidate file.path.
@@ -67,28 +67,28 @@ class JavadocAssertionTestSuite extends TestSuite {
      * Default value is "".
      */
     public static final String SYSPROP_SRC_EXCLUDES_PATTERN = "javadocAssertion.src.excludesPattern";
-    
+
     private static final JavadocAssertionTestBuilder testBuilder = new JavadocAssertionTestBuilder()
     private static final IFileNameFinder finder = Class.forName('groovy.ant.FileNameFinder',true,this.classLoader).newInstance()
-    
+
     static Test suite() {
         String basedir = System.getProperty(SYSPROP_SRC_DIR, "./src/")
         return suite(basedir)
     }
-    
+
     static Test suite(String basedir) {
         String includePattern = System.getProperty(SYSPROP_SRC_PATTERN, "**/*.java,**/*.groovy")
         return suite(basedir, includePattern)
     }
-    
+
     static Test suite(String basedir, String includePattern) {
         String excludePattern = System.getProperty(SYSPROP_SRC_EXCLUDES_PATTERN, "")
         return suite(basedir, includePattern, excludePattern)
     }
-    
+
     static Test suite(String basedir, String includePattern, String excludePattern) {
         assert new File(basedir).exists()
-        
+
         TestSuite suite = new JavadocAssertionTestSuite()
 
         Collection filenames = finder.getFileNames([dir:basedir, includes:includePattern, excludes:excludePattern])

@@ -27,13 +27,13 @@ class Groovy8240Bug extends StaticTypeCheckingTestCase implements StaticCompilat
             class Bar {
                 void vararg(boolean flag = true, Class<?>... classes) {}
             }
-            
+
             class Foo extends Bar{
               def test() {
                   vararg(false, Foo)
               }
             }
-            
+
             new Foo().test()
         '''
     }
@@ -43,13 +43,13 @@ class Groovy8240Bug extends StaticTypeCheckingTestCase implements StaticCompilat
             class Bar {
                 void vararg(boolean flag = true, Class<?>... classes) {}
             }
-            
+
             class Foo extends Bar{
               def test() {
                   vararg(false, Foo, Bar)
               }
             }
-            
+
             new Foo().test()
         '''
     }
@@ -59,13 +59,13 @@ class Groovy8240Bug extends StaticTypeCheckingTestCase implements StaticCompilat
             class Bar {
                 void vararg(boolean flag = true, Class<?>... classes) {}
             }
-            
+
             class Foo extends Bar{
               def test() {
                   vararg(false)
               }
             }
-            
+
             new Foo().test()
         '''
     }

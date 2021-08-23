@@ -26,13 +26,13 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * A list of statements and a scope. 
+ * A list of statements and a scope.
  */
 public class BlockStatement extends Statement {
 
     private List<Statement> statements = new ArrayList<Statement>();
     private VariableScope scope;
-    
+
     public BlockStatement() {
         this(new ArrayList<Statement>(), new VariableScope());
     }
@@ -50,7 +50,7 @@ public class BlockStatement extends Statement {
         this.statements = statements;
         this.scope = scope;
     }
-    
+
     /**
      * Creates a BlockStatement with a scope and children statements.
      * @param statements
@@ -112,7 +112,7 @@ public class BlockStatement extends Statement {
     public void setVariableScope(VariableScope scope) {
         this.scope = scope;
     }
-    
+
     public VariableScope getVariableScope() {
         return scope;
     }

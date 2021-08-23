@@ -216,14 +216,14 @@ public class ConcurrentReaderHashMap
    * MUST be a power of two.
    */
   private static final int MINIMUM_CAPACITY = 4;
-  
+
   /**
    * The maximum capacity, used if a higher value is implicitly specified
    * by either of the constructors with arguments.
    * MUST be a power of two &lt;= 1&lt;&lt;30.
    */
   private static final int MAXIMUM_CAPACITY = 1 << 30;
-  
+
   /**
    * The default load factor for this table (1.0).
    * Used when not otherwise specified in constructor.
@@ -263,7 +263,7 @@ public class ConcurrentReaderHashMap
    */
   private static int p2capacity(int initialCapacity) {
     int cap = initialCapacity;
-    
+
     // Compute the appropriate capacity
     int result;
     if (cap > MAXIMUM_CAPACITY || cap < 0) {
@@ -370,7 +370,7 @@ public class ConcurrentReaderHashMap
   public synchronized boolean isEmpty() {
     return count == 0;
   }
-  
+
 
 
   /**
@@ -477,7 +477,7 @@ public class ConcurrentReaderHashMap
   public Object put(Object key, Object value) {
     if (value == null) 
       throw new NullPointerException();
-    
+
     int hash = hash(key);
     Entry[] tab = table;
     int index = hash & (tab.length-1);
@@ -509,7 +509,7 @@ public class ConcurrentReaderHashMap
           }
         }
       }
-      
+
       // retry if wrong list or lost race against concurrent remove
       return sput(key, value, hash);
     }
@@ -637,14 +637,14 @@ public class ConcurrentReaderHashMap
            on this strategy to ensure that elements will not be
           repeated during iteration.
     */
-          
+
 
     int hash = hash(key);
     Entry[] tab = table;
     int index = hash & (tab.length-1);
     Entry first = tab[index];
     Entry e = first;
-      
+
     for (e = first; e != null; e = e.next) 
       if (e.hash == hash && eq(key, e.key)) 
         break;
@@ -661,18 +661,18 @@ public class ConcurrentReaderHashMap
           if (first == tab[index] && oldValue != null) {
             e.value = null;
             count--;
-            
+
             Entry head = e.next;
             for (Entry p = first; p != e; p = p.next) 
               head = new Entry(p.hash, p.key, p.value, head);
-            
+
             tab[index] = head;
             recordModification(head);
             return oldValue;
           }
         }
       }
-    
+
       // Wrong list or interference
       return sremove(key, hash);
     }
@@ -686,7 +686,7 @@ public class ConcurrentReaderHashMap
     Entry[] tab = table;
     int index = hash & (tab.length-1);
     Entry first = tab[index];
-      
+
     for (Entry e = first; e != null; e = e.next) {
       if (e.hash == hash && eq(key, e.key)) {
         Object oldValue = e.value;
@@ -695,7 +695,7 @@ public class ConcurrentReaderHashMap
         Entry head = e.next;
         for (Entry p = first; p != e; p = p.next) 
           head = new Entry(p.hash, p.key, p.value, head);
-        
+
         tab[index] = head;
         recordModification(head);
         return oldValue;
@@ -859,7 +859,7 @@ public class ConcurrentReaderHashMap
     Set ks = keySet;
     return (ks != null)? ks : (keySet = new KeySet());
   }
-  
+
   private class KeySet extends AbstractSet {
     @Override
     public Iterator iterator() {
@@ -909,7 +909,7 @@ public class ConcurrentReaderHashMap
     Collection vs = values;
     return (vs != null)? vs : (values = new Values());
   }
-  
+
   private class Values extends AbstractCollection {
     @Override
     public Iterator iterator() {
@@ -1122,12 +1122,12 @@ public class ConcurrentReaderHashMap
       Map.Entry e = (Map.Entry)o;
       return (key.equals(e.getKey()) && value.equals(e.getValue()));
     }
-    
+
     @Override
     public int hashCode() {
       return  key.hashCode() ^ value.hashCode();
     }
-    
+
     @Override
     public String toString() {
       return key + "=" + value;
@@ -1216,12 +1216,12 @@ public class ConcurrentReaderHashMap
     @Override
     protected Object returnValueOfNext() { return currentKey; }
   }
-  
+
   protected class ValueIterator extends HashIterator {
     @Override
     protected Object returnValueOfNext() { return currentValue; }
   }
-  
+
 
 
   /**
@@ -1242,17 +1242,17 @@ public class ConcurrentReaderHashMap
     throws IOException  {
     // Write out the threshold, loadfactor, and any hidden stuff
     s.defaultWriteObject();
-    
+
     // Write out number of buckets
     s.writeInt(table.length);
-    
+
     // Write out size (number of Mappings)
     s.writeInt(count);
-    
+
     // Write out keys and values (alternating)
     for (int index = table.length-1; index >= 0; index--) {
       Entry entry = table[index];
-      
+
       while (entry != null) {
         s.writeObject(entry.key);
         s.writeObject(entry.value);
@@ -1276,10 +1276,10 @@ public class ConcurrentReaderHashMap
     // Read in number of buckets and allocate the bucket array;
     int numBuckets = s.readInt();
     table = new Entry[numBuckets];
-    
+
     // Read in size (number of Mappings)
     int size = s.readInt();
-    
+
     // Read the keys and values, and put the mappings in the table
     for (int i=0; i<size; i++) {
       Object key = s.readObject();
@@ -1287,7 +1287,7 @@ public class ConcurrentReaderHashMap
       put(key, value);
     }
   }
-  
+
   /** 
    * @return the number of slots in this table
    **/

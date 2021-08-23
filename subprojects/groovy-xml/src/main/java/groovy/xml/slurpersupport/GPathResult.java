@@ -216,7 +216,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     protected abstract void replaceNode(Closure newValue);
 
     protected abstract void replaceBody(Object newValue);
-    
+
     protected abstract void appendNode(Object newValue);
 
     /**

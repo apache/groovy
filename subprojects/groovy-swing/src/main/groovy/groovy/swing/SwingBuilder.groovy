@@ -546,7 +546,7 @@ class SwingBuilder extends FactoryBuilderSupport {
         }
         def actionKey = attributes.remove("actionKey")
         if( !actionKey ) actionKey = "Action"+Math.abs(random.nextLong())
-                           
+
         def keyStroke = attributes.remove("keyStroke")
         // accept String, Number, KeyStroke, List<String>, List<Number>, List<KeyStroke>
         def action = attributes.remove("action")

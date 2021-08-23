@@ -28,14 +28,14 @@ class DocumentationExampleTests extends BaseTestClass {
     def example_person = '''
     @Contracted
     package tests
-    
+
     import groovy.contracts.*
-    
+
     @Invariant({ firstName != null && lastName != null })
     class Person {
         String firstName
         String lastName
-    
+
         @Requires ({ delimiter in ['.', ',', ' '] })
         @Ensures({ result -> result == (firstName + delimiter + lastName) })
         def String getName(String delimiter) {

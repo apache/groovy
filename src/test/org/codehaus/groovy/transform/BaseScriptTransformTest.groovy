@@ -27,7 +27,7 @@ class BaseScriptTransformTest extends CompilableTestSupport {
     void testInheritsFromCustomScript() {
         assertScript """
             abstract class CustomScript extends Script {}
-  
+
             @groovy.transform.BaseScript CustomScript baseScript
             assert this.class.superclass == CustomScript
         """
@@ -36,7 +36,7 @@ class BaseScriptTransformTest extends CompilableTestSupport {
     void testBaseScriptMustExtendsScript() {
         shouldNotCompile """
             abstract class CustomScript {}
-  
+
             @groovy.transform.BaseScript CustomScript baseScript
         """
     }
@@ -44,7 +44,7 @@ class BaseScriptTransformTest extends CompilableTestSupport {
     void testThisObjectIsAssignedToBaseScriptVariable() {
         assertScript """
             abstract class CustomScript extends Script {}
-  
+
             @groovy.transform.BaseScript CustomScript baseScript
             assert this == baseScript
         """
@@ -110,12 +110,12 @@ class BaseScriptTransformTest extends CompilableTestSupport {
         CompilerConfiguration config = new CompilerConfiguration()
         config.scriptBaseClass = MyCustomScript.name
         GroovyShell shell = new GroovyShell(config)
-        
+
         shell.evaluate('''
             abstract class DeclaredBaseScript extends Script {
                 int meaningOfLife = 42
             }
-        
+
             @groovy.transform.BaseScript DeclaredBaseScript baseScript
 
             assert meaningOfLife == 42

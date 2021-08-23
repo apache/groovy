@@ -36,7 +36,7 @@ class Groovy3831Bug extends GroovyTestCase {
 class Test3831V1 {
     String string
     URI[] uris
- 
+
     public Test3831V1(String string, URI[] uris) {
         this.string = string
         this.uris = uris

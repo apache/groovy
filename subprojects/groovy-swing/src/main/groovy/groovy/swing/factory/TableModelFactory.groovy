@@ -28,7 +28,7 @@ import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 
 class TableModelFactory extends AbstractFactory {
-    
+
     Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (FactoryBuilderSupport.checkValueIsType(value, name, TableModel)) {
             return value

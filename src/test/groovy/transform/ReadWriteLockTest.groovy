@@ -220,7 +220,7 @@ class MyClass {
     def staticWriterMethod1Called = false
     def staticWriterMethod2Called = false
     def myLock = new ReentrantReadWriteLock()
-    
+
     @WithReadLock
     void readerMethod1() {
         readerMethod1Called = true

@@ -37,7 +37,7 @@ class Groovy3720Bug extends GroovyTestCase {
         def stubNodeContext2 = new StubFor(MyNode3720) 
         assertNotNull stubNodeContext2.proxyDelegateInstance()
     }
-    
+
     void testCreateMockNode() {
         def mockNodeContext1 = new MockFor(AnotherNode3720) 
         assertNotNull mockNodeContext1.proxyInstance()

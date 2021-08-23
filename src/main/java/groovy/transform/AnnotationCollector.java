@@ -24,15 +24,15 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * The AnnotationCollector can be used to define aliases for groups of 
- * annotations. The Alias needs to be a class or annotation annotated with 
- * AnnotationCollector, otherwise nothing is required. The alias will be 
- * replaced on the AST level and will never appear in later. Any members of the 
+ * The AnnotationCollector can be used to define aliases for groups of
+ * annotations. The Alias needs to be a class or annotation annotated with
+ * AnnotationCollector, otherwise nothing is required. The alias will be
+ * replaced on the AST level and will never appear in later. Any members of the
  * class or annotation will be ignored, but could be used by a custom processor.
  * Annotation arguments are mapped to the aliased annotations
  * if existing. Should the default processor not be able to map one of the
- * arguments and error will be given. Is this not wished or if you want a 
- * different mapping a custom processor has to be used. There are two ways of 
+ * arguments and error will be given. Is this not wished or if you want a
+ * different mapping a custom processor has to be used. There are two ways of
  * using the alias. The first way is by providing the annotations as list/array:
  * <pre class="groovyTestCase">
  *          import groovy.transform.*
@@ -47,7 +47,7 @@ import java.lang.annotation.Target;
  *          assert new Foo(a: 1, b: 2).toString() == "Foo(2)"
  * </pre>
  * In the example above we have Alias as the alias annotation and an argument
- * excludes which will be mapped to ToString and EqualsAndHashCode. Immutable 
+ * excludes which will be mapped to ToString and EqualsAndHashCode. Immutable
  * doesn't have excludes, thus nothing will be done there.<br>
  * The other way is to add annotations to the alias:
  * <pre class="groovyTestCase">
@@ -68,11 +68,11 @@ import java.lang.annotation.Target;
  * In the example above we have again Alias as the alias annotation, but
  * this time the argument is part of the alias. Instead of mapping excludes to
  * ToString as well as EqualsAndHashCode, only ToString will have the excludes.
- * Again the alias can have an argument excludes, which would overwrite the 
+ * Again the alias can have an argument excludes, which would overwrite the
  * excludes given in from the definition and be mapped to ToString as well as
  * EqualsAndHashCode.
  * If both ways are combined, then the list overwrites annotation usage.
- * NOTE: The aliasing does not support aliasing of aliased annotations. 
+ * NOTE: The aliasing does not support aliasing of aliased annotations.
  * <p>More examples:</p>
  * <pre class="groovyTestCase">
  * //--------------------------------------------------------------------------
@@ -94,14 +94,14 @@ import java.lang.annotation.Target;
  * assert User.class.annotations.size() == 2
  *
  *
- * // We can use the attributes from the 
+ * // We can use the attributes from the
  * // grouped annotations.
  * &#64;Simple(excludes = 'street')
  * class Address {
  *     String street, town
  * }
  *
- * def address = new Address(street: 'Evergreen Terrace', town: 'Springfield') 
+ * def address = new Address(street: 'Evergreen Terrace', town: 'Springfield')
  * assert address.toString() == 'Address(Springfield)'
  * </pre>
  * <pre class="groovyTestCase">
@@ -113,9 +113,9 @@ import java.lang.annotation.Target;
  *
  * class SimpleProcessor extends AnnotationCollectorTransform {
  *
- *     public List&lt;AnnotationNode&gt; visit(AnnotationNode collector, 
- *                                       AnnotationNode aliasAnnotationUsage, 
- *                                       AnnotatedNode aliasAnnotated, 
+ *     public List&lt;AnnotationNode&gt; visit(AnnotationNode collector,
+ *                                       AnnotationNode aliasAnnotationUsage,
+ *                                       AnnotatedNode aliasAnnotated,
  *                                       SourceUnit source) {
  *
  *         // Get attributes and attribute value for dontUse.
@@ -169,7 +169,7 @@ import java.lang.annotation.Target;
  * def user = new User(username: 'mrhaki')
  * assert user.toString() == 'User(mrhaki)'
  * </pre>
- * 
+ *
  * @see org.codehaus.groovy.transform.AnnotationCollectorTransform
  * @since 2.1.0
  */
@@ -178,9 +178,9 @@ import java.lang.annotation.Target;
 @Target({ElementType.ANNOTATION_TYPE, ElementType.TYPE})
 public @interface AnnotationCollector {
     /**
-     * Processor used for computing custom logic or the list of annotations, or 
+     * Processor used for computing custom logic or the list of annotations, or
      * both. The default is org.codehaus.groovy.transform.AnnotationCollectorTransform.
-     * Custom processors need to extend that class. 
+     * Custom processors need to extend that class.
      */
     String processor() default "org.codehaus.groovy.transform.AnnotationCollectorTransform";
 

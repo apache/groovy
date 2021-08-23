@@ -27,14 +27,14 @@ class AnnotationMemberValuesResolutionV3StubsTest extends StringSourcesStubTestC
         [
             'foo/Foo4434V3.java': '''
                 package foo;
-                
+
                 import java.lang.annotation.ElementType;
                 import java.lang.annotation.Retention;
                 import java.lang.annotation.RetentionPolicy;
                 import java.lang.annotation.Target;
-                
+
                 import baz.MyClass4434V3;
-                
+
                 @Retention(RetentionPolicy.RUNTIME)
                 @Target( { ElementType.TYPE })
                 public @interface Foo4434V3 {
@@ -49,7 +49,7 @@ class AnnotationMemberValuesResolutionV3StubsTest extends StringSourcesStubTestC
             'Bar4434V3.groovy': '''
                 import foo.Foo4434V3
                 import baz.MyClass4434V3
-                
+
                 @Foo4434V3(val = MyClass4434V3.SOME_CONST)
                 class Bar4434V3 {}
             '''

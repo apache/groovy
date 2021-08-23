@@ -24,7 +24,7 @@ package groovy.bugs
 import groovy.test.GroovyTestCase
 
 class Groovy770_Bug extends GroovyTestCase {
-     
+
     void testBug() {
         def a = new Pair(sym:"x")
         def b = new Pair(sym:"y")

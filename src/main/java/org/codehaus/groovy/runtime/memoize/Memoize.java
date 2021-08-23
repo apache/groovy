@@ -117,7 +117,7 @@ public abstract class Memoize {
         private static final long serialVersionUID = -2780003153676993093L;
         final MemoizeCache<Object, Object> cache;
         final Closure<V> closure;
-        
+
         MemoizeFunction(final MemoizeCache<Object, ?> cache, Closure<V> closure) {
             super(closure.getOwner());
             this.cache = coerce(cache);
@@ -129,7 +129,7 @@ public abstract class Memoize {
         private static MemoizeCache coerce(MemoizeCache<Object, ?> cache) {
             return cache;
         }
-        
+
         @Override
         public V call(final Object... args) {
             final Object key = generateKey(args);
@@ -146,12 +146,12 @@ public abstract class Memoize {
             return call(args);
         }
     }
-    
+
     private static class SoftReferenceMemoizeFunction<V> extends MemoizeFunction<V> {
         private static final long serialVersionUID = -1338206227167457991L;
         final ProtectionStorage lruProtectionStorage;
         final ReferenceQueue queue;
-        
+
         SoftReferenceMemoizeFunction(final MemoizeCache<Object, SoftReference<Object>> cache, Closure<V> closure,
                 ProtectionStorage lruProtectionStorage, ReferenceQueue queue) {
             super(cache, closure);

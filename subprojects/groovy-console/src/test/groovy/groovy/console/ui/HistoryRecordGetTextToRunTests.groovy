@@ -21,7 +21,7 @@ package groovy.console.ui
 import junit.framework.TestCase
 
 class HistoryRecordGetTextToRunTests extends TestCase {
-     
+
     void testImport() {
         assert java.text.SimpleDateFormat == runSelected('import java.text.SimpleDateFormat', 'return SimpleDateFormat')
     }
@@ -45,18 +45,18 @@ class HistoryRecordGetTextToRunTests extends TestCase {
     void testStaticImportField() {
         assert Integer.MAX_VALUE == runSelected('import static java.lang.Integer.MAX_VALUE', 'return MAX_VALUE')
     }
-    
+
     void testMultipleStaticImports() {
         String importText = '''import static java.lang.Integer.MAX_VALUE
         import static java.lang.String.valueOf'''
-        
+
         assert Integer.MAX_VALUE.toString() == runSelected(importText, 'return valueOf(MAX_VALUE)')
     }
 
     void testErrorsInScript() {
         assert 1 == runSelected('aa#@!#@$', 'return 1')
     }
-    
+
     private def runSelected(String importText, String selectedText) {
         HistoryRecord hr = new HistoryRecord()
         String allText = importText + '\n' + selectedText

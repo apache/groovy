@@ -28,7 +28,7 @@ import groovy.test.GroovyTestCase
 
 class Groovy1018_Bug extends GroovyTestCase {
 
-    public static Object Class = "bar" 
+    public static Object Class = "bar"
 
     // GROOVY-1018
     void testGetPublicStaticField() {
@@ -44,4 +44,4 @@ class Groovy1018_Bug extends GroovyTestCase {
         assert Groovy1018_Bug.Class == "bar-" && Groovy1018_Bug.@Class == "bar-"
     }
 
-} 
+}

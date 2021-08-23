@@ -432,7 +432,7 @@ log4j {
         org.codehaus.groovy.grails="info,stdout"
         org.springframework="info,stdout"
     }
-     
+
     additivity.'default' = true
     additivity.org.codehaus.groovy.grails=false
     additivity.org.springframework=false

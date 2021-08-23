@@ -125,7 +125,7 @@ class PropertyTest extends GroovyTestCase {
         }
         A.class.declaredMethods.each {
           assert it.name!="setFoo"
-          
+
         }
         assert new A().foo==1
       """
@@ -243,7 +243,7 @@ class PropertyTest extends GroovyTestCase {
             }
             class A extends Base {
                 private String name = 'AA'
-            
+
                 @Override
                 String getName() {
                     this.name
@@ -425,7 +425,7 @@ class PropertyTest extends GroovyTestCase {
             static String getAProp() { 'AProp' }
             static String getpNAME() { 'pNAME' }
         }
-        
+
         import static A.*
 
         assert prop == 'Prop'
@@ -455,7 +455,7 @@ class PropertyTest extends GroovyTestCase {
             static String getAProp() { 'AProp' }
             static String getpNAME() { 'pNAME' }
         }
-        
+
         import static A.*
 
         class B {

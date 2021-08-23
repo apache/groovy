@@ -30,7 +30,7 @@ class Groovy3389Bug extends GroovyTestCase {
                     assert bar instanceof File
                 }
             }
-            
+
             def obj = new Groovy3389()
             obj.doIt()
         """

@@ -27,7 +27,7 @@ import org.codehaus.groovy.GroovyBugError
 class Groovy3776Bug extends GroovyTestCase {
     void testInvalidListWithMapEntryExpressions() {
         GroovyClassLoader cl = new GroovyClassLoader();
-        
+
         def scriptStr = """
             class InvalidListLiteral {
                 def x = [

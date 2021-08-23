@@ -61,7 +61,7 @@ static compilation and static type checking at levels similar to or greater than
 It aims to greatly increase developer productivity with many powerful features but also a concise, familiar and easy to learn syntax.
 
 It integrates smoothly with any Java class or library, and immediately delivers to your application powerful capabilities,
-including scripting support, Domain-Specific Language authoring, runtime and compile-time meta-programming and functional programming. 
+including scripting support, Domain-Specific Language authoring, runtime and compile-time meta-programming and functional programming.
 
 == Downloading
 

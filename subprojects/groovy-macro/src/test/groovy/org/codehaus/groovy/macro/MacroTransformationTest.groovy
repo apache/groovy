@@ -27,7 +27,7 @@ class MacroTransformationTest extends GroovyTestCase {
     void testSimple() {
         assertScript """
         def nullObject = null
-        
+
         assert null == safe(nullObject.hashcode())
 """
     }

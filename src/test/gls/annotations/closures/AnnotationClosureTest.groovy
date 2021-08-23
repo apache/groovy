@@ -29,7 +29,7 @@ class AnnotationClosureTest extends CompilableTestSupport {
     def answer = new Object() {
         def answer() { 42 }
     }
-    
+
     void testGep3InClosure() {
         shouldCompile """
             @interface Bar{Class value();}
@@ -153,7 +153,7 @@ import java.lang.annotation.*
 class Foo {}
         """
     }
-    
+
     @NotYetImplemented
     void testAnnotationOnAnonymousMethod() {
         shouldCompile """        

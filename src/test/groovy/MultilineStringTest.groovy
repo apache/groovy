@@ -27,7 +27,7 @@ class MultilineStringTest extends GroovyTestCase {
 efg
 
         hijk
-        
+
 """
         assert s != null
         def idx = s.indexOf("i")

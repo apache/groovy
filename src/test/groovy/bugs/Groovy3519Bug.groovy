@@ -58,7 +58,3 @@ class Groovy3519Bug extends GroovyTestCase {
     }
 
 }
-
-
-
-

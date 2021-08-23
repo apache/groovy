@@ -1140,7 +1140,7 @@ public abstract class FactoryBuilderSupport extends Binding {
 
     /**
      * Restores the state of the current builder to the same state as an older build.
-     * 
+     *
      * Caution, this will destroy rather than merge the current build context if there is any,
      * @param data the data retrieved from a compatible getContinuationData call
      */

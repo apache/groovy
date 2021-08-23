@@ -33,7 +33,7 @@ class NodeBuilderTest extends GroovyTestCase {
             user(id: '2', firstname: 'Alice', lastname: 'Doe')
         }
         // end::node_builder_example[]
-         
+
         // tag::node_builder_gpath_assert[]
         assert userlist.user.@firstname.join(', ') == 'John, Alice'
         assert userlist.user.find { it.@lastname == 'Smith' }.address.size() == 2

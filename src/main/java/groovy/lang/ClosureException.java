@@ -25,7 +25,7 @@ public class ClosureException extends RuntimeException {
 
     private static final long serialVersionUID = -945565055750688719L;
     private final Closure closure;
-    
+
     public ClosureException(Closure closure, Throwable cause) {
         super("Exception thrown by call to closure: " + closure + " reason: " + cause, cause);
         this.closure = closure;

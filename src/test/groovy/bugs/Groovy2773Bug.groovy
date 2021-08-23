@@ -31,13 +31,13 @@ class Groovy2773Bug extends GroovyTestCase {
                     return new DateTime(millis - (1000 * 60 * 60 * 24 * 7 * numWeeks))
                 }
             }
-            
+
             class Utils {
                 static nowUTC() { return new DateTime() }
             }
-            
+
             import static Utils.nowUTC
-            
+
             DateTime baseDate = Utils.nowUTC()
             Long now = new Date().getTime()
             Long lastWeekFromBaseDate = baseDate.minusWeeks(1).millis

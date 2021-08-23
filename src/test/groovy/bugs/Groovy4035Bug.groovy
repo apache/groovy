@@ -32,7 +32,7 @@ class Groovy4035Bug extends GroovyTestCase {
 
     void testSuperCallInsideANormalInnerClass() {
         def inner = new Inner4035()
-        
+
         assert inner.foo("42") == "Inner-Foo4035-42"
     }
 

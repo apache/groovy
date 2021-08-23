@@ -64,7 +64,7 @@ class SerializeTest extends GroovyTestCase {
         assert foo.class == fooClass
         assert object.class == fooClass
     }
-    
+
     def write(object) {
         def buffer = new ByteArrayOutputStream()
         def out = new ObjectOutputStream(buffer)
@@ -72,7 +72,7 @@ class SerializeTest extends GroovyTestCase {
         out.close()
         return buffer.toByteArray()
     }
-    
+
     def read(buffer) {
         def input = new ObjectInputStream(new ByteArrayInputStream(buffer))
         def object = input.readObject()

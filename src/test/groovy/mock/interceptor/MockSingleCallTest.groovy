@@ -113,7 +113,7 @@ class MockSingleCallTest extends GroovyTestCase {
            If we think this assert is important, we should extend AssertionFailedError and add the properties
            expectedRange and callCount to it. But I think the test is good enough with just checking for the thrown
            exception. */
-        // assert msg =~ /0.*1..1.*never called/ 
+        // assert msg =~ /0.*1..1.*never called/
     }
 
     void testFirstOptionalOmitted() {

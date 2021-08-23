@@ -39,18 +39,18 @@ public class TimeDuration extends Duration {
     public TimeDuration(final int hours, final int minutes, final int seconds, final int millis) {
         super(0, hours, minutes, seconds, millis);
      }
-    
+
     public TimeDuration(final int days, final int hours, final int minutes, final int seconds, final int millis) {
         super(days, hours, minutes, seconds, millis);
      }
-    
+
     @Override
     public Duration plus(final Duration rhs) {
         return new TimeDuration(this.getDays() + rhs.getDays(), this.getHours() + rhs.getHours(),
                                 this.getMinutes() + rhs.getMinutes(), this.getSeconds() + rhs.getSeconds(),
                                 this.getMillis() + rhs.getMillis());
     }
-    
+
     @Override
     public DatumDependentDuration plus(final DatumDependentDuration rhs) {
         return new TimeDatumDependentDuration(rhs.getYears(), rhs.getMonths(),
@@ -58,14 +58,14 @@ public class TimeDuration extends Duration {
                                               this.getMinutes() + rhs.getMinutes(), this.getSeconds() + rhs.getSeconds(),
                                               this.getMillis() + rhs.getMillis());
     }
-    
+
     @Override
     public Duration minus(final Duration rhs) {
         return new TimeDuration(this.getDays() - rhs.getDays(), this.getHours() - rhs.getHours(),
                                 this.getMinutes() - rhs.getMinutes(), this.getSeconds() - rhs.getSeconds(),
                                 this.getMillis() - rhs.getMillis());
     }
-    
+
     @Override
     public DatumDependentDuration minus(final DatumDependentDuration rhs) {
         return new TimeDatumDependentDuration(-rhs.getYears(), -rhs.getMonths(),
@@ -73,7 +73,7 @@ public class TimeDuration extends Duration {
                                               this.getMinutes() - rhs.getMinutes(), this.getSeconds() - rhs.getSeconds(),
                                               this.getMillis() - rhs.getMillis());
     }
-    
+
     @Override
     public Date getAgo() {
         final Calendar cal = Calendar.getInstance();
@@ -83,7 +83,7 @@ public class TimeDuration extends Duration {
         cal.add(Calendar.MINUTE, -this.getMinutes());
         cal.add(Calendar.SECOND, -this.getSeconds());
         cal.add(Calendar.MILLISECOND, -this.getMillis());
-        
+
         return cal.getTime();
     }        
 
@@ -99,7 +99,7 @@ public class TimeDuration extends Duration {
                 cal.add(Calendar.MINUTE, TimeDuration.this.getMinutes());
                 cal.add(Calendar.SECOND, TimeDuration.this.getSeconds());
                 cal.add(Calendar.MILLISECOND, TimeDuration.this.getMillis());
-                
+
                 return cal.getTime();
             }
         };

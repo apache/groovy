@@ -215,7 +215,7 @@ class GinqErrorTest {
                 String name
                 int weight
                 String gender
-                
+
                 Person(String name, int weight, String gender) {
                     this.name = name
                     this.weight = weight
@@ -312,7 +312,7 @@ class GinqErrorTest {
                 select n, (
                     from m in [2, 3, 4]
                     where m > n
-                    select m   
+                    select m
                 ) as q
             }.toList()
         '''
@@ -328,7 +328,7 @@ class GinqErrorTest {
                 innerjoin m in [2, 3, 4] on m == n
                 groupby n
                 select n, m, count(n)
-            }.toList()    
+            }.toList()
         '''
 
         assert err.toString().contains('`m` is not in the `groupby` clause @ line 5, column 27.')
@@ -342,7 +342,7 @@ class GinqErrorTest {
                 innerjoin m in [2, 3, 4] on m == n
                 groupby n
                 select n, n + m, count(n)
-            }.toList()    
+            }.toList()
         '''
 
         assert err.toString().contains('`m` is not in the `groupby` clause @ line 5, column 31.')
@@ -355,7 +355,7 @@ class GinqErrorTest {
                 from n in [1, 2, 3]
                 groupby n
                 select n, hello(n)
-            }.toList()    
+            }.toList()
         '''
 
         assert err.toString().contains('`this.hello(n)` is not an aggregate function @ line 4, column 27.')

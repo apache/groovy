@@ -40,7 +40,7 @@ final class Groovy7867 {
                     super(capacity, increment)
                 }
             }
-            
+
             def myList = [10, 5] as SingletonList
             assert myList.size() == 0
             assert myList.capacity() == 10
@@ -52,7 +52,7 @@ final class Groovy7867 {
         // for easier failure analysis it can be crucial to get hold of the original exception
         assertScript '''
             import org.codehaus.groovy.runtime.typehandling.GroovyCastException
-            
+
             class SingletonList extends Vector {
                 SingletonList(Collection c) {
                     super(c)
@@ -61,7 +61,7 @@ final class Groovy7867 {
                     }
                 }
             }
-            
+
             // not exactly one argument --> (user defined) exception
             boolean caught = false
             try {
@@ -74,7 +74,7 @@ final class Groovy7867 {
                 assert ex.suppressed[0].message == "expected SingletonList to be initialized with exactly one element"
             }
             assert caught == true
-            
+
             // exactly one argument --> OK
             caught = false
             try {
@@ -104,7 +104,7 @@ final class Groovy7867 {
                     super(capacity, increment)
                 }
             }
-            
+
             def myList = [10, 5] as SingletonList
             assert myList.size() == 2
             assert myList[0] == 10

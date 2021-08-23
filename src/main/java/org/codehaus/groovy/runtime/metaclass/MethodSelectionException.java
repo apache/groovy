@@ -40,7 +40,7 @@ public class MethodSelectionException extends GroovyRuntimeException {
     private final String methodName;
     private final FastArray methods;
     private final Class[] arguments;
-    
+
     /**
      * Creates a new MethodSelectionException.
      * @param methodName name of the method
@@ -63,8 +63,8 @@ public class MethodSelectionException extends GroovyRuntimeException {
         appendMethods(buffer);
         return buffer.toString();
     }
-    
-    
+
+
     private static void appendClassNames(StringBuilder argBuf, Class[] classes) {
         argBuf.append("(");
         for (int i = 0; i < classes.length; i++) {
@@ -77,7 +77,7 @@ public class MethodSelectionException extends GroovyRuntimeException {
         }
         argBuf.append(")");
     }
-    
+
     private void appendMethods(StringBuilder buffer) {
         for (int i = 0; i < methods.size; i++) {
             buffer.append("\n  ");

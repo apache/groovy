@@ -26,15 +26,15 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 public class BreakStatement extends Statement {
 
     private String label;
-    
+
     public BreakStatement() {
         this(null);
     }
-    
+
     public BreakStatement(String label) {
         this.label = label;
     }
-    
+
     public String getLabel() {
         return label;
     }

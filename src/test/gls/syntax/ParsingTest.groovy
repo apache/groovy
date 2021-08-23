@@ -27,7 +27,7 @@ class ParsingTest extends CompilableTestSupport {
         shouldCompile """
             (String) {-> print ""}.call()
         """
-    
+
         shouldCompile """
             (String[]) {-> print ""}.call()
         """
@@ -35,7 +35,7 @@ class ParsingTest extends CompilableTestSupport {
         shouldCompile """
             (short) {-> print numbers[0]}.call()
         """
-        
+
         shouldCompile """
             (short[]) {-> print numbers}.call()
         """
@@ -43,7 +43,7 @@ class ParsingTest extends CompilableTestSupport {
 
         def val1 = (Groovy2605) {-> return testObj}.call()
         assert val1 instanceof Groovy2605
-        
+
         def val2 = (String){-> return testObj}.call()
         assert val2 instanceof String
         assert val2 == "[A Groovy2605 object]"

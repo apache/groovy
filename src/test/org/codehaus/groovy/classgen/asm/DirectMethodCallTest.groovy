@@ -22,7 +22,7 @@ import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.Parameter
 
 class DirectMethodCallTest extends AbstractBytecodeTestCase {
-    
+
   void testVirtual() {
       def target = ClassHelper.Integer_TYPE.getMethod("toString", new Parameter[0])
       def makeDirectCall = {su ->
@@ -30,7 +30,7 @@ class DirectMethodCallTest extends AbstractBytecodeTestCase {
               getMethod("run", new Parameter[0]).code.
               statements.last().expression.methodTarget = target;
       }
-      
+
       assert compile (method:"run", conversionAction: makeDirectCall, """
           def a = 1; 
           a.toString()
@@ -38,7 +38,7 @@ class DirectMethodCallTest extends AbstractBytecodeTestCase {
               "INVOKEVIRTUAL java/lang/Integer.toString ()Ljava/lang/String;"
       ])
   }
-  
+
   //GROOVY-6384
   void testClassForNameAutomaticDirectCall() {
       ['"Foo"',1,null,"println(x)"].each { arg ->

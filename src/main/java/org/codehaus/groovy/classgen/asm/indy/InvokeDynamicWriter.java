@@ -62,8 +62,8 @@ import static org.objectweb.asm.Opcodes.H_INVOKESTATIC;
  * for usage by invokedynamic.
  */
 public class InvokeDynamicWriter extends InvocationWriter {
-    
-    
+
+
     private static final String INDY_INTERFACE_NAME = IndyInterface.class.getName().replace('.', '/');
     private static final String BSM_METHOD_TYPE_DESCRIPTOR = 
         MethodType.methodType(
@@ -101,20 +101,20 @@ public class InvokeDynamicWriter extends InvocationWriter {
         }
         return false;
     }
-    
+
     private String prepareIndyCall(Expression receiver, boolean implicitThis) {
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
 
         compileStack.pushLHS(false);
-        
+
         // load normal receiver as first argument
         compileStack.pushImplicitThis(implicitThis);
         receiver.visit(controller.getAcg());
         compileStack.popImplicitThis();
         return "("+getTypeDescription(operandStack.getTopOperand());
     }
-    
+
     private void finishIndyCall(Handle bsmHandle, String methodName, String sig, int numberOfArguments, Object... bsmArgs) {
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
@@ -158,7 +158,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
         int flags = getMethodCallFlags(adapter, safe, containsSpreadExpression);
         finishIndyCall(BSM, callSiteName, sig.toString(), numberOfArguments, methodName, flags);
     }
-    
+
     private static int getMethodCallFlags(MethodCallerMultiAdapter adapter, boolean safe, boolean spread) {
         int ret = 0;
         if (safe)                           ret |= SAFE_NAVIGATION;
@@ -186,12 +186,12 @@ public class InvokeDynamicWriter extends InvocationWriter {
         int flags = getPropertyFlags(safe,implicitThis,groovyObject);
         finishIndyCall(BSM, GET.getCallSiteName(), sig, 1, propertyName, flags);
     }
-    
+
     @Override
     protected void writeNormalConstructorCall(ConstructorCallExpression call) {
         makeCall(call, new ClassExpression(call.getType()), new ConstantExpression("<init>"), call.getArguments(), null, false, false, false);
     }
-    
+
     @Override
     public void coerce(ClassNode from, ClassNode target) {
         ClassNode wrapper = ClassHelper.getWrapper(target);

@@ -28,7 +28,7 @@ public interface StrangeEventListener extends EventListener {
      * good practice.  We need to test what can be done not what should be done
      */
     void somethingStrangeHappened(String what, String where);
-    
+
     void somethingChanged(PropertyChangeEvent changeEvent);
-    
+
 }

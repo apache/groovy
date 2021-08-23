@@ -74,7 +74,7 @@ public class BooleanExpressionTransformer {
         }
         return transformer.superTransform(booleanExpression);
     }
-    
+
     private static boolean isExtended(ClassNode owner, Iterator<InnerClassNode> classes) {
         while (classes.hasNext()) {
             InnerClassNode next =  classes.next();

@@ -121,21 +121,21 @@ class MemoizeTest extends AbstractMemoizeTestCase {
     void testMemoizeConcurrently() {
         assertScript '''
         // http://groovy.329449.n5.nabble.com/ConcurrentModificationException-with-use-of-memoize-tp5736788.html
-        
+
         class Utils { 
             public static int cnt = 0
-            
+
             public static synchronized void increment() {
                 cnt++
             }
-            
+
             public static synchronized int getCnt() {
                 return cnt
             }
-        
+
             public static final Closure powerSet =  { Collection things -> 
                 increment()
-        
+
                 def Set objSets = things.collect { [it] as Set } 
                 def Set resultSet = [[] as Set] 
                 def finalResult = objSets.inject(resultSet) { rez, objSet -> 
@@ -144,10 +144,10 @@ class MemoizeTest extends AbstractMemoizeTestCase {
                         rez 
                 } 
             }.memoize() 
-    
+
             public static Collection combinations(Collection objs, int n) { (n < 1 || n > objs.size()) ? null : powerSet(objs)?.findAll { it.size() == n } } 
         } 
-        
+
         def threadList = (0..<10).collect {
             Thread.start { 
                 Collection things = [
@@ -178,9 +178,9 @@ class MemoizeTest extends AbstractMemoizeTestCase {
                 Utils.combinations(things, 2) 
             }
         })
-        
+
         threadList*.join()
-        
+
         assert 2 == Utils.getCnt()
         '''
     }

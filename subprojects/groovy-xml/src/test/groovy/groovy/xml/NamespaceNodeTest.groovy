@@ -35,7 +35,7 @@ class NamespaceNodeTest extends TestXmlSupport {
         assert result[n.inner][0].@name == 'foo'
         assert result[n.inner][1].text() == 'bar'
     }
-    
+
     void testTree() {
         def builder = NodeBuilder.newInstance()
         def xmlns = new NamespaceBuilder(builder)
@@ -94,7 +94,7 @@ class NamespaceNodeTest extends TestXmlSupport {
             }
             innerWithoutNewNamespace("bar")
         }
-        
+
         def expected = pretty("""<?xml version="1.0" encoding="UTF-8"?>\
 <outer xmlns="http://foo/bar" id="3">
   <ns1:innerWithNewNamespace xmlns:ns1="http://foo/other" someAttr="someValue">

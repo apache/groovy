@@ -28,16 +28,16 @@ class Groovy7031Bug extends GroovyTestCase {
         class StaticClass {
             StringHolder holder = new StringHolder()
             String str
-        
+
             StaticClass(String s) {
                 str = holder.str = s
             }
         }
-        
+
         class StringHolder {
             String str
         }
-        
+
         def s = new StaticClass('test')
         assert s.holder.str == 'test'
         assert s.str == 'test'

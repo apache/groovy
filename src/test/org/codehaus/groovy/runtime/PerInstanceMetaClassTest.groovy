@@ -253,7 +253,7 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
        Integer.metaClass = null
 
        def foo =  { x ->
-           return x._100 
+           return x._100
        }
         shouldFail {
           assert foo(1) == 100
@@ -262,7 +262,7 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
        ExpandoMetaClass emc = new ExpandoMetaClass(Integer, false, true).define {
            _100 = 100
        }
-       emc.initialize ()                                                
+       emc.initialize ()
         shouldFail {
           assert foo(1) == 100
         }

@@ -26,6 +26,4 @@ class NullPropertyTest extends GroovyTestCase {
     void testNullProperty() {
         assert wensleydale == null
     }
-} 
-
-
+}

@@ -77,7 +77,7 @@ def executeBench= { bench, input ->
     println "Benchmark $bench"
     [".java", ".groovy"].each { ending ->
         println("\t$bench$ending :")
-        
+
         boolean exists = prepare(bench, ending)
         if (exists) {
             execBenchmark(bench, input)
@@ -88,7 +88,7 @@ def executeBench= { bench, input ->
     }
     horizontalBreak()
 }
-if (args.length==0) { 
+if (args.length==0) {
     benchData.each(executeBench)
 } else {
     executeBench(args[0],benchData[args[0]])
@@ -133,7 +133,7 @@ void showJavaVersion() {
 }
 
 void execBenchmark(bench, input) {
-    input.each { param -> 
+    input.each { param ->
         def cp = "./exec/" + File.pathSeparatorChar
         cp += GROOVY_LIB + File.pathSeparatorChar
         cp += "../build/lib/runtime/*"

@@ -21,7 +21,6 @@
 
 = Proxy Pattern
 
-
 The https://en.wikipedia.org/wiki/Proxy_pattern[Proxy Pattern] allows one object to act as a pretend replacement for some other object. In general, whoever is using the proxy, doesn't realise that they are not using the real thing. The pattern is useful when the real object is hard to create or use: it may exist over a network connection, or be a large object in memory, or be a file, database or some other resource that is expensive or impossible to duplicate.
 
 == Example

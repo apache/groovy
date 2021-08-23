@@ -36,13 +36,13 @@ public class TryCatchStatement extends Statement {
     private final List<ExpressionStatement> resourceStatements = new ArrayList<>(4);
     private final List<CatchStatement> catchStatements = new ArrayList<>(4);
     private Statement finallyStatement;
-    
+
 
     public TryCatchStatement(Statement tryStatement, Statement finallyStatement) {
         this.tryStatement = tryStatement;
         this.finallyStatement = finallyStatement;
     }
-    
+
     @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitTryCatchFinally(this);

@@ -40,4 +40,4 @@ class OverridePropertyGetterTest extends GroovyTestCase {
     String getCheese() {
         return cheese
     }
-} 
+}

@@ -34,16 +34,16 @@ public class ValueHolder implements ValueModel {
     public ValueHolder() {
         this(Object.class);
     }
-    
+
     public ValueHolder(Class type) {
         this.type = type;
     }
-    
+
     public ValueHolder(Object value) {
         this.value = value;
         this.type = (value != null) ? value.getClass() : Object.class;
     }
-    
+
     /** 
      * Add a PropertyChangeListener to the listener list.
      * @param listener The listener to add.
@@ -54,7 +54,7 @@ public class ValueHolder implements ValueModel {
         }
         propertyChangeSupport.addPropertyChangeListener(listener);
     }
-    
+
     /** 
      * Removes a PropertyChangeListener from the listener list.
      * @param listener The listener to remove.
@@ -64,7 +64,7 @@ public class ValueHolder implements ValueModel {
             propertyChangeSupport.removePropertyChangeListener(listener);
         }
     }
-    
+
 
     @Override
     public Object getValue() {
@@ -89,7 +89,7 @@ public class ValueHolder implements ValueModel {
     public boolean isEditable() {
         return editable;
     }
-    
+
     public void setEditable(boolean editable) {
         this.editable = editable;
     }

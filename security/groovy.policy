@@ -21,7 +21,7 @@
  *
  * The following methods in groovy have privileged operations wrapping
  * setAccessible.  If these wrappers are not provided, most codebases below
- * must have the following grant: 
+ * must have the following grant:
  * permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
  *  MetaMethod.createMetaMethod
  *  MetaMethod.invoke(Object Object[])
@@ -105,7 +105,7 @@ grant codeBase "file:${user.dir}/../../plugins/-" {
  * The following codebases are assigned when groovy parses a groovy script
  */
 
-/* 
+/*
  * GroovyShell.parse(InputStream,...) is given a codebase of "groovy.shell" because no actual
  * codebase can be determined.  The other forms of parse(File) and parse(GroovyCodeSource) allow
  * for more control.  These permission should be set to control scripts that are passed into
@@ -142,7 +142,7 @@ grant codeBase "file:/groovy/testSupport" {
  * than read from a file).  Note that even though the codebases conform to
  * the file URL syntax, they are not physical files: they represent virtual
  * codebases.
- * The permission grant that is commented out is the permission that is 
+ * The permission grant that is commented out is the permission that is
  * expected to be missing by the test case.  It is here as a comment for
  * information.
  */
@@ -169,7 +169,7 @@ grant codeBase "file:/groovy/security/javax/print/allow" {
 /*
  * ================= .groovy script file codebases  ===============
  * The following grants are for individual security test cases.
- * The permission grant that is commented out is the permission that is 
+ * The permission grant that is commented out is the permission that is
  * expected to be missing by the test case.  It is here as a comment for
  * information.
  */

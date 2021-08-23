@@ -51,7 +51,7 @@ class TrampolineTest extends GroovyTestCase {
         assert 0 == funA(1000)
         assert 0 == funA(2000)
     }
-    
+
     public void testMutualRecursionWithUserCallingTrampoline() {
         def funB
         def funA = { int num -> num == 0 ? 0 : funB.trampoline(num - 1)}

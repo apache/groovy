@@ -87,7 +87,7 @@ class ClassGeneratorFixesTest extends GroovyTestCase {
     void testReturnVoid() { // groovy-405, 387
         returnVoid()
     }
-    
+
     void testBooleanValue() { // groovy-385
             /** @todo
             boolean value

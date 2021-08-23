@@ -49,7 +49,7 @@ class GroovyServletTest extends CompilableTestSupport {
             // end::example[]
         '''
     }
-    
+
     void testExampleMarkupBuilder() {
         shouldCompile '''
             // tag::example_markup_builder[]

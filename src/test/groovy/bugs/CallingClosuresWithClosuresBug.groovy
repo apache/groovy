@@ -29,9 +29,9 @@ class CallingClosuresWithClosuresBug extends GroovyTestCase {
         // old workaround
         //def b = {a.call()}
         def b = {a()}
-        
+
         def value = b()
-        
+
         assert value == 1
     }
 }

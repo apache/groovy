@@ -38,12 +38,12 @@ class DOMBuilderTest extends GroovyTestCase {
               </car>
             </records>'''
         // end::xml_string[]
-        
+
         // tag::dom_builder_parse[]
         def reader = new StringReader(recordsXML)
         def doc = groovy.xml.DOMBuilder.parse(reader)
         // end::dom_builder_parse[]
-        
+
         // tag::dom_builder_process_result[]
         def records = doc.documentElement
         use(groovy.xml.dom.DOMCategory) {

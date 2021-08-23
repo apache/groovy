@@ -46,7 +46,7 @@ class MetaClassTest extends GroovyTestCase {
         assertScript """
             class Foo {
                 MetaClass metaClass
-            } 
+            }
             def foo = new Foo()
             assert foo.@metaClass != null
             """

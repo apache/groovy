@@ -32,7 +32,7 @@ public class BooleanCachedClass extends CachedClass {
     public boolean isDirectlyAssignable(Object argument) {
         return (allowNull && argument == null) || argument instanceof Boolean;
      }
-    
+
     @Override
     public boolean isAssignableFrom(Class classToTransformFrom) {
         return (allowNull && classToTransformFrom == null)

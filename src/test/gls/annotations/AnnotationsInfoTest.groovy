@@ -28,13 +28,13 @@ class AnnotationsInfoTest extends AnnotationsTestBase {
             class B extends ArrayList<Long> {
                 @HasSourceRetention
                 def fieldS
-                
+
                 @HasRuntimeRetention
                 def fieldR
-                
+
                 @HasDefaultClassRetention
                 def methodDC() {}
-                
+
                 @HasExplicitClassRetention
                 def methodEC() {}
             }

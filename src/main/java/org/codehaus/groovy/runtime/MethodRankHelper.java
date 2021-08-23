@@ -44,7 +44,7 @@ public class MethodRankHelper{
     public static final int DL_DELETE = 10; //This is also the cost for a insert
     public static final int DL_TRANSPOSITION = 5;
     public static final int DL_CASE = 5;
-    
+
     public static final int MAX_RECOMENDATIONS = 5;
     public static final int MAX_METHOD_SCORE = 50;
     public static final int MAX_CONSTRUCTOR_SCORE = 20;
@@ -59,7 +59,7 @@ public class MethodRankHelper{
             this.v = v;
         }
     }
-    
+
     /**
      * Returns a string detailing possible solutions to a missing method
      * if no good solutions can be found a empty string is returned.
@@ -107,7 +107,7 @@ public class MethodRankHelper{
         }
         return sb.toString();
     }
-    
+
     private static List<Pair<Class,Class>> getConflictClasses(List<MetaMethod> sugg, Class[] argumentClasses) {
         List<Pair<Class,Class>> ret = new LinkedList<Pair<Class,Class>>();
         Set<Class> recordedClasses = new HashSet<Class>();
@@ -162,7 +162,7 @@ public class MethodRankHelper{
             return "";
         }
     }
-    
+
     /**
      * Returns a string detailing possible solutions to a missing field or property
      * if no good solutions can be found a empty string is returned.
@@ -177,7 +177,7 @@ public class MethodRankHelper{
         List<RankableField> rf = new ArrayList<RankableField>(fi.size());
         StringBuilder sb = new StringBuilder();
         sb.append("\nPossible solutions: ");
-        
+
         for(MetaProperty mp : fi) rf.add(new RankableField(fieldName, mp));
         Collections.sort(rf);
 
@@ -191,7 +191,7 @@ public class MethodRankHelper{
         }
         return i > 0? sb.toString(): "";
     }
-    
+
     /**
      * creates a comma separated list of each of the class names.
      *
@@ -206,8 +206,8 @@ public class MethodRankHelper{
       }
       return sb.toString();
     }
-    
-    
+
+
     private static String listParameterNames(CachedClass[] cachedClasses){
         StringBuilder sb = new StringBuilder();
         for(int i =0; i < cachedClasses.length;i++){
@@ -216,7 +216,7 @@ public class MethodRankHelper{
         }
         return sb.toString();
       }
-    
+
     /**
      * Returns a sorted(ranked) list of a selection of the methods among candidates which
      * most closely resembles original.
@@ -230,7 +230,7 @@ public class MethodRankHelper{
         List<RankableMethod> rm = new ArrayList<RankableMethod>(methods.size());
         if (original==null) original = EMPTY_OBJECT_ARRAY;
         Class[] ta = new Class[original.length];
-    
+
         Class nullC =  NullObject.class;
         for(int i = 0; i < original.length; i++){
             //All nulls have to be wrapped so that they can be compared
@@ -241,7 +241,7 @@ public class MethodRankHelper{
             rm.add(new RankableMethod(name, ta, m));
         }
         Collections.sort(rm);
-        
+
         List<MetaMethod> l =  new ArrayList<MetaMethod>(rm.size());
         for (RankableMethod m : rm) {
             if (l.size() > MAX_RECOMENDATIONS) break;
@@ -339,7 +339,7 @@ public class MethodRankHelper{
             return score.compareTo(co.score);
         }
     }
-    
+
     /**
      * This class wraps a method object and a score variable so methods 
      * Can easily be ranked by their likeness to a another method
@@ -360,7 +360,7 @@ public class MethodRankHelper{
             return score.compareTo(co.score);
         }
     }
-    
+
     /**
      * If c is a primitive class this method returns a boxed version
      * otherwise c is returned.
@@ -389,7 +389,7 @@ public class MethodRankHelper{
             return c;
         }
     }
-    
+
     /**
      * This is a small wrapper for nulls
      */
@@ -494,7 +494,7 @@ public class MethodRankHelper{
     private static boolean caselessCompare(char a, char b){
         return Character.toLowerCase(a) == Character.toLowerCase(b);
     }
-    
+
     /**
      * This is a implementation of DL distance between two Object arrays instead
      * of character streams. The objects are compared using their equals method.

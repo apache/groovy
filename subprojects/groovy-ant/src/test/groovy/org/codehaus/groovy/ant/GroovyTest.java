@@ -172,7 +172,7 @@ public class GroovyTest extends GroovyTestCase {
     }
 
     /**
-     * Test that helpful "file name" appears in the stack trace and not just "Script1" 
+     * Test that helpful "file name" appears in the stack trace and not just "Script1"
      */
     public void testFileNameInStackTrace() {
         testFileNameInStackTrace("groovyErrorMsg", "\\(embedded_script_in_.*GroovyTest_dot_xml");
@@ -191,10 +191,10 @@ public class GroovyTest extends GroovyTestCase {
 
             final Writer sw = new StringBuilderWriter();
             cause.printStackTrace(new PrintWriter(sw));
-            
+
             final String stackTrace = sw.toString();
             final Pattern pattern = Pattern.compile(fileNamePattern);
-            assertTrue("Does >" + stackTrace + "< contain >" + fileNamePattern + "<?", 
+            assertTrue("Does >" + stackTrace + "< contain >" + fileNamePattern + "<?",
                     pattern.matcher(stackTrace).find());
         }
     }

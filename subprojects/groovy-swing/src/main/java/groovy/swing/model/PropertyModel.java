@@ -71,7 +71,7 @@ public class PropertyModel implements ValueModel, NestedValueModel {
             InvokerHelper.setProperty(source, property, value);
         }
     }
-    
+
     @Override
     public Class getType() {
         return type;

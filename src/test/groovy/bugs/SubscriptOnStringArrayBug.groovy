@@ -22,17 +22,17 @@ class SubscriptOnStringArrayBug extends TestSupport {
 
     void testArraySubscript() {
         def array = getMockArguments()
- 
+
         assert array[1] == "b"
-        
+
         array[0] = "d"
-        
+
         assert array[0] == "d"
     }
-    
+
     void testRobsTestCase() {
         def array = "one two three".split(" ")
-        
+
         assert array[1] == "two"
     }
 }

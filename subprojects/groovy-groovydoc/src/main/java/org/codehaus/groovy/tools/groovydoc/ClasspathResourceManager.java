@@ -29,7 +29,7 @@ public class ClasspathResourceManager implements ResourceManager {
     public ClasspathResourceManager() {
         classLoader = getClass().getClassLoader();
     }
-    
+
     public ClasspathResourceManager(ClassLoader classLoader) {
         this.classLoader = classLoader;
     }

@@ -111,11 +111,11 @@ class Person {
         this.first = first
         this.last = last
     }
-    
+
     String fullName(String separator) {
         "$first$separator$last"
     }
-    
+
     String greeting(String salutation) {
         "$salutation, $first"
     }

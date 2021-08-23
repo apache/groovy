@@ -52,13 +52,13 @@ class SingletonBugPrivate {
 
     private SingletonBugPrivate() {
     }
-    
+
     static SingletonBugPrivate getInstance() {
         if (instance1 == null)
             instance1 = new SingletonBugPrivate()
         return instance1
     }
-    
+
     // private static SingletonBugPrivate getInstance2() {
     //     if (instance1 == null)
     //         instance1 = new SingletonBugPrivate()
@@ -73,13 +73,13 @@ class SingletonBugProtected {
 
     protected SingletonBugProtected() {
     }
-    
+
     static SingletonBugProtected getInstance() {
         if (instance1 == null)
             instance1 = new SingletonBugProtected()
         return instance1
     }
-    
+
     // private static SingletonBugProtected getInstance2() {
     //     if (instance1 == null)
     //         instance1 = new SingletonBugProtected()

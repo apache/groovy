@@ -29,7 +29,7 @@ class Groovy4202Bug extends GroovyTestCase {
 
         inst0.metaClass.addedMethod1 = { 'hello10'}
         inst0.metaClass.addedMethod2 = { 'hello20'}
-        
+
         inst1.metaClass.addedMethod1 = { 'hello11'}
         inst1.metaClass.addedMethod2 = { 'hello21'}
     }

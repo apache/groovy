@@ -31,7 +31,7 @@ public class MultipleCompilationErrorsException extends
 
     private static final long serialVersionUID = 8583586586290252555L;
     protected ErrorCollector collector;
-    
+
     public MultipleCompilationErrorsException(ErrorCollector ec) {
         super(0, null);
         if (ec == null) {
@@ -47,7 +47,7 @@ public class MultipleCompilationErrorsException extends
     public ErrorCollector getErrorCollector() {
         return collector;
     }
-    
+
     @Override
     public String getMessage() {
         Writer data = new StringBuilderWriter();

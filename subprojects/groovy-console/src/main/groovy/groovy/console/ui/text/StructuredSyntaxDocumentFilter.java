@@ -41,28 +41,28 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class StructuredSyntaxDocumentFilter extends DocumentFilter {
-    
+
     public static final String TAB_REPLACEMENT = "    ";
-    
+
     private static final MLComparator ML_COMPARATOR = new MLComparator();
 
     /**
      * The root of the lexical parsing tree.
      */
     protected LexerNode lexer = new LexerNode(true);
-    
+
     // The styled document the filter parses
     protected DefaultStyledDocument styledDocument; 
-    
+
     // the document buffer and segment
     private Segment segment = new Segment();
     private CharBuffer buffer;
-    
+
     /**
      * The position tree of multi-line comments.
-     */ 
+     */
     protected SortedSet mlTextRunSet = new TreeSet(ML_COMPARATOR);
-    
+
     // Ensures not adding any regexp with capturing groups
     private static void checkRegexp(String regexp) {
         String checking = regexp.replaceAll("\\\\\\(", "X").replaceAll("\\(\\?", "X");
@@ -77,7 +77,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
             throw new IllegalArgumentException(msg.toString());
         }
     }
-    
+
     /**
      * Creates a new instance of StructuredSyntaxDocumentFilter
      * @param document the styled document to parse
@@ -85,7 +85,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
     public StructuredSyntaxDocumentFilter(DefaultStyledDocument document) {
         this.styledDocument = document;
     }
-    
+
     private int calcBeginParse(int offset) {
         MultiLineRun mlr = getMultiLineRun(offset);
         if (mlr != null) {
@@ -98,10 +98,10 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
             mlr = getMultiLineRun(offset);
             offset = mlr == null ? offset : mlr.end() + 1;
         }
-        
+
         return offset;
     }
-    
+
     private int calcEndParse(int offset) {
         MultiLineRun mlr = getMultiLineRun(offset);
         if (mlr != null) {
@@ -114,10 +114,10 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
             mlr = getMultiLineRun(offset);
             offset = mlr == null ? offset : mlr.end();
         }
-        
+
         return offset;
     }
-    
+
     /**
      * Create a new LexerNode for adding to root.
      *
@@ -126,7 +126,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
     public LexerNode createLexerNode() {
         return new LexerNode(false);
     }
-    
+
     // given an offset, return the mlr it resides in
     private MultiLineRun getMultiLineRun(int offset) {
         MultiLineRun ml = null;
@@ -142,17 +142,17 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
 
         return ml;
     }
-    
+
     /**
      * Get the root node for lexing the document.   Children can be added such
      * that matching patterns can be further parsed if required.
      *
-     * @return the root lexing node.  
+     * @return the root lexing node.
      */
     public LexerNode getRootNode() {
         return lexer;
     }
-    
+
     /**
      * Insert a string into the document, and then parse it if the parser has been
      * set.
@@ -169,16 +169,16 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
         throws BadLocationException {
         // remove problem meta characters returns
         text = replaceMetaCharacters(text);
-        
+
         fb.insertString(offset, text, attrs);
-        
+
         // start on the string that was inserted
         parseDocument(offset, text.length());
     }
-    
+
     /**
      * Parse the Document to update the character styles given an initial start
-     * position.  Called by the filter after it has updated the text. 
+     * position.  Called by the filter after it has updated the text.
      *
      * @param offset
      * @param length
@@ -188,9 +188,9 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
         // initialize the segment with the complete document so the segment doesn't
         // have an underlying gap in the buffer
         styledDocument.getText(0, styledDocument.getLength(), segment);
-        
+
         buffer = CharBuffer.wrap(segment.array).asReadOnlyBuffer();
-        
+
         // initialize the lexer if necessary
         if (!lexer.isInitialized()) {
             // prime the parser and reparse whole document
@@ -202,7 +202,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
             int end = offset + length;
             offset = calcBeginParse(offset);
             length = calcEndParse(end) - offset;
-            
+
             // clean the tree by ensuring multi line styles are reset in area
             // of parsing
             SortedSet set = mlTextRunSet.subSet(offset,
@@ -211,7 +211,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
                 set.clear();
             }
         }
-        
+
         // parse the document
         lexer.parse(buffer, offset, length);
     }
@@ -224,7 +224,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
      * @param offset
      * @param length
      * @throws BadLocationException
-     */    
+     */
     @Override
     public void remove(DocumentFilter.FilterBypass fb, int offset, int length)
         throws BadLocationException {
@@ -232,14 +232,14 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
         // does not get done properly, so first replace and remove after parsing
         if (offset == 0 && length != fb.getDocument().getLength()) {
             fb.replace(0, length, "\n", lexer.defaultStyle);
-            
+
             // start on either side of the removed text
             parseDocument(offset, 2);
             fb.remove(offset, 1);
         }
         else {
             fb.remove(offset, length);
-            
+
             // start on either side of the removed text
             if (offset + 1 < fb.getDocument().getLength()) {
                 parseDocument(offset, 1);
@@ -265,7 +265,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
      * @param text
      * @param attrs
      * @throws BadLocationException
-     */    
+     */
     @Override
     public void replace(DocumentFilter.FilterBypass fb, int offset,
                         int length, String text, AttributeSet attrs)
@@ -273,45 +273,45 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
     {
         // text might be null and indicates no replacement text
         if (text == null) text = "";
-        
+
         // remove problem meta characters returns
         text = replaceMetaCharacters(text);
-        
+
         fb.replace(offset, length, text, attrs);
-        
+
         // start on the text that was replaced
         parseDocument(offset, text.length());
     }
-    
+
     // tabs with spaces (I hate tabs)
     private String replaceMetaCharacters(String string) {
         // just in case remove carriage returns
         string = string.replace("\\t", TAB_REPLACEMENT);
         return string;
     }
-    
+
     public final class LexerNode {
-        
+
         private Style defaultStyle;
-    
+
         private Map styleMap = new LinkedHashMap();
         private Map children = new HashMap();
 
         private Matcher matcher;
         private List groupList = new ArrayList();
-        
+
         private boolean initialized;
-        
+
         private CharBuffer lastBuffer;
 
         /*
-         * Creates a new instance of LexerNode 
+         * Creates a new instance of LexerNode
          */
         LexerNode(boolean isParent) {
             StyleContext sc = StyleContext.getDefaultStyleContext();
             defaultStyle = sc.getStyle(StyleContext.DEFAULT_STYLE);
         }
-    
+
         private String buildRegexp(String[] regexps) {
             StringBuilder regexp = new StringBuilder();
 
@@ -322,7 +322,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
             // ensure leading '|' is removed
             return regexp.substring(1);
         }
-        
+
         public Style getDefaultStyle() {
             return defaultStyle;
         }
@@ -331,7 +331,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
             matcher = null;
             groupList.clear();
             groupList.add(null);
-            
+
             Iterator iter = styleMap.keySet().iterator();
             StringBuilder regexp = new StringBuilder();
             while (iter.hasNext()) {
@@ -342,7 +342,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
             }
             if (!regexp.toString().isEmpty()) {
                 matcher = Pattern.compile(regexp.substring(1)).matcher("");
-                
+
                 iter = children.values().iterator();
                 while (iter.hasNext()) {
                     ((LexerNode)iter.next()).initialize();
@@ -350,10 +350,10 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
             }
             initialized = true;
         }
-        
+
         /**
          * @return true if initialised
-         */        
+         */
         public boolean isInitialized() {
             return initialized;
         }
@@ -363,38 +363,38 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
          * @param offset
          * @param length
          * @throws BadLocationException
-         */        
+         */
         public void parse(CharBuffer buffer, int offset, int length)
             throws BadLocationException {
             // get the index of where we can start to look for an exit:
-            // i.e. after the end of the length of the segment, when we find 
+            // i.e. after the end of the length of the segment, when we find
             // that text in question already is set properly, we can stop
             // parsing
             int checkPoint = offset + length;
-            
+
             // reset the matcher and start parsing string
             if (lastBuffer != buffer) {
                 matcher.reset(buffer);
                 lastBuffer = buffer;
             }
-            
+
             // the start and end indices of a match in the Matcher looking
             int matchEnd = offset;
             Style style = null;
             while (matchEnd < checkPoint && matcher.find(offset)) {
                 // when we get something other than -1, we know which regexp
-                // matched; the 0 group is the complete expression of the 
+                // matched; the 0 group is the complete expression of the
                 // matcher, which would always return a hit based on the above
                 // while condition
                 int groupNum = 0;
                 while ((offset = matcher.start(++groupNum)) == -1){
                 }
-                
-                // if the matching offset is not the same as the end of the 
-                // previous match, we have extra text not matched, so set to 
+
+                // if the matching offset is not the same as the end of the
+                // previous match, we have extra text not matched, so set to
                 // the default style of this lexer node
                 if (offset != matchEnd) {
-                    offset = offset > checkPoint ? checkPoint : offset; 
+                    offset = offset > checkPoint ? checkPoint : offset;
                     styledDocument.setCharacterAttributes(matchEnd,
                                                           offset - matchEnd,
                                                           defaultStyle,
@@ -404,7 +404,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
                     }
                 }
 
-                // track the end of the matching string 
+                // track the end of the matching string
                 matchEnd = matcher.end(groupNum);
 
                 // retrieve the proper style from groupNum of the groupList and
@@ -423,13 +423,13 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
                     MultiLineRun mlr = new MultiLineRun(offset, matchEnd);
                     mlTextRunSet.add(mlr);
                 }
-                
+
                 // parse the child regexps, if any, within a matched block
                 LexerNode node = (LexerNode)children.get(groupList.get(groupNum));
                 if (node != null) {
                     node.parse(buffer, offset, matchEnd - offset);
                 }
-                
+
                 // set the offset to start where we left off
                 offset = matchEnd;
             }
@@ -448,10 +448,10 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
          *
          * @param regexp
          * @param node
-         */        
+         */
         public void putChild(String regexp, LexerNode node) {
             node.defaultStyle = (Style)styleMap.get(regexp);
-            
+
             // have to compile regexp first so that it will match
             children.put(Pattern.compile(regexp).pattern(), node);
             initialized = false;
@@ -460,7 +460,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
         /**
          * @param regexps
          * @param node
-         */        
+         */
         public void putChild(String[] regexps, LexerNode node) {
             putChild(buildRegexp(regexps), node);
         }
@@ -468,7 +468,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
         /**
          * @param regexp
          * @param style
-         */        
+         */
         public void putStyle(String regexp, Style style) {
             checkRegexp(regexp);
             styleMap.put(regexp, style);
@@ -478,21 +478,21 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
         /**
          * @param regexps
          * @param style
-         */        
+         */
         public void putStyle(String regexps[], Style style) {
             putStyle(buildRegexp(regexps), style);
         }
 
         /**
          * @param regexp
-         */        
+         */
         public void removeChild(String regexp) {
             children.remove(regexp);
         }
 
         /**
          * @param regexp
-         */        
+         */
         public void removeStyle(String regexp) {
             styleMap.remove(regexp);
             children.remove(regexp);
@@ -500,33 +500,33 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
 
         /**
          * @param regexps
-         */        
+         */
         public void removeStyle(String regexps[]) {
             removeStyle(buildRegexp(regexps));
         }
-        
+
         public void setDefaultStyle(Style style) {
             defaultStyle = style;
         }
     }
-    
+
     protected class MultiLineRun {
-        
+
         private Position start;
         private Position end;
         private int delimeterSize;
-        
+
         public MultiLineRun(int start, int end) throws BadLocationException {
             this(start, end, 2);
         }
-        
+
         public MultiLineRun(int start, int end, int delimeterSize) throws BadLocationException {
             if (start > end) {
                 String msg = "Start offset is after end: ";
                 throw new BadLocationException(msg, start);
             }
             if (delimeterSize < 1) {
-                String msg = "Delimiters be at least size 1: " + 
+                String msg = "Delimiters be at least size 1: " +
                               delimeterSize;
                 throw new IllegalArgumentException(msg);
             }
@@ -534,28 +534,28 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
             this.end = styledDocument.createPosition(end);
             this.delimeterSize = delimeterSize;
         }
-        
+
         public int getDelimeterSize() {
             return delimeterSize;
         }
-        
+
         public int end() {
             return end.getOffset();
         }
-        
+
         public int length() {
             return end.getOffset() - start.getOffset();
         }
-        
+
         public int start() {
             return start.getOffset();
         }
-        
+
         @Override
         public String toString() {
             return start.toString() + " " + end.toString();
         }
-        
+
     }
 
     private static class MLComparator implements Comparator, Serializable {
@@ -566,7 +566,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
         public int compare(Object obj, Object obj1) {
             return valueOf(obj) - valueOf(obj1);
         }
-        
+
         private int valueOf(Object obj) {
             return obj instanceof Integer ?
                     (Integer) obj :

@@ -26,7 +26,7 @@ class MethodPropertyMissingTest extends GroovyTestCase {
         assertScript '''
             //tag::method_missing_simple[]
             class Foo {
-            
+
                def methodMissing(String name, def args) {
                     return "this is me"
                }

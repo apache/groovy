@@ -210,7 +210,7 @@ class GenericsBytecodeTest extends GenericsTestBase {
                class B<T> {
                    private T owner;
                    Class<T> getOwnerClass(){}
-   
+
             } 
         """
         assert signatures == [

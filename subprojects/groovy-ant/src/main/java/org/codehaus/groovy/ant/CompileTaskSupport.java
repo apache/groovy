@@ -112,14 +112,14 @@ public abstract class CompileTaskSupport
 
     public void setClasspathRef(final Reference r) {
         assert r != null;
-        
+
         createClasspath().setRefid(r);
     }
 
     public CompilerConfiguration createConfiguration() {
         return config;
     }
-    
+
     protected void validate() throws BuildException {
         if (src == null) {
             throw new BuildException("Missing attribute: srcdir (or one or more nested <src> elements).", getLocation());
@@ -152,7 +152,7 @@ public abstract class CompileTaskSupport
 
     protected void handleException(final Exception e) throws BuildException {
         assert e != null;
-        
+
         Writer writer = new StringBuilderWriter();
         new ErrorReporter(e, false).write(new PrintWriter(writer));
         String message = writer.toString();

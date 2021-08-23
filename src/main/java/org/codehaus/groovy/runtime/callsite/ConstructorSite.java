@@ -135,7 +135,7 @@ public class ConstructorSite extends MetaClassSite {
                 return CallSiteArray.defaultCallConstructor(this, receiver, args);
         }
     }
-    
+
     public static class NoParamSiteInnerClass extends ConstructorSiteNoUnwrapNoCoerce {
         public NoParamSiteInnerClass(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class[] params) {
             super(site, metaClass, constructor, params);

@@ -110,7 +110,7 @@ class InstructionSequenceHelperClassTest extends GroovyTestCase {
                 "IADD"
         ])
     }
-    
+
     void testStrictSequencePatternPrefixRepetition() {
         def instrs = new InstructionSequence(instructions: [
                 "A", "A", "B",
@@ -124,5 +124,5 @@ class InstructionSequenceHelperClassTest extends GroovyTestCase {
                 "A", "A", "C"
         ])
     }
-    
+
 }

@@ -55,7 +55,6 @@ final class Groovy9589 {
         }.ast
     }
 
-
     private static String source(int index) {
         """
 class Hello${index} {

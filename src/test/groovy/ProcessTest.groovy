@@ -110,7 +110,7 @@ class MockProcess extends Process {
 }
 
 /**
- * only needed for workaround in groovy, 
+ * only needed for workaround in groovy,
  *     new ByteArrayInputStream(myByteArray) doesn't work at mo... (28-Sep-2004)
  */
 class AnotherMockInputStream extends InputStream {

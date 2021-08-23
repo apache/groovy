@@ -21,7 +21,7 @@ package groovy.bugs
 import groovy.test.GroovyTestCase
 
 class GuillaumesBug extends GroovyTestCase {
-    
+
     void testBug() {
         if (true) 
             println("true")

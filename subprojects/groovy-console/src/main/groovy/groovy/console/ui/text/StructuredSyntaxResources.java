@@ -30,7 +30,7 @@ public final class StructuredSyntaxResources {
     // ==================================================
     // ClipBoard
     // ==================================================
-    
+
     public static final Clipboard SYSTEM_CLIPBOARD;
     static {
         Clipboard systemClipboard = null;
@@ -48,7 +48,7 @@ public final class StructuredSyntaxResources {
             systemClipboard = new Clipboard("UIResourceMgr");
         }
         catch (Exception e) {
-            e.printStackTrace();               
+            e.printStackTrace();
         }
         SYSTEM_CLIPBOARD = systemClipboard;
     }
@@ -60,7 +60,7 @@ public final class StructuredSyntaxResources {
     public static final Font LARGE_FONT = Font.decode("Arial-24");
     public static final Font MEDIUM_FONT = Font.decode("Arial-18");
     public static final Font SMALL_FONT = Font.decode("Arial-12");
-    
+
     public static final Font EDITOR_FONT = Font.decode("Monospaced-12");
 
     // =====================================================
@@ -73,7 +73,7 @@ public final class StructuredSyntaxResources {
     public static final String FIND = "Find";
     public static final String FIND_NEXT = "Find Next";
     public static final String REPLACE = "Replace";
-        
+
     // singleton
     private StructuredSyntaxResources() {
     }

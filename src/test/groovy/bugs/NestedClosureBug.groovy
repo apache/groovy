@@ -23,7 +23,7 @@ import groovy.test.GroovyTestCase
 /**
  */
 class NestedClosureBug extends GroovyTestCase {
-     
+
     void testBug() {
         def a = 123
         getValues().each { 
@@ -32,7 +32,7 @@ class NestedClosureBug extends GroovyTestCase {
             }
         }
     }
-    
+
     def getValues() {
         [5, 6, 7]
     }

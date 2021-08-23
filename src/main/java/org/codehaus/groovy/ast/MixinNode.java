@@ -24,7 +24,7 @@ package org.codehaus.groovy.ast;
 public class MixinNode extends ClassNode {
 
     public static final MixinNode[] EMPTY_ARRAY = {};
-    
+
     /**
      * @param name is the full name of the class
      * @param modifiers the modifiers, @see org.objectweb.asm.Opcodes

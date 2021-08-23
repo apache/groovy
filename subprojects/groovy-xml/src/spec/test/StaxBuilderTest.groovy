@@ -26,16 +26,16 @@ class StaxBuilderTest extends GroovyTestCase {
         def factory = javax.xml.stream.XMLOutputFactory.newInstance()
         def writer = new StringWriter()
         def builder = new groovy.xml.StaxBuilder(factory.createXMLStreamWriter(writer))
-        
+
         builder.root(attribute:1) {
             elem1('hello')
             elem2('world')
         }
-        
+
         assert writer.toString() == '<?xml version="1.0" ?><root attribute="1"><elem1>hello</elem1><elem2>world</elem2></root>'
         // end::stax_builder[]
     }
-    
+
     void testStaxBuilderExternalLibrary() {
         assertScript '''
             // tag::stax_builder_external_library[]
@@ -46,12 +46,12 @@ class StaxBuilderTest extends GroovyTestCase {
             def writer = new StringWriter()
             def mappedWriter = new MappedXMLStreamWriter(new MappedNamespaceConvention(), writer)
             def builder = new groovy.xml.StaxBuilder(mappedWriter)
-            
+
             builder.root(attribute:1) {
                  elem1('hello')
                  elem2('world')
             }
-            
+
             assert writer.toString() == '{"root":{"@attribute":"1","elem1":"hello","elem2":"world"}}'
             // end::stax_builder_external_library[]
         '''

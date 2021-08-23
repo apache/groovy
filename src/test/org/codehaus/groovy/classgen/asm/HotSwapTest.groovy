@@ -21,7 +21,7 @@ package org.codehaus.groovy.classgen.asm
 import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
 
 class HotSwapTest extends AbstractBytecodeTestCase {
-    
+
     void testHotSwapMethodExistsAndCallsGetCallSiteArray() {
         if (config.indyEnabled) return;
         assert compile(method: '__$swapInit', '''
@@ -31,7 +31,7 @@ class HotSwapTest extends AbstractBytecodeTestCase {
                 'PUTSTATIC script.$callSiteArray : Ljava/lang/ref/SoftReference;'
         ])
     }
-    
+
     void testClinitCallingHotSwapMethod() {
         assert compile(method: '<clinit>', '''
              Long d = 123456L

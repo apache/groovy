@@ -25,7 +25,7 @@ import java.util.Map;
 * Lazy evaluated representation of parent nodes without duplicates
 */
 public class NodeParents extends NodeChildren {
-    
+
     /**
      * @param parent the GPathResult prior to the application of the expression creating this GPathResult
      * @param namespaceTagHints the known tag to namespace mappings
@@ -37,9 +37,9 @@ public class NodeParents extends NodeChildren {
     @Override
     public Iterator nodeIterator() {
         return new NodeIterator(this.parent.nodeIterator()) {
-            
+
             private Node prev = null;
-            
+
             @Override
             protected Object getNextNode(final Iterator iter) {
                 while (iter.hasNext()) {
@@ -53,5 +53,5 @@ public class NodeParents extends NodeChildren {
             }
         };
     }
-    
+
 }

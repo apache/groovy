@@ -33,7 +33,7 @@ class Groovy3135Bug extends GroovyTestCase {
     def values
 
     void testConversionForPrimitiveTypeVarArgs() {
-        
+
         setVarArgsShort("", b, s)
         checkConversionAndVarArgCount(Short.TYPE, 2)
 
@@ -42,10 +42,10 @@ class Groovy3135Bug extends GroovyTestCase {
 
         setVarArgsLong("", b, s, i, l)
         checkConversionAndVarArgCount(Long.TYPE, 4)
-        
+
         setVarArgsFloat("", b, s, i, l, f)
         checkConversionAndVarArgCount(Float.TYPE, 5)
-        
+
         setVarArgsDouble("", b, s, i, l, f, d, bi, bd)
         checkConversionAndVarArgCount(Double.TYPE, 8)
     }
@@ -53,19 +53,19 @@ class Groovy3135Bug extends GroovyTestCase {
     def setVarArgsShort(String str, short... varArgValues) {
         values = varArgValues
     }
-    
+
     def setVarArgsInteger(String str, int... varArgValues) {
         values = varArgValues
     }
-    
+
     def setVarArgsLong(String str, long... varArgValues) {
         values = varArgValues
     }
-    
+
     def setVarArgsFloat(String str, float... varArgValues) {
         values = varArgValues
     }
-    
+
     def setVarArgsDouble(String str, double... varArgValues) {
         values = varArgValues
     }

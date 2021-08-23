@@ -21,7 +21,7 @@ package groovy.swing.impl;
 import javax.swing.*;
 import java.awt.*;
 
-/** 
+/**
  * Represents a HTML style table layout
  */
 public class TableLayout extends JPanel {
@@ -32,7 +32,7 @@ public class TableLayout extends JPanel {
     public TableLayout() {
         setLayout(new GridBagLayout());
     }
-    
+
     public int getCellpadding() {
         return cellpadding;
     }

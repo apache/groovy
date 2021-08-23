@@ -39,7 +39,7 @@ class Cheddar extends Goober implements Runnable
     void run() { cheeseIt() }
 
     static Goober mutateGoober(Goober theGoober) { }
-   
+
 }
 
 class Provolone

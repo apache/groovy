@@ -28,7 +28,7 @@ class Groovy4188Bug extends GroovyTestCase {
                 class Foo4188 {
                   private String metaClass
                 }
-                  
+
                 new Foo4188()
             """
             fail("The compilation should have failed as the field 'metaClass' is not of type groovy.lang.MetaClass.")

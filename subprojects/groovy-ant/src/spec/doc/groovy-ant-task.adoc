@@ -219,7 +219,7 @@ import java.util.jar.JarFile
 def classes = []
 def resourceNamePattern = /org\/.*\/.*Builder.class/
 def jarNamePattern = /.*(beta|commons).*jar$/
- 
+
 def libdir = new File("${properties['local.target']}/lib")
 libdir.listFiles().grep(~jarNamePattern).each { candidate ->
     new JarFile(candidate).entries().each { entry ->
@@ -323,7 +323,7 @@ Output:
 [source]
 ---------------------------------------------------------------------------------
 Buildfile: build.xml
- 
+
 run:
    [groovy] 4
    [groovy] 3
@@ -331,6 +331,6 @@ run:
      [echo] 2
      [echo] 3
      [echo] 4 5
- 
+
 BUILD SUCCESSFUL
 ---------------------------------------------------------------------------------

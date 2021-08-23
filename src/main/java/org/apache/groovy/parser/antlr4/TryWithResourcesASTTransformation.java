@@ -205,7 +205,6 @@ public class TryWithResourcesASTTransformation {
                 );
         astBuilder.appendStatementsToBlockStatement(blockStatement, primaryExcDeclarationStatement);
 
-
         // The generated try-catch-finally statement
         String firstResourceIdentifierName =
                 ((DeclarationExpression) tryCatchStatement.getResourceStatement(0).getExpression()).getLeftExpression().getText();

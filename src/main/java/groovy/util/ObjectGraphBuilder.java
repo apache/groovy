@@ -90,7 +90,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
      * Returns the current name of the 'bean' node.
      */
     public String getBeanFactoryName() {
-        return beanFactoryName; 
+        return beanFactoryName;
     }
 
     /**

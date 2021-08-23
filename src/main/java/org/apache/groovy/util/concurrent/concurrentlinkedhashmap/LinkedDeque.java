@@ -287,7 +287,6 @@ final class LinkedDeque<E extends Linked<E>> extends AbstractCollection<E> imple
     return offerLast(e);
   }
 
-
   @Override
   public void addFirst(E e) {
     if (!offerFirst(e)) {

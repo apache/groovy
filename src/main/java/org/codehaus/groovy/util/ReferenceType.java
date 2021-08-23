@@ -50,7 +50,7 @@ public enum ReferenceType {
         }
     };
     protected abstract <T,V extends Finalizable> Reference<T,V> createReference(T value, V handler, ReferenceQueue queue);
-    
+
     private static class SoftRef<TT,V  extends Finalizable> extends SoftReference<TT> implements Reference<TT,V> {
         private final V handler;
         public SoftRef(TT referent, V handler, ReferenceQueue<? super TT> q) {
@@ -62,7 +62,7 @@ public enum ReferenceType {
             return handler;
         }        
     }
-    
+
     private static class WeakRef<TT,V  extends Finalizable> extends WeakReference<TT> implements Reference<TT,V> {
         private final V handler;
         public WeakRef(TT referent, V handler, ReferenceQueue<? super TT> q) {
@@ -74,7 +74,7 @@ public enum ReferenceType {
             return handler;
         }            
     }
-    
+
     private static class PhantomRef<TT,V  extends Finalizable> extends PhantomReference<TT> implements Reference<TT,V> {
         private final V handler;
         public PhantomRef(TT referent, V handler, ReferenceQueue<? super TT> q) {
@@ -86,7 +86,7 @@ public enum ReferenceType {
             return handler;
         }            
     }
-    
+
     private static class HardRef<TT,V extends Finalizable> implements Reference<TT,V> {
         private TT ref;
         private final V handler;
@@ -107,5 +107,5 @@ public enum ReferenceType {
             ref = null;
         }        
     }
-    
+
 }

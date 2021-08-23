@@ -100,7 +100,7 @@ public class XmlSlurper extends DefaultHandler {
     public XmlSlurper() throws ParserConfigurationException, SAXException {
         this(false, true);
     }
-    
+
     /**
      * Creates a <code>XmlSlurper</code> which does not allow DOCTYPE declarations in documents.
      * 
@@ -141,7 +141,7 @@ public class XmlSlurper extends DefaultHandler {
     public XmlSlurper(final SAXParser parser) throws SAXException {
         this(parser.getXMLReader());
     }
-    
+
     private static void setQuietly(SAXParserFactory factory, String feature, boolean value) {
         try {
             factory.setFeature(feature, value);

@@ -44,7 +44,7 @@ class SignatureCodecTest extends GroovyTestCase {
             assert codec.decode(signature) == it
         }
     }
-    
+
     void testCodecWithGenericType() {
         ClassNode cn = LIST_TYPE.getPlainNodeReference()
         cn.genericsTypes = [ new GenericsType(STRING_TYPE) ] as GenericsType[]
@@ -53,7 +53,7 @@ class SignatureCodecTest extends GroovyTestCase {
         assert decoded == cn
         assert decoded.genericsTypes[0].type == STRING_TYPE
     }
-    
+
     void testCodecWithUnionType() {
         ClassNode cn = new UnionTypeClassNode(STRING_TYPE, LIST_TYPE)
         String signature = codec.encode(cn)
@@ -67,7 +67,7 @@ class SignatureCodecTest extends GroovyTestCase {
         ClassNode decoded = codec.decode(signature)
         assert decoded == cn
     }
-    
+
     void testCodecWithUnionTypeAndGenerics() {
         ClassNode list = LIST_TYPE.getPlainNodeReference()
         list.genericsTypes = [ new GenericsType(STRING_TYPE) ] as GenericsType[]
@@ -77,6 +77,6 @@ class SignatureCodecTest extends GroovyTestCase {
         assert decoded == cn
         assert decoded.delegates[1] == LIST_TYPE
         assert decoded.delegates[1].genericsTypes[0].type == STRING_TYPE
-        
+
     }
 }

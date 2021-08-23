@@ -37,13 +37,13 @@ public class IllegalPropertyAccessException extends MissingPropertyException {
         if (isField) propertyType = "field";
         return  "Can not access the "+access+" "+propertyType+" "+propertyName+" in class "+clazz.getName();
     }
-    
+
     public IllegalPropertyAccessException(String propertyName, Class clazz, int modifiers) {
         super(makeMessage(propertyName,clazz,modifiers,false),propertyName,clazz);
     }
-    
+
     public IllegalPropertyAccessException(Field field, Class clazz) {
         super(makeMessage(field.getName(),clazz,field.getModifiers(),true),field.getName(),clazz);
     }
-    
+
 }

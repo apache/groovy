@@ -20,18 +20,15 @@ package groovy.bugs
 
 import groovy.test.GroovyTestCase
 
-/**
- */
 class ClosureTypedVariableBug extends GroovyTestCase {
-    
+
     void testBug2() {
         def count = makeClosure(0)
         assert count == 1
-        
+
         count = makeClosure2(0)
         assert count == 1
     }
-
 
     def makeClosure(Number count) {
         def closure = { count = it }
@@ -52,14 +49,14 @@ class ClosureTypedVariableBug extends GroovyTestCase {
         closure(1)
         assert count == 1
     }
-    
+
     void testBug3() {
         def closure = getElementClosure("p")
         def answer = closure("b")
         def value = answer("c")
         println "returned : ${value}"
     }
-    
+
     Closure getElementClosure(tag) {
         return { body ->
             if (true) {
@@ -70,7 +67,7 @@ class ClosureTypedVariableBug extends GroovyTestCase {
             }
         }
     }
-    
+
     void testDoubleSlotReference() {
         // there was a bug that the local variable index
         // was wrong set for a closure shared variable. 
@@ -80,7 +77,7 @@ class ClosureTypedVariableBug extends GroovyTestCase {
         double d2 = 10.0d
         1.times { d1=d1*d2 }
         assert d1==10d
-        
+
         long l1 = 1l
         long l2 = 10l
         1.times { l1=l1*l2 }

@@ -35,12 +35,12 @@ public class ClassExpression extends Expression {
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitClassExpression(this);
     }
-    
+
     @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         return this;
     }
-    
+
     @Override
     public String getText() {
         return getType().getName();

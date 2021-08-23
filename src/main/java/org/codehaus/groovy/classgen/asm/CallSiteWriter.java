@@ -115,7 +115,7 @@ public class CallSiteWriter {
             callSites.addAll(ihcn.getCallSites());
         }
     }
-    
+
     public void makeSiteEntry() {
         if (controller.isNotClinit()) {
             MethodVisitor mv = controller.getMethodVisitor();
@@ -125,7 +125,7 @@ public class CallSiteWriter {
             callSiteArrayVarIndex = controller.getCompileStack().defineTemporaryVariable("$local$callSiteArray", CALLSITE_ARRAY_TYPE, true);
         }
     }
-    
+
     public void generateCallSiteArray() {
         if (!controller.getClassNode().isInterface()) {
             controller.getClassVisitor().visitField(MOD_PRIVSS, CALLSITE_FIELD, REF_DESC, null, null);
@@ -164,7 +164,7 @@ public class CallSiteWriter {
         mv.visitMaxs(0, 0);
         mv.visitEnd();
     }
-        
+
     private void generateCreateCallSiteArray() { 
         List<String> callSiteInitMethods = new LinkedList<String>(); 
         int index = 0; 
@@ -217,7 +217,7 @@ public class CallSiteWriter {
         mv.visitMaxs(0,0); 
         mv.visitEnd(); 
     } 
-    
+
     private int allocateIndex(String name) {
         callSites.add(name);
         return callSites.size()-1;
@@ -241,11 +241,11 @@ public class CallSiteWriter {
         mv.visitLdcInsn(index);
         mv.visitInsn(AALOAD);
     }
-    
+
     private void prepareSiteAndReceiver(Expression receiver, String methodName, boolean implicitThis) {
         prepareSiteAndReceiver(receiver, methodName, implicitThis, false);
     }
-    
+
     protected void prepareSiteAndReceiver(Expression receiver, String methodName, boolean implicitThis, boolean lhs) {
         //site
         prepareCallSite(methodName);
@@ -259,7 +259,7 @@ public class CallSiteWriter {
         compileStack.popLHS();
         compileStack.popImplicitThis();
     }
-    
+
     protected void visitBoxedArgument(Expression exp) {
         exp.visit(controller.getAcg());
         if (!(exp instanceof TupleExpression)) {
@@ -283,17 +283,17 @@ public class CallSiteWriter {
         controller.getMethodVisitor().visitMethodInsn(INVOKEINTERFACE, "org/codehaus/groovy/runtime/callsite/CallSite", safe ? "callSafe" : "call", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", true);
         operandStack.replace(ClassHelper.OBJECT_TYPE, m2-m1);
     }
-    
+
     public void makeGroovyObjectGetPropertySite(Expression receiver, String methodName, boolean safe, boolean implicitThis) {
         prepareSiteAndReceiver(receiver, methodName, implicitThis);
         invokeSafe(safe, "callGroovyObjectGetProperty", "callGroovyObjectGetPropertySafe");
     }
-    
+
     public void makeGetPropertySite(Expression receiver, String methodName, boolean safe, boolean implicitThis) {
         prepareSiteAndReceiver(receiver, methodName, implicitThis);
         invokeSafe(safe, "callGetProperty", "callGetPropertySafe");
     }
-    
+
     public void makeCallSite(Expression receiver, String message, Expression arguments, boolean safe, boolean implicitThis, boolean callCurrent, boolean callStatic) {
         prepareSiteAndReceiver(receiver, message, implicitThis);
 
@@ -302,7 +302,7 @@ public class CallSiteWriter {
         compileStack.pushLHS(false);
         boolean constructor = message.equals(CONSTRUCTOR);
         OperandStack operandStack = controller.getOperandStack();
-        
+
         // arguments
         boolean containsSpreadExpression = AsmClassGenerator.containsSpreadExpression(arguments);
         int numberOfArguments = containsSpreadExpression ? -1 : AsmClassGenerator.argumentSize(arguments);
@@ -327,9 +327,9 @@ public class CallSiteWriter {
         }
         controller.getCompileStack().popLHS();
         controller.getCompileStack().popImplicitThis();
-        
+
         MethodVisitor mv = controller.getMethodVisitor();
-        
+
         if (numberOfArguments > 4) {
             final String createArraySignature = getCreateArraySignature(numberOfArguments);
             mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/ArrayUtil", "createArray", createArraySignature, false);

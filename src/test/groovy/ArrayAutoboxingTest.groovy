@@ -21,7 +21,7 @@ package groovy
 import groovy.test.GroovyTestCase
 
 class ArrayAutoboxingTest extends GroovyTestCase {
-    
+
     void testUnwantedAutoboxingWhenInvokingMethods() {
       def cl
       cl = blah2(new int[2*2])
@@ -39,9 +39,9 @@ class ArrayAutoboxingTest extends GroovyTestCase {
       cl = blah2(new float[2*2])
       assert cl == "[F"
     }
-    
+
     def blah2(Object o) {
        return o.class.name
     }
-        
-} 
+
+}

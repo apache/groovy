@@ -47,7 +47,7 @@ public class PostfixExpression extends Expression {
 
     @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new PostfixExpression(transformer.transform(expression), operation); 
+        Expression ret = new PostfixExpression(transformer.transform(expression), operation);
         ret.setSourcePosition(this);
         ret.copyNodeMetaData(this);
         return ret;

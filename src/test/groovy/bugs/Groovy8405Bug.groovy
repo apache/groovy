@@ -42,7 +42,7 @@ class Groovy8405Bug extends CompilableTestSupport {
             class SubType extends SuperType {
                 @Override
                 void sample(String string) {
-                    assert 'hi' == string 
+                    assert 'hi' == string
                 }
             }
 

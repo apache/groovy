@@ -59,7 +59,7 @@ public class TernaryExpression extends Expression {
     public String toString() {
         return super.toString() +"[" + booleanExpression + " ? " + trueExpression + " : " + falseExpression + "]";
     }
-    
+
     public BooleanExpression getBooleanExpression() {
         return booleanExpression;
     }

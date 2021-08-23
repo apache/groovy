@@ -75,8 +75,8 @@ import org.codehaus.groovy.syntax.Types
 /**
  * Test case to show an ASTBuilder working off of a code block.
  *
- * The field declarations, static initializers, instance initializers, 
- * and most of the comments are all meaningful and tested. 
+ * The field declarations, static initializers, instance initializers,
+ * and most of the comments are all meaningful and tested.
  */
 @WithAstBuilder
 class AstBuilderFromCodeTest extends GroovyTestCase {

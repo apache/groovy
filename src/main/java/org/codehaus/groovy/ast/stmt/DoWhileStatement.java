@@ -28,18 +28,18 @@ public class DoWhileStatement extends Statement implements LoopingStatement {
 
     private BooleanExpression booleanExpression;
     private Statement loopBlock;
-    
+
 
     public DoWhileStatement(BooleanExpression booleanExpression, Statement loopBlock) {
         this.booleanExpression = booleanExpression;
         this.loopBlock = loopBlock;
     }
-    
+
     @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitDoWhileLoop(this);
     }
-    
+
     public BooleanExpression getBooleanExpression() {
         return booleanExpression;
     }

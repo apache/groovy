@@ -25,7 +25,7 @@ class NewExpressionTest extends GroovyTestCase {
 
     void testNewInstance() {
         def cheese = new String( "hey you hosers" )
-        
+
         assert cheese != null
     }
 
@@ -58,9 +58,9 @@ class NewExpressionTest extends GroovyTestCase {
 
         assert bean != null
     }
-    
+
     void testNewOnMultipleLines() {
-        def bean = 
+        def bean =
           new
             File
             ("Foo")

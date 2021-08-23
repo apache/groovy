@@ -22,13 +22,13 @@ import groovy.test.GroovyTestCase
 
 /**
  */
- 
+
 class OverloadInvokeMethodBug extends GroovyTestCase {
-     
+
     void testBug() {
         def a = new OverloadA()
         a.duh()
-        
+
         def b = new OverloadB()
         b.duh()
     }

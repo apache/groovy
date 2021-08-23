@@ -21,7 +21,6 @@
 
 = Design patterns in Groovy
 
-
 Using https://en.wikipedia.org/wiki/Design_pattern_%28computer_science%29[design patterns] with Java is a well-established topic.
 Design patterns also apply to Groovy:
 
@@ -79,7 +78,7 @@ include::_design-pattern-visitor.adoc[leveloffset=+2]
  * _The canonical reference of design patterns._
 . Martin Fowler (1999). _Refactoring: Improving the Design of Existing Code_. Addison-Wesley. ISBN 0-201-48567-2.
 . Joshua Kerievsky (2004). _Refactoring To Patterns_. Addison-Wesley. ISBN 0-321-21335-1.
-. Eric Freeman, Elisabeth Freeman, Kathy Sierra, Bert Bates (2004). _Head First Design Patterns_. O’Reilly. ISBN 0-596-00712-4. 
+. Eric Freeman, Elisabeth Freeman, Kathy Sierra, Bert Bates (2004). _Head First Design Patterns_. O’Reilly. ISBN 0-596-00712-4.
  *_A great book to read, informative as well as amusing._
 . Dierk Koenig with Andrew Glover, Paul King, Guillaume Laforge and Jon Skeet (2007). _Groovy in Action_. Manning. ISBN 1-932394-84-2.
  * _Discusses Visitor, Builder and other Patterns._

@@ -90,7 +90,7 @@ public class DOMBuilder extends BuilderSupport {
             throws SAXException, IOException, ParserConfigurationException {
         return parse(reader, validating, namespaceAware, false);
     }
-    
+
     /**
      * Creates a DocumentBuilder and uses it to parse the XML text read from the given reader, allowing
      * parser validation, namespace awareness and permission of DOCTYPE declarations to be controlled.
@@ -116,7 +116,7 @@ public class DOMBuilder extends BuilderSupport {
         DocumentBuilder documentBuilder = factory.newDocumentBuilder();
         return documentBuilder.parse(new InputSource(reader));
     }
-    
+
     private static void setQuietly(DocumentBuilderFactory factory, String feature, boolean value) {
         try {
             factory.setFeature(feature, value);

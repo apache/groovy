@@ -88,10 +88,10 @@ public class Binding extends GroovyObjectSupport {
 
         variables.remove(name);
     }
-    
+
     /**
      * Simple check for whether the binding contains a particular variable or not.
-     * 
+     *
      * @param name the name of the variable to check for
      */
     public boolean hasVariable(String name) {
@@ -131,5 +131,5 @@ public class Binding extends GroovyObjectSupport {
             setVariable(property, newValue);
         }
     }
-    
+
 }

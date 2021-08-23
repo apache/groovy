@@ -29,12 +29,12 @@ public class CaseStatement extends Statement {
 
     private Statement code;
     private Expression expression;
-    
+
     public CaseStatement(Expression expression, Statement code) {
         this.expression = expression;
         this.code = code;
     }
-    
+
     public Statement getCode() {
         return code;
     }
@@ -46,7 +46,7 @@ public class CaseStatement extends Statement {
     public Expression getExpression() {
         return expression;
     }
-    
+
     public void setExpression(Expression e) {
         expression=e;
     }
@@ -55,7 +55,7 @@ public class CaseStatement extends Statement {
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitCaseStatement(this);
     }
-    
+
     @Override
     public String toString() {
         return super.toString() + "[expression: " + expression + "; code: " + code + "]";

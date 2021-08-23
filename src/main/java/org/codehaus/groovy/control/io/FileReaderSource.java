@@ -53,12 +53,12 @@ public class FileReaderSource extends AbstractReaderSource {
     }
 
     /**
-    *  Returns a new Reader on the underlying source object.  
+    *  Returns a new Reader on the underlying source object.
     */
     @Override
     public Reader getReader() throws IOException {
        // we want to remove the BOM windows adds from a file if the encoding is UTF-8
-       // in other cases we depend on the charsets 
+       // in other cases we depend on the charsets
        Charset cs = Charset.forName(configuration.getSourceEncoding());
        InputStream in = new BufferedInputStream(new FileInputStream(file));
        if (UTF8.name().equalsIgnoreCase(cs.name())) {

@@ -24,32 +24,32 @@ class Groovy7204Bug extends GroovyTestCase {
     void testTypeChecked1() {
         assertScript '''
         import java.io.Serializable;
-        
+
         import groovy.transform.CompileStatic;
         import groovy.transform.TypeChecked;
-        
+
         @TypeChecked
         public class MyClass {
             static MyRepository factory() {
                 return new MyRepositoryImpl()
             }
-            
+
             static void main(String[] args) {
                 MyRepository r = factory()
                 r.delete('foo')
             }
         }
-        
+
         @TypeChecked
         interface CrudRepository<T, S extends Serializable> {
             void delete(T arg);
             void delete(S arg);
         }
-        
+
         @TypeChecked
         interface MyRepository extends CrudRepository<String, Long> {
         }
-        
+
         @TypeChecked
         class MyRepositoryImpl implements MyRepository {
             @Override
@@ -57,7 +57,7 @@ class Groovy7204Bug extends GroovyTestCase {
                 System.out.println("String");
                 assert true
             }
-            
+
             @Override
             public void delete(Long arg) {
                 System.out.println("Long");
@@ -70,32 +70,32 @@ class Groovy7204Bug extends GroovyTestCase {
     void testTypeChecked2() {
         assertScript '''
         import java.io.Serializable;
-        
+
         import groovy.transform.CompileStatic;
         import groovy.transform.TypeChecked;
-        
+
         @TypeChecked
         public class MyClass {
             static MyRepository factory() {
                 return new MyRepositoryImpl()
             }
-            
+
             static void main(String[] args) {
                 MyRepository r = factory()
                 r.delete('foo')
             }
         }
-        
+
         @TypeChecked
         abstract class CrudRepository<T, S extends Serializable> {
             abstract void delete(T arg);
             abstract void delete(S arg);
         }
-        
+
         @TypeChecked
         abstract class MyRepository extends CrudRepository<String, Long> {
         }
-        
+
         @TypeChecked
         class MyRepositoryImpl extends MyRepository {
             @Override
@@ -103,7 +103,7 @@ class Groovy7204Bug extends GroovyTestCase {
                 System.out.println("String");
                 assert true
             }
-            
+
             @Override
             public void delete(Long arg) {
                 System.out.println("Long");
@@ -116,36 +116,36 @@ class Groovy7204Bug extends GroovyTestCase {
     void testTypeChecked3() {
         assertScript '''
         import java.io.Serializable;
-        
+
         import groovy.transform.CompileStatic;
         import groovy.transform.TypeChecked;
-        
+
         @TypeChecked
         public class MyClass {
             static MyRepository factory() {
                 return new MyRepositoryImpl()
             }
-            
+
             static void main(String[] args) {
                 MyRepository r = factory()
                 r.delete('foo')
             }
         }
-        
+
         @TypeChecked
         interface CrudRepository<T, S extends Serializable> {
             void delete(T arg);
             void delete(S arg);
         }
-        
+
         @TypeChecked
         interface MyRepository2 extends CrudRepository<String, Long> {
         }
-        
+
         @TypeChecked
         interface MyRepository extends MyRepository2 {
         }
-        
+
         @TypeChecked
         class MyRepositoryImpl implements MyRepository {
             @Override
@@ -153,7 +153,7 @@ class Groovy7204Bug extends GroovyTestCase {
                 System.out.println("String");
                 assert true
             }
-            
+
             @Override
             public void delete(Long arg) {
                 System.out.println("Long");
@@ -166,36 +166,36 @@ class Groovy7204Bug extends GroovyTestCase {
     void testTypeChecked4() {
         assertScript '''
         import java.io.Serializable;
-        
+
         import groovy.transform.CompileStatic;
         import groovy.transform.TypeChecked;
-        
+
         @TypeChecked
         public class MyClass {
             static MyRepository factory() {
                 return new MyRepositoryImpl()
             }
-            
+
             static void main(String[] args) {
                 MyRepository r = factory()
                 r.delete('foo')
             }
         }
-        
+
         @TypeChecked
         abstract class CrudRepository<T, S extends Serializable> {
             abstract void delete(T arg);
             abstract void delete(S arg);
         }
-        
+
         @TypeChecked
         abstract class MyRepository2 extends CrudRepository<String, Long> {
         }
-        
+
         @TypeChecked
         abstract class MyRepository extends MyRepository2 {
         }
-        
+
         @TypeChecked
         class MyRepositoryImpl extends MyRepository {
             @Override
@@ -203,7 +203,7 @@ class Groovy7204Bug extends GroovyTestCase {
                 System.out.println("String");
                 assert true
             }
-            
+
             @Override
             public void delete(Long arg) {
                 System.out.println("Long");
@@ -216,36 +216,36 @@ class Groovy7204Bug extends GroovyTestCase {
     void testTypeChecked5() {
         assertScript '''
         import java.io.Serializable;
-        
+
         import groovy.transform.CompileStatic;
         import groovy.transform.TypeChecked;
-        
+
         @TypeChecked
         public class MyClass {
             static MyRepository factory() {
                 return new MyRepositoryImpl()
             }
-            
+
             static void main(String[] args) {
                 MyRepository r = factory()
                 r.delete('foo')
             }
         }
-        
+
         @TypeChecked
         interface CrudRepository<T, S extends Serializable> {
             void delete(T arg);
             void delete(S arg);
         }
-        
+
         @TypeChecked
         abstract class MyRepository2 implements CrudRepository<String, Long> {
         }
-        
+
         @TypeChecked
         abstract class MyRepository extends MyRepository2 {
         }
-        
+
         @TypeChecked
         class MyRepositoryImpl extends MyRepository {
             @Override
@@ -253,7 +253,7 @@ class Groovy7204Bug extends GroovyTestCase {
                 System.out.println("String");
                 assert true
             }
-            
+
             @Override
             public void delete(Long arg) {
                 System.out.println("Long");
@@ -267,32 +267,32 @@ class Groovy7204Bug extends GroovyTestCase {
     void testCompileStatic1() {
         assertScript '''
         import java.io.Serializable;
-        
+
         import groovy.transform.CompileStatic;
         import groovy.transform.TypeChecked;
-        
+
         @CompileStatic
         public class MyClass {
             static MyRepository factory() {
                 return new MyRepositoryImpl()
             }
-            
+
             static void main(String[] args) {
                 MyRepository r = factory()
                 r.delete('foo')
             }
         }
-        
+
         @CompileStatic
         interface CrudRepository<T, S extends Serializable> {
             void delete(T arg);
             void delete(S arg);
         }
-        
+
         @CompileStatic
         interface MyRepository extends CrudRepository<String, Long> {
         }
-        
+
         @CompileStatic
         class MyRepositoryImpl implements MyRepository {
             @Override
@@ -300,7 +300,7 @@ class Groovy7204Bug extends GroovyTestCase {
                 System.out.println("String");
                 assert true
             }
-            
+
             @Override
             public void delete(Long arg) {
                 System.out.println("Long");
@@ -313,32 +313,32 @@ class Groovy7204Bug extends GroovyTestCase {
     void testCompileStatic2() {
         assertScript '''
         import java.io.Serializable;
-        
+
         import groovy.transform.CompileStatic;
         import groovy.transform.TypeChecked;
-        
+
         @CompileStatic
         public class MyClass {
             static MyRepository factory() {
                 return new MyRepositoryImpl()
             }
-            
+
             static void main(String[] args) {
                 MyRepository r = factory()
                 r.delete('foo')
             }
         }
-        
+
         @CompileStatic
         abstract class CrudRepository<T, S extends Serializable> {
             abstract void delete(T arg);
             abstract void delete(S arg);
         }
-        
+
         @CompileStatic
         abstract class MyRepository extends CrudRepository<String, Long> {
         }
-        
+
         @CompileStatic
         class MyRepositoryImpl extends MyRepository {
             @Override
@@ -346,7 +346,7 @@ class Groovy7204Bug extends GroovyTestCase {
                 System.out.println("String");
                 assert true
             }
-            
+
             @Override
             public void delete(Long arg) {
                 System.out.println("Long");
@@ -359,36 +359,36 @@ class Groovy7204Bug extends GroovyTestCase {
     void testCompileStatic3() {
         assertScript '''
         import java.io.Serializable;
-        
+
         import groovy.transform.CompileStatic;
         import groovy.transform.TypeChecked;
-        
+
         @CompileStatic
         public class MyClass {
             static MyRepository factory() {
                 return new MyRepositoryImpl()
             }
-            
+
             static void main(String[] args) {
                 MyRepository r = factory()
                 r.delete('foo')
             }
         }
-        
+
         @CompileStatic
         interface CrudRepository<T, S extends Serializable> {
             void delete(T arg);
             void delete(S arg);
         }
-        
+
         @CompileStatic
         interface MyRepository2 extends CrudRepository<String, Long> {
         }
-        
+
         @CompileStatic
         interface MyRepository extends MyRepository2 {
         }
-        
+
         @CompileStatic
         class MyRepositoryImpl implements MyRepository {
             @Override
@@ -396,7 +396,7 @@ class Groovy7204Bug extends GroovyTestCase {
                 System.out.println("String");
                 assert true
             }
-            
+
             @Override
             public void delete(Long arg) {
                 System.out.println("Long");
@@ -409,36 +409,36 @@ class Groovy7204Bug extends GroovyTestCase {
     void testCompileStatic4() {
         assertScript '''
         import java.io.Serializable;
-        
+
         import groovy.transform.CompileStatic;
         import groovy.transform.TypeChecked;
-        
+
         @CompileStatic
         public class MyClass {
             static MyRepository factory() {
                 return new MyRepositoryImpl()
             }
-            
+
             static void main(String[] args) {
                 MyRepository r = factory()
                 r.delete('foo')
             }
         }
-        
+
         @CompileStatic
         abstract class CrudRepository<T, S extends Serializable> {
             abstract void delete(T arg);
             abstract void delete(S arg);
         }
-        
+
         @CompileStatic
         abstract class MyRepository2 extends CrudRepository<String, Long> {
         }
-        
+
         @CompileStatic
         abstract class MyRepository extends MyRepository2 {
         }
-        
+
         @CompileStatic
         class MyRepositoryImpl extends MyRepository {
             @Override
@@ -446,7 +446,7 @@ class Groovy7204Bug extends GroovyTestCase {
                 System.out.println("String");
                 assert true
             }
-            
+
             @Override
             public void delete(Long arg) {
                 System.out.println("Long");
@@ -459,36 +459,36 @@ class Groovy7204Bug extends GroovyTestCase {
     void testCompileStatic5() {
         assertScript '''
         import java.io.Serializable;
-        
+
         import groovy.transform.CompileStatic;
         import groovy.transform.TypeChecked;
-        
+
         @CompileStatic
         public class MyClass {
             static MyRepository factory() {
                 return new MyRepositoryImpl()
             }
-            
+
             static void main(String[] args) {
                 MyRepository r = factory()
                 r.delete('foo')
             }
         }
-        
+
         @CompileStatic
         interface CrudRepository<T, S extends Serializable> {
             void delete(T arg);
             void delete(S arg);
         }
-        
+
         @CompileStatic
         abstract class MyRepository2 implements CrudRepository<String, Long> {
         }
-        
+
         @CompileStatic
         abstract class MyRepository extends MyRepository2 {
         }
-        
+
         @CompileStatic
         class MyRepositoryImpl extends MyRepository {
             @Override
@@ -496,7 +496,7 @@ class Groovy7204Bug extends GroovyTestCase {
                 System.out.println("String");
                 assert true
             }
-            
+
             @Override
             public void delete(Long arg) {
                 System.out.println("Long");
@@ -516,13 +516,13 @@ class Groovy7204Bug extends GroovyTestCase {
             void delete(T arg) { assert true }
             void delete(S arg) { assert false: 'wrong method invoked' }
         }
-        
+
         @CompileStatic
         def test() {
             Repository<String, Long> r = new Repository<String, Long>()
             r.delete('foo')
         }
-        
+
         test()
         '''
     }
@@ -531,24 +531,24 @@ class Groovy7204Bug extends GroovyTestCase {
         assertScript '''
         @groovy.transform.CompileStatic
         class Trie<T> {}
-        
+
         @groovy.transform.CompileStatic
         class Base<T> {
             protected List<Trie<T>> list
-            
+
             Base() {
                 list = new ArrayList<Trie<T>>()
                 list.add(new Trie<String>())
             }
         }
-        
+
         @groovy.transform.CompileStatic
         class Derived extends Base<String> {
             Trie<String> getFirstElement() {
                 list.get(0)
             }
         }
-        
+
         assert new Derived().getFirstElement() instanceof Trie
         '''
     }
@@ -557,22 +557,22 @@ class Groovy7204Bug extends GroovyTestCase {
         assertScript '''
         @groovy.transform.CompileStatic
         class Trie<T> {}
-        
+
         @groovy.transform.CompileStatic
         class Base<T> extends ArrayList<Trie<T>> {
-            
+
             Base() {
                 this.add(new Trie<String>())
             }
         }
-        
+
         @groovy.transform.CompileStatic
         class Derived extends Base<String> {
             Trie<String> getFirstElement() {
                 this.get(0)
             }
         }
-        
+
         assert new Derived().getFirstElement() instanceof Trie
         '''
     }

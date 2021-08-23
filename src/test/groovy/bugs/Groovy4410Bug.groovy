@@ -24,10 +24,10 @@ class Groovy4410Bug extends GroovyTestCase {
     void testBridgeMethodWithArrayTypeParameterV1() {
         StringProducer1 sp = new StringProducer1()
         assert sp.gimme(null) == 'Hello World'
-        
+
         G4410JavaStringProducer jsp = new G4410JavaStringProducer()
         assert jsp.gimme(null) == 'Hello World'
-        
+
         HackProducer1 hp = new HackProducer1()
         assert hp.gimme(null) == 'Hello World'
     }
@@ -35,7 +35,7 @@ class Groovy4410Bug extends GroovyTestCase {
     void testBridgeMethodWithArrayTypeParameterV2() {
         StringProducer2 sp = new StringProducer2()
         assert sp.gimme(null) == 'Hello World'
-        
+
         HackProducer2 hp = new HackProducer2()
         assert hp.gimme(null) == 'Hello World'
     }

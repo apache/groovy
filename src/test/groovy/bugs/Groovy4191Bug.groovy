@@ -22,8 +22,8 @@ import groovy.test.GroovyTestCase
 
 class Groovy4191Bug extends GroovyTestCase {
     void testPutIntoArray() {
-        recreateProblem()    
-        recreateProblem()    
+        recreateProblem()
+        recreateProblem()
     }
 
     def recreateProblem() {

@@ -31,14 +31,14 @@ class ShadowCommand extends ComplexCommandSupport {
 
     ShadowCommand(final Groovysh shell) {
         super(shell, COMMAND_NAME, ':&', [ 'debug', 'verbose', 'info', 'this' ])
-        
+
         this.hidden = true
     }
-    
+
     def do_debug = {
         Preferences.verbosity = IO.Verbosity.DEBUG
     }
-    
+
     def do_verbose = {
         Preferences.verbosity = IO.Verbosity.VERBOSE
     }

@@ -28,7 +28,6 @@ public class LongCachedClass extends NumberCachedClass {
         this.allowNull = allowNull;
     }
 
-
     @Override
     public Object coerceArgument(Object argument) {
         if (argument instanceof Long) {

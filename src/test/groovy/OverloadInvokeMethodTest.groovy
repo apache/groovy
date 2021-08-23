@@ -21,7 +21,7 @@ package groovy
 import groovy.test.GroovyTestCase
 
 class OverloadInvokeMethodTest extends GroovyTestCase {
-    
+
     void testBug() {
         def value = foo(123)
         assert value == 246
@@ -44,7 +44,7 @@ class OverloadInvokeMethodTest extends GroovyTestCase {
             }
         }
     }
-    
+
     def bar(param) {
         return param * 2
     }

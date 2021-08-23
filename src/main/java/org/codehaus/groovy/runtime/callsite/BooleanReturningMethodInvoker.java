@@ -34,15 +34,15 @@ import org.apache.groovy.internal.util.UncheckedThrow;
  */
 public class BooleanReturningMethodInvoker {
     private final CallSiteArray csa;
-    
+
     public BooleanReturningMethodInvoker() {
         this(null);
     }
-    
+
     public BooleanReturningMethodInvoker(String methodName) {
         csa = new CallSiteArray(BooleanReturningMethodInvoker.class, new String[]{methodName, "asBoolean"});
     }
-    
+
     public boolean invoke(Object receiver, Object... args) {
         try {
             // make cached call for given method
@@ -54,7 +54,7 @@ public class BooleanReturningMethodInvoker {
             return false;
         }
     }
-    
+
     public boolean convertToBoolean(Object arg) {
         // handle conversion to boolean
         if (arg == null) return false;

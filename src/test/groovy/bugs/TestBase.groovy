@@ -26,15 +26,15 @@ package groovy.bugs
  class TestBase {
 
      String foo
-     
+
      TestBase() {
      }
-     
+
      TestBase(String aFoo) {
          this.foo = aFoo
      }
      /** @todo fix bug */
-     
+
      def doSomething() {
          "TestBase"
      }

@@ -50,5 +50,5 @@ public interface Writable {
      * @throws IOException if an error occurred while outputting data to the writer
      */
     Writer writeTo(Writer out) throws IOException;
-        
+
 }

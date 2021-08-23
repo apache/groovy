@@ -59,7 +59,7 @@ class WithSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
 
-            assert Test.a( 'Daniel' ) == 6 
+            assert Test.a( 'Daniel' ) == 6
         '''
     }
 

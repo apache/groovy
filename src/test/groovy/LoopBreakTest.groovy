@@ -33,7 +33,7 @@ class LoopBreakTest extends GroovyTestCase {
             assert x < 10 , "Should never get here"
         }
     }
-    
+
     /**
 
       We currently do not support do ... while in the JSR syntax

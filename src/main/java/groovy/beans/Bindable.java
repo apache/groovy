@@ -43,7 +43,7 @@ import java.lang.annotation.Target;
  * block is wrapped with the needed code to fire off the event.
  * <p>
  * The following example shows how you can use this annotation on fields
- * of a class: 
+ * of a class:
  * <pre>
  * class Person {
  *    &#064;groovy.beans.Bindable
@@ -53,52 +53,52 @@ import java.lang.annotation.Target;
  *    def zipCode
  * }
  * </pre>
- * The above example will generate code that is similar to the next snippet. 
- * Notice the difference between a String property and a def/Object property: 
+ * The above example will generate code that is similar to the next snippet.
+ * Notice the difference between a String property and a def/Object property:
  * <pre>
- * public class Person { 
+ * public class Person {
  *     &#064;groovy.beans.Bindable
- *     private java.lang.String firstName 
+ *     private java.lang.String firstName
  *     &#064;groovy.beans.Bindable
- *     private java.lang.Object zipCode 
- *     final private java.beans.PropertyChangeSupport this$propertyChangeSupport 
- * 
+ *     private java.lang.Object zipCode
+ *     final private java.beans.PropertyChangeSupport this$propertyChangeSupport
+ *
  *     public Person() {
  *         this$propertyChangeSupport = new java.beans.PropertyChangeSupport(this)
  *     }
- * 
+ *
  *     public void addPropertyChangeListener(java.beans.PropertyChangeListener listener) {
  *         this$propertyChangeSupport.addPropertyChangeListener(listener)
  *     }
- * 
+ *
  *     public void addPropertyChangeListener(java.lang.String name, java.beans.PropertyChangeListener listener) {
  *         this$propertyChangeSupport.addPropertyChangeListener(name, listener)
  *     }
- * 
+ *
  *     public void removePropertyChangeListener(java.beans.PropertyChangeListener listener) {
  *         this$propertyChangeSupport.removePropertyChangeListener(listener)
  *     }
- * 
+ *
  *     public void removePropertyChangeListener(java.lang.String name, java.beans.PropertyChangeListener listener) {
  *         this$propertyChangeSupport.removePropertyChangeListener(name, listener)
  *     }
- * 
+ *
  *     public void firePropertyChange(java.lang.String name, java.lang.Object oldValue, java.lang.Object newValue) {
  *         this$propertyChangeSupport.firePropertyChange(name, oldValue, newValue)
  *     }
- * 
+ *
  *     public java.beans.PropertyChangeListener[] getPropertyChangeListeners() {
  *         return this$propertyChangeSupport.getPropertyChangeListeners()
  *     }
- * 
+ *
  *     public java.beans.PropertyChangeListener[] getPropertyChangeListeners(java.lang.String name) {
  *         return this$propertyChangeSupport.getPropertyChangeListeners(name)
  *     }
- * 
+ *
  *     public void setFirstName(java.lang.String value) {
  *         this.firePropertyChange('firstName', firstName, firstName = value )
  *     }
- * 
+ *
  *     public void setZipCode(java.lang.Object value) {
  *         this.firePropertyChange('zipCode', zipCode, zipCode = value )
  *     }

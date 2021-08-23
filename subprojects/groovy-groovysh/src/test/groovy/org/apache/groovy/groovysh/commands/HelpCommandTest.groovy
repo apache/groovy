@@ -25,11 +25,11 @@ class HelpCommandTest extends CommandTestSupport {
     void testList() {
         shell.execute(HelpCommand.COMMAND_NAME)
     }
-    
+
     void testCommandHelp() {
         shell.execute(HelpCommand.COMMAND_NAME + ' exit')
     }
-    
+
     void testCommandHelpInvalidCommand() {
         shell.execute(HelpCommand.COMMAND_NAME + ' no-such-command')
     }

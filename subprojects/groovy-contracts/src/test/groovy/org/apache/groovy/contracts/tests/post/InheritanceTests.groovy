@@ -119,7 +119,7 @@ class Descendant extends Parent {
   def Integer some_operation6() {
     return 0
   }
-  
+
   @Ensures({ true })
   def Integer some_operation7() {
     return 0

@@ -29,7 +29,7 @@ class InterceptionThroughMetaClassTest extends GroovyTestCase {
         invoking.metaClass.invokeMethod = { String name, Object args ->
             'invoked'
         }
-        
+
         assert invoking.length() == 'invoked'
         assert invoking.someMethod() == 'invoked'
     }
@@ -39,7 +39,7 @@ class InterceptionThroughMetaClassTest extends GroovyTestCase {
         entity.metaClass.invokeMethod = { String name, Object args ->
             'invoked'
         }
-        
+
         assert entity.build(new Object()) == 'invoked'
         assert entity.someMethod() == 'invoked'
     }

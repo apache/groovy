@@ -624,7 +624,7 @@ class AstBuilderFromSpecificationTest extends GroovyTestCase {
         // [foo: 'bar', baz: 'buz']
         def result = new AstBuilder().buildFromSpec {
             map {
-                mapEntry 'foo': 'bar'       // NOTE: this really only works for constants. 
+                mapEntry 'foo': 'bar'       // NOTE: this really only works for constants.
                 mapEntry 'baz': 'buz'
                 mapEntry 'qux': 'quux', 'corge': 'grault'
             }
@@ -737,7 +737,7 @@ class AstBuilderFromSpecificationTest extends GroovyTestCase {
     void testPropertyExpression() {
         // foo.bar
         def result = new AstBuilder().buildFromSpec {
-            property {                  // this name conflicts with PropertyNode. 
+            property {                  // this name conflicts with PropertyNode.
                 variable "foo"
                 constant "bar"
             }
@@ -1433,7 +1433,7 @@ class AstBuilderFromSpecificationTest extends GroovyTestCase {
             'some result'
           }
          */
-        // vararg methods are just array methods. 
+        // vararg methods are just array methods.
         def result = new AstBuilder().buildFromSpec {
             method('myMethod', ACC_PUBLIC, String) {
                 parameters {
@@ -1508,7 +1508,7 @@ class AstBuilderFromSpecificationTest extends GroovyTestCase {
     }
 
     void testAnnotatedNode() {
-        // this class is never instantiated. It is used as an abstract class but not marked as such. 
+        // this class is never instantiated. It is used as an abstract class but not marked as such.
     }
 
     void testConstructorNode() {
@@ -1557,7 +1557,7 @@ class AstBuilderFromSpecificationTest extends GroovyTestCase {
                 mixins {}
                 genericsTypes {
                     genericsType Object
-                    genericsType Number, {      
+                    genericsType Number, {
                         upperBound {
                             classNode Number
                         }
@@ -1828,7 +1828,7 @@ class AstBuilderFromSpecificationTest extends GroovyTestCase {
     }
 
     void testModuleNode() {
-        // todo: what source code creates a ModuleNode? ModuleNode has a ton of setters that aren't currently being tested. Should this even be part of the DSL? 
+        // todo: what source code creates a ModuleNode? ModuleNode has a ton of setters that aren't currently being tested. Should this even be part of the DSL?
     }
 
     void testPropertyNode() {

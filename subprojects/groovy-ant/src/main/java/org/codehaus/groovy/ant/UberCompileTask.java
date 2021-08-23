@@ -80,7 +80,7 @@ public class UberCompileTask extends Task {
 
     public void setClasspath(final Path path) {
         assert path != null;
-        
+
         if (classpath == null) {
             classpath = path;
         }
@@ -144,13 +144,13 @@ public class UberCompileTask extends Task {
             throw new BuildException("Destination directory does not exist: " + destdir, getLocation());
         }
     }
-    
+
     @Override
     public void execute() throws BuildException {
         validate();
 
         FileSet fileset;
-        
+
         GenStubsAdapter genstubs = createGeneratestubs();
         genstubs.classpath = classpath;
         genstubs.src = src;
@@ -163,7 +163,7 @@ public class UberCompileTask extends Task {
             genstubs.createInclude().setName("**/*.java");
             genstubs.createInclude().setName("**/*.groovy");
         }
-                
+
         JavacAdapter javac = createJavac();
         javac.setSrcdir(src);
         javac.setDestdir(destdir);
@@ -186,7 +186,7 @@ public class UberCompileTask extends Task {
         // HACK: For now force all classes to compile, so we pick up stub changes
         //
         groovyc.force = true;
-        
+
         fileset = groovyc.getFileSet();
         if (!fileset.hasPatterns()) {
             groovyc.createInclude().setName("**/*.groovy");
@@ -210,7 +210,7 @@ public class UberCompileTask extends Task {
     //
     // Nested task adapters
     //
-    
+
     private class GenStubsAdapter extends GenerateStubsTask {
         public FileSet getFileSet() {
             return super.getImplicitFileSet();

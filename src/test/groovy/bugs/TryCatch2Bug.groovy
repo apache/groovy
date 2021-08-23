@@ -21,11 +21,11 @@ package groovy.bugs
 import groovy.test.GroovyTestCase
 
 class TryCatch2Bug extends GroovyTestCase {
-    
+
     void testBug() {
         try {
         }
-        catch (Throwable t) { 
-        } 
+        catch (Throwable t) {
+        }
     }
 }

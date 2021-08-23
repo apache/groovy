@@ -23,7 +23,7 @@ package org.codehaus.groovy.ast.expr;
  * Provides a way to transform expressions
  */
 public interface ExpressionTransformer {
-    
+
     /** 
      * Transforms the given expression into another expression
      */

@@ -41,7 +41,7 @@ public class ExpressionAsVariableSlot extends BytecodeExpression {
         this.controller = controller;
         this.name = name;
     }
-    
+
     public ExpressionAsVariableSlot(WriterController controller, Expression expression) {
         this(controller, expression, "ExpressionAsVariableSlot_TEMP");
     }

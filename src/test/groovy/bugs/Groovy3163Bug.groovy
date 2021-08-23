@@ -26,9 +26,9 @@ void testSuperOverStatic() {
     def siws = new Groovy3163SomeImplementorWithStatic()
 
     assert (1 == siws.build(1)[0])
-    
+
     def c = { -> 'foo ' }
-    
+
 //    def s = c as Script
 //    assert s.is(siws.build(s)[0])
 

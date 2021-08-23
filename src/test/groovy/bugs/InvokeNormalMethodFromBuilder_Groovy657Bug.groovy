@@ -52,5 +52,5 @@ class Builder extends BuilderSupport {
 
     String callNormalMethod()               { return "first" }
     String callOtherStaticallyTypedMethod() { return "second" }
-    
+
 }

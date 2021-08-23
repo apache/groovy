@@ -21,7 +21,7 @@ package groovy.bugs
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
- 
+
 final class Groovy3422 {
     @Test
     void testStaticClosureProperty() {

@@ -28,4 +28,4 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.TYPE})
 @GroovyASTTransformationClass({"groovy.bugs.MyConstantsASTTransformation4272"})
-public @interface MyConstants4272 {} 
+public @interface MyConstants4272 {}

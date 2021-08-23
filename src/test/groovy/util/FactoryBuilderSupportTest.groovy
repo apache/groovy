@@ -866,7 +866,7 @@ class SpoofFactoryBuilder extends FactoryBuilderSupport{
        registerFactory( "outer", factory )
        registerFactory( "inner", factory )
     }
-    
+
     protected Object postNodeCompletion(Object parent, Object node) {
         log << 'post_node_completion'
         log << parent

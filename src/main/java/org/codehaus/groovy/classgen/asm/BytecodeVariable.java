@@ -26,7 +26,7 @@ import org.objectweb.asm.Label;
  * Represents compile time variable metadata while compiling a method.
  */
 public class BytecodeVariable {
-    
+
     public static final BytecodeVariable THIS_VARIABLE = new BytecodeVariable();
     public static final BytecodeVariable SUPER_VARIABLE = new BytecodeVariable();
 
@@ -48,7 +48,7 @@ public class BytecodeVariable {
         holder=false;
         prevCurrent=0;
     }
-    
+
     public BytecodeVariable(int index, ClassNode type, String name, int prevCurrent) {
         this.index = index;
         this.type = type;
@@ -63,7 +63,7 @@ public class BytecodeVariable {
     public ClassNode getType() {
         return type;
     }
- 
+
     /**
      * @return the stack index for this variable
      */
@@ -81,7 +81,7 @@ public class BytecodeVariable {
     public void setHolder(boolean holder) {
         this.holder = holder;
     }
-    
+
     public Label getStartLabel() {
         return startLabel;
     }
@@ -111,7 +111,7 @@ public class BytecodeVariable {
     public void setDynamicTyped(boolean b) {
         dynamicTyped = b;
     }
-    
+
     public boolean isDynamicTyped() {
         return dynamicTyped;
     }

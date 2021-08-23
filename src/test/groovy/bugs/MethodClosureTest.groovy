@@ -26,7 +26,7 @@ class MethodClosureTest extends GroovyTestCase {
     def aa(x) {
         x
     }
-    
+
     static bb(it) { it}
 
     void testMethodClosure() {
@@ -47,7 +47,7 @@ class MethodClosureTest extends GroovyTestCase {
         assert [c1, c2].collect(cl) == [c1,c2]
 
     }
-    
+
     void testStaticMethodAccess() {
        def list = [1].collect (this.&bb)
        assert list == [1]

@@ -962,7 +962,7 @@ class ASTMatcherTest extends GroovyTestCase {
         import org.codehaus.groovy.ast.builder.AstAssert
         import org.codehaus.groovy.macro.matcher.ASTMatcher
         import org.codehaus.groovy.macro.transform.MacroClass
-        
+
         use(ASTMatcher) {
             def ast1 = macro { a + b }
             def ast2 = macro { a - b }

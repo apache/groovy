@@ -37,7 +37,7 @@ public final class Logger {
         assert name != null;
         this.name = name;
     }
-    
+
     private void log(final String level, Object msg, Throwable cause) {
         assert level != null;
         assert msg != null;
@@ -86,7 +86,7 @@ public final class Logger {
     //
     // Level helpers
     //
-    
+
     private static final String DEBUG = "DEBUG";
 
     public boolean isDebugEnabled() {
@@ -96,13 +96,13 @@ public final class Logger {
     public boolean isDebug() {
         return isDebugEnabled();
     }
-    
+
     public void debug(final Object msg) {
         if (isDebugEnabled()) {
             log(DEBUG, msg, null);
         }
     }
-    
+
     public void debug(final Object msg, final Throwable cause) {
         if (isDebugEnabled()) {
             log(DEBUG, msg, cause);
@@ -118,7 +118,7 @@ public final class Logger {
     public void warn(final Object msg, final Throwable cause) {
         log(WARN, msg, cause);
     }
-    
+
     private static final String ERROR = "ERROR";
 
     public void error(final Object msg) {
@@ -132,7 +132,7 @@ public final class Logger {
     //
     // Factory access
     //
-    
+
     public static Logger create(final Class type) {
         return new Logger(type.getName());
     }

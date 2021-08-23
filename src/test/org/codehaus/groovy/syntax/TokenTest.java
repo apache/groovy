@@ -765,6 +765,6 @@ public class TokenTest
         assertEquals( COLUMN,
                       token.getStartColumn() );
     }
-    
+
 */
 }

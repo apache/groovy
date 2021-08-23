@@ -107,7 +107,7 @@ public class BinaryLongExpressionHelper extends BinaryExpressionWriter {
         LSHR,           // RIGHT_SHIFT              281
         LUSHR           // RIGHT_SHIFT_UNSIGNED     282
     };
-    
+
     @Override
     protected int getShiftOperationBytecode(int type) {
         return shiftOp[type];
@@ -121,7 +121,7 @@ public class BinaryLongExpressionHelper extends BinaryExpressionWriter {
         LDIV,           //  INTDIV      204
         LREM,           //  MOD         203
     };
-    
+
     @Override
     protected int getStandardOperationBytecode(int type) {
         return stdOperations[type];

@@ -81,7 +81,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX
  * package your annotation in a jar file.
  *
  * @since 1.8.0
- * 
  */
 @CompileStatic
 class ASTTransformationCustomizer extends CompilationCustomizer implements CompilationUnitAware {

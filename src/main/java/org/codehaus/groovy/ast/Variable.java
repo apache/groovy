@@ -25,33 +25,33 @@ import org.codehaus.groovy.ast.expr.Expression;
  * VariableExpression, FieldNode, PropertyNode and Parameter
  */
 public interface Variable {
-    
+
     /**
      * the type of the variable
      */
     ClassNode getType();
-    
+
     /**
      * the type before wrapping primitives type of the variable
      */
     ClassNode getOriginType();
-    
+
     /**
      * the name of the variable
      */
     String getName();
-    
+
     /**
      * expression used to initialize the variable or null of there
      * is no initialization.
      */
     Expression getInitialExpression();
-    
+
     /**
      * returns true if there is an initialization expression
      */
     boolean hasInitialExpression();
-    
+
     /**
      * returns true if this variable is used in a static context.
      * A static context is any static initializer block, when this variable

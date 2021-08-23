@@ -36,7 +36,7 @@ public class ManagedConcurrentValueMap<K,V> {
         this.bundle = bundle;
         internalMap = new ConcurrentHashMap<K, ManagedReference<V>>();
     }
-    
+
     /**
      * Sets a new bundle used for reference creation. Be warned that
      * older entries will not be changed by this
@@ -72,5 +72,5 @@ public class ManagedConcurrentValueMap<K,V> {
         };
         internalMap.put(key, ref);
     }
-    
+
 }

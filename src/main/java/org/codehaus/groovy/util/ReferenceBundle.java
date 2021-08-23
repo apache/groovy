@@ -33,7 +33,7 @@ public class ReferenceBundle{
     public ReferenceManager getManager() {
         return manager;
     }      
-    
+
     private static final ReferenceBundle softReferences, weakReferences, hardReferences, phantomReferences;
     static {
         ReferenceQueue queue = new ReferenceQueue();

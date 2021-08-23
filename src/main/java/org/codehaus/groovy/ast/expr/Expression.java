@@ -32,7 +32,7 @@ import java.util.List;
 public abstract class Expression extends AnnotatedNode {
     public static final Expression[] EMPTY_ARRAY = new Expression[0];
     private ClassNode type=ClassHelper.DYNAMIC_TYPE;
-    
+
     /**
      * Return a copy of the expression calling the transformer on any nested expressions 
      * @param transformer
@@ -68,11 +68,11 @@ public abstract class Expression extends AnnotatedNode {
         }
         return list;
     }
-    
+
     public ClassNode getType() {
         return type;
     }
-    
+
     public void setType(ClassNode t) {
         type=t;
     }

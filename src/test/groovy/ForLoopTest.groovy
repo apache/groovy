@@ -28,7 +28,7 @@ class ForLoopTest extends gls.CompilableTestSupport {
         // only 'final' should be allowed: other modifiers like 'synchronized' should be forbidden
         shouldNotCompile """
             def collection = ["a", "b", "c", "d", "e"]
-            for (synchronized String letter in collection) { }            
+            for (synchronized String letter in collection) { }
         """
 
         // only 'final' allowed, and no additional modifier

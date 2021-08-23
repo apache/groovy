@@ -23,7 +23,7 @@ import groovy.test.GroovyTestCase
 /**
  */
 class GetterBug extends GroovyTestCase {
-     
+
     String foo
     def bar
 
@@ -33,45 +33,45 @@ class GetterBug extends GroovyTestCase {
         }
         return foo
     }
-    
+
     void setFoo(String foo) {
         this.foo = foo
        }
-    
+
     void testTypedGetterAndSetter() {
         def value = getFoo()
-        
+
         assert value == "James"
-        
+
         setFoo("Bob")
-        
+
         value = getFoo()
-        
+
         assert value == "Bob"
     }
-    
+
     def getBar() {
         if (this.bar == null) {
             this.bar = "James"
         }
         bar
     }
-    
+
     void setBar(bar) {
         this.bar = bar
     }
-    
-    
+
+
     void testUntypedGetterAndSetter() {
         def value = getBar()
-        
+
         assert value == "James"
-        
+
         setBar("Bob")
-        
+
         value = getBar()
-        
+
         assert value == "Bob"
     }
-    
+
 }

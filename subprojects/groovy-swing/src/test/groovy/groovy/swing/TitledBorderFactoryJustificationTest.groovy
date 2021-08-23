@@ -50,10 +50,10 @@ class TitledBorderFactoryJustificationTest extends GroovySwingTestCase {
         testInEDT {
             def swing = new SwingBuilder()
                 swing.frame{
-    
+
                 def tbf = new TitledBorderFactory()
                 TitledBorder titledBorder = tbf.newInstance(swing, "TestBorder", "", [justification:justificationString])
-    
+
                 assert justification == titledBorder.titleJustification:"justification should be -> ($justificationString)"
             }
         }

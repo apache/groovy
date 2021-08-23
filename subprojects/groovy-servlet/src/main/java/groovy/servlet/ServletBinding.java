@@ -95,10 +95,10 @@ import java.util.Map;
  * </ul>
  */
 public class ServletBinding extends Binding {
-    
+
     /**
      * A OutputStream dummy that will throw a GroovyBugError for any
-     * write method call to it. 
+     * write method call to it.
      */
     private static class InvalidOutputStream extends OutputStream {
         /**
@@ -113,16 +113,16 @@ public class ServletBinding extends Binding {
     /**
      * A class to manage the response output stream and writer.
      * If the stream have been 'used', then using the writer will cause
-     * a IllegalStateException. If the writer have been 'used', then 
+     * a IllegalStateException. If the writer have been 'used', then
      * using the stream will cause a IllegalStateException. 'used' means
      * any write method has been called. Simply requesting the objects will
-     * not cause an exception. 
+     * not cause an exception.
      */
     private static class ServletOutput {
         private final HttpServletResponse response;
         private ServletOutputStream outputStream;
         private PrintWriter writer;
-        
+
         public ServletOutput(HttpServletResponse response) {
             this.response = response;
         }
@@ -230,9 +230,9 @@ public class ServletBinding extends Binding {
                     return this;
                 }
             };
-        }        
-    }    
-    
+        }
+    }
+
     private boolean initialized;
 
     /**
@@ -349,11 +349,11 @@ public class ServletBinding extends Binding {
         // bind forward method
         MethodClosure c = new MethodClosure(this, "forward");
         super.setVariable("forward", c);
-        
+
         // bind include method
         c = new MethodClosure(this, "include");
         super.setVariable("include", c);
-        
+
         // bind redirect method
         c = new MethodClosure(this, "redirect");
         super.setVariable("redirect", c);
@@ -378,14 +378,14 @@ public class ServletBinding extends Binding {
             throw new IllegalArgumentException("Can't bind variable to key named '" + name + "'.");
         }
     }
-    
+
     public void forward(String path) throws ServletException, IOException {
         HttpServletRequest request = (HttpServletRequest) super.getVariable("request");
         HttpServletResponse response = (HttpServletResponse) super.getVariable("response");
         RequestDispatcher dispatcher = request.getRequestDispatcher(path);
         dispatcher.forward(request, response);
-    } 
-    
+    }
+
     public void include(String path) throws ServletException, IOException {
         HttpServletRequest request = (HttpServletRequest) super.getVariable("request");
         HttpServletResponse response = (HttpServletResponse) super.getVariable("response");
@@ -396,5 +396,5 @@ public class ServletBinding extends Binding {
     public void redirect(String location) throws IOException {
         HttpServletResponse response = (HttpServletResponse) super.getVariable("response");
         response.sendRedirect(location);
-    }    
+    }
 }

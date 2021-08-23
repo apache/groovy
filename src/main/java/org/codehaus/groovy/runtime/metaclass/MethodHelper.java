@@ -25,7 +25,7 @@ import java.lang.reflect.Modifier;
  * Some reflection helper methods
  */
 public class MethodHelper {
- 
+
     public static boolean isStatic(Method method) {
         int flags = Modifier.STATIC;
         return (method.getModifiers() & (flags)) == flags;

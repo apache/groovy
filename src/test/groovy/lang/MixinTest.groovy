@@ -350,9 +350,9 @@ class MixinTest extends GroovyTestCase {
                     return "Bar " + code() 
                 }
             }
-            
+
             class Groovy3474B extends Groovy3474A {}
-            
+
             class Groovy3474C {}
             Groovy3474C.metaClass { mixin Groovy3474B }
             def c = new Groovy3474C()

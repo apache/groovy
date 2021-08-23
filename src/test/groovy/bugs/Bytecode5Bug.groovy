@@ -29,7 +29,7 @@ class Bytecode5Bug extends GroovyTestCase {
         getCollection().each { c += it }       
         assert c == 10
     }
-    
+
     def getCollection() {
         [1, 2, 3, 4]
     }

@@ -24,14 +24,14 @@ package org.codehaus.groovy.runtime.typehandling;
 public final class FloatingPointMath extends NumberMath {
 
     public static final FloatingPointMath INSTANCE = new FloatingPointMath();
-    
+
     private FloatingPointMath() {}
-                
+
     @Override
     protected Number absImpl(Number number) {
         return Math.abs(number.doubleValue());
     }
-    
+
     @Override
     public Number addImpl(Number left, Number right) {
         return left.doubleValue() + right.doubleValue();
@@ -56,12 +56,12 @@ public final class FloatingPointMath extends NumberMath {
     public int compareToImpl(Number left, Number right) {
         return Double.compare(left.doubleValue(), right.doubleValue());
     }
-    
+
     @Override
     protected Number modImpl(Number left, Number right) {
         return left.doubleValue() % right.doubleValue();
     }
-    
+
     @Override
     protected Number unaryMinusImpl(Number left) {
         return -left.doubleValue();

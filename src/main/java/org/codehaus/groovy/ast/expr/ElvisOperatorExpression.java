@@ -48,7 +48,7 @@ public class ElvisOperatorExpression extends TernaryExpression {
     public ElvisOperatorExpression(Expression base, Expression falseExpression) {
         super(getBool(base), base, falseExpression);
     }
-    
+
     private static BooleanExpression getBool(Expression base) {
        BooleanExpression be = new BooleanExpression(base);
        be.setSourcePosition(base);
@@ -59,7 +59,7 @@ public class ElvisOperatorExpression extends TernaryExpression {
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitShortTernaryExpression(this);
     }
-    
+
     @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new ElvisOperatorExpression(

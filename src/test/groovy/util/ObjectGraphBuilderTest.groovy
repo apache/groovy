@@ -259,7 +259,7 @@ class ObjectGraphBuilderTest extends GroovyTestCase {
             address( refId: 'a1' )
          }
       }
-      
+
       assert actualCompany != null
       assert actualCompany.name == expectedCompany.name
       def actualAddress = actualCompany.addr

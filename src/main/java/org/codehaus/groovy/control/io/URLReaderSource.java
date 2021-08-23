@@ -34,7 +34,7 @@ import java.net.URL;
  */
 public class URLReaderSource extends AbstractReaderSource {
     private final URL url;  // The URL from which we produce Readers.
-    
+
    /**
     *  Creates the ReaderSource from a File descriptor.
     * @param url url pointing to script source
@@ -46,7 +46,7 @@ public class URLReaderSource extends AbstractReaderSource {
     }
 
    /**
-    *  Returns a new Reader on the underlying source object.  
+    *  Returns a new Reader on the underlying source object.
     */
     @Override
     public Reader getReader() throws IOException {

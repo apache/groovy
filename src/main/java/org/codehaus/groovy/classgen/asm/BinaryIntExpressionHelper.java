@@ -51,7 +51,7 @@ import static org.objectweb.asm.Opcodes.IXOR;
 import static org.objectweb.asm.Opcodes.POP2;
 
 public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
-    
+
     private static final MethodCaller intArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "intArrayGet");
     private static final MethodCaller intArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "intArraySet");
 
@@ -65,7 +65,7 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
         IF_ICMPLE,      // COMPARE_GREATER_THAN         126
         IF_ICMPLT,      // COMPARE_GREATER_THAN_EQUAL   127
     };
-    
+
     private static final int[] stdOperations = {
         IADD,           //  PLUS        200
         ISUB,           //  MINUS       201
@@ -74,13 +74,13 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
         IDIV,           //  INTDIV      204
         IREM,           //  MOD         203
     };
-    
+
     private static final int[] bitOp = {
         IOR,            //  BITWISE_OR / PIPE   340
         IAND,           //  BITWISE_AND         341
         IXOR,           //  BIWISE_XOR          342
     };    
-    
+
     /* unhandled types from from org.codehaus.groovy.syntax.Types
     public static final int LOGICAL_OR                  = 162;   // ||
     public static final int LOGICAL_AND                 = 164;   // &&
@@ -88,7 +88,7 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
     public static final int DIVIDE                      = 203;   // /
     public static final int STAR_STAR                   = 206;   // **
     public static final int POWER                       = STAR_STAR;   //
-    
+
     public static final int PLUS_EQUAL                  = 210;   // +=
     public static final int MINUS_EQUAL                 = 211;   // -=
     public static final int MULTIPLY_EQUAL              = 212;   // *=
@@ -123,7 +123,7 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
     public static final int BITWISE_XOR_EQUAL           = 352;   // ^=
     public static final int BITWISE_NEGATION            = REGEX_PATTERN;    // ~
     */
-    
+
     public BinaryIntExpressionHelper(WriterController wc) {
         this(wc, intArraySet, intArrayGet);
     }
@@ -135,7 +135,7 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
         super(wc, arraySet, arrayGet);
     }
 
-    
+
     /**
      * writes a std compare. This involves the tokens IF_ICMPEQ, IF_ICMPNE, 
      * IF_ICMPEQ, IF_ICMPNE, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE and IF_ICMPLT
@@ -165,7 +165,7 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
         }
         return true;
     }
-    
+
     /**
      * writes the spaceship operator, type should be COMPARE_TO
      * @param type the token type
@@ -176,11 +176,11 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
         if (type != COMPARE_TO) return false;
         /*  
            we will actually do
-         
+
           (x < y) ? -1 : ((x == y) ? 0 : 1)
           which is the essence of what the call with Integers would do
           this compiles to something along
-          
+
               <x>
               <y>
               IF_ICMPGE L1
@@ -195,11 +195,11 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
           L3
               ICONST_1
           L2
-          
+
           since the operators are already on the stack and we don't want
           to load them again, we will instead duplicate them. This will
           require some pop actions in the branches!
-          
+
               DUP2          (operands: IIII) 
               IF_ICMPGE L1  (operands: II)
               ICONST_M1     (operands: III)
@@ -215,15 +215,15 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
           L2  
           - if jump from GOTO L2 we have III, but need only I
           - if from L3 branch we get only I
-          
+
           this means we have to pop of II before loading -1
-          
+
         */
         if (!simulate) {
             MethodVisitor mv = getController().getMethodVisitor();
             // duplicate int arguments
             mv.visitInsn(DUP2);
-            
+
             Label l1 = new Label();
             mv.visitJumpInsn(IF_ICMPGE,l1);
             // no jump, so -1, need to pop off surplus II
@@ -231,13 +231,13 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
             mv.visitInsn(ICONST_M1);
             Label l2 = new Label();
             mv.visitJumpInsn(GOTO, l2);
-            
+
             mv.visitLabel(l1);
             Label l3 = new Label();
             mv.visitJumpInsn(IF_ICMPNE,l3);
             mv.visitInsn(ICONST_0);
             mv.visitJumpInsn(GOTO,l2);
-            
+
             mv.visitLabel(l3);
             mv.visitInsn(ICONST_1);
 

@@ -27,7 +27,7 @@ public class NamedArgumentListExpression extends MapExpression {
 
     public NamedArgumentListExpression() {
     }
-    
+
     public NamedArgumentListExpression(List<MapEntryExpression> mapEntryExpressions) {
         super(mapEntryExpressions);
     }
@@ -40,5 +40,5 @@ public class NamedArgumentListExpression extends MapExpression {
         ret.copyNodeMetaData(this);
         return ret;        
     }
-    
+
 }

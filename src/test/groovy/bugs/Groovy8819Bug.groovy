@@ -31,7 +31,7 @@ class Groovy8819Bug extends GroovyTestCase {
                 Child() { this(DEFAULT) }
                 Child(String value) { this.value = value }
             }
-            
+
             assert 'default' == new Child().value
         '''
     }
@@ -44,14 +44,14 @@ class Groovy8819Bug extends GroovyTestCase {
             class Parent { 
                 static final String DEFAULT = 'default' 
             }
-            
+
             @CompileStatic
             class Child extends Parent {
                 String value
                 Child() { this(DEFAULT) }
                 Child(String value) { this.value = value }
             }
-            
+
             assert 'default' == new Child().value
         '''
     }

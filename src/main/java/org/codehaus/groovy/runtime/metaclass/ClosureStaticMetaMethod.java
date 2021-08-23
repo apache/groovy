@@ -54,7 +54,7 @@ public class ClosureStaticMetaMethod extends MetaMethod implements ClosureInvoki
         this.declaringClass = ReflectionCache.getCachedClass(declaringClass);
         this.name = name;
     }
-    
+
     @Override
     public Object invoke(Object object, Object[] arguments) {
         Closure cloned = (Closure) callable.clone();

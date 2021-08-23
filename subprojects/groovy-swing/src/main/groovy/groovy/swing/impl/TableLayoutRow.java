@@ -22,7 +22,7 @@ import java.awt.GridBagConstraints;
 import java.util.ArrayList;
 import java.util.List;
 
-/** 
+/**
  * Represents a row in a table layout
  */
 public class TableLayoutRow {
@@ -30,7 +30,7 @@ public class TableLayoutRow {
     private final TableLayout parent;
     private final List<groovy.swing.impl.TableLayoutCell> cells = new ArrayList<groovy.swing.impl.TableLayoutCell>();
     private int rowIndex;
-    
+
     public TableLayoutRow(TableLayout tableLayoutTag) {
         this.parent = tableLayoutTag;
     }
@@ -47,7 +47,7 @@ public class TableLayoutRow {
         tag.getConstraints().gridx = gridx;
         cells.add(tag);
     }
-    
+
     public void addComponentsForRow() {
         rowIndex = parent.nextRowIndex();
 
@@ -57,7 +57,7 @@ public class TableLayoutRow {
             c.gridy = rowIndex;
             // add the cell to the table
             parent.addCell(cell);
-        }        
+        }
     }
 
     /**

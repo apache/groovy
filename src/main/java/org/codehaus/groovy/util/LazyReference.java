@@ -27,11 +27,11 @@ public abstract class LazyReference<T> extends LockableObject {
     private static final long serialVersionUID = -828564509716680325L;
     private ManagedReference<T> reference = INIT;
     private final ReferenceBundle bundle;
-    
+
     public LazyReference(ReferenceBundle bundle) { 
         this.bundle = bundle;
     }
-    
+
     public T get() {
         ManagedReference<T> resRef = reference;
         if (resRef == INIT) return getLocked(false);

@@ -51,7 +51,7 @@ class Groovy8085Bug extends GroovyTestCase {
             } finally {
                 visitSequence << 'outerFinally'
             }
-            
+
             assert ['innerFinally', 'outerCatch', 'outerFinally'] == visitSequence
         '''
     }
@@ -86,7 +86,7 @@ class Groovy8085Bug extends GroovyTestCase {
             } finally {
                 visitSequence << 'outerFinally'
             }
-            
+
             assert ['innerFinally', 'outerCatch', 'outerFinally'] == visitSequence
         '''
     }

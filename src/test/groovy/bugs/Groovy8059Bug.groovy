@@ -32,14 +32,14 @@ class Groovy8059Bug extends GroovyTestCase {
             void delete(K key) {}
             void delete(V value) {}
         }
-        
+
         @groovy.transform.CompileStatic
         class Foo extends Base<String, Integer> {}
-        
+
         @groovy.transform.CompileStatic
         public class Class1 {
             Class1() {
-                Foo foo = new Foo()        
+                Foo foo = new Foo()
                 foo.delete(Integer.valueOf(1))
             }
         }

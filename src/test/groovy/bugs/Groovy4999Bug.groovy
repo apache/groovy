@@ -30,13 +30,13 @@ class Groovy4999Bug extends GroovyTestCase {
                     MainClass mc = new MainClass()
                     mc.callMixinMethods()
                 }
-            
+
                 void callMixinMethods() {
                     println callClassOverloadedMethod("")
                     println callStaticOverloadedMethod("")
                 }
             }
-            
+
             class UtilClass {
                 def callClassOverloadedMethod(String s) {
                     "callClassOverloadedMethod(String)"

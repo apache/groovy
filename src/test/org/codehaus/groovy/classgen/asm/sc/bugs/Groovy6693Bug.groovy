@@ -25,25 +25,25 @@ class Groovy6693Bug extends StaticTypeCheckingTestCase implements StaticCompilat
     void testGenericsInference() {
         assertScript '''
             interface Converter<F, T> {
-               T convertC(F from)
+                T convertC(F from)
             }
-              
+
             class Holder<T> {
-               T thing
-              
-               Holder(T thing) {
-                this.thing = thing
-               }
-              
-               def <R> Holder<R> convertH(Converter<? super T, ? extends R> func1) {
-                  new Holder(func1.convertC(thing))
-               }
+                T thing
+
+                Holder(T thing) {
+                   this.thing = thing
+                }
+
+                def <R> Holder<R> convertH(Converter<? super T, ? extends R> func1) {
+                    new Holder(func1.convertC(thing))
+                }
             }
 
             class IntToFloatConverter implements Converter<Integer,Float> {
-               public Float convertC(Integer from) { from.floatValue() } 
+                public Float convertC(Integer from) { from.floatValue() }
             }
-             
+
             @groovy.transform.TypeChecked
             void foo() {
             @ASTTest(phase=INSTRUCTION_SELECTION,value={

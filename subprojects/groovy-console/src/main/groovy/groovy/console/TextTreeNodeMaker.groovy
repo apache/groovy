@@ -17,7 +17,7 @@
  *  under the License.
  */
 /**
- * A factory class for plain text nodes for use in the AST tree made by ASTBrowser 
+ * A factory class for plain text nodes for use in the AST tree made by ASTBrowser
  */
 package groovy.console
 

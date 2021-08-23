@@ -28,7 +28,7 @@ import groovy.lang.MetaProperty;
  */
 public class MethodMetaProperty extends MetaProperty {
     private final MetaMethod method;
-    
+
     public MethodMetaProperty(String name, MetaMethod method) {
         super(name, Object.class);
         this.method = method;
@@ -43,11 +43,11 @@ public class MethodMetaProperty extends MetaProperty {
     public void setProperty(Object object, Object newValue) {
         throw new UnsupportedOperationException();
     }
-    
+
     public MetaMethod getMetaMethod() {
         return method;
     }
-    
+
     /**
      * Wrapper for a method realizing the property get.
      * WARNING: This class is for internal use only, don't use it for your APIs
@@ -63,7 +63,7 @@ public class MethodMetaProperty extends MetaProperty {
             return getMetaMethod().doMethodInvoke(object, new Object[]{name});
         }
     }
-    
+
     /**
      * Wrapper for a method realizing the property getter.
      * WARNING: This class is for internal use only, don't use it for your APIs

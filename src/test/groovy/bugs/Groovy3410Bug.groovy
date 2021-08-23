@@ -26,7 +26,7 @@ class Groovy3410Bug extends GroovyTestCase {
         assertScript """
             class Groovy3405N1 {
                 long id // or float or double
-                
+
                 boolean bar() {
                     return (id ? true : false)
                 }

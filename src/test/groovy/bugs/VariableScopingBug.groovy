@@ -19,7 +19,7 @@
 package groovy.bugs
 
 class VariableScopingBug extends TestSupport {
-    
+
     void testUndeclaredVariable() {
         shouldFail(MissingPropertyException) {
             def shell = new GroovyShell()

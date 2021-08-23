@@ -38,7 +38,7 @@ public class ConvertedClosure extends ConversionHandler implements Serializable 
         super(closure);
         this.methodName = method;
     }
-    
+
     public ConvertedClosure(Closure closure) {
         this(closure,null);
     }

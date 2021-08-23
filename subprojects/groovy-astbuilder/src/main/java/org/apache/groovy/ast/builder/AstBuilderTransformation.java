@@ -102,7 +102,7 @@ public class AstBuilderTransformation extends MethodCallTransformation {
                 }
             }
         }
-        
+
         @Override
         protected boolean handleTargetMethodCallExpression(MethodCallExpression call) {
             ClosureExpression closureExpression = getClosureArgument(call);
@@ -116,7 +116,7 @@ public class AstBuilderTransformation extends MethodCallTransformation {
             call.setSpreadSafe(false);
             call.setSafe(false);
             call.setImplicitThis(false);
-            
+
             return false;
         }
 

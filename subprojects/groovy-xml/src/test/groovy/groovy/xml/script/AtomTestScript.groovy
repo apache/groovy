@@ -20,7 +20,7 @@ package groovy.xml.script
 
 import groovy.xml.MarkupBuilder
 
-/** note you could use Expando classes if you don't mind being dynamically typed 
+/* note you could use Expando classes if you don't mind being dynamically typed
 f = new Expando()
 
 f.author = new Expando(name:'Ted Leung',url:'http://www.sauria.com/blog', email:'twl@sauria.com')

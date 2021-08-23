@@ -22,16 +22,16 @@ import groovy.test.GroovyTestCase
 
 class Groovy3574Bug extends GroovyTestCase {
     void testToStringCallDelegationToConvertedClosureProxy() {
-        Closure failing1 = { 
-            throw new RuntimeException("Call to this closure fails.") 
+        Closure failing1 = {
+            throw new RuntimeException("Call to this closure fails.")
         }
-        
+
         Closure failing2 = { a, b ->
             assert a == "a"
             assert b == "b"
-            throw new RuntimeException("Call to this closure fails.") 
+            throw new RuntimeException("Call to this closure fails.")
         }
-        
+
         MyType3574A instance1 = failing1 as MyType3574A
 
         // test call without args
@@ -41,10 +41,10 @@ class Groovy3574Bug extends GroovyTestCase {
         } catch (ex) {
             // ok, if it failed
         }
-        
+
         // this call was getting delegated to the closure earlier
         assert instance1.toString() != null
-        
+
         // test call with args
         MyType3574B instance2 = failing2 as MyType3574B
         try{

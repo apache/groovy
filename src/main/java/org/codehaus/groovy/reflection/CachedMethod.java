@@ -255,7 +255,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
     public String toString() {
         return cachedMethod.toString();
     }
-    
+
     private static Constructor getConstructor(SoftReference<Constructor> ref) {
         if (ref==null) return null;
         return ref.get();
@@ -274,7 +274,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
                     skipCompiled = true;
                 }
             }
-    
+
             if (constr!=null) {
                 try {
                     return (CallSite) constr.newInstance(site, metaClass, this, params, constr);
@@ -303,7 +303,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
                     skipCompiled = true;
                 }
             }
-    
+
             if (constr!=null) {
                 try {
                     return (CallSite) constr.newInstance(site, metaClass, this, params, constr);
@@ -331,7 +331,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
                     skipCompiled = true;
                 }
             }
-    
+
             if (constr!=null) {
                 try {
                     return (CallSite) constr.newInstance(site, metaClass, this, params, constr);

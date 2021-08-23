@@ -42,9 +42,9 @@ public class StringReaderSource extends AbstractReaderSource {
        super( configuration );
        this.string = string;
    }
-    
+
    /**
-    *  Returns a new Reader on the underlying source object.  
+    *  Returns a new Reader on the underlying source object.
     */
    @Override
    public Reader getReader() throws IOException {

@@ -47,7 +47,7 @@ class StaticCompileConstructorsTest extends ConstructorsSTCTest implements Stati
         WTF.main()
         '''
     }
-    
+
     void testMixedDynamicStaticConstructor() {
         shouldFailWithMessages("""
             class A{}

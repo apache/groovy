@@ -31,7 +31,7 @@ import java.util.Map;
  */
 public abstract class ReplacementNode implements Buildable, Writable {
     public abstract void build(GroovyObject builder, Map namespaceMap, Map<String, String> namespaceTagHints);
-    
+
     @Override
     public void build(final GroovyObject builder) {
         build(builder, null, null);

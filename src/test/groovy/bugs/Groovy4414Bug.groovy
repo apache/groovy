@@ -29,19 +29,19 @@ class Groovy4414Bug extends GroovyTestCase {
         assertEquals(-1.0,  InvokerHelper.unaryMinus(1.0));
         assertEquals(BigInteger.valueOf(-1l),  InvokerHelper.unaryMinus(BigInteger.valueOf(1l)));
         assertEquals(BigDecimal.valueOf(-1l),  InvokerHelper.unaryMinus(BigDecimal.valueOf(1l)));
-        
+
         List<Object> expected = new ArrayList<Object>() {{
             add(-1);
             add(-1.0);
             add(-1l);
         }};
-        
+
         List<Object> actual = new ArrayList<Object>() {{
             add(1);
             add(1.0);
             add(1l);
         }};
-        
+
         assertEquals(expected, InvokerHelper.unaryMinus(actual));
 
         def negativeShortOne = InvokerHelper.unaryMinus((short) 1)
@@ -60,15 +60,15 @@ class Groovy4414Bug extends GroovyTestCase {
         assertEquals(1.0,  InvokerHelper.unaryPlus(1.0));
         assertEquals(BigInteger.valueOf(1l),  InvokerHelper.unaryPlus(BigInteger.valueOf(1l)));
         assertEquals(BigDecimal.valueOf(1l),  InvokerHelper.unaryPlus(BigDecimal.valueOf(1l)));
-        
+
         List<Object> actual = new ArrayList<Object>() {{
             add(1);
             add(1.0);
             add(1l);
         }};
-        
+
         assertEquals(actual, InvokerHelper.unaryPlus(actual));
-        
+
         assertEquals((short)1, InvokerHelper.unaryPlus((short)1));
         assertEquals((byte)1, InvokerHelper.unaryPlus((byte)1));
     }

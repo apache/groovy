@@ -465,13 +465,13 @@ class AClass {
     }
 
     def x = "owner"
-    
+
     def test() {
         def theDelegate = new ADelegate()
         def res = closureExecuter(theDelegate) {
             return x
         }
-        
+
         return res
     }
 }
@@ -497,13 +497,13 @@ class AClass {
     }
 
     def x = "owner"
-    
+
     def test() {
         def theDelegate = new ADelegate()
         def res = closureExecuter(theDelegate) {
             x = "changed"
         }
-        
+
         return [theDelegate.x, this.x].toSet()
     }
 }

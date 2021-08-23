@@ -23,7 +23,7 @@ import groovy.test.GroovyTestCase
 class Groovy3749Bug extends GroovyTestCase {
     void testScriptsProvidingStaticMainMethod() {
         def scriptStr
-        
+
         // test various signatures of main()
         scriptStr = """
             static main(args) {
@@ -31,14 +31,14 @@ class Groovy3749Bug extends GroovyTestCase {
             }
         """
         verifyScriptRun(scriptStr, "RuntimeException")
-        
+
         scriptStr = """
             static def main(args) {
                 throw new RuntimeException('main called')
             }
         """
         verifyScriptRun(scriptStr, "RuntimeException")
-        
+
         scriptStr = """
             static void main(args) {
                 throw new RuntimeException('main called')
@@ -66,7 +66,7 @@ class Groovy3749Bug extends GroovyTestCase {
             }
         """
         verifyScriptRun(scriptStr, "RuntimeException")
-        
+
         // if both main() and the loose statements are provided, then the loose statements should run and not main
         scriptStr = """
             static main(args) {
@@ -75,14 +75,14 @@ class Groovy3749Bug extends GroovyTestCase {
             throw new Error()
         """
         verifyScriptRun(scriptStr, "Error")
-        
+
         assertScript """
             def main(args) {
                 throw new RuntimeException('main called')
             }
         """
     }
-    
+
     void verifyScriptRun(scriptText, expectedFailure) {
         try{
             assertScript(scriptText)

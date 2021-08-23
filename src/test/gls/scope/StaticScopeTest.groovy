@@ -220,7 +220,7 @@ class StaticScopeTest extends CompilableTestSupport {
         }
         """
     }
-    
+
     void testStaticMethodAccessingDynamicField() {
         shouldFail MissingMethodException, """
             class A {
@@ -230,20 +230,20 @@ class StaticScopeTest extends CompilableTestSupport {
             A.foo()
         """
     }
-    
+
     void testStaticThisWithClass() {
         assertScript """
             static foo(){this}
             assert foo() instanceof Class
             assert foo() != Class
         """
-        
+
         assertScript """
             static foo(){this.class}
             assert foo() == Class
         """
     }
-    
+
     void testConstructorParameterDefault() {
         shouldNotCompile """
             class Child {

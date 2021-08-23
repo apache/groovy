@@ -334,11 +334,11 @@ class DesignPatternsTest extends CompilableTestSupport {
             // invoker class
             class Switch {
                 private final Map<String, Command> commandMap = new HashMap<>()
-                
+
                 void register(String commandName, Command command) {
                     commandMap[commandName] = command
                 }
-                
+
                 void execute(String commandName) {
                     Command command = commandMap[commandName]
                     if (!command) {
@@ -353,7 +353,7 @@ class DesignPatternsTest extends CompilableTestSupport {
                 void turnOn() {
                     println "The light is on"
                 }
-            
+
                 void turnOff() {
                     println "The light is off"
                 }
@@ -361,7 +361,7 @@ class DesignPatternsTest extends CompilableTestSupport {
 
             class SwitchOnCommand implements Command {
                 Light light
-            
+
                 @Override // Command
                 void execute() {
                     light.turnOn()
@@ -370,7 +370,7 @@ class DesignPatternsTest extends CompilableTestSupport {
 
             class SwitchOffCommand implements Command {
                 Light light
-            
+
                 @Override // Command
                 void execute() {
                     light.turnOff()
@@ -398,11 +398,11 @@ class DesignPatternsTest extends CompilableTestSupport {
             // invoker class
             class Switch {
                 private final Map<String, Command> commandMap = [:]
-                
+
                 void register(String commandName, Command command) {
                     commandMap[commandName] = command
                 }
-                
+
                 void execute(String commandName) {
                     Command command = commandMap[commandName]
                     if (!command) {
@@ -417,7 +417,7 @@ class DesignPatternsTest extends CompilableTestSupport {
                 void turnOn() {
                     println 'The light is on'
                 }
-            
+
                 void turnOff() {
                     println 'The light is off'
                 }
@@ -439,7 +439,7 @@ class DesignPatternsTest extends CompilableTestSupport {
                 void turnOn() {
                     println 'The light is on'
                 }
-            
+
                 void turnOff() {
                     println 'The light is off'
                 }
@@ -698,7 +698,7 @@ class DesignPatternsTest extends CompilableTestSupport {
                     ("-" * indent) + name
                 }
             }
-                
+
             class Composite extends Component {
                 private children = []
                 def toString(indent) {
@@ -1233,7 +1233,7 @@ class DesignPatternsTest extends CompilableTestSupport {
 
             // tag::loan_my_resource_example5[]
             withListOfWordsForEachLine(f) { wordList ->
-                println wordList    
+                println wordList
             }
             // =>
             // [ "Mon", "Jun", "18", "22:38:17", "EST", "2007" ]
@@ -1246,17 +1246,17 @@ class DesignPatternsTest extends CompilableTestSupport {
         assertScript '''
         // tag::monoids_intro[]
         def nums = [1, 2, 3, 4]
-        
+
         def sum = 0    // <1>
         for (num in nums) { sum += num }    // <2>
         assert sum == 10
-        
+
         def product = 1    // <1>
         for (num in nums) { product *= num }    // <2>
         assert product == 24
-        
+
         def letters = ['a', 'b', 'c']
-        
+
         def concat = ''    // <1>
         for (letter in letters) { concat += letter }    // <2>
         assert concat == 'abc'
@@ -1398,7 +1398,7 @@ class DesignPatternsTest extends CompilableTestSupport {
             // tag::null_object_tree_example[]
             class NullHandlingTree {
                 def left, right, value
-                
+
                 def size() {
                     1 + (left ? left.size() : 0) + (right ? right.size() : 0)
                 }
@@ -1433,7 +1433,7 @@ class DesignPatternsTest extends CompilableTestSupport {
             // tag::null_object_tree_example2[]
             class Tree {
                 def left = new NullTree(), right = new NullTree(), value
-                
+
                 def size() {
                     1 + left.size() + right.size()
                 }
@@ -1982,18 +1982,18 @@ class DesignPatternsTest extends CompilableTestSupport {
     void testStateVariation2() {
         shouldCompile '''
             interface State { }
-            
+
             // tag::state_variation1_impl[]
             class Client implements State {
-              // ... as before ... 
+              // ... as before ...
             }
 
             class Online implements State {
-              // ... as before ... 
+              // ... as before ...
             }
 
             class Offline implements State {
-              // ... as before ... 
+              // ... as before ...
             }
             // end::state_variation1_impl[]
         '''

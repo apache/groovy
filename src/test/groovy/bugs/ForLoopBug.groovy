@@ -64,7 +64,6 @@ class ForLoopBug extends GroovyTestCase {
         assert a == 5
     }
 
-
     void testVisibility() {
         assertScript """
             def array = [ true, true, true ];

@@ -36,13 +36,13 @@ class ReproducibleBytecodeBugs extends StaticTypeCheckingTestCase implements Sta
             }
             interface ProjectInternal extends Project, FileOperations {
             }
-            
+
             class Check {
                 void test(ProjectInternal p) {
                     def f = p.file()
                 }
             }
-            
+
             def c = new Check()
         '''
 
@@ -65,7 +65,7 @@ class ReproducibleBytecodeBugs extends StaticTypeCheckingTestCase implements Sta
                     }
                 }
             }
-            
+
             def c = new Check()
         '''
 

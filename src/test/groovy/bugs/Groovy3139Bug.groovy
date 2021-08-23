@@ -45,13 +45,13 @@ class Groovy3139Bug extends GroovyTestCase {
 
 class Get2{
     String url
-    
+
     String getText() {
             def aUrl = new URL(toString())
             def conn = aUrl.openConnection()
             return "DUMMY"
     }
-        
+
     String toString(){
         return url
     }

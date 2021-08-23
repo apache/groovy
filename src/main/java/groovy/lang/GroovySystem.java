@@ -36,7 +36,7 @@ public final class GroovySystem {
         USE_REFLECTION = true;
         META_CLASS_REGISTRY = new MetaClassRegistryImpl();
     }
-    
+
     /**
      * If true then the MetaClass will only use reflection for method dispatch, property access, etc.
      */
@@ -57,7 +57,7 @@ public final class GroovySystem {
     public static final Map<String, GroovyRunner> RUNNER_REGISTRY = GroovyRunnerRegistry.getInstance();
 
     private static boolean keepJavaMetaClasses=false;
-    
+
     private GroovySystem() {
         // Do not allow this class to be instantiated
     }
@@ -70,15 +70,15 @@ public final class GroovySystem {
     public static MetaClassRegistry getMetaClassRegistry() {
         return META_CLASS_REGISTRY;
     }
-    
+
     public static void setKeepJavaMetaClasses(boolean keepJavaMetaClasses) {
         GroovySystem.keepJavaMetaClasses = keepJavaMetaClasses;
     }
-    
+
     public static boolean isKeepJavaMetaClasses() {
         return keepJavaMetaClasses;
     }
-    
+
     /**
      * This method can be used to ensure that no threaded created
      * by a reference manager will be active. This is useful if the Groovy

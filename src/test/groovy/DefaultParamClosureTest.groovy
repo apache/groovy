@@ -45,16 +45,16 @@ class DefaultParamClosureTest extends GroovyTestCase {
     def doTypedSomething = { String a = 'defA', String b = 'defB', String c = 'defC' ->
             return a + "-" + b + "-" + c
         }
-    
+
         def value = doTypedSomething("X", "Y", "Z")
         assert value == "X-Y-Z"
-        
+
         value = doTypedSomething("X", "Y")
         assert value == "X-Y-defC"
-        
+
         value = doTypedSomething("X")
         assert value == "X-defB-defC"
-        
+
         value = doTypedSomething()
         assert value == "defA-defB-defC"
     }

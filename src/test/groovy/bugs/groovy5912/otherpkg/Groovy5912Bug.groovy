@@ -24,16 +24,16 @@ class Groovy5912Bug extends GroovyTestCase {
     void test() {
         def errMsg = shouldFail '''
         package groovy.bugs.groovy5912.otherpkg
-        
+
         import groovy.bugs.groovy5912.PluginPathAwareFileSystemResourceLoader
-        
+
         @groovy.transform.CompileStatic
         class GrailsProjectLoader {
             def access() {
                 new PluginPathAwareFileSystemResourceLoader().setSearchLocations(null)
             }
         }
-        
+
         new GrailsProjectLoader().access()
         '''
 

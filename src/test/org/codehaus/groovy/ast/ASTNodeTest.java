@@ -26,7 +26,7 @@ public class ASTNodeTest extends TestCase {
 
     public void testHashCode() {
         int hashcode = astNode.hashCode();
-        
+
         astNode.setLineNumber(astNode.getLineNumber() + 10);
         assertEquals("hashCode is consistent", hashcode, astNode.hashCode());
     }

@@ -93,9 +93,9 @@ import java.lang.annotation.Target
  * name        = a suffix for creating the add, remove, and get methods.
  *               Default: Name of the listener type
  *               In the above example, if name is set to MyListener, then the class will have an addMyListener,
- *               removeMyListener, and getMyListeners methods. 
+ *               removeMyListener, and getMyListeners methods.
  *
- * synchronize = Whether or not the methods created should be synchronized at the method level. 
+ * synchronize = Whether or not the methods created should be synchronized at the method level.
  *               Default: false
  * </pre>
  * <p>

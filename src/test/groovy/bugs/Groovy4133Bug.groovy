@@ -26,7 +26,7 @@ class Groovy4133Bug extends GroovyTestCase {
             class String4133 {
                 @Delegate String str
             }
-            
+
             /* loading of class used to fail earlier with ClassFormatError */
             assert String4133 != null
         """

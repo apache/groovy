@@ -40,7 +40,7 @@ public final class NullCallSite extends AbstractCallSite {
             return CallSiteArray.defaultCall(this, receiver, args);
         }
     }
-    
+
     @Override
     public Object getProperty(Object receiver) throws Throwable {
         if (receiver == null) {

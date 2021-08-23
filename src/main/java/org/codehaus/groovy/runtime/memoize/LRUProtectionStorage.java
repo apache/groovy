@@ -65,7 +65,7 @@ final class LRUProtectionStorage extends LinkedHashMap<Object, Object> implement
         if (value != null) put(key, value);
         return value;
     }
-    
+
     /**
      * Performs a shallow clone
      *

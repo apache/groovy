@@ -28,7 +28,7 @@ class SandwichMakerTest extends GroovyTestCase {
         def mocker = new MockFor(CheeseSlicer.class)
 
         mocker.demand.slice { name ->
-            assert name.startsWith("ch") 
+            assert name.startsWith("ch")
         }
 
         def sandwichMaker = new SandwichMaker()

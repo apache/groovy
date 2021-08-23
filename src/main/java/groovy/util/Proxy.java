@@ -60,7 +60,7 @@ public class Proxy extends GroovyObjectSupport {
             return InvokerHelper.invokeMethod(adaptee, name, args);
         }
     }
-    
+
     public Iterator iterator() {
         return InvokerHelper.asIterator(adaptee);
     }

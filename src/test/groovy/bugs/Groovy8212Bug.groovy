@@ -30,7 +30,7 @@ class Groovy8212Bug extends GroovyTestCase {
                 return map["$k x"]
             }
         }
-        
+
         assert 1 == new Groovy8212().get('a')
         assert 2 == new Groovy8212().get('b')
         '''

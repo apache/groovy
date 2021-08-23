@@ -118,31 +118,31 @@ class Entity implements Buildable {
     public static final Entity yacute = new Entity("yacute")    // latin small y with acute, U+00FD ISOlat1 
     public static final Entity thorn = new Entity("thorn")      // latin small thorn with, U+00FE ISOlat1 
     public static final Entity yuml = new Entity("yuml")        // latin small y with diaeresis, U+00FF ISOlat1
-    
+
     /*
      * XML-compatible ISO Special Character Entity Set for XHTML 
      */
-    
+
     // C0 Controls and Basic Latin 
     public static final Entity lt = new Entity("lt")            //less-than sign, U+003C ISOnum
     public static final Entity gt = new Entity("gt")            //greater-than sign, U+003E ISOnum
     public static final Entity amp = new Entity("amp")          //ampersand, U+0026 ISOnum
     public static final Entity apos = new Entity("apos")        //The Apostrophe (Apostrophe Quote, APL Quote), U+0027 ISOnum
     public static final Entity quot = new Entity("quot")        //quotation mark (Quote Double), U+0022 ISOnum
-    
+
     // Latin Extended-A
     public static final Entity OElig = new Entity("OElig")  //latin capital ligature OE, U+0152 ISOlat2
     public static final Entity oelig = new Entity("oelig")  //latin small ligature oe, U+0153 ISOlat2
-    
+
     // ligature is a misnomer, this is a separate character in some languages 
     public static final Entity Scaron = new Entity("Scaron")    //latin capital letter S with caron, U+0160 ISOlat2
     public static final Entity scaron = new Entity("scaron")    //latin small letter s with caron, U+0161 ISOlat2
     public static final Entity Yuml = new Entity("Yuml")    //latin capital letter Y with diaeresis, U+0178 ISOlat2
-    
+
     // Spacing Modifier Letters
     public static final Entity circ = new Entity("circ")    //modifier letter circumflex accent, U+02C6 ISOpub
     public static final Entity tilde = new Entity("tilde")  //small tilde, U+02DC ISOdia
-    
+
     // General Punctuation
     public static final Entity ensp = new Entity("ensp")    //en space, U+2002 ISOpub
     public static final Entity emsp = new Entity("emsp")    //em space, U+2003 ISOpub
@@ -162,25 +162,25 @@ class Entity implements Buildable {
     public static final Entity dagger = new Entity("dagger")    //dagger, U+2020 ISOpub
     public static final Entity Dagger = new Entity("Dagger")    //double dagger, U+2021 ISOpub
     public static final Entity permil = new Entity("permil")    //per mille sign, U+2030 ISOtech
-    
+
     // lsaquo is proposed but not yet ISO standardized
     public static final Entity lsaquo = new Entity("lsaquo")    //single left-pointing angle quotation mark, U+2039 ISO proposed
-    
+
     // rsaquo is proposed but not yet ISO standardized
     public static final Entity rsaquo = new Entity("rsaquo")    //single right-pointing angle quotation mark, U+203A ISO proposed
     public static final Entity euro = new Entity("euro")    //euro sign, U+20AC NEW
 
-    
+
     private final entity;
-    
+
     Entity(String name) {
         this.entity = "&$name;"
     }
-    
+
     Entity(int name) {
         this.entity = "&#$name;"
     }
-    
+
     void build(GroovyObject builder) {
         builder.unescaped << entity
     }

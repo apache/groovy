@@ -18,7 +18,6 @@
  */
 package groovy.lang;
 
-
 /**
  * An exception occurred if a dynamic field dispatch fails with an unknown field.
  * 

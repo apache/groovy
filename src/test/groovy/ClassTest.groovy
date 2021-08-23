@@ -26,11 +26,11 @@ class ClassTest extends GroovyTestCase {
         def c = String.class
         assert c instanceof Class
         assert c.name == "java.lang.String" , c.name
-        
+
         c = GroovyTestCase.class
         assert c instanceof Class
         assert c.name.endsWith("GroovyTestCase") , c.name
-        
+
         c = ClassTest.class
         assert c instanceof Class
         assert c.name.endsWith("ClassTest") , c.name

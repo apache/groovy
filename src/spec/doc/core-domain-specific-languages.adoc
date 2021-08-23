@@ -1773,7 +1773,7 @@ gapi:groovy.util.FileTreeBuilder[FileTreeBuilder] is a builder for generating a 
         |--- groovy
                |--- FooTest.groovy
 ---------
- 
+
 You can use a `FileTreeBuilder` like this:
 
 [source,groovy]

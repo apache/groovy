@@ -49,7 +49,7 @@ class Groovy3511Bug extends GroovyTestCase {
             verifyExceptionMsg(ex, Number.class.name)
         }
     }
-    
+
     def verifyExceptionMsg(ex, className) {
         assertTrue ex.message.contains(className)       
     }

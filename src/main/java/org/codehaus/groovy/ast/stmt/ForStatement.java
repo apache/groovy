@@ -35,19 +35,19 @@ public class ForStatement extends Statement implements LoopingStatement {
     private Expression collectionExpression;
     private Statement loopBlock;
     private VariableScope scope;
-    
+
 
     public ForStatement(Parameter variable, Expression collectionExpression, Statement loopBlock) {
-        this.variable = variable; 
+        this.variable = variable;
         this.collectionExpression = collectionExpression;
         this.loopBlock = loopBlock;
     }
-    
+
     @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitForLoop(this);
     }
-    
+
     public Expression getCollectionExpression() {
         return collectionExpression;
     }
@@ -60,17 +60,17 @@ public class ForStatement extends Statement implements LoopingStatement {
     public Parameter getVariable() {
         return variable;
     }
-    
+
     public ClassNode getVariableType() {
         return variable.getType();
     }
-    
+
     public void setCollectionExpression(Expression collectionExpression) {
         this.collectionExpression = collectionExpression;
     }
 
     public void setVariableScope(VariableScope variableScope) {
-       scope = variableScope;        
+       scope = variableScope;
     }
 
     public VariableScope getVariableScope() {

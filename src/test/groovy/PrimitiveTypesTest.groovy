@@ -25,27 +25,27 @@ class PrimitiveTypesTest extends GroovyTestCase {
     int getInt() {
         return 1
     }
-    
+
     short getShort() {
         return 1
     }
-    
+
     boolean getBoolean() {
         return true
     }
-    
+
     double getDouble() {
         return 1.0
     }
-    
+
     float getFloat() {
         return 1.0
     }
-    
+
     byte getByte() {
         return 1
     }
-    
+
     long getLong() {
         return 1
     }
@@ -53,15 +53,15 @@ class PrimitiveTypesTest extends GroovyTestCase {
     char getChar() {
         return 'a'
     }
-    
+
     int getNextInt(int i) {
         return i + 1
     }
-    
+
     short getNextShort(short i) {
         return i + 1
     }
-    
+
     void testPrimitiveTypes() {
         assert 1 == getInt()
         assert 1 == getShort()
@@ -73,10 +73,10 @@ class PrimitiveTypesTest extends GroovyTestCase {
         assert 'a' == getChar()
     }
 
-    void testPrimitiveParameters() {        
+    void testPrimitiveParameters() {
         assert getNextInt(1) == 2
         assert 3 == getNextInt(2)
-        
+
         assert getNextShort((Short) 1) == 2
         assert 3 == getNextShort((Short) 2)
     }

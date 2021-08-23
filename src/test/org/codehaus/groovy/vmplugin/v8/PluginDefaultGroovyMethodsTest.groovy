@@ -35,9 +35,9 @@ class PluginDefaultGroovyMethodsTest extends StaticTypeCheckingTestCase {
 
                 x = Optional.ofNullable(null) ? 1 : -1
                 assert x == -1
-                
+
                 Optional.empty()
-            }            
+            }
             assert !m()
         '''
     }
@@ -45,7 +45,7 @@ class PluginDefaultGroovyMethodsTest extends StaticTypeCheckingTestCase {
     void testStreamToList() {
         assertScript '''
             def list = [1, 2, 3]
-            assert list == list.stream().toList() 
+            assert list == list.stream().toList()
         '''
     }
 

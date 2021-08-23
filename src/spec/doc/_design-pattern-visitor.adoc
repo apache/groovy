@@ -21,7 +21,6 @@
 
 = Visitor Pattern
 
-
 The https://en.wikipedia.org/wiki/Visitor_pattern[Visitor Pattern] is one of those well-known but not
 often used patterns. Perhaps this is because it seems a little complex at first.
 But once you become familiar with it, it becomes a powerful way to evolve your code

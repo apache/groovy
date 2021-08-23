@@ -39,7 +39,7 @@ class MethodNodeTest extends TestCase implements Opcodes {
         assert ast[1].@methods.get('myMethod')[0].text ==
                     'public java.lang.Object myMethod()  { ... }'
     }
-    
+
     void testGetTextAdvanced() {
         def ast = new AstBuilder().buildFromString CompilePhase.SEMANTIC_ANALYSIS, false, '''
 
@@ -54,17 +54,17 @@ class MethodNodeTest extends TestCase implements Opcodes {
         def methodNode = new MethodNode('foo', ACC_PUBLIC, new ClassNode(Object.class), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement())
         assert !methodNode.isDynamicReturnType()
     }
-    
+
     void testIsDynamicReturnTypeDYNAMIC_TYPE() {
         MethodNode methodNode = new MethodNode('foo', ACC_PUBLIC, ClassHelper.DYNAMIC_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement())
         assert methodNode.isDynamicReturnType()
     }
-    
+
     void testIsDynamicReturnTypeVoid() {
         MethodNode methodNode = new MethodNode('foo', ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement())
         assert !methodNode.isDynamicReturnType()
     }
-    
+
     void testIsDynamicReturnTypeNull() {
         MethodNode methodNode = new MethodNode('foo', ACC_PUBLIC, null, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement())
         assert !methodNode.isDynamicReturnType()

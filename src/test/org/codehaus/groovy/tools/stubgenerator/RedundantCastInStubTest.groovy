@@ -29,7 +29,7 @@ class RedundantCastInStubTest extends StringSourcesStubTestCase {
                 'Dummy.java': '''
                     public class Dummy {}
                 ''',
-                
+
                 'some/ClassWithPrimitiveBoolean.groovy': '''
                     package some
 

@@ -23,7 +23,7 @@ import groovy.test.GroovyTestCase
 /**
  */
 class AssignmentInsideExpressionBug extends GroovyTestCase {
-    
+
     void testBug() {
         def x
         if ((x = someMethod()) != null) {
@@ -37,7 +37,7 @@ class AssignmentInsideExpressionBug extends GroovyTestCase {
         } else {
             fail("y [${y}] should be greater than 5")
         }
-        
+
         def a = 123, b = 123
         assert a == 123
         assert b == 123
@@ -46,7 +46,7 @@ class AssignmentInsideExpressionBug extends GroovyTestCase {
     def someMethod() {
         return "worked!"
     }
-    
+
     def getFoo() {
         return 7
     }

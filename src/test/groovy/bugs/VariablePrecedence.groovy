@@ -21,9 +21,9 @@ package groovy.bugs
 import groovy.test.GroovyTestCase
 
 class VariblePrecedence extends GroovyTestCase {
-    
+
     void testVariablePrecedence() {
- 
+
         assertScript( """
             class VariableFoo {
                 def x = 100

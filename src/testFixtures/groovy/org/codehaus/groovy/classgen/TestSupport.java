@@ -91,7 +91,7 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
         /*
         System.out.println("Expected: " + expected);
         System.out.println("Value: " + value);
-        
+
         if (expected == null) { System.out.println("Expected is null"); }
         if (value == null) { System.out.println("value is null"); }
         */

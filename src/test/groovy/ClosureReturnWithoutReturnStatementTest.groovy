@@ -34,14 +34,14 @@ class ClosureReturnWithoutReturnStatementTest extends GroovyTestCase {
 
     void testReturnValueUsingFunction() {
         def block = {x-> someFunction(x) }
-        
+
         def value = block.call(10)
         assert value
 
         value = block.call(3)
         assert value == false
     }
-    
+
     def someFunction(x) {
         x > 5
     }

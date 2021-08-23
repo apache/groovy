@@ -20,7 +20,7 @@ package groovy
 
 import groovy.test.GroovyTestCase
 
-/** 
+/**
  * Tests iterating using Groovy
  */
 class ListIteratingTest extends GroovyTestCase {
@@ -29,11 +29,11 @@ class ListIteratingTest extends GroovyTestCase {
         def s = [1, 2, 3, 4 ]
         assertSequence(s)
     }
-    
+
     void testIteratingWithSequencesAsParameter() {
         assertSequence([1, 2, 3, 4 ])
     }
-    
+
     void testIteratingWithList() {
         def s = new ArrayList()
         s.add(1)
@@ -51,7 +51,7 @@ class ListIteratingTest extends GroovyTestCase {
 
         assert(result == 10)
         assert(s.size() == 4)
-        
+
         assert(s[2] == 3)
         result = 0
         for ( i in s[1,2] ) {    // or s[1..2]

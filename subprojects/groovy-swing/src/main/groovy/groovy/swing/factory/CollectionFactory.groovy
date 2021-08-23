@@ -22,7 +22,7 @@ package groovy.swing.factory
  * This returns a mutable java.util.Collection of some sort, to which items are added.  
  */
 public class CollectionFactory extends AbstractFactory {
-    
+
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         FactoryBuilderSupport.checkValueIsNull(value, name);
         if (attributes.isEmpty()) {

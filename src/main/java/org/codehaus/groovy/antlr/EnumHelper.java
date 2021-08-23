@@ -31,7 +31,7 @@ import org.objectweb.asm.Opcodes;
 public class EnumHelper {
     private static final int FS = Opcodes.ACC_FINAL | Opcodes.ACC_STATIC;
     private static final int PUBLIC_FS = Opcodes.ACC_PUBLIC | FS; 
-    
+
     public static ClassNode makeEnumNode(String name, int modifiers, ClassNode[] interfaces, ClassNode outerClass) {
         modifiers = modifiers | Opcodes.ACC_FINAL | Opcodes.ACC_ENUM;
         ClassNode enumClass;
@@ -42,7 +42,7 @@ public class EnumHelper {
             modifiers |= Opcodes.ACC_STATIC;
             enumClass = new InnerClassNode(outerClass,name,modifiers,null,interfaces,MixinNode.EMPTY_ARRAY);
         }
-        
+
         // set super class and generics info
         // "enum X" -> class X extends Enum<X>
         GenericsType gt = new GenericsType(enumClass);
@@ -50,7 +50,7 @@ public class EnumHelper {
         superClass.setGenericsTypes(new GenericsType[]{gt});
         enumClass.setSuperClass(superClass);
         superClass.setRedirect(ClassHelper.Enum_Type);
-        
+
         return enumClass;
     }
 

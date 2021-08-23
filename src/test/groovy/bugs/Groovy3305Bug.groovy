@@ -33,19 +33,19 @@ class Groovy3305Bug extends GroovyTestCase {
     def foo1(int arg0, String arg1) {
         return "$arg0,$arg1" 
     }
-    
+
     def foo2(BigDecimal arg0, String arg1) {
         return "$arg0,$arg1" 
     }
-    
+
     def foo3(byte arg0, String arg1) {
         return "$arg0,$arg1" 
     }
-    
+
     def foo4(float arg0, String arg1) {
         return "$arg0,$arg1" 
     }
-    
+
     def foo5(long arg0, String arg1) {
         return "$arg0,$arg1" 
     }

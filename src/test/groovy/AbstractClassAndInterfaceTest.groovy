@@ -29,7 +29,7 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
                 void methodOne(Object o)
                 Object methodTwo()
             }
-            
+
             class B implements A {
                 void methodOne(Object o){assert true}
                 Object methodTwo(){
@@ -38,7 +38,7 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
                     return new Object()
                 }
             }
-            
+
             def b = new B();
             return b.methodTwo()
             """
@@ -52,15 +52,15 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
                 void methodOne(Object o)
                 Object methodTwo()
             }
-            
+
             class B implements A {
                 void methodOne(Object o){assert true}
             }
-            
+
             def b = new B();
             return b.methodTwo()
             """
-        
+
         shouldNotCompile """
             interface A {
                 Object methodTwo()
@@ -68,11 +68,11 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
             interface B extends A{
                 void methodOne(Object o)
             }
-            
+
             class C implements A {
                 void methodOne(Object o){assert true}
             }
-            
+
             def b = new C();
             return b.methodTwo()
             """
@@ -100,18 +100,18 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
                     return new Object()
                 }
             }
-            
+
             class B extends A {
                 void methodOne(Object o){assert true}
             }
-            
+
             def b = new B();
             return b.methodTwo()
             """
         def retVal = shell.evaluate(text)
         assert retVal.class == Object
     }    
-    
+
     void testClassExtendingAnAbstractClassButMissesMethod() {
         shouldNotCompile """
             abstract class A {
@@ -123,17 +123,17 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
                 }
                 abstract void MethodThree()
             }
-            
+
             abstract class B extends A {
                 void methodOne(Object o){assert true}
             }
-            
+
             class C extends B{}
-            
+
             def b = new C();
             return b.methodTwo()
             """    
-        
+
        shouldNotCompile """
             abstract class A {
                 abstract void methodOne(Object o)
@@ -144,27 +144,27 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
                 }
                 abstract void MethodThree()
             }
-            
+
             class B extends A {
                 void methodOne(Object o){assert true}
             }
-            
+
             def b = new B();
             return b.methodTwo()
             """
     }
-    
+
     void testInterfaceAbstractClassCombination() {
         def shell = new GroovyShell()
         def text = """
             interface A {
                 void methodOne()
             }
-            
+
             abstract class B implements A{
                 abstract void methodTwo()
             }
-            
+
             class C extends B {
                 void methodOne(){assert true}
                 void methodTwo(){
@@ -175,31 +175,31 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
             c.methodTwo()
             """
         shell.evaluate(text)
-        
+
         shouldNotCompile """
             interface A {
                 void methodOne()
             }
-            
+
             abstract class B implements A{
                 abstract void methodTwo()
             }
-            
+
             class C extends B {}
             def c = new c()
             c.methodTwo()
             """
     }
-    
+
     void testDefaultModifiersForInterfaces() {
         def shell = new GroovyShell()
         def text = """
             import java.lang.reflect.Modifier
-            
+
             interface A {
                 def foo
             }
-            
+
             def fields = A.class.declaredFields
             assert fields.length==1
             assert fields[0].name == "foo"
@@ -209,7 +209,7 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
             """
         shell.evaluate(text)
     }
-    
+
     void testAccessToInterfaceField() {
         def shell = new GroovyShell()
         def text = """
@@ -247,14 +247,14 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
         }
         """
     }
-    
+
     void testClassImplementsItselfCreatingACycle() {
         def scriptStr = """
             package p1
             class XXX implements XXX {}
         """
         shouldNotCompile scriptStr
-        
+
         scriptStr = """
             class YYY implements YYY {}
         """

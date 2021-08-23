@@ -26,7 +26,7 @@ class Groovy4449Bug extends GroovyTestCase {
         try {
             new GroovyShell().parse """
                 def foo(String... strs, int i) { println i }
-                
+
                 foo("me", "you", 42)
             """
             fail('The compilation should have failed as the var-arg parameter is not the last one.')
@@ -39,7 +39,7 @@ class Groovy4449Bug extends GroovyTestCase {
     void testVarArgAsTheLastParameter() {
         new GroovyShell().parse """
             def foo(int i, String... strs) { println i }
-            
+
             foo(42, "me", "you")
         """
     }

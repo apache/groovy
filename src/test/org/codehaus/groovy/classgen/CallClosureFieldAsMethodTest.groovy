@@ -44,7 +44,7 @@ class CallClosureFieldAsMethodTest extends GroovyTestCase {
                 def call(Object arguments) {"1"}
             }
             def c = new Dummy()
-            assert c(2) == "1"      
+            assert c(2) == "1"
         """
     }
 

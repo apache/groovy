@@ -38,12 +38,12 @@ class JavadocAssertionTestBuilder {
 
     Class buildTest(String filename, String code) {
         Class test = null
-        
+
         List assertionTags = getAssertionTags(code)
         if (assertionTags) {
             String testName = getTestName(filename)
 
-            Map lineNumberToAssertions = getLineNumberToAssertionsMap(code, assertionTags)                            
+            Map lineNumberToAssertions = getLineNumberToAssertionsMap(code, assertionTags)
             List testMethods = getTestMethods(lineNumberToAssertions, filename)
             String testCode = getTestCode(testName, testMethods)
 
@@ -52,25 +52,25 @@ class JavadocAssertionTestBuilder {
 
         return test
     }
-    
+
     private List getAssertionTags(String code) {
         List assertions = new ArrayList()
 
         code.eachMatch(javadocPattern) { javadoc ->
             assertions.addAll(javadoc.findAll(assertionPattern))
         }
-        
+
         return assertions
     }
-    
+
     private String getTestName(String filename) {
         String filenameWithoutPath = new File(filename).name
         String testName = filenameWithoutPath.substring(0, filenameWithoutPath.lastIndexOf(".")) +
             "JavadocAssertionTest"
-        
+
         return testName
     }
-    
+
     private Map getLineNumberToAssertionsMap(String code, List assertionTags) {
         Map lineNumberToAssertions = [:] as LinkedHashMap
 
@@ -79,15 +79,15 @@ class JavadocAssertionTestBuilder {
             codeIndex = code.indexOf(tag, codeIndex)
             int lineNumber = code.substring(0, codeIndex).findAll("(?m)^").size()
             codeIndex += tag.size()
-            
+
             String assertion = getAssertion(tag)
-            
+
             lineNumberToAssertions.get(lineNumber, []) << assertion
         }
 
         return lineNumberToAssertions
     }
-    
+
     private String getAssertion(String tag) {
         String tagInner = tag.substring(tag.indexOf(">")+1, tag.lastIndexOf("<"))
         String htmlAssertion = tagInner.replaceAll("(?m)^\\s*\\*\\s?", "")
@@ -99,7 +99,7 @@ class JavadocAssertionTestBuilder {
         assertion = assertion.replaceAll(/(?i)\{@code ([^}]*)\}/, '$1')
         return assertion
     }
-    
+
     private List getTestMethods(Map lineNumberToAssertions, String filename) {
         List testMethods = lineNumberToAssertions.collect { lineNumber, assertions ->
             Character differentiator = 'a'
@@ -127,7 +127,7 @@ class JavadocAssertionTestBuilder {
             }
         """
     }
-    
+
     private String getTestCode(String testName, List testMethods) {
         return """
             class $testName extends junit.framework.TestCase {
@@ -138,5 +138,5 @@ class JavadocAssertionTestBuilder {
 
     private Class createClass(String testCode) {
         return new GroovyClassLoader().parseClass(testCode)
-    }    
+    }
 }

@@ -812,7 +812,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
           try {
             A.metaClass.foo = {->1}
             A.metaClass.methodMissing = { method, args -> 2}
-          
+
             def a = new A()
             assert a.bar("foo")() == 1
             assert a.x() == 2

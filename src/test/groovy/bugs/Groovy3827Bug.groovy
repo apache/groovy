@@ -24,7 +24,7 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException
 class Groovy3827Bug extends GroovyTestCase {
     void testDuplicateCompilationErrorOnProperty() {
         GroovyClassLoader cl = new GroovyClassLoader();
-        
+
         def scriptStr = """
             class NewGroovyClass {
                 Test x

@@ -27,12 +27,12 @@ import java.util.Map;
  */
 public class SpreadMapTest extends GroovyTestCase {
     Map map;
-        
+
     public void setUp() {
         String[] list = new String[] { "key", "value", "name", "tim" };
         map = new SpreadMap(list);
     }
-    
+
     public void testOriginal() {
         assertEquals(2, map.size());
         assertEquals("value", map.get("key"));

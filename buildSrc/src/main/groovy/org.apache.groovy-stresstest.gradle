@@ -32,7 +32,6 @@ sourceSets {
     }
 }
 
-
 def stressTest = tasks.register("stressTest", Test) {
     description = "Runs the stress tests."
     group = "verification"

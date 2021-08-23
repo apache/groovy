@@ -134,19 +134,19 @@ if (location.href.indexOf('is-external=true') == -1) {
     if (classDoc.isAnnotationType()) {
         def hasReq = classDoc.fields().any{ isRequired(it, "true") }
         def hasOpt = classDoc.fields().any{ isRequired(it, "false") }
-        if (hasReq) { %><li><a href="#required_element_summary"><% } %>Required<% if (hasReq) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
-        if (hasOpt) { %><li><a href="#optional_element_summary"><% } %>Optional<% if (hasOpt) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+        if (hasReq) { %><li><a href="#required_element_summary"><% } %>Required<% if (hasReq) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
+        if (hasOpt) { %><li><a href="#optional_element_summary"><% } %>Optional<% if (hasOpt) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
     } else {
-        if (visibleNested) { %><li><a href="#nested_summary"><% } %>Nested<% if (visibleNested) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+        if (visibleNested) { %><li><a href="#nested_summary"><% } %>Nested<% if (visibleNested) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
         if (classDoc.isEnum()) {
-            if (hasEnumConstants) { %><li><a href="#enum_constant_summary"><% } %>Enum constants<% if (hasEnumConstants) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+            if (hasEnumConstants) { %><li><a href="#enum_constant_summary"><% } %>Enum constants<% if (hasEnumConstants) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
         }
-        if (hasFields) { %><li><a href="#field_summary"><% } %>Field<% if (hasFields) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
-        if (hasProperties) { %><li><a href="#property_summary">Property</a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+        if (hasFields) { %><li><a href="#field_summary"><% } %>Field<% if (hasFields) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
+        if (hasProperties) { %><li><a href="#property_summary">Property</a></li><% } %>&nbsp;&nbsp;&nbsp;<%
         if (classDoc.isClass()) {
-            if (visibleConstructors) { %><li><a href="#constructor_summary"><% } %>Constructor<% if (visibleConstructors) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+            if (visibleConstructors) { %><li><a href="#constructor_summary"><% } %>Constructor<% if (visibleConstructors) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
         }
-        if (visibleMethods) { %><li><a href="#method_summary"><% } %>Method<% if (visibleMethods) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+        if (visibleMethods) { %><li><a href="#method_summary"><% } %>Method<% if (visibleMethods) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
     }
     %>
         </ul>
@@ -154,7 +154,7 @@ if (location.href.indexOf('is-external=true') == -1) {
             <li>&nbsp;|&nbsp;Detail:&nbsp;</li>
             <%
             if (classDoc.isAnnotationType()) {
-                if (hasElements) { %><li><a href="#element_detail"><% } %>Element<% if (hasElements) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 
+                if (hasElements) { %><li><a href="#element_detail"><% } %>Element<% if (hasElements) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<%
             } else {
                 if (classDoc.isEnum()) {
                     if (hasEnumConstants) { %><li><a href="#enum_constant_detail"><% } %>Enum constants<% if (hasEnumConstants) { %></a></li><% } %>&nbsp;&nbsp;&nbsp;<% 

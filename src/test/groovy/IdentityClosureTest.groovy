@@ -24,7 +24,7 @@ import groovy.test.GroovyTestCase
  * Check that Object.identity(Closure) method works as expected
  */
 class IdentityClosureTest extends GroovyTestCase {
-    
+
     def foo = [[1,2,3],[4,5,6],[7,8,9]]
     def bar = " bar "
     def mooky = 1
@@ -38,7 +38,7 @@ class IdentityClosureTest extends GroovyTestCase {
             assert 3 == it.size()
             assert it.indexOf("A") > 0
         }
-    }  
+    }
 
     /** check the basics */
     void testIdentity1() {
@@ -50,11 +50,11 @@ class IdentityClosureTest extends GroovyTestCase {
     /** test temp shortcut to an element of an array */
     void testIdentity2() {
         assert 6 == foo[1][2]
-        
+
         foo[1].identity{ myArray->
             myArray[2] = 12
         }
-        
+
         assert 12 == foo[1][2]
     }
 

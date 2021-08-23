@@ -46,4 +46,3 @@ public class PropertyValue {
         mp.setProperty(bean, value);
     }
 }
-

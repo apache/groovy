@@ -46,7 +46,7 @@ public class DependencyTracker extends ClassCodeVisitorSupport {
     public DependencyTracker(SourceUnit source, StringSetMap cache) {
         this(source, cache, new HashMap());
     }
-    
+
     public DependencyTracker(SourceUnit source, StringSetMap cache, Map<String, ?> precompiledEntries) {
         this.source = source;
         this.cache = cache;
@@ -65,7 +65,7 @@ public class DependencyTracker extends ClassCodeVisitorSupport {
         addToCache(node.getSuperClass());
         addToCache(node.getInterfaces());
     }
-    
+
     private void addToCache(ClassNode[] nodes){
         if (nodes==null) return;
         for (ClassNode node : nodes) addToCache(node);

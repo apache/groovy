@@ -25,7 +25,7 @@ import groovy.swing.impl.TableLayoutRow
 import java.awt.*
 
 public class TableLayoutFactory extends AbstractFactory {
-    
+
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (FactoryBuilderSupport.checkValueIsType(value, name, TableLayout)) {
             return value;
@@ -39,7 +39,7 @@ public class TableLayoutFactory extends AbstractFactory {
         }
     }
 }
-    
+
 public class TRFactory extends AbstractFactory {
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         FactoryBuilderSupport.checkValueIsNull(value, name);

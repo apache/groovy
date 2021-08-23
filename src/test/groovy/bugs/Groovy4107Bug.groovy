@@ -26,7 +26,7 @@ class Groovy4107Bug extends GroovyTestCase {
         try {
             new GroovyShell().parse """
                 import Roshan4107
-                
+
                 Roshan4107.foo()
             """
             fail('The compilation should have failed as the class Roshan4107 is non-existent')

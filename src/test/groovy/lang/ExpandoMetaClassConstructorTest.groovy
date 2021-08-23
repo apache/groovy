@@ -33,7 +33,7 @@ class ExpandoMetaClassConstructorTest extends GroovyTestCase {
                 Long.metaClass {
                     constructor << { List l -> l.size() as long }
                 }
-    
+
                 def result = [[] as Short, ['foo'] as Integer, ['bar', 'baz'] as Long]
                 assert result.toString() == '[0, 1, 2]'
                 assert result*.class == [Short, Integer, Long]

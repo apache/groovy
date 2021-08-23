@@ -25,7 +25,7 @@ class GroovyInnerEnumBug extends GroovyTestCase {
         a, b, c
         public static MyEnum[] myenums = [a, b, c];
     }
-    
+
     // GROOVY-3979
     void testEnumInsideAClass3979() {
         assertScript """

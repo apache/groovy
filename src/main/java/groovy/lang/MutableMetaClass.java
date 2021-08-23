@@ -73,6 +73,6 @@ public interface MutableMetaClass extends MetaClass {
      * @param metaBeanProperty The MetaBeanProperty instance
      */
     void addMetaBeanProperty(MetaBeanProperty metaBeanProperty);
-    
+
     // TODO: Add methods like addMetaConstructor, addMetaAttribute, addMetaAnnotation etc.
 }

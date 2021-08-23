@@ -100,7 +100,7 @@ class Groovysh extends Shell {
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar, CompilerConfiguration configuration) {
        this(classLoader, binding, io, registrar, configuration,  new Interpreter(classLoader, binding, configuration))
     }
-    
+
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar, CompilerConfiguration configuration, Interpreter interpreter) {
         super(io)
         assert classLoader

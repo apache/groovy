@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit
 
 public class CacheCleanupTest extends GroovyTestCase {
     private static final Object ANCHOR = "I'm never gonna go"
-    
+
     public void testUnlimitedCache() {
         checkCache(new UnlimitedConcurrentCache())
         checkCache(new LRUCache(10))

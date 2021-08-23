@@ -221,14 +221,14 @@ class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
             def x = 1
         """
         verifyPackageDetails(loader.parseClass(script, 'Pkg1Groovy3537Script.groovy'), "pkg1")
-        
+
         script = """
             package pkg1.pkg2
             class Groovy3537A{}
         """
         verifyPackageDetails(loader.parseClass(script, 'Pkg1Pkg2Groovy3537A.groovy'), "pkg1.pkg2")
     }
-    
+
     void testPackageDefinitionForGroovyClassesInDefineClass() {
         def loader = new GroovyClassLoader(this.class.classLoader)
         def classNode = new ClassNode("pkg3.Groovy3537B", ACC_PUBLIC, ClassHelper.OBJECT_TYPE)
@@ -239,7 +239,7 @@ class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
         def clazz = loader.defineClass(classNode, classNode.getName() + ".groovy", "")
         verifyPackageDetails(clazz, "pkg3")
     }
-    
+
     static void verifyPackageDetails(clazz, expectedPkgName) {
         assert clazz.package instanceof Package
         assert clazz.package.name == expectedPkgName

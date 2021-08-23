@@ -39,7 +39,7 @@ void testBug3235 () {
       def t = f.text
 
       assert d == t.normalize()
-      
+
       assert d.denormalize() == t
    }
 }

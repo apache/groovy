@@ -29,7 +29,7 @@ class SomeGroovyClass {
     def invokeMethod(String name, Object args) {
         return "called invokeMethod $name $args"
     }
-    
+
     def test() {
         return 'method exists'
     }
@@ -42,7 +42,7 @@ assert someGroovyClass.someMethod() == 'called invokeMethod someMethod []'
 // end::groovy_invoke_method[]
 '''
     }
-    
+
     void testGetProperty () {
         assertScript '''
 // tag::groovy_get_property[]
@@ -51,11 +51,11 @@ class SomeGroovyClass {
     def property1 = 'ha'
     def field2 = 'ho'
     def field4 = 'hu'
-    
+
     def getField1() {
         return 'getHa'
     }
-    
+
     def getProperty(String name) {
         if (name != 'field3')
             return metaClass.getProperty(this, name) // <1>
@@ -73,14 +73,14 @@ assert someGroovyClass.field4 == 'hu'
 // end::groovy_get_property[]
 '''
     }
-    
+
     void testSetProperty () {
         assertScript '''
 // tag::groovy_set_property[]
 class POGO {
 
     String property 
-    
+
     void setProperty(String name, Object value) {
         this.@"$name" = 'overridden'
     }
@@ -101,7 +101,7 @@ class SomeGroovyClass {
 
     def field1 = 'ha'
     def field2 = 'ho'
-    
+
     def getField1() {
         return 'getHa'
     }
@@ -114,7 +114,7 @@ assert someGroovyClass.metaClass.getAttribute(someGroovyClass, 'field2') == 'ho'
 // end::groovy_get_attribute[]
 '''
     }
-    
+
     void testSetAttribute () {
         assertScript '''
 // tag::groovy_set_attribute[]
@@ -122,7 +122,7 @@ class POGO {
 
     private String field
     String property1
-    
+
     void setProperty1(String property1) {
         this.property1 = "setProperty1"
     }

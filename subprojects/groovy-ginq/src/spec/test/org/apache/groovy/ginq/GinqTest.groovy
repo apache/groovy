@@ -84,7 +84,7 @@ class GinqTest {
             class Person {
                 String name
                 int age
-                
+
                 Person(String name, int age) {
                     this.name = name
                     this.age = age
@@ -105,7 +105,7 @@ class GinqTest {
             class Person {
                 String name
                 int age
-                
+
                 Person(String name, int age) {
                     this.name = name
                     this.age = age
@@ -126,7 +126,7 @@ class GinqTest {
             class Person {
                 String name
                 int age
-                
+
                 Person(String name, int age) {
                     this.name = name
                     this.age = age
@@ -156,7 +156,7 @@ class GinqTest {
         assertGinqScript '''
 // tag::ginq_execution_02[]
             import java.util.stream.Collectors
-            
+
             def numbers = [0, 1, 2]
             assert '0#1#2' == GQ {
                 from n in numbers
@@ -497,7 +497,7 @@ class GinqTest {
             class Person {
                 String name
                 int age
-                
+
                 Person(String name, int age) {
                     this.name = name
                     this.age = age
@@ -520,13 +520,13 @@ class GinqTest {
             class Person {
                 String name
                 int age
-                
+
                 Person(String name, int age) {
                     this.name = name
                     this.age = age
                 }
             }
-            
+
             def persons1 = [new Person('Daniel', 35), new Person('Linda', 21), new Person('Peter', 30)]
             def persons2 = [new Person('Jack', 35), new Person('Rose', 21), new Person('Smith', 30)]
             assert [['DANIEL', 'JACK'], ['LINDA', 'ROSE'], ['PETER', 'SMITH']] == GQ {
@@ -543,13 +543,13 @@ class GinqTest {
             class Person {
                 String name
                 int age
-                
+
                 Person(String name, int age) {
                     this.name = name
                     this.age = age
                 }
             }
-            
+
             def same(str) { str }
 
             def persons1 = [new Person('Daniel', 35), new Person('Linda', 21), new Person('Peter', 30)]
@@ -690,7 +690,7 @@ class GinqTest {
             class Person {
                 String name
                 int age
-                
+
                 Person(String name, int age) {
                     this.name = name
                     this.age = age
@@ -714,13 +714,13 @@ class GinqTest {
             class Person {
                 String name
                 int age
-                
+
                 Person(String name, int age) {
                     this.name = name
                     this.age = age
                 }
             }
-            
+
             def same(obj) {obj}
 
             def persons1 = [new Person('Daniel', 35), new Person('Linda', 21), new Person('David', 30)]
@@ -761,8 +761,8 @@ class GinqTest {
                 from n1 in nums1
                 innerjoin n2 in nums2 on n2 == n1
                 leftjoin n3 in nums3 on n3 == n2
-                where 1 < n1 && n1 < 5 
-                        && 2 < n2 && n2 < 7 
+                where 1 < n1 && n1 < 5
+                        && 2 < n2 && n2 < 7
                         && n3 != null
                 select n1, n2, n3
             }.toList()
@@ -1054,14 +1054,14 @@ class GinqTest {
     void "testGinq - nested from select - 17"() {
         assertGinqScript '''
             import static groovy.lang.Tuple.*
-            
+
             @groovy.transform.EqualsAndHashCode
             class Person {
                 String firstName
                 String lastName
                 int age
                 String gender
-                
+
                 Person(String firstName, String lastName, int age, String gender) {
                     this.firstName = firstName
                     this.lastName = lastName
@@ -1074,14 +1074,14 @@ class GinqTest {
                 String lastName
                 String gender
                 boolean valid
-                
+
                 LuckyInfo(String lastName, String gender, boolean valid) {
                     this.lastName = lastName
                     this.gender = gender
                     this.valid = valid
                 }
             }
-            
+
             def persons = [new Person('Daniel', 'Sun', 35, 'Male'), new Person('Linda', 'Yang', 21, 'Female'), 
                           new Person('Peter', 'Yang', 30, 'Male'), new Person('Rose', 'Yang', 30, 'Female')]
             def luckyInfoList = [new LuckyInfo('Sun', 'Male', true), new LuckyInfo('Yang', 'Female', true), 
@@ -2094,7 +2094,7 @@ class GinqTest {
             class Person {
                 String name
                 int age
-                
+
                 Person(String name, int age) {
                     this.name = name
                     this.age = age
@@ -2116,7 +2116,7 @@ class GinqTest {
             class Person {
                 String name
                 int age
-                
+
                 Person(String name, int age) {
                     this.name = name
                     this.age = age
@@ -2138,7 +2138,7 @@ class GinqTest {
             class Person {
                 String name
                 int age
-                
+
                 Person(String name, int age) {
                     this.name = name
                     this.age = age
@@ -2160,7 +2160,7 @@ class GinqTest {
             class Person {
                 String name
                 int age
-                
+
                 Person(String name, int age) {
                     this.name = name
                     this.age = age
@@ -2182,7 +2182,7 @@ class GinqTest {
             class Person {
                 String name
                 int age
-                
+
                 Person(String name, int age) {
                     this.name = name
                     this.age = age
@@ -2204,7 +2204,7 @@ class GinqTest {
             class Person {
                 String name
                 int age
-                
+
                 Person(String name, int age) {
                     this.name = name
                     this.age = age
@@ -2573,7 +2573,7 @@ class GinqTest {
                 String name
                 int weight
                 String gender
-                
+
                 Person(String name, int weight, String gender) {
                     this.name = name
                     this.weight = weight
@@ -2598,7 +2598,7 @@ class GinqTest {
                 String name
                 int weight
                 String gender
-                
+
                 Person(String name, int weight, String gender) {
                     this.name = name
                     this.weight = weight
@@ -2623,7 +2623,7 @@ class GinqTest {
                 String name
                 int weight
                 String gender
-                
+
                 Person(String name, int weight, String gender) {
                     this.name = name
                     this.weight = weight
@@ -2648,7 +2648,7 @@ class GinqTest {
                 String name
                 int weight
                 String gender
-                
+
                 Person(String name, int weight, String gender) {
                     this.name = name
                     this.weight = weight
@@ -2688,7 +2688,7 @@ class GinqTest {
                 String lastName
                 int age
                 String gender
-                
+
                 Person(String firstName, String lastName, int age, String gender) {
                     this.firstName = firstName
                     this.lastName = lastName
@@ -2696,10 +2696,10 @@ class GinqTest {
                     this.gender = gender
                 }
             }
-            
+
             def persons = [new Person('Daniel', 'Sun', 35, 'Male'), new Person('Linda', 'Yang', 21, 'Female'), 
                           new Person('Peter', 'Yang', 30, 'Male'), new Person('Rose', 'Yang', 30, 'Female')]
-                          
+
             assert [['Male', 30, 35], ['Female', 21, 30]] == GQ {
                 from p in persons
                 groupby p.gender
@@ -2712,7 +2712,7 @@ class GinqTest {
     void "testGinq - from groupby select - 9"() {
         assertGinqScript '''
             import java.util.stream.Collectors
-            
+
             assert [[1, 'a'], [2, 'bc'], [3, 'def']] == GQ {
                 from s in ['a', 'bc', 'def']
                 groupby s.size()
@@ -2725,7 +2725,7 @@ class GinqTest {
     void "testGinq - from groupby select - 10"() {
         assertGinqScript '''
             import java.util.stream.Collectors
-            
+
             assert [[3, 3, 'def'], [2, 2, 'bc']] == GQ {
                 from n in [1, 2, 3]
                 innerjoin s in ['bc', 'def'] on n == s.length()
@@ -2739,7 +2739,7 @@ class GinqTest {
     void "testGinq - from groupby select - 11"() {
         assertGinqScript '''
             import java.util.stream.Collectors
-            
+
             assert [[2, 2, 2, 'bc'], [3, 3, 3, 'def']] == GQ {
                 from n in [1, 2, 3]
                 innerjoin m in [1, 2, 3] on m == n
@@ -2854,7 +2854,7 @@ class GinqTest {
                 String name
                 int weight
                 String gender
-                
+
                 Person(String name, int weight, String gender) {
                     this.name = name
                     this.weight = weight
@@ -3180,13 +3180,13 @@ class GinqTest {
                     ]
                 }
             ''')
-    
+
             def expected = [
                     [taskId: 1, taskContent: 'task1', assignee: 'Daniel', manDay: 6],
                     [taskId: 4, taskContent: 'task4', assignee: 'Eric', manDay: 5],
                     [taskId: 3, taskContent: 'task3', assignee: 'Paul', manDay: 3]
             ]
-    
+
             assert expected == GQ {
                 from p in json.persons
                 join t in json.tasks on t.assignee == p.id
@@ -3213,7 +3213,7 @@ class GinqTest {
                     ]
                 }
             ''')
-    
+
             def expected = [['Mongo', 29], ['Orange', 11], ['Apple', 6], ['Banana', 4]]
             assert expected == GQ {
                 from f in json.fruits
@@ -3232,7 +3232,7 @@ class GinqTest {
                 from n in [1, 2, 3]
                 select n as first_col, n + 1 as second_col
             }
-    
+
             def expected = '\\n+-----------+------------+\\n| first_col | second_col |\\n+-----------+------------+\\n| 1         | 2          |\\n| 2         | 3          |\\n| 3         | 4          |\\n+-----------+------------+\\n\'
             assert expected == q.toString()
         '''
@@ -3307,7 +3307,7 @@ class GinqTest {
                 String name
                 String nickname
             }
-            
+
             def linda = new Person('Linda', null)
             def david = new Person('David', null)
             def persons = [new Person('Daniel', 'ShanFengXiaoZi'), linda, david]
@@ -3318,7 +3318,7 @@ class GinqTest {
             }.stream()
                 .peek(p -> { p.nickname = 'Unknown' }) // update `nickname`
                 .toList()
-            
+
             def expected = [new Person('Linda', 'Unknown'), new Person('David', 'Unknown')]
             assert expected == result
             assert ['Unknown', 'Unknown'] == [linda, david]*.nickname // ensure the original objects are updated
@@ -4207,7 +4207,7 @@ class GinqTest {
     void "testGinq - asType - 4"() {
         assertGinqScript '''
             import java.util.stream.Stream
-            
+
             def result = GQ {from n in [1] select n} as Stream
             assert result instanceof Stream
             assert 1 == result.findFirst().get()
@@ -4236,7 +4236,7 @@ class GinqTest {
     void "testGinq - asType - 7"() {
         assertGinqScript '''
             import org.apache.groovy.ginq.provider.collection.runtime.Queryable
-            
+
             def original = GQ {from n in [1] select n}
             def result = original as Queryable
             assert original === result
@@ -4695,7 +4695,7 @@ class GinqTest {
     void "testGinq - from innerhashjoin select - 4"() {
         assertGinqScript '''
             import java.util.stream.Collectors
-            
+
             @groovy.transform.EqualsAndHashCode
             class Person {
                 String name
@@ -4705,10 +4705,10 @@ class GinqTest {
                     this.age = age
                 }
             }
-            
+
             def persons1 = [new Person('Daniel', 36), new Person('Peter', 15), new Person('Linda', 23)]
             def persons2 = [new Person('Daniel', 36), new Person('Tom', 15), new Person('Rose', 23)]
-            
+
             assert [new Person('Daniel', 36)] == GQ {
                 from p1 in persons1
                 innerhashjoin p2 in persons2 on p1.name == p2.name && p1.age == p2.age
@@ -4733,7 +4733,7 @@ class GinqTest {
     void "testGinq - from innerhashjoin groupby select - 1"() {
         assertGinqScript '''
             import java.util.stream.Collectors
-            
+
             assert [[2, 2, 2, 'bc'], [3, 3, 3, 'def']] == GQ {
                 from n in [1, 2, 3]
                 innerhashjoin m in [1, 2, 3] on m == n
@@ -6237,7 +6237,7 @@ class GinqTest {
                 where b < n && n < e
                 select n
             }
-            
+
             assert [3, 4] == ginq([1, 2, 3, 4, 5, 6], 2, 5).toList()
 // end::ginq_method_01[]
         '''
@@ -6247,14 +6247,14 @@ class GinqTest {
     void "testGinqMethod - GQ - 1"() {
         assertScript '''
             import groovy.ginq.transform.GQ
-            
+
             @GQ
             def ginq(x) {
                 from n in [1, 2, 3]
                 where n < x
                 select n
             }
-            
+
             assert [1] == ginq(2).toList()
         '''
     }
@@ -6263,7 +6263,7 @@ class GinqTest {
     void "testGinqMethod - GQ - 2"() {
         assertScript '''
             import groovy.ginq.transform.GQ
-            
+
             class GinqClass {
                 @GQ
                 def ginq(x) {
@@ -6272,7 +6272,7 @@ class GinqTest {
                     select n
                 }
             }
-            
+
             assert [1, 2] == new GinqClass().ginq(3).toList()
         '''
     }
@@ -6281,7 +6281,7 @@ class GinqTest {
     void "testGinqMethod - GQ - 3"() {
         assertScript '''
             import groovy.ginq.transform.GQ
-            
+
             class GinqClass {
                 static class Holder {
                     @GQ
@@ -6292,7 +6292,7 @@ class GinqTest {
                     }
                 }
             }
-            
+
             assert [1, 2] == new GinqClass.Holder().ginq(3).toList()
         '''
     }
@@ -6301,14 +6301,14 @@ class GinqTest {
     void "testGinqMethod - GQ - 4"() {
         assertScript '''
             import groovy.ginq.transform.GQ
-            
+
             @GQ(optimize=false)
             def ginq(x) {
                 from n in [1, 2, 3]
                 where n < x
                 select n
             }
-            
+
             assert [1] == ginq(2).toList()
         '''
     }
@@ -6318,14 +6318,14 @@ class GinqTest {
         assertScript '''
 // tag::ginq_method_02[]
             import groovy.ginq.transform.GQ
-            
+
             @GQ(parallel=true)
             def ginq(x) {
                 from n in [1, 2, 3]
                 where n < x
                 select n
             }
-            
+
             assert [1] == ginq(2).toList()
 // end::ginq_method_02[]
         '''
@@ -6335,14 +6335,14 @@ class GinqTest {
     void "testGinqMethod - GQ - 6"() {
         assertScript '''
             import groovy.ginq.transform.GQ
-            
+
             @GQ(astWalker='org.apache.groovy.ginq.provider.collection.GinqAstWalker')
             def ginq(x) {
                 from n in [1, 2, 3]
                 where n < x
                 select n
             }
-            
+
             assert [1] == ginq(2).toList()
         '''
     }
@@ -6351,14 +6351,14 @@ class GinqTest {
     void "testGinqMethod - GQ - 7"() {
         assertScript '''
             import groovy.ginq.transform.GQ
-            
+
             @GQ(optimize=false, parallel=true)
             def ginq(x) {
                 from n in [1, 2, 3]
                 where n < x
                 select n
             }
-            
+
             assert [1] == ginq(2).toList()
         '''
     }
@@ -6367,14 +6367,14 @@ class GinqTest {
     void "testGinqMethod - GQ - 8"() {
         assertScript '''
             import groovy.ginq.transform.GQ
-            
+
             @GQ(optimize=false, parallel=true, astWalker='org.apache.groovy.ginq.provider.collection.GinqAstWalker')
             def ginq(x) {
                 from n in [1, 2, 3]
                 where n < x
                 select n
             }
-            
+
             assert [1] == ginq(2).toList()
         '''
     }
@@ -6383,21 +6383,21 @@ class GinqTest {
     void "testGinqMethod - GQ - 9"() {
         assertScript '''
             import groovy.ginq.transform.GQ
-            
+
             @GQ
             def ginq1(x) {
                 from n in [1, 2, 3]
                 where n < x
                 select n
             }
-            
+
             @GQ
             def ginq2(x) {
                 from n in [2, 3, 4]
                 where n > x
                 select n
             }
-            
+
             assert [1] == ginq1(2).toList()
             assert [3, 4] == ginq2(2).toList()
         '''
@@ -6407,12 +6407,12 @@ class GinqTest {
     void "testGinqMethod - GQ - 10"() {
         assertScript '''
             import groovy.ginq.transform.GQ
-            
+
             abstract class AbstractGinqClass {
                 abstract def ginq1(x)
                 abstract def ginq2(x)
             }
-            
+
             class GinqClass extends AbstractGinqClass {
                 @Override
                 @GQ
@@ -6421,7 +6421,7 @@ class GinqTest {
                     where n < x
                     select n
                 }
-                
+
                 @Override
                 @GQ
                 def ginq2(x) {
@@ -6430,7 +6430,7 @@ class GinqTest {
                     select n
                 }
             }
-            
+
             def gc = new GinqClass()
             assert [1] == gc.ginq1(2).toList()
             assert [3, 4] == gc.ginq2(2).toList()
@@ -6441,11 +6441,11 @@ class GinqTest {
     void "testGinqMethod - GQ - 11"() {
         assertScript '''
             import groovy.ginq.transform.GQ
-            
+
             class GinqClass {
                 private static final int F = 6
                 private int e = 3
-                
+
                 @GQ
                 def ginq(b) {
                     from n in [1, 2, 3]
@@ -6453,7 +6453,7 @@ class GinqTest {
                     select n + F
                 }
             }
-            
+
             assert [8] == new GinqClass().ginq(1).toList()
         '''
     }
@@ -6464,16 +6464,16 @@ class GinqTest {
             import groovy.ginq.transform.GQ
             import groovy.transform.CompileStatic
             import groovy.transform.CompileDynamic
-            
+
             @CompileStatic
             class GinqClass {
                 private static final int F = 6
                 private int e = 3
-                
+
                 List<Integer> biz(b) {
                     (List<Integer>) ginq(b)
                 }
-                
+
                 @GQ(List)
                 @CompileDynamic
                 def ginq(b) {
@@ -6482,7 +6482,7 @@ class GinqTest {
                     select n + F
                 }
             }
-            
+
             assert [8] == new GinqClass().ginq(1)
         '''
     }
@@ -6492,14 +6492,14 @@ class GinqTest {
         assertScript '''
 // tag::ginq_method_03[]
             import groovy.ginq.transform.GQ
-            
+
             @GQ(List)
             def ginq(b, e) {
                 from n in [1, 2, 3, 4, 5, 6]
                 where b < n && n < e
                 select n
             }
-            
+
             assert [3, 4] == ginq(2, 5)
 // end::ginq_method_03[]
         '''
@@ -6509,14 +6509,14 @@ class GinqTest {
     void "testGinqMethod - GQ - 14"() {
         assertScript '''
             import groovy.ginq.transform.GQ
-            
+
             @GQ(value=List, parallel=true)
             def ginq(b, e) {
                 from n in [1, 2, 3, 4, 5, 6]
                 where b < n && n < e
                 select n
             }
-            
+
             assert [3, 4] == ginq(2, 5)
         '''
     }
@@ -6525,14 +6525,14 @@ class GinqTest {
     void "testGinqMethod - GQ - 15"() {
         assertScript '''
             import groovy.ginq.transform.GQ
-            
+
             @GQ(Set)
             def ginq(b, e) {
                 from n in [1, 2, 3, 3, 4, 4, 5, 6]
                 where b < n && n < e
                 select n
             }
-            
+
             assert [3, 4] as Set == ginq(2, 5)
         '''
     }

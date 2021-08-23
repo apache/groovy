@@ -21,7 +21,6 @@
 
 = Loan my Resource Pattern
 
-
 The https://wiki.scala-lang.org/display/SYGN/Loan[Loan my Resource] pattern ensures that a resource is deterministically disposed of once it goes out of scope.
 
 This pattern is built in to many Groovy helper methods. You should consider using it yourself if you need to work with resources in ways beyond what Groovy supports.

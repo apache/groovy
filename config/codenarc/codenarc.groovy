@@ -16,11 +16,11 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-ruleset {    
+ruleset {
     ruleset('rulesets/naming.xml') {
         exclude 'PackageName' {
             regex = '^[a-z]([a-zA-Z\\.0-9])*\\b'
-        } 
+        }
 
         'ClassName' {
             regex = '^[A-Z]([a-zA-Z0-9$_])*\\b'
@@ -31,14 +31,14 @@ ruleset {
             finalRegex = '^[a-z]([a-zA-Z0-9$])*\\b'
             staticFinalRegex = '^[A-Z]([A-Z0-9$_])*\\b|^serialVersionUID\\b'
             staticRegex = '^[A-Z]([A-Z0-9$_])*\\b'
-            doNotApplyToClassNames='Entity,AstNodeToScriptVisitor,LookAndFeelHelper,SwingBuilder,Console,' +    
-                        'JavadocAssertionTestBuilder,JavadocAssertionTestSuite,Main,Groovysh,Parser,' + 
-                        'AliasTargetProxyCommand,WorkerThread,Cheddar,CategoryTestPropertyCategory,' + 
-                        'GroovyClosureMethodsTest,SingletonBugPrivate,SingletonBugProtected,' + 
-                        'GroovyInnerEnumBug$MyEnum,GroovyInnerEnumBug,' + 
-                        'CategoryTestHelperPropertyReplacer,PrimitiveTypeFieldTest,I3830,Cheese,' + 
-                        'SingletonBugTest,ClosureWithStaticVariablesBug,Groovy1018_Bug,Groovy3830Bug,Groovy4386_Bug,' + 
-                        'GroovyInnerEnumBug,GroovySwingTestCase,GpathSyntaxTestSupport,MixedMarkupTestSupport,' + 
+            doNotApplyToClassNames='Entity,AstNodeToScriptVisitor,LookAndFeelHelper,SwingBuilder,Console,' +
+                        'JavadocAssertionTestBuilder,JavadocAssertionTestSuite,Main,Groovysh,Parser,' +
+                        'AliasTargetProxyCommand,WorkerThread,Cheddar,CategoryTestPropertyCategory,' +
+                        'GroovyClosureMethodsTest,SingletonBugPrivate,SingletonBugProtected,' +
+                        'GroovyInnerEnumBug$MyEnum,GroovyInnerEnumBug,' +
+                        'CategoryTestHelperPropertyReplacer,PrimitiveTypeFieldTest,I3830,Cheese,' +
+                        'SingletonBugTest,ClosureWithStaticVariablesBug,Groovy1018_Bug,Groovy3830Bug,Groovy4386_Bug,' +
+                        'GroovyInnerEnumBug,GroovySwingTestCase,GpathSyntaxTestSupport,MixedMarkupTestSupport,' +
                         'TraversalTestSupport,CallClosureFieldAsMethodTest'
         }
         'PropertyName' {
@@ -50,7 +50,7 @@ ruleset {
                 'groovy.swing.factory.TitledBorderFactory,groovy.ui.Console,groovy.ui.OutputTransforms,' +
                 'org.codehaus.groovy.tools.shell.commands.HistoryCommand,org.codehaus.groovy.tools.shell.commands.PurgeCommand,' +
                 'org.codehaus.groovy.tools.shell.commands.RecordCommand,org.codehaus.groovy.tools.shell.commands.ShadowCommand,' +
-                'org.codehaus.groovy.tools.shell.commands.ShowCommand,org.codehaus.groovy.tools.shell.ComplexCommandSupport,' + 
+                'org.codehaus.groovy.tools.shell.commands.ShowCommand,org.codehaus.groovy.tools.shell.ComplexCommandSupport,' +
                 'groovy.bugs.StaticPropertyFoo,groovy.bugs.Groovy3135Bug,groovy.util.XmlParserTest,' +
                 'org.codehaus.groovy.runtime.PerInstanceMetaClassTest,groovy.StaticImportChild,' +
                 'gls.scope.VariablePrecedenceTest,groovy.bugs.Groovy3069Bug,groovy.StaticImportTarget,' +
@@ -75,24 +75,24 @@ ruleset {
         'VariableName' {
             regex = '^[a-z]([a-zA-Z0-9$])*\\b'
             finalRegex = '^[a-z]([a-zA-Z0-9$])*\\b'
-            doNotApplyToClassNames='groovy.GroovyClosureMethodsTest,groovy.RegularExpressionsTest,groovy.NumberMathTest,' + 
-                        'groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,' + 
-                        'groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,' + 
-                        'groovy.NumberMathTest,groovy.RegularExpressionsTest,' + 
-                        'groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,' + 
-                        'groovy.RegularExpressionsTest,groovy.NumberMathTest,groovy.NumberMathTest,' + 
-                        'groovy.NumberMathTest,groovy.ValidNameTest,groovy.ValidNameTest,' + 
-                        'org.codehaus.groovy.runtime.PerInstanceMetaClassTest,' + 
-                        'groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,' + 
-                        'groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,' + 
-                        'gls.scope.NameResolvingTest,groovy.util.AntTest,groovy.sql.SqlCacheTest,' + 
-                        'groovy.operator.NegateListsTest,org.codehaus.groovy.reflection.WeakMapTest,' + 
+            doNotApplyToClassNames='groovy.GroovyClosureMethodsTest,groovy.RegularExpressionsTest,groovy.NumberMathTest,' +
+                        'groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,' +
+                        'groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,' +
+                        'groovy.NumberMathTest,groovy.RegularExpressionsTest,' +
+                        'groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,' +
+                        'groovy.RegularExpressionsTest,groovy.NumberMathTest,groovy.NumberMathTest,' +
+                        'groovy.NumberMathTest,groovy.ValidNameTest,groovy.ValidNameTest,' +
+                        'org.codehaus.groovy.runtime.PerInstanceMetaClassTest,' +
+                        'groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,' +
+                        'groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,groovy.NumberMathTest,' +
+                        'gls.scope.NameResolvingTest,groovy.util.AntTest,groovy.sql.SqlCacheTest,' +
+                        'groovy.operator.NegateListsTest,org.codehaus.groovy.reflection.WeakMapTest,' +
                         'groovy.RegularExpressionsTest,gls.scope.NameResolvingTest'
         }
 
         'MethodName' {
-            doNotApplyToClassNames='groovy.swing.SwingBuilder,groovy.$Temp,groovy.bugs.Groovy4119Bug,' + 
-                        'groovy.lang.MetaClassRegistryTest,groovy.lang.MixinTest,' + 
+            doNotApplyToClassNames='groovy.swing.SwingBuilder,groovy.$Temp,groovy.bugs.Groovy4119Bug,' +
+                        'groovy.lang.MetaClassRegistryTest,groovy.lang.MixinTest,' +
                         'groovy.swing.TitledBorderFactoryJustificationTest'
             doNotApplyToFilesMatching='.*spectralnorm\\.groovy'
         }
@@ -135,14 +135,14 @@ ruleset {
 
         'UnusedPrivateField' {
             doNotApplyToClassNames='gls.annotations.closures.CallOnOwner,gls.annotations.closures.CallOnThisObject,' +
-                'gls.annotations.closures.UnqualifiedCall,gls.annotations.closures.ClosureWithParameters,' + 
+                'gls.annotations.closures.UnqualifiedCall,gls.annotations.closures.ClosureWithParameters,' +
                 'gls.annotations.closures.JavaCompatibility,gls.annotations.closures.JavaCompatibilityParameterized,' +
                 'groovy.Foo,groovy.Singlet'
         }
 
         'UnusedPrivateMethod'  {
-            doNotApplyToClassNames='org.codehaus.groovy.ast.builder.AstBuilder,org.codehaus.groovy.ast.builder.AstSpecificationCompiler,' + 
-                'StringMethodName,Foo' 
+            doNotApplyToClassNames='org.codehaus.groovy.ast.builder.AstBuilder,org.codehaus.groovy.ast.builder.AstSpecificationCompiler,' +
+                'StringMethodName,Foo'
         }
 
         'UnusedPrivateMethodParameter' {
@@ -150,7 +150,7 @@ ruleset {
         }
 
         'UnusedObject'  {
-            doNotApplyToClassNames='groovy.ui.OutputTransforms,org.codehaus.groovy.ast.builder.AstSpecificationCompiler,groovy.lang.GroovyCodeSourceTest'        
+            doNotApplyToClassNames='groovy.ui.OutputTransforms,org.codehaus.groovy.ast.builder.AstSpecificationCompiler,groovy.lang.GroovyCodeSourceTest'
         }
     }
 
@@ -208,11 +208,11 @@ ruleset {
     ruleset('rulesets/unnecessary.xml') {
         'UnnecessaryInstantiationToGetClass'  {
              doNotApplyToClassNames='SpreadDotTest'
-        } 
+        }
 
         'ConsecutiveStringConcatenation' {
-            doNotApplyToClassNames='groovy.DynamicMemberTest,groovy.StaticImportTest,groovy.bugs.Groovy675_Bug,groovy.bugs.MorgansBug,' + 
-                        'groovy.bugs.WriteOnlyPropertyBug,groovy.operator.StringOperatorsTest,groovy.swing.SwingBuilderTest,' + 
+            doNotApplyToClassNames='groovy.DynamicMemberTest,groovy.StaticImportTest,groovy.bugs.Groovy675_Bug,groovy.bugs.MorgansBug,' +
+                        'groovy.bugs.WriteOnlyPropertyBug,groovy.operator.StringOperatorsTest,groovy.swing.SwingBuilderTest,' +
                         'org.codehaus.groovy.runtime.powerassert.EvaluationTest,groovy.json.JsonLexerTest'
         }
 
@@ -227,7 +227,7 @@ ruleset {
         exclude 'DuplicateStringLiteral'    // too many to worry about, review later
     }
     ruleset('rulesets/design.xml') {
-        'CloseWithoutCloseable' { 
+        'CloseWithoutCloseable' {
             doNotApplyToClassNames='Log4jInterceptingAppender'
         }
         exclude 'EmptyMethodInAbstractClass'      // too many to worry about, review later

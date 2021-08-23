@@ -26,14 +26,14 @@ class Groovy3770Bug extends GroovyTestCase {
             void hello(who) {
                 println ("Hello " + who)
             }
-            
+
             def c = { x ->
                 hello(x)
             }
-            
+
             def d = c.curry("Ian")
             d.call()
-            
+
             d.delegate = null
 
             assert d.delegate == null
@@ -48,7 +48,7 @@ class Groovy3770Bug extends GroovyTestCase {
             }
         """
     }
-    
+
     void testCurriedClosuresShouldNotAffectParent() {
         // GROOVY-3875
         def orig = { tmp -> assert tmp == 1 }

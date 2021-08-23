@@ -424,7 +424,7 @@ class SqlCompleteTest extends SqlHelperTestCase {
         assert result != null
         assert result["name"] == "edam"
     }
-    
+
     void testEachRowPaging() {
         def names = []
         sql.eachRow("select name from FOOD order by name", 2, 2) { row ->

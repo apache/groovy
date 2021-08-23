@@ -24,7 +24,7 @@ package org.codehaus.groovy.runtime;
 * <p>
 * The purpose is the reduction of the size of the bytecode. Consider creating a three element Object[] with null values:
 * <pre>
-*  ANEWARRAY java/lang/Object    
+*  ANEWARRAY java/lang/Object
 *  DUP
 *  ICONST_0
 *  ACONST_NULL
@@ -50,8 +50,8 @@ package org.codehaus.groovy.runtime;
 * inlining threshold here or there.
 * <p>
 * So even though the class is ugly, there are good reason to have this in Groovy, even if the class makes
-* absolutely no sense in normal Java. But it is not used in normal Java, but from the bytecode. 
-*/ 
+* absolutely no sense in normal Java. But it is not used in normal Java, but from the bytecode.
+*/
 public class ArrayUtil {
     private static final Object[] EMPTY = new Object[0];
 

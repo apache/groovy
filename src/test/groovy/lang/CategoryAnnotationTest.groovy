@@ -30,11 +30,11 @@ class CategoryAnnotationTest extends GroovyTestCase {
                     new Distance3367(number: this.number + increment.number)
                 }
             }
-    
+
             class Distance3367 {
                 def number
             }
-    
+
             use(DistanceCategory3367) {
                 def d1 = new Distance3367(number: 5)
                 def d2 = new Distance3367(number: 10)
@@ -87,17 +87,17 @@ class CategoryAnnotationTest extends GroovyTestCase {
                     return myname + "-Post"
                 }
             }
-    
+
             interface Test { 
                 String getName() 
             }
-    
+
             class MyTest implements Test {
                 String getName() {
                     return "Pre-"
                 }
             }
-    
+
             def onetest = new MyTest()
             use(TestCategory) { 
                 assert onetest.getSuperName1() == "hi from category"
@@ -119,22 +119,22 @@ class CategoryAnnotationTest extends GroovyTestCase {
                         ""
                 }
             }
-            
+
             interface Guy {
                 Type getType()
             }
-            
+
             class Type {
                 String name
             }
-            
+
             class MyGuyver implements Guy {
                 Type type
             }
-            
+
             def atype = new Type(name: 'String')
             def onetest = new MyGuyver(type:atype)
-            
+
             use(Naming) {
                 assert onetest.getTypeName() == onetest.getType().getName()
             }
@@ -149,23 +149,23 @@ class CategoryAnnotationTest extends GroovyTestCase {
                     this.messages.findAll{it.name != this.getName()}
                 }
             }
-            
+
             interface Guy {
                 String getName()
                 List getMessages()
             }
-            
+
             class MyGuyver implements Guy {
                 List messages
                 String name
             }
-            
+
             def onetest = new MyGuyver(
                     name: 'coucou',
                     messages : [['name':'coucou'], ['name':'test'], ['name':'salut']])
-            
+
             Guy.mixin   Filtering
-            
+
             assert onetest.process() == onetest.messages.findAll{it.name != onetest.getName()}        
         """
     }

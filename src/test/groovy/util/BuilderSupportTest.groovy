@@ -166,7 +166,7 @@ class BuilderSupportTest extends GroovyTestCase{
 **/
 class SpoofBuilder extends BuilderSupport{
     def log = []
-    
+
     protected void setParent(Object parent, Object child){
         log << "set_parent"
         log << parent
@@ -201,7 +201,7 @@ class SpoofBuilder extends BuilderSupport{
         log << parent
         log << node
     }
-    
+
     protected Object postNodeCompletion(Object parent, Object node) {
         log << 'post_node_completion'
         log << parent

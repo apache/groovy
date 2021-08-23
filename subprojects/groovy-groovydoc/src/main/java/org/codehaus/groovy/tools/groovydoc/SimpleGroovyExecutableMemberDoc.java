@@ -29,7 +29,7 @@ import java.util.List;
 public class SimpleGroovyExecutableMemberDoc extends SimpleGroovyMemberDoc implements GroovyExecutableMemberDoc {
     private static final GroovyParameter[] EMPTY_GROOVYPARAMETER_ARRAY = new GroovyParameter[0];
     List parameters;
-    
+
     public SimpleGroovyExecutableMemberDoc(String name, GroovyClassDoc belongsToClass) {
         super(name, belongsToClass);
         parameters = new ArrayList();
@@ -44,7 +44,7 @@ public class SimpleGroovyExecutableMemberDoc extends SimpleGroovyMemberDoc imple
         parameters.add(parameter);
     }
 
-    
+
     @Override
     public String flatSignature() {/*todo*/return null;}
     @Override

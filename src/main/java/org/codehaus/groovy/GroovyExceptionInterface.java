@@ -27,5 +27,5 @@ public interface GroovyExceptionInterface {
     boolean isFatal();
 
     void setFatal( boolean fatal );
-    
+
 }

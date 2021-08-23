@@ -55,7 +55,7 @@ public class GroovycTask
         GlobPatternMapper mapper = new GlobPatternMapper();
         mapper.setFrom("*.groovy");
         mapper.setTo("*.class");
-        
+
         int count = 0;
         String[] list = src.list();
 

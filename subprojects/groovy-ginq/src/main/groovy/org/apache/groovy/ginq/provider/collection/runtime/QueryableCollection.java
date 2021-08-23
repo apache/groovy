@@ -167,7 +167,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
             Collector<Candidate<U>, ?, ? extends Map<Integer, List<Candidate<U>>>> candidateMapCollector =
                     isParallel() ? Collectors.toConcurrentMap(keyMapper, valueMapper, mergeFunction)
                                  : Collectors.toMap(keyMapper, valueMapper, mergeFunction);
-            
+
             return queryable.stream()
                     .map(e -> new Candidate<U>(e, fieldsExtractor2.apply(e)))
                     .collect(candidateMapCollector);
@@ -637,7 +637,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                 sortedPartitionCacheKey,
                 sortedPartitionId -> Partition.of(partition.orderBy(composeOrders(windowDefinition)).toList())
         );
-        
+
         return Window.of(currentRecord, sortedPartition, windowDefinition);
     }
 

@@ -94,7 +94,7 @@ public class ASTHelper {
     public void setController(SourceUnit controller) {
         this.controller = controller;
     }
-    
+
     /**
      * @return Two names joined by a dot. If the base name is
      * empty, returns the name unchanged.

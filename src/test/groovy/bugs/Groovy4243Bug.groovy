@@ -43,7 +43,7 @@ class Groovy4243Bug extends GroovyTestCase {
             }
         ''')
         assert Script.isAssignableFrom(scriptClass)
-        assert TestScript4243.isAssignableFrom(scriptClass) // <-- fails here    
+        assert TestScript4243.isAssignableFrom(scriptClass) // <-- fails here
     }
 }
 

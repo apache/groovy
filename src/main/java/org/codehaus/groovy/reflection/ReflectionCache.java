@@ -37,7 +37,7 @@ public class ReflectionCache {
         }
         return (String) mopNameEntry.value;
     }
-    
+
     static final CachedClass STRING_CLASS = getCachedClass(String.class);
 
     public static boolean isArray(Class klazz) {
@@ -93,7 +93,7 @@ public class ReflectionCache {
     public static CachedClass getCachedClass(Class klazz) {
         if (klazz == null)
           return null;
-        
+
         return ClassInfo.getClassInfo(klazz).getCachedClass();
     }
 

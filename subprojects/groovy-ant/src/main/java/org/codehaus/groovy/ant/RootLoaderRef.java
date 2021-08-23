@@ -33,7 +33,7 @@ import java.security.PrivilegedAction;
 /**
  * Sets the RootLoader as reference.
  * Re-execution of this task will set a new instance of RootLoader for
- * the reference. 
+ * the reference.
  *
  * arguments:
  * <ul>

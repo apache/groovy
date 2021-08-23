@@ -23,7 +23,7 @@ import groovy.lang.Closure;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 
-/** 
+/**
  * A default action implementation
  */
 public class DefaultAction extends AbstractAction {

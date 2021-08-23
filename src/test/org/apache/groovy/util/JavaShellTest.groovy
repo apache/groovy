@@ -82,7 +82,7 @@ class JavaShellTest {
             public class Test1 {
                 public static String test() { return TestHelper.msg(); }
             }
-            
+
             class TestHelper {
                 public static String msg() { 
                     return "Hello, " + groovy.lang.GString.class.getSimpleName();
@@ -92,7 +92,7 @@ class JavaShellTest {
 
         new GroovyShell(js.getClassLoader()).evaluate '''
             import tests.Test1
-            
+
             assert 'Hello, GString' == Test1.test()
         '''
     }

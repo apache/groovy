@@ -128,7 +128,7 @@ public class AntBuilder extends BuilderSupport {
 
         // define "owning" task as wrapper to avoid having tasks added to the target
         // but it needs to be an UnknownElement and no access is available from
-        // task to its original UnknownElement 
+        // task to its original UnknownElement
         final UnknownElement ue = new UnknownElement(parentTask.getTaskName());
         ue.setProject(parentTask.getProject());
         ue.setTaskType(parentTask.getTaskType());
@@ -188,7 +188,7 @@ public class AntBuilder extends BuilderSupport {
 
         final ProjectHelper helper = ProjectHelper.getProjectHelper();
         project.addReference(ProjectHelper.PROJECTHELPER_REFERENCE, helper);
-        helper.getImportStack().addElement("AntBuilder"); // import checks that stack is not empty 
+        helper.getImportStack().addElement("AntBuilder"); // import checks that stack is not empty
 
         final BuildLogger logger = new NoBannerLogger();
 

@@ -133,7 +133,7 @@ public interface MetaClass extends MetaObjectProtocol {
      * @param fromInsideClass Whether the call happened from the inside or the outside of a class
      */
      void setAttribute(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper, boolean fromInsideClass);
-    
+
     /**
      * Complete the initialisation process. After this method
      * is called no methods should be added to the meta class.
@@ -163,7 +163,7 @@ public interface MetaClass extends MetaObjectProtocol {
      */
     @Override
     List<MetaMethod> getMethods();
-     
+
      /**
       * Obtains a reference to the original AST for the MetaClass if it is available at runtime
       *
@@ -177,7 +177,7 @@ public interface MetaClass extends MetaObjectProtocol {
       * @return A list of MetaMethods
       */
      List<MetaMethod> getMetaMethods();
-    
+
      /**
       *
       * Internal method to support Groovy runtime. Not for client usage.

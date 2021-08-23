@@ -24,7 +24,7 @@ import groovy.test.GroovyTestCase
  * Fix Bug GROOVY-683
  */
 class PrimitivePropertyBug extends GroovyTestCase {
-     
+
     double x1
     float x2
     long x3
@@ -42,7 +42,7 @@ class PrimitivePropertyBug extends GroovyTestCase {
         y.x5 = 10.0
         y.x6 = 10.0
         y.x7 = 10.0
-        
+
         assert y.x1 == 10.0
         assert y.x2 == 10.0
         assert y.x3 == 10.0

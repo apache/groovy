@@ -26,7 +26,7 @@ public class BoxFactory extends ComponentFactory {
     public BoxFactory() {
         super(null);
     }
-    
+
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (FactoryBuilderSupport.checkValueIsType(value, name, Box)) {
             return value;

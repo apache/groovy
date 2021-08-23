@@ -30,12 +30,12 @@ class Groovy7995Bug extends GroovyTestCase{
                 Closure wrap = {
                     c()
                 }
-            
+
                 def run() {
                     wrap()
                 }
             }
-            
+
             assert new Foo().run()=='ok'
         ''')
     }

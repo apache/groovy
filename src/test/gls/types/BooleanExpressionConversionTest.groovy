@@ -32,7 +32,7 @@ class BooleanExpressionConversionTest extends CompilableTestSupport {
             assert foo(256)
         """
     }
-    
+
     void testLong() {
         assertScript """
             boolean foo(long i){
@@ -44,7 +44,7 @@ class BooleanExpressionConversionTest extends CompilableTestSupport {
             assert foo(256)
         """
     }
-    
+
     void testFloat() {
         assertScript """
             boolean foo(float i){
@@ -56,7 +56,7 @@ class BooleanExpressionConversionTest extends CompilableTestSupport {
             assert foo(256)
         """
     }
-    
+
     void testDouble() {
         assertScript """
             boolean foo(double i){
@@ -68,7 +68,7 @@ class BooleanExpressionConversionTest extends CompilableTestSupport {
             assert foo(256)
         """
     }
-    
+
     void testChar() {
         assertScript """
             boolean foo(char i){
@@ -80,7 +80,7 @@ class BooleanExpressionConversionTest extends CompilableTestSupport {
             assert foo((char)256)
         """
     }
-    
+
     void testByte() {
         assertScript """
             boolean foo(byte i){
@@ -92,7 +92,7 @@ class BooleanExpressionConversionTest extends CompilableTestSupport {
             assert !foo((byte)256)
         """
     }
-    
+
     void testShort() {
         assertScript """
             boolean foo(short i){
@@ -104,5 +104,5 @@ class BooleanExpressionConversionTest extends CompilableTestSupport {
             assert foo((short)256)
         """
     }
-    
+
 }

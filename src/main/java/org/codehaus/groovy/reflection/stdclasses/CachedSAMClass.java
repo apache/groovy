@@ -89,7 +89,7 @@ public class CachedSAMClass extends CachedClass {
                     instantiateAggregateFromBaseClass(m, clazz);
         }
     }
-    
+
     @Override
     public Object coerceArgument(Object argument) {
         if (argument instanceof Closure) {
@@ -140,7 +140,7 @@ public class CachedSAMClass extends CachedClass {
         if (current.size()==1) return current.get(0);
         Method m = current.remove(0);
         for (Method m2 : current) {
-            if (m.getName().equals(m2.getName()) && 
+            if (m.getName().equals(m2.getName()) &&
                 Arrays.equals(m.getParameterTypes(), m2.getParameterTypes()))
             {
                 continue;

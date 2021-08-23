@@ -55,7 +55,7 @@ public class NodeChild extends GPathResult {
     public NodeChild(final Node node, final GPathResult parent, final Map<String, String> namespaceTagHints) {
         this(node, parent, "*", namespaceTagHints);
     }
-    
+
     @Override
     public GPathResult parent() {
         if (node.parent() != null)

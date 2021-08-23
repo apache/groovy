@@ -30,13 +30,13 @@ public class StringSetMap extends LinkedHashMap<String,Set<String>> {
     public StringSetMap() {
         super();
     }
-    
+
     public StringSetMap(StringSetMap other) {
         for (String key : other.keySet()) {
             get(key).addAll(other.get(key));
         }
     }
-    
+
     @Override
     public Set<String> get(Object o){
         String name = (String) o;
@@ -50,7 +50,7 @@ public class StringSetMap extends LinkedHashMap<String,Set<String>> {
 
     public void makeTransitiveHull() {
         Set<String> nameSet = new TreeSet<String>(keySet());
-        
+
         for (String k: nameSet) {
             StringSetMap delta = new StringSetMap();
             for (String i: nameSet) {

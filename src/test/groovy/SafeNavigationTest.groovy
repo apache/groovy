@@ -43,7 +43,7 @@ class SafeNavigationTest extends GroovyTestCase {
         def t = d?.time
         assert t == null
     }
-    
+
     void testNormalMethodCall() {
         def x = 1234
         def y = x?.toString()

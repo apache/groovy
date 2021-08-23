@@ -30,11 +30,11 @@ class Groovy5030Bug extends GroovyTestCase {
                     list << obj
                 }] as RemoteObject5030
             }
-              
+
             String val = "Value" 
             cut.someMethod(val)
             assert list == [val]
-            
+
             public class ClassUnderTest5030 extends RemoteObject5030 
             {
                 public def someMethod(String someValue) {
@@ -45,7 +45,7 @@ class Groovy5030Bug extends GroovyTestCase {
                    return new RemoteObject5030()
                 }
              }
-             
+
              public class RemoteObject5030 {
                 public void method(obj) { /* Something */ }
              }

@@ -28,12 +28,12 @@ class Groovy8595Bug extends CompilableTestSupport {
               List<Foo> foo() {
                 return []
               }
-            
+
               List<String> bar() {
                 return foo().collect { Foo it -> it.instanceId }
               }
             }
-            
+
             @groovy.transform.CompileStatic
             class Foo {
               String instanceId
@@ -48,12 +48,12 @@ class Groovy8595Bug extends CompilableTestSupport {
                 List<Foo> foo() {
                     return []
                 }
-            
+
                 List<String> bar() {
                     return foo()*.instanceId
                 }
             }
-            
+
             @groovy.transform.CompileStatic
             class Foo {
               String instanceId

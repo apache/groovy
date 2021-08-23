@@ -367,7 +367,7 @@ public class MarkupBuilder extends BuilderSupport {
     protected Object getName(String methodName) {
         return super.getName(methodName);
     }
-    
+
     /**
      * Escapes a string so that it can be used directly as an XML
      * attribute value.

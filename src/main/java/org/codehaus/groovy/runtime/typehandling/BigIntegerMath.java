@@ -24,14 +24,14 @@ package org.codehaus.groovy.runtime.typehandling;
 public final class BigIntegerMath extends NumberMath {
 
     public static final BigIntegerMath INSTANCE = new BigIntegerMath();
-    
+
     private BigIntegerMath() {}
 
     @Override
     protected Number absImpl(Number number) {
         return toBigInteger(number).abs();
     }
-    
+
     @Override
     public Number addImpl(Number left, Number right) {
         return toBigInteger(left).add(toBigInteger(right));
@@ -50,7 +50,7 @@ public final class BigIntegerMath extends NumberMath {
     public Number divideImpl(Number left, Number right) {
         return BigDecimalMath.INSTANCE.divideImpl(left, right);
     }
-    
+
     @Override
     public int compareToImpl(Number left, Number right) {
         return toBigInteger(left).compareTo(toBigInteger(right));
@@ -60,12 +60,12 @@ public final class BigIntegerMath extends NumberMath {
     protected Number intdivImpl(Number left, Number right) {
         return toBigInteger(left).divide(toBigInteger(right));
     }
-    
+
     @Override
     protected Number modImpl(Number left, Number right) {
         return toBigInteger(left).mod(toBigInteger(right));
     }
-    
+
     @Override
     protected Number unaryMinusImpl(Number left) {
         return toBigInteger(left).negate();
@@ -90,7 +90,7 @@ public final class BigIntegerMath extends NumberMath {
     protected Number andImpl(Number left, Number right) {
         return toBigInteger(left).and(toBigInteger(right));
     }
-    
+
     @Override
     protected Number xorImpl(Number left, Number right) {
         return toBigInteger(left).xor(toBigInteger(right));

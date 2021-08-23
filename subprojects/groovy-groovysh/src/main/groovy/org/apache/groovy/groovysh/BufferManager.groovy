@@ -26,7 +26,7 @@ import org.codehaus.groovy.tools.shell.util.Logger
 class BufferManager
 {
     protected final Logger log = Logger.create(this.class)
-    
+
     final List<List<String>> buffers = []
 
     int selected
@@ -34,24 +34,24 @@ class BufferManager
     BufferManager() {
         reset()
     }
-    
+
     void reset() {
         buffers.clear()
-        
+
         create(true)
-        
+
         log.debug('Buffers reset')
     }
-    
+
     List<String> current() {
         assert !buffers.isEmpty()
-        
+
         return buffers[selected]
     }
-    
+
     void select(final int index) {
         assert index >= 0 && index < buffers.size()
-        
+
         selected = index
     }
 
@@ -63,11 +63,11 @@ class BufferManager
         if (select) {
             this.select(i)
         }
-        
+
         if (log.debugEnabled) {
             log.debug("Created new buffer with index: $i")
         }
-        
+
         return i
     }
 
@@ -75,7 +75,7 @@ class BufferManager
         assert index >= 0 && index < buffers.size()
 
         buffers.remove(index)
-        
+
         if (log.debugEnabled) {
             log.debug("Deleted buffer with index: $index")
         }
@@ -88,7 +88,7 @@ class BufferManager
     //
     // Selected operators
     //
-    
+
     void deleteSelected() {
         delete(selected)
 
@@ -108,7 +108,7 @@ class BufferManager
 
     void updateSelected(final List buffer) {
         assert buffer != null
-        
+
         buffers[selected] = buffer
     }
 }

@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-/** 
+/**
  * <p><code>FileScanner</code> is a bean which allows the iteration
  * over a number of files from a collection of FileSet instances.
  */
@@ -37,11 +37,11 @@ public class FileScanner extends Task {
 
     public FileScanner() {
     }
-    
+
     public FileScanner(final Project project) {
         setProject(project);
     }
-    
+
     public Iterator<File> iterator() {
         return new FileIterator(getProject(), filesets.iterator());
     }

@@ -29,23 +29,23 @@ public class IfStatement extends Statement {
     private BooleanExpression booleanExpression;
     private Statement ifBlock;
     private Statement elseBlock;
-    
+
 
     public IfStatement(BooleanExpression booleanExpression, Statement ifBlock, Statement elseBlock) {
         this.booleanExpression = booleanExpression;
         this.ifBlock = ifBlock;
         this.elseBlock = elseBlock;
     }
-    
+
     @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitIfElse(this);
     }
-    
+
     public BooleanExpression getBooleanExpression() {
         return booleanExpression;
     }
-    
+
     public Statement getIfBlock() {
         return ifBlock;
     }

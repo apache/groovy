@@ -23,7 +23,7 @@ import groovy.test.GroovyTestCase
 public class ExceptionTest extends GroovyTestCase {
 
     private int finallyCounter;
-    
+
     def m1() {
         // this code is in a method, because we need to test
         // insertions for return here along with the method
@@ -35,7 +35,7 @@ public class ExceptionTest extends GroovyTestCase {
             throw new RuntimeException("2") 
         }
     }
-    
+
     void testFinallyExceptionOverridingTryException() {
         finallyCounter = 0
         try {
@@ -46,7 +46,7 @@ public class ExceptionTest extends GroovyTestCase {
         }
         assert finallyCounter == 1
     }
-    
+
     def m2() {
         try {
             def x = 0
@@ -56,7 +56,7 @@ public class ExceptionTest extends GroovyTestCase {
             throw new RuntimeException("1") 
         }
     }
-    
+
     void testFinallyExceptionAlone() {
         finallyCounter = 0
         try {
@@ -67,7 +67,7 @@ public class ExceptionTest extends GroovyTestCase {
         }
         assert finallyCounter == 1
     }
-    
+
     def m3() {    
         try {
           throw new RuntimeException("1")
@@ -78,7 +78,7 @@ public class ExceptionTest extends GroovyTestCase {
           finallyCounter++
         }
     }
-    
+
     void testExceptionAndCatchBlock() {
         finallyCounter = 0
         try {

@@ -841,7 +841,7 @@ class CliBuilderTest extends GroovyTestCase {
             import groovy.cli.UnparsedField
             import groovy.cli.picocli.CliBuilder
             import java.math.RoundingMode
-            
+
             @OptionField String first
             @OptionField String last
             @OptionField boolean flag1

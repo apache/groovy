@@ -134,7 +134,7 @@ public class NamespaceBuilderSupport extends BuilderSupport {
 
         return super.invokeMethod(methodName, args);
     }
-    
+
     private static Map findAttributes(Object args) {
         List list = InvokerHelper.asList(args);
         for (Object o : list) {

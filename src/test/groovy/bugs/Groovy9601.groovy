@@ -30,18 +30,18 @@ final class Groovy9601 {
         assertScript '''
             abstract class Base {
                 abstract String getName()
-                
+
                 public String hi() { return "Hi, ${name}" }
-                
+
                 public String hello() { return 'Hello, ' + name }
-                
+
                 public String hey() { return 'Hey, ' + this.name }
             }
-            
+
             class Derived extends Base {
                 String getName() { 'Daniel' }
             }
-            
+
             def d = new Derived()
             assert 'Hi, Daniel' == d.hi()
             assert 'Hello, Daniel' == d.hello()

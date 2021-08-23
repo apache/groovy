@@ -21,9 +21,9 @@ package groovy.bugs
 /**
  */
 class NestedClosure2Bug extends TestSupport {
-     
+
     Object f
-     
+
     void testFieldBug() {
         def closure = {
             return {
@@ -35,7 +35,7 @@ class NestedClosure2Bug extends TestSupport {
         value = value()
         assert f == 123
     }
-     
+
     void testBugOutsideOfScript() {
         def a = 123
         def b = 456
@@ -43,7 +43,7 @@ class NestedClosure2Bug extends TestSupport {
             def c = 999
             return {
                 f = 2222111
-                
+
                 def d = 678
                 return { 
                     assert f == 2222111
@@ -58,7 +58,7 @@ class NestedClosure2Bug extends TestSupport {
         assert f == 2222111        
         assert value == 123
     }
-    
+
     void testBug() {
         assertScript """
             def a = 123
@@ -72,7 +72,7 @@ class NestedClosure2Bug extends TestSupport {
             def c2 = closure()
             def c3 = c2()
             value = c3()
-            
+
             assert value == 123
 """
     }

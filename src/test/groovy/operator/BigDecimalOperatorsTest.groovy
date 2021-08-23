@@ -97,14 +97,14 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
         y = 34.00000000000 / 3
         assert y == 11.33333333333 , "y = " + y
     }
-    
+
     BigDecimal echoX ( BigDecimal x, BigDecimal y) {x}
-    
+
     // test for Groovy-1250
     void testBigDecimalCoerce() {
         assert echoX(9.95, 1.0) == echoX(9.95, 1)
     }
-    
+
     void testAssign() {
         BigDecimal foo
         foo = (byte) 20
@@ -130,11 +130,11 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
         foo = (double) 0.5d
         assert foo.class == BigDecimal.class
         assert foo == 0.5
-        
+
         foo = 10G
         assert foo.class == BigDecimal.class
         assert foo == 10
-        
+
         double d = 1000
         d *= d
         d *= d
@@ -164,16 +164,16 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
     public void testBDPrimOptFields() {
         assertScript """
             class BigDecimalBug {
-                
+
                   BigDecimal advancePaid = 100.00
                   BigDecimal advanceApplied = 10.00
                   BigDecimal advanceHeld = 20.00
                   BigDecimal advanceAdj = 50.00
-                
+
                   void testAdvanceAvailable() {
                     def tmp = advancePaid + advanceApplied + advanceHeld + advanceAdj;
                     assert tmp.getClass() == BigDecimal
-                  }  
+                  }
             }
             def bug = new BigDecimalBug()
             bug.testAdvanceAvailable()

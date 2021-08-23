@@ -46,7 +46,7 @@ import static org.objectweb.asm.Opcodes.IFNE;
  * Base class for writing primitive typed operations
  */
 public abstract class BinaryExpressionWriter {
-    
+
     private final WriterController controller;
     private MethodCaller arraySet, arrayGet;
 
@@ -63,10 +63,10 @@ public abstract class BinaryExpressionWriter {
     public WriterController getController() {
         return controller;
     }
-    
+
     protected static final int[] stdCompareCodes = {
         IFEQ,      // COMPARE_NOT_EQUAL            120
-        IFNE,      // COMPARE_IDENTICAL            121 
+        IFNE,      // COMPARE_IDENTICAL            121
         IFEQ,      // COMPARE_NOT_IDENTICAL        122
         IFNE,      // COMPARE_EQUAL                123
         IFGE,      // COMPARE_LESS_THAN            124
@@ -74,7 +74,7 @@ public abstract class BinaryExpressionWriter {
         IFLE,      // COMPARE_GREATER_THAN         126
         IFLT,      // COMPARE_GREATER_THAN_EQUAL   127
     };
-    
+
     protected abstract int getCompareCode();
 
     /**
@@ -105,19 +105,19 @@ public abstract class BinaryExpressionWriter {
         }
         return true;
     }
-    
+
     protected abstract void doubleTwoOperands(MethodVisitor mv);
     protected abstract void removeTwoOperands(MethodVisitor mv);
-    
+
     protected boolean writeSpaceship(int type, boolean simulate) {
         if (type != COMPARE_TO) return false;
-        /*  
+        /*
            we will actually do
-         
+
           (x < y) ? -1 : ((x == y) ? 0 : 1)
           which is the essence of what the call with Number would do
           this compiles to something along
-          
+
               <x>
               <y>
               LCMP
@@ -134,13 +134,13 @@ public abstract class BinaryExpressionWriter {
           L3
               ICONST_1
           L2
-          
+
           since the operators are already on the stack and we don't want
           to load them again, we will instead duplicate them. This will
           require some pop actions in the branches!
-          
+
               DUP4          (operands: L1L2L1L2)
-              LCMP          
+              LCMP
               IFGE L1       (operands: L1L2)
               ICONST_M1     (operands: L1L2I)
               GOTO L2
@@ -156,9 +156,9 @@ public abstract class BinaryExpressionWriter {
           L2  
           - if jump from GOTO L2 we have LLI, but need only I
           - if from L3 branch we get only I
-          
+
           this means we have to pop of LL before loading -1
-          
+
           since there is no DUP4 we have to do this:
             DUP2_X1
             POP2
@@ -171,7 +171,7 @@ public abstract class BinaryExpressionWriter {
             MethodVisitor mv = controller.getMethodVisitor();
             // duplicate arguments
             doubleTwoOperands(mv);
-            
+
             Label l1 = new Label();
             mv.visitInsn(getCompareCode());
             mv.visitJumpInsn(IFGE,l1);
@@ -180,17 +180,17 @@ public abstract class BinaryExpressionWriter {
             mv.visitInsn(ICONST_M1);
             Label l2 = new Label();
             mv.visitJumpInsn(GOTO, l2);
-            
+
             mv.visitLabel(l1);
             Label l3 = new Label();
             mv.visitInsn(getCompareCode());
             mv.visitJumpInsn(IFNE,l3);
             mv.visitInsn(ICONST_0);
             mv.visitJumpInsn(GOTO,l2);
-            
+
             mv.visitLabel(l3);
             mv.visitInsn(ICONST_1);
-            
+
             controller.getOperandStack().replace(ClassHelper.int_TYPE, 2);
         }
         return true;
@@ -198,11 +198,11 @@ public abstract class BinaryExpressionWriter {
 
     protected abstract ClassNode getNormalOpResultType();
     protected abstract int getStandardOperationBytecode(int type);
-    
+
     protected boolean writeStdOperators(int type, boolean simulate) {
         type = type-PLUS;
         if (type<0 || type>5 || type == 3 /*DIV*/) return false;
-        
+
         if (!simulate) {
             int bytecode = getStandardOperationBytecode(type);
             controller.getMethodVisitor().visitInsn(bytecode);
@@ -210,7 +210,7 @@ public abstract class BinaryExpressionWriter {
         }
         return true;
     }
-    
+
     protected boolean writeDivision(boolean simulate) {
         if (!supportsDivision()) return false;
         if (!simulate) {
@@ -220,7 +220,7 @@ public abstract class BinaryExpressionWriter {
         }
         return true;
     }
-    
+
     protected boolean supportsDivision() {
         return false;
     }
@@ -228,7 +228,7 @@ public abstract class BinaryExpressionWriter {
     protected abstract ClassNode getDevisionOpResultType();
 
     protected abstract int getBitwiseOperationBytecode(int type);
-    
+
     /**
      * writes some the bitwise operations. type is one of BITWISE_OR, 
      * BITWISE_AND, BITWISE_XOR
@@ -246,9 +246,9 @@ public abstract class BinaryExpressionWriter {
         }
         return true;
     }
-    
+
     protected abstract int getShiftOperationBytecode(int type);
-    
+
     /**
      * Write shifting operations.
      * Type is one of LEFT_SHIFT, RIGHT_SHIFT, or RIGHT_SHIFT_UNSIGNED
@@ -275,7 +275,7 @@ public abstract class BinaryExpressionWriter {
                 writeBitwiseOp(operation, simulate)          ||
                 writeShiftOp(operation, simulate);
     }
-    
+
     protected MethodCaller getArrayGetCaller() {
         return arrayGet;
     }
@@ -283,7 +283,7 @@ public abstract class BinaryExpressionWriter {
     protected ClassNode getArrayGetResultType(){
         return getNormalOpResultType();
     }
-    
+
     protected MethodCaller getArraySetCaller() {
         return arraySet;
     }
@@ -292,10 +292,10 @@ public abstract class BinaryExpressionWriter {
         this.arraySet = arraySet;
         this.arrayGet = arrayGet;
     }
-    
+
     public boolean arrayGet(int operation, boolean simulate) {
         if (operation!=LEFT_SQUARE_BRACKET) return false;
-        
+
         if (!simulate) {
             getArrayGetCaller().call(controller.getMethodVisitor());
         }

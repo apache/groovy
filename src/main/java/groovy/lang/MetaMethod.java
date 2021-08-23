@@ -59,7 +59,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
 
     /**
      * Returns the name of the method represented by this class
-     * 
+     *
      * @return name of this method
      */
     public abstract String getName();
@@ -258,7 +258,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
             final String name = getName();
             StringBuilder buf = new StringBuilder(name.length()+parameters.length*10);
             buf.append(getReturnType().getName());
-            
+
             buf.append(' ');
             buf.append(name);
             buf.append('(');
@@ -274,14 +274,14 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
         return signature;
     }
 
-    
+
     public String getMopName() {
         if (mopName == null) {
           String name = getName();
           CachedClass declaringClass = getDeclaringClass();
           if (Modifier.isPrivate(getModifiers()))
             mopName = "this$" + declaringClass.getSuperClassDistance() + "$" + name;
-          else 
+          else
             mopName = "super$" + declaringClass.getSuperClassDistance() + "$" + name;
         }
         return mopName;

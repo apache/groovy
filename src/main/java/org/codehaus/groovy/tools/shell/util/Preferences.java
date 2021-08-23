@@ -93,7 +93,7 @@ public class Preferences
     //
     // Store Access
     //
-    
+
     public static String[] keys() throws BackingStoreException {
         return STORE.keys();
     }

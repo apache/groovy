@@ -189,7 +189,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
             assert w.toString() == '{"a":1,"b":true,"c":null}'
         }
     }
-    
+
     void testNestedObjects() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -464,7 +464,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         new StringWriter().with { w ->
             def builder = new StreamingJsonBuilder(w)
             builder { elem 1, 2, 3 }
-            
+
             assert w.toString() == '{"elem":[1,2,3]}'
         }
         new StringWriter().with { w ->
@@ -476,13 +476,13 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         new StringWriter().with { w ->
             def builder = new StreamingJsonBuilder(w)
             builder.elem(a: 1, b: 2) { c 3 }
-            
+
             assert w.toString() == '{"elem":{"a":1,"b":2,"c":3}}'
         }
         new StringWriter().with { w ->
             def builder = new StreamingJsonBuilder(w)
             builder.elem([:]) { c 3 }
-            
+
             assert w.toString() == '{"elem":{"c":3}}'
         }
         new StringWriter().with { w ->

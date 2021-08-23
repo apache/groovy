@@ -231,7 +231,7 @@ class NewifyTransformTest extends GroovyShellTestCase {
                     @Newify(A)
                     int answer = A(32).id
                     answer
-                } 
+                }
             }
             assert Foo.test() == 'bar'
             assert Foo.test2() == 42

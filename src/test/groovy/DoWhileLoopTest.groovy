@@ -39,6 +39,6 @@ class DoWhileLoopTest extends GroovyTestCase {
 
         assert x == 5
     */
-            
+
     }
 }

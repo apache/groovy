@@ -28,9 +28,9 @@ import org.codehaus.groovy.control.CompilePhase
  *
  * You can convert a String into AST using the buildFromString method.
  * You can convert code into AST using the buildFromCode method.
- * You can use the AST DSL with the buildFromSpec method. 
+ * You can use the AST DSL with the buildFromSpec method.
  *
- * For more information, see the resources on the Groovy wiki pages. 
+ * For more information, see the resources on the Groovy wiki pages.
  */
 @CompileStatic
 class AstBuilder {
@@ -81,7 +81,6 @@ class AstBuilder {
 Are you sure you are using it correctly?''')
     }
 
-
     /**
      * Builds AST based on the code within the String parameter.
      *
@@ -102,16 +101,16 @@ Are you sure you are using it correctly?''')
     }
 
     /**
-     * Builds AST based on the code within the String parameter. The parameter is assumed to be 
-     * a code block which is not legal Groovy code. A goto label is affixed to the block, compiled, 
-     * and the resulting BlockStatement wrapper is removed before returning a result. 
+     * Builds AST based on the code within the String parameter. The parameter is assumed to be
+     * a code block which is not legal Groovy code. A goto label is affixed to the block, compiled,
+     * and the resulting BlockStatement wrapper is removed before returning a result.
      * @param phase
      *      the  {@link CompilePhase}  the AST will be targeted towards. Default is  {@link CompilePhase#CLASS_GENERATION}
      * @param statementsOnly
      *      when true, only the script statements are returned. WHen false, you will
      *      receive back a Script class node also. Default is true.
      * @param source
-     *      The source code String that will be compiled. The string must be a block wrapped in curly braces. 
+     *      The source code String that will be compiled. The string must be a block wrapped in curly braces.
      * @returns a List of {@link ASTNode}.
      * @throws IllegalArgumentException if source is null or empty
      */

@@ -27,7 +27,7 @@ class NullObjectTest extends GroovyTestCase {
           println foo.bar
         }
     }
-    
+
     void testtoStringMethod() {
         def foo = null
         assert foo.toString() == "null"
@@ -38,15 +38,15 @@ class NullObjectTest extends GroovyTestCase {
         assert a[3] == a[4]
         assert a[2].equals(a[4])
     }
-    
+
     void testAsExpression() {
       assert null as String == null
     }
-    
+
     void testIs(){
       assert null.is(null)
     }
-    
+
     void testCategory() {
         def n = null
 
@@ -66,10 +66,10 @@ class NullObjectTest extends GroovyTestCase {
     void testClone() {
         def foo = null
         shouldFail(NullPointerException) {
-            foo.clone()    
+            foo.clone()
         }
     }
-    
+
     void testEMC() {
         def oldMC = null.getMetaClass()
         NullObject.metaClass.hello = { -> "Greeting from null" }

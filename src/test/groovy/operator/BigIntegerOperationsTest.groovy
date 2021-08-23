@@ -46,11 +46,11 @@ class BigIntegerOperationsTest extends GroovyTestCase {
         foo = (double) 0.5d
         assert foo.class == BigInteger
         assert foo == 0
-        
+
         foo = 10.5G
         assert foo.class == BigInteger
         assert foo == 10
-        
+
         double d = 1000
         d *= d
         d *= d
@@ -58,7 +58,7 @@ class BigIntegerOperationsTest extends GroovyTestCase {
         assert (long)d != d
         assert (BigInteger) d == d
     }
-    
+
     void testAsOperatorPrecisionLoss() {
         def value = BigInteger.valueOf(Long.MAX_VALUE) + 1
         def value2 = value as BigInteger

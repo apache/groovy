@@ -104,7 +104,7 @@ public class CachedConstructor extends ParameterTypes {
     public int getModifiers () {
         return cachedConstructor.getModifiers();
     }
-    
+
     public CachedClass getCachedClass() {
         return clazz;
     }

@@ -80,7 +80,7 @@ class TupleConstructorStaticCompilationTest extends AbstractBytecodeTestCase {
             assert p.priority == null
         '''
     }
-    
+
     void testConstructorWithDefaultArgsAndPossibleMessup() {
         assertScript '''
             @groovy.transform.CompileStatic

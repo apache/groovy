@@ -29,7 +29,7 @@ class Groovy4264Bug extends GroovyTestCase {
                         throw new RuntimeException('B4264#main() called correctly')
                     }
                 }
-                
+
                 class A4264 {}
             """
             fail('B4264 execution should have made the script fail')
@@ -47,7 +47,7 @@ class Groovy4264Bug extends GroovyTestCase {
                         throw new RuntimeException('X4264#main() called correctly')
                     }
                 }
-                
+
                 class X4264 {}
                 throw new RuntimeException('Script class executed correctly')
             """

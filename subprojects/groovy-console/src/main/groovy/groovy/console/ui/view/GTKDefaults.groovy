@@ -39,7 +39,7 @@ try {
     ps.getAttributes()
     docFlav  = (ps.getSupportedDocFlavors() as List).find {it.mimeType == 'application/vnd.cups-postscript' }
     attrset = ps.getAttributes()
-    orient = attrset.get(javax.print.attribute.standard.OrientationRequested) ?: 
+    orient = attrset.get(javax.print.attribute.standard.OrientationRequested) ?:
              ps.getDefaultAttributeValue(javax.print.attribute.standard.OrientationRequested)
     ps.isAttributeValueSupported(orient, docFlav, attrset)
 } catch (NullPointerException npe) {

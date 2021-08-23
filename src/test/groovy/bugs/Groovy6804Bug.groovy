@@ -27,7 +27,7 @@ class Groovy6804Bug extends StaticTypeCheckingTestCase {
         assertScript '''
             class Base<K extends Serializable, V> {
                 void delete(K key) {}
-                
+
                 void delete(V value) {}
             }
 
@@ -36,7 +36,7 @@ class Groovy6804Bug extends StaticTypeCheckingTestCase {
             public class Class1 {
                 Class1() {
                     Foo foo = new Foo();
-                    
+
                     foo.delete(1);
                 }
             }

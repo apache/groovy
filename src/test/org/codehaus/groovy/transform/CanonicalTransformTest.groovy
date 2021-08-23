@@ -41,21 +41,21 @@ class CanonicalTransformTest extends GroovyShellTestCase {
             assertScript """
                 @groovy.transform.Canonical class Foo {
                     def foo, bar, baz
-                
+
                     Foo() {}
-                
+
                     Foo(foo, bar) {
                         this.foo = foo
                         this.bar = bar
                     }
                 }
-            
+
                 def foo = new Foo('a', 'b')
                 def foo1 = new Foo()
                 foo1.foo = 'a'
                 foo1.bar = 'b'
                 assert foo == foo1
-            
+
                 // Fail here
                 new Foo('a', 'b', 'c')
             """
@@ -69,16 +69,16 @@ class CanonicalTransformTest extends GroovyShellTestCase {
             def array = [1, 2, 3] as Integer[]
             def map = [foo: 'bar']
             def collection = [4, 5, 6]
-            
+
             @groovy.transform.Canonical class Foo {
                 Date date
                 Integer[] array
                 Map map
                 Collection collection
             }
-            
+
             def foo = new Foo(date, array, map, collection)
-            
+
             assert date.is(foo.date)
             assert array.is(foo.array)
             assert map.is(foo.map)
@@ -227,7 +227,7 @@ class CanonicalTransformTest extends GroovyShellTestCase {
                 String bar
                 String baz = 'a'
             }
-            
+
             def foo = new Foo(bar: 'c')
             def foo1 = new Foo(baz: 'd')
             assert 'a' == foo.baz
@@ -250,7 +250,7 @@ class CanonicalTransformTest extends GroovyShellTestCase {
                 float i
                 boolean j
             }
-            
+
             new Foo("foo")
             new Foo("foo", 10)
             new Foo("foo", 10, (char) 20)
@@ -268,7 +268,7 @@ class CanonicalTransformTest extends GroovyShellTestCase {
                 String bar
                 String baz = 'a'
             }
-            
+
             def foo = new Foo()
             def foo0 = new Foo('c')
             def foo1 = new Foo('c', 'd')
@@ -314,12 +314,12 @@ class CanonicalTransformTest extends GroovyShellTestCase {
               }
               def object = new HasListAndMap()
               def object2 = new HasListAndMap(['bar'] as Object[])
-              
+
               assert object != object2
-              
+
               object.foo = new Object[1]
               object.foo[0] = 'bar'
-              
+
               assert object == object2
         """
     }

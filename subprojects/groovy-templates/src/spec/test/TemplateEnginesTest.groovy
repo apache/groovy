@@ -106,7 +106,7 @@ class TemplateEnginesTest extends CompilableTestSupport {
         result = template.toString()
         assert result.readLines()[1].trim() == '\\'
     }
-    
+
         void testStreamingTemplateEngine() {
 // tag::streaming_template_engine[]
 def text = '''\
@@ -184,7 +184,7 @@ The conference committee.'''
         def template = engine.createTemplate(text).make(binding)
         println template.toString()
         // end::xml_template_engine[]
-        
+
         assert template.toString() == '''\
 <document type='letter'>
   Dearest
@@ -209,15 +209,15 @@ The conference committee.'''
         def result = template.make([items : [1,2,3,4]]).toString()
         assert result == '''
 <ul>
-    
+
     <li>1</li>
-    
+
     <li>2</li>
-    
+
     <li>3</li>
-    
+
     <li>4</li>
-    
+
 </ul>
 '''
     }

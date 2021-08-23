@@ -21,7 +21,6 @@
 
 = State Pattern
 
-
 The https://en.wikipedia.org/wiki/State_pattern[State Pattern] provides a structured approach to partitioning the behaviour within complex systems. The overall behaviour of a system is partitioned into well-defined states. Typically, each state is implemented by a class. The overall system behaviour can be determined firstly by knowing the __current state__ of the system; secondly, by understanding the behaviour possible while in that state (as embodied in the methods of the class corresponding to that state).
 
 == Example

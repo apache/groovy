@@ -21,7 +21,7 @@ package org.codehaus.groovy.classgen.asm
 import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
 
 class BinaryOperationsTest extends AbstractBytecodeTestCase {
-    
+
     void testIntPlus() {
         if (config.indyEnabled) return;
         assert compile("""\
@@ -34,7 +34,7 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
                 "IADD"
         ])
     }
-    
+
     void testIntCompareLessThan() {
         if (config.indyEnabled) return;
         assert compile("""\
@@ -46,7 +46,7 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
                 "IF_ICMPGE"
         ])
     }
-    
+
     void testCompareLessThanInClosure() {
         if (config.indyEnabled) return;
         // GROOVY-4741
@@ -58,7 +58,7 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
             true
         """
     }
-    
+
     void testLongLeftShift() {
         if (config.indyEnabled) return;
         assert compile("""\

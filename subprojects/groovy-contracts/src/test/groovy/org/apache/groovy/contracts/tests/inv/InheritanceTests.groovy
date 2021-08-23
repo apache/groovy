@@ -303,7 +303,7 @@ class Account {
    @Test void with_private_instance_variable_in_super_class()  {
       create_instance_of(source11, ['test'])
       create_instance_of(source12, ['test'])
-  
+
       shouldFail AssertionError, {
         create_instance_of(source12, [''])
       }
@@ -398,9 +398,9 @@ class Account {
     void separate_class_invariant() {
         def c = add_class_to_classpath """
             package tests
-      
+
             import groovy.contracts.*
-      
+
             @Invariant({
                 i_never_null: i != null
                 j_never_null: j != null

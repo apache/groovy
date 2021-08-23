@@ -39,7 +39,7 @@ class GroovyObjectInheritanceTest extends CompilableTestSupport {
         assert bar.foo==1
     """
   }
-  
+
   void testInheritanceWithSetProperty() {
     assertScript """
         class Foo {
@@ -62,7 +62,7 @@ class GroovyObjectInheritanceTest extends CompilableTestSupport {
         assert bar.foo == 1
     """
   }
-  
+
   void testInheritanceWithInvokeMethod() {
     assertScript """
         class Foo {
@@ -81,7 +81,7 @@ class GroovyObjectInheritanceTest extends CompilableTestSupport {
         assert bar.foo() == 1
     """
   }
-  
+
   void testMetaClassFieldInheritance() {
     assertScript """
         class Foo {}
@@ -90,27 +90,27 @@ class GroovyObjectInheritanceTest extends CompilableTestSupport {
         assert Bar.class.declaredFields.find{it.name=="metaClass"}==null
     """
   }
-  
+
   void testStandardInheritance() {
     assertScript """
         class Foo{}
         class Bar extends Foo{}
-        
+
         assert Foo.class.declaredFields.find{it.name=="metaClass"}!=null
         assert Bar.class.declaredFields.find{it.name=="metaClass"}==null
-        
+
         assert Foo.class.declaredMethods.find{it.name=="getMetaClass"}!=null
         assert Bar.class.declaredMethods.find{it.name=="getMetaClass"}==null
-        
+
         assert Foo.class.declaredMethods.find{it.name=="setMetaClass"}!=null
         assert Bar.class.declaredMethods.find{it.name=="setMetaClass"}==null
-        
+
         assert Foo.class.declaredMethods.find{it.name=="getProperty"}==null
         assert Bar.class.declaredMethods.find{it.name=="getProperty"}==null
-        
+
         assert Foo.class.declaredMethods.find{it.name=="setProperty"}==null
         assert Bar.class.declaredMethods.find{it.name=="setProperty"}==null
-        
+
         assert Foo.class.declaredMethods.find{it.name=="invokeMethod"}==null
         assert Bar.class.declaredMethods.find{it.name=="invokeMethod"}==null
     """

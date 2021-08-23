@@ -262,7 +262,7 @@ class CovariantReturnTest extends CompilableTestSupport {
             }
         """
     }
-    
+
     void testPrimitiveObjectMix() {
         //Object overridden by primitive
         shouldNotCompile """
@@ -317,14 +317,14 @@ class CovariantReturnTest extends CompilableTestSupport {
           interface Interface<SomeType> {
              public int handle(long a, SomeType x);
           }
-          
+
           class InterfaceImpl
           implements Interface<String> {
               public int handle(long a, String something) {
                   return 1
               }
           }
-          
+
           InterfaceImpl test = new InterfaceImpl()
           assert test.handle(5, "hi") == 1
         """

@@ -34,7 +34,7 @@ class Groovy5267Bug extends AbstractBytecodeTestCase {
         '''
         }
     }
-    
+
     void testClosureCallBytecode() {
         def bytecode= compile(method:'m', '''
         class BarScript {
@@ -44,7 +44,7 @@ class Groovy5267Bug extends AbstractBytecodeTestCase {
                }
         }
         ''')
-        
+
         assert bytecode.hasSequence(['INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;'])
     }
 }

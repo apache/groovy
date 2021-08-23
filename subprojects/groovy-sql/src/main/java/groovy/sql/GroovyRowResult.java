@@ -113,7 +113,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map<String, 
      * The following methods are needed for implementing the Map interface.
      * They are mostly delegating the request to the provided Map.
      */
-     
+
     @Override
     public void clear() {
         result.clear();

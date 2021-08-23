@@ -57,7 +57,7 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
     boolean expandEmptyElements = false
     def getQt() { useDoubleQuotes ? '"' : "'" }
     def pendingStack = []
-    
+
     /**
      * Invoked by calling <code>mkp.comment</code>
      */
@@ -113,7 +113,7 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
             }
         }
     }
-    
+
     /**
      * Invoked by calling <code>mkp.yieldUnescaped</code>.  Used to render 
      * literal text or markup to the output stream.  No escaping is done on the
@@ -122,7 +122,7 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
     def unescapedClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
         out.unescaped() << body
     }
-    
+
     def tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
         boolean pendingIsDefaultNamespace = pendingNamespaces.containsKey(prefix) && !pendingNamespaces[prefix]
         if (prefix != "") {

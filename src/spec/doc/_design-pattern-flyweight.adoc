@@ -32,7 +32,6 @@ In such circumstances, we call the state that is shared with many other things (
 
 First we are going to model some complex aircraft (the first being a hoax competitor of the second - though that is not relevant to the example).
 
-
 [source,groovy]
 ----
 include::../test/DesignPatternsTest.groovy[tags=flyweight_boeing797,indent=0]

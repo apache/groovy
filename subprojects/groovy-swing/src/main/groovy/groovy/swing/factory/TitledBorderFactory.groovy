@@ -55,7 +55,7 @@ class TitledBorderFactory extends SwingBorderFactory {
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
         builder.context.applyBorderToParent = attributes.remove('parent')
-        
+
         String title
         if (value) {
             title = value as String

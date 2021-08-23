@@ -21,7 +21,7 @@ package org.codehaus.groovy.classgen
 import groovy.test.GroovyTestCase
 
 class CallSiteTest extends GroovyTestCase {
-    
+
     void testChangeMetaClass2() {
         assertScript '''
             def a = new Dummy()

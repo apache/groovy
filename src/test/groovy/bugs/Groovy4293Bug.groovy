@@ -27,11 +27,11 @@ class Groovy4293Bug extends GroovyTestCase {
                 def params = new Expando()
                 params.newValue = 23
                 def trendMap = ['worsening': (-2), 'slightly worsening':(-1), 'neutral':0 ,'slightly improving': 1,'improving':2]
-                
+
                 def obj = []
                 def el = [obj]
                 if (!el[1]) el[1] = "1"
-                
+
                 Eval.x(el[0],"x[1]="+ el[2] ? trendMap[params.newValue.toInteger()] : params.newValue.toInteger() )
             """
             fail('Eval call should have failed as null script is passed to it')

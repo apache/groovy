@@ -18,7 +18,7 @@
  */
 package groovy
 
-/** 
+/**
  * A dummy bean for testing the use of properties in Groovy
  */
 class Foo implements Serializable {
@@ -27,7 +27,7 @@ class Foo implements Serializable {
     def name = "James"
     def count
     String location = "London"
-    
+
     // declare private variables
     private blah = 9
     private invisible = "invisible"
@@ -42,7 +42,7 @@ class Foo implements Serializable {
         def f = new Foo()
         println f
     }
-    
+
     // provide a getter method
     def getCount() {
          if (count == null) {
@@ -50,7 +50,7 @@ class Foo implements Serializable {
          }
          return count
     }
-     
+
     def getBlah() {
          return blah
     }

@@ -127,7 +127,7 @@ final class StaticImportTest extends groovy.test.GroovyTestCase {
             import static Bar.*
 
             class Bar {
-                static void bar() { 
+                static void bar() {
                     assert foo(10,1000) == 1010 
                     assert foo(10) == 110
                 }
