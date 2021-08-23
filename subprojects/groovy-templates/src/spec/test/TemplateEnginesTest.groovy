@@ -200,9 +200,9 @@ The conference committee.'''
         TemplateEngine engine = new StreamingTemplateEngine()
         Template template = engine.createTemplate('''
 <ul>
-    <% items.each { %>
+<% items.each { %>
     <li>${it}</li>
-    <% } %>
+<% } %>
 </ul>
 ''')
 
