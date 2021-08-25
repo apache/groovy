@@ -26,6 +26,7 @@ import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
 import org.junit.Test
 
+import static groovy.test.GroovyAssert.assertScript
 import static org.junit.Assert.assertEquals
 
 /**
@@ -63,6 +64,24 @@ final class ExpressionUtilsTest {
         ClassNode targetType = ClassHelper.make(String)
         ConstantExpression actual = ExpressionUtils.transformBinaryConstantExpression(be, targetType)
         assertEquals('hello, world!', actual.value)
+    }
+
+    @Test
+    void 'test transformBinaryConstantExpression, integer + integer with target type string'() {
+        ConstantExpression left = new ConstantExpression(1)
+        ConstantExpression right = new ConstantExpression(1)
+        Token token = new Token(Types.PLUS, '+', 1, 1)
+        BinaryExpression be = new BinaryExpression(left, token, right)
+        ClassNode targetType = ClassHelper.make(String)
+        ConstantExpression actual = ExpressionUtils.transformBinaryConstantExpression(be, targetType)
+        assert !actual // null indicates it could not be transformed (simplified) at compile time
+        // but should still succeed at runtime as per below script
+        assertScript '''
+            class Foo {
+                static final String bar = 1 + 1
+            }
+            assert Foo.bar == '2'
+        '''
     }
 
     @Test
