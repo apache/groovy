@@ -56,6 +56,7 @@
          <trusted-key id="050a37a2e0577f4baa095b52602ec18d20c4661c">
             <trusting group="com.thoughtworks.xstream"/>
             <trusting group="com.thoughtworks.xstream" name="xstream"/>
+            <trusting group="io.github.x-stream"/>
          </trusted-key>
          <trusted-key id="0785b3eff60b1b1bea94e0bb7c25280eae63ebe5" group="org.apache.httpcomponents"/>
          <trusted-key id="07dbc3c1ab1f4468471656061c8d5ef0df2b70d4" group="cglib"/>
