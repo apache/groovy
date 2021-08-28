@@ -507,7 +507,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             if (declarationExpressions.size() == 1) {
                 return configureAST((Expression) declarationExpressions.get(0), ctx);
             } else {
-                return configureAST(new ClosureListExpression(List.class.cast(declarationExpressions)), ctx);
+                return configureAST(new ClosureListExpression((List) declarationExpressions), ctx);
             }
         }
 
