@@ -32,6 +32,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
@@ -405,10 +406,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             // parsing have to wait util clearing is complete.
             AtnManager.READ_LOCK.lock();
             try {
-                if (SLL_THRESHOLD >= 0 && parser.getInputStream().size() > SLL_THRESHOLD) {
+                final TokenStream tokenStream = parser.getInputStream();
+                if (SLL_THRESHOLD >= 0 && tokenStream.size() > SLL_THRESHOLD) {
                     // The more tokens to parse, the more possibility SLL will fail and the more parsing time will waste.
                     // The option `groovy.antlr4.sll.threshold` could be tuned for better parsing performance, but it is disabled by default.
-                    // If the token count is greater than `groovy.antlr4.sll.threshold`, use ALL directly.
+                    // If the token count is greater than `groovy.antlr4.sll.threshold`, use LL directly.
                     result = buildCST(PredictionMode.LL);
                 } else {
                     try {
@@ -419,6 +421,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                             throw t;
                         }
 
+                        tokenStream.seek(0);
                         result = buildCST(PredictionMode.LL);
                     }
                 }
@@ -438,7 +441,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         if (PredictionMode.SLL.equals(predictionMode)) {
             this.removeErrorListeners();
         } else {
-            parser.getInputStream().seek(0);
             this.addErrorListeners();
         }
 
