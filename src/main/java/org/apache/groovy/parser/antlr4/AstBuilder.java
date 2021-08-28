@@ -405,10 +405,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             // parsing have to wait util clearing is complete.
             AtnManager.READ_LOCK.lock();
             try {
-                if (SLL_THRESHOLD > 0 && parser.getInputStream().size() > SLL_THRESHOLD) {
+                if (SLL_THRESHOLD >= 0 && parser.getInputStream().size() > SLL_THRESHOLD) {
                     // The more tokens to parse, the more possibility SLL will fail and the more parsing time will waste.
                     // The option `groovy.antlr4.sll.threshold` could be tuned for better parsing performance, but it is disabled by default.
-                    // if the token count is greater than `groovy.antlr4.sll.threshold`, use ALL directly.
+                    // If the token count is greater than `groovy.antlr4.sll.threshold`, use ALL directly.
                     result = buildCST(PredictionMode.LL);
                 } else {
                     try {
