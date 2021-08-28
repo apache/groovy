@@ -39,6 +39,7 @@ import org.apache.groovy.parser.antlr4.internal.DescriptiveErrorStrategy;
 import org.apache.groovy.parser.antlr4.internal.atnmanager.AtnManager;
 import org.apache.groovy.parser.antlr4.util.StringUtils;
 import org.apache.groovy.util.Maps;
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.antlr.EnumHelper;
 import org.codehaus.groovy.ast.ASTNode;
@@ -207,14 +208,23 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             // parsing have to wait util clearing is complete.
             AtnManager.READ_LOCK.lock();
             try {
-                result = buildCST(PredictionMode.SLL);
-            } catch (Throwable t) {
-                // if some syntax error occurred in the lexer, no need to retry the powerful LL mode
-                if (t instanceof GroovySyntaxError && GroovySyntaxError.LEXER == ((GroovySyntaxError) t).getSource()) {
-                    throw t;
-                }
+                if (SLL_THRESHOLD > 0 && parser.getInputStream().size() > SLL_THRESHOLD) {
+                    // The more tokens to parse, the more possibility SLL will fail and the more parsing time will waste.
+                    // The option `groovy.antlr4.sll.threshold` could be tuned for better parsing performance, but it is disabled by default.
+                    // if the token count is greater than `groovy.antlr4.sll.threshold`, use ALL directly.
+                    result = buildCST(PredictionMode.LL);
+                } else {
+                    try {
+                        result = buildCST(PredictionMode.SLL);
+                    } catch (Throwable t) {
+                        // if some syntax error occurred in the lexer, no need to retry the powerful LL mode
+                        if (t instanceof GroovySyntaxError && GroovySyntaxError.LEXER == ((GroovySyntaxError) t).getSource()) {
+                            throw t;
+                        }
 
-                result = buildCST(PredictionMode.LL);
+                        result = buildCST(PredictionMode.LL);
+                    }
+                }
             } finally {
                 AtnManager.READ_LOCK.unlock();
             }
@@ -4461,6 +4471,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private int visitingSwitchStatementCount;
     private int visitingAssertStatementCount;
     private int visitingArrayInitializerCount;
+
+    private static final int SLL_THRESHOLD = SystemUtil.getIntegerSafe("groovy.antlr4.sll.threshold", -1);
 
     private static final String QUESTION_STR = "?";
     private static final String DOT_STR = ".";
