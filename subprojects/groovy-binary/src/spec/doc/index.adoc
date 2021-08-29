@@ -96,6 +96,8 @@ include::../../../../../src/spec/doc/grape.adoc[leveloffset=+2]
 
 include::../../../../../src/spec/doc/core-testing-guide.adoc[leveloffset=+2]
 
+include::../../../../../src/spec/doc/performance-guide.adoc[leveloffset=+2]
+
 include::../../../../../subprojects/groovy-json/src/spec/doc/json-userguide.adoc[leveloffset=+2]
 
 include::../../../../../subprojects/groovy-sql/src/spec/doc/sql-userguide.adoc[leveloffset=+2]
