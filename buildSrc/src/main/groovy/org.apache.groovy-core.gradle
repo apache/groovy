@@ -108,7 +108,7 @@ def dgmConverter = tasks.register("dgmConverter", DgmConverter) {
 }
 
 dependencies {
-    testRuntimeOnly files(dgmConverter)
+    runtimeOnly files(dgmConverter)
 }
 
 tasks.named('jar') {
