@@ -111,10 +111,7 @@ public class JavaStubCompilationUnit extends CompilationUnit {
 
     private boolean hasAcceptedFileExtension(String name) {
         String lowerCasedName = name.toLowerCase();
-        for (String extension : configuration.getScriptExtensions()) {
-            if (lowerCasedName.endsWith(extension))
-                return true;
-        }
-        return false;
+        String extension = lowerCasedName.substring(lowerCasedName.lastIndexOf('.') + 1);
+        return configuration.getScriptExtensions().contains(extension);
     }
 }
