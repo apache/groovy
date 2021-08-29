@@ -35,9 +35,10 @@ import org.codehaus.groovy.transform.ASTTransformationCollectorCodeVisitor;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Compilation Unit capable of compiling Java source files.
@@ -45,7 +46,7 @@ import java.util.Map;
 public class JavaAwareCompilationUnit extends CompilationUnit {
 
     private final JavaStubGenerator stubGenerator;
-    private final List<String> javaSources = new LinkedList<>();
+    private final Set<String> javaSources = new HashSet<>();
     private JavaCompilerFactory compilerFactory = new JavacCompilerFactory();
     private final File generationGoal;
     private final boolean keepStubs;
@@ -116,7 +117,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
             try {
                 addJavaCompilationUnits(stubGenerator.getJavaStubCompilationUnitSet()); // add java stubs
                 JavaCompiler compiler = compilerFactory.createCompiler(configuration);
-                compiler.compile(javaSources, this);
+                compiler.compile(new ArrayList<>(javaSources), this);
             } finally {
                 if (!keepStubs) stubGenerator.clean();
                 javaSources.clear();
@@ -136,12 +137,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     }
 
     private void addJavaSource(final File file) {
-        String path = file.getAbsolutePath();
-        for (String source : javaSources) {
-            if (path.equals(source))
-                return;
-        }
-        javaSources.add(path);
+        javaSources.add(file.getAbsolutePath());
     }
 
     @Override
