@@ -46,7 +46,10 @@ If you plan on using invokedynamic support, link:invokedynamic-support.html[read
 
 === Snapshots
 
-For those who want to test the very latest versions of Groovy and live on the bleeding edge, you can use our https://oss.jfrog.org/oss-snapshot-local/org/codehaus/groovy[snapshot builds]. As soon as a build succeeds on our continuous integration server a snapshot is deployed to Artifactory's OSS snapshot repository.
+For those who want to test the very latest versions of Groovy and live on the bleeding edge, you can use our https://repository.apache.org/content/groups/snapshots/org/apache/groovy[snapshot builds].
+As soon as a build succeeds on our continuous integration server a snapshot is deployed to this repository.
+These snapshots are not official releases and are intended for integration testing by the development
+community prior to official versions being released. We welcome any feedback.
 
 === Prerequisites
 
