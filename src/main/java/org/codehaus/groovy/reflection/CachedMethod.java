@@ -103,11 +103,15 @@ public class CachedMethod extends MetaMethod implements Comparable {
     public final Object invoke(Object object, Object[] arguments) {
         makeAccessibleIfNecessary();
 
-        try {
-            AccessPermissionChecker.checkAccessPermission(cachedMethod);
-        } catch (CacheAccessControlException ex) {
-            throw new InvokerInvocationException(ex);
+        if (!accessAllowed) {
+            try {
+                AccessPermissionChecker.checkAccessPermission(cachedMethod);
+                accessAllowed = true;
+            } catch (CacheAccessControlException ex) {
+                throw new InvokerInvocationException(ex);
+            }
         }
+
         try {
             return cachedMethod.invoke(object, arguments);
         } catch (IllegalArgumentException | IllegalAccessException e) {
@@ -146,7 +150,11 @@ public class CachedMethod extends MetaMethod implements Comparable {
     public final Method setAccessible() {
         makeAccessibleIfNecessary();
 
-        AccessPermissionChecker.checkAccessPermission(cachedMethod);
+        if (!accessAllowed) {
+            AccessPermissionChecker.checkAccessPermission(cachedMethod);
+            accessAllowed = true;
+        }
+
 //        if (queuedToCompile.compareAndSet(false,true)) {
 //            if (isCompilable())
 //              CompileThread.addMethod(this);
@@ -372,7 +380,10 @@ public class CachedMethod extends MetaMethod implements Comparable {
 
     public Method getCachedMethod() {
         makeAccessibleIfNecessary();
-        AccessPermissionChecker.checkAccessPermission(cachedMethod);
+        if (!accessAllowed) {
+            AccessPermissionChecker.checkAccessPermission(cachedMethod);
+            accessAllowed = true;
+        }
         return cachedMethod;
     }
 
@@ -387,4 +398,6 @@ public class CachedMethod extends MetaMethod implements Comparable {
             makeAccessibleDone = true;
         }
     }
+
+    private boolean accessAllowed = false;
 }

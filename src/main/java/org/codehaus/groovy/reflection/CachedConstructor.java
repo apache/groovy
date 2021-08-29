@@ -115,7 +115,10 @@ public class CachedConstructor extends ParameterTypes {
 
     public Constructor getCachedConstructor() {
         makeAccessibleIfNecessary();
-        AccessPermissionChecker.checkAccessPermission(cachedConstructor);
+        if (!accessAllowed) {
+            AccessPermissionChecker.checkAccessPermission(cachedConstructor);
+            accessAllowed = true;
+        }
         return cachedConstructor;
     }
 
@@ -130,4 +133,6 @@ public class CachedConstructor extends ParameterTypes {
     private boolean isConstructorOfAbstractClass() {
         return Modifier.isAbstract(cachedConstructor.getDeclaringClass().getModifiers());
     }
+
+    private boolean accessAllowed = false;
 }
