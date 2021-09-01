@@ -35,7 +35,7 @@ public class DynamicVariable implements Variable {
 
     @Override
     public ClassNode getType() {
-        return ClassHelper.DYNAMIC_TYPE;
+        return ClassHelper.dynamicType();
     }
 
     @Override

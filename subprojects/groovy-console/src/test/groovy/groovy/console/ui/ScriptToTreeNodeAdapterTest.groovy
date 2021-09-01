@@ -251,7 +251,7 @@ final class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                         eq('BlockStatement - (1)'),
                         eq('ExpressionStatement - BinaryExpression'),
                         eq('Binary - (foo = bar)'),
-                        eq('Variable - foo : java.lang.Object'),
+                        startsWith('Variable - foo : java.lang.Object'),
                         eq('DynamicVariable - foo'),
                 ]
             )

@@ -28,6 +28,8 @@ import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
 import org.junit.Test
 
+import static org.codehaus.groovy.ast.ClassHelper.dynamicType
+
 class ReturnStatementToIterationConverterTest {
 
     @Test
@@ -58,7 +60,7 @@ class ReturnStatementToIterationConverterTest {
             }
         }[0]
 
-        Map positionMapping = [0: [name: '_a_', type: ClassHelper.DYNAMIC_TYPE]]
+        Map positionMapping = [0: [name: '_a_', type: dynamicType()]]
         def block = new ReturnStatementToIterationConverter().convert(statement, positionMapping)
 
         AstAssert.assertSyntaxTree([expected], [block])
@@ -105,7 +107,7 @@ class ReturnStatementToIterationConverterTest {
 				return(myMethod(1, _a_ + 1))
 		""")[0].statements[0]
 
-        Map positionMapping = [0: [name: '_a_', type: ClassHelper.DYNAMIC_TYPE], 1: [name: '_b_', type: ClassHelper.DYNAMIC_TYPE]]
+        Map positionMapping = [0: [name: '_a_', type: dynamicType()], 1: [name: '_b_', type: dynamicType()]]
         def block = new ReturnStatementToIterationConverter().convert(statement, positionMapping)
 
         AstAssert.assertSyntaxTree([expected], [block])
@@ -162,7 +164,7 @@ class ReturnStatementToIterationConverterTest {
 				""")[0].statements[0]
 
 
-        Map positionMapping = [0: [name: '_a_', type: ClassHelper.DYNAMIC_TYPE], 1: [name: '_b_', type: ClassHelper.DYNAMIC_TYPE]]
+        Map positionMapping = [0: [name: '_a_', type: dynamicType()], 1: [name: '_b_', type: dynamicType()]]
         def block = new ReturnStatementToIterationConverter().convert(statement, positionMapping)
 
         AstAssert.assertSyntaxTree([expected], [block])
@@ -189,7 +191,7 @@ class ReturnStatementToIterationConverterTest {
             }
         }[0]
 
-        Map positionMapping = [0: [name: '_a_', type: ClassHelper.DYNAMIC_TYPE]]
+        Map positionMapping = [0: [name: '_a_', type: dynamicType()]]
         def block = new ReturnStatementToIterationConverter().convert(statement, positionMapping)
 
         AstAssert.assertSyntaxTree([expected], [block])

@@ -470,7 +470,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 declare(parameter, expression);
             }
         } else if (expression.getParameters() != null) {
-            Parameter var = new Parameter(ClassHelper.OBJECT_TYPE, "it");
+            Parameter var = new Parameter(ClassHelper.dynamicType(), "it");
             var.setInStaticContext(currentScope.isInStaticContext());
             currentScope.putDeclaredVariable(var);
         }

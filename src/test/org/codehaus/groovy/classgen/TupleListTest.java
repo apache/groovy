@@ -58,7 +58,7 @@ public class TupleListTest extends TestSupport {
 
         BlockStatement block = new BlockStatement();
         block.addStatement(new ExpressionStatement(new DeclarationExpression(new VariableExpression("list"), Token.newSymbol("=", 0, 0), listExpression)));
-        block.addStatement(new ForStatement(new Parameter(ClassHelper.DYNAMIC_TYPE, "i"), new VariableExpression("list"), loopStatement));
+        block.addStatement(new ForStatement(new Parameter(ClassHelper.dynamicType(), "i"), new VariableExpression("list"), loopStatement));
         classNode.addMethod(new MethodNode(methodName, ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, block));
 
         Class fooClass = loadClass(classNode);

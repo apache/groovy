@@ -312,7 +312,7 @@ public class CompileStack {
      * @return the index used for this temporary variable
      */
     public int defineTemporaryVariable(final String name, final boolean store) {
-        return defineTemporaryVariable(name, ClassHelper.DYNAMIC_TYPE,store);
+        return defineTemporaryVariable(name, ClassHelper.dynamicType(), store);
     }
 
     /**

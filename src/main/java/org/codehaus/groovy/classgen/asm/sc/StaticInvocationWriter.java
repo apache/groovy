@@ -374,7 +374,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                     && !classNode.isDerivedFrom(target.getDeclaringClass())
                     && !classNode.implementsInterface(target.getDeclaringClass())) {
                 ClassNode thisType = controller.getThisType();
-                if (isTrait(thisType.getOuterClass())) thisType = ClassHelper.DYNAMIC_TYPE; // GROOVY-7242
+                if (isTrait(thisType.getOuterClass())) thisType = ClassHelper.dynamicType(); // GROOVY-7242
 
                 fixedReceiver = varX("thisObject", thisType);
                 // account for multiple levels of inner types

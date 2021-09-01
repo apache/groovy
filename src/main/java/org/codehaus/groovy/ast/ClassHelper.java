@@ -101,8 +101,7 @@ public class ClassHelper {
     };
 
     public static final ClassNode
-            DYNAMIC_TYPE = makeCached(Object.class),
-            OBJECT_TYPE = DYNAMIC_TYPE,
+            OBJECT_TYPE = makeCached(Object.class),
             CLOSURE_TYPE = makeCached(Closure.class),
             GSTRING_TYPE = makeCached(GString.class),
             RANGE_TYPE = makeCached(Range.class),
@@ -161,6 +160,9 @@ public class ClassHelper {
             GROOVY_INTERCEPTABLE_TYPE = makeWithoutCaching(GroovyInterceptable.class),
             GROOVY_OBJECT_SUPPORT_TYPE = makeWithoutCaching(GroovyObjectSupport.class);
 
+    @Deprecated
+    public static final ClassNode DYNAMIC_TYPE = OBJECT_TYPE;
+
     private static final ClassNode[] types = new ClassNode[]{
             OBJECT_TYPE,
             boolean_TYPE, char_TYPE, byte_TYPE, short_TYPE,
@@ -178,10 +180,17 @@ public class ClassHelper {
 
     private static final int ABSTRACT_STATIC_PRIVATE = Opcodes.ACC_ABSTRACT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE;
     private static final int VISIBILITY = 5; // public|protected
+    private static final String DYNAMIC_TYPE_METADATA = "_DYNAMIC_TYPE_METADATA_";
 
     protected static final ClassNode[] EMPTY_TYPE_ARRAY = {};
 
     public static final String OBJECT = "java.lang.Object";
+
+    public static ClassNode dynamicType() {
+        ClassNode node = OBJECT_TYPE.getPlainNodeReference();
+        node.putNodeMetaData(DYNAMIC_TYPE_METADATA, Boolean.TRUE);
+        return node;
+    }
 
     public static ClassNode makeCached(Class c) {
         ClassNode classNode;
@@ -279,7 +288,7 @@ public class ClassHelper {
      * @param name of the class the ClassNode is representing
      */
     public static ClassNode make(String name) {
-        if (name == null || name.length() == 0) return DYNAMIC_TYPE;
+        if (name == null || name.length() == 0) return dynamicType();
 
         for (int i = 0; i < primitiveClassNames.length; i++) {
             if (primitiveClassNames[i].equals(name)) return types[i];
@@ -417,7 +426,7 @@ public class ClassHelper {
     }
 
     public static boolean isDynamicTyped(ClassNode type) {
-        return type != null && DYNAMIC_TYPE == type.redirect();
+        return type != null && Boolean.TRUE.equals(type.getNodeMetaData(DYNAMIC_TYPE_METADATA));
     }
 
     public static boolean isPrimitiveBoolean(ClassNode type) {

@@ -30,8 +30,8 @@ public class VariableExpression extends Expression implements Variable {
     // The following fields are only used internally; every occurrence of a user-defined expression of the same kind
     // has its own instance so as to preserve line information. Consequently, to test for such an expression, don't
     // compare against the field but call isXXXExpression() instead.
-    public static final VariableExpression THIS_EXPRESSION = new VariableExpression("this", ClassHelper.DYNAMIC_TYPE);
-    public static final VariableExpression SUPER_EXPRESSION = new VariableExpression("super", ClassHelper.DYNAMIC_TYPE);
+    public static final VariableExpression THIS_EXPRESSION = new VariableExpression("this", ClassHelper.dynamicType());
+    public static final VariableExpression SUPER_EXPRESSION = new VariableExpression("super", ClassHelper.dynamicType());
 
     private final String variable;
     private int modifiers;
@@ -57,7 +57,7 @@ public class VariableExpression extends Expression implements Variable {
     }
 
     public VariableExpression(String variable) {
-        this(variable, ClassHelper.DYNAMIC_TYPE);
+        this(variable, ClassHelper.dynamicType());
     }
 
     public VariableExpression(Variable variable) {

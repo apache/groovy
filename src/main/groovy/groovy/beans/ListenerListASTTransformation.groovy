@@ -232,7 +232,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
 
         BlockStatement block = new BlockStatement()
         block.addStatements([
-                declS(localVarX('__result', ClassHelper.DYNAMIC_TYPE), new ListExpression()),
+                declS(localVarX('__result', ClassHelper.dynamicType()), new ListExpression()),
                 ifS(
                         notNullX(varX(field.name)),
                         stmt(callX(varX('__result'), constX('addAll'), args(varX(field.name))))
@@ -280,7 +280,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
                                         ctorX(listenerListType, args(varX(field.name)))
                                 ),
                                 new ForStatement(
-                                        param(ClassHelper.DYNAMIC_TYPE, 'listener'),
+                                        param(ClassHelper.dynamicType(), 'listener'),
                                         varX('__list'),
                                         new BlockStatement([
                                                 stmt(callX(varX('listener'), method.name, methodArgs))
