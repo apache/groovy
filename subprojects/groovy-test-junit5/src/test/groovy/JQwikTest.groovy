@@ -19,7 +19,7 @@
 import net.jqwik.api.*
 import net.jqwik.api.constraints.*
 
-class PropertyBasedTests {
+class JQwikTest {
     @Property
     def uniqueInList(@ForAll @Size(5) @UniqueElements List<@IntRange(min = 0, max = 10) Integer> aList) {
         assert aList.size() == aList.toSet().size()
