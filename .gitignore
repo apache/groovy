@@ -19,3 +19,4 @@ out/
 .classpath
 .project
 bin/
+.jqwik-database

@@ -147,6 +147,7 @@
          <trusted-key id="a5bd02b93e7a40482eb1d66a5f69ad087600b22c" group="org.ow2.asm"/>
          <trusted-key id="a778fde933a96dda827840d8e2b3d84202b812d9" group="org.assertj"/>
          <trusted-key id="a7892505cf1a58076453e52d7999befba1039e8b" group="net.bytebuddy"/>
+         <trusted-key id="aaaa9d3f580c7223dbd1ff425746ee07d997ddb6" group="net.jqwik"/>
          <trusted-key id="b1fc0e1fa329669191f8306f5bcee695141e6086">
             <trusting group="org.jboss.weld"/>
             <trusting group="javax.enterprise"/>
@@ -942,6 +943,11 @@
       </component>
       <component group="org.codenarc" name="CodeNarc" version="2.1.0">
          <artifact name="CodeNarc-2.1.0.jar">
+            <pgp value="851264c36365d4ff9427625f38362fd5cfa2668b"/>
+         </artifact>
+      </component>
+      <component group="org.codenarc" name="CodeNarc" version="2.2.0">
+         <artifact name="CodeNarc-2.2.0.jar">
             <pgp value="851264c36365d4ff9427625f38362fd5cfa2668b"/>
          </artifact>
       </component>
