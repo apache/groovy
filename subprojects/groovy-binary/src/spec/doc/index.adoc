@@ -118,6 +118,8 @@ Groovy integrates very well with http://ant.apache.org[Apache Ant] thanks to <<a
 
 include::../../../../../subprojects/groovy-ant/src/spec/doc/groovy-ant-task.adoc[leveloffset=+2]
 
+include::../../../../../subprojects/groovy-ant/src/spec/doc/groovyc-ant-task.adoc[leveloffset=+2]
+
 include::../../../../../subprojects/groovy-templates/src/spec/doc/template-engines.adoc[leveloffset=+2]
 
 include::../../../../../subprojects/groovy-servlet/src/spec/doc/servlet-userguide.adoc[leveloffset=+2]
