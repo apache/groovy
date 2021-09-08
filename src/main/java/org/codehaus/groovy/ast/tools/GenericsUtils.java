@@ -852,9 +852,10 @@ public class GenericsUtils {
         ClassNode parameterizedType = findParameterizedTypeFromCache(declaringClass, actualReceiver, tryToFindExactType);
         if (parameterizedType != null && parameterizedType.isRedirectNode() && !parameterizedType.isGenericsPlaceHolder()) { // GROOVY-10166
             // declaringClass may be "List<T> -> List<E>" and parameterizedType may be "List<String> -> List<E>" or "List<> -> List<E>"
-            GenericsType[] sourceGenericsTypes = parameterizedType.getGenericsTypes();
             GenericsType[] targetGenericsTypes = parameterizedType.redirect().getGenericsTypes();
-            if (sourceGenericsTypes != null && targetGenericsTypes != null) {
+            if (targetGenericsTypes != null) {
+                GenericsType[] sourceGenericsTypes = parameterizedType.getGenericsTypes();
+                if (sourceGenericsTypes == null) sourceGenericsTypes = EMPTY_GENERICS_ARRAY;
                 map = new LinkedHashMap<>();
                 for (int i = 0, m = sourceGenericsTypes.length, n = targetGenericsTypes.length; i < n; i += 1) {
                     map.put(targetGenericsTypes[i], i < m ? sourceGenericsTypes[i] : targetGenericsTypes[i]);
