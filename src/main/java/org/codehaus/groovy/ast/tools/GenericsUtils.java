@@ -848,38 +848,20 @@ public class GenericsUtils {
     }
 
     private static Tuple2<Map<GenericsType, GenericsType>, ClassNode> doMakeDeclaringAndActualGenericsTypeMap(final ClassNode declaringClass, final ClassNode actualReceiver, final boolean tryToFindExactType) {
+        Map<GenericsType, GenericsType> map = Collections.emptyMap();
         ClassNode parameterizedType = findParameterizedTypeFromCache(declaringClass, actualReceiver, tryToFindExactType);
-        if (parameterizedType == null) {
-            return tuple(Collections.emptyMap(), parameterizedType);
-        }
-
-        Map<GenericsType, GenericsType> result = new LinkedHashMap<>();
-        result.putAll(makePlaceholderAndParameterizedTypeMap(declaringClass));
-        result.putAll(makePlaceholderAndParameterizedTypeMap(parameterizedType));
-
-        result = connectGenericsTypes(result);
-
-        return tuple(result, parameterizedType);
-    }
-
-    private static Map<GenericsType, GenericsType> makePlaceholderAndParameterizedTypeMap(final ClassNode declaringClass) {
-        if (null == declaringClass) {
-            return Collections.emptyMap();
-        }
-
-        Map<GenericsType, GenericsType> result = new LinkedHashMap<>();
-
-        ClassNode redirectDeclaringClass = declaringClass.redirect();
-        GenericsType[] declaringGenericsTypes = declaringClass.getGenericsTypes();
-        GenericsType[] redirectDeclaringGenericsTypes = redirectDeclaringClass.getGenericsTypes();
-
-        if (null != declaringGenericsTypes && null != redirectDeclaringGenericsTypes) {
-            for (int i = 0, n = declaringGenericsTypes.length; i < n; i++) {
-                result.put(redirectDeclaringGenericsTypes[i], declaringGenericsTypes[i]);
+        if (parameterizedType != null && parameterizedType.isRedirectNode() && !parameterizedType.isGenericsPlaceHolder()) { // GROOVY-10166
+            // declaringClass may be "List<T> -> List<E>" and parameterizedType may be "List<String> -> List<E>" or "List<> -> List<E>"
+            GenericsType[] sourceGenericsTypes = parameterizedType.getGenericsTypes();
+            GenericsType[] targetGenericsTypes = parameterizedType.redirect().getGenericsTypes();
+            if (sourceGenericsTypes != null && targetGenericsTypes != null) {
+                map = new LinkedHashMap<>();
+                for (int i = 0, m = sourceGenericsTypes.length, n = targetGenericsTypes.length; i < n; i += 1) {
+                    map.put(targetGenericsTypes[i], i < m ? sourceGenericsTypes[i] : targetGenericsTypes[i]);
+                }
             }
         }
-
-        return result;
+        return tuple(map, parameterizedType);
     }
 
     private static Map<GenericsType, GenericsType> connectGenericsTypes(final Map<GenericsType, GenericsType> genericsTypeMap) {
