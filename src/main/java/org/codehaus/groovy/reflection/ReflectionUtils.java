@@ -212,8 +212,16 @@ public class ReflectionUtils {
 
     // to be run in PrivilegedAction!
     public static Optional<AccessibleObject> makeAccessible(final AccessibleObject ao) {
+        if (ao.isAccessible()) {
+            try {
+                // Avoid unnecessary security checks for each invocation
+                ao.setAccessible(true);
+            } catch (Throwable ignore) {
+            }
+            return Optional.of(ao);
+        }
         try {
-            if (ao.isAccessible() || trySetAccessible(ao)) {
+            if (trySetAccessible(ao)) {
                 return Optional.of(ao);
             }
         } catch (Throwable ignore) {
