@@ -2542,8 +2542,29 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10196
+    // GROOVY-10049, GROOVY-10166
     void testShouldFindMethodEvenWithRepeatNames2() {
+        assertScript '''
+            abstract class A<T extends C> {
+                T getC() {
+                }
+            }
+
+            class C<T extends A> {
+                T get() {
+                    A a = null
+                    a.c.get(1)
+                }
+                T get(int i) {
+                }
+            }
+
+            new C()
+        '''
+    }
+
+    // GROOVY-10196
+    void testShouldFindMethodEvenWithRepeatNames3() {
         assertScript '''
             interface M<K,V> {
             }
