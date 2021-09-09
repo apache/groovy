@@ -83,6 +83,7 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
                     candidates.add(type);
                     while (!candidates.isEmpty()) {
                         ClassNode next = candidates.remove(0);
+                        if (!Traits.isTrait(next)) continue;
                         ClassNode helper = Traits.findHelper(next);
                         Parameter[] params = new Parameter[argumentTypes.length + 1];
                         params[0] = new Parameter(ClassHelper.CLASS_Type.getPlainNodeReference(), "staticSelf");
