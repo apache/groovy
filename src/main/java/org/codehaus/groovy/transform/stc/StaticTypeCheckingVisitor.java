@@ -587,10 +587,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         final Variable accessedVariable = vexp.getAccessedVariable();
         final TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
 
-        if (accessedVariable == null) {
-            return;
-        }
-
         if (accessedVariable instanceof DynamicVariable) {
             // a dynamic variable is either a closure property, a class member referenced from a closure, or an undeclared variable
 
@@ -657,18 +653,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
             }
-        } else {
+        } else if (accessedVariable != null) {
             VariableExpression localVariable;
             if (accessedVariable instanceof Parameter) {
-                Parameter parameter = (Parameter) accessedVariable;
-                localVariable = new ParameterVariableExpression(parameter);
+                Parameter prm = (Parameter) accessedVariable;
+                localVariable = new ParameterVariableExpression(prm);
             } else {
                 localVariable = (VariableExpression) accessedVariable;
             }
 
             ClassNode inferredType = localVariable.getNodeMetaData(INFERRED_TYPE);
             inferredType = getInferredTypeFromTempInfo(localVariable, inferredType);
-            if (inferredType != null && !isObjectType(inferredType)) {
+            if (inferredType != null && !isObjectType(inferredType) && !inferredType.equals(accessedVariable.getType())) {
                 vexp.putNodeMetaData(INFERRED_RETURN_TYPE, inferredType);
             }
         }
@@ -685,7 +681,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (vexp == VariableExpression.THIS_EXPRESSION) return true;
         if (!vexp.isThisExpression()) return false;
         // GROOVY-6904, GROOVY-9422: non-static inner class constructor call sets type
-        storeType(vexp, !OBJECT_TYPE.equals(vexp.getType()) ? vexp.getType() : makeThis());
+        storeType(vexp, !isObjectType(vexp.getType()) ? vexp.getType() : makeThis());
         return true;
     }
 
@@ -776,7 +772,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 lType = getType(leftExpression);
             } else {
                 if (op != ASSIGN && op != ELVIS_EQUAL) {
-                    lType = getType(leftExpression);
+                    if (leftExpression instanceof VariableExpression && hasInferredReturnType(leftExpression)) {
+                        lType = getInferredReturnType(leftExpression);
+                    } else {
+                        lType = getType(leftExpression);
+                    }
                 } else {
                     lType = getOriginalDeclarationType(leftExpression);
 
@@ -5020,7 +5020,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 return fieldType;
             }
             if (variable != vexp && variable instanceof VariableExpression) {
-                return getType((Expression) variable);
+                return getType((VariableExpression) variable);
             }
             if (variable instanceof Parameter) {
                 Parameter parameter = (Parameter) variable;

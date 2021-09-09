@@ -487,6 +487,20 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10217
+    void testInstanceOfThenSubscriptOperator() {
+        assertScript '''
+            void test(Object o) {
+                if (o instanceof List) {
+                    assert o[0] == 1
+                    def x = (List) o
+                    assert x[0] == 1
+                }
+            }
+            test([1])
+        '''
+    }
+
     void testShouldNotFailWithWith() {
         assertScript '''
             class A {
