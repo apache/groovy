@@ -467,6 +467,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return Boolean.TRUE.equals(node.getNodeMetaData(StaticTypeCheckingVisitor.class)) || isSkipMode(node);
     }
 
+    protected boolean shouldSkipMethodNode(final MethodNode node) {
+        return Boolean.TRUE.equals(node.getNodeMetaData(StaticTypeCheckingVisitor.class)) || isSkipMode(node);
+    }
+
     public boolean isSkipMode(final AnnotatedNode node) {
         if (node == null) return false;
         for (ClassNode tca : getTypeCheckingAnnotations()) {
@@ -2160,18 +2164,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
-    protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
-        typeCheckingContext.pushEnclosingMethod(node);
-        if (!isSkipMode(node) && !shouldSkipMethodNode(node)) {
-            super.visitConstructorOrMethod(node, isConstructor);
-        }
-        if (!isConstructor) {
-            returnAdder.visitMethod(node); // return statement added after visitConstructorOrMethod finished... we can not count these auto-generated return statements(GROOVY-7753), see `typeCheckingContext.pushEnclosingReturnStatement`
-        }
-        typeCheckingContext.popEnclosingMethod();
-    }
-
-    @Override
     public void visitExpressionStatement(final ExpressionStatement statement) {
         typeCheckingContext.pushTemporaryTypeInfo();
         super.visitExpressionStatement(statement);
@@ -2552,14 +2544,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    protected boolean shouldSkipMethodNode(final MethodNode node) {
-        return Boolean.TRUE.equals(node.getNodeMetaData(StaticTypeCheckingVisitor.class));
+    @Override
+    public void visitConstructor(final ConstructorNode node) {
+        if (shouldSkipMethodNode(node)) {
+            return;
+        }
+        super.visitConstructor(node);
     }
 
     @Override
     public void visitMethod(final MethodNode node) {
         if (shouldSkipMethodNode(node)) {
-            // method has already been visited by a static type checking visitor
             return;
         }
         if (!extension.beforeVisitMethod(node)) {
@@ -2574,18 +2569,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         extension.afterVisitMethod(node);
     }
 
-    @Override
-    public void visitConstructor(final ConstructorNode node) {
-        if (shouldSkipMethodNode(node)) {
-            // method has already been visited by a static type checking visitor
-            return;
-        }
-        super.visitConstructor(node);
-    }
-
     protected void startMethodInference(final MethodNode node, final ErrorCollector collector) {
-        if (isSkipMode(node)) return;
-
         // second, we must ensure that this method MUST be statically checked
         // for example, in a mixed mode where only some methods are statically checked
         // we must not visit a method which used dynamic dispatch.
@@ -2610,6 +2594,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         typeCheckingContext.popErrorCollector();
         node.putNodeMetaData(ERROR_COLLECTOR, collector);
+    }
+
+    @Override
+    protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
+        typeCheckingContext.pushEnclosingMethod(node);
+        super.visitConstructorOrMethod(node, isConstructor);
+        if (!isConstructor) {
+            returnAdder.visitMethod(node); // GROOVY-7753: we cannot count these auto-generated return statements, see `typeCheckingContext.pushEnclosingReturnStatement`
+        }
+        typeCheckingContext.popEnclosingMethod();
     }
 
     protected void addTypeCheckingInfoAnnotation(final MethodNode node) {
