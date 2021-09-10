@@ -2600,6 +2600,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         typeCheckingContext.pushEnclosingMethod(node);
         super.visitConstructorOrMethod(node, isConstructor);
+        if (node.hasDefaultValue()) {
+            for (Parameter parameter : node.getParameters()) {
+                if (!parameter.hasInitialExpression()) continue;
+                // GROOVY-10094: visit param default argument expression
+                visitInitialExpression(parameter.getInitialExpression(), varX(parameter), parameter);
+                // GROOVY-10104: remove direct target setting to prevent errors
+                parameter.getInitialExpression().visit(new CodeVisitorSupport() {
+                    @Override
+                    public void visitMethodCallExpression(final MethodCallExpression mce) {
+                        super.visitMethodCallExpression(mce);
+                        mce.setMethodTarget(null);
+                    }
+                });
+            }
+        }
         if (!isConstructor) {
             returnAdder.visitMethod(node); // GROOVY-7753: we cannot count these auto-generated return statements, see `typeCheckingContext.pushEnclosingReturnStatement`
         }
