@@ -208,13 +208,25 @@ class GenericsBytecodeTest extends GenericsTestBase {
     // GROOVY-10229
     void testWildcard3() {
         createClassInfo '''
+            @groovy.transform.CompileStatic
             class C {
-                Map<String,List<?>> getMap() {
+                Map<String,?> a() {
+                }
+                Map<String,List<?>> b() {
+                    def c = {
+                        [
+                            a()
+                        ]
+                    }
+                    return null
                 }
             }
         '''
         assert signatures == [
-            'getMap()Ljava/util/Map;': '()Ljava/util/Map<Ljava/lang/String;Ljava/util/List<*>;>;'
+            'a()Ljava/util/Map;'                        : '()Ljava/util/Map<Ljava/lang/String;*>;',
+            'b()Ljava/util/Map;'                        : '()Ljava/util/Map<Ljava/lang/String;Ljava/util/List<*>;>;',
+            'doCall()Ljava/util/List;'                  : '()Ljava/util/List<Ljava/util/Map<Ljava/lang/String;+Ljava/lang/Object;>;>;',
+            'doCall(Ljava/lang/Object;)Ljava/util/List;': '(Ljava/lang/Object;)Ljava/util/List<Ljava/util/Map<Ljava/lang/String;+Ljava/lang/Object;>;>;'
         ]
     }
 
