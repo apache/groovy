@@ -215,7 +215,7 @@ class GenericsBytecodeTest extends GenericsTestBase {
                 Map<String,List<?>> b() {
                     def c = {
                         [
-                            a()
+                            a(), a()
                         ]
                     }
                     return null
@@ -235,7 +235,6 @@ class GenericsBytecodeTest extends GenericsTestBase {
                class B<T> {
                    private T owner;
                    Class<T> getOwnerClass(){}
-
             }
         """
         assert signatures == [
