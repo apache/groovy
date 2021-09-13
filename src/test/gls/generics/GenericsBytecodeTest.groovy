@@ -160,8 +160,8 @@ class GenericsBytecodeTest extends GenericsTestBase {
 
     void testMultipleBounds() {
         createClassInfo """
-            class Pair<    A extends Comparable<A> & Cloneable , 
-                        B extends Cloneable & Comparable<B> > 
+            class Pair<    A extends Comparable<A> & Cloneable ,
+                        B extends Cloneable & Comparable<B> >
             {
                 A foo(){}
                 B bar(){}
@@ -174,34 +174,59 @@ class GenericsBytecodeTest extends GenericsTestBase {
         ]
     }
 
-    void testWildCard() {
-        createClassInfo """
-            class B {
-                private Collection<?> f1 
-                private List<? extends Number> f2 
-                private Comparator<? super String> f3 
-                private Map<String,?> f4  
+    void testWildcard1() {
+        createClassInfo '''
+            class C {
+                private Collection<?> f1
+                private List<? extends Number> f2
+                private Comparator<? super String> f3
+                private Map<String,?> f4
             }
-        """
+        '''
         assert signatures == [
-                f1: "Ljava/util/Collection<*>;",
-                f2: "Ljava/util/List<+Ljava/lang/Number;>;",
-                f3: "Ljava/util/Comparator<-Ljava/lang/String;>;",
-                f4: "Ljava/util/Map<Ljava/lang/String;*>;"
+            f1: 'Ljava/util/Collection<*>;',
+            f2: 'Ljava/util/List<+Ljava/lang/Number;>;',
+            f3: 'Ljava/util/Comparator<-Ljava/lang/String;>;',
+            f4: 'Ljava/util/Map<Ljava/lang/String;*>;'
         ]
     }
 
-    void testwildcardWithBound() {
-        createClassInfo """
-            class Something<T extends Number> {
+    void testWildcard2() {
+        createClassInfo '''
+            class C<T extends Number> {
                 List<? super T> dependency
             }
-        """
+        '''
         assert signatures == [
-                "class"                           : "<T:Ljava/lang/Number;>Ljava/lang/Object;Lgroovy/lang/GroovyObject;",
-                dependency                        : "Ljava/util/List<-TT;>;",
-                "setDependency(Ljava/util/List;)V": "(Ljava/util/List<-TT;>;)V",
-                "getDependency()Ljava/util/List;" : "()Ljava/util/List<-TT;>;",
+            class                             : '<T:Ljava/lang/Number;>Ljava/lang/Object;Lgroovy/lang/GroovyObject;',
+            dependency                        : 'Ljava/util/List<-TT;>;',
+            'getDependency()Ljava/util/List;' : '()Ljava/util/List<-TT;>;',
+            'setDependency(Ljava/util/List;)V': '(Ljava/util/List<-TT;>;)V'
+        ]
+    }
+
+    // GROOVY-10229
+    void testWildcard3() {
+        createClassInfo '''
+            @groovy.transform.CompileStatic
+            class C {
+                Map<String,?> a() {
+                }
+                Map<String,List<?>> b() {
+                    def c = {
+                        [
+                            a()
+                        ]
+                    }
+                    return null
+                }
+            }
+        '''
+        assert signatures == [
+            'a()Ljava/util/Map;'                        : '()Ljava/util/Map<Ljava/lang/String;*>;',
+            'b()Ljava/util/Map;'                        : '()Ljava/util/Map<Ljava/lang/String;Ljava/util/List<*>;>;',
+            'doCall()Ljava/util/List;'                  : '()Ljava/util/List<Ljava/util/Map<Ljava/lang/String;+Ljava/lang/Object;>;>;',
+            'doCall(Ljava/lang/Object;)Ljava/util/List;': '(Ljava/lang/Object;)Ljava/util/List<Ljava/util/Map<Ljava/lang/String;+Ljava/lang/Object;>;>;'
         ]
     }
 
@@ -210,8 +235,8 @@ class GenericsBytecodeTest extends GenericsTestBase {
                class B<T> {
                    private T owner;
                    Class<T> getOwnerClass(){}
-   
-            } 
+
+            }
         """
         assert signatures == [
                 "class"                           : "<T:Ljava/lang/Object;>Ljava/lang/Object;Lgroovy/lang/GroovyObject;",
@@ -226,7 +251,6 @@ class GenericsBytecodeTest extends GenericsTestBase {
         """
         assert signatures == ["class": "<T:Ljava/lang/Object;>Ljava/lang/Object;"]
     }
-
 
     void testTypeParamAsBound() {
         createClassInfo """
