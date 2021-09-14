@@ -1,4 +1,3 @@
-import groovy.transform.NonSealed
 import groovy.transform.Sealed
 
 /*

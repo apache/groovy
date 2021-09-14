@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform
 
+import groovy.transform.Sealed
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.Test
 
@@ -202,5 +204,20 @@ class SealedTransformTest {
             }
             Shape.getAnnotation(Sealed).permittedSubclasses()*.name
         ''') == ['Shape$Triangle', 'Shape$Polygon']
+    }
+
+    @Test
+    void testInferredPermittedNestedClassesWithAnnosDisabled() {
+        def config = new CompilerConfiguration(sealedAnnotations: false)
+        def shapeClass = new GroovyShell(config).evaluate('''
+            import groovy.transform.Sealed
+
+            @Sealed class Shape {
+                final class Triangle extends Shape { }
+                final class Polygon extends Shape { }
+            }
+            Shape
+        ''')
+        assert shapeClass.getAnnotation(Sealed) == null
     }
 }
