@@ -385,6 +385,16 @@ public class CompilerConfiguration {
     private boolean previewFeatures;
 
     /**
+     * Whether Sealed class information is natively generated for target bytecode >= 17 (JEP 360/397/409)
+     */
+    private boolean sealedNative;
+
+    /**
+     * Whether Sealed annotations are generated
+     */
+    private boolean sealedAnnotations;
+
+    /**
      * options for joint compilation (null by default == no joint compilation)
      */
     private Map<String, Object> jointCompilationOptions;
@@ -418,6 +428,8 @@ public class CompilerConfiguration {
      *   <tr><td><code>groovy.target.directory</code></td><td>{@link #getTargetDirectory}</td></tr>
      *   <tr><td><code>groovy.parameters</code></td><td>{@link #getParameters()}</td></tr>
      *   <tr><td><code>groovy.preview.features</code></td><td>{@link #isPreviewFeatures}</td></tr>
+     *   <tr><td><code>groovy.sealed.native.disable</code></td><td>{@link #isSealedNative}</td></tr>
+     *   <tr><td><code>groovy.sealed.annotations.disable</code></td><td>{@link #isSealedAnnotations}</td></tr>
      *   <tr><td><code>groovy.default.scriptExtension</code></td><td>{@link #getDefaultScriptExtension}</td></tr>
      * </table>
      * </blockquote>
@@ -441,6 +453,8 @@ public class CompilerConfiguration {
         warningLevel = WarningMessage.LIKELY_ERRORS;
         parameters = getBooleanSafe("groovy.parameters");
         previewFeatures = getBooleanSafe("groovy.preview.features");
+        sealedNative = !getBooleanSafe("groovy.sealed.native.disable");
+        sealedAnnotations = !getBooleanSafe("groovy.sealed.annotations.disable");
         sourceEncoding = getSystemPropertySafe("groovy.source.encoding",
                 getSystemPropertySafe("file.encoding", DEFAULT_SOURCE_ENCODING));
         setTargetDirectorySafe(getSystemPropertySafe("groovy.target.directory"));
@@ -487,6 +501,8 @@ public class CompilerConfiguration {
         setMinimumRecompilationInterval(configuration.getMinimumRecompilationInterval());
         setTargetBytecode(configuration.getTargetBytecode());
         setPreviewFeatures(configuration.isPreviewFeatures());
+        setSealedNative(configuration.isSealedNative());
+        setSealedAnnotations(configuration.isSealedAnnotations());
         setDefaultScriptExtension(configuration.getDefaultScriptExtension());
         setSourceEncoding(configuration.getSourceEncoding());
         Map<String, Object> jointCompilationOptions = configuration.getJointCompilationOptions();
@@ -540,6 +556,8 @@ public class CompilerConfiguration {
      *   <tr><td><code>groovy.target.bytecode</code></td><td>{@link #getTargetBytecode}</td></tr>
      *   <tr><td><code>groovy.parameters</code></td><td>{@link #getParameters()}</td></tr>
      *   <tr><td><code>groovy.preview.features</code></td><td>{@link #isPreviewFeatures}</td></tr>
+     *   <tr><td><code>groovy.sealed.native.disable</code></td><td>{@link #isSealedNative}</td></tr>
+     *   <tr><td><code>groovy.sealed.annotations.disable</code></td><td>{@link #isSealedAnnotations}</td></tr>
      *   <tr><td><code>groovy.classpath</code></td><td>{@link #getClasspath}</td></tr>
      *   <tr><td><code>groovy.output.verbose</code></td><td>{@link #getVerbose}</td></tr>
      *   <tr><td><code>groovy.output.debug</code></td><td>{@link #getDebug}</td></tr>
@@ -645,6 +663,12 @@ public class CompilerConfiguration {
 
         text = configuration.getProperty("groovy.preview.features");
         if (text != null) setPreviewFeatures(text.equalsIgnoreCase("true"));
+
+        text = configuration.getProperty("groovy.sealed.native.disable");
+        if (text != null) setSealedNative(!text.equalsIgnoreCase("false"));
+
+        text = configuration.getProperty("groovy.sealed.annotations.disable");
+        if (text != null) setSealedAnnotations(!text.equalsIgnoreCase("false"));
 
         text = configuration.getProperty("groovy.classpath");
         if (text != null) setClasspath(text);
@@ -971,6 +995,42 @@ public class CompilerConfiguration {
      */
     public void setPreviewFeatures(final boolean previewFeatures) {
         this.previewFeatures = previewFeatures;
+    }
+
+    /**
+     * Whether Sealed class information is natively generated (JEP 360/397/409).
+     *
+     * @return sealedNative
+     */
+    public boolean isSealedNative() {
+        return sealedNative;
+    }
+
+    /**
+     * Sets whether Sealed class information is natively generated (JEP 360/397/409).
+     *
+     * @param sealedNative whether to generate permittedSubclass information in the class file for target bytecode >= 17
+     */
+    public void setSealedNative(final boolean sealedNative) {
+        this.sealedNative = sealedNative;
+    }
+
+    /**
+     * Whether Sealed annotations are generated.
+     *
+     * @return sealedAnnotations
+     */
+    public boolean isSealedAnnotations() {
+        return sealedAnnotations;
+    }
+
+    /**
+     * Sets whether Sealed annotations are generated.
+     *
+     * @param sealedAnnotations whether to generate {@code @Sealed} annotations for sealed types
+     */
+    public void setSealedAnnotations(final boolean sealedAnnotations) {
+        this.sealedAnnotations = sealedAnnotations;
     }
 
     /**

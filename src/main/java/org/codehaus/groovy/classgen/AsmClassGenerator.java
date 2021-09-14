@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyRuntimeException;
+import groovy.transform.Sealed;
 import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.GroovyBugError;
@@ -110,6 +111,7 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.TypePath;
 import org.objectweb.asm.TypeReference;
@@ -371,6 +373,12 @@ public class AsmClassGenerator extends ClassGenerator {
             // GROOVY-4649, GROOVY-6750, GROOVY-6808
             for (Iterator<InnerClassNode> it = classNode.getInnerClasses(); it.hasNext(); ) {
                 makeInnerClassEntry(it.next());
+            }
+            if (controller.getBytecodeVersion() >= Opcodes.V17 &&
+                    context.getCompileUnit().getConfig().isSealedNative()) {
+                for (ClassNode sub: classNode.getPermittedSubclasses()) {
+                    classVisitor.visitPermittedSubclass(sub.getName());
+                }
             }
 
             classVisitor.visitEnd();
@@ -2065,6 +2073,7 @@ public class AsmClassGenerator extends ClassGenerator {
             // skip built-in properties
             if (an.isBuiltIn()) continue;
             if (an.hasSourceRetention()) continue;
+            if (an.getClassNode().getName().equals(Sealed.class.getName()) && !context.getCompileUnit().getConfig().isSealedAnnotations()) continue;
 
             AnnotationVisitor av = getAnnotationVisitor(targetNode, an, visitor);
             visitAnnotationAttributes(an, av);
