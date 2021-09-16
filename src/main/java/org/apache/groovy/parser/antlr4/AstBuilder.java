@@ -4010,8 +4010,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public Statement visitLambdaBody(final LambdaBodyContext ctx) {
-        if (asBoolean(ctx.expression())) {
-            return configureAST(new ExpressionStatement((Expression) this.visit(ctx.expression())), ctx);
+        if (asBoolean(ctx.statementExpression())) {
+            return configureAST((ExpressionStatement) this.visit(ctx.statementExpression()), ctx);
         }
 
         if (asBoolean(ctx.block())) {
