@@ -33,18 +33,13 @@ final class LambdaTest {
         assertScript '''
             import groovy.transform.CompileStatic
             import java.util.stream.Collectors
-            import java.util.stream.Stream
 
             @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
-                }
-
-                public static void p() {
-                    assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus(1)).collect(Collectors.toList());
-                }
+            def f() {
+                [1, 2, 3].stream().map(e -> e + 1).collect(Collectors.toList())
             }
+
+            assert f() == [2, 3, 4]
         '''
     }
 
@@ -53,50 +48,28 @@ final class LambdaTest {
         assertScript '''
             import groovy.transform.CompileStatic
             import java.util.stream.Collectors
-            import java.util.stream.Stream
 
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
-                }
-
-                @CompileStatic
-                public static void p() {
-                    assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus(1)).collect(Collectors.toList());
-                }
+            @CompileStatic
+            def f() {
+                [1, 2, 3].stream().map(e -> e.plus(1)).collect(Collectors.toList())
             }
+
+            assert f() == [2, 3, 4]
         '''
     }
 
     @Test
-    void testFunctionScript() {
+    void testFunctionWithTypeArgument() {
         assertScript '''
             import groovy.transform.CompileStatic
             import java.util.stream.Collectors
-            import java.util.stream.Stream
 
             @CompileStatic
-            void p() {
-                assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e + 1).collect(Collectors.toList());
+            List<String> f() {
+                [1, 2, 3].stream().<String>map(i -> null).collect(Collectors.toList())
             }
 
-            p()
-        '''
-    }
-
-    @Test
-    void testFunctionScript2() {
-        assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            void p() {
-                assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus(1)).collect(Collectors.toList());
-            }
-
-            p()
+            assert f() == [null, null, null]
         '''
     }
 
@@ -104,74 +77,57 @@ final class LambdaTest {
     void testBinaryOperator() {
         assertScript '''
             import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
 
             @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
-                }
-
-                public static void p() {
-                    assert 13 == [1, 2, 3].stream().reduce(7, (Integer r, Integer e) -> r + e);
-                }
+            int f() {
+                [1, 2, 3].stream().reduce(7, (Integer r, Integer e) -> r + e)
             }
+
+            assert f() == 13
         '''
     }
 
-    @Test // GROOVY-8917: Failed to infer parameter type of some SAM, e.g. BinaryOperator
-    void testBinaryOperatorWithoutExplicitTypeDef() {
+    @Test // GROOVY-8917
+    void testBinaryOperatorWithoutExplicitTypes() {
         assertScript '''
             import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
 
             @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
-                }
-
-                public static void p() {
-                    assert 13 == [1, 2, 3].stream().reduce(7, (r, e) -> r + e);
-                }
+            int f() {
+                [1, 2, 3].stream().reduce(7, (r, e) -> r + e)
             }
+
+            assert f() == 13
         '''
     }
 
     @Test
-    void testBinaryOperatorWithoutExplicitTypeDef2() {
+    void testBinaryOperatorWithoutExplicitTypes2() {
         assertScript '''
             import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
             import java.util.function.BinaryOperator
 
             @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
-                }
-
-                public static void p() {
-                    BinaryOperator<Integer> accumulator = (r, e) -> r + e
-                    assert 13 == [1, 2, 3].stream().reduce(7, accumulator);
-                }
+            int f() {
+                BinaryOperator<Integer> accumulator = (r, e) -> r + e
+                return [1, 2, 3].stream().reduce(7, accumulator)
             }
+
+            assert f() == 13
         '''
     }
 
     @Test @NotYetImplemented
     void testBiFunctionAndBinaryOperatorWithSharedTypeParameter() {
         assertScript '''
-            @groovy.transform.CompileStatic
-            void test() {
-                String string = java.util.stream.IntStream.range(0, 10)
-                    .boxed().reduce('', (s, i) -> s + '-', String::concat)
-                assert string == '----------'
+            import groovy.transform.CompileStatic
+            import java.util.stream.IntStream
+
+            @CompileStatic
+            def f() {
+                IntStream.range(0, 10).boxed().reduce('', (s, i) -> s + '-', String::concat)
             }
-            test()
+            assert f() == '----------'
         '''
     }
 

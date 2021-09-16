@@ -284,8 +284,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def <X> Set<X> f(Class<X> x) {
                 Collections.singleton(x.newInstance(42))
             }
-            def <Y extends Number> List<Y> g(Class<Y> y) {
-                f(y).stream().filter(n -> n.intValue() > 0).toList()
+            def <T extends Number> List<T> g(Class<T> t) {
+                f(t).stream().filter(n -> n.intValue() > 0).toList()
             }
 
             def result = g(Integer)
