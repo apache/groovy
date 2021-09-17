@@ -802,6 +802,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // for the "in" or "!in" operator, the receiver and the arguments are reversed
                 BinaryExpression reverseExpression = binX(rightExpression, expression.getOperation(), leftExpression);
                 resultType = getResultType(rType, op, lType, reverseExpression);
+                if (resultType == null) resultType = boolean_TYPE; // GROOVY-10239
                 storeTargetMethod(expression, reverseExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
             } else {
                 resultType = getResultType(lType, op, rType, expression);
