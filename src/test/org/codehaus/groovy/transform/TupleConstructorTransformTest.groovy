@@ -22,23 +22,60 @@ import groovy.test.GroovyShellTestCase
 
 class TupleConstructorTransformTest extends GroovyShellTestCase {
 
-    void testOk() {
-        assertScript """
-            import groovy.transform.TupleConstructor
-
-            @TupleConstructor
+    void testBasics() {
+        assertScript '''
+            @groovy.transform.TupleConstructor
             class Person {
                 String firstName
                 String lastName
             }
 
-            def p = new Person("John", "Doe")
-            assert p.firstName == "John"
-            assert p.lastName == "Doe"
-        """
+            def p = new Person('John', 'Doe')
+            assert p.firstName == 'John'
+            assert p.lastName == 'Doe'
+        '''
     }
 
-    void testConstructorWithPostAndFields() {
+    void testCopyConstructor() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(force=true)
+            class Person {
+                String firstName, lastName
+                Person(Person that) {
+                    this.firstName = that.firstName
+                }
+            }
+
+            def p = new Person('John', 'Doe')
+            assert p.firstName == 'John'
+            assert p.lastName == 'Doe'
+
+            p = new Person(p)
+            assert p.firstName == 'John'
+            assert p.lastName == null
+        '''
+    }
+
+    void testFieldsAndInitializers() {
+        assertScript '''
+            @groovy.transform.TupleConstructor(includeFields=true)
+            class Person {
+                String firstName = 'John'
+                private String lastName = 'Doe'
+                String getLastName() { lastName }
+            }
+
+            def p = new Person()
+            assert p.firstName == 'John'
+            assert p.lastName == 'Doe'
+
+            p = new Person('Jane')
+            assert p.firstName == 'Jane'
+            assert p.lastName == 'Doe'
+        '''
+    }
+
+    void testFieldsAndNamesAndPost() {
         assertScript '''
             import groovy.transform.*
 
@@ -54,7 +91,7 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
         '''
     }
 
-    void testConstructorWithPreAndPost() {
+    void testSuperPropsAndPreAndPost() {
         assertScript '''
             import groovy.transform.*
 
@@ -75,8 +112,9 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
         '''
     }
 
-    void testExistingEmptyConstructorTakesPrecedence_groovy7522() {
-        assertScript """
+    // GROOVY-7522
+    void testExistingEmptyConstructorTakesPrecedence() {
+        assertScript '''
             @groovy.transform.TupleConstructor
             class Cat {
                 String name
@@ -86,12 +124,12 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
 
             assert new Cat("Mr. Bigglesworth").name == null
             assert Cat.declaredConstructors.size() == 1
-        """
+        '''
     }
 
     void testIncludesAndExcludesTogetherResultsInError() {
         def message = shouldFail {
-            evaluate """
+            evaluate '''
                 import groovy.transform.TupleConstructor
 
                 @TupleConstructor(includes='surName', excludes='surName')
@@ -100,14 +138,14 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
                 }
 
                 new Person("Doe")
-            """
+            '''
         }
         assert message.contains("Error during @TupleConstructor processing: Only one of 'includes' and 'excludes' should be supplied not both.")
     }
 
     void testIncludesWithInvalidPropertyNameResultsInError() {
         def message = shouldFail {
-            evaluate """
+            evaluate '''
                 import groovy.transform.TupleConstructor
 
                 @TupleConstructor(includes='sirName')
@@ -117,14 +155,14 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
                 }
 
                 def p = new Person("John", "Doe")
-            """
+            '''
         }
         assert message.contains("Error during @TupleConstructor processing: 'includes' property 'sirName' does not exist.")
     }
 
     void testExcludesWithInvalidPropertyNameResultsInError() {
         def message = shouldFail {
-            evaluate """
+            evaluate '''
                 import groovy.transform.TupleConstructor
 
                 @TupleConstructor(excludes='sirName')
@@ -134,12 +172,13 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
                 }
 
                 def p = new Person("John", "Doe")
-            """
+            '''
         }
         assert message.contains("Error during @TupleConstructor processing: 'excludes' property 'sirName' does not exist.")
     }
 
-    void testIncludesWithEmptyList_groovy7523() {
+    // GROOVY-7523
+    void testIncludesWithEmptyList() {
         assertScript '''
             @groovy.transform.TupleConstructor(includes=[])
             class Cat {
@@ -150,7 +189,8 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
         '''
     }
 
-    void testCombiningWithInheritConstructors_groovy7524() {
+    // GROOVY-7524
+    void testCombiningWithInheritConstructors() {
         assertScript '''
             import groovy.transform.*
 
@@ -176,7 +216,8 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
         '''
     }
 
-    void testMultipleUsages_groovy7672() {
+    // GROOVY-7672
+    void testMultipleUsages() {
         assertScript '''
             import groovy.transform.*
             import java.awt.Color
@@ -203,7 +244,8 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
         '''
     }
 
-    void testInternalFieldsAreIncludedIfRequested_groovy6454() {
+    // GROOVY-6454
+    void testInternalFieldsAreIncludedIfRequested() {
         assertScript '''
             import groovy.transform.*
 
@@ -327,5 +369,4 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
                 'public Baz(Basep,Basepp,Basepubf,java.lang.Byte,Foop,Foopubf,java.lang.Short,Barp,Barpp,Barpubf,java.lang.Integer,Bazp,Bazpp,Bazpubf,java.lang.Long)'
         '''
     }
-
 }

@@ -24,6 +24,7 @@ import groovy.transform.TupleConstructor;
 import groovy.transform.options.PropertyHandler;
 import groovy.transform.stc.POJO;
 import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
+import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -49,17 +50,16 @@ import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasExplicitConstructor;
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.checkPropNamesS;
 import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -69,17 +69,16 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.copyStatementsWithSuperAdjustment;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.defaultValueX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
-import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.transform.ImmutableASTTransformation.makeImmutable;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
@@ -95,25 +94,15 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode LHMAP_TYPE = makeWithoutCaching(LinkedHashMap.class, false);
     private static final ClassNode POJO_TYPE = make(POJO.class);
-    private static final Map<Class<?>, Expression> primitivesInitialValues;
-
-    static {
-        final ConstantExpression zero = constX(0);
-        final ConstantExpression zeroDecimal = constX(.0);
-        primitivesInitialValues = new HashMap<Class<?>, Expression>();
-        primitivesInitialValues.put(int.class, zero);
-        primitivesInitialValues.put(long.class, zero);
-        primitivesInitialValues.put(short.class, zero);
-        primitivesInitialValues.put(byte.class, zero);
-        primitivesInitialValues.put(char.class, zero);
-        primitivesInitialValues.put(float.class, zeroDecimal);
-        primitivesInitialValues.put(double.class, zeroDecimal);
-        primitivesInitialValues.put(boolean.class, ConstantExpression.FALSE);
-    }
 
     @Override
     public String getAnnotationName() {
         return MY_TYPE_NAME;
+    }
+
+    @Override
+    public void setCompilationUnit(CompilationUnit unit) {
+        compilationUnit = unit;
     }
 
     @Override
@@ -294,17 +283,14 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         return param;
     }
 
-    private static Expression providedOrDefaultInitialValue(FieldNode fNode) {
-        Expression initialExp = fNode.getInitialExpression() != null ? fNode.getInitialExpression() : nullX();
-        final ClassNode paramType = fNode.getType();
-        if (ClassHelper.isPrimitiveType(paramType) && isNull(initialExp)) {
-            initialExp = primitivesInitialValues.get(paramType.getTypeClass());
+    private static Expression providedOrDefaultInitialValue(final FieldNode fNode) {
+        ClassNode fType = fNode.getType();
+        Expression init = fNode.getInitialExpression();
+        fNode.setInitialValueExpression(null); // GROOVY-10238
+        if (init == null || (ClassHelper.isPrimitiveType(fType) && ExpressionUtils.isNullConstant(init))) {
+            init = defaultValueX(fType);
         }
-        return initialExp;
-    }
-
-    private static boolean isNull(Expression exp) {
-        return exp instanceof ConstantExpression && ((ConstantExpression) exp).isNullExpression();
+        return init;
     }
 
     public static void addSpecialMapConstructors(int modifiers, ClassNode cNode, String message, boolean addNoArg) {
@@ -343,10 +329,5 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         boolean pojo = !cNode.getAnnotations(POJO_TYPE).isEmpty();
         block.addStatement(checkPropNamesS(namedArgs, pojo, props));
         return block;
-    }
-
-    @Override
-    public void setCompilationUnit(CompilationUnit unit) {
-        this.compilationUnit = unit;
     }
 }

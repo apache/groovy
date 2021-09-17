@@ -21,13 +21,34 @@ package org.codehaus.groovy.classgen.asm.sc
 import groovy.transform.stc.DefaultGroovyMethodsSTCTest
 
 /**
- * Unit tests for static compilation: DGM method calls.
+ * Unit tests for static compilation: default groovy methods.
  */
 class StaticCompileDGMTest extends DefaultGroovyMethodsSTCTest implements StaticCompilationTestSupport {
 
+    // GROOVY-10238
+    void testMapWithDefault() {
+        assertScript '''
+            import groovy.transform.*
+
+            @CompileDynamic
+            class Outer {
+                @Canonical
+                @CompileStatic
+                static class Inner {
+                    Map<String,Object> map = [:].withDefault { new Object() } // NoSuchMethodError: java.util.Map.withDefault(Lgroovy/lang/Closure;)
+                }
+            }
+
+            def obj = new Outer.Inner()
+            assert obj.toString() == 'Outer$Inner([:])'
+            assert obj.map['foo'] != null
+            assert obj.toString() != 'Outer$Inner([:])'
+        '''
+    }
+
     void testThreadDotStart() {
         assertScript '''
-            @ASTTest(phase = INSTRUCTION_SELECTION, value = {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 lookup('start').each {
                     def target = it.expression.target
                     assert target instanceof org.codehaus.groovy.transform.stc.ExtensionMethodNode
@@ -37,14 +58,13 @@ class StaticCompileDGMTest extends DefaultGroovyMethodsSTCTest implements Static
                     assert target.returnType.nameWithoutPackage == 'Thread'
                 }
             })
-            void foo() {
-                start:
+            void test() {
+              start:
                 Thread.start {
                     println 'ok'
                 }
             }
-            foo()
+            test()
         '''
     }
 }
-

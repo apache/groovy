@@ -498,8 +498,6 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
 
     void testMethodCallWithDefaultParams() {
         assertScript '''
-            import groovy.transform.*
-            @TypeChecked(TypeCheckingMode.SKIP)
             class Support {
                 Support(String name, String val, List arg=null, Set set = null, Date suffix = new Date()) {
                     "$name$val$suffix"
