@@ -340,6 +340,64 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testIsCaseArray() {
+        assertScript '''
+            def accept = new Integer[]{1}
+            def result = ['x','yy','zzz'].findAll { it.size() in accept }
+            assert result.size() == 1
+        '''
+    }
+
+    // GROOVY-10239
+    void testIsNotCaseArray() {
+        assertScript '''
+            def reject = new Integer[]{1}
+            def result = ['x','yy','zzz'].findAll { it.size() !in reject }
+            assert result.size() == 2
+        '''
+    }
+
+    void testIsCaseCollection() {
+        assertScript '''
+            def accept = [1]
+            def result = ['x','yy','zzz'].findAll { it.size() in accept }
+            assert result.size() == 1
+        '''
+    }
+
+    // GROOVY-10239
+    void testIsNotCaseCollection() {
+        assertScript '''
+            def reject = [1]
+            def result = ['x','yy','zzz'].findAll { it.size() !in reject }
+            assert result.size() == 2
+        '''
+    }
+
+    // GROOVY-10318
+    void testIsNotCaseCollection2() {
+        assertScript '''
+            class Pogo {
+                String foo, bar
+            }
+            @groovy.transform.CompileStatic
+            void test() {
+                def pogo = new Pogo(foo: 'foo', bar: 'bar')
+                Map<String, ?> filteredProperties = pogo.getProperties().findAll {
+                    String key = it.key
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                      def type = node.getNodeMetaData(INFERRED_TYPE)
+                      assert type == boolean_TYPE
+                    })
+                    def result = key !in ['class']
+                    return result
+                }
+                assert filteredProperties.size() == 2
+            }
+            test()
+        '''
+    }
+
     // GROOVY-5177
     void testShouldNotAllowArrayAssignment() {
         shouldFailWithMessages '''

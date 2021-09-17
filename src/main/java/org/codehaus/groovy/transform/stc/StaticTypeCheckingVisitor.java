@@ -766,27 +766,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode rType = isNullConstant(rightExpression) && !isPrimitiveType(lType)
                     ? UNKNOWN_PARAMETER_TYPE // null to primitive type is handled elsewhere
                     : getInferredTypeFromTempInfo(rightExpression, getType(rightExpression));
+            ClassNode resultType;
+            if (op == ELVIS_EQUAL) {
+                Expression fullExpression = new ElvisOperatorExpression(leftExpression, rightExpression);
+                fullExpression.setSourcePosition(expression);
+                fullExpression.visit(this);
 
-            BinaryExpression reversedBinaryExpression = binX(rightExpression, expression.getOperation(), leftExpression);
-            ClassNode resultType = (op == KEYWORD_IN || op == COMPARE_NOT_IN)
-                    ? getResultType(rType, op, lType, reversedBinaryExpression)
-                    : getResultType(lType, op, rType, expression);
-            if (op == KEYWORD_IN || op == COMPARE_NOT_IN) {
-                // in case of the "in" operator, the receiver and the arguments are reversed
-                // so we use the reversedExpression and get the target method from it
-                storeTargetMethod(expression, reversedBinaryExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
-            } else if (op == LEFT_SQUARE_BRACKET
-                    && leftExpression instanceof VariableExpression
-                    && leftExpression.getNodeMetaData(INFERRED_TYPE) == null) {
-                storeType(leftExpression, lType);
-            } else if (op == ELVIS_EQUAL) {
-                ElvisOperatorExpression elvisOperatorExpression = new ElvisOperatorExpression(leftExpression, rightExpression);
-                elvisOperatorExpression.setSourcePosition(expression);
-                elvisOperatorExpression.visit(this);
-                resultType = getType(elvisOperatorExpression);
+                resultType = getType(fullExpression);
                 storeType(leftExpression, resultType);
+            } else if (op == KEYWORD_IN || op == COMPARE_NOT_IN) {
+                // for the "in" or "!in" operator, the receiver and the arguments are reversed
+                BinaryExpression reverseExpression = binX(rightExpression, expression.getOperation(), leftExpression);
+                resultType = getResultType(rType, op, lType, reverseExpression);
+                if (resultType == null) resultType = boolean_TYPE;//GROOVY-10239
+                storeTargetMethod(expression, reverseExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
+            } else {
+                resultType = getResultType(lType, op, rType, expression);
+                if (op == LEFT_SQUARE_BRACKET
+                        && leftExpression instanceof VariableExpression
+                        && leftExpression.getNodeMetaData(INFERRED_TYPE) == null) {
+                    storeType(leftExpression, lType);
+                }
             }
-
             if (resultType == null) {
                 resultType = lType;
             }
