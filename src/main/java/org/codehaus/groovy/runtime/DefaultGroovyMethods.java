@@ -1086,8 +1086,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return InvokerHelper.invokeMethod(object, method, arguments);
     }
 
-    // isCase methods
     //-------------------------------------------------------------------------
+    // isCase/isNotCase
 
     /**
      * Method for overloading the behavior of the 'case' method in switch statements.
@@ -1219,6 +1219,50 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static boolean isCase(Number caseValue, Number switchValue) {
         return NumberMath.compareTo(caseValue, switchValue) == 0;
     }
+
+    /**
+     * @since 4.0.0
+     */
+    public static boolean isNotCase(Number caseValue, Number switchValue) {
+        return !isCase(caseValue, switchValue);
+    }
+
+    /**
+     * @since 4.0.0
+     */
+    public static boolean isNotCase(Object caseValue, Object switchValue) {
+        return !isCase(caseValue, switchValue);
+    }
+
+    /**
+     * @since 4.0.0
+     */
+    public static boolean isNotCase(Class<?> caseValue, Object switchValue) {
+        return !isCase(caseValue, switchValue);
+    }
+
+    /**
+     * @since 4.0.0
+     */
+    public static boolean isNotCase(Closure<?> caseValue, Object switchValue) {
+        return !caseValue.isCase(switchValue);
+    }
+
+    /**
+     * @since 4.0.0
+     */
+    public static boolean isNotCase(Collection<?> caseValue, Object switchValue) {
+        return !isCase(caseValue, switchValue);
+    }
+
+    /**
+     * @since 4.0.0
+     */
+    public static boolean isNotCase(Map<?, ?>     caseValue, Object switchValue) {
+        return !isCase(caseValue, switchValue);
+    }
+
+    //--------------------------------------------------------------------------
 
     /**
      * Returns an iterator equivalent to this iterator with all duplicated items removed
