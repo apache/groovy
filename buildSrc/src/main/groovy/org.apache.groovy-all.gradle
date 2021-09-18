@@ -40,10 +40,10 @@ javaPlatform {
 
 configurations {
     allSources {
-        extendsFrom runtime
+        extendsFrom runtimeElements
     }
     allSourcesRuntimeClasspath {
-        extendsFrom runtime
+        extendsFrom runtimeElements
     }
 }
 
