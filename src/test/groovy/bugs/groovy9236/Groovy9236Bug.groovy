@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs.groovy9236
+package bugs.groovy9236
 
 import groovy.test.GroovyTestCase
 import org.apache.groovy.util.ScriptRunner
@@ -105,19 +105,11 @@ java.util.stream$Stream
                                               'groovy.lang.GroovyObject$groovy$transform$CompileStatic',
                                               'groovy.lang.GroovyObject$java$util$stream$Stream']
 
+        assert !cl.guessedClassNameList.isEmpty()
         assert cl.guessedClassNameList.every(n -> !classNamesShouldAvoidToGuess.contains(n))
     }
 
     void testResolvingPrecedence() {
         ScriptRunner.runScript('/groovy/bugs/groovy9236/Main.groovy')
-    }
-
-    private static class Groovy9236ClassLoader extends GroovyClassLoader {
-        def guessedClassNameList = []
-
-        protected Class<?> findClass(final String name) throws ClassNotFoundException {
-            guessedClassNameList << name
-            super.findClass(name)
-        }
     }
 }
