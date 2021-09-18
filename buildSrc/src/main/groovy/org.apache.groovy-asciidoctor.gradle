@@ -53,6 +53,8 @@ asciidoctor {
     }
     outputDir = "$buildDir/asciidoc/html5"
     resources {
+        duplicatesStrategy = DuplicatesStrategy.WARN
+
         from("${rootProject.projectDir}/src/spec/doc/assets") {
             include 'css/style.css'
         }

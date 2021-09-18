@@ -181,8 +181,10 @@ configurations {
     }
 }
 
-tasks.withType(AbstractCopyTask).configureEach {
-    it.duplicatesStrategy = DuplicatesStrategy.WARN
+allprojects {
+    tasks.withType(AbstractCopyTask).configureEach {
+        it.duplicatesStrategy = DuplicatesStrategy.WARN
+    }
 }
 
 tasks.named('jar') {
