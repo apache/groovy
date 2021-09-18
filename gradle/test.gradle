@@ -33,6 +33,12 @@ allprojects {
             systemProperties 'java.awt.headless': 'true'
         }
         systemProperties 'apple.awt.UIElement': 'true', 'javadocAssertion.src.dir': './src/main'
+        if (rootProject.hasProperty('target.java.home')) {
+            String targetJavaHome = rootProject.property('target.java.home')
+            if (targetJavaHome?.trim()) {
+                executable = "${targetJavaHome}/bin/java"
+            }
+        }
 
         forkEvery = 50
         maxParallelForks = isRunningOnCI() ? 1 : Runtime.runtime.availableProcessors()
