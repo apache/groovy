@@ -789,21 +789,21 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
         final Pattern baseInterface = Pattern.compile(
             "<pre>" +
-            "(public&nbsp;)?interface (Java|Groovy)InterfaceWithTypeParam&lt;T&gt;" +
+            "(public )?interface (Java|Groovy)InterfaceWithTypeParam&lt;T&gt;" +
             "</pre>");
         final Pattern derivedInterface = Pattern.compile(
             "<pre>" +
-            "(public&nbsp;)?interface (Java|Groovy)InterfaceWithMultipleInterfaces\n" +
+            "(public )?interface (Java|Groovy)InterfaceWithMultipleInterfaces\n" +
             "extends " + interfaces +
             "</pre>");
         final Pattern baseClass = Pattern.compile(
             "<pre>" +
-            "(public&nbsp;)?class (ClassWithMethodComment|DocumentedClass)\n" +
+            "(public )?class (ClassWithMethodComment|DocumentedClass)\n" +
             "extends " + object +
             "</pre>");
         final Pattern derivedClass = Pattern.compile(
             "<pre>" +
-            "(public&nbsp;)?abstract&nbsp;class (Java|Groovy)ClassWithMultipleInterfaces\n" +
+            "(public )?abstract class (Java|Groovy)ClassWithMultipleInterfaces\n" +
             "extends " + object + "\n" +
             "implements " + interfaces +
             "</pre>");
@@ -969,7 +969,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertTrue("The Java class declaration header should have the annotation", Pattern.compile(Pattern.quote(
                 "<pre>@<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a>\n" +
                         "@<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/SuppressWarnings.html' title='SuppressWarnings'>SuppressWarnings</a>(\"foo\")\n" +
-                        "public&nbsp;class Java"
+                        "public class Java"
         )).matcher(javadoc).find());
 
         assertTrue("The Groovy field details should have the annotation", Pattern.compile(Pattern.quote(
