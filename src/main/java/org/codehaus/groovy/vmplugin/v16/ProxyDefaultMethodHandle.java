@@ -27,6 +27,14 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
+/**
+ * Represents default method handle of proxy.
+ * <p>
+ * The given {@code method} must be a default method declared in a proxy interface of the {@code proxy}'s class
+ * or inherited from its superinterface directly or indirectly.
+ *
+ * @since 4.0.0
+ */
 class ProxyDefaultMethodHandle {
     private static final MethodHandle INVOKE_DEFAULT_METHOD_HANDLE;
     static {
