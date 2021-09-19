@@ -456,8 +456,7 @@ if (classDoc.isInterface() && classDoc.interfaces()) {
                         <% visibleConstructors.eachWithIndex { constructor, i -> %>
                         <tr class="${i%2==0?'altColor':'rowColor'}">
                             <td class="colFirst">
-                                <code>${modifiersBrief(constructor)}<a href="#${nameFromParams(constructor)}">${constructor.name()}</a>
-                                (${paramsOf(constructor, true)})</code><br>${constructor.firstSentenceCommentText()}</td>
+                                <code>${modifiersBrief(constructor)}<strong><a href="#${nameFromParams(constructor)}">${constructor.name()}</a></strong>(${paramsOf(constructor, true)})</code><br>${constructor.firstSentenceCommentText()}</td>
                         </tr>
                         <% } %>
                     </table>
