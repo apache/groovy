@@ -50,7 +50,6 @@ class ProxyDefaultMethodHandle {
     }
 
     Object invokeWithArguments(Object... arguments) throws Throwable {
-        Object proxy = this.proxy;
-        return INVOKE_DEFAULT_METHOD_HANDLE.invokeExact(proxy, method, arguments);
+        return INVOKE_DEFAULT_METHOD_HANDLE.invokeExact(((Object) this.proxy), method, arguments);
     }
 }
