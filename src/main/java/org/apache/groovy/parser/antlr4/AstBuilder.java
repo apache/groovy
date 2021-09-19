@@ -1165,6 +1165,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                             .map(e -> this.visitSwitchBlockStatementExpressionGroup(e))
                             .collect(Collectors.toList());
 
+            if (statementInfoList.isEmpty()) {
+                throw createParsingFailedException("`case` or `default` branches are expected", ctx.LBRACE());
+            }
+
             Boolean isArrow = statementInfoList.get(0).getV2();
             if (!isArrow && statementInfoList.stream().noneMatch(e -> {
                 Boolean hasYieldOrThrowStatement = e.getV3();

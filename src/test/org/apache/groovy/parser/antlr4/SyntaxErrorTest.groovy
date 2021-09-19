@@ -442,6 +442,7 @@ final class SyntaxErrorTest extends GroovyTestCase {
 		TestUtils.doRunAndShouldFail('fail/SwitchExpression_07x.groovy')
 		TestUtils.doRunAndShouldFail('fail/SwitchExpression_08x.groovy')
         TestUtils.doRunAndShouldFail('fail/SwitchExpression_09x.groovy')
+        TestUtils.doRunAndShouldFail('fail/SwitchExpression_10x.groovy')
     }
 
     @NotYetImplemented
