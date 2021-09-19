@@ -234,7 +234,7 @@ if (classDoc.isInterface()) {
 def declaration = annotations(classDoc, '\n') +
     modifiersWithOptions(classDoc, classDoc.isGroovy(), classDoc.isInterface() || classDoc.isAnnotationType()) +
     classDoc.typeSourceDescription +
-    " <b>${nameEncoded}</b>"
+    " ${nameEncoded}"
 final interfaces = classDoc.interfaces().collect{ linkable(it) }.join(', ')
 if (classDoc.isInterface() && classDoc.interfaces()) {
     if (interfaces) {
