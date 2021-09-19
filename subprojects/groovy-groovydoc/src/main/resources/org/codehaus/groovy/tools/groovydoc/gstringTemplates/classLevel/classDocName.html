@@ -234,8 +234,7 @@ if (classDoc.isInterface()) {
 def declaration = annotations(classDoc, '\n') +
     modifiersWithOptions(classDoc, classDoc.isGroovy(), classDoc.isInterface() || classDoc.isAnnotationType()) +
     classDoc.typeSourceDescription +
-    ' ' +
-    nameEncoded
+    " <b>${nameEncoded}</b>"
 final interfaces = classDoc.interfaces().collect{ linkable(it) }.join(', ')
 if (classDoc.isInterface() && classDoc.interfaces()) {
     if (interfaces) {
@@ -248,7 +247,7 @@ if (classDoc.isInterface() && classDoc.interfaces()) {
     }
 }
 %>
-<pre>${declaration}</pre>
+<pre>${declaration?.replace('  ', ' ')}</pre>
 <% if (classDoc.commentText()) { %>
     <p>${classDoc.commentText()}</p>
 <% } %>
