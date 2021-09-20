@@ -60,16 +60,6 @@ script:
   - if [ "$TARGET_JAVA_HOME" != "" ]; then /tmp/install-jdk.sh --target "$TARGET_JAVA_HOME" --workspace "/home/travis/.cache/install-jdk" --feature "$FEATURE" --license "$LICENSE" --cacerts; fi
   - if [ "$BC" == "indy" ]; then travis_wait 60 ./gradlew test -Ptarget.java.home=$TARGET_JAVA_HOME; elif [ "$BC" == "sonar" ]; then travis_wait 60 ./gradlew sonarqube -Dsonar.login=$SONAR_LOGIN -Pcoverage=true; fi
 
-# As recommended in:
-# https://docs.travis-ci.com/user/languages/java/#Caching
-before_cache:
-  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
-
-cache:
-  directories:
-    - $HOME/.gradle/caches/
-    - $HOME/.gradle/wrapper/
 
 after_failure:
   - find /home/travis/build/apache/groovy/build/reports/dependency-verification -type f -name "*.html" | xargs cat
