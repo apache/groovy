@@ -757,6 +757,11 @@
             <pgp value="77993d3295698c46912e83984b2277c6358670ee"/>
          </artifact>
       </component>
+      <component group="org.assertj" name="assertj-core" version="3.20.2">
+         <artifact name="assertj-core-3.20.2.jar">
+            <pgp value="be685132afd2740d9095f9040cc0b712fee75827"/>
+         </artifact>
+      </component>
       <component group="org.checkerframework" name="checker-qual" version="2.5.2">
          <artifact name="checker-qual-2.5.2.jar">
             <pgp value="19beab2d799c020f17c69126b16698a4adf4d638"/>
@@ -1021,6 +1026,11 @@
       </component>
       <component group="org.junit.vintage" name="junit-vintage-engine" version="5.7.2">
          <artifact name="junit-vintage-engine-5.7.2.jar">
+            <pgp value="ff6e2c001948c5f2f38b0cc385911f425ec61b51"/>
+         </artifact>
+      </component>
+      <component group="org.junit.vintage" name="junit-vintage-engine" version="5.8.0">
+         <artifact name="junit-vintage-engine-5.8.0.jar">
             <pgp value="ff6e2c001948c5f2f38b0cc385911f425ec61b51"/>
          </artifact>
       </component>
