@@ -71,3 +71,7 @@ cache:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
 
+after_failure:
+  - find /home/travis/build/apache/groovy/build/reports/dependency-verification -type f -name "*.html" | xargs cat
+  - ./gradlew --write-verification-metadata pgp,sha512 --dry-run
+  - diff -u /home/travis/build/apache/groovy/gradle/verification-metadata.xml /home/travis/build/apache/groovy/gradle/verification-metadata.dryrun.xml
