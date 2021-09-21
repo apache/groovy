@@ -471,6 +471,8 @@ PERMITS       : 'permits';
 PRIVATE       : 'private';
 PROTECTED     : 'protected';
 PUBLIC        : 'public';
+
+RECORD        : 'record';
 RETURN        : 'return';
 
 SEALED        : 'sealed';

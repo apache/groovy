@@ -29,6 +29,7 @@ import groovy.transform.TypeCheckingMode;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.ClosureSignatureConflictResolver;
 import groovy.transform.stc.ClosureSignatureHint;
+import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -139,7 +140,8 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.apache.groovy.util.BeanUtils.decapitalize;
 import static org.codehaus.groovy.ast.ClassHelper.AUTOCLOSEABLE_TYPE;
@@ -219,6 +221,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isBigDecCategory;
@@ -4736,8 +4739,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 && !mn.isStatic() && !mn.isAbstract() && Traits.isTrait(mn.getDeclaringClass()))
             ).forEach(methods::add);
         }
+
         if (receiver.isInterface()) {
             methods.addAll(OBJECT_TYPE.getMethods(name));
+        } else if (receiver.isRecord()) {
+            if (methods.stream().noneMatch(MethodNodeUtils::isGetterCandidate)) {
+                PropertyNode p = receiver.getProperty(name);
+                if (null != p) {
+                    MethodNode getter = new MethodNode(p.getGetterName(), Modifier.PUBLIC, p.getType(), Parameter.EMPTY_ARRAY,
+                            ClassNode.EMPTY_ARRAY, block(returnS(varX(p.getName()))));
+                    getter.setDeclaringClass(receiver);
+                    methods.add(getter);
+                }
+            }
         }
 
         if (methods.isEmpty() || receiver.isResolved()) {

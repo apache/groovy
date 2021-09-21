@@ -29,6 +29,7 @@ import groovy.transform.NonSealed;
 import groovy.transform.Sealed;
 import groovy.transform.stc.POJO;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
+import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.apache.groovy.util.BeanUtils;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -794,14 +795,24 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (node.isStatic()) {
             getterModifiers &= ~ACC_FINAL;
         }
-        if (getterBlock != null) {
-            visitGetter(node, field, getterBlock, getterModifiers, getterName);
 
-            if (node.getGetterName() == null && getterName.startsWith("get") && isPrimitiveBoolean(node.getType())) {
-                String altGetterName = "is" + capitalize(name);
-                MethodNode altGetter = classNode.getGetterMethod(altGetterName, !node.isStatic());
-                if (methodNeedsReplacement(altGetter)) {
-                    visitGetter(node, field, getterBlock, getterModifiers, altGetterName);
+        if (getterBlock != null) {
+            boolean toVisitGetter = true;
+            if (classNode.isRecord()) {
+                boolean isGetterDefined = classNode.getDeclaredMethods(name).stream()
+                        .anyMatch(MethodNodeUtils::isGetterCandidate);
+                toVisitGetter = !isGetterDefined;
+            }
+
+            if (toVisitGetter) {
+                visitGetter(node, field, getterBlock, getterModifiers, getterName);
+
+                if (node.getGetterName() == null && getterName.startsWith("get") && isPrimitiveBoolean(node.getType())) {
+                    String altGetterName = "is" + capitalize(name);
+                    MethodNode altGetter = classNode.getGetterMethod(altGetterName, !node.isStatic());
+                    if (methodNeedsReplacement(altGetter)) {
+                        visitGetter(node, field, getterBlock, getterModifiers, altGetterName);
+                    }
                 }
             }
         }
