@@ -215,7 +215,7 @@ typeList
 
 
 /**
- *  t   0: class; 1: interface; 2: enum; 3: annotation; 4: trait
+ *  t   0: class; 1: interface; 2: enum; 3: annotation; 4: trait; 5: record
  */
 classDeclaration
 locals[ int t ]
@@ -224,9 +224,11 @@ locals[ int t ]
         |   ENUM { $t = 2; }
         |   AT INTERFACE { $t = 3; }
         |   TRAIT { $t = 4; }
+        |   RECORD { $t = 5; }
         )
         identifier
         (nls typeParameters)?
+        (nls formalParameters)?
         (nls EXTENDS nls scs=typeList)?
         (nls IMPLEMENTS nls is=typeList)?
         (nls PERMITS nls ps=typeList)?
@@ -1212,6 +1214,7 @@ identifier
     |   AS
     |   YIELD
     |   PERMITS
+    |   RECORD
     ;
 
 builtInType
@@ -1250,6 +1253,7 @@ keywords
     |   NON_SEALED
     |   PACKAGE
     |   PERMITS
+    |   RECORD
     |   RETURN
     |   SEALED
     |   STATIC

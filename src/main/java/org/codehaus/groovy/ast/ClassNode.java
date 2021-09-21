@@ -59,6 +59,7 @@ import static org.objectweb.asm.Opcodes.ACC_ANNOTATION;
 import static org.objectweb.asm.Opcodes.ACC_ENUM;
 import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_RECORD;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
@@ -1355,6 +1356,16 @@ public class ClassNode extends AnnotatedNode {
 
     public boolean isInterface() {
         return (getModifiers() & ACC_INTERFACE) != 0;
+    }
+
+    /**
+     * Checks if the {@link ClassNode} instance represents {@code record}
+     *
+     * @return {@code true} if the instance represents {@code record}
+     * @since 4.0.0
+     */
+    public boolean isRecord() {
+        return (getModifiers() & ACC_RECORD) != 0;
     }
 
     public boolean isAbstract() {

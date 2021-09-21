@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ast.tools;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -127,5 +128,19 @@ public class MethodNodeUtils {
             block = (BlockStatement) code;
         }
         return block;
+    }
+
+    /**
+     * Check if the {@link MethodNode} instance is getter candidate
+     *
+     * @param m the {@link MethodNode} instance
+     * @return {@code true} if the instance is getter candidate
+     * @since 4.0.0
+     */
+    public static boolean isGetterCandidate(MethodNode m) {
+        Parameter[] parameters = m.getParameters();
+        return m.isPublic() && !m.isStatic() && !m.isAbstract()
+                && (null == parameters || 0 == parameters.length)
+                && !ClassHelper.VOID_TYPE.equals(m.getReturnType());
     }
 }
