@@ -904,11 +904,11 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
 
         shouldFailWithMessages '''
             Deque<String> deque = []
-        ''', 'Cannot assign value of type java.util.List<java.lang.String> to variable of type java.util.Deque<java.lang.String>'
+        ''', 'Cannot assign value of type java.util.List<E> to variable of type java.util.Deque<java.lang.String>'
 
         shouldFailWithMessages '''
             Queue<String> queue = []
-        ''', 'Cannot assign value of type java.util.List<java.lang.String> to variable of type java.util.Queue<java.lang.String>'
+        ''', 'Cannot assign value of type java.util.List<E> to variable of type java.util.Queue<java.lang.String>'
     }
 
     // GROOVY-7128

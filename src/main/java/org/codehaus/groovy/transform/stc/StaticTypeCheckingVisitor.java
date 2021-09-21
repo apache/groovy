@@ -855,11 +855,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     // List<Type> list = new LinkedList()
                     // Iterable<Type> iter = new LinkedList()
                     // Collection<Type> coll = Collections.emptyList()
+                    // Collection<Type> view = ConcurrentHashMap.newKeySet()
 
                     // the inferred type of the binary expression is the type of the RHS
                     // "completed" with generics type information available from the LHS
-                    if (!resultType.isGenericsPlaceHolder()) // plain reference drops placeholder
-                        resultType = GenericsUtils.parameterizeType(lType, resultType.getPlainNodeReference());
+                    if (lType.equals(resultType)) {
+                        if (!lType.isGenericsPlaceHolder()) resultType = lType;
+                    } else { // GROOVY-10235, et al.
+                        Map<GenericsTypeName, GenericsType> gt = new HashMap<>();
+                        extractGenericsConnections(gt, resultType, resultType.redirect());
+                        extractGenericsConnections(gt, lType, ClassHelper.getNextSuperClass(resultType, lType));
+
+                        resultType = applyGenericsContext(gt, resultType.redirect());
+                    }
                 }
 
                 ClassNode originType = getOriginalDeclarationType(leftExpression);

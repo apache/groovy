@@ -2116,6 +2116,37 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10220
+    void testCompatibleArgumentsForPlaceholders3() {
+        assertScript '''
+            class C<S, T extends Number> {
+            }
+            class D<T> {
+                C<? extends T, Integer> f
+                D(C<? extends T, Integer> p) {
+                    f = p
+                }
+            }
+
+            assert new D<String>(null).f == null
+        '''
+    }
+
+    // GROOVY-10235
+    void testCompatibleArgumentsForPlaceholders4() {
+        assertScript '''
+            import static java.util.concurrent.ConcurrentHashMap.newKeySet
+
+            void accept(Collection<Integer> integers) {
+                assert integers
+            }
+
+            Set<Integer> integers = newKeySet()
+            integers.add(42)
+            accept(integers)
+        '''
+    }
+
     void testIncompatibleArgumentsForPlaceholders1() {
         shouldFailWithMessages '''
             def <T extends Number> T test(T one, T two) { }
