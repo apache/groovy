@@ -60,6 +60,10 @@ import java.lang.annotation.Target;
  * would have all parameters marked final (from &#64;AutoFinal), and
  * would have all parameters checked against {@code null} (from &#64;NullCheck).
  * </p>
+ * In general, it would be bad style to have an explicit {@code final} modifier and a {@code @Final} annotation
+ * (or more than one {@code @Final} annotation),
+ * but in that scenario if there is an explicit {@code final} or at least one enabled {@code @Final},
+ * then the annotated class or member will be final.
  *
  * @since 4.0.0
  */
@@ -68,4 +72,10 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.FinalASTTransformation")
 public @interface Final {
+    /**
+     * When disabled, this annotation effectively becomes a no-op.
+     * Typically only used to override an annotation collector already containing an enabled {@code @Final} annotation.
+     * Care must be taken when disabling final in this way since the annotation collector probably had good reason for enabling final.
+     */
+    boolean enabled() default true;
 }
