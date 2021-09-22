@@ -264,6 +264,7 @@ memberDeclaration[int t]
     :   methodDeclaration[0, $t]
     |   fieldDeclaration
     |   modifiersOpt classDeclaration
+    |   compactConstructorDeclaration
     ;
 
 /**
@@ -281,6 +282,10 @@ methodDeclaration[int t, int ct]
             (nls THROWS nls qualifiedClassNameList)?
             (nls methodBody)?
         )?
+    ;
+
+compactConstructorDeclaration
+    :   modifiers methodName nls methodBody
     ;
 
 methodName

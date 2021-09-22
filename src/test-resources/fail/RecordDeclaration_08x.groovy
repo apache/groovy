@@ -16,13 +16,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package fail
+package core
 
-class Person {
-    String name
-    int age
-
-    public Person {
+record Person(String name, int age) {
+    public Person123 {
         if (name == 'Devil') throw new IllegalArgumentException("Invalid person: $name")
         if (age < 18) throw new IllegalArgumentException("Invalid age: $age")
     }
