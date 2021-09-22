@@ -47,6 +47,38 @@ class FinalTransformTest {
     }
 
     @Test
+    void testUsageDirectDisabled() {
+        assertScript """
+            import groovy.transform.*
+            import static java.lang.reflect.Modifier.isFinal
+
+            @Final(enabled=false)
+            class Foo {}
+
+            assert !isFinal(Foo.modifiers)
+        """
+    }
+
+    @Test
+    void testUsageInAnnoationCollectorForClassDisabled() {
+        assertScript """
+            import groovy.transform.*
+            import static java.lang.reflect.Modifier.isFinal
+
+            @AnnotationCollector(mode=AnnotationCollectorMode.PREFER_EXPLICIT_MERGED)
+            @Canonical
+            @Final
+            @interface MyCanonical {}
+
+            @MyCanonical
+            @Final(enabled=false)
+            class Foo {}
+
+            assert !isFinal(Foo.modifiers)
+        """
+    }
+
+    @Test
     void testUsageInAnnoationCollectorForMethod() {
         assertScript """
             import groovy.transform.*

@@ -47,6 +47,7 @@ public class FinalASTTransformation extends AbstractASTTransformation {
         AnnotatedNode candidate = (AnnotatedNode) nodes[1];
         AnnotationNode node = (AnnotationNode) nodes[0];
         if (!MY_TYPE.equals(node.getClassNode())) return;
+        if (memberHasValue(node, "enabled", false)) return;
 
         if (candidate instanceof ClassNode) {
             ClassNode cNode = (ClassNode) candidate;
