@@ -16,14 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package fail
-
-class Person {
-    String name
-    int age
-
-    public Person {
-        if (name == 'Devil') throw new IllegalArgumentException("Invalid person: $name")
-        if (age < 18) throw new IllegalArgumentException("Invalid age: $age")
-    }
+class Foo {}
+new Foo() {
+    Foo() {}
 }
