@@ -453,8 +453,20 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10098
+    // GROOVY-7316, GROOVY-10256
     void testReturnTypeInferenceWithMethodGenerics16() {
+        shouldFailWithMessages '''
+            def <T extends CharSequence> T chars() {
+            }
+            List test() {
+                chars()
+            }
+        ''',
+        'Cannot return value of type #T on method returning type java.util.List'
+    }
+
+    // GROOVY-10098
+    void testReturnTypeInferenceWithMethodGenerics17() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class C<T extends Number> {
@@ -469,7 +481,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8638
-    void testReturnTypeInferenceWithMethodGenerics17() {
+    void testReturnTypeInferenceWithMethodGenerics18() {
         assertScript '''
             @Grab('com.google.guava:guava:30.1.1-jre')
             import com.google.common.collect.*
