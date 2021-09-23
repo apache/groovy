@@ -31,5 +31,5 @@ dependencies {
     implementation 'org.jfrog.buildinfo:build-info-extractor-gradle:4.17.2'
     implementation 'org.nosphere.apache:creadur-rat-gradle:0.7.0'
     implementation 'gradle.plugin.com.github.spotbugs.snom:spotbugs-gradle-plugin:4.6.0'
-    implementation 'me.champeau.gradle:jmh-gradle-plugin:0.5.2'
+    implementation 'me.champeau.gradle:jmh-gradle-plugin:0.5.3'
 }
