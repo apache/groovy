@@ -709,7 +709,7 @@ public class Node implements Serializable, Cloneable {
      * @since 2.5.0
      */
     public void breadthFirst(Map<String, Object> options, Closure c) {
-        boolean preorder = Boolean.valueOf(options.get("preorder").toString());
+        boolean preorder = Boolean.parseBoolean(options.get("preorder").toString());
         if (preorder) callClosureForNode(c, this, 1);
         breadthFirstRest(preorder, 2, c);
         if (!preorder) callClosureForNode(c, this, 1);
