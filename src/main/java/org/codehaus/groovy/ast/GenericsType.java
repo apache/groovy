@@ -196,12 +196,8 @@ public class GenericsType extends ASTNode {
     //--------------------------------------------------------------------------
 
     /**
-     * Compares this generics type with the provided class node. If the provided
-     * class node is compatible with the generics specification, returns true.
-     * Otherwise, returns false. The check is complete, meaning that nested
-     * generics are also checked.
-     *
-     * @return if {@code classNode} is or is not compatible with this generics specification
+     * Determines if the provided type is compatible with this specification.
+     * The check is complete, meaning that nested generics are also checked.
      */
     public boolean isCompatibleWith(final ClassNode classNode) {
         GenericsType[] genericsTypes = classNode.getGenericsTypes();
@@ -212,20 +208,20 @@ public class GenericsType extends ASTNode {
             if (genericsTypes == null) {
                 return true;
             }
-            String name = genericsTypes[0].name;
+            String name = genericsTypes[0].getName();
             if (!isWildcard()) {
-                return this.name.equals(name);
+                return name.equals(getName());
             }
             if (getLowerBound() != null) {
                 // check for "? super T" vs "T"
                 ClassNode lowerBound = getLowerBound();
-                if (lowerBound.getUnresolvedName().equals(name)) {
+                if (name.equals(lowerBound.getUnresolvedName())) {
                     return true;
                 }
             } else if (getUpperBounds() != null) {
                 // check for "? extends T & I" vs "T" or "I"
                 for (ClassNode upperBound : getUpperBounds()) {
-                    if (upperBound.getUnresolvedName().equals(name)) {
+                    if (name.equals(upperBound.getUnresolvedName())) {
                         return true;
                     }
                 }
@@ -234,10 +230,9 @@ public class GenericsType extends ASTNode {
             return checkGenerics(classNode);
         }
         if (isWildcard() || isPlaceholder()) {
-            // if the generics spec is a wildcard or a placeholder then check the bounds
             ClassNode lowerBound = getLowerBound();
             if (lowerBound != null) {
-                // for a lower bound, perform the upper bound checks with reversed arguments
+                // test bound and type in reverse for lower bound vs upper bound
                 if (!implementsInterfaceOrIsSubclassOf(lowerBound, classNode)) {
                     return false;
                 }
@@ -251,19 +246,16 @@ public class GenericsType extends ASTNode {
                         return false;
                     }
                 }
-                // if the provided classnode is a subclass of the upper bound
-                // then check that the generic types supplied by the class node are compatible with
-                // this generics specification
-                // for example, we could have the spec saying List<String> but provided classnode
-                // saying List<Integer>
+                // if the provided type is a subclass of the upper bound(s) then
+                // check that the generic types supplied are compatible with this
+                // for example, this spec could be "Type<X>" but type is "Type<Y>"
                 return checkGenerics(classNode);
             }
-            // if there are no bounds, the generic type is basically Object, and everything is compatible
+            // if there are no bounds, the generic type is basically Object and everything is compatible
             return true;
         }
-        // last, we could have the spec saying List<String> and a classnode saying List<Integer> so
-        // we must check that generics are compatible
-        return getType().equals(classNode) && compareGenericsWithBound(classNode, type);
+        // not placeholder or wildcard; no covariance allowed for type or bound(s)
+        return classNode.equals(getType()) && compareGenericsWithBound(classNode, getType());
     }
 
     private static boolean implementsInterfaceOrIsSubclassOf(final ClassNode type, final ClassNode superOrInterface) {
@@ -464,7 +456,7 @@ public class GenericsType extends ASTNode {
                                         if (!match) break;
                                     }
                                 }
-                                continue;
+                                continue; // GROOVY-10010
                             }
                         }
                         match = redirectBoundType.isCompatibleWith(classNodeType.getType());

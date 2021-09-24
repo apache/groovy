@@ -140,8 +140,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.*;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.apache.groovy.util.BeanUtils.decapitalize;
 import static org.codehaus.groovy.ast.ClassHelper.AUTOCLOSEABLE_TYPE;
@@ -3420,7 +3419,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             GenericsType[] genericsTypes = type.getGenericsTypes();
                             if (genericsTypes != null && genericsTypes.length == 1
                                     && genericsTypes[0].getLowerBound() == null) {
-                                type = getCombinedBoundType(genericsTypes[0]);
+                                type = genericsTypes[0].getType();
                             } else {
                                 type = OBJECT_TYPE;
                             }
@@ -5428,9 +5427,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // and unknown generics
             if (!GenericsUtils.hasUnresolvedGenerics(at)) continue;
 
-            while (!at.equals(pt) && !isObjectType(at)) {
-                ClassNode sc = GenericsUtils.getSuperClass(at, pt);
-                at = applyGenericsContext(GenericsUtils.extractPlaceholders(at), sc);
+            while (!at.equals(pt) && !isObjectType(at) && !isGenericsPlaceHolderOrArrayOf(at)) {
+                at = applyGenericsContext(GenericsUtils.extractPlaceholders(at), getNextSuperClass(at, pt));
             }
 
             // try to resolve placeholder(s) in argument type using parameter type
