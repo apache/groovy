@@ -360,6 +360,7 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.VAR;
 import static org.apache.groovy.parser.antlr4.util.PositionConfigureUtils.configureAST;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -1962,13 +1963,35 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         if (!methodName.equals(className)) {
             createParsingFailedException("Compact constructor should have the same name with record: " + className, ctx.methodName());
         }
-        ClassNode returnType = ClassHelper.VOID_TYPE;
+        ClassNode returnType = ClassHelper.MAP_TYPE.getPlainNodeReference();
 
         Parameter[] header = classNode.getNodeMetaData(RECORD_HEADER);
         Objects.requireNonNull(classNode, "record header should not be null");
-        Parameter[] parameters = cloneParams(header);
+
+        final Parameter[] parameters = cloneParams(header);
         Statement code = this.visitMethodBody(ctx.methodBody());
-        MethodNode methodNode = classNode.addSyntheticMethod(RECORD_COMPACT_CONSTRUCTOR_NAME, ACC_PRIVATE, returnType, parameters, ClassNode.EMPTY_ARRAY, code);
+        code.visit(new CodeVisitorSupport() {
+            @Override
+            public void visitPropertyExpression(PropertyExpression expression) {
+                final String propertyName = expression.getPropertyAsString();
+                if (THIS_STR.equals(expression.getObjectExpression().getText()) && Arrays.stream(parameters).anyMatch(p -> p.getName().equals(propertyName))) {
+                    createParsingFailedException("Cannot assign a value to final variable `" + propertyName + "`", expression.getProperty());
+                }
+                super.visitPropertyExpression(expression);
+            }
+        });
+
+        final String closureVarName = "$c" + System.nanoTime();
+        List<Expression> argExpressionList = Arrays.stream(parameters).flatMap(p -> {
+            String parameterName = p.getName();
+            return Stream.of(constX(parameterName), varX(parameterName));
+        }).collect(Collectors.toList());
+        Statement block = block(
+                declS(localVarX(closureVarName), closureX(code)),
+                stmt(callX(varX(closureVarName), "call")),
+                returnS(callX(ClassHelper.makeCached(Maps.class), "of", args(argExpressionList)))
+        );
+        MethodNode methodNode = classNode.addSyntheticMethod(RECORD_COMPACT_CONSTRUCTOR_NAME, ACC_PRIVATE, returnType, parameters, ClassNode.EMPTY_ARRAY, block);
 
         modifierManager.attachAnnotations(methodNode);
         attachMapConstructorAnnotationToRecord(classNode, parameters);
@@ -1993,7 +2016,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 Arrays.stream(parameters)
                         .map(mapper::apply)
                         .collect(Collectors.toList());
-        tupleConstructorAnnotationNode.setMember("pre", closureX(block(stmt(callX(varX("this"), RECORD_COMPACT_CONSTRUCTOR_NAME, args(argExpressionList))))));
+        final String resultVarName = "$r" + System.nanoTime();
+        tupleConstructorAnnotationNode.setMember("pre", closureX(block(
+                declS(localVarX(resultVarName), castX(ClassHelper.MAP_TYPE.getPlainNodeReference(), callX(varX("this"), RECORD_COMPACT_CONSTRUCTOR_NAME, args(argExpressionList)))),
+                assignS(
+                        new TupleExpression(Arrays.stream(parameters).map(p -> varX(p.getName())).collect(Collectors.toList())),
+                        listX(Arrays.stream(parameters).map(p -> castX(p.getOriginType(), callX(varX(resultVarName), "get", args(constX(p.getName()))))).collect(Collectors.toList()))
+                )
+        )));
         classNode.addAnnotation(tupleConstructorAnnotationNode);
     }
 
