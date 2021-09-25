@@ -385,6 +385,12 @@ public class CompilerConfiguration {
     private boolean previewFeatures;
 
     /**
+     * Whether Record class information is natively generated for target bytecode >= 16 (JEP 359/384/395).
+     * Otherwise record-like classes are produced.
+     */
+    private boolean recordsNative;
+
+    /**
      * Whether Sealed class information is natively generated for target bytecode >= 17 (JEP 360/397/409)
      */
     private boolean sealedNative;
@@ -453,6 +459,7 @@ public class CompilerConfiguration {
         warningLevel = WarningMessage.LIKELY_ERRORS;
         parameters = getBooleanSafe("groovy.parameters");
         previewFeatures = getBooleanSafe("groovy.preview.features");
+        recordsNative = !getBooleanSafe("groovy.records.native.disable");
         sealedNative = !getBooleanSafe("groovy.sealed.native.disable");
         sealedAnnotations = !getBooleanSafe("groovy.sealed.annotations.disable");
         sourceEncoding = getSystemPropertySafe("groovy.source.encoding",
@@ -995,6 +1002,24 @@ public class CompilerConfiguration {
      */
     public void setPreviewFeatures(final boolean previewFeatures) {
         this.previewFeatures = previewFeatures;
+    }
+
+    /**
+     * Whether Record class information is natively generated (JEP 359/384/395).
+     *
+     * @return recordsNative
+     */
+    public boolean isRecordsNative() {
+        return recordsNative;
+    }
+
+    /**
+     * Sets whether Record class information is natively generated (JEP 359/384/395).
+     *
+     * @param recordsNative whether record classes extend java.lang.Record for target bytecode >= 16
+     */
+    public void setRecordsNative(final boolean recordsNative) {
+        this.recordsNative = recordsNative;
     }
 
     /**

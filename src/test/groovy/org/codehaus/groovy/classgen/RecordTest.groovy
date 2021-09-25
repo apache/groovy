@@ -36,4 +36,14 @@ class RecordTest {
             assert java.lang.Record == RecordJDK16plus.class.getSuperclass()
         ''')
     }
+
+    @Test
+    void testRecordOnJDK16plusWhenDisabled() {
+        assumeTrue(isAtLeastJdk('16.0'))
+        def configuration = new CompilerConfiguration(targetBytecode: CompilerConfiguration.JDK16, recordsNative: false)
+        assertScript(new GroovyShell(configuration), '''
+            record RecordJDK16plus2(String name) {}
+            assert java.lang.Record != RecordJDK16plus2.class.getSuperclass()
+        ''')
+    }
 }

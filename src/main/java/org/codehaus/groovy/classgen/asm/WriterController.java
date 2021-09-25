@@ -101,7 +101,7 @@ public class WriterController {
 
         this.bytecodeVersion = chooseBytecodeVersion(invokedynamic, config.isPreviewFeatures(), config.getTargetBytecode());
 
-        if (bytecodeVersion >= Opcodes.V16 && cn.isRecord()) {
+        if (bytecodeVersion >= Opcodes.V16 && cn.isRecord() && config.isRecordsNative()) {
             // `java.lang.Record` has been added since JDK16
             cn.setSuperClass(ClassHelper.makeWithoutCaching(RECORD_CLASS_NAME));
         }
