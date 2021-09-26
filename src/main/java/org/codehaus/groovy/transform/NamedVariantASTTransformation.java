@@ -32,6 +32,8 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
@@ -63,6 +65,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.defaultValueX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.elvisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.entryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.list2args;
@@ -124,7 +127,9 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
                 } else if (AnnotatedNodeUtils.hasAnnotation(fromParam, NAMED_DELEGATE_TYPE)) {
                     if (!processDelegateParam(mNode, mapParam, args, propNames, fromParam, coerce)) return;
                 } else {
-                    args.addExpression(asType(varX(fromParam), fromParam.getType(), coerce));
+                    VariableExpression arg = varX(fromParam);
+                    Expression argOrDefault = fromParam.hasInitialExpression() ? elvisX(arg, fromParam.getDefaultValue()) : arg;
+                    args.addExpression(asType(argOrDefault, fromParam.getType(), coerce));
                     if (hasDuplicates(mNode, propNames, fromParam.getName())) return;
                     genParams.add(fromParam);
                 }
@@ -142,7 +147,9 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         namedParam.addMember("type", classX(fromParam.getType()));
         namedParam.addMember("required", constX(required, true));
         mapParam.addAnnotation(namedParam);
-        args.addExpression(asType(propX(varX(mapParam), name), fromParam.getType(), coerce));
+        PropertyExpression arg = propX(varX(mapParam), name);
+        Expression argOrDefault = fromParam.hasInitialExpression() ? elvisX(arg, fromParam.getDefaultValue()) : arg;
+        args.addExpression(asType(argOrDefault, fromParam.getType(), coerce));
         return true;
     }
 
@@ -167,7 +174,9 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
             inner.addStatement(new AssertStatement(boolX(callX(varX(mapParam), "containsKey", args(constX(name)))),
                     plusX(constX("Missing required named argument '" + name + "'. Keys found: "), callX(varX(mapParam), "keySet"))));
         }
-        args.addExpression(asType(propX(varX(mapParam), name), fromParam.getType(), coerce));
+        PropertyExpression arg = propX(varX(mapParam), name);
+        Expression argOrDefault = fromParam.hasInitialExpression() ? elvisX(arg, fromParam.getDefaultValue()) : arg;
+        args.addExpression(asType(argOrDefault, fromParam.getType(), coerce));
         mapParam.addAnnotation(namedParam);
         fromParam.getAnnotations().remove(namedParam);
         return true;
