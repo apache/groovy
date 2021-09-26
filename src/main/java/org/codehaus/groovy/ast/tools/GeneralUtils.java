@@ -41,6 +41,7 @@ import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
@@ -352,6 +353,10 @@ public class GeneralUtils {
      */
     public static ConstantExpression defaultValueX(final ClassNode type) {
         return Optional.ofNullable((ConstantExpression) getDefaultValueForPrimitive(type)).orElse(nullX());
+    }
+
+    public static ElvisOperatorExpression elvisX(final Expression base, final Expression otherwise) {
+        return new ElvisOperatorExpression(base, otherwise);
     }
 
     public static MapEntryExpression entryX(final Expression key, final Expression value) {

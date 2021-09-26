@@ -187,6 +187,24 @@ final class NamedVariantTransformTest {
         '''
     }
 
+    @Test // GROOVY-GROOVY-10261
+    void testNamedDelegateWithDefaultValues() {
+        assertScript '''
+            import groovy.transform.*
+            import java.awt.Color
+
+            @NamedVariant
+            Color makeColor(int r=10, int g=20, int b=30) {
+                new Color(r, g, b)
+            }
+
+            assert makeColor(r: 128, g: 128, b: 5).toString() == 'java.awt.Color[r=128,g=128,b=5]'
+            assert makeColor(r: 128, g: 128).toString() == 'java.awt.Color[r=128,g=128,b=30]'
+            assert makeColor(r: 128).toString() == 'java.awt.Color[r=128,g=20,b=30]'
+            assert makeColor().toString() == 'java.awt.Color[r=10,g=20,b=30]'
+        '''
+    }
+
     @Test // GROOVY-9183
     void testNamedDelegateWithPropertyDefaults() {
         assertScript '''
