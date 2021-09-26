@@ -669,6 +669,24 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         """
     }
 
+    // GROOVY-7003
+    void testSAMProperty2() {
+        assertScript '''
+            import java.beans.*
+
+            class C {
+                static PropertyChangeListener listener = { PropertyChangeEvent event ->
+                    result = "${event.oldValue} -> ${event.newValue}"
+                }
+                public static result
+            }
+
+            def event = new PropertyChangeEvent(new Object(), 'foo', 'bar', 'baz')
+            C.getListener().propertyChange(event)
+            assert C.result == 'bar -> baz'
+        '''
+    }
+
     void testSAMAttribute() {
         assertScript """
             interface SAM { def foo(); }
@@ -682,6 +700,19 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             x.@s = {2}
             assert x.s.foo() == 2
         """
+    }
+
+    // GROOVY-10254
+    void testSAMReturnType() {
+        assertScript '''
+            interface SAM<T> { T get() }
+            SAM<Integer> foo() {
+                return { -> 42 }
+            }
+
+            def result = foo().get()
+            assert result == 42
+        '''
     }
 
     void testMultipleSAMSignature() {

@@ -749,6 +749,10 @@ public abstract class StaticTypeCheckingSupport {
             return true;
         }
 
+        if (right.isDerivedFrom(CLOSURE_TYPE) && isSAMType(left)) {
+            return true;
+        }
+
         // GROOVY-7316, GROOVY-10256: "Type x = m()" given "def <T> T m()"; T adapts to target
         return right.isGenericsPlaceHolder() && right.asGenericsType().isCompatibleWith(left);
     }
