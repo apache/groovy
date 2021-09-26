@@ -228,6 +228,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         if (node.isRecord()) {
             detectInvalidRecordComponentNames(node);
+            if (node.isAbstract()) {
+                throw new RuntimeParserException("Record '" + classNode.getNameWithoutPackage() + "' must not be abstract", classNode);
+            }
         }
         if (Traits.isTrait(node) // maybe possible to have this true in joint compilation mode
                 || classNode.isInterface()) {
