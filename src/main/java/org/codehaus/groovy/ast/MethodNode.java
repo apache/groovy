@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Optional;
 
@@ -280,7 +281,8 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         String retType = AstToTextHelper.getClassText(returnType);
         String exceptionTypes = AstToTextHelper.getThrowsClauseText(exceptions);
         String params = AstToTextHelper.getParametersText(parameters);
-        return AstToTextHelper.getModifiersText(modifiers) + " " + retType + " " + name + "(" + params + ") " + exceptionTypes + " { ... }";
+        int mask = this instanceof ConstructorNode ? Modifier.constructorModifiers() : Modifier.methodModifiers();
+        return AstToTextHelper.getModifiersText(modifiers & mask) + " " + retType + " " + name + "(" + params + ") " + exceptionTypes + " { ... }";
     }
 
     @Override
