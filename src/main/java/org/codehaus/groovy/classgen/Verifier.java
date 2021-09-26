@@ -285,7 +285,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         checkFinalVariables(node);
     }
 
-    private static final List<String> invalidNames = List.of("clone", "finalize", "getClass", "hashCode", "notify", "notifyAll", "toString", "wait");
+    private static final List<String> invalidNames = Arrays.asList("clone", "finalize", "getClass", "hashCode", "notify", "notifyAll", "toString", "wait");
+
     private void detectInvalidRecordComponentNames(ClassNode node) {
         for (FieldNode fn : node.getFields()) {
             if (invalidNames.contains(fn.getName())) {
