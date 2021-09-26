@@ -442,6 +442,8 @@ final class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/RecordDeclaration_07x.groovy')
         TestUtils.doRunAndShouldFail('fail/RecordDeclaration_08x.groovy')
         TestUtils.doRunAndShouldFail('fail/RecordDeclaration_09x.groovy')
+        TestUtils.doRunAndShouldFail('fail/RecordDeclaration_10x.groovy')
+        TestUtils.doRunAndShouldFail('fail/RecordDeclaration_11x.groovy')
     }
 
     void 'test groovy core - Array'() {

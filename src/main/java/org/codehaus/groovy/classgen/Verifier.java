@@ -138,6 +138,7 @@ import static org.codehaus.groovy.ast.tools.PropertyNodeUtils.adjustPropertyModi
  *     <li>Uninitialized variables</li>
  *     <li>Bad code in object initializers or constructors</li>
  *     <li>Mismatches in modifiers or return types between implementations and interfaces/abstract classes</li>
+ *     <li>Invalid record component names</li>
  * </ul>
  *
  * Added code includes:
@@ -225,6 +226,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 !node.getAnnotations(ClassHelper.make(POJO.class)).isEmpty();
         this.classNode = node;
 
+        if (node.isRecord()) {
+            detectInvalidRecordComponentNames(node);
+        }
         if (Traits.isTrait(node) // maybe possible to have this true in joint compilation mode
                 || classNode.isInterface()) {
             //interfaces have no constructors, but this code expects one,
@@ -279,6 +283,15 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         addDetectedSealedClasses(node);
 
         checkFinalVariables(node);
+    }
+
+    private static final List<String> invalidNames = List.of("clone", "finalize", "getClass", "hashCode", "notify", "notifyAll", "toString", "wait");
+    private void detectInvalidRecordComponentNames(ClassNode node) {
+        for (FieldNode fn : node.getFields()) {
+            if (invalidNames.contains(fn.getName())) {
+                throw new RuntimeParserException("Illegal record component name '" + fn.getName() + "'", fn);
+            }
+        }
     }
 
     private void detectNonSealedClasses(ClassNode node) {
