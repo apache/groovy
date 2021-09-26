@@ -765,6 +765,10 @@ public abstract class StaticTypeCheckingSupport {
             return true;
         }
 
+        if (right.isDerivedFrom(CLOSURE_TYPE) && isSAMType(left)) {
+            return true;
+        }
+
         if (left.isGenericsPlaceHolder()) {
             // GROOVY-7307
             GenericsType[] genericsTypes = left.getGenericsTypes();
