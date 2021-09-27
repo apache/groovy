@@ -46,4 +46,14 @@ class RecordTest {
             assert java.lang.Record != RecordJDK16plus2.class.getSuperclass()
         ''')
     }
+
+    @Test
+    void testInnerRecordIsImplicitlyStatic() {
+        assertScript '''
+            class Test {
+                record Point(int i, int j) {}
+            }
+            assert java.lang.reflect.Modifier.isStatic(Test$Point.modifiers)
+        '''
+    }
 }

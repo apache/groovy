@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -86,6 +87,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         String cName = cNode.getName();
         if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
         makeClassFinal(this, cNode);
+        makeInnerRecordStatic(cNode);
 
         final List<PropertyNode> pList = getInstanceProperties(cNode);
         for (PropertyNode pNode : pList) {
@@ -126,6 +128,12 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             return true;
         }
         return false;
+    }
+
+    private static void makeInnerRecordStatic(ClassNode cNode) {
+        if (cNode instanceof InnerClassNode) {
+            cNode.setModifiers(cNode.getModifiers() | ACC_STATIC);
+        }
     }
 
     private static void makeClassFinal(AbstractASTTransformation xform, ClassNode cNode) {
