@@ -1640,6 +1640,20 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.String to variable of type java.lang.Number'
     }
 
+    // GROOVY-10225
+    void testShouldUseMethodGenericType13() {
+        assertScript '''
+            def <T> T m(T t) {
+                assert t == null
+            }
+            def <N extends Number, X extends N> void test() {
+                X x = (X) null
+                m(false ? x : (X) null) // was NPE
+            }
+            test()
+        '''
+    }
+
     // GROOVY-5516
     void testAddAllWithCollectionShouldBeAllowed() {
         assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode

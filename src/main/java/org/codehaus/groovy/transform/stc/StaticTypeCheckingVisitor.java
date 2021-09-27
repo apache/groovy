@@ -5410,7 +5410,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 actuals[i] = getLiteralResultType(pt, at, LinkedHashMap_TYPE);
             } else if (a instanceof ConstructorCallExpression) {
                 inferDiamondType((ConstructorCallExpression) a, pt); // GROOVY-10086
-            } else if (a instanceof TernaryExpression && at.isUsingGenerics() && at.getGenericsTypes().length == 0) {
+            } else if (a instanceof TernaryExpression && at.getGenericsTypes() != null && at.getGenericsTypes().length == 0) {
                 // GROOVY-9983: double diamond scenario -- "m(flag ? new Type<>(...) : new Type<>(...))"
                 typeCheckingContext.pushEnclosingBinaryExpression(assignX(varX(p), a, a));
                 a.visit(this); // re-visit with target type witness
