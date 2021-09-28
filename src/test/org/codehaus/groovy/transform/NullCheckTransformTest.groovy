@@ -18,14 +18,16 @@
  */
 package org.codehaus.groovy.transform
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
 
 /**
  * Tests for the {@code @NullCheck} AST transform.
  */
-class NullCheckTransformTest extends GroovyTestCase {
+final class NullCheckTransformTest {
 
-    // GROOVY-9406
+    @Test // GROOVY-9406
     void testNullCheckDoesNotConflictWithGeneratedConstructors() {
         assertScript '''
             import groovy.transform.*
@@ -58,6 +60,7 @@ class NullCheckTransformTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testNullCheckWithIncludeGenerated() {
         assertScript '''
             import groovy.transform.*
@@ -87,6 +90,7 @@ class NullCheckTransformTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testNullCheckWithEquals() {
         assertScript '''
             import groovy.transform.*
@@ -112,6 +116,7 @@ class NullCheckTransformTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testNullCheckMethodWithDefaultValues() {
         assertScript '''
             import groovy.transform.*
@@ -136,6 +141,7 @@ class NullCheckTransformTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testNullCheckMethodWithNullDefaultValue() {
         assertScript '''
             import groovy.transform.*
@@ -159,6 +165,51 @@ class NullCheckTransformTest extends GroovyTestCase {
         '''
     }
 
+    @Test
+    void testNullCheckWithCompileStatic1() {
+        assertScript '''
+            import groovy.transform.*
+            import static groovy.test.GroovyAssert.shouldFail
+
+            @CompileStatic @NullCheck
+            class Pogo {
+                Pogo() {}
+                Pogo(p) {}
+                void m(p) {}
+            }
+
+            new Pogo()
+            new Pogo('')
+            new Pogo().m('')
+            shouldFail(IllegalArgumentException) { new Pogo(null) }
+            shouldFail(IllegalArgumentException) { new Pogo().m(null) }
+        '''
+    }
+
+    @Test // GROOVY-10178
+    void testNullCheckWithCompileStatic2() {
+        assertScript '''
+            import groovy.transform.*
+            import static groovy.test.GroovyAssert.shouldFail
+
+            @CompileStatic
+            class Pogo {
+                Pogo() {}
+                @NullCheck
+                Pogo(p) {}
+                @NullCheck
+                void m(p) {}
+            }
+
+            new Pogo()
+            new Pogo('x')
+            new Pogo('x').m('x')
+            shouldFail(IllegalArgumentException) { new Pogo(null) }
+            shouldFail(IllegalArgumentException) { new Pogo('x').m(null) }
+        '''
+    }
+
+    @Test
     void testNullCheckWithImmutable1() {
         assertScript '''
             import groovy.transform.*
@@ -192,6 +243,7 @@ class NullCheckTransformTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testNullCheckWithImmutable2() {
         assertScript '''
             import groovy.transform.*
@@ -225,6 +277,7 @@ class NullCheckTransformTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testNullCheckWithImmutable3() {
         assertScript '''
             import groovy.transform.*
@@ -258,6 +311,7 @@ class NullCheckTransformTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testNullCheckWithImmutable4() {
         assertScript '''
             import groovy.transform.*

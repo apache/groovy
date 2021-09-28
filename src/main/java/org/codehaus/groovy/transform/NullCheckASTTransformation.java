@@ -41,22 +41,25 @@ import java.util.List;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.isGenerated;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
-import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isNullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 
 /**
  * Handles generation of code for the @NullCheck annotation.
  */
 @GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION)
 public class NullCheckASTTransformation extends AbstractASTTransformation {
-    public static final ClassNode NULL_CHECK_TYPE = make(NullCheck.class);
+    public static final ClassNode NULL_CHECK_TYPE = ClassHelper.make(NullCheck.class);
     private static final String NULL_CHECK_NAME = "@" + NULL_CHECK_TYPE.getNameWithoutPackage();
     private static final ClassNode EXCEPTION = ClassHelper.make(IllegalArgumentException.class);
+    private static final ConstructorNode EXCEPTION_STRING_CTOR = EXCEPTION.getDeclaredConstructor(params(param(ClassHelper.STRING_TYPE, "s")));
     private static final String NULL_CHECK_IS_PROCESSED = "NullCheck.isProcessed";
 
     @Override
@@ -124,8 +127,10 @@ public class NullCheckASTTransformation extends AbstractASTTransformation {
         mn.setCode(newCode);
     }
 
-    public static ThrowStatement makeThrowStmt(String name) {
-        return throwS(ctorX(EXCEPTION, constX(name + " cannot be null")));
+    public static ThrowStatement makeThrowStmt(final String variableName) {
+        ConstructorCallExpression newException = ctorX(EXCEPTION, constX(variableName + " cannot be null"));
+        newException.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, EXCEPTION_STRING_CTOR); // GROOVY-10178
+        return throwS(newException);
     }
 
     /**
