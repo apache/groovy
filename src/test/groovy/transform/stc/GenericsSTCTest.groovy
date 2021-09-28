@@ -3634,6 +3634,46 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-10234
+    void testSelfReferentialTypeParameter() {
+        config.with {
+            targetDirectory = File.createTempDir()
+            jointCompilationOptions = [memStub: true]
+        }
+        File parentDir = File.createTempDir()
+        try {
+            def a = new File(parentDir, 'Main.groovy')
+            a.write '''
+                def <T> T getBean(Class<T> beanType) {
+                    { obj, Class target -> Optional.of(obj.toString()) } as Service
+                }
+
+                def result = getBean(Service).convert(new ArrayList(), String)
+                assert result.get() == '[]'
+            '''
+            def b = new File(parentDir, 'Service.java')
+            b.write '''
+                import java.util.Optional;
+                import java.util.function.Function;
+
+                public interface Service<Impl extends Service> {
+                    <T> Optional<T> convert(Object object, Class<T> targetType);
+                    <S, T> Impl addConverter(Class<S> sourceType, Class<T> targetType, Function<S, T> typeConverter);
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b)
+            cu.compile()
+
+            loader.loadClass('Main').main()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+        }
+    }
+
     // GROOVY-7804
     void testParameterlessClosureToGenericSAMTypeArgumentCoercion() {
         assertScript '''
