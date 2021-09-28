@@ -1013,7 +1013,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     }
 
     protected void assertStaticImportIsAllowed(final String member, final String className) {
-        final String fqn = member.equals(className) ? member : className + "." + member;
+        final String fqn = className.equals(member) ? className : className + "." + member;
         if (allowedStaticImports != null && !allowedStaticImports.contains(fqn)) {
             if (allowedStaticStarImports != null) {
                 // we should now check if the import is in the star imports
