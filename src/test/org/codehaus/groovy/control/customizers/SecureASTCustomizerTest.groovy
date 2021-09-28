@@ -357,7 +357,7 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testAllowedIndirectStarImports() {
+    void testAllowedIndirectStarImports1() {
         customizer.allowedStarImports = ['java.util.*']
         customizer.indirectImportCheckEnabled = true
         def shell = new GroovyShell(configuration)
@@ -378,6 +378,25 @@ final class SecureASTCustomizerTest {
                 return java.util.concurrent.atomic.AtomicBoolean.&get
             ''')
         }
+    }
+
+    @Test // GROOVY-8135
+    void testAllowedIndirectStarImports2() {
+        customizer.allowedStarImports = ['java.lang']
+        customizer.indirectImportCheckEnabled = true
+        def shell = new GroovyShell(configuration)
+        shell.evaluate('Object object = new Object()')
+        shell.evaluate('Object object = new Object(); object.hashCode()')
+        shell.evaluate('Object[] array = new Object[0]; array.size()')
+        shell.evaluate('Object[][] array = new Object[0][0]; array.size()')
+    }
+
+    @Test // GROOVY-10184
+    void testAllowedIndirectStarImports3() {
+        customizer.allowedStarImports = ['java.lang.*']
+        customizer.indirectImportCheckEnabled = true
+        def shell = new GroovyShell(configuration)
+        shell.evaluate('def obj = new Object(); def method = "hashCode"; obj."${method}"()')
     }
 
     @Test
@@ -600,16 +619,5 @@ final class SecureASTCustomizerTest {
                 java.lang.Long x = 666L
             '''
         }
-    }
-
-    @Test // GROOVY-8135
-    void testStarImportsAllowedListWithIndirectImportCheckEnabled() {
-        customizer.indirectImportCheckEnabled = true
-        customizer.allowedStarImports = ['java.lang']
-        def shell = new GroovyShell(configuration)
-        shell.evaluate('Object object = new Object()')
-        shell.evaluate('Object object = new Object(); object.hashCode()')
-        shell.evaluate('Object[] array = new Object[0]; array.size()')
-        shell.evaluate('Object[][] array = new Object[0][0]; array.size()')
     }
 }
