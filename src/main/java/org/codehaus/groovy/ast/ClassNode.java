@@ -714,7 +714,8 @@ public class ClassNode extends AnnotatedNode {
         if (that == this) return true;
         if (!(that instanceof ClassNode)) return false;
         if (redirect != null) return redirect.equals(that);
-        return (((ClassNode) that).getText().equals(getText()));
+        if (componentType != null) return componentType.equals(((ClassNode) that).componentType);
+        return ((ClassNode) that).getText().equals(getText()); // arrays could be "T[]" or "[LT;"
     }
 
     @Override

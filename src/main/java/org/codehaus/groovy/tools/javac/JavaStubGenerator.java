@@ -79,8 +79,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveByte;
@@ -93,6 +91,8 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveShort;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.codehaus.groovy.ast.ClassHelper.isStringType;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 
 public class JavaStubGenerator {
     private final boolean java5;
@@ -425,24 +425,23 @@ public class JavaStubGenerator {
                         }
                     }
                 }
-                if (existingMethod != null) continue;
-                boolean isCandidate = isCandidateTraitMethod(trait, traitMethod);
-                if (!isCandidate) continue;
-                printMethod(out, classNode, traitMethod);
+                if (existingMethod == null && isConcreteTraitMethod(trait, traitMethod)) {
+                    printMethod(out, classNode, traitMethod);
+                }
             }
         }
     }
 
-    private boolean isCandidateTraitMethod(ClassNode trait, MethodNode traitMethod) {
-        boolean precompiled = trait.redirect() instanceof DecompiledClassNode;
-        if (!precompiled) return !traitMethod.isAbstract();
-        List<MethodNode> helperMethods = Traits.findHelper(trait).getMethods();
-        for (MethodNode helperMethod : helperMethods) {
-            boolean isSynthetic = (traitMethod.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0;
-            if (helperMethod.getName().equals(traitMethod.getName()) && !isSynthetic && !traitMethod.getName().contains("$")) {
-                Parameter[] origParams = helperMethod.getParameters();
-                Parameter[] newParams = Arrays.copyOfRange(origParams, 1, origParams.length);
-                if (sameParameterTypes(newParams, traitMethod.getParameters())) return true;
+    private static boolean isConcreteTraitMethod(final ClassNode trait, final MethodNode traitMethod) {
+        if (!(trait.redirect() instanceof DecompiledClassNode)) {
+            return !traitMethod.isAbstract();
+        }
+        boolean isSynthetic = (traitMethod.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0;
+        if (!isSynthetic && !traitMethod.getName().contains("$")) {
+            for (MethodNode helperMethod : Traits.findHelper(trait).getMethods(traitMethod.getName())) {
+                Parameter[] params = helperMethod.getParameters();
+                params = Arrays.copyOfRange(params, 1, params.length);
+                if (sameParameterTypes(params, traitMethod.getParameters())) return true;
             }
         }
         return false;
