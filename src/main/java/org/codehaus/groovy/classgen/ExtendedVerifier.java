@@ -270,6 +270,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             }
 
             String name = visited.getClassNode().getName();
+            boolean skip = currentClass.isRecord() && skippableRecordAnnotation(node, visited);
             if (!visited.hasSourceRetention()) {
                 List<AnnotationNode> seen = nonSourceAnnotations.get(name);
                 if (seen == null) {
@@ -278,19 +279,26 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
                     addError("Cannot specify duplicate annotation on the same member : " + name, visited);
                 }
                 seen.add(visited);
-                nonSourceAnnotations.put(name, seen);
+                if (!skip) {
+                    nonSourceAnnotations.put(name, seen);
+                }
             }
 
             // Check if the annotation target is correct, unless it's the target annotating an annotation definition
             // defining on which target elements the annotation applies
             boolean isTargetAnnotation = name.equals("java.lang.annotation.Target");
-            if (!isTargetAnnotation && !visited.isTargetAllowed(target) && !isTypeUseScenario(visited, target)) {
+            if (!isTargetAnnotation && !skip && !visited.isTargetAllowed(target) && !isTypeUseScenario(visited, target)) {
                 addError("Annotation @" + name + " is not allowed on element " + AnnotationNode.targetToName(target), visited);
             }
             visitDeprecation(node, visited);
             visitOverride(node, visited);
         }
         processDuplicateAnnotationContainers(node, nonSourceAnnotations);
+    }
+
+    private boolean skippableRecordAnnotation(AnnotatedNode node, AnnotationNode visited) {
+        return (node instanceof ClassNode && !visited.isTargetAllowed(TYPE_TARGET) && !visited.isTargetAllowed(TYPE_USE_TARGET) && visited.isTargetAllowed(CONSTRUCTOR_TARGET))
+                || (node instanceof FieldNode && !visited.isTargetAllowed(FIELD_TARGET) && !visited.isTargetAllowed(TYPE_USE_TARGET));
     }
 
     private boolean isRepeatable(final AnnotationNode annoNode) {
