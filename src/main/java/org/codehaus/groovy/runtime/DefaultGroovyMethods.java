@@ -12651,6 +12651,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * For collections of custom objects; the objects should implement java.lang.Comparable
      * <pre class="groovyTestCase">
      * assert [3,4] == [1,2,3,4].intersect([3,4,5,6], Comparator.naturalOrder())
+     * assert [2,4] == [1,2,3,4].intersect([4,8,12,16,20], (x, y) {@code -> x * x <=> y})
      * </pre>
      * <pre class="groovyTestCase">
      * def one = ['a', 'B', 'c', 'd']
@@ -12658,8 +12659,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * def compareIgnoreCase = { a, b {@code ->} a.toLowerCase() {@code <=>} b.toLowerCase() }
      * assert one.intersect(two) == ['d']
      * assert two.intersect(one) == ['d']
-     * assert one.intersect(two, compareIgnoreCase) == ['b', 'C', 'd']
-     * assert two.intersect(one, compareIgnoreCase) == ['B', 'c', 'd']
+     * assert one.intersect(two, compareIgnoreCase) == ['B', 'c', 'd']
+     * assert two.intersect(one, compareIgnoreCase) == ['b', 'C', 'd']
      * </pre>
      *
      * @param left  a Collection
@@ -12674,11 +12675,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
         Collection<T> result = createSimilarCollection(left, Math.min(left.size(), right.size()));
         //creates the collection to look for values.
-        Collection<T> pickFrom = new TreeSet<>(comparator);
-        pickFrom.addAll(left);
+        Collection<T> compareWith = new TreeSet<>(comparator);
+        compareWith.addAll(right);
 
-        for (final T t : right) {
-            if (pickFrom.contains(t))
+        for (final T t : left) {
+            if (compareWith.contains(t))
                 result.add(t);
         }
         return result;
@@ -12688,7 +12689,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a Collection composed of the intersection of both iterables.  Any
      * elements that exist in both iterables are added to the resultant collection.
      * For iterables of custom objects; the objects should implement java.lang.Comparable
-     * <pre class="groovyTestCase">assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])</pre>
+     * <pre class="groovyTestCase">
+     * assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])
+     * </pre>
      * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
      * element exists in both collections.
      *
@@ -12706,7 +12709,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a Collection composed of the intersection of both iterables.  Any
      * elements that exist in both iterables are added to the resultant collection.
      * For iterables of custom objects; the objects should implement java.lang.Comparable
-     * <pre class="groovyTestCase">assert [3,4] == [1,2,3,4].intersect([3,4,5,6], Comparator.naturalOrder())</pre>
+     * <pre class="groovyTestCase">
+     * assert [3,4] == [1,2,3,4].intersect([3,4,5,6], Comparator.naturalOrder())
+     * </pre>
      *
      * @param left  an Iterable
      * @param right an Iterable
@@ -12719,9 +12724,41 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Create a Collection composed of the intersection of both iterables.
+     * Elements from teh first iterable which also occur (according to the comparator closure) in the second iterable are added to the result.
+     * If the closure takes a single parameter, the argument passed will be each element,
+     * and the closure should return a value used for comparison (either using
+     * {@link java.lang.Comparable#compareTo(java.lang.Object)} or {@link java.lang.Object#equals(java.lang.Object)}).
+     * If the closure takes two parameters, two items from the Iterator
+     * will be passed as arguments, and the closure should return an
+     * int value (with 0 indicating the items are deemed equal).
+     * <pre class="groovyTestCase">
+     * def one = ['a', 'B', 'c', 'd']
+     * def two = ['b', 'C', 'd', 'e']
+     * def compareIgnoreCase = { it.toLowerCase() }
+     * assert one.intersect(two, compareIgnoreCase) == ['B', 'c', 'd']
+     * assert two.intersect(one, compareIgnoreCase) == ['b', 'C', 'd']
+     * </pre>
+     *
+     * @param left  an Iterable
+     * @param right an Iterable
+     * @param condition a Closure used to determine unique items
+     * @return a Collection as an intersection of both iterables
+     * @since 4.0.0
+     */
+    public static <T> Collection<T> intersect(Iterable<T> left, Iterable<T> right, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure condition) {
+        Comparator<T> comparator = condition.getMaximumNumberOfParameters() == 1
+                ? new OrderBy<>(condition, true)
+                : new ClosureComparator<>(condition);
+        return intersect(left, right, comparator);
+    }
+
+    /**
      * Create a List composed of the intersection of a List and an Iterable.  Any
      * elements that exist in both iterables are added to the resultant collection.
-     * <pre class="groovyTestCase">assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])</pre>
+     * <pre class="groovyTestCase">
+     * assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])
+     * </pre>
      * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
      * element exists in both collections.
      *
@@ -12738,7 +12775,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a List composed of the intersection of a List and an Iterable.  Any
      * elements that exist in both iterables are added to the resultant collection.
-     * <pre class="groovyTestCase">assert [3,4] == [1,2,3,4].intersect([3,4,5,6])</pre>
+     * <pre class="groovyTestCase">
+     * assert [3,4] == [1,2,3,4].intersect([3,4,5,6])
+     * </pre>
      *
      * @param left  a List
      * @param right an Iterable
@@ -12753,7 +12792,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a Set composed of the intersection of a Set and an Iterable.  Any
      * elements that exist in both iterables are added to the resultant collection.
-     * <pre class="groovyTestCase">assert [4,5] as Set == ([1,2,3,4,5] as Set).intersect([4,5,6,7,8])</pre>
+     * <pre class="groovyTestCase">
+     * assert [4,5] as Set == ([1,2,3,4,5] as Set).intersect([4,5,6,7,8])
+     * </pre>
      * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
      * element exists in both collections.
      *
@@ -12770,7 +12811,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a Set composed of the intersection of a Set and an Iterable.  Any
      * elements that exist in both iterables are added to the resultant collection.
-     * <pre class="groovyTestCase">assert [3,4] as Set == ([1,2,3,4] as Set).intersect([3,4,5,6], Comparator.naturalOrder())</pre>
+     * <pre class="groovyTestCase">
+     * assert [3,4] as Set == ([1,2,3,4] as Set).intersect([3,4,5,6], Comparator.naturalOrder())
+     * </pre>
      *
      * @param left  a Set
      * @param right an Iterable
@@ -12785,7 +12828,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a SortedSet composed of the intersection of a SortedSet and an Iterable.  Any
      * elements that exist in both iterables are added to the resultant collection.
-     * <pre class="groovyTestCase">assert [4,5] as SortedSet == ([1,2,3,4,5] as SortedSet).intersect([4,5,6,7,8])</pre>
+     * <pre class="groovyTestCase">
+     * assert [4,5] as SortedSet == ([1,2,3,4,5] as SortedSet).intersect([4,5,6,7,8])
+     * </pre>
      * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
      * element exists in both collections.
      *
@@ -12802,7 +12847,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a SortedSet composed of the intersection of a SortedSet and an Iterable.  Any
      * elements that exist in both iterables are added to the resultant collection.
-     * <pre class="groovyTestCase">assert [4,5] as SortedSet == ([1,2,3,4,5] as SortedSet).intersect([4,5,6,7,8])</pre>
+     * <pre class="groovyTestCase">
+     * assert [4,5] as SortedSet == ([1,2,3,4,5] as SortedSet).intersect([4,5,6,7,8])
+     * </pre>
      *
      * @param left  a SortedSet
      * @param right an Iterable

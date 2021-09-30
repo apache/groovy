@@ -170,12 +170,14 @@ class ListTest extends GroovyTestCase {
     void testIntersect() {
         def l1 = [1, 1, "wrer", 2, 3, 3, "wrewer", 4, 5, "w", "w"]
         def l2 = [1, 2, "f", "w"]
-        assert l1.intersect(l2) == [1, 2, "w"]
+        assert l1.intersect(l2) == [1, 1, 2, 'w', 'w']
+        assert l2.intersect(l1) == [1, 2, "w"]
 
-        // GROOVY-1006    
+        // GROOVY-1006
         l1 = [1, 1.0, "wrer", 2, 3, 3L, "wrewer", 4, 5, "w", "w"]
         l2 = [(double) 1, 2L, "f", "w"]
-        assert l1.intersect(l2) == [1, 2, "w"]
+        assert l1.intersect(l2) == [1, 1.0, 2, 'w', 'w']
+        assert l2.intersect(l1) == [1, 2, "w"]
     }
 
     // GROOVY-1006

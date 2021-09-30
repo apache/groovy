@@ -1597,7 +1597,8 @@ class GroovyMethodsTest extends GroovyTestCase {
         def list1 = [[language: 'Java'], [language: 'Groovy'], [language: 'Scala']]
         def list2 = [[language: 'Groovy'], [language: 'JRuby'], [language: 'Java']]
         def intersection = list1.intersect(list2)
-        assert intersection == [[language: 'Groovy'], [language: 'Java']]
+        assert intersection == [[language: 'Java'], [language: 'Groovy']]
+        assert list2.intersect(list1) == [[language: 'Groovy'], [language: 'Java']]
 
         def locs1 = [[loc: [0, 1]], [loc: [1, 1]]]
         def locs2 = [[loc: [2, 1]], [loc: [1, 1]]]
