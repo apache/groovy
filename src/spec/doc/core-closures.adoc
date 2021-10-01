@@ -157,7 +157,7 @@ parameter, named `it`. This means that this code:
 include::../test/ClosuresSpecTest.groovy[tags=implicit_it,indent=0]
 ----
 
-is stricly equivalent to this one:
+is strictly equivalent to this one:
 
 [source,groovy]
 ----
