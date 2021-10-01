@@ -30,9 +30,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 abstract class TypeSignatureParser extends SignatureVisitor {
+
     private final AsmReferenceResolver resolver;
 
-    public TypeSignatureParser(AsmReferenceResolver resolver) {
+    public TypeSignatureParser(final AsmReferenceResolver resolver) {
         super(CompilerConfiguration.ASM_API_VERSION);
         this.resolver = resolver;
     }
@@ -43,12 +44,12 @@ abstract class TypeSignatureParser extends SignatureVisitor {
     private final List<GenericsType> arguments = new ArrayList<GenericsType>();
 
     @Override
-    public void visitTypeVariable(String name) {
+    public void visitTypeVariable(final String name) {
         finished(Java5.configureTypeVariableReference(name));
     }
 
     @Override
-    public void visitBaseType(char descriptor) {
+    public void visitBaseType(final char descriptor) {
         finished(resolver.resolveType(Type.getType(String.valueOf(descriptor))));
     }
 
@@ -57,14 +58,14 @@ abstract class TypeSignatureParser extends SignatureVisitor {
         final TypeSignatureParser outer = this;
         return new TypeSignatureParser(resolver) {
             @Override
-            void finished(ClassNode result) {
+            void finished(final ClassNode result) {
                 outer.finished(result.makeArray());
             }
         };
     }
 
     @Override
-    public void visitClassType(String name) {
+    public void visitClassType(final String name) {
         baseName = AsmDecompiler.fromInternalName(name);
     }
 
@@ -90,7 +91,29 @@ abstract class TypeSignatureParser extends SignatureVisitor {
         };
     }
 
-    private static GenericsType createWildcard(ClassNode[] upper, ClassNode lower) {
+    @Override
+    public void visitInnerClassType(final String name) {
+        baseName += "$" + name;
+        arguments.clear();
+    }
+
+    @Override
+    public void visitEnd() {
+        ClassNode baseType = resolver.resolveClass(baseName);
+        if (arguments.isEmpty() && isNotParameterized(baseType)) {
+            finished(baseType);
+        } else {
+            ClassNode parameterizedType = baseType.getPlainNodeReference();
+            if (!arguments.isEmpty()) { // else GROOVY-10234: no type arguments -> raw type
+                parameterizedType.setGenericsTypes(arguments.toArray(GenericsType.EMPTY_ARRAY));
+            }
+            finished(parameterizedType);
+        }
+    }
+
+    //--------------------------------------------------------------------------
+
+    private static GenericsType createWildcard(final ClassNode[] upper, final ClassNode lower) {
         ClassNode base = ClassHelper.makeWithoutCaching("?");
         base.setRedirect(ClassHelper.OBJECT_TYPE);
         GenericsType t = new GenericsType(base, upper, lower);
@@ -98,23 +121,11 @@ abstract class TypeSignatureParser extends SignatureVisitor {
         return t;
     }
 
-    @Override
-    public void visitInnerClassType(String name) {
-        baseName += "$" + name;
-        arguments.clear();
-    }
-
-    @Override
-    public void visitEnd() {
-        ClassNode base = resolver.resolveClass(baseName);
-        if (arguments.isEmpty()) {
-            finished(base);
-            return;
+    private static boolean isNotParameterized(final ClassNode cn) {
+        // DecompiledClassNode may not have generics initialized
+        if (cn instanceof DecompiledClassNode) {
+            return !((DecompiledClassNode) cn).isParameterized();
         }
-
-        ClassNode bound = base.getPlainNodeReference();
-        bound.setGenericsTypes(arguments.toArray(GenericsType.EMPTY_ARRAY));
-        finished(bound);
+        return (cn.getGenericsTypes() == null);
     }
-
 }
