@@ -44,9 +44,9 @@ public class DecompiledClassNode extends ClassNode {
     private volatile boolean supersInitialized;
     private volatile boolean membersInitialized;
 
-    public DecompiledClassNode(ClassStub data, AsmReferenceResolver resolver) {
-        super(data.className, getFullModifiers(data), null, null, MixinNode.EMPTY_ARRAY);
-        classData = data;
+    public DecompiledClassNode(final ClassStub classData, final AsmReferenceResolver resolver) {
+        super(classData.className, getFullModifiers(classData), null, null, MixinNode.EMPTY_ARRAY);
+        this.classData = classData;
         this.resolver = resolver;
         isPrimaryNode = false;
     }
@@ -167,6 +167,10 @@ public class DecompiledClassNode extends ClassNode {
         throw new UnsupportedOperationException();
     }
 
+    public boolean isParameterized() {
+        return (classData.signature != null && classData.signature.charAt(0) == '<');
+    }
+
     @Override
     public boolean isResolved() {
         return true;
@@ -182,12 +186,11 @@ public class DecompiledClassNode extends ClassNode {
 
         synchronized (lazyInitLock) {
             if (!supersInitialized) {
-                ClassSignatureParser.configureClass(this, this.classData, this.resolver);
+                ClassSignatureParser.configureClass(this, classData, resolver);
                 addAnnotations(classData, this);
                 supersInitialized = true;
             }
         }
-
     }
 
     private void lazyInitMembers() {
@@ -262,5 +265,4 @@ public class DecompiledClassNode extends ClassNode {
         }
         return node;
     }
-
 }

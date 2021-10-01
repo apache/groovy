@@ -58,7 +58,7 @@ abstract class TypeSignatureParser extends SignatureVisitor {
         final TypeSignatureParser outer = this;
         return new TypeSignatureParser(resolver) {
             @Override
-            void finished(ClassNode result) {
+            void finished(final ClassNode result) {
                 outer.finished(result.makeArray());
             }
         };
@@ -91,14 +91,6 @@ abstract class TypeSignatureParser extends SignatureVisitor {
         };
     }
 
-    private static GenericsType createWildcard(final ClassNode[] upper, final ClassNode lower) {
-        ClassNode base = ClassHelper.makeWithoutCaching("?");
-        base.setRedirect(ClassHelper.OBJECT_TYPE);
-        GenericsType t = new GenericsType(base, upper, lower);
-        t.setWildcard(true);
-        return t;
-    }
-
     @Override
     public void visitInnerClassType(final String name) {
         baseName += "$" + name;
@@ -107,14 +99,33 @@ abstract class TypeSignatureParser extends SignatureVisitor {
 
     @Override
     public void visitEnd() {
-        ClassNode base = resolver.resolveClass(baseName);
-        if (arguments.isEmpty()) {
-            finished(base);
-            return;
+        ClassNode baseType = resolver.resolveClass(baseName);
+        if (arguments.isEmpty() && isNotParameterized(baseType)) {
+            finished(baseType);
+        } else {
+            ClassNode parameterizedType = baseType.getPlainNodeReference();
+            if (!arguments.isEmpty()) { // else GROOVY-10234: no type arguments -> raw type
+                parameterizedType.setGenericsTypes(arguments.toArray(GenericsType.EMPTY_ARRAY));
+            }
+            finished(parameterizedType);
         }
+    }
 
-        ClassNode bound = base.getPlainNodeReference();
-        bound.setGenericsTypes(arguments.toArray(GenericsType.EMPTY_ARRAY));
-        finished(bound);
+    //--------------------------------------------------------------------------
+
+    private static GenericsType createWildcard(final ClassNode[] upper, final ClassNode lower) {
+        ClassNode base = ClassHelper.makeWithoutCaching("?");
+        base.setRedirect(ClassHelper.OBJECT_TYPE);
+        GenericsType t = new GenericsType(base, upper, lower);
+        t.setWildcard(true);
+        return t;
+    }
+
+    private static boolean isNotParameterized(final ClassNode cn) {
+        // DecompiledClassNode may not have generics initialized
+        if (cn instanceof DecompiledClassNode) {
+            return !((DecompiledClassNode) cn).isParameterized();
+        }
+        return (cn.getGenericsTypes() == null);
     }
 }
