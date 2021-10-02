@@ -237,9 +237,9 @@ tasks.named('test') {
 
 if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_16)) {
     logger.lifecycle '''
-************************************* WARNING ***********************************************
-****  You're running the build with an older JDK. NEVER try to release with an old JDK!  ****
-****  You must use a JDK 16+ in order to compile all features of the language.           ****
+**************************************** WARNING ********************************************
+******   You are running the build with an older JDK. NEVER try to release with 1.8.   ******
+******   You must use a JDK 16+ in order to compile all features of the language.      ******
 *********************************************************************************************
 '''
 }

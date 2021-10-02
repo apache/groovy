@@ -31,22 +31,22 @@ matrix:
       jdk: openjdk16
     - env: BC='indy'
       jdk: openjdk16
-    - env: BC='indy' FEATURE='15' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
-      jdk: openjdk16
-    - env: BC='indy' FEATURE='14' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
-      jdk: openjdk16
-    - env: BC='indy' FEATURE='13' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
-      jdk: openjdk16
-    - env: BC='indy' FEATURE='12' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
-      jdk: openjdk16
-    - env: BC='indy' FEATURE='11' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
-      jdk: openjdk16
-    - env: BC='indy' FEATURE='10' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
-      jdk: openjdk16
-    - env: BC='indy' FEATURE='9' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
-      jdk: openjdk16
-    - env: BC='indy' FEATURE='8' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
-      jdk: openjdk16
+    - env: BC='indy'
+      jdk: openjdk15
+    - env: BC='indy'
+      jdk: openjdk14
+    - env: BC='indy'
+      jdk: openjdk13
+    - env: BC='indy'
+      jdk: openjdk12
+    - env: BC='indy'
+      jdk: openjdk11
+    - env: BC='indy'
+      jdk: openjdk10
+    - env: BC='indy'
+      jdk: oraclejdk9
+    - env: BC='indy'
+      jdk: oraclejdk8
 
 #    - env: BC='sonar'
 #      jdk: openjdk11

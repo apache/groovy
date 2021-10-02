@@ -23,6 +23,11 @@ import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.decompiled.AsmDecompiler
+import org.codehaus.groovy.ast.decompiled.AsmReferenceResolver
+import org.codehaus.groovy.ast.decompiled.DecompiledClassNode
+import org.codehaus.groovy.control.ClassNodeResolver
+import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
@@ -147,22 +152,14 @@ class RecordTest {
             assert 'titles' == rcs[3].name && String[].class == rcs[3].type
 
             ClassNode personClassNode = ClassHelper.make(personClazz)
-            assert personClassNode.isRecord()
-            def rcns = personClassNode.getRecordComponentNodes()
-            assert 4 == rcns.size()
-            assert 'name' == rcns[0].name && ClassHelper.STRING_TYPE == rcns[0].type
-            List<AnnotationNode> annotationNodes = rcns[0].getAnnotations()
-            assert 1 == annotationNodes.size()
-            assert ClassHelper.make(notNullClazz) == annotationNodes[0].getClassNode()
+            ClassNode notNullClassNode = ClassHelper.make(notNullClazz)
+            doTestNativeRecordClassNode(personClassNode, notNullClassNode)
 
-            assert 'age' == rcns[1].name && ClassHelper.int_TYPE == rcns[1].type
-
-            assert 'locations' == rcns[2].name && ClassHelper.LIST_TYPE == rcns[2].type
-            def genericsTypes = rcns[2].type.genericsTypes
-            assert 1 == genericsTypes.size()
-            assert ClassHelper.STRING_TYPE == genericsTypes[0].type
-
-            assert 'titles' == rcns[3].name && ClassHelper.make(String[].class) == rcns[3].type
+            def resource = loader.getResource(personClazz.getName().replace('.', '/') + '.class')
+            def stub = AsmDecompiler.parseClass(resource)
+            def unit = new CompilationUnit(loader)
+            def personDecompiledClassNode = new DecompiledClassNode(stub, new AsmReferenceResolver(new ClassNodeResolver(), unit))
+            doTestNativeRecordClassNode(personDecompiledClassNode, notNullClassNode)
         } finally {
             parentDir.deleteDir()
             config.targetDirectory.deleteDir()
