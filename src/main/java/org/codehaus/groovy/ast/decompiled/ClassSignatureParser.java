@@ -18,13 +18,17 @@
  */
 package org.codehaus.groovy.ast.decompiled;
 
+import org.apache.groovy.util.ObjectHolder;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.RecordComponentNode;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.signature.SignatureVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 class ClassSignatureParser {
     static void configureClass(ClassNode classNode, ClassStub stub, AsmReferenceResolver resolver) {
@@ -47,6 +51,24 @@ class ClassSignatureParser {
             for (String name : stub.permittedSubclasses) {
                 permittedSubclasses.add(resolver.resolveClass(AsmDecompiler.fromInternalName(name)));
             }
+        }
+
+        if (!stub.recordComponents.isEmpty()) {
+            classNode.setRecordComponentNodes(stub.recordComponents.stream().map(r -> {
+                ClassNode type = resolver.resolveType(Type.getType(r.descriptor));
+                ObjectHolder<ClassNode> typeHolder = new ObjectHolder<>(type);
+                if (null != r.signature) {
+                    new SignatureReader(r.signature).accept(new TypeSignatureParser(resolver) {
+                        @Override
+                        void finished(final ClassNode result) {
+                            typeHolder.setObject(applyErasure(result, typeHolder.getObject()));
+                        }
+                    });
+                }
+                RecordComponentNode recordComponentNode = new RecordComponentNode(classNode, r.name, typeHolder.getObject());
+                Annotations.addAnnotations(r, recordComponentNode, resolver);
+                return recordComponentNode;
+            }).collect(Collectors.toList()));
         }
     }
 

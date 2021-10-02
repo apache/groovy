@@ -59,7 +59,6 @@ import static org.objectweb.asm.Opcodes.ACC_ANNOTATION;
 import static org.objectweb.asm.Opcodes.ACC_ENUM;
 import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static org.objectweb.asm.Opcodes.ACC_RECORD;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
@@ -165,6 +164,7 @@ public class ClassNode extends AnnotatedNode {
     protected List<InnerClassNode> innerClasses;
     private List<ClassNode> permittedSubclasses = new ArrayList<>(4);
     private List<AnnotationNode> typeAnnotations = Collections.emptyList();
+    private List<RecordComponentNode> recordComponentNodes = Collections.emptyList();
 
     /**
      * The AST Transformations to be applied during compilation.
@@ -1366,7 +1366,34 @@ public class ClassNode extends AnnotatedNode {
      * @since 4.0.0
      */
     public boolean isRecord() {
-        return (getModifiers() & ACC_RECORD) != 0;
+        List<RecordComponentNode> recordComponentNodes = getRecordComponentNodes();
+        return null != recordComponentNodes && !recordComponentNodes.isEmpty();
+    }
+
+    /**
+     * Get the record components of record type
+     *
+     * @return {@code RecordComponentNode} instances
+     * @since 4.0.0
+     */
+    public List<RecordComponentNode> getRecordComponentNodes() {
+        if (redirect != null)
+            return redirect.getRecordComponentNodes();
+        lazyClassInit();
+        return recordComponentNodes;
+    }
+
+    /**
+     * Set the record components for record type
+     *
+     * @since 4.0.0
+     */
+    public void setRecordComponentNodes(List<RecordComponentNode> recordComponentNodes) {
+        if (redirect != null) {
+            redirect.setRecordComponentNodes(recordComponentNodes);
+        } else {
+            this.recordComponentNodes = recordComponentNodes;
+        }
     }
 
     public boolean isAbstract() {

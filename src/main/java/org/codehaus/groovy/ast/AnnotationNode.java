@@ -38,10 +38,11 @@ public class AnnotationNode extends ASTNode {
     public static final int PACKAGE_TARGET = 1 << 7;
     public static final int TYPE_PARAMETER_TARGET = 1 << 8;
     public static final int TYPE_USE_TARGET = 1 << 9;
+    public static final int RECORD_COMPONENT_TARGET = 1 << 10;
     public static final int TYPE_TARGET = 1 + ANNOTATION_TARGET;    //GROOVY-7151
     private static final int ALL_TARGETS = TYPE_TARGET | CONSTRUCTOR_TARGET | METHOD_TARGET
             | FIELD_TARGET | PARAMETER_TARGET | LOCAL_VARIABLE_TARGET | ANNOTATION_TARGET
-            | PACKAGE_TARGET | TYPE_PARAMETER_TARGET | TYPE_USE_TARGET;
+            | PACKAGE_TARGET | TYPE_PARAMETER_TARGET | TYPE_USE_TARGET | RECORD_COMPONENT_TARGET;
 
     private final ClassNode classNode;
     private Map<String, Expression> members;
@@ -187,6 +188,8 @@ public class AnnotationNode extends ASTNode {
                 return "TYPE_PARAMETER";
             case TYPE_USE_TARGET:
                 return "TYPE_USE";
+            case RECORD_COMPONENT_TARGET:
+                return "RECORD_COMPONENT";
             default:
                 return "unknown target";
         }

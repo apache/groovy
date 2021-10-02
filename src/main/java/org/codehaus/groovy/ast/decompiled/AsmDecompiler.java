@@ -25,6 +25,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.RecordComponentVisitor;
 import org.objectweb.asm.Type;
 
 import java.io.BufferedInputStream;
@@ -189,6 +190,21 @@ public abstract class AsmDecompiler {
         @Override
         public void visitPermittedSubclass(final String permittedSubclass) {
             result.permittedSubclasses.add(permittedSubclass);
+        }
+
+        @Override
+        public RecordComponentVisitor visitRecordComponent(
+                final String name, final String descriptor, final String signature) {
+
+            RecordComponentStub recordComponentStub = new RecordComponentStub(name, descriptor, signature);
+            result.recordComponents.add(recordComponentStub);
+
+            return new RecordComponentVisitor(api) {
+                @Override
+                public AnnotationVisitor visitAnnotation(final String descriptor, final boolean visible) {
+                    return readAnnotationMembers(recordComponentStub.addAnnotation(descriptor));
+                }
+            };
         }
 
         @Override

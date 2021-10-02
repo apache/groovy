@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.decompiled;
 
+import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
@@ -93,6 +94,19 @@ class Annotations {
         }
 
         return new ConstantExpression(value);
+    }
+
+    static <T extends AnnotatedNode> T addAnnotations(AnnotatedStub stub, T node, AsmReferenceResolver resolver) {
+        List<AnnotationStub> annotations = stub.getAnnotations();
+        if (annotations != null) {
+            for (AnnotationStub annotation : annotations) {
+                AnnotationNode annotationNode = createAnnotationNode(annotation, resolver);
+                if (annotationNode != null) {
+                    node.addAnnotation(annotationNode);
+                }
+            }
+        }
+        return node;
     }
 
     private static class DecompiledAnnotationNode extends AnnotationNode {

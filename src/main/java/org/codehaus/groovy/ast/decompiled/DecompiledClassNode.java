@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.ast.decompiled;
 
-import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -26,6 +25,7 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.MixinNode;
+import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.objectweb.asm.Opcodes;
@@ -198,6 +198,17 @@ public class DecompiledClassNode extends ClassNode {
         return false;
     }
 
+    /**
+     * Get the record components of record types
+     *
+     * @return {@code RecordComponentNode} instances
+     * @since 4.0.0
+     */
+    public List<RecordComponentNode> getRecordComponentNodes() {
+        lazyInitSupers();
+        return super.getRecordComponentNodes();
+    }
+
     @Override
     public Class getTypeClass() {
         return resolver.resolveJvmClass(getName());
@@ -209,7 +220,7 @@ public class DecompiledClassNode extends ClassNode {
         synchronized (lazyInitLock) {
             if (!supersInitialized) {
                 ClassSignatureParser.configureClass(this, classData, resolver);
-                addAnnotations(classData, this);
+                Annotations.addAnnotations(classData, this, resolver);
                 supersInitialized = true;
             }
         }
@@ -242,7 +253,7 @@ public class DecompiledClassNode extends ClassNode {
     }
 
     private FieldNode createFieldNode(final FieldStub field) {
-        Supplier<FieldNode> fieldNodeSupplier = () -> addAnnotations(field, MemberSignatureParser.createFieldNode(field, resolver, this));
+        Supplier<FieldNode> fieldNodeSupplier = () -> Annotations.addAnnotations(field, MemberSignatureParser.createFieldNode(field, resolver, this), resolver);
 
         if ((field.accessModifiers & Opcodes.ACC_PRIVATE) != 0) {
             return new LazyFieldNode(fieldNodeSupplier, field.fieldName);
@@ -252,7 +263,7 @@ public class DecompiledClassNode extends ClassNode {
     }
 
     private MethodNode createMethodNode(final MethodStub method) {
-        Supplier<MethodNode> methodNodeSupplier = () -> addAnnotations(method, MemberSignatureParser.createMethodNode(resolver, method));
+        Supplier<MethodNode> methodNodeSupplier = () -> Annotations.addAnnotations(method, MemberSignatureParser.createMethodNode(resolver, method), resolver);
 
         if ((method.accessModifiers & Opcodes.ACC_PRIVATE) != 0) {
             return new LazyMethodNode(methodNodeSupplier, method.methodName);
@@ -262,7 +273,7 @@ public class DecompiledClassNode extends ClassNode {
     }
 
     private ConstructorNode createConstructor(final MethodStub method) {
-        Supplier<ConstructorNode> constructorNodeSupplier = () -> (ConstructorNode) addAnnotations(method, MemberSignatureParser.createMethodNode(resolver, method));
+        Supplier<ConstructorNode> constructorNodeSupplier = () -> (ConstructorNode) Annotations.addAnnotations(method, MemberSignatureParser.createMethodNode(resolver, method), resolver);
 
         if ((method.accessModifiers & Opcodes.ACC_PRIVATE) != 0) {
             return new LazyConstructorNode(constructorNodeSupplier);
@@ -275,16 +286,4 @@ public class DecompiledClassNode extends ClassNode {
         return "<init>".equals(method.methodName);
     }
 
-    private <T extends AnnotatedNode> T addAnnotations(MemberStub stub, T node) {
-        List<AnnotationStub> annotations = stub.annotations;
-        if (annotations != null) {
-            for (AnnotationStub annotation : annotations) {
-                AnnotationNode annotationNode = Annotations.createAnnotationNode(annotation, resolver);
-                if (annotationNode != null) {
-                    node.addAnnotation(annotationNode);
-                }
-            }
-        }
-        return node;
-    }
 }

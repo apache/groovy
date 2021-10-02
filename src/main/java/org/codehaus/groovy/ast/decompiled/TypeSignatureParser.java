@@ -38,6 +38,16 @@ abstract class TypeSignatureParser extends SignatureVisitor {
         this.resolver = resolver;
     }
 
+    protected static ClassNode applyErasure(final ClassNode genericType, final ClassNode erasure) {
+        if (genericType.isArray() && erasure.isArray() && genericType.getComponentType().isGenericsPlaceHolder()) {
+            genericType.setRedirect(erasure);
+            genericType.getComponentType().setRedirect(erasure.getComponentType());
+        } else if (genericType.isGenericsPlaceHolder()) {
+            genericType.setRedirect(erasure);
+        }
+        return genericType;
+    }
+
     abstract void finished(ClassNode result);
 
     private String baseName;

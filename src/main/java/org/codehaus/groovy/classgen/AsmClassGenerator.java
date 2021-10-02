@@ -38,6 +38,7 @@ import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
@@ -112,6 +113,7 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.RecordComponentVisitor;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.TypePath;
 import org.objectweb.asm.TypeReference;
@@ -381,6 +383,22 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
             }
 
+            if (classNode.isRecord() && controller.getBytecodeVersion() >= Opcodes.V16 &&
+                    context.getCompileUnit().getConfig().isRecordsNative()) {
+                List<RecordComponentNode> recordComponentNodeList = classNode.getRecordComponentNodes();
+                for (int i = 0, n = recordComponentNodeList.size(); i < n; i++) {
+                    RecordComponentNode recordComponentNode = recordComponentNodeList.get(i);
+                    final ClassNode type = recordComponentNode.getType();
+                    RecordComponentVisitor recordComponentVisitor =
+                            classVisitor.visitRecordComponent(recordComponentNode.getName(),
+                                    BytecodeHelper.getTypeDescription(type),
+                                    BytecodeHelper.getTypeGenericsSignature(type));
+
+                    visitAnnotations(recordComponentNode, recordComponentVisitor);
+                    TypeReference typeRef = newTypeParameterReference(CLASS_TYPE_PARAMETER, i);
+                    visitTypeAnnotations(recordComponentNode.getType(), recordComponentVisitor, typeRef, "", true);
+                }
+            }
             classVisitor.visitEnd();
         } catch (GroovyRuntimeException e) {
             e.setModule(classNode.getModule());
@@ -2101,6 +2119,8 @@ public class AsmClassGenerator extends ClassGenerator {
                 av = ((MethodVisitor) visitor).visitTypeAnnotation(typeRefInt, typePath, annotationDescriptor, an.hasRuntimeRetention());
             } else if (visitor instanceof FieldVisitor) {
                 av = ((FieldVisitor) visitor).visitTypeAnnotation(typeRefInt, typePath, annotationDescriptor, an.hasRuntimeRetention());
+            } else if (visitor instanceof RecordComponentVisitor) {
+                av = ((RecordComponentVisitor) visitor).visitTypeAnnotation(typeRefInt, typePath, annotationDescriptor, an.hasRuntimeRetention());
             } else {
                 throwException("Cannot create an AnnotationVisitor. Please report Groovy bug");
             }
@@ -2192,6 +2212,8 @@ public class AsmClassGenerator extends ClassGenerator {
             return ((FieldVisitor) visitor).visitAnnotation(annotationDescriptor, an.hasRuntimeRetention());
         } else if (targetNode instanceof ClassNode) {
             return ((ClassVisitor) visitor).visitAnnotation(annotationDescriptor, an.hasRuntimeRetention());
+        } else if (visitor instanceof RecordComponentVisitor) {
+            return ((RecordComponentVisitor) visitor).visitAnnotation(annotationDescriptor, true);
         }
         throwException("Cannot create an AnnotationVisitor. Please report Groovy bug");
         return null;

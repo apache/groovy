@@ -158,16 +158,6 @@ class MemberSignatureParser {
         return result;
     }
 
-    private static ClassNode applyErasure(final ClassNode genericType, final ClassNode erasure) {
-        if (genericType.isArray() && erasure.isArray() && genericType.getComponentType().isGenericsPlaceHolder()) {
-            genericType.setRedirect(erasure);
-            genericType.getComponentType().setRedirect(erasure.getComponentType());
-        } else if (genericType.isGenericsPlaceHolder()) {
-            genericType.setRedirect(erasure);
-        }
-        return genericType;
-    }
-
     private static ClassNode[] resolve(final AsmReferenceResolver resolver, final String[] names) {
         int n = names.length; ClassNode[] nodes = new ClassNode[n];
         for (int i = 0; i < n; i += 1) {
