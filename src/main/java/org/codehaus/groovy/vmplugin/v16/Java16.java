@@ -19,6 +19,11 @@
 package org.codehaus.groovy.vmplugin.v16;
 
 import groovy.lang.GroovyRuntimeException;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CompileUnit;
+import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.vmplugin.v10.Java10;
 
 import java.lang.invoke.MethodHandle;
@@ -27,8 +32,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Additional Java 16 based functions will be added here as needed.
@@ -102,6 +109,22 @@ public class Java16 extends Java10 {
         if (handle instanceof Throwable) throw (Throwable) handle;
         MethodHandle mh = (MethodHandle) handle;
         return mh.invokeWithArguments(args);
+    }
+
+    @Override
+    protected void makeRecordComponents(final CompileUnit cu, final ClassNode classNode, final Class<?> clazz) {
+        if (!clazz.isRecord()) return;
+        List<RecordComponentNode> recordComponentNodeList = Arrays.stream(clazz.getRecordComponents())
+                .map(r -> {
+                    List<AnnotationNode> annotationNodeList = Arrays.stream(r.getAnnotations()).map(annotation -> {
+                        AnnotationNode node = new AnnotationNode(ClassHelper.make(annotation.annotationType()));
+                        configureAnnotation(node, annotation);
+                        return node;
+                    }).collect(Collectors.toList());
+                    return new RecordComponentNode(classNode, r.getName(), makeClassNode(cu, r.getGenericType(), r.getType()), annotationNodeList);
+                })
+                .collect(Collectors.toList());
+        classNode.setRecordComponentNodes(recordComponentNodeList);
     }
 
     @Override

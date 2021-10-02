@@ -17,9 +17,11 @@
  *  under the License.
  */
 
+
+import org.apache.groovy.gradle.CoreExtension
 import org.apache.groovy.gradle.DgmConverter
 import org.apache.groovy.gradle.JarJarTask
-import org.apache.groovy.gradle.CoreExtension
+
 import javax.inject.Inject
 
 plugins {
@@ -50,7 +52,7 @@ sourceSets {
                 exclude '**/v10/*'
                 exclude '**/vm10/*'
             }
-            if (!JavaVersion.current().isJava11Compatible()) {
+            if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_16)) {
                 exclude '**/v16/*'
                 exclude '**/vm16/*'
             }
@@ -64,7 +66,7 @@ sourceSets {
                 exclude '**/v10/*'
                 exclude '**/vm10/*'
             }
-            if (!JavaVersion.current().isJava11Compatible()) {
+            if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_16)) {
                 exclude '**/v16/*'
                 exclude '**/vm16/*'
             }
@@ -87,7 +89,7 @@ sourceSets {
                 exclude '**/v10/*'
                 exclude '**/vm10/*'
             }
-            if (!JavaVersion.current().isJava11Compatible()) {
+            if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_16)) {
                 exclude '**/v16/*'
                 exclude '**/vm16/*'
             }

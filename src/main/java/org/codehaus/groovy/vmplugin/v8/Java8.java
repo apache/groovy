@@ -181,8 +181,11 @@ public class Java8 implements VMPlugin {
             default:
                 // falls through
         }
-        if ("MODULE".equals(value.name())) { // JDK 9+
-            return AnnotationNode.TYPE_TARGET;
+        String name = value.name();
+        if ("MODULE".equals(name)) { // JDK 9+
+            return AnnotationNode.TYPE_TARGET; // TODO Add MODULE_TARGET too?
+        } else if ("RECORD_COMPONENT".equals(name)) { // JDK 16+
+            return AnnotationNode.RECORD_COMPONENT_TARGET;
         } else {
             throw new GroovyBugError("unsupported Target " + value);
         }
@@ -337,7 +340,7 @@ public class Java8 implements VMPlugin {
         }
     }
 
-    private void configureAnnotation(final AnnotationNode node, final Annotation annotation) {
+    protected void configureAnnotation(final AnnotationNode node, final Annotation annotation) {
         Class<?> type = annotation.annotationType();
         if (type == Retention.class) {
             Retention r = (Retention) annotation;
@@ -428,6 +431,7 @@ public class Java8 implements VMPlugin {
             if (sc != null) classNode.setUnresolvedSuperClass(makeClassNode(compileUnit, clazz.getGenericSuperclass(), sc));
             makeInterfaceTypes(compileUnit, classNode, clazz);
             makePermittedSubclasses(compileUnit, classNode, clazz);
+            makeRecordComponents(compileUnit, classNode, clazz);
             setAnnotationMetaData(clazz.getAnnotations(), classNode);
 
             PackageNode packageNode = classNode.getPackage();
@@ -494,6 +498,9 @@ public class Java8 implements VMPlugin {
         classNode.setPermittedSubclasses(permittedSubclasses);
     }
 
+    protected void makeRecordComponents(final CompileUnit cu, final ClassNode classNode, final Class<?> clazz) {
+    }
+
     private void makeInterfaceTypes(final CompileUnit cu, final ClassNode classNode, final Class<?> clazz) {
         Type[] interfaceTypes = clazz.getGenericInterfaces();
         final int n = interfaceTypes.length;
@@ -526,7 +533,7 @@ public class Java8 implements VMPlugin {
         return nodes;
     }
 
-    private ClassNode makeClassNode(final CompileUnit cu, final Type t, final Class<?> c) {
+    protected ClassNode makeClassNode(final CompileUnit cu, final Type t, final Class<?> c) {
         ClassNode back = null;
         if (cu != null) back = cu.getClass(c.getName());
         if (back == null) back = ClassHelper.make(c);

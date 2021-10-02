@@ -35,6 +35,7 @@ public class ClassStub extends MemberStub {
     List<MethodStub> methods;
     List<FieldStub> fields;
     final List<String> permittedSubclasses = new ArrayList<>(1);
+    final List<RecordComponentStub> recordComponents  = new ArrayList<>(1);
 
     // Used to store the real access modifiers for inner classes
     int innerClassModifiers = -1;
@@ -48,7 +49,11 @@ public class ClassStub extends MemberStub {
     }
 }
 
-class MemberStub {
+interface AnnotatedStub {
+    List<AnnotationStub> getAnnotations();
+}
+
+class MemberStub implements AnnotatedStub {
     List<AnnotationStub> annotations = null;
 
     AnnotationStub addAnnotation(String desc) {
@@ -56,6 +61,11 @@ class MemberStub {
         if (annotations == null) annotations = new ArrayList<AnnotationStub>(1);
         annotations.add(stub);
         return stub;
+    }
+
+    @Override
+    public List<AnnotationStub> getAnnotations() {
+        return annotations;
     }
 }
 
@@ -122,5 +132,30 @@ class EnumConstantWrapper {
     public EnumConstantWrapper(String enumDesc, String constant) {
         this.enumDesc = enumDesc;
         this.constant = constant;
+    }
+}
+
+class RecordComponentStub implements AnnotatedStub {
+    final String name;
+    final String descriptor;
+    final String signature;
+    List<AnnotationStub> annotations;
+
+    public RecordComponentStub(String name, String descriptor, String signature) {
+        this.name = name;
+        this.descriptor = descriptor;
+        this.signature = signature;
+    }
+
+    AnnotationStub addAnnotation(String desc) {
+        AnnotationStub stub = new AnnotationStub(desc);
+        if (annotations == null) annotations = new ArrayList<AnnotationStub>(1);
+        annotations.add(stub);
+        return stub;
+    }
+
+    @Override
+    public List<AnnotationStub> getAnnotations() {
+        return annotations;
     }
 }

@@ -32,7 +32,6 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.lang.reflect.Modifier;
 
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveByte;
@@ -42,6 +41,7 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveFloat;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveInt;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveShort;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ARETURN;
@@ -364,6 +364,23 @@ public class BytecodeHelper {
                 if (anInterface.isUsingGenerics()) return true;
             }
         }
+        return false;
+    }
+
+    public static String getTypeGenericsSignature(ClassNode node) {
+        if (!usesGenericsInTypeSignature(node)) return null;
+        StringBuilder ret = new StringBuilder(100);
+        ret.append(getTypeDescription(node.getPlainNodeReference(), false));
+        addSubTypes(ret, node.getGenericsTypes(), "<", ">");
+        ret.append(";");
+
+        return ret.toString();
+    }
+
+    private static boolean usesGenericsInTypeSignature(ClassNode node) {
+        if (!node.isUsingGenerics()) return false;
+        if (hasGenerics(node)) return true;
+
         return false;
     }
 
