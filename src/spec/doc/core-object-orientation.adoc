@@ -439,7 +439,7 @@ include::../test/objectorientation/MethodsTest.groovy[tags=varargs_example,inden
 ----
 
 This example defines a method `foo`, that can take any number of arguments, including no arguments at all.
-`args.length` will return the number of arguments given. Groovy allows `T[]` as a alternative notation to `T...`.
+`args.length` will return the number of arguments given. Groovy allows `T[]` as an alternative notation to `T...`.
 That means any method with an array as last parameter is seen by Groovy as a method that can take a variable number of arguments.
 
 [source,groovy]
