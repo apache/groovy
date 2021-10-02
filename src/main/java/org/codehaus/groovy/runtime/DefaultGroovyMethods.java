@@ -13352,68 +13352,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.4.0
      */
     public static <T> Collection<T> minus(Collection<T> self, Collection<?> removeMe) {
-        Collection<T> ansCollection = createSimilarCollection(self);
-        if (self.isEmpty())
-            return ansCollection;
-        T head = self.iterator().next();
-
-        boolean nlgnSort = sameType(new Collection[]{self, removeMe});
-
-        // We can't use the same tactic as for intersection
-        // since AbstractCollection only does a remove on the first
-        // element it encounters.
-
-        Comparator<T> numberComparator = new NumberAwareComparator<>();
-
-        if (nlgnSort && (head instanceof Comparable)) {
-            //n*LOG(n) version
-            Set<T> answer;
-            if (head instanceof Number) {
-                answer = new TreeSet<>(numberComparator);
-                answer.addAll(self);
-                for (T t : self) {
-                    if (t instanceof Number) {
-                        for (Object t2 : removeMe) {
-                            if (t2 instanceof Number) {
-                                if (numberComparator.compare(t, (T) t2) == 0)
-                                    answer.remove(t);
-                            }
-                        }
-                    } else {
-                        if (removeMe.contains(t))
-                            answer.remove(t);
-                    }
-                }
-            } else {
-                answer = new TreeSet<>(numberComparator);
-                answer.addAll(self);
-                answer.removeAll(removeMe);
-            }
-
-            for (T o : self) {
-                if (answer.contains(o))
-                    ansCollection.add(o);
-            }
-        } else {
-            //n*n version
-            List<T> tmpAnswer = new LinkedList<>(self);
-            for (Iterator<T> iter = tmpAnswer.iterator(); iter.hasNext();) {
-                T element = iter.next();
-                boolean elementRemoved = false;
-                for (Iterator<?> iterator = removeMe.iterator(); iterator.hasNext() && !elementRemoved;) {
-                    Object elt = iterator.next();
-                    if (DefaultTypeTransformation.compareEqual(element, elt)) {
-                        iter.remove();
-                        elementRemoved = true;
-                    }
-                }
-            }
-
-            //remove duplicates
-            //can't use treeset since the base classes are different
-            ansCollection.addAll(tmpAnswer);
-        }
-        return ansCollection;
+        return minus(self, removeMe, new NumberAwareComparator<>());
     }
 
     /**
@@ -13444,6 +13383,104 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe) {
         return minus(asCollection(self), asCollection(removeMe));
+    }
+
+    /**
+     * Create a new Collection composed of the elements of the first Iterable minus
+     * every matching occurrence as determined by the condition closure of elements of the given Iterable.
+     * <pre class="groovyTestCase">
+     * assert ['a', 'B', 'c', 'D', 'E'].minus(['b', 'C', 'D']) { it.toLowerCase() } == ['a', 'E']
+     * </pre>
+     *
+     * @param self     an Iterable
+     * @param removeMe an Iterable of elements to remove
+     * @param condition a Closure used to determine unique items
+     * @return a new Collection with the given elements removed
+     * @since 4.0.0
+     */
+    public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure condition) {
+        Comparator<T> comparator = condition.getMaximumNumberOfParameters() == 1
+                ? new OrderBy<>(condition, true)
+                : new ClosureComparator<>(condition);
+        return minus(self, removeMe, comparator);
+    }
+
+    /**
+     * Create a new Collection composed of the elements of the first Iterable minus
+     * every matching occurrence as determined by the condition comparator of elements of the given Iterable.
+     * <pre class="groovyTestCase">
+     * assert ['a', 'B', 'c', 'D', 'E'].minus(['b', 'C', 'D'], {@code (i, j) -> i.toLowerCase() <=> j.toLowerCase()}) == ['a', 'E']
+     * </pre>
+     *
+     * @param self     an Iterable
+     * @param removeMe an Iterable of elements to remove
+     * @param comparator a Comparator
+     * @return a new Collection with the given elements removed
+     * @since 4.0.0
+     */
+    public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe, Comparator<T> comparator) {
+        Collection<T> self1 = asCollection(self);
+        Collection<?> removeMe1 = asCollection(removeMe);
+        Collection<T> ansCollection = createSimilarCollection(self1);
+        if (self1.isEmpty())
+            return ansCollection;
+        T head = self1.iterator().next();
+
+        boolean nlgnSort = sameType(new Collection[]{self1, removeMe1});
+
+        // We can't use the same tactic as for intersection
+        // since AbstractCollection only does a remove on the first
+        // element it encounters.
+
+        if (nlgnSort && (head instanceof Comparable)) {
+            //n*LOG(n) version
+            Set<T> answer;
+            if (head instanceof Number) {
+                answer = new TreeSet<>(comparator);
+                answer.addAll(self1);
+                for (T t : self1) {
+                    if (t instanceof Number) {
+                        for (Object t2 : removeMe1) {
+                            if (t2 instanceof Number) {
+                                if (comparator.compare(t, (T) t2) == 0)
+                                    answer.remove(t);
+                            }
+                        }
+                    } else {
+                        if (removeMe1.contains(t))
+                            answer.remove(t);
+                    }
+                }
+            } else {
+                answer = new TreeSet<>(comparator);
+                answer.addAll(self1);
+                answer.removeAll(removeMe1);
+            }
+
+            for (T o : self1) {
+                if (answer.contains(o))
+                    ansCollection.add(o);
+            }
+        } else {
+            //n*n version
+            List<T> tmpAnswer = new LinkedList<>(self1);
+            for (Iterator<T> iter = tmpAnswer.iterator(); iter.hasNext();) {
+                T element = iter.next();
+                boolean elementRemoved = false;
+                for (Iterator<?> iterator = removeMe1.iterator(); iterator.hasNext() && !elementRemoved;) {
+                    Object elt = iterator.next();
+                    if (DefaultTypeTransformation.compareEqual(element, elt)) {
+                        iter.remove();
+                        elementRemoved = true;
+                    }
+                }
+            }
+
+            //remove duplicates
+            //can't use treeset since the base classes are different
+            ansCollection.addAll(tmpAnswer);
+        }
+        return ansCollection;
     }
 
     /**

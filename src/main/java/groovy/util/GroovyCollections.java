@@ -18,14 +18,21 @@
  */
 package groovy.util;
 
+import groovy.lang.Closure;
+import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.FromString;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.NumberAwareComparator;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * A Collections utility class
@@ -238,6 +245,115 @@ public class GroovyCollections {
      */
     public static Object sum(Iterable<?> items) {
         return DefaultGroovyMethods.sum(items);
+    }
+
+    /**
+     * Returns an ordered set of all the unique items found in the provided argument iterables.
+     * <pre class="groovyTestCase">
+     * assert GroovyCollections.union([1, 2], [2, 3], [1, 4]) == [1, 2, 3, 4]
+     * </pre>
+     *
+     * @param iterables the sources of items
+     * @return the ordered list of unique values found
+     * @since 4.0.0
+     */
+    public static <T> List<T> union(Iterable<T>... iterables) {
+        return union(Arrays.asList(iterables));
+    }
+
+    /**
+     * Returns an ordered set of all the unique items found in the provided argument iterables.
+     * <pre class="groovyTestCase">
+     * assert GroovyCollections.union([[1, 2], [2, 3], [1, 4]]) == [1, 2, 3, 4]
+     * </pre>
+     *
+     * @param iterables the list of source items
+     * @return the ordered list of unique values found
+     * @since 4.0.0
+     */
+    public static <T> List<T> union(List<Iterable<T>> iterables) {
+        return union(iterables, new NumberAwareComparator<>());
+    }
+
+    /**
+     * Returns an ordered set of all the unique items found in the provided argument iterables
+     * using the provided comparator to compare items.
+     * <pre class="groovyTestCase">
+     * assert GroovyCollections.union(n -&gt; n.abs(), [1, 2, 5], [-3, -4, -5], [4, 6]) == [1, 2, 5, -3, -4, 6]
+     * assert GroovyCollections.union(n -&gt; n.trunc(), [1.1, 2.2], [2.5, 3.3], [3.9, 4.1]) == [1.1, 2.2, 3.3, 4.1]
+     * assert GroovyCollections.union(w -&gt; w.toUpperCase(), ['a', 'A'], ['B', 'a', 'c', 'b']) == ['a', 'B', 'c']
+     * </pre>
+     *
+     * @param comparator a Comparator
+     * @param iterables the sources of items
+     * @return the ordered list of unique values found
+     * @since 4.0.0
+     */
+    public static <T> List<T> union(Comparator<T> comparator, Iterable<T>... iterables) {
+        return union(Arrays.asList(iterables), comparator);
+    }
+
+    /**
+     * Returns an ordered set of all the unique items found in the provided argument iterables
+     * using the provided comparator to compare items.
+     * <pre class="groovyTestCase">
+     * assert GroovyCollections.union([[1, 2, 5], [-3, -4, -5], [4, 6]], n -&gt; n.abs()) == [1, 2, 5, -3, -4, 6]
+     * assert GroovyCollections.union([[1.1, 2.2], [2.5, 3.3], [3.9, 4.1]], n -&gt; n.trunc()) == [1.1, 2.2, 3.3, 4.1]
+     * assert GroovyCollections.union([['a', 'A'], ['B', 'a', 'c', 'b']], w -&gt; w.toUpperCase()) == ['a', 'B', 'c']
+     * </pre>
+     *
+     * @param iterables the list of source items
+     * @param comparator a Comparator
+     * @return the ordered list of unique values found
+     * @since 4.0.0
+     */
+    public static <T> List<T> union(List<Iterable<T>> iterables, Comparator<T> comparator) {
+        LinkedHashSet<T> ansSet = new LinkedHashSet<>();
+        TreeSet<T> seen = new TreeSet<>(comparator);
+        for (Iterable<T> nextList : iterables) {
+            for (T next : nextList) {
+                if (seen.add(next)) {
+                    ansSet.add(next);
+                }
+            }
+        }
+        return new ArrayList<>(ansSet);
+    }
+
+    /**
+     * Returns an ordered set of all the unique items found in the provided argument iterables
+     * using the provided closure to compare items.
+     * <pre class="groovyTestCase">
+     * def abs = { n -&gt; n.abs() }
+     * assert GroovyCollections.union(abs, [1, 2, 5], [-3, -4, -5], [4, 6]) == [1, 2, 5, -3, -4, 6]
+     * </pre>
+     *
+     * @param condition a Closure used to determine unique items
+     * @param iterables the sources of items
+     * @return the ordered list of unique values found
+     * @since 4.0.0
+     */
+    public static <T> List<T> union(@ClosureParams(value= FromString.class, options={"T","T,T"}) Closure condition, Iterable<T>... iterables) {
+        return union(Arrays.asList(iterables), condition);
+    }
+
+    /**
+     * Returns an ordered set of all the unique items found in the provided argument iterables
+     * using the provided closure to compare items.
+     * <pre class="groovyTestCase">
+     * assert GroovyCollections.union([[1, 2, 5], [-3, -4, -5], [4, 6]]){ n -&gt; n.abs() } == [1, 2, 5, -3, -4, 6]
+     * </pre>
+     *
+     * @param iterables the list of source items
+     * @param condition a Closure used to determine unique items
+     * @return the ordered list of unique values found
+     * @since 4.0.0
+     */
+    public static <T> List<T> union(List<Iterable<T>> iterables, @ClosureParams(value= FromString.class, options={"T","T,T"}) Closure condition) {
+        Comparator<T> comparator = condition.getMaximumNumberOfParameters() == 1
+                ? new OrderBy<>(condition, true)
+                : new ClosureComparator<>(condition);
+        return union(iterables, comparator);
     }
 
 }
