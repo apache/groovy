@@ -199,4 +199,28 @@ class RecordTest {
             assert 'group' == rcns[1].name && 'java.nio.file.attribute.GroupPrincipal' == rcns[1].type.name
         '''
     }
+
+    @Test
+    void testNativeRecordOnJDK16plus3_java() {
+        assumeTrue(isAtLeastJdk('16.0'))
+        assertScript '''
+            @groovy.transform.CompileStatic
+            record Record(String name, int x0, int x1, int x2, int x3, int x4, 
+                                    int x5, int x6, int x7, int x8, int x9, int x10, int x11, int x12, int x13, int x14, 
+                                    int x15, int x16, int x17, int x18, int x19, int x20) {
+                public Record {
+                    x1 = -x1
+                }
+            }
+            
+            def r = new Record('someRecord', 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)
+            def expected = 'Record(name:someRecord, x0:0, x1:-1, x2:2, x3:3, x4:4, x5:5, x6:6, x7:7, x8:8, x9:9, x10:10, x11:11, x12:12, x13:13, x14:14, x15:15, x16:16, x17:17, x18:18, x19:19, x20:20)'
+            assert expected == r.toString()
+            
+            def ms = r.getClass().getDeclaredMethods().grep(m -> m.name == '$compactInit')
+            assert 1 == ms.size()
+            def m = ms[0]
+            assert m.isSynthetic()
+        '''
+    }
 }
