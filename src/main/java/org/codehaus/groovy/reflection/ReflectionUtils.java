@@ -247,7 +247,7 @@ public class ReflectionUtils {
 
         boolean sealed = false;
         try {
-            sealed = (boolean) IS_SEALED_METHODHANDLE.bindTo(clazz).invokeExact();
+            sealed = (boolean) IS_SEALED_METHODHANDLE.invokeExact(clazz);
         } catch (Throwable ignored) {
         }
         return sealed;
@@ -259,7 +259,7 @@ public class ReflectionUtils {
 
         Class<?>[] result = EMPTY_CLASS_ARRAY;
         try {
-            result = (Class<?>[]) GET_PERMITTED_SUBCLASSES_METHODHANDLE.bindTo(clazz).invokeExact();
+            result = (Class<?>[]) GET_PERMITTED_SUBCLASSES_METHODHANDLE.invokeExact(clazz);
         } catch (Throwable ignored) {
         }
         return result;
