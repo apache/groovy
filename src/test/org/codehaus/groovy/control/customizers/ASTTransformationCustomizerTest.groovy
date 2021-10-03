@@ -122,7 +122,7 @@ class ASTTransformationCustomizerTest extends GroovyTestCase {
     }
 
     void testAnyExpressionAsParameterValue() {
-        customizer = new ASTTransformationCustomizer(value:200, unit: propX(classX(ClassHelper.make(TimeUnit)),'MILLISECONDS'), TimedInterrupt)
+        customizer = new ASTTransformationCustomizer(value:300, unit: propX(classX(ClassHelper.make(TimeUnit)),'MILLISECONDS'), TimedInterrupt)
         configuration.addCompilationCustomizers(customizer)
         def shell = new GroovyShell(configuration)
         def result = shell.evaluate '''
