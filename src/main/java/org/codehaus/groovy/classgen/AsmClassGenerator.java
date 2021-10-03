@@ -376,14 +376,14 @@ public class AsmClassGenerator extends ClassGenerator {
             for (Iterator<InnerClassNode> it = classNode.getInnerClasses(); it.hasNext(); ) {
                 makeInnerClassEntry(it.next());
             }
-            if (controller.getBytecodeVersion() >= Opcodes.V17 &&
+            if (bytecodeVersion >= Opcodes.V17 &&
                     context.getCompileUnit().getConfig().isSealedNative()) {
                 for (ClassNode sub: classNode.getPermittedSubclasses()) {
                     classVisitor.visitPermittedSubclass(sub.getName());
                 }
             }
 
-            if (classNode.isRecord() && controller.getBytecodeVersion() >= Opcodes.V16 &&
+            if (classNode.isRecord() && bytecodeVersion >= Opcodes.V16 &&
                     context.getCompileUnit().getConfig().isRecordsNative()) {
                 visitRecordComponents(classNode);
             }
