@@ -23,6 +23,11 @@ import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.decompiled.AsmDecompiler
+import org.codehaus.groovy.ast.decompiled.AsmReferenceResolver
+import org.codehaus.groovy.ast.decompiled.DecompiledClassNode
+import org.codehaus.groovy.control.ClassNodeResolver
+import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
@@ -167,6 +172,25 @@ class RecordTest {
             parentDir.deleteDir()
             config.targetDirectory.deleteDir()
         }
+    }
+
+    private static void doTestNativeRecordClassNode(ClassNode personClassNode, ClassNode notNullClassNode) {
+        assert personClassNode.isRecord()
+        def rcns = personClassNode.getRecordComponentNodes()
+        assert 4 == rcns.size()
+        assert 'name' == rcns[0].name && ClassHelper.STRING_TYPE == rcns[0].type
+        List<AnnotationNode> annotationNodes = rcns[0].getAnnotations()
+        assert 1 == annotationNodes.size()
+        assert notNullClassNode == annotationNodes[0].getClassNode()
+
+        assert 'age' == rcns[1].name && ClassHelper.int_TYPE == rcns[1].type
+
+        assert 'locations' == rcns[2].name && ClassHelper.LIST_TYPE == rcns[2].type
+        def genericsTypes = rcns[2].type.genericsTypes
+        assert 1 == genericsTypes.size()
+        assert ClassHelper.STRING_TYPE == genericsTypes[0].type
+
+        assert 'titles' == rcns[3].name && ClassHelper.make(String[].class) == rcns[3].type
     }
 
     @Test
