@@ -201,7 +201,7 @@ class RecordTest {
     }
 
     @Test
-    void testNativeRecordOnJDK16plus3_java() {
+    void testNativeRecordOnJDK16plus2() {
         assumeTrue(isAtLeastJdk('16.0'))
         assertScript '''
             @groovy.transform.CompileStatic
@@ -221,6 +221,7 @@ class RecordTest {
             assert 1 == ms.size()
             def m = ms[0]
             assert m.isSynthetic()
+            assert 22 == m.getParameterCount()
         '''
     }
 }
