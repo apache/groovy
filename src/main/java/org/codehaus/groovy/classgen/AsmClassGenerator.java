@@ -385,20 +385,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
             if (classNode.isRecord() && controller.getBytecodeVersion() >= Opcodes.V16 &&
                     context.getCompileUnit().getConfig().isRecordsNative()) {
-                List<RecordComponentNode> recordComponentNodeList = classNode.getRecordComponentNodes();
-                for (int i = 0, n = recordComponentNodeList.size(); i < n; i++) {
-                    RecordComponentNode recordComponentNode = recordComponentNodeList.get(i);
-                    final ClassNode type = recordComponentNode.getType();
-                    RecordComponentVisitor rcv =
-                            classVisitor.visitRecordComponent(recordComponentNode.getName(),
-                                    BytecodeHelper.getTypeDescription(type),
-                                    BytecodeHelper.getTypeGenericsSignature(type));
-
-                    visitAnnotations(recordComponentNode, rcv);
-                    TypeReference typeRef = newTypeParameterReference(CLASS_TYPE_PARAMETER, i);
-                    visitTypeAnnotations(recordComponentNode.getType(), rcv, typeRef, "", true);
-                    rcv.visitEnd();
-                }
+                visitRecordComponents(classNode);
             }
             classVisitor.visitEnd();
         } catch (GroovyRuntimeException e) {
@@ -409,6 +396,25 @@ public class AsmClassGenerator extends ClassGenerator {
             GroovyRuntimeException gre = new GroovyRuntimeException(m, e);
             gre.setModule(classNode.getModule());
             throw gre;
+        }
+    }
+
+    private void visitRecordComponents(final ClassNode classNode) {
+        List<RecordComponentNode> recordComponentNodeList = classNode.getRecordComponentNodes();
+        if (null == recordComponentNodeList) return;
+
+        for (int i = 0, n = recordComponentNodeList.size(); i < n; i++) {
+            RecordComponentNode recordComponentNode = recordComponentNodeList.get(i);
+            final ClassNode type = recordComponentNode.getType();
+            RecordComponentVisitor rcv =
+                    classVisitor.visitRecordComponent(recordComponentNode.getName(),
+                            BytecodeHelper.getTypeDescription(type),
+                            BytecodeHelper.getTypeGenericsSignature(type));
+
+            visitAnnotations(recordComponentNode, rcv);
+            TypeReference typeRef = newTypeParameterReference(CLASS_TYPE_PARAMETER, i);
+            visitTypeAnnotations(recordComponentNode.getType(), rcv, typeRef, "", true);
+            rcv.visitEnd();
         }
     }
 
