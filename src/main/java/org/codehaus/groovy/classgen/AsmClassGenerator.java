@@ -389,14 +389,15 @@ public class AsmClassGenerator extends ClassGenerator {
                 for (int i = 0, n = recordComponentNodeList.size(); i < n; i++) {
                     RecordComponentNode recordComponentNode = recordComponentNodeList.get(i);
                     final ClassNode type = recordComponentNode.getType();
-                    RecordComponentVisitor recordComponentVisitor =
+                    RecordComponentVisitor rcv =
                             classVisitor.visitRecordComponent(recordComponentNode.getName(),
                                     BytecodeHelper.getTypeDescription(type),
                                     BytecodeHelper.getTypeGenericsSignature(type));
 
-                    visitAnnotations(recordComponentNode, recordComponentVisitor);
+                    visitAnnotations(recordComponentNode, rcv);
                     TypeReference typeRef = newTypeParameterReference(CLASS_TYPE_PARAMETER, i);
-                    visitTypeAnnotations(recordComponentNode.getType(), recordComponentVisitor, typeRef, "", true);
+                    visitTypeAnnotations(recordComponentNode.getType(), rcv, typeRef, "", true);
+                    rcv.visitEnd();
                 }
             }
             classVisitor.visitEnd();
