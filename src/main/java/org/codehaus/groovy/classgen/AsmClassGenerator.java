@@ -383,7 +383,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
             }
 
-            if (classNode.isRecord() && bytecodeVersion >= Opcodes.V16 &&
+            if (bytecodeVersion >= Opcodes.V16 && classNode.isRecord() &&
                     context.getCompileUnit().getConfig().isRecordsNative()) {
                 visitRecordComponents(classNode);
             }
