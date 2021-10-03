@@ -23,11 +23,6 @@ import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.decompiled.AsmDecompiler
-import org.codehaus.groovy.ast.decompiled.AsmReferenceResolver
-import org.codehaus.groovy.ast.decompiled.DecompiledClassNode
-import org.codehaus.groovy.control.ClassNodeResolver
-import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
