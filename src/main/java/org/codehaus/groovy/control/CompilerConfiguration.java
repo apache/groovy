@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 import static org.apache.groovy.util.SystemUtil.getBooleanSafe;
+import static org.apache.groovy.util.SystemUtil.getIntegerSafe;
 import static org.apache.groovy.util.SystemUtil.getSystemPropertySafe;
 import static org.codehaus.groovy.runtime.StringGroovyMethods.isAtLeast;
 
@@ -401,6 +402,16 @@ public class CompilerConfiguration {
     private boolean sealedAnnotations;
 
     /**
+     * Whether logging class generation is enabled
+     */
+    private boolean logClassgen;
+
+    /**
+     * sets logging class generation stack trace max depth
+     */
+    private int logClassgenStackTraceMaxDepth;
+
+    /**
      * options for joint compilation (null by default == no joint compilation)
      */
     private Map<String, Object> jointCompilationOptions;
@@ -420,6 +431,7 @@ public class CompilerConfiguration {
     private Set<String> disabledGlobalASTTransformations;
 
     private BytecodeProcessor bytecodePostprocessor;
+
 
     /**
      * Sets the compiler flags/settings to default values.
@@ -462,6 +474,8 @@ public class CompilerConfiguration {
         recordsNative = !getBooleanSafe("groovy.records.native.disable");
         sealedNative = !getBooleanSafe("groovy.sealed.native.disable");
         sealedAnnotations = !getBooleanSafe("groovy.sealed.annotations.disable");
+        logClassgen = getBooleanSafe("groovy.log.classgen");
+        logClassgenStackTraceMaxDepth = getIntegerSafe("groovy.log.classgen.stacktrace.max.depth", 0);
         sourceEncoding = getSystemPropertySafe("groovy.source.encoding",
                 getSystemPropertySafe("file.encoding", DEFAULT_SOURCE_ENCODING));
         setTargetDirectorySafe(getSystemPropertySafe("groovy.target.directory"));
@@ -510,6 +524,8 @@ public class CompilerConfiguration {
         setPreviewFeatures(configuration.isPreviewFeatures());
         setSealedNative(configuration.isSealedNative());
         setSealedAnnotations(configuration.isSealedAnnotations());
+        setLogClassgen(configuration.isLogClassgen());
+        setLogClassgenStackTraceMaxDepth(configuration.getLogClassgenStackTraceMaxDepth());
         setDefaultScriptExtension(configuration.getDefaultScriptExtension());
         setSourceEncoding(configuration.getSourceEncoding());
         Map<String, Object> jointCompilationOptions = configuration.getJointCompilationOptions();
@@ -677,6 +693,19 @@ public class CompilerConfiguration {
         text = configuration.getProperty("groovy.sealed.annotations.disable");
         if (text != null) setSealedAnnotations(!text.equalsIgnoreCase("false"));
 
+        text = configuration.getProperty("groovy.log.classgen");
+        if (text != null) setLogClassgen(text.equalsIgnoreCase("true"));
+
+        text = configuration.getProperty("groovy.log.classgen.stacktrace.max.depth");
+        if (text != null) {
+            int logClassgenStackTraceMaxDepth = 0;
+            try {
+                logClassgenStackTraceMaxDepth = Integer.parseInt(text);
+            } catch (Exception ignored) {
+            }
+            setLogClassgenStackTraceMaxDepth(Math.max(logClassgenStackTraceMaxDepth, 0));
+        }
+
         text = configuration.getProperty("groovy.classpath");
         if (text != null) setClasspath(text);
 
@@ -723,6 +752,7 @@ public class CompilerConfiguration {
             setDisabledGlobalASTTransformations(disabledTransforms);
         }
     }
+
 
     /**
      * Gets the currently configured warning level. See {@link WarningMessage}
@@ -1056,6 +1086,46 @@ public class CompilerConfiguration {
      */
     public void setSealedAnnotations(final boolean sealedAnnotations) {
         this.sealedAnnotations = sealedAnnotations;
+    }
+
+    /**
+     * Returns whether logging class generation is enabled
+     *
+     * @return whether logging class generation is enabled
+     * @since 4.0.0
+     */
+    public boolean isLogClassgen() {
+        return logClassgen;
+    }
+
+    /**
+     * Sets whether logging class generation is enabled
+     *
+     * @param logClassgen whether to enable logging class generation
+     * @since 4.0.0
+     */
+    public void setLogClassgen(boolean logClassgen) {
+        this.logClassgen = logClassgen;
+    }
+
+    /**
+     * Returns stack trace max depth of logging class generation
+     *
+     * @return stack trace max depth of logging class generation
+     * @since 4.0.0
+     */
+    public int getLogClassgenStackTraceMaxDepth() {
+        return logClassgenStackTraceMaxDepth;
+    }
+
+    /**
+     * Sets stack trace max depth of logging class generation
+     *
+     * @param logClassgenStackTraceMaxDepth stack trace max depth of logging class generation
+     * @since 4.0.0
+     */
+    public void setLogClassgenStackTraceMaxDepth(int logClassgenStackTraceMaxDepth) {
+        this.logClassgenStackTraceMaxDepth = logClassgenStackTraceMaxDepth;
     }
 
     /**
