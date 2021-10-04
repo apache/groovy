@@ -26,6 +26,7 @@ import org.objectweb.asm.TypePath;
 import org.objectweb.asm.util.Printer;
 import org.objectweb.asm.util.Textifier;
 
+import java.io.PrintWriter;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -35,19 +36,30 @@ import java.util.List;
  * @since 2.5.0
  */
 public class LoggableTextifier extends Textifier {
-    private static final String GROOVY_LOG_CLASSGEN_STACKTRACE_MAX_DEPTH = "groovy.log.classgen.stacktrace.max.depth";
     private static final String GROOVY = ".groovy.";
     private static final String LOGGABLE_TEXTIFIER = ".LoggableTextifier";
-    private static final int STACKTRACE_MAX_DEPTH = Integer.getInteger(GROOVY_LOG_CLASSGEN_STACKTRACE_MAX_DEPTH, 0);
+    private final CompilerConfiguration compilerConfiguration;
+    private final int logClassgenStackTraceMaxDepth;
+    private final PrintWriter out;
     private int loggedLineCnt = 0;
 
     public LoggableTextifier() {
+        this(CompilerConfiguration.DEFAULT);
+    }
+
+    public LoggableTextifier(CompilerConfiguration compilerConfiguration) {
         super(CompilerConfiguration.ASM_API_VERSION);
+        this.compilerConfiguration = compilerConfiguration;
+
+        this.logClassgenStackTraceMaxDepth = compilerConfiguration.getLogClassgenStackTraceMaxDepth();
+        this.out = null == compilerConfiguration.getOutput()
+                        ? new PrintWriter(System.out, true)
+                        : compilerConfiguration.getOutput();
     }
 
     @Override
     protected Textifier createTextifier() {
-        return new LoggableTextifier();
+        return new LoggableTextifier(compilerConfiguration);
     }
 
     protected void log() {
@@ -67,11 +79,11 @@ public class LoggableTextifier extends Textifier {
         if (bcList.size() > 0) {
             List<StackTraceElement> invocationPositionInfo = getInvocationPositionInfo();
             if (invocationPositionInfo.size() > 0) {
-                System.out.print(formatInvocationPositionInfo(invocationPositionInfo));
+                out.print(formatInvocationPositionInfo(invocationPositionInfo));
             }
 
             for (Object bc : bcList) {
-                System.out.print(bc);
+                out.print(bc);
             }
         }
 
@@ -85,7 +97,7 @@ public class LoggableTextifier extends Textifier {
         for (StackTraceElement stackTraceElement : stackTraceElements) {
             String className = stackTraceElement.getClassName();
             if (className.contains(GROOVY) && !className.endsWith(LOGGABLE_TEXTIFIER)) {
-                if (stackTraceElementList.size() >= STACKTRACE_MAX_DEPTH) {
+                if (stackTraceElementList.size() >= logClassgenStackTraceMaxDepth) {
                     break;
                 }
 

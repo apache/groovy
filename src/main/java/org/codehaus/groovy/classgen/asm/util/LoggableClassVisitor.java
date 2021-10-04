@@ -29,6 +29,10 @@ import org.objectweb.asm.util.TraceClassVisitor;
  */
 public class LoggableClassVisitor extends ClassVisitor {
     public LoggableClassVisitor(final ClassVisitor cv) {
-        super(CompilerConfiguration.ASM_API_VERSION, new TraceClassVisitor(cv, new LoggableTextifier(), null));
+        this(cv, CompilerConfiguration.DEFAULT);
+    }
+
+    public LoggableClassVisitor(ClassVisitor cv, CompilerConfiguration compilerConfiguration) {
+        super(CompilerConfiguration.ASM_API_VERSION, new TraceClassVisitor(cv, new LoggableTextifier(compilerConfiguration), null));
     }
 }

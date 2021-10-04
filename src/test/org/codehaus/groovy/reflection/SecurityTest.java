@@ -21,6 +21,7 @@ package org.codehaus.groovy.reflection;
 import groovy.lang.GroovyObjectSupport;
 import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -82,6 +83,22 @@ public class SecurityTest extends GroovyTestCase {
     Permissions forbidden;
 
     public void setUp() {
+        // Forbidding suppressAccessChecks in the test will make the internal implementation of some JDK fail,
+        // so load vm plugin before security manager is installed:
+        /*
+         *     Caused by: java.security.AccessControlException: suppressAccessChecks
+         *         at org.codehaus.groovy.reflection.SecurityTest$1.checkPermission(SecurityTest.java:92)
+         *         at java.base/java.lang.reflect.AccessibleObject.checkPermission(AccessibleObject.java:83)
+         *         at java.base/java.lang.reflect.Constructor.setAccessible(Constructor.java:180)
+         *         at java.base/java.lang.invoke.InnerClassLambdaMetafactory$1.run(InnerClassLambdaMetafactory.java:207)
+         *         at java.base/java.lang.invoke.InnerClassLambdaMetafactory$1.run(InnerClassLambdaMetafactory.java:200)
+         *         at java.base/java.security.AccessController.doPrivileged(Native Method)
+         *         at java.base/java.lang.invoke.InnerClassLambdaMetafactory.buildCallSite(InnerClassLambdaMetafactory.java:199)
+         *         at java.base/java.lang.invoke.LambdaMetafactory.metafactory(LambdaMetafactory.java:329)
+         *         at java.base/java.lang.invoke.BootstrapMethodInvoker.invoke(BootstrapMethodInvoker.java:127)
+         */
+        VMPluginFactory.getPlugin();
+
         forbidden = new Permissions();
         forbidden.add(new ReflectPermission("suppressAccessChecks"));
         restrictiveSecurityManager = new SecurityManager() {

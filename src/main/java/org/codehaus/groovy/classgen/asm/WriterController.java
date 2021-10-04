@@ -41,12 +41,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.groovy.util.SystemUtil.getBooleanSafe;
 import static org.codehaus.groovy.ast.ClassHelper.isGeneratedFunction;
 
 public class WriterController {
-
-    private static final boolean LOG_CLASSGEN = getBooleanSafe("groovy.log.classgen");
     private static final String RECORD_CLASS_NAME = "java.lang.Record";
 
     private AsmClassGenerator acg;
@@ -136,7 +133,7 @@ public class WriterController {
         this.acg = asmClassGenerator;
         this.context = gcon;
         this.compileStack = new CompileStack(this);
-        this.cv = createClassVisitor(cv);
+        this.cv = createClassVisitor(cv, config);
         if (this.optimizeForInt) {
             this.statementWriter = new OptimizingStatementWriter(this);
         } else {
@@ -145,11 +142,11 @@ public class WriterController {
         this.typeChooser = new StatementMetaTypeChooser();
     }
 
-    private static ClassVisitor createClassVisitor(final ClassVisitor cv) {
-        if (!LOG_CLASSGEN || cv instanceof LoggableClassVisitor) {
+    private static ClassVisitor createClassVisitor(final ClassVisitor cv, CompilerConfiguration config) {
+        if (!config.isLogClassgen() || cv instanceof LoggableClassVisitor) {
             return cv;
         }
-        return new LoggableClassVisitor(cv);
+        return new LoggableClassVisitor(cv, config);
     }
 
     private static int chooseBytecodeVersion(final boolean invokedynamic, final boolean previewFeatures, final String targetBytecode) {
