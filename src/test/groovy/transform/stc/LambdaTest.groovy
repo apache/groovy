@@ -117,7 +117,7 @@ final class LambdaTest {
         '''
     }
 
-    @Test @NotYetImplemented
+    @Test // GROOVY-10282
     void testBiFunctionAndBinaryOperatorWithSharedTypeParameter() {
         assertScript '''
             import groovy.transform.CompileStatic

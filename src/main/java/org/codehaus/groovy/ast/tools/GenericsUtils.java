@@ -816,7 +816,7 @@ public class GenericsUtils {
      * so we need actual types:  T: String, S: Long
      */
     public static Map<GenericsType, GenericsType> makeDeclaringAndActualGenericsTypeMap(final ClassNode declaringClass, final ClassNode actualReceiver) {
-        return doMakeDeclaringAndActualGenericsTypeMap(declaringClass, actualReceiver, false).getV1();
+        return doMakeDeclaringAndActualGenericsTypeMap(declaringClass, actualReceiver, false);
     }
 
     /**
@@ -831,23 +831,10 @@ public class GenericsUtils {
      * @since 3.0.0
      */
     public static Map<GenericsType, GenericsType> makeDeclaringAndActualGenericsTypeMapOfExactType(final ClassNode declaringClass, final ClassNode actualReceiver) {
-        return makeDeclaringAndActualGenericsTypeMapOfExactType(declaringClass, actualReceiver, new HashSet<>());
+        return doMakeDeclaringAndActualGenericsTypeMap(declaringClass, actualReceiver, true);
     }
 
-    private static Map<GenericsType, GenericsType> makeDeclaringAndActualGenericsTypeMapOfExactType(final ClassNode declaringClass, final ClassNode actualReceiver, final Set<ClassNode> parameterizedTypes) {
-        Tuple2<Map<GenericsType, GenericsType>, ClassNode> tuple = doMakeDeclaringAndActualGenericsTypeMap(declaringClass, actualReceiver, true);
-        Map<GenericsType, GenericsType> result = tuple.getV1();
-        ClassNode parameterizedType = tuple.getV2();
-
-        if (parameterizedTypes.add(parameterizedType) && hasPlaceHolders(parameterizedType)) {
-            result.putAll(makeDeclaringAndActualGenericsTypeMapOfExactType(parameterizedType, actualReceiver, parameterizedTypes));
-            result = connectGenericsTypes(result);
-        }
-
-        return result;
-    }
-
-    private static Tuple2<Map<GenericsType, GenericsType>, ClassNode> doMakeDeclaringAndActualGenericsTypeMap(final ClassNode declaringClass, final ClassNode actualReceiver, final boolean tryToFindExactType) {
+    private static Map<GenericsType, GenericsType> doMakeDeclaringAndActualGenericsTypeMap(final ClassNode declaringClass, final ClassNode actualReceiver, final boolean tryToFindExactType) {
         Map<GenericsType, GenericsType> map = Collections.emptyMap();
         ClassNode parameterizedType = findParameterizedTypeFromCache(declaringClass, actualReceiver, tryToFindExactType);
         if (parameterizedType != null && parameterizedType.isRedirectNode() && !parameterizedType.isGenericsPlaceHolder()) { // GROOVY-10166
@@ -862,31 +849,7 @@ public class GenericsUtils {
                 }
             }
         }
-        return tuple(map, parameterizedType);
-    }
-
-    private static Map<GenericsType, GenericsType> connectGenericsTypes(final Map<GenericsType, GenericsType> genericsTypeMap) {
-        Map<GenericsType, GenericsType> result = new LinkedHashMap<>();
-
-        outer:
-        for (Map.Entry<GenericsType, GenericsType> entry : genericsTypeMap.entrySet()) {
-            GenericsType key = entry.getKey();
-            GenericsType value = entry.getValue();
-
-            if (value.isPlaceholder()) {
-                for (Map.Entry<GenericsType, GenericsType> genericsTypeMapEntry : genericsTypeMap.entrySet()) {
-                    GenericsType genericsTypeMapEntryValue = genericsTypeMapEntry.getValue();
-                    if (!genericsTypeMapEntryValue.isPlaceholder() && (genericsTypeMapEntry.getKey().getName().equals(value.getName()))) {
-                        result.put(key, genericsTypeMapEntryValue); // connected to actual type
-                        continue outer;
-                    }
-                }
-            }
-
-            result.put(key, value);
-        }
-
-        return result;
+        return map;
     }
 
     /**
