@@ -99,8 +99,7 @@ public class LoggableTextifier extends Textifier {
     private String formatInvocationPositionInfo(List<StackTraceElement> stackTraceElementList) {
         StringBuilder sb = new StringBuilder(128);
         for (StackTraceElement stackTraceElement : stackTraceElementList) {
-            sb.append("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t// ");
-            sb.append(String.format("%s#%s:%s%n", stackTraceElement.getClassName(), stackTraceElement.getMethodName(), stackTraceElement.getLineNumber()));
+            sb.append(String.format("%30s// %s#%s:%s%n", "", stackTraceElement.getClassName(), stackTraceElement.getMethodName(), stackTraceElement.getLineNumber()));
         }
 
         return sb.toString();
