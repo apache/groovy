@@ -20,117 +20,118 @@ package org.codehaus.groovy.transform
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 
-import gls.CompilableTestSupport
-
-class BaseScriptTransformTest extends CompilableTestSupport {
+final class BaseScriptTransformTest extends gls.CompilableTestSupport {
 
     void testInheritsFromCustomScript() {
-        assertScript """
-            abstract class CustomScript extends Script {}
+        assertScript '''
+            abstract class Custom extends Script {
+            }
 
-            @groovy.transform.BaseScript CustomScript baseScript
-            assert this.class.superclass == CustomScript
-        """
+            @groovy.transform.BaseScript Custom self
+
+            assert this.class.superclass == Custom
+        '''
     }
 
     void testBaseScriptMustExtendsScript() {
-        shouldNotCompile """
-            abstract class CustomScript {}
+        shouldNotCompile '''
+            abstract class Custom {
+            }
 
-            @groovy.transform.BaseScript CustomScript baseScript
-        """
+            @groovy.transform.BaseScript Custom self
+        '''
     }
 
     void testThisObjectIsAssignedToBaseScriptVariable() {
-        assertScript """
-            abstract class CustomScript extends Script {}
+        assertScript '''
+            abstract class Custom extends Script {
+            }
 
-            @groovy.transform.BaseScript CustomScript baseScript
-            assert this == baseScript
-        """
+            @groovy.transform.BaseScript Custom self
+
+            assert this == self
+        '''
     }
 
     void testNotAllowedForClassFields() {
-        shouldNotCompile """
-            import groovy.transform.*
-
-            abstract class CustomScript extends Script {}
+        shouldNotCompile '''
+            abstract class Custom extends Script {
+            }
 
             class Inner {
-                @BaseScript CustomScript baseScript
+                @groovy.transform.BaseScript Custom nope
             }
-        """
+        '''
     }
 
     void testNotAllowedForScriptInnerClassFields() {
-        shouldNotCompile """
-            import groovy.transform.*
-
-            abstract class CustomScript extends Script {}
+        shouldNotCompile '''
+            abstract class Custom extends Script {
+            }
 
             class Inner {
-                @BaseScript CustomScript baseScript
+                @groovy.transform.BaseScript Custom nope
             }
+
             println Inner.class.name
-        """
+        '''
     }
 
     void testNotAllowedInClassMethods() {
-        shouldNotCompile """
-            import groovy.transform.*
-
-            abstract class CustomScript extends Script {}
+        shouldNotCompile '''
+            abstract class Custom extends Script {
+            }
 
             class Inner {
-                def bar() {
-                    @BaseScript CustomScript baseScript
+                void test() {
+                    @groovy.transform.BaseScript Custom nope
                 }
             }
-        """
+        '''
     }
 
     void testNotAllowedInScriptInnerClassMethods() {
-        shouldNotCompile """
-            import groovy.transform.*
-
-            abstract class CustomScript extends Script {}
+        shouldNotCompile '''
+            abstract class Custom extends Script {
+            }
 
             class Inner {
-                def bar() {
-                    @BaseScript CustomScript baseScript
+                void test() {
+                    @groovy.transform.BaseScript Custom nope
                 }
             }
+
             println Inner.class.name
-        """
+        '''
     }
 
     abstract class MyCustomScript extends Script {}
 
-    void testBaseScriptFromCompiler(){
+    void testBaseScriptFromCompiler() {
         CompilerConfiguration config = new CompilerConfiguration()
         config.scriptBaseClass = MyCustomScript.name
         GroovyShell shell = new GroovyShell(config)
 
         shell.evaluate('''
-            abstract class DeclaredBaseScript extends Script {
+            abstract class Custom extends Script {
                 int meaningOfLife = 42
             }
 
-            @groovy.transform.BaseScript DeclaredBaseScript baseScript
+            @groovy.transform.BaseScript Custom self
 
             assert meaningOfLife == 42
         ''')
     }
 
+    // GROOVY-6585
     void testBaseScriptAbstractMethod() {
-        // https://issues.apache.org/jira/browse/GROOVY-6585
         CompilerConfiguration config = new CompilerConfiguration()
         config.scriptBaseClass = MyCustomScript.name
         GroovyShell shell = new GroovyShell(config)
 
         def answer = shell.evaluate('''
-            abstract class DeclaredBaseScript extends Script {
-                int _meaningOfLife = 0
+            abstract class Custom extends Script {
+                private int _meaningOfLife = 0
                 int getMeaningOfLife() { _meaningOfLife }
                 void setMeaningOfLife(int v) { _meaningOfLife = v }
 
@@ -147,7 +148,7 @@ class BaseScriptTransformTest extends CompilableTestSupport {
                 }
             }
 
-            @groovy.transform.BaseScript DeclaredBaseScript baseScript
+            @groovy.transform.BaseScript Custom self
 
             meaningOfLife |= 32
             assert meaningOfLife == 34
@@ -158,12 +159,12 @@ class BaseScriptTransformTest extends CompilableTestSupport {
 
     void testBaseScriptImplementsRunMethod() {
         def result = new GroovyShell().evaluate('''
-            class DeclaredBaseScript extends Script {
+            class Custom extends Script {
                 boolean iBeenRun
                 def run() { iBeenRun = true }
             }
 
-            @groovy.transform.BaseScript DeclaredBaseScript baseScript
+            @groovy.transform.BaseScript Custom self
 
             assert !iBeenRun
 
@@ -179,73 +180,68 @@ class BaseScriptTransformTest extends CompilableTestSupport {
 
     void testBaseScriptCanImplementRunMethodWithArgs() {
         assertScript '''
-            abstract class  Foo extends Script {
-               def run() {run(null)}
-              abstract run(Object x)
+            abstract class Custom extends Script {
+                def run() { run(null) }
+                abstract run(Object x)
             }
 
-            @groovy.transform.BaseScript Foo foo
+            @groovy.transform.BaseScript Custom self
+
             println "hello world"
         '''
     }
 
     void testScriptCanOverrideRun() {
         assertScript '''
-            abstract class Foo extends Script {
-               def depth = 3
-               def run() { myRun() }
-               abstract myRun()
+            abstract class Custom extends Script {
+                def depth = 3
+                def run() { myRun() }
+                abstract myRun()
             }
 
             def run() {
-               while (depth-- > 0) {
-                  println "Going super"
-                  super.run()
-               }
+                while (depth-- > 0) {
+                    println "Going super"
+                    super.run()
+                }
             }
 
-            @groovy.transform.BaseScript Foo foo
+            @groovy.transform.BaseScript Custom self
+
             println "hello world"
         '''
     }
 
     void testScriptCanOverrideRunButNotIfFinal() {
         shouldNotCompile '''
-            abstract class Foo extends Script {
-               def depth = 3
-               final def run() { myRun() }
-               abstract myRun()
+            abstract class Custom extends Script {
+                def depth = 3
+                final def run() { myRun() }
+                abstract myRun()
             }
 
             def run() {
-               while (depth-- > 0) {
-                  println "Going super"
-                  super.run()
-               }
+                while (depth-- > 0) {
+                    println "Going super"
+                    super.run()
+                }
             }
 
-            @groovy.transform.BaseScript Foo foo
-            println "hello world"
-        '''
-    }
+            @groovy.transform.BaseScript Custom self
 
-    void testMultipleMethodsWithSameSignatureFails() {
-        shouldNotCompile '''
-            def run() { println 'hmm' }
-            println 'huh?'
+            println "hello world"
         '''
     }
 
     void testBaseScriptOnImport() {
         def result = new GroovyShell().evaluate('''
-            @BaseScript(DeclaredBaseScript)
+            @BaseScript(Custom)
             import groovy.transform.BaseScript
 
-            class DeclaredBaseScript extends Script {
+            class Custom extends Script {
                 boolean iBeenRun
                 def run() { iBeenRun = true }
             }
-
 
             assert !iBeenRun
 
@@ -259,49 +255,47 @@ class BaseScriptTransformTest extends CompilableTestSupport {
         assert result
     }
 
-    /**
-     * Test GROOVY-6706.  Base script in import (or package) with a SAM.
-     */
-    void testGROOVY_6706() {
+    // GROOVY-6706
+    void testBaseScriptOnImport2() {
         assertScript '''
-@BaseScript(CustomBase)
-import groovy.transform.BaseScript
+            @BaseScript(Custom)
+            import groovy.transform.BaseScript
 
-assert did_before
-assert !did_after
+            assert did_before
+            assert !did_after
 
-42
+            42
 
-abstract class CustomBase extends Script {
-    boolean did_before = false
-    boolean did_after = false
+            abstract class Custom extends Script {
+                boolean did_before = false
+                boolean did_after = false
 
-    def run() {
-        before()
-        def r = internalRun()
-        after()
-        assert r == 42
-    }
+                def run() {
+                    before()
+                    def r = internalRun()
+                    after()
+                    assert r == 42
+                }
 
-    abstract internalRun()
+                abstract internalRun()
 
-    def before() { did_before = true }
-    def after()  { did_after = true  }
-}'''
+                def before() { did_before = true }
+                def after()  { did_after = true  }
+            }
+        '''
     }
 
     void testBaseScriptOnPackage() {
         def result = new GroovyShell().evaluate('''
-            @BaseScript(DeclaredBaseScript)
+            @BaseScript(Custom)
             package foo
 
             import groovy.transform.BaseScript
 
-            class DeclaredBaseScript extends Script {
+            class Custom extends Script {
                 boolean iBeenRun
                 def run() { iBeenRun = true }
             }
-
 
             assert !iBeenRun
 

@@ -54,7 +54,7 @@ public abstract class Script extends GroovyObjectSupport {
     public Object getProperty(String property) {
         try {
             return binding.getVariable(property);
-        } catch (MissingPropertyException e) {
+        } catch (MissingPropertyException mpe) {
             return super.getProperty(property);
         }
     }
@@ -97,15 +97,14 @@ public abstract class Script extends GroovyObjectSupport {
     public Object invokeMethod(String name, Object args) {
         try {
             return super.invokeMethod(name, args);
-        }
-        // if the method was not found in the current scope (the script's methods)
-        // let's try to see if there's a method closure with the same name in the binding
-        catch (MissingMethodException mme) {
+        } catch (MissingMethodException mme) {
+            // if the method was not found in the current scope (the script's methods)
+            // let's try to see if there's a method closure with the same name in the binding
             try {
                 if (name.equals(mme.getMethod())) {
                     Object boundClosure = getProperty(name);
                     if (boundClosure instanceof Closure) {
-                        return ((Closure) boundClosure).call((Object[])args);
+                        return ((Closure<?>) boundClosure).call((Object[]) args);
                     } else {
                         throw mme;
                     }
