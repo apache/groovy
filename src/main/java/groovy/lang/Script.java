@@ -76,11 +76,13 @@ public abstract class Script extends GroovyObjectSupport {
 
     private boolean hasSetterMethodFor(String property) {
         String setterName = GeneralUtils.getSetterName(property);
-        for (Method method : getClass().getDeclaredMethods()) {
-            if (method.getParameterCount() == 1
-                    // TODO: Test modifiers or return type?
-                    && method.getName().equals(setterName)) {
-                return true;
+        for (Class<?> c = getClass(); !c.equals(Script.class); c = c.getSuperclass()) {
+            for (Method method : c.getDeclaredMethods()) {
+                if (method.getParameterCount() == 1
+                        // TODO: Test modifiers or return type?
+                        && method.getName().equals(setterName)) {
+                    return true;
+                }
             }
         }
         return false;

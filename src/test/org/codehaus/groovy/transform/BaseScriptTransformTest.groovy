@@ -309,6 +309,26 @@ final class BaseScriptTransformTest extends gls.CompilableTestSupport {
         assert result
     }
 
+    // GROOVY-6586
+    void testBaseScriptVsBinding() {
+        assertScript '''
+            abstract class Custom extends Script {
+                private int _something = 1
+                int getSomething() { _something }
+                void setSomething(int i) { _something = i }
+            }
+
+            @groovy.transform.BaseScript Custom self
+
+            assert binding.variables.size() == 0
+            assert something == 1
+            assert binding.variables.size() == 0
+            something = 2
+            assert binding.variables.size() == 0
+            assert something == 2
+        '''
+    }
+
     void testShouldNotAllowClassMemberIfUsedOnADeclaration() {
         shouldNotCompile '''import groovy.transform.BaseScript
 
