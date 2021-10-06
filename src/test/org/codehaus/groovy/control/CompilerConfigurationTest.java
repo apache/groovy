@@ -60,7 +60,7 @@ public final class CompilerConfigurationTest {
         assertEquals(10, config.getTolerance());
         assertEquals(100, config.getMinimumRecompilationInterval());
         assertEquals(System.getProperty("file.encoding", CompilerConfiguration.DEFAULT_SOURCE_ENCODING), config.getSourceEncoding());
-        assertEquals(CompilerConfiguration.JDK8, config.getTargetBytecode());
+        assertEquals(CompilerConfiguration.DEFAULT_TARGET_BYTECODE, config.getTargetBytecode());
         assertEquals(Boolean.FALSE, config.getRecompileGroovySource());
         assertEquals(Collections.emptyList(), config.getClasspath());
         assertEquals(".groovy", config.getDefaultScriptExtension());
