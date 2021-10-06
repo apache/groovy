@@ -881,7 +881,7 @@ public abstract class StaticTypeCheckingSupport {
         if (type.isArray()) {
             return prettyPrintTypeName(type.getComponentType()) + "[]";
         }
-        return type.getText();
+        return type.isGenericsPlaceHolder() ? type.getUnresolvedName() : type.getText();
     }
 
     public static boolean implementsInterfaceOrIsSubclassOf(final ClassNode type, final ClassNode superOrInterface) {

@@ -18,6 +18,7 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 
 /**
@@ -2483,29 +2484,23 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testOutOfBoundsByExtendsPlaceholderParameterType() {
         shouldFailWithMessages '''
             class Foo {
-                static <T extends List<? extends CharSequence>> void bar(T a) {}
+                static <T extends List<? extends CharSequence>> void bar(T list) {}
             }
-            class Baz {
-                static <T extends List<Object>> void qux(T a) {
-                    Foo.bar(a)
-                }
+            def <U extends List<Object>> void baz(U list) {
+                Foo.bar(list)
             }
-            Baz.qux([new Object()])
-        ''', 'Cannot call <T extends java.util.List<? extends java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.List<java.lang.Object>]'
+        ''', 'Cannot call <T extends java.util.List<? extends java.lang.CharSequence>> Foo#bar(T) with arguments [U]'
     }
 
     void testOutOfBoundsBySuperPlaceholderParameterType() {
         shouldFailWithMessages '''
             class Foo {
-                static <T extends List<? super CharSequence>> void bar(T a) {}
+                static <T extends List<? super CharSequence>> void bar(T list) {}
             }
-            class Baz {
-                static <T extends List<String>> void qux(T a) {
-                    Foo.bar(a)
-                }
+            def <U extends List<String>> void baz(U list) {
+                Foo.bar(list)
             }
-            Baz.qux(['abc'])
-        ''', 'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.List<java.lang.String>]'
+        ''', 'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [U]'
     }
 
     // GROOVY-5721
@@ -2922,8 +2917,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '#foo(java.util.List<? extends A>) with arguments [java.util.ArrayList<java.lang.Object>]'
     }
 
+    // GROOVY-5891
     void testMethodLevelGenericsForMethodCall() {
-        // Groovy-5891
         assertScript '''
             public <T extends List<Integer>> T foo(Class<T> type, def x) {
                 return type.cast(x)
@@ -2937,24 +2932,116 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
             def cl = {1}
             assert foo(cl.class, cl) == cl
-         '''
-         assertScript '''
+        '''
+        assertScript '''
             public <T extends Runnable> T foo(Class<T> type, def x) {
                 return type.cast(x) as T
             }
             def cl = {1}
             assert foo(cl.class, cl) == cl
-         '''
-         // GROOVY-5885
-         assertScript '''
+        '''
+    }
+
+    // GROOVY-5885
+    void testMethodLevelGenericsForMethodCall2() {
+        assertScript '''
             class Test {
-                public <X extends Test> X castToMe(Class<X> type, Object o) {
+                public <T extends Test> T castToMe(Class<T> type, Object o) {
                     return type.cast(o);
                 }
             }
             def t = new Test()
-            assert t.castToMe(Test, t)  == t
-         '''
+            assert t == t.castToMe(Test, t)
+        '''
+    }
+
+    // GROOVY-6919
+    void testMethodLevelGenericsForMethodCall3() {
+        assertScript '''
+            interface I1 {
+                String getFoo()
+            }
+            interface I2 {
+                String getBar()
+            }
+            def <T extends I1 & I2> void test(T obj) {
+                obj?.getFoo()
+                obj?.getBar()
+            }
+            test(null)
+        '''
+    }
+
+    // GROOVY-6919
+    void testMethodLevelGenericsForPropertyRead() {
+        assertScript '''
+            interface I1 {
+                String getFoo()
+            }
+            interface I2 {
+                String getBar()
+            }
+            def <T extends I1 & I2> void test(T obj) {
+                obj?.foo
+                obj?.bar
+            }
+            test(null)
+        '''
+    }
+
+    @NotYetImplemented
+    void testMethodLevelGenericsForPropertyRead2() {
+        assertScript '''
+            interface I1 {
+                static String getFoo() { 'foo' }
+            }
+            interface I2 {
+                String bar = 'bar'
+            }
+            def <T extends I1 & I2> void test(Class<T> cls) {
+                cls?.foo
+                cls?.bar
+            }
+            test(null)
+        '''
+    }
+
+    void testMethodLevelGenericsForPropertyRead3() {
+        assertScript '''
+            interface I1 {
+                String getFoo()
+            }
+            interface I2 {
+                String getBar()
+            }
+            class C<T extends I1 & I2> {
+                def <U extends T> void test(U obj) {
+                    obj?.foo
+                    obj?.bar
+                }
+            }
+            new C().test(null)
+        '''
+    }
+
+    void testMethodLevelGenericsForPropertyRead4() {
+        assertScript '''
+            interface I1 {
+                String getFoo()
+            }
+            interface I2 {
+                String getBar()
+            }
+            @groovy.transform.SelfType(I2) trait T2 {
+                abstract String getBaz()
+            }
+            def <T extends I1 & T2> void test(T obj) {
+                obj?.foo
+                obj?.bar
+                obj?.baz
+            }
+            test(null)
+        '''
     }
 
     // GROOVY-5839
