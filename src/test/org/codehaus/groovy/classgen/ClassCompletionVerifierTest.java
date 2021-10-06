@@ -63,6 +63,8 @@ public class ClassCompletionVerifierTest extends TestSupport {
             "The method 'java.lang.Object na()' has an incorrect modifier native.";
     private static final String EXPECTED_SYNCHRONIZED_METHOD_ERROR_MESSAGE =
             "The method 'java.lang.Object sy()' has an incorrect modifier synchronized.";
+    private static final String EXPECTED_TRANSIENT_METHOD_ERROR_MESSAGE =
+            "The method 'java.lang.Object tr()' has an incorrect modifier transient.";
     private static final String EXPECTED_PROTECTED_FIELD_ERROR_MESSAGE =
             "The field 'prof' is not 'public static final' but is defined in interface 'zzz'.";
     private static final String EXPECTED_PRIVATE_FIELD_ERROR_MESSAGE =
@@ -142,12 +144,14 @@ public class ClassCompletionVerifierTest extends TestSupport {
         node.addMethod(new MethodNode("st", ACC_STRICT, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
         node.addMethod(new MethodNode("na", ACC_NATIVE, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
         node.addMethod(new MethodNode("sy", ACC_SYNCHRONIZED, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        node.addMethod(new MethodNode("tr", ACC_TRANSIENT, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
         addDummyConstructor(node);
         verifier.visitClass(node);
-        checkErrorCount(3);
+        checkErrorCount(4);
         checkErrorMessage(EXPECTED_STRICT_METHOD_ERROR_MESSAGE);
         checkErrorMessage(EXPECTED_NATIVE_METHOD_ERROR_MESSAGE);
         checkErrorMessage(EXPECTED_SYNCHRONIZED_METHOD_ERROR_MESSAGE);
+        checkErrorMessage(EXPECTED_TRANSIENT_METHOD_ERROR_MESSAGE);
     }
 
     public void testDetectsIncorrectMemberVisibilityInInterface() throws Exception {
@@ -174,6 +178,16 @@ public class ClassCompletionVerifierTest extends TestSupport {
         addDummyConstructor(node);
         verifier.visitClass(node);
         checkErrorCount(0);
+    }
+
+    public void testDetectsIncorrectMethodModifiersInClass() throws Exception {
+        // can't check volatile here as it doubles up with bridge
+        ClassNode node = new ClassNode("zzz", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+        node.addMethod(new MethodNode("tr", ACC_TRANSIENT, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        addDummyConstructor(node);
+        verifier.visitClass(node);
+        checkErrorCount(1);
+        checkErrorMessage(EXPECTED_TRANSIENT_METHOD_ERROR_MESSAGE);
     }
 
     public void testDetectsInvalidFieldModifiers() {
