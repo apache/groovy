@@ -22,6 +22,7 @@ import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.control.io.NullWriter;
 import org.codehaus.groovy.control.messages.WarningMessage;
+import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.objectweb.asm.Opcodes;
 
 import java.io.File;
@@ -128,6 +129,8 @@ public class CompilerConfiguration {
             JDK17, Opcodes.V17,
             JDK18, Opcodes.V18
     );
+
+    public static final String DEFAULT_TARGET_BYTECODE = defaultTargetBytecode();
 
     /**
      * The valid targetBytecode values.
@@ -465,7 +468,7 @@ public class CompilerConfiguration {
         sourceEncoding = getSystemPropertySafe("groovy.source.encoding",
                 getSystemPropertySafe("file.encoding", DEFAULT_SOURCE_ENCODING));
         setTargetDirectorySafe(getSystemPropertySafe("groovy.target.directory"));
-        setTargetBytecodeIfValid(getSystemPropertySafe("groovy.target.bytecode", JDK8));
+        setTargetBytecodeIfValid(getSystemPropertySafe("groovy.target.bytecode", DEFAULT_TARGET_BYTECODE));
         defaultScriptExtension = getSystemPropertySafe("groovy.default.scriptExtension", ".groovy");
 
         optimizationOptions = new HashMap<>(4);
@@ -984,6 +987,20 @@ public class CompilerConfiguration {
      */
     public String getTargetBytecode() {
         return this.targetBytecode;
+    }
+
+    /**
+     * Returns the default target bytecode compatibility level
+     *
+     * @return the default target bytecode compatibility level
+     * @since 4.0.0
+     */
+    private static String defaultTargetBytecode() {
+        final String javaVersion = VMPlugin.getJavaVersion();
+        if (JDK_TO_BYTECODE_VERSION_MAP.containsKey(javaVersion)) {
+            return javaVersion;
+        }
+        return JDK8;
     }
 
     /**

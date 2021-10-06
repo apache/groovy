@@ -20,10 +20,13 @@ package org.codehaus.groovy.vmplugin;
 
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
 import java.util.Collections;
@@ -65,6 +68,35 @@ public interface VMPlugin {
      * @return 7 for jdk7, 8 for jdk8, 9 for jdk9 or higher
      */
     int getVersion();
+
+    /**
+     * Returns java version, e.g. 1.8, 9, 11, 17
+     *
+     * @return java version
+     * @since 4.0.0
+     */
+    static String getJavaVersion() {
+        try {
+            return System.getProperty("java.specification.version");
+        } catch (SecurityException se) {
+            Class<?> versionClass;
+            try {
+                versionClass = Class.forName("java.lang.Runtime$Version"); // `Version` has been added since Java 9
+            } catch (ClassNotFoundException e) {
+                return "1.8";
+            }
+
+            try {
+                MethodHandles.Lookup lookup = MethodHandles.lookup();
+                MethodHandle versionMethodHandle = lookup.unreflect(Runtime.class.getMethod("version"));
+                Object version = versionMethodHandle.invoke();
+                MethodHandle majorMethodHandle = lookup.unreflect(versionClass.getMethod("major"));
+                return String.valueOf(majorMethodHandle.invoke(version));
+            } catch (Throwable t) {
+                throw new GroovyBugError(t.getMessage()); // should never happen
+            }
+        }
+    }
 
     /**
      * Check whether invoking {@link AccessibleObject#setAccessible(boolean)} on the accessible object will be completed successfully

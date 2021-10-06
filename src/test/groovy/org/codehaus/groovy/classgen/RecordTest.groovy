@@ -41,16 +41,16 @@ class RecordTest {
     @Test
     void testRecordOnJDK16plus() {
         assumeTrue(isAtLeastJdk('16.0'))
-        assertScript(new GroovyShell(new CompilerConfiguration(targetBytecode: CompilerConfiguration.JDK16)), '''
+        assertScript '''
             record RecordJDK16plus(String name) {}
             assert java.lang.Record == RecordJDK16plus.class.getSuperclass()
-        ''')
+        '''
     }
 
     @Test
     void testRecordOnJDK16plusWhenDisabled() {
         assumeTrue(isAtLeastJdk('16.0'))
-        def configuration = new CompilerConfiguration(targetBytecode: CompilerConfiguration.JDK16, recordsNative: false)
+        def configuration = new CompilerConfiguration(recordsNative: false)
         assertScript(new GroovyShell(configuration), '''
             record RecordJDK16plus2(String name) {}
             assert java.lang.Record != RecordJDK16plus2.class.getSuperclass()
@@ -70,7 +70,7 @@ class RecordTest {
     @Test
     void testNativeRecordOnJDK16plus() {
         assumeTrue(isAtLeastJdk('16.0'))
-        assertScript(new GroovyShell(new CompilerConfiguration(targetBytecode: CompilerConfiguration.JDK16)), '''
+        assertScript '''
             import java.lang.annotation.Annotation
             import java.lang.annotation.Documented
             import java.lang.annotation.ElementType
@@ -101,7 +101,7 @@ class RecordTest {
             assert 'java.util.List<java.lang.String>' == rcs[2].genericType.toString()
             
             assert 'titles' == rcs[3].name && String[].class == rcs[3].type
-        ''')
+        '''
     }
 
     @Test
