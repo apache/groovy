@@ -20,6 +20,7 @@ package org.codehaus.groovy.classgen;
 
 import groovy.transform.NonSealed;
 import groovy.transform.Sealed;
+import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
@@ -522,6 +523,11 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
             checkMethodForModifier(node, isStrict(node.getModifiers()), "strictfp");
             checkMethodForModifier(node, isSynchronized(node.getModifiers()), "synchronized");
             checkMethodForModifier(node, isNative(node.getModifiers()), "native");
+        }
+        // transient overlaps with varargs but we don't add varargs until AsmClassGenerator
+        // but we might have varargs set from e.g. @Delegate of a varargs method so skip generated
+        if (!AnnotatedNodeUtils.isGenerated(node)) {
+            checkMethodForModifier(node, isTransient(node.getModifiers()), "transient");
         }
     }
 

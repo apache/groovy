@@ -30,7 +30,7 @@ public class PropertyNodeUtils {
      * from the property are carried over to the backing field (so a property marked as
      * {@code transient} will have a {@code transient} backing field) but when creating
      * the accessor methods we don't carry over modifier values which don't make sense for
-     * methods (this includes VOLATILE and TRANSIENT) but other modifiers are carried over,
+     * methods (such as {@code volatile} and {@code transient}) but other modifiers are carried over,
      * for example {@code static}.
      *
      * @param propNode the original property node
