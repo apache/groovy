@@ -315,6 +315,37 @@ class AnnotationCollectorTest extends GroovyTestCase {
         '''
     }
 
+    void testIgnoreIncubating() {
+        assertScript '''
+            import groovy.transform.*
+            @Sortable
+            @org.apache.groovy.lang.annotation.Incubating
+            @ToString(excludes=["a"])
+            @AnnotationCollector()
+            class Alias {}
+
+            @Alias
+            class Foo {
+                Integer a, b
+            }
+            assert Foo.class.annotations.size() == 2
+            assert new Foo(a: 1, b: 2).toString() == "Foo(2)"
+
+            def data = Alias.getAnnotation(AnnotationCollector).serializeClass().value()
+            assert data.length == 2
+            assert data instanceof Object[][]
+            assert data[0].length == 2
+            assert data[0][0] == groovy.transform.Sortable
+            assert data[0][1] instanceof Map
+            assert data[0][1].size() == 0
+            assert data[1][0] == groovy.transform.ToString
+            assert data[1][1] instanceof Map
+            assert data[1][1].size() == 1
+            assert data[1][1].excludes instanceof Object[]
+            assert data[1][1].excludes[0] == "a"
+        '''
+    }
+
     void testAnnotationTakingAnnotationParams() {
         assertScript '''
             import groovy.transform.*
