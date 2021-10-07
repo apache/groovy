@@ -74,7 +74,7 @@ tasks.withType(AbstractCompile).configureEach {
 }
 
 tasks.withType(GroovyCompile).configureEach {
-    groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4.cache.threshold=100"]
+    groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4.cache.threshold=100", "-Dgroovy.target.bytecode=1.8"]
     groovyOptions.fork(memoryMaximumSize: sharedConfiguration.groovycMaxMemory.get())
     groovyClasspath = configurations.groovyCompilerClasspath
 
