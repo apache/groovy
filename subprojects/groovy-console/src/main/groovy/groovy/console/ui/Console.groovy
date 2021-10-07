@@ -1549,7 +1549,14 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         def version = GroovySystem.getVersion()
         def pane = swing.optionPane()
         // work around GROOVY-1048
-        pane.setMessage('Welcome to the Groovy Console for evaluating Groovy scripts\nVersion ' + version)
+        def message = 'Welcome to the Groovy Console for evaluating Groovy scripts\nGroovy version: ' + version
+        try {
+            message += "\nJava version: ${System.getProperty('java.version')} (${System.getProperty('java.vendor')})"
+        } catch(ignore) { }
+        try {
+            message += "\nOS version: ${System.getProperty('os.version')} (${System.getProperty('os.name')})"
+        } catch(ignore) { }
+        pane.setMessage(message)
         def dialog = pane.createDialog(frame, 'About GroovyConsole')
         dialog.show()
     }
