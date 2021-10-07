@@ -33,6 +33,8 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java }}
           check-latest: true
+      - name: Install graphviz
+        run: sudo apt-get install -y graphviz
       - name: Build and package
         run: ./gradlew clean dist --no-build-cache --no-scan --refresh-dependencies
         timeout-minutes: 60
