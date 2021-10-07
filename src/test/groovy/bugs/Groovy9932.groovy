@@ -19,9 +19,11 @@
 package groovy.bugs
 
 import groovy.mock.interceptor.MockFor
+import org.junit.Ignore
 import org.junit.Test
 
 final class Groovy9932 {
+    @Ignore
     @Test
     void testCallCurrentOnMock() {
         def mockForHelper = new MockFor(Helper)
