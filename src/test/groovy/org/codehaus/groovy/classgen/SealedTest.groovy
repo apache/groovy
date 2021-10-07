@@ -22,7 +22,6 @@ import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.Test
 
-import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.isAtLeastJdk
 import static org.junit.Assume.assumeTrue
 
@@ -31,11 +30,8 @@ class SealedTest {
     @Test
     void testInferredPermittedNestedClasses() {
         assumeTrue(isAtLeastJdk('17.0'))
-        def config = new CompilerConfiguration(targetBytecode: CompilerConfiguration.JDK17)
-        List<Class> classes = (List<Class>) new GroovyShell(config).evaluate('''
-            import groovy.transform.Sealed
-
-            @Sealed class Shape {
+        List<Class> classes = (List<Class>) new GroovyShell().evaluate('''
+            sealed class Shape {
                 final class Triangle extends Shape { }
                 final class Polygon extends Shape { }
             }
@@ -47,11 +43,9 @@ class SealedTest {
     @Test
     void testInferredPermittedNestedClassesWithNativeDisabled() {
         assumeTrue(isAtLeastJdk('17.0'))
-        def config = new CompilerConfiguration(targetBytecode: CompilerConfiguration.JDK17, sealedNative: false)
+        def config = new CompilerConfiguration(sealedNative: false)
         def classes = new GroovyShell(config).evaluate('''
-            import groovy.transform.Sealed
-
-            @Sealed class Shape {
+            sealed class Shape {
                 final class Triangle extends Shape { }
                 final class Polygon extends Shape { }
             }
