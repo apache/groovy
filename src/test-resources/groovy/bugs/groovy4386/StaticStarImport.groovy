@@ -16,18 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package groovy.bugs.groovy4386
 
+import static groovy.bugs.groovy4386.Constants.*
 
-import groovy.transform.CompileStatic
-import org.apache.groovy.util.ScriptRunner
-import org.junit.Ignore
-import org.junit.Test
-
-@CompileStatic
-final class Groovy9243 {
-    @Ignore @Test
-    void testResolveNestedClassFromBaseType() {
-        ScriptRunner.runScript('/groovy/bugs/groovy9243/Main.groovy')
+class Test {
+    static test() {
+        assert TWOPI == PI + PI
     }
 }
+
+Test.test()

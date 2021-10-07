@@ -46,7 +46,6 @@ import org.codehaus.groovy.control.io.InputStreamReaderSource;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
 import org.codehaus.groovy.control.messages.Message;
-import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.tools.GroovyClass;
@@ -227,7 +226,7 @@ public class CompilationUnit extends ProcessingUnit {
             List<ClassNode> classes = source.getAST().getClasses();
             for (ClassNode node : classes) {
                 CompileUnit cu = node.getCompileUnit();
-                for (Iterator<String> it = cu.iterateClassNodeToCompile(); it.hasNext(); ) {
+                for (Iterator<String> it = cu.getClassesToCompile().keySet().iterator(); it.hasNext(); ) {
                     String name = it.next();
                     StringBuilder message = new StringBuilder();
                     message
@@ -250,9 +249,8 @@ public class CompilationUnit extends ProcessingUnit {
                         }
                     }
 
-                    getErrorCollector().addErrorAndContinue(
-                            new SimpleMessage(message.toString(), this)
-                    );
+                    getErrorCollector().addErrorAndContinue(Message.create(message.toString(), this));
+
                     it.remove();
                 }
             }

@@ -16,8 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs.groovy9236
+package groovy.bugs.groovy4386
 
-interface Groovy9236 {
+import static groovy.bugs.groovy4386.Constants.PI
 
+class Test {
+    static test() {
+        assert PI == 3.14
+    }
 }
+
+Test.test()
