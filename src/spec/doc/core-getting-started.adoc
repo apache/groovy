@@ -53,7 +53,7 @@ community prior to official versions being released. We welcome any feedback.
 
 === Prerequisites
 
-Groovy {groovy-short-version} requires Java 8+ with support for up to Groovy 16.
+Groovy {groovy-short-version} requires Java 8+ with support for up to Java 16.
 
 Various Groovy CI servers run the test suite (with more than 10000 tests) across numerous versions of Java.
 Those servers are also useful to look at to confirm supported Java versions for different Groovy releases.
