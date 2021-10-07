@@ -615,13 +615,103 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Checks if the specified bytecode version string represents a JDK 1.8+ compatible
+     * Checks if the specified bytecode version string represents a JDK 9+ compatible
      * bytecode version.
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
-     * @return true if the bytecode version is JDK 9.0+
+     * @return true if the bytecode version is JDK 9+
      */
     public static boolean isPostJDK9(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK9);
+    }
+
+    /**
+     * Checks if the specified bytecode version string represents a JDK 10+ compatible bytecode version.
+     *
+     * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
+     * @return true if the bytecode version is JDK 10+
+     */
+    public static boolean isPostJDK10(final String bytecodeVersion) {
+        return isAtLeast(bytecodeVersion, JDK10);
+    }
+
+    /**
+     * Checks if the specified bytecode version string represents a JDK 11+ compatible bytecode version.
+     *
+     * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
+     * @return true if the bytecode version is JDK 11+
+     */
+    public static boolean isPostJDK11(final String bytecodeVersion) {
+        return isAtLeast(bytecodeVersion, JDK11);
+    }
+
+    /**
+     * Checks if the specified bytecode version string represents a JDK 12+ compatible bytecode version.
+     *
+     * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
+     * @return true if the bytecode version is JDK 12+
+     */
+    public static boolean isPostJDK12(final String bytecodeVersion) {
+        return isAtLeast(bytecodeVersion, JDK12);
+    }
+
+    /**
+     * Checks if the specified bytecode version string represents a JDK 13+ compatible bytecode version.
+     *
+     * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
+     * @return true if the bytecode version is JDK 13+
+     */
+    public static boolean isPostJDK13(final String bytecodeVersion) {
+        return isAtLeast(bytecodeVersion, JDK13);
+    }
+
+    /**
+     * Checks if the specified bytecode version string represents a JDK 14+ compatible bytecode version.
+     *
+     * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
+     * @return true if the bytecode version is JDK 14+
+     */
+    public static boolean isPostJDK14(final String bytecodeVersion) {
+        return isAtLeast(bytecodeVersion, JDK14);
+    }
+
+    /**
+     * Checks if the specified bytecode version string represents a JDK 15+ compatible bytecode version.
+     *
+     * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
+     * @return true if the bytecode version is JDK 15+
+     */
+    public static boolean isPostJDK15(final String bytecodeVersion) {
+        return isAtLeast(bytecodeVersion, JDK15);
+    }
+
+    /**
+     * Checks if the specified bytecode version string represents a JDK 16+ compatible bytecode version.
+     *
+     * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
+     * @return true if the bytecode version is JDK 16+
+     */
+    public static boolean isPostJDK16(final String bytecodeVersion) {
+        return isAtLeast(bytecodeVersion, JDK16);
+    }
+
+    /**
+     * Checks if the specified bytecode version string represents a JDK 17+ compatible bytecode version.
+     *
+     * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
+     * @return true if the bytecode version is JDK 17+
+     */
+    public static boolean isPostJDK17(final String bytecodeVersion) {
+        return isAtLeast(bytecodeVersion, JDK17);
+    }
+
+    /**
+     * Checks if the specified bytecode version string represents a JDK 18+ compatible bytecode version.
+     *
+     * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
+     * @return true if the bytecode version is JDK 18+
+     */
+    public static boolean isPostJDK18(final String bytecodeVersion) {
+        return isAtLeast(bytecodeVersion, JDK18);
     }
 
     /**
