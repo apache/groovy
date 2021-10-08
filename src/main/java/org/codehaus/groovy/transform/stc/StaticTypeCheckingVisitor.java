@@ -1214,19 +1214,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private void addListAssignmentConstructorErrors(final ClassNode leftRedirect, final ClassNode leftExpressionType, final ClassNode inferredRightExpressionType, final Expression rightExpression, final Expression assignmentExpression) {
+        if (isWildcardLeftHandSide(leftRedirect) && !CLASS_Type.equals(leftRedirect)) return; // GROOVY-6802, GROOVY-6803
         // if left type is not a list but right type is a list, then we're in the case of a groovy
         // constructor type : Dimension d = [100,200]
         // In that case, more checks can be performed
-        if (rightExpression instanceof ListExpression && !implementsInterfaceOrIsSubclassOf(LIST_TYPE, leftRedirect)) {
+        if (rightExpression instanceof ListExpression
+                && !implementsInterfaceOrIsSubclassOf(LIST_TYPE, leftRedirect)) {
             ArgumentListExpression argList = args(((ListExpression) rightExpression).getExpressions());
             ClassNode[] args = getArgumentTypes(argList);
             MethodNode methodNode = checkGroovyStyleConstructor(leftRedirect, args, assignmentExpression);
             if (methodNode != null) {
                 rightExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, methodNode);
             }
-        } else if (!implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, leftRedirect)
-                && implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, LIST_TYPE)
-                && !isWildcardLeftHandSide(leftExpressionType)) {
+        } else if (implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, LIST_TYPE)
+                && !implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, leftRedirect)) {
             if (!extension.handleIncompatibleAssignment(leftExpressionType, inferredRightExpressionType, assignmentExpression)) {
                 addAssignmentError(leftExpressionType, inferredRightExpressionType, assignmentExpression);
             }
@@ -1234,8 +1235,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private void addMapAssignmentConstructorErrors(final ClassNode leftRedirect, final Expression leftExpression, final Expression rightExpression) {
-        if (!(rightExpression instanceof MapExpression) || (leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).isDynamicTyped())
-                || leftRedirect.equals(OBJECT_TYPE) || implementsInterfaceOrIsSubclassOf(leftRedirect, MAP_TYPE)) {
+        if ((!(rightExpression instanceof MapExpression)
+                || leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).isDynamicTyped())
+                || (isWildcardLeftHandSide(leftRedirect) && !CLASS_Type.equals(leftRedirect)) // GROOVY-6802, GROOVY-6803
+                || implementsInterfaceOrIsSubclassOf(leftRedirect, MAP_TYPE)) {
             return;
         }
 
@@ -1381,14 +1384,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ConstructorNode cn = new ConstructorNode(Opcodes.ACC_PUBLIC, new Parameter[]{new Parameter(LINKEDHASHMAP_CLASSNODE, "args")}, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
                 return cn;
             } else {
-                addStaticTypeError("No matching constructor found: " + node + toMethodParametersString("<init>", arguments), source);
+                addStaticTypeError("No matching constructor found: " + prettyPrintTypeName(node) + toMethodParametersString("", arguments), source);
                 return null;
             }
         } else if (constructorList.size() > 1) {
-            addStaticTypeError("Ambiguous constructor call " + node + toMethodParametersString("<init>", arguments), source);
+            addStaticTypeError("Ambiguous constructor call " + prettyPrintTypeName(node) + toMethodParametersString("", arguments), source);
             return null;
         }
         return constructorList.get(0);
+    }
+
+    private static String prettyPrintTypeName(final ClassNode node) {
+        if (node.isArray()) {
+            return prettyPrintTypeName(node.getComponentType()) + "[]";
+        }
+        return node.isGenericsPlaceHolder() ? node.getUnresolvedName() : node.getText();
     }
 
     /**
@@ -4847,7 +4857,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
 
-        if (receiver.equals(CLASS_Type) && receiver.getGenericsTypes() != null) {
+        if (isClassClassNodeWrappingConcreteType(receiver)) {
             List<MethodNode> result = findMethod(receiver.getGenericsTypes()[0].getType(), name, args);
             if (!result.isEmpty()) return result;
         }

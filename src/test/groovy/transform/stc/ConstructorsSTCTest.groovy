@@ -37,7 +37,7 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             import java.awt.Dimension
             Dimension d = [100]
-        ''', 'No matching constructor found: java.awt.Dimension<init>(int)'
+        ''', 'No matching constructor found: java.awt.Dimension(int)'
     }
 
     void testWrongNumberOfArgumentsWithDefaultConstructor() {
@@ -62,7 +62,7 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             import java.awt.Dimension
             Dimension d = ['100','200']
-        ''', 'No matching constructor found: java.awt.Dimension<init>(java.lang.String, java.lang.String)'
+        ''', 'No matching constructor found: java.awt.Dimension(java.lang.String, java.lang.String)'
     }
 
     void testConstructFromListAndVariables() {
