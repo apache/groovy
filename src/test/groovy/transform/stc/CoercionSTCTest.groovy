@@ -22,9 +22,9 @@ package groovy.transform.stc
  * Unit tests for static type checking : coercions.
  */
 class CoercionSTCTest extends StaticTypeCheckingTestCase {
+
     void testCoerceToArray() {
         assertScript '''
-        def m() {
             try {
                 throw new Exception()
             } catch (Throwable t) {
@@ -38,10 +38,90 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
                 // ...
                 clean = newTrace.toArray(newTrace as StackTraceElement[])
             }
-        }
+        '''
+    }
 
-        m()
+    // GROOVY-6802
+    void testCoerceToBool1() {
+        assertScript '''
+            boolean b = [new Object()]
+            assert b
+        '''
+        assertScript '''
+            boolean b = [false]
+            assert b
+        '''
+        assertScript '''
+            boolean b = [true]
+            assert b
+        '''
+        assertScript '''
+            boolean b = ['x']
+            assert b
+        '''
+        assertScript '''
+            boolean b = [:]
+            assert !b
+        '''
+        assertScript '''
+            boolean b = []
+            assert !b
+        '''
+    }
+
+    void testCoerceToBool2() {
+        assertScript '''
+            Boolean b = [new Object()]
+            assert b
+        '''
+        assertScript '''
+            Boolean b = [false]
+            assert b
+        '''
+        assertScript '''
+            Boolean b = [true]
+            assert b
+        '''
+        assertScript '''
+            Boolean b = ['x']
+            assert b
+        '''
+        assertScript '''
+            Boolean b = [:]
+            assert !b
+        '''
+        assertScript '''
+            Boolean b = []
+            assert !b
+        '''
+    }
+
+    void testCoerceToClass() {
+        assertScript '''
+            Class c = 'java.lang.String'
+            assert String.class
+        '''
+        shouldFailWithMessages '''
+            Class c = []
+        ''', 'No matching constructor found: java.lang.Class()'
+        shouldFailWithMessages '''
+            Class c = [:]
+        ''', 'No matching constructor found: java.lang.Class(java.util.LinkedHashMap)'
+    }
+
+    // GROOVY-6803
+    void testCoerceToString() {
+        assertScript '''
+            String s = ['x']
+            assert s == '[x]'
+        '''
+        assertScript '''
+            String s = [:]
+            assert s == '[:]'
+        '''
+        assertScript '''
+            String s = []
+            assert s == '[]'
         '''
     }
 }
-
