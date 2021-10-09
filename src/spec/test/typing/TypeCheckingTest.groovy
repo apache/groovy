@@ -159,8 +159,8 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
             // tag::stc_assign_prim[]
             int i = 0
             Integer bi = 1
-            int x = new Integer(123)
-            double d = new Float(5f)
+            int x = Integer.valueOf(123)
+            double d = Float.valueOf(5f)
             // end::stc_assign_prim[]
         '''
 

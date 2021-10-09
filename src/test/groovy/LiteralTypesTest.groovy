@@ -45,11 +45,11 @@ class LiteralTypesTest extends GroovyTestCase {
 
         x = 0xFF //Hex
         assert x instanceof Integer
-        assert x == new Integer("255")
+        assert x == Integer.valueOf("255")
 
         x = 0xFFL //Hex
         assert x instanceof Long
-        assert x == new Long("255")
+        assert x == Long.valueOf("255")
 
         x = 0xFFG //Hex
         assert x instanceof BigInteger
@@ -61,11 +61,11 @@ class LiteralTypesTest extends GroovyTestCase {
 
         x = 077 //octal
         assert x instanceof Integer
-        assert x == new Integer("63")
+        assert x == Integer.valueOf("63")
 
         x = 077l //octal
         assert x instanceof Long
-        assert x == new Long("63")
+        assert x == Long.valueOf("63")
 
         x = 077g //octal
         assert x instanceof BigInteger
@@ -73,23 +73,23 @@ class LiteralTypesTest extends GroovyTestCase {
 
         x = 2147483647           // max integer value
         assert x instanceof Integer
-        assert x == new Integer("2147483647")
+        assert x == Integer.valueOf("2147483647")
 
         x = -2147483648          // min integer constant
         assert x < 0
-        assert x == new Integer("-2147483648")
+        assert x == Integer.valueOf("-2147483648")
         assert x instanceof Integer, x.class
 
         x = -2147483649          // min integer value - 1
-        assert x == new Long("-2147483649")
+        assert x == Long.valueOf("-2147483649")
         assert x instanceof Long
 
         x = 2147483648           // 1 + max integer value
-        assert x == new Long("2147483648")
+        assert x == Long.valueOf("2147483648")
         assert x instanceof Long
 
         x = 9223372036854775807  // max long value
-        assert x == new Long("9223372036854775807")
+        assert x == Long.valueOf("9223372036854775807")
         assert x instanceof Long
 
         x = -9223372036854775808 // min long value
@@ -124,19 +124,19 @@ class LiteralTypesTest extends GroovyTestCase {
 
         x = 3.2D
         assert x instanceof Double
-        assert x == new Double("3.2")
+        assert x == Double.valueOf("3.2")
 
         x = -3.2d
         assert x instanceof Double
-        assert x == new Double("-3.2")
+        assert x == Double.valueOf("-3.2")
 
         x = 3.2F
         assert x instanceof Float
-        assert x == new Float("3.2")
+        assert x == Float.valueOf("3.2")
 
         x = -3.2f
         assert x instanceof Float
-        assert x == new Float("-3.2")
+        assert x == Float.valueOf("-3.2")
     }
 
     void testExponential() {
@@ -154,10 +154,10 @@ class LiteralTypesTest extends GroovyTestCase {
 
         x = 3.2e2d
         assert x instanceof Double
-        assert x == new Double("3.2e2")
+        assert x == Double.valueOf("3.2e2")
 
         x = 3.2e2f
         assert x instanceof Float
-        assert x == new Float("3.2e2")
+        assert x == Float.valueOf("3.2e2")
     }
 }

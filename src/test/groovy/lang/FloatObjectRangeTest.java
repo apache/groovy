@@ -28,7 +28,7 @@ public class FloatObjectRangeTest extends NumberRangeTestCase {
      */
     @Override
     protected Range createRange(int from, int to) {
-        return new ObjectRange(new Float(from), new Float(to));
+        return new ObjectRange(Float.valueOf(from), Float.valueOf(to));
     }
 
     /**
