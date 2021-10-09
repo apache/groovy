@@ -37,12 +37,12 @@ public class CharacterRangeTest extends TestCase {
     /**
      * The first character in the range.
      */
-    private final Character FROM = new Character('a');
+    private final Character FROM = Character.valueOf('a');
 
     /**
      * The last character in the range.
      */
-    private final Character TO = new Character('d');
+    private final Character TO = Character.valueOf('d');
 
     /**
      * {@inheritDoc}

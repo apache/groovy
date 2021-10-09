@@ -36,7 +36,7 @@ public class FloatObjectRangeTest extends NumberRangeTestCase {
      */
     @Override
     protected Comparable createValue(int value) {
-        return new Double(value);
+        return Double.valueOf(value);
     }
 
 }

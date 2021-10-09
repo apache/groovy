@@ -66,7 +66,7 @@ public class GStringTest extends GroovyTestCase {
     public void testEqualsAndHashCode() {
         DummyGString a = new DummyGString(new Object[]{Integer.valueOf(1)});
         DummyGString b = new DummyGString(new Object[]{Long.valueOf(1)});
-        Comparable c = new DummyGString(new Object[]{new Double(2.3)});
+        Comparable c = new DummyGString(new Object[]{Double.valueOf(2.3)});
 
         assertTrue("a == b", a.equals(b));
         assertEquals("hashcode a == b", a.hashCode(), b.hashCode());
