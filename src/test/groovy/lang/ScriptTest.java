@@ -53,7 +53,7 @@ public class ScriptTest extends TestSupport {
 
     public static class Dummy {
         public Integer method() {
-            return new Integer(3);
+            return 3;
         }
     }
 

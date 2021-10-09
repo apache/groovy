@@ -41,7 +41,7 @@ public class PropertyTest extends GroovyTestCase {
         map.put("bar", Integer.valueOf(123));
 
         assertGetSetProperty(map, "foo", "abc", "def");
-        assertGetSetProperty(map, "bar", Integer.valueOf(123), new Double(12.34));
+        assertGetSetProperty(map, "bar", Integer.valueOf(123), Double.valueOf(12.34));
     }
 
     public void testBeanProperties() throws Exception {

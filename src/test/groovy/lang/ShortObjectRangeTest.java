@@ -28,7 +28,7 @@ public class ShortObjectRangeTest extends NumberRangeTestCase {
      */
     @Override
     protected Range createRange(int from, int to) {
-        return new ObjectRange(new Short((short) from), new Short((short) to));
+        return new ObjectRange(Short.valueOf((short) from), Short.valueOf((short) to));
     }
 
     /**
@@ -36,6 +36,6 @@ public class ShortObjectRangeTest extends NumberRangeTestCase {
      */
     @Override
     protected Comparable createValue(int value) {
-        return new Integer(value);
+        return Integer.valueOf(value);
     }
 }

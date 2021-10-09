@@ -688,7 +688,8 @@ public abstract class NumberRangeTestCase extends TestCase {
         assertTrue("missing strict subset", range.containsAll(list));
 
         // test non-integer number
-        assertFalse("contains Float", range.contains(new Float((to + from) / 2.0 + 0.3)));
+        float v = (float) ((to + from) / 2.0 + 0.3);
+        assertFalse("contains Float", range.contains(v));
     }
 
     /**

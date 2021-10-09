@@ -158,8 +158,8 @@ public class InvokeMethodTest extends GroovyTestCase {
     //SPG modified to reflect DefaultGroovyMethod name change and expected result from
     //Integer/Integer division.
     public void testDivideNumbers() throws Throwable {
-        assertMethodCall(new Double(10), "div", Double.valueOf(2), Double.valueOf(5));
-        assertMethodCall(new Double(10), "div", Integer.valueOf(2), Double.valueOf(5));
+        assertMethodCall(Double.valueOf(10), "div", Double.valueOf(2), Double.valueOf(5));
+        assertMethodCall(Double.valueOf(10), "div", Integer.valueOf(2), Double.valueOf(5));
         assertMethodCall(Integer.valueOf(10), "div", Double.valueOf(2), Double.valueOf(5));
         assertMethodCall(Integer.valueOf(10), "div", Integer.valueOf(2), new java.math.BigDecimal("5"));
     }

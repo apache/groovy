@@ -236,12 +236,12 @@ public class ObjectRangeTest extends TestCase {
     public void testContainsWithLikeNumbers() {
         Range r = new ObjectRange(Integer.valueOf(1), Short.valueOf((short) 3));
         assertTrue("contains 2", r.contains(Integer.valueOf(2)));
-        r = new ObjectRange(new Float(1.0), new Double(3.0));
-        assertTrue("contains 2.0d", r.contains(new Double(2.0)));
+        r = new ObjectRange(Float.valueOf(1.0f), Double.valueOf(3.0));
+        assertTrue("contains 2.0d", r.contains(Double.valueOf(2.0)));
         assertTrue("contains 2.0g", r.contains(new BigDecimal(2.0)));
         r = new ObjectRange(new BigDecimal(1.0), new BigDecimal(3.0));
-        assertTrue("contains 2.0d", r.contains(new Double(2.0)));
-        assertTrue("contains 2.0f", r.contains(new Float(2.0)));
+        assertTrue("contains 2.0d", r.contains(Double.valueOf(2.0)));
+        assertTrue("contains 2.0f", r.contains(Float.valueOf(2.0f)));
     }
 
     public void testContainsWithIncompatibleType() {
@@ -355,7 +355,7 @@ public class ObjectRangeTest extends TestCase {
         }
         assertEquals(11, i);
 
-        r = createRange(new Character('a'), new Character('z'));
+        r = createRange(Character.valueOf('a'), Character.valueOf('z'));
         char valChar = 'a';
         for (Iterator it = r.iterator(); it.hasNext();) {
             assertEquals("equals to " + valChar, valChar, ((Character) it.next()).charValue());

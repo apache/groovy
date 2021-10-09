@@ -97,10 +97,10 @@ public class MetaClassTest extends GroovyTestCase {
         Double[][] matrix2 =
                 {
                         {
-                                new Double(35), new Double(50), new Double(120)
+                                Double.valueOf(35), Double.valueOf(50), Double.valueOf(120)
                         },
                         {
-                                new Double(75), new Double(80), new Double(150)
+                                Double.valueOf(75), Double.valueOf(80), Double.valueOf(150)
                         }
                 };
         metaClass.setProperty(dymmyClass, "matrix", matrix2);

@@ -37,18 +37,18 @@ public class SequenceTest extends GroovyTestCase {
         assertEquals("Element", "James", sequence.get(0));
         assertEquals("Element", "Bob", sequence.get(1));
 
-        // now lets try some methods on each item in the list
+        // now let's try some methods on each item in the list
         List answer = (List) InvokerHelper.invokeMethod(sequence, "startsWith", new Object[]{"Ja"});
         assertArrayEquals(new Object[]{Boolean.TRUE, Boolean.FALSE}, answer.toArray());
 
         answer = (List) InvokerHelper.invokeMethod(sequence, "length", null);
-        assertArrayEquals(new Object[]{new Integer(5), new Integer(3)}, answer.toArray());
+        assertArrayEquals(new Object[]{Integer.valueOf(5), Integer.valueOf(3)}, answer.toArray());
     }
 
     public void testAddingWrongTypeFails() {
         try {
             Sequence sequence = new Sequence(String.class);
-            sequence.add(new Integer(5));
+            sequence.add(Integer.valueOf(5));
 
             fail("Should have thrown exception");
         }

@@ -26,8 +26,6 @@ public class SimpleBean {
     private String bar;
     private Object x;
 
-    //private static final Object INT_CONST = new Integer(123);
-
     public String getBar() {
         return bar;
     }
@@ -36,12 +34,11 @@ public class SimpleBean {
         this.bar = value;
     }
 
-
     public void setNumber() {
-        x = new Integer(123);
+        x = Integer.valueOf(123);
     }
 
     public void setFloat() {
-        x = new Double(123);
+        x = Double.valueOf(123);
     }
 }

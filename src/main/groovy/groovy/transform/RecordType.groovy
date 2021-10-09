@@ -75,7 +75,8 @@ import java.lang.annotation.Target
  * @see PropertyOptions
  * @see TupleConstructor
  * @see MapConstructor
- * @see KnownImmutable*
+ * @see KnownImmutable
+ * @see POJO
  * @since 4.0.0
  */
 @RecordBase
