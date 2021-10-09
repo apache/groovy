@@ -99,12 +99,12 @@ public class InvokeMethodTest extends GroovyTestCase {
         if (notYetImplemented()) return;
         assertMethodChooser("String", "foo");
         assertMethodChooser("String", new StringBuffer());
-        assertMethodChooser("String", new Character('a'));
+        assertMethodChooser("String", Character.valueOf('a'));
     }
 
     public void testMethodChooserNumber() throws Throwable {
         assertMethodChooser("Number", Integer.valueOf(2));
-        assertMethodChooser("Number", new Double(2));
+        assertMethodChooser("Number", Double.valueOf(2));
     }
 
     public void testMethodChooserTwoParams() throws Throwable {
@@ -158,9 +158,9 @@ public class InvokeMethodTest extends GroovyTestCase {
     //SPG modified to reflect DefaultGroovyMethod name change and expected result from
     //Integer/Integer division.
     public void testDivideNumbers() throws Throwable {
-        assertMethodCall(new Double(10), "div", new Double(2), new Double(5));
-        assertMethodCall(new Double(10), "div", Integer.valueOf(2), new Double(5));
-        assertMethodCall(Integer.valueOf(10), "div", new Double(2), new Double(5));
+        assertMethodCall(new Double(10), "div", Double.valueOf(2), Double.valueOf(5));
+        assertMethodCall(new Double(10), "div", Integer.valueOf(2), Double.valueOf(5));
+        assertMethodCall(Integer.valueOf(10), "div", Double.valueOf(2), Double.valueOf(5));
         assertMethodCall(Integer.valueOf(10), "div", Integer.valueOf(2), new java.math.BigDecimal("5"));
     }
 

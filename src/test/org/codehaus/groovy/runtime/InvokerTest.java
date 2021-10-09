@@ -85,11 +85,11 @@ public class InvokerTest extends GroovyTestCase {
         assertAsBoolean(true, nonEmptyGString);
         assertAsBoolean(true, Integer.valueOf(1234));
         assertAsBoolean(false, Integer.valueOf(0));
-        assertAsBoolean(true, new Float(0.3f));
-        assertAsBoolean(true, new Double(3.0f));
-        assertAsBoolean(false, new Float(0.0f));
-        assertAsBoolean(true, new Character((char) 1));
-        assertAsBoolean(false, new Character((char) 0));
+        assertAsBoolean(true, Float.valueOf(0.3f));
+        assertAsBoolean(true, Double.valueOf(3.0f));
+        assertAsBoolean(false, Float.valueOf(0.0f));
+        assertAsBoolean(true, Character.valueOf((char) 1));
+        assertAsBoolean(false, Character.valueOf((char) 0));
         assertAsBoolean(false, Collections.EMPTY_LIST);
         assertAsBoolean(true, Arrays.asList(new Integer[]{Integer.valueOf(1)}));
     }
