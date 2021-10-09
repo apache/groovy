@@ -127,14 +127,7 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
     }
 
     protected static boolean shouldHandleImplicitThisForInnerClass(ClassNode cn) {
-        if (cn.isEnum() || cn.isInterface()) return false;
-        if ((cn.getModifiers() & Opcodes.ACC_STATIC) != 0) return false;
-
-        if (!(cn instanceof InnerClassNode)) return false;
-        InnerClassNode innerClass = (InnerClassNode) cn;
-        // scope != null means aic, we don't handle that here
-        if (innerClass.getVariableScope() != null) return false;
-        // static inner classes don't need this$0
-        return (innerClass.getModifiers() & Opcodes.ACC_STATIC) == 0;
+        final int explicitOrImplicitStatic = Opcodes.ACC_STATIC | Opcodes.ACC_INTERFACE | Opcodes.ACC_ENUM;
+        return (cn.getModifiers() & explicitOrImplicitStatic) == 0 && (cn instanceof InnerClassNode && !((InnerClassNode) cn).isAnonymous());
     }
 }
