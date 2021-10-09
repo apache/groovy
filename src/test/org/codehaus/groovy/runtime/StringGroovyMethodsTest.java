@@ -54,19 +54,19 @@ public final class StringGroovyMethodsTest {
 
     @Test
     public void testToMethods() throws Exception {
-        assertEquals(StringGroovyMethods.toInteger("1"), new Integer(1));
-        assertEquals(StringGroovyMethods.toLong("1"), new Long(1));
-        assertEquals(StringGroovyMethods.toFloat("1"), new Float(1));
-        assertEquals(StringGroovyMethods.toDouble("1"), new Double(1));
-        assertEquals(StringGroovyMethods.toBigInteger("1"), new BigInteger("1"));
-        assertEquals(StringGroovyMethods.toBigDecimal("1"), new BigDecimal("1"));
-        assertEquals(StringGroovyMethods.toBoolean("True"), Boolean.TRUE);
-        assertEquals(StringGroovyMethods.toBoolean("Y"), Boolean.TRUE);
-        assertEquals(StringGroovyMethods.toBoolean(" y "), Boolean.TRUE);
-        assertEquals(StringGroovyMethods.toBoolean("1"), Boolean.TRUE);
-        assertEquals(StringGroovyMethods.toBoolean("false"), Boolean.FALSE);
-        assertEquals(StringGroovyMethods.toBoolean("n"), Boolean.FALSE);
-        assertEquals(StringGroovyMethods.toBoolean("0"), Boolean.FALSE);
+        assertEquals(Integer.valueOf(1), StringGroovyMethods.toInteger("1"));
+        assertEquals(Long.valueOf(1), StringGroovyMethods.toLong("1"));
+        assertEquals(Float.valueOf(1), StringGroovyMethods.toFloat("1"));
+        assertEquals(Double.valueOf(1), StringGroovyMethods.toDouble("1"));
+        assertEquals(new BigInteger("1"), StringGroovyMethods.toBigInteger("1"));
+        assertEquals(new BigDecimal("1"), StringGroovyMethods.toBigDecimal("1"));
+        assertEquals(Boolean.TRUE, StringGroovyMethods.toBoolean("True"));
+        assertEquals(Boolean.TRUE, StringGroovyMethods.toBoolean("Y"));
+        assertEquals(Boolean.TRUE, StringGroovyMethods.toBoolean(" y "));
+        assertEquals(Boolean.TRUE, StringGroovyMethods.toBoolean("1"));
+        assertEquals(Boolean.FALSE, StringGroovyMethods.toBoolean("false"));
+        assertEquals(Boolean.FALSE, StringGroovyMethods.toBoolean("n"));
+        assertEquals(Boolean.FALSE, StringGroovyMethods.toBoolean("0"));
     }
 
     @Test
