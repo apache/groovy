@@ -904,7 +904,7 @@ include::../test/semantics/OptionalityTest.groovy[tags=omitted_public,indent=0]
 [[the-groovy-truth]]
 == The Groovy Truth
 
-Groovy decides whether a expression is true or false by applying the rules given below.
+Groovy decides whether an expression is true or false by applying the rules given below.
 
 === Boolean expressions
 True if the corresponding Boolean value is `true`.
