@@ -1032,6 +1032,90 @@ final class InnerClassTest {
     }
 
     @Test
+    void testUsageOfOuterType() {
+        assertScript '''
+            class Foo {
+                class Bar {
+                    def test() {
+                        new Baz()
+                    }
+                }
+                class Baz {
+                }
+            }
+            def baz = new Foo().new Foo.Bar().test()
+            assert baz instanceof Foo.Baz
+        '''
+    }
+
+    @Test
+    void testUsageOfOuterType2() {
+        assertScript '''
+            class Foo {
+                static class Bar {
+                    static test() {
+                        new Baz()
+                    }
+                }
+                static class Baz {
+                }
+            }
+            def baz = Foo.Bar.test()
+            assert baz instanceof Foo.Baz
+        '''
+    }
+
+    @Test
+    void testUsageOfOuterType3() {
+        def err = shouldFail '''
+            class Foo {
+                static class Bar {
+                    static test() {
+                        new Baz()
+                    }
+                }
+                class Baz {
+                }
+            }
+        '''
+        assert err =~ /No enclosing instance passed in constructor call of a non-static inner class/
+    }
+
+    @Test // GROOVY-10289
+    void testUsageOfOuterType4() {
+        def err = shouldFail '''
+            class Foo {
+                static class Bar {
+                    def test() {
+                        new Baz()
+                    }
+                }
+                class Baz {
+                }
+            }
+        '''
+        assert err =~ /No enclosing instance passed in constructor call of a non-static inner class/
+    }
+
+    @Test
+    void testUsageOfOuterType5() {
+        def err = shouldFail '''
+            class Foo {
+                static class Bar {
+                    class Baz {
+                        def test() {
+                            new Foo.Baz()
+                        }
+                    }
+                }
+                class Baz {
+                }
+            }
+        '''
+        assert err =~ /No enclosing instance passed in constructor call of a non-static inner class/
+    }
+
+    @Test
     void testClassOutputOrdering() {
         // this does actually not do much, but before this
         // change the inner class was tried to be executed

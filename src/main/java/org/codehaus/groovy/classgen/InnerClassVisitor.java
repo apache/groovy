@@ -260,30 +260,37 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
 
     // this is the counterpart of addThisReference(). To non-static inner classes, outer this should be
     // passed as the first argument implicitly.
-    private void passThisReference(ConstructorCallExpression call) {
+    private void passThisReference(final ConstructorCallExpression call) {
         ClassNode cn = call.getType().redirect();
         if (!shouldHandleImplicitThisForInnerClass(cn)) return;
 
-        boolean isInStaticContext = true;
+        boolean isInStaticContext;
         if (currentMethod != null)
-            isInStaticContext = currentMethod.getVariableScope().isInStaticContext();
+            isInStaticContext = currentMethod.isStatic();
         else if (currentField != null)
             isInStaticContext = currentField.isStatic();
-        else if (processingObjInitStatements)
-            isInStaticContext = false;
+        else
+            isInStaticContext = !processingObjInitStatements;
 
-        // if constructor call is not in static context, return
+        // GROOVY-10289
+        ClassNode enclosing = classNode;
+        while (!isInStaticContext && !enclosing.equals(cn.getOuterClass())) {
+            isInStaticContext = (enclosing.getModifiers() & ACC_STATIC) != 0;
+            // TODO: if enclosing is a local type, also test field or method
+            enclosing = enclosing.getOuterClass();
+            if (enclosing == null) break;
+        }
+
         if (isInStaticContext) {
             // constructor call is in static context and the inner class is non-static - 1st arg is supposed to be
             // passed as enclosing "this" instance
-            //
             Expression args = call.getArguments();
             if (args instanceof TupleExpression && ((TupleExpression) args).getExpressions().isEmpty()) {
                 addError("No enclosing instance passed in constructor call of a non-static inner class", call);
             }
-            return;
+        } else {
+            insertThis0ToSuperCall(call, cn);
         }
-        insertThis0ToSuperCall(call, cn);
     }
 
     private void insertThis0ToSuperCall(final ConstructorCallExpression call, final ClassNode cn) {
