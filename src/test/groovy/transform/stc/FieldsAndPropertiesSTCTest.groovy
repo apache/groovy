@@ -27,25 +27,88 @@ import groovy.transform.PackageScope
 class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
     void testAssignFieldValue() {
-        assertScript """
-            class A {
-                int x
-            }
-
-            A a = new A()
-            a.x = 1
-        """
+        assertScript '''
+            class C { int x }
+            C c = new C()
+            c.x = 1
+        '''
+        shouldFailWithMessages '''
+            class C { int x }
+            C c = new C()
+            c.x = '1'
+        ''', 'Cannot assign value of type java.lang.String to variable of type int'
     }
 
-    void testAssignFieldValueWithWrongType() {
-        shouldFailWithMessages '''
-            class A {
-                int x
+    void testAssignFinalFieldValue() {
+        assertScript '''
+            class C {
+                final x = null
             }
+            new C().x
+        '''
+        assertScript '''
+            class C {
+                final x
+                C() {
+                    x = null
+                }
+            }
+            new C().x
+        '''
+        assertScript '''
+            class C {
+                final x;
+                {
+                    x = null
+                }
+            }
+            new C().x
+        '''
+        assertScript '''
+            class C {
+                static final x;
+                static {
+                    x = null
+                }
+            }
+            new C().x
+        '''
+        assertScript '''
+            class C {
+                public final x
+                C(Object x) {
+                    this.x = x
+                }
+            }
+            new C(null).x
+        '''
+    }
 
-            A a = new A()
-            a.x = '1'
-        ''', 'Cannot assign value of type java.lang.String to variable of type int'
+    void testAssignFinalFieldValue2() {
+        shouldFailWithMessages '''
+            int[] array = []
+            array.length = 1
+        ''', 'Cannot set read-only property: length'
+
+        shouldFailWithMessages '''
+            class C { final x }
+            new C().x = null
+        ''', 'Cannot set read-only property: x'
+
+        shouldFailWithMessages '''
+            class C { final x }
+            new C().with { x = null }
+        ''', 'Cannot set read-only property: x'
+
+        shouldFailWithMessages '''
+            class C { final x }
+            new C().with { delegate.x = null }
+        ''', 'Cannot set read-only property: x'
+
+        shouldFailWithMessages '''
+            class C { final x }
+            new C().setX(null)
+        ''', 'Cannot find matching method C#setX(<unknown parameter type>).'
     }
 
     void testMapDotPropertySyntax() {
