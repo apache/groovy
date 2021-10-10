@@ -32,7 +32,7 @@ import java.util.List;
  *  A converter for converting YAML to JSON, vice versa
  *  @since 3.0.0
  */
-public class YamlConverter {
+public final class YamlConverter {
     /**
      * Convert yaml to json
      * @param yamlReader the reader of yaml
