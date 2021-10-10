@@ -525,6 +525,7 @@ public class CompilerConfiguration {
         setMinimumRecompilationInterval(configuration.getMinimumRecompilationInterval());
         setTargetBytecode(configuration.getTargetBytecode());
         setPreviewFeatures(configuration.isPreviewFeatures());
+        setRecordsNative(configuration.isRecordsNative());
         setSealedNative(configuration.isSealedNative());
         setSealedAnnotations(configuration.isSealedAnnotations());
         setLogClassgen(configuration.isLogClassgen());
