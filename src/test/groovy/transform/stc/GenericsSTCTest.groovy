@@ -932,21 +932,24 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             class Test<T> {
                 T test() {
-                    new Foo<T>().one.two.three
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        def type = node.getNodeMetaData(INFERRED_TYPE)
+                        assert type.toString(false) == 'T'
+                    })
+                    def t = new Foo<T>().x.y.z
                 }
             }
             class Foo<X> {
-                Bar<X> one = new Bar<>()
+                Bar<X> x = new Bar<>()
             }
-            class Bar<Y> {
-                Baz<Y> two = new Baz<>()
+            class Bar<T> {
+                Baz<T> y = new Baz<>()
             }
             class Baz<Z> {
-                Z three
+                Z z
             }
 
-            def result = new Test().test()
-            assert result == null
+            new Test<String>().test()
         '''
     }
 

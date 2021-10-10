@@ -1576,14 +1576,10 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     public static ClassNode resolveClassNodeGenerics(Map<GenericsTypeName, GenericsType> resolvedPlaceholders, final Map<GenericsTypeName, GenericsType> placeholdersFromContext, final ClassNode currentType) {
-        ClassNode target = currentType.redirect();
-        resolvedPlaceholders = new HashMap<>(resolvedPlaceholders);
-        applyContextGenerics(resolvedPlaceholders, placeholdersFromContext);
-
-        Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
-        extractGenericsConnections(connections, currentType, target);
-        applyGenericsConnections(connections, resolvedPlaceholders);
-        return applyGenericsContext(resolvedPlaceholders, currentType);
+        ClassNode type = currentType; // GROOVY-10280, et al.
+        type = applyGenericsContext(resolvedPlaceholders, type);
+        type = applyGenericsContext(placeholdersFromContext, type);
+        return type;
     }
 
     static void applyGenericsConnections(final Map<GenericsTypeName, GenericsType> connections, final Map<GenericsTypeName, GenericsType> resolvedPlaceholders) {
