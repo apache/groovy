@@ -160,15 +160,7 @@ class StatementReplacer extends CodeVisitorSupport {
         this.closureLevel = closureLevel;
     }
 
-    private Closure<Boolean> when = new Closure<Boolean>(this, this) {
-        public Boolean doCall(Statement node) {
-            return false;
-        }
-    };
-    private Closure<Statement> replaceWith = new Closure<Statement>(this, this) {
-        public Statement doCall(Statement statement) {
-            return statement;
-        }
-    };
+    private Closure<Boolean> when;
+    private Closure<Statement> replaceWith;
     private int closureLevel = 0;
 }
