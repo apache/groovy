@@ -1548,6 +1548,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode receiverType = receiver.getType();
 
             if (receiverType.isArray() && "length".equals(propertyName)) {
+                pexp.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE);
                 storeType(pexp, int_TYPE);
                 if (visitor != null) {
                     FieldNode length = new FieldNode("length", Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL, int_TYPE, receiverType, null);
@@ -1586,7 +1587,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // skip property/accessor checks for "x.@field"
                 if (pexp instanceof AttributeExpression) {
                     if (field != null && storeField(field, pexp, receiverType, visitor, receiver.getData(), !readMode)) {
-                        pexp.removeNodeMetaData(READONLY_PROPERTY);
                         return true;
                     }
                     continue;
@@ -1595,7 +1595,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // skip property/accessor checks for "field", "this.field", "this.with { field }", etc. in declaring class of field
                 if (field != null && enclosingTypes.contains(current)) {
                     if (storeField(field, pexp, receiverType, visitor, receiver.getData(), !readMode)) {
-                        pexp.removeNodeMetaData(READONLY_PROPERTY);
                         return true;
                     }
                 }
@@ -1645,12 +1644,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             }
                             pexp.removeNodeMetaData(READONLY_PROPERTY);
                             return true;
-                        } else if (property == null) {
-                            if (field != null && hasAccessToField(typeCheckingContext.getEnclosingClassNode(), field)) {
-                                pexp.removeNodeMetaData(READONLY_PROPERTY);
-                            } else if (getter != null) {
-                                pexp.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE);
-                            }
+                        } else if (getter != null && field == null) {
+                            pexp.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE); // GROOVY-9127
                         }
                     }
                 }
@@ -1869,9 +1864,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private boolean storeField(final FieldNode field, final PropertyExpression expressionToStoreOn, final ClassNode receiver, final ClassCodeVisitorSupport visitor, final String delegationData, final boolean lhsOfAssignment) {
         if (visitor != null) visitor.visitField(field);
         checkOrMarkPrivateAccess(expressionToStoreOn, field, lhsOfAssignment);
+        boolean accessible = hasAccessToField(isSuperExpression(expressionToStoreOn.getObjectExpression()) ? typeCheckingContext.getEnclosingClassNode() : receiver, field);
 
         if (expressionToStoreOn instanceof AttributeExpression) { // TODO: expand to include PropertyExpression
-            if (!hasAccessToField(isSuperExpression(expressionToStoreOn.getObjectExpression()) ? typeCheckingContext.getEnclosingClassNode() : receiver, field)) {
+            if (!accessible) {
                 addStaticTypeError("The field " + field.getDeclaringClass().getNameWithoutPackage() + "." + field.getName() + " is not accessible", expressionToStoreOn.getProperty());
             }
         }
@@ -1879,6 +1875,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         storeWithResolve(field.getOriginType(), receiver, field.getDeclaringClass(), field.isStatic(), expressionToStoreOn);
         if (delegationData != null) {
             expressionToStoreOn.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
+        }
+        if (field.isFinal()) {
+          //expressionToStoreOn.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE); // GROOVY-5450
+        } else if (accessible) {
+            expressionToStoreOn.removeNodeMetaData(READONLY_PROPERTY);
         }
         return true;
     }
@@ -1888,6 +1889,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         storeWithResolve(property.getOriginType(), receiver, property.getDeclaringClass(), property.isStatic(), expressionToStoreOn);
         if (delegationData != null) {
             expressionToStoreOn.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
+        }
+        if (Modifier.isFinal(property.getModifiers())) {
+            expressionToStoreOn.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE);
+        } else {
+            expressionToStoreOn.removeNodeMetaData(READONLY_PROPERTY);
         }
         return true;
     }

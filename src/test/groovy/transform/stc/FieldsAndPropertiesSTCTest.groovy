@@ -20,6 +20,7 @@ package groovy.transform.stc
 
 import groovy.test.NotYetImplemented
 import groovy.transform.PackageScope
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 
 /**
  * Unit tests for static type checking : fields and properties.
@@ -28,23 +29,88 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
     void testAssignFieldValue() {
         assertScript '''
-            class C {
-                int x
-            }
+            class C { int x }
             C c = new C()
             c.x = 1
         '''
-    }
-
-    void testAssignFieldValueWithWrongType() {
         shouldFailWithMessages '''
-            class C {
-                int x
-            }
+            class C { int x }
             C c = new C()
             c.x = '1'
         ''',
         'Cannot assign value of type java.lang.String to variable of type int'
+    }
+
+    void testAssignFinalFieldValue() {
+        assertScript '''
+            class C {
+                final x = null
+            }
+            new C().x
+        '''
+        assertScript '''
+            class C {
+                final x
+                C() {
+                    x = null
+                }
+            }
+            new C().x
+        '''
+        assertScript '''
+            class C {
+                final x;
+                {
+                    x = null
+                }
+            }
+            new C().x
+        '''
+        assertScript '''
+            class C {
+                static final x;
+                static {
+                    x = null
+                }
+            }
+            new C().x
+        '''
+        assertScript '''
+            class C {
+                public final x
+                C(Object x) {
+                    this.x = x
+                }
+            }
+            new C(null).x
+        '''
+    }
+
+    void testAssignFinalFieldValue2() {
+        shouldFailWithMessages '''
+            int[] array = []
+            array.length = 1
+        ''', 'Cannot set read-only property: length'
+
+        shouldFailWithMessages '''
+            class C { final x }
+            new C().x = null
+        ''', 'Cannot set read-only property: x'
+
+        shouldFailWithMessages '''
+            class C { final x }
+            new C().with { x = null }
+        ''', 'Cannot set read-only property: x'
+
+        shouldFailWithMessages '''
+            class C { final x }
+            new C().with { delegate.x = null }
+        ''', 'Cannot set read-only property: x'
+
+        shouldFailWithMessages '''
+            class C { final x }
+            new C().setX(null)
+        ''', 'Cannot find matching method C#setX(<unknown parameter type>).'
     }
 
     void testInferenceFromFieldType() {
@@ -304,6 +370,42 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             assert c.m() == 123456 // BUG! exception in phase 'class generation' ...
             assert c.m(123) == 123 // ClassCastException: class org.codehaus.groovy.ast.Parameter cannot be cast to ...
         '''
+    }
+
+    // GROOVY-11005
+    void testGetterForProperty4() {
+        File parentDir = File.createTempDir()
+        config.with {
+            targetDirectory = File.createTempDir()
+            jointCompilationOptions = [memStub: true]
+        }
+        try {
+            def a = new File(parentDir, 'Pogo.groovy')
+            a.write '''
+                class Pogo {
+                    String value
+                    String getValue() { value }
+                }
+            '''
+            def b = new File(parentDir, 'Test.groovy')
+            b.write '''
+                class Test extends Pogo {
+                    void test() {
+                        value = 'string'
+                    }
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b)
+            cu.compile()
+
+            loader.loadClass('Test').newInstance().test()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+        }
     }
 
     // GROOVY-5232
