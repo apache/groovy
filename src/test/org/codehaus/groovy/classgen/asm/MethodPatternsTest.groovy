@@ -26,7 +26,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
         if (config.indyEnabled) return;
         // in this example the if block contains statements that will not be optimized
         // but we still want to optimize the for loops, which can.
-        // The test will check there is a optimized bytecode sequence for the loops.
+        // The test will check there is an optimized bytecode sequence for the loops.
         assert compile('''
 
             long sum = 0;
