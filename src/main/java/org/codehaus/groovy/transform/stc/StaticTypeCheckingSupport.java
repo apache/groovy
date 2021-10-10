@@ -1908,19 +1908,6 @@ public abstract class StaticTypeCheckingSupport {
         return genericsType.getType();
     }
 
-    private static void applyContextGenerics(final Map<GenericsTypeName, GenericsType> resolvedPlaceholders, final Map<GenericsTypeName, GenericsType> placeholdersFromContext) {
-        if (placeholdersFromContext == null) return;
-        for (Map.Entry<GenericsTypeName, GenericsType> entry : resolvedPlaceholders.entrySet()) {
-            GenericsType gt = entry.getValue();
-            if (gt.isPlaceholder()) {
-                GenericsTypeName name = new GenericsTypeName(gt.getName());
-                GenericsType outer = placeholdersFromContext.get(name);
-                if (outer == null) continue;
-                entry.setValue(outer);
-            }
-        }
-    }
-
     private static Map<GenericsTypeName, GenericsType> getGenericsParameterMapOfThis(final ClassNode cn) {
         if (cn == null) return null;
         Map<GenericsTypeName, GenericsType> map = null;
