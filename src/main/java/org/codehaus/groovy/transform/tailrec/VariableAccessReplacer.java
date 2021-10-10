@@ -4,7 +4,6 @@ import groovy.lang.Closure;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -61,6 +60,6 @@ class VariableAccessReplacer {
      * 'varToReplace2': [name: 'newVar2', type: TypeOfVar2],
      * ]
      */
-    private Map<String, Map> nameAndTypeMapping = new LinkedHashMap<>();
+    private Map<String, Map> nameAndTypeMapping;
     private VariableReplacedListener listener = VariableReplacedListener.NULL;
 }

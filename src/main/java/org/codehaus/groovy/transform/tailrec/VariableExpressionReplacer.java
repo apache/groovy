@@ -205,15 +205,7 @@ class VariableExpressionReplacer extends CodeVisitorSupport {
         this.replaceWith = replaceWith;
     }
 
-    private Closure<Boolean> when = new Closure<Boolean>(this, this) {
-        public Boolean doCall(final VariableExpression node) {
-            return false;
-        }
-    };
-    private Closure<VariableExpression> replaceWith = new Closure<VariableExpression>(this, this) {
-        public VariableExpression doCall(final VariableExpression variableExpression) {
-            return variableExpression;
-        }
-    };
+    private Closure<Boolean> when;
+    private Closure<VariableExpression> replaceWith;
     private ExpressionTransformer transformer;
 }
