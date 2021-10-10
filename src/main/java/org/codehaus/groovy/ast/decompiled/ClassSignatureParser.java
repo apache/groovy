@@ -65,7 +65,9 @@ class ClassSignatureParser {
                         }
                     });
                 }
-                RecordComponentNode recordComponentNode = new RecordComponentNode(classNode, r.name, typeHolder.getObject());
+                ClassNode cn = typeHolder.getObject();
+                Annotations.addTypeAnnotations(r, cn, resolver);
+                RecordComponentNode recordComponentNode = new RecordComponentNode(classNode, r.name, cn);
                 Annotations.addAnnotations(r, recordComponentNode, resolver);
                 return recordComponentNode;
             }).collect(Collectors.toList()));

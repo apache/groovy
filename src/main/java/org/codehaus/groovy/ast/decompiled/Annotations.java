@@ -109,6 +109,19 @@ class Annotations {
         return node;
     }
 
+    static <T extends ClassNode> T addTypeAnnotations(AnnotatedTypeStub stub, T node, AsmReferenceResolver resolver) {
+        List<TypeAnnotationStub> annotations = stub.getTypeAnnotations();
+        if (annotations != null) {
+            for (TypeAnnotationStub annotation : annotations) {
+                AnnotationNode annotationNode = createAnnotationNode(annotation, resolver);
+                if (annotationNode != null) {
+                    node.addTypeAnnotation(annotationNode);
+                }
+            }
+        }
+        return node;
+    }
+
     private static class DecompiledAnnotationNode extends AnnotationNode {
         private final Object initLock;
         private volatile boolean lazyInitDone;

@@ -412,7 +412,11 @@ public class AsmClassGenerator extends ClassGenerator {
                             BytecodeHelper.getTypeGenericsSignature(type));
 
             visitAnnotations(recordComponentNode, rcv);
-            TypeReference typeRef = newTypeParameterReference(CLASS_TYPE_PARAMETER, i);
+
+            // the int encoded value of the type reference is ALWAYS `318767104`
+            // TODO Get the magic number `318767104` via `TypeReference.newXXX()`
+            TypeReference typeRef = new TypeReference(318767104);
+
             visitTypeAnnotations(recordComponentNode.getType(), rcv, typeRef, "", true);
             rcv.visitEnd();
         }

@@ -53,6 +53,10 @@ interface AnnotatedStub {
     List<AnnotationStub> getAnnotations();
 }
 
+interface AnnotatedTypeStub {
+    List<TypeAnnotationStub> getTypeAnnotations();
+}
+
 class MemberStub implements AnnotatedStub {
     List<AnnotationStub> annotations = null;
 
@@ -117,6 +121,12 @@ class AnnotationStub {
     }
 }
 
+class TypeAnnotationStub extends AnnotationStub {
+    public TypeAnnotationStub(String className) {
+        super(className);
+    }
+}
+
 class TypeWrapper {
     final String desc;
 
@@ -135,11 +145,12 @@ class EnumConstantWrapper {
     }
 }
 
-class RecordComponentStub implements AnnotatedStub {
+class RecordComponentStub implements AnnotatedStub, AnnotatedTypeStub {
     final String name;
     final String descriptor;
     final String signature;
     List<AnnotationStub> annotations;
+    List<TypeAnnotationStub> typeAnnotations;
 
     public RecordComponentStub(String name, String descriptor, String signature) {
         this.name = name;
@@ -157,5 +168,17 @@ class RecordComponentStub implements AnnotatedStub {
     @Override
     public List<AnnotationStub> getAnnotations() {
         return annotations;
+    }
+
+    public TypeAnnotationStub addTypeAnnotation(String desc) {
+        TypeAnnotationStub stub = new TypeAnnotationStub(desc);
+        if (typeAnnotations == null) typeAnnotations = new ArrayList<TypeAnnotationStub>(1);
+        typeAnnotations.add(stub);
+        return stub;
+    }
+
+    @Override
+    public List<TypeAnnotationStub> getTypeAnnotations() {
+        return typeAnnotations;
     }
 }

@@ -27,6 +27,7 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.RecordComponentVisitor;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.TypePath;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -203,6 +204,11 @@ public abstract class AsmDecompiler {
                 @Override
                 public AnnotationVisitor visitAnnotation(final String descriptor, final boolean visible) {
                     return readAnnotationMembers(recordComponentStub.addAnnotation(descriptor));
+                }
+
+                @Override
+                public AnnotationVisitor visitTypeAnnotation(final int typeRef, final TypePath typePath, final String descriptor, final boolean visible) {
+                    return readAnnotationMembers(recordComponentStub.addTypeAnnotation(descriptor));
                 }
             };
         }

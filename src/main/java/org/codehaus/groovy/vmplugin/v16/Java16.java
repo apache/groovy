@@ -121,7 +121,13 @@ public class Java16 extends Java10 {
                         configureAnnotation(node, annotation);
                         return node;
                     }).collect(Collectors.toList());
-                    return new RecordComponentNode(classNode, r.getName(), makeClassNode(cu, r.getGenericType(), r.getType()), annotationNodeList);
+                    ClassNode type = makeClassNode(cu, r.getGenericType(), r.getType());
+                    type.addTypeAnnotations(Arrays.stream(r.getAnnotatedType().getAnnotations()).map(annotation -> {
+                        AnnotationNode node = new AnnotationNode(ClassHelper.make(annotation.annotationType()));
+                        configureAnnotation(node, annotation);
+                        return node;
+                    }).collect(Collectors.toList()));
+                    return new RecordComponentNode(classNode, r.getName(), type, annotationNodeList);
                 })
                 .collect(Collectors.toList());
         classNode.setRecordComponentNodes(recordComponentNodeList);

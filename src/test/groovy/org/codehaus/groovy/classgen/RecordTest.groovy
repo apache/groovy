@@ -84,21 +84,36 @@ class RecordTest {
             @Target([ElementType.RECORD_COMPONENT])
             @interface NotNull {}
             
-            record Person(@NotNull String name, int age, List<String> locations, String[] titles) {}
+            @Documented
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target([ElementType.RECORD_COMPONENT, ElementType.TYPE_USE])
+            @interface NotNull2 {}
+            
+            record Person(@NotNull @NotNull2 String name, int age, @NotNull2 List<String> locations, String[] titles) {}
             
             RecordComponent[] rcs = Person.class.getRecordComponents()
             assert 4 == rcs.length
             
             assert 'name' == rcs[0].name && String.class == rcs[0].type
             Annotation[] annotations = rcs[0].getAnnotations()
-            assert 1 == annotations.length
+            assert 2 == annotations.length
             assert NotNull.class == annotations[0].annotationType()
+            assert NotNull2.class == annotations[1].annotationType()
+            def typeAnnotations = rcs[0].getAnnotatedType().getAnnotations()
+            assert 1 == typeAnnotations.length
+            assert NotNull2.class == typeAnnotations[0].annotationType()
             
             assert 'age' == rcs[1].name && int.class == rcs[1].type
             
             assert 'locations' == rcs[2].name && List.class == rcs[2].type
             assert 'Ljava/util/List<Ljava/lang/String;>;' == rcs[2].genericSignature
             assert 'java.util.List<java.lang.String>' == rcs[2].genericType.toString()
+            def annotations2 = rcs[2].getAnnotations()
+            assert 1 == annotations2.length
+            assert NotNull2.class == annotations2[0].annotationType()
+            def typeAnnotations2 = rcs[2].getAnnotatedType().getAnnotations()
+            assert 1 == typeAnnotations2.length
+            assert NotNull2.class == typeAnnotations2[0].annotationType()
             
             assert 'titles' == rcs[3].name && String[].class == rcs[3].type
         '''
@@ -118,13 +133,19 @@ class RecordTest {
             def b = new File(parentDir, 'Person.java')
             b.write '''
                 import java.lang.annotation.*;
+                import java.util.*;
                 
-                public record Person(@NotNull String name, int age, java.util.List<String> locations, String[] titles) {}
+                public record Person(@NotNull @NotNull2 String name, int age, @NotNull2 List<String> locations, String[] titles) {}
                 
                 @Documented
                 @Retention(RetentionPolicy.RUNTIME)
                 @Target({ElementType.RECORD_COMPONENT})
                 @interface NotNull {}
+                
+                @Documented
+                @Retention(RetentionPolicy.RUNTIME)
+                @Target({ElementType.RECORD_COMPONENT, ElementType.TYPE_USE})
+                @interface NotNull2 {}
             '''
 
             def loader = new GroovyClassLoader(this.class.classLoader)
@@ -134,46 +155,62 @@ class RecordTest {
 
             Class personClazz = loader.loadClass("Person")
             Class notNullClazz = loader.loadClass("NotNull")
+            Class notNull2Clazz = loader.loadClass("NotNull2")
 
             def rcs = personClazz.getRecordComponents()
             assert 4 == rcs.length
 
             assert 'name' == rcs[0].name && String.class == rcs[0].type
             def annotations = rcs[0].getAnnotations()
-            assert 1 == annotations.length
+            assert 2 == annotations.length
             assert notNullClazz == annotations[0].annotationType()
+            assert notNull2Clazz == annotations[1].annotationType()
+            def typeAnnotations = rcs[0].getAnnotatedType().getAnnotations()
+            assert 1 == typeAnnotations.length
+            assert notNull2Clazz == typeAnnotations[0].annotationType()
 
             assert 'age' == rcs[1].name && int.class == rcs[1].type
 
             assert 'locations' == rcs[2].name && List.class == rcs[2].type
             assert 'Ljava/util/List<Ljava/lang/String;>;' == rcs[2].genericSignature
             assert 'java.util.List<java.lang.String>' == rcs[2].genericType.toString()
+            def annotations2 = rcs[2].getAnnotations()
+            assert 1 == annotations2.length
+            assert notNull2Clazz == annotations2[0].annotationType()
+            def typeAnnotations2 = rcs[2].getAnnotatedType().getAnnotations()
+            assert 1 == typeAnnotations2.length
+            assert notNull2Clazz == typeAnnotations2[0].annotationType()
 
             assert 'titles' == rcs[3].name && String[].class == rcs[3].type
 
             ClassNode personClassNode = ClassHelper.make(personClazz)
             ClassNode notNullClassNode = ClassHelper.make(notNullClazz)
-            doTestNativeRecordClassNode(personClassNode, notNullClassNode)
+            ClassNode notNull2ClassNode = ClassHelper.make(notNull2Clazz)
+            doTestNativeRecordClassNode(personClassNode, notNullClassNode, notNull2ClassNode)
 
             def resource = loader.getResource(personClazz.getName().replace('.', '/') + '.class')
             def stub = AsmDecompiler.parseClass(resource)
             def unit = new CompilationUnit(loader)
             def personDecompiledClassNode = new DecompiledClassNode(stub, new AsmReferenceResolver(new ClassNodeResolver(), unit))
-            doTestNativeRecordClassNode(personDecompiledClassNode, notNullClassNode)
+            doTestNativeRecordClassNode(personDecompiledClassNode, notNullClassNode, notNull2ClassNode)
         } finally {
             parentDir.deleteDir()
             config.targetDirectory.deleteDir()
         }
     }
 
-    private static void doTestNativeRecordClassNode(ClassNode personClassNode, ClassNode notNullClassNode) {
+    private static void doTestNativeRecordClassNode(ClassNode personClassNode, ClassNode notNullClassNode, ClassNode notNull2ClassNode) {
         assert personClassNode.isRecord()
         def rcns = personClassNode.getRecordComponentNodes()
         assert 4 == rcns.size()
         assert 'name' == rcns[0].name && ClassHelper.STRING_TYPE == rcns[0].type
         List<AnnotationNode> annotationNodes = rcns[0].getAnnotations()
-        assert 1 == annotationNodes.size()
+        assert 2 == annotationNodes.size()
         assert notNullClassNode == annotationNodes[0].getClassNode()
+        assert notNull2ClassNode == annotationNodes[1].getClassNode()
+        def typeAnnotationNodes = rcns[0].getType().getTypeAnnotations()
+        assert 1 == typeAnnotationNodes.size()
+        assert notNull2ClassNode == typeAnnotationNodes[0].getClassNode()
 
         assert 'age' == rcns[1].name && ClassHelper.int_TYPE == rcns[1].type
 
@@ -181,6 +218,12 @@ class RecordTest {
         def genericsTypes = rcns[2].type.genericsTypes
         assert 1 == genericsTypes.size()
         assert ClassHelper.STRING_TYPE == genericsTypes[0].type
+        def annotationNodes2 = rcns[2].getAnnotations()
+        assert 1 == annotationNodes2.size()
+        assert notNull2ClassNode == annotationNodes2[0].getClassNode()
+        def typeAnnotationNodes2 = rcns[2].getType().getTypeAnnotations()
+        assert 1 == typeAnnotationNodes2.size()
+        assert notNull2ClassNode == typeAnnotationNodes2[0].getClassNode()
 
         assert 'titles' == rcns[3].name && ClassHelper.make(String[].class) == rcns[3].type
     }
