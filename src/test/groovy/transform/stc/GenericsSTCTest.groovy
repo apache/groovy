@@ -909,6 +909,47 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-10283
+    void testDiamondInferrenceFromConstructor16() {
+        assertScript '''
+            class A<T1, T2> {
+            }
+            class B<T1 extends Number, T2 extends A<C, ? extends T1>> {
+                T2 t
+                B(T2 t) {
+                    this.t  = t
+                }
+            }
+            class C {
+            }
+
+            new B<Integer,A<C,Integer>>(new A<>())
+        '''
+    }
+
+    // GROOVY-10280
+    void testTypeArgumentPropagation() {
+        assertScript '''
+            class Test<T> {
+                T test() {
+                    new Foo<T>().one.two.three
+                }
+            }
+            class Foo<X> {
+                Bar<X> one = new Bar<>()
+            }
+            class Bar<Y> {
+                Baz<Y> two = new Baz<>()
+            }
+            class Baz<Z> {
+                Z three
+            }
+
+            def result = new Test().test()
+            assert result == null
+        '''
+    }
+
     void testLinkedListWithListArgument() {
         assertScript '''
             List<String> list = new LinkedList<String>(['1','2','3'])
