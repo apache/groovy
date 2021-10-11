@@ -2228,7 +2228,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     addStaticTypeError("Cannot return value of type " + prettyPrintType(type) + " on method returning type " + prettyPrintType(returnType), expression);
                 }
             } else if (implementsInterfaceOrIsSubclassOf(type, returnType)) {
-                checkTypeGenerics(returnType, type, expression);
+                BinaryExpression dummy = assignX(varX("{target}", returnType), expression, expression);
+                ClassNode resultType = getResultType(returnType, ASSIGN, type, dummy); // GROOVY-10295
+                checkTypeGenerics(returnType, resultType, expression);
             }
         }
         return null;
@@ -4404,7 +4406,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (leftExpression instanceof VariableExpression) {
                 ClassNode initialType = getOriginalDeclarationType(leftExpression);
 
-                if (isPrimitiveType(right) && initialType.isDerivedFrom(Number_TYPE)) {
+                if (isPrimitiveType(rightRedirect) && initialType.isDerivedFrom(Number_TYPE)) {
                     return getWrapper(right);
                 }
 

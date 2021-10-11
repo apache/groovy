@@ -3642,12 +3642,30 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     void testReturnTypeChecking() {
         shouldFailWithMessages '''
-            class Foo {
-                List<String> run() {
-                    [11, 12]
-                }
+            List<String> test() {
+                return [1,2,3]
             }
-        ''', 'Incompatible generic argument types. Cannot assign java.util.List<java.lang.Integer> to: java.util.List<java.lang.String>'
+        ''', 'Cannot assign java.util.ArrayList<java.lang.Integer> to: java.util.List<java.lang.String>'
+
+        shouldFailWithMessages '''
+            List<CharSequence> test() {
+                return [1,2,3]
+            }
+        ''', 'Cannot assign java.util.ArrayList<java.lang.Integer> to: java.util.List<java.lang.CharSequence>'
+    }
+
+    // GROOVY-10295
+    void testReturnTypeChecking2() {
+        assertScript '''
+            List<CharSequence> test() {
+                return ['foo','bar','baz']
+            }
+        '''
+        assertScript '''
+            Map<String,Object> test() {
+                return [date: new Date(), string: new String()]
+            }
+        '''
     }
 
     void testBoundedReturnTypeChecking() {
