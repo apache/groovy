@@ -57,6 +57,15 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
         assertScript '''
             class C {
+                final x
+                C(def x) {
+                    this.x = x
+                }
+            }
+            new C(null).x
+        '''
+        assertScript '''
+            class C {
                 final x;
                 {
                     x = null
@@ -66,21 +75,21 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
         assertScript '''
             class C {
-                static final x;
-                static {
-                    x = null
+                final x;
+                {
+                    this.x = x
                 }
             }
             new C().x
         '''
         assertScript '''
             class C {
-                public final x
-                C(Object x) {
-                    this.x = x
+                static final x
+                static {
+                    this.x = null
                 }
             }
-            new C(null).x
+            new C().x
         '''
     }
 
@@ -93,6 +102,12 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             class C { final x }
             new C().x = null
+        ''', 'Cannot set read-only property: x'
+
+        // GROOVY-5450
+        shouldFailWithMessages '''
+            class C { final x }
+            new C().@x = null
         ''', 'Cannot set read-only property: x'
 
         shouldFailWithMessages '''
