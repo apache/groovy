@@ -1877,7 +1877,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             expressionToStoreOn.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
         }
         if (field.isFinal()) {
-          //expressionToStoreOn.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE); // GROOVY-5450
+            MethodNode enclosing = typeCheckingContext.getEnclosingMethod();
+            if (enclosing == null || !enclosing.getName().endsWith("init>"))
+                expressionToStoreOn.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE); // GROOVY-5450
         } else if (accessible) {
             expressionToStoreOn.removeNodeMetaData(READONLY_PROPERTY);
         }
@@ -2698,6 +2700,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             typeCheckingContext.popErrorCollector();
             node.putNodeMetaData(ERROR_COLLECTOR, collector);
         }
+    }
+
+    @Override
+    protected void visitObjectInitializerStatements(final ClassNode node) {
+        // GROOVY-5450: create fake constructor node so final field analysis can allow write within non-static initializer block(s)
+        ConstructorNode init = new ConstructorNode(0, null, null, new BlockStatement(node.getObjectInitializerStatements(), null));
+        typeCheckingContext.pushEnclosingMethod(init);
+        super.visitObjectInitializerStatements(node);
+        typeCheckingContext.popEnclosingMethod();
     }
 
     protected void addTypeCheckingInfoAnnotation(final MethodNode node) {

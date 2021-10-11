@@ -73,11 +73,9 @@ public abstract class MethodCallTransformation implements ASTTransformation {
                     }
 
                     try {
-                        if (classNode.getObjectInitializerStatements() != null) {
-                            for (Statement node : classNode.getObjectInitializerStatements()) {
-                                if (node != null) {
-                                    node.visit(transformer);
-                                }
+                        for (Statement node : classNode.getObjectInitializerStatements()) {
+                            if (node != null) {
+                                node.visit(transformer);
                             }
                         }
                     } catch (MissingPropertyException ignored) {
