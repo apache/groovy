@@ -33,7 +33,7 @@ import java.io.Reader;
  *  @since 4.0.0
  */
 @Incubating
-public class TomlConverter {
+public final class TomlConverter {
     /**
      * Convert toml to json
      * @param tomlReader the reader of toml
