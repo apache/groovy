@@ -18,19 +18,21 @@
  */
 package org.codehaus.groovy.ast;
 
+import org.objectweb.asm.Opcodes;
+
 /**
- * Represents the anonymous inner class for an enum constant
- * This subtype is needed so that EnumVisitor can differentiate between the scenarios when a InnerClassNode
- * represents anonymous inner class for an enu constant and when it represents an enum class defined inside
- * another class
+ * Represents the anonymous inner class for an enum constant. This subtype is
+ * needed so that EnumVisitor can differentiate between the scenarios when an
+ * {@link InnerClassNode} represents anonymous inner class for an enum constant
+ * versus an enum class defined within another class.
  */
 public class EnumConstantClassNode extends InnerClassNode {
 
-    /**
-     * @param name is the full name of the class
-     * @param modifiers the modifiers, @see org.objectweb.asm.Opcodes
-     * @param superClass the base class name - use "java.lang.Object" if no direct base class
-     */
+    public EnumConstantClassNode(ClassNode outerClass, String name, ClassNode superClass) {
+        super(outerClass, name, Opcodes.ACC_ENUM | Opcodes.ACC_FINAL, superClass);
+    }
+
+    @Deprecated
     public EnumConstantClassNode(ClassNode outerClass, String name, int modifiers, ClassNode superClass) {
         super(outerClass, name, modifiers, superClass);
     }

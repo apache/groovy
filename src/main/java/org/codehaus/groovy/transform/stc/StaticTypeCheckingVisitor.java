@@ -138,9 +138,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toMap;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.apache.groovy.util.BeanUtils.decapitalize;
 import static org.codehaus.groovy.ast.ClassHelper.AUTOCLOSEABLE_TYPE;
@@ -353,7 +354,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode MAP_ENTRY_TYPE = ClassHelper.make(Map.Entry.class);
     protected static final ClassNode ITERABLE_TYPE = ClassHelper.ITERABLE_TYPE;
 
-    private static List<ClassNode> TUPLE_TYPES = Arrays.stream(ClassHelper.TUPLE_CLASSES).map(ClassHelper::makeWithoutCaching).collect(toList());
+    private static List<ClassNode> TUPLE_TYPES = Arrays.stream(ClassHelper.TUPLE_CLASSES).map(ClassHelper::makeWithoutCaching).collect(Collectors.toList());
 
     public static final MethodNode CLOSURE_CALL_NO_ARG  = CLOSURE_TYPE.getDeclaredMethod("call", Parameter.EMPTY_ARRAY);
     public static final MethodNode CLOSURE_CALL_ONE_ARG = CLOSURE_TYPE.getDeclaredMethod("call", new Parameter[]{new Parameter(OBJECT_TYPE, "arg")});
@@ -2228,7 +2229,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     addStaticTypeError("Cannot return value of type " + prettyPrintType(type) + " on method returning type " + prettyPrintType(returnType), expression);
                 }
             } else if (implementsInterfaceOrIsSubclassOf(type, returnType)) {
-                BinaryExpression dummy = assignX(varX("{target}", returnType), expression, expression);
+                BinaryExpression dummy = assignX(varX("{target}", returnType), expression, statement);
                 ClassNode resultType = getResultType(returnType, ASSIGN, type, dummy); // GROOVY-10295
                 checkTypeGenerics(returnType, resultType, expression);
             }
@@ -5826,7 +5827,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     public void performSecondPass() {
-        for (SecondPassExpression wrapper : typeCheckingContext.secondPassExpressions) {
+        for (SecondPassExpression<?> wrapper : typeCheckingContext.secondPassExpressions) {
             Expression expression = wrapper.getExpression();
             if (expression instanceof BinaryExpression) {
                 Expression left = ((BinaryExpression) expression).getLeftExpression();
