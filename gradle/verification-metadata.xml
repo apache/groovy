@@ -1,4 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+     Licensed to the Apache Software Foundation (ASF) under one
+     or more contributor license agreements.  See the NOTICE file
+     distributed with this work for additional information
+     regarding copyright ownership.  The ASF licenses this file
+     to you under the Apache License, Version 2.0 (the
+     "License"); you may not use this file except in compliance
+     with the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing,
+     software distributed under the License is distributed on an
+     "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+     KIND, either express or implied.  See the License for the
+     specific language governing permissions and limitations
+     under the License.
+
+-->
+<!--
+   This file declares the dependency verification metadata for dependencies used by Groovy.
+   When you upgrade a dependency, verification is likely to fail so you will need to update
+   it.
+
+   If, for whatever reason, verification fails for you, DO NOT DISABLE IT but follow the
+   troubleshooting guide at https://docs.gradle.org/current/userguide/dependency_verification.html
+
+   This build uses PGP verification and SHA512 checksum verification for unsigned artifacts:
+
+   ./gradlew -write-verification-metadata sha512,pgp -export-keys <tasks>
+
+   Then check the diff, remove the unnecessary entries (for old dependencies) and make sure
+   the new ones are correct.
+
+   Do not remove this header.
+
+-->
 <verification-metadata xmlns="https://schema.gradle.org/dependency-verification" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://schema.gradle.org/dependency-verification https://schema.gradle.org/dependency-verification/dependency-verification-1.1.xsd">
    <configuration>
       <verify-metadata>false</verify-metadata>
@@ -122,6 +160,7 @@
          <trusted-key id="bdb5fa4fe719d787fb3d3197f6d4a1d411e9d1ae" group="com.google.guava"/>
          <trusted-key id="c5c776287800887af679da34d03081ee195be743" group="net.javacrumbs.json-unit"/>
          <trusted-key id="c739ce4075d9f0f0ded13a7d39be51a1084c9113" group="org.apache.maven.doxia"/>
+         <trusted-key id="c7be5bcc9fec15518cfda882b0f3710fa64900e7" group="com.google.code.gson" name="gson"/>
          <trusted-key id="cd5464315f0b98c77e6e8ecd9daadc1c9fcc82d0">
             <trusting group="org.apache.commons"/>
             <trusting group="commons-cli"/>
