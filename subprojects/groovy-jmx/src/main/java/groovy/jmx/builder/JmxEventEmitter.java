@@ -100,10 +100,10 @@ public class JmxEventEmitter extends NotificationBroadcasterSupport implements J
     }
 
     private static class NumberSequencer {
-        private static final AtomicLong num = new AtomicLong(0);
+        private static final AtomicLong NUM = new AtomicLong(0);
 
         public static long getNextSequence() {
-            return num.incrementAndGet();
+            return NUM.incrementAndGet();
         }
     }
 }

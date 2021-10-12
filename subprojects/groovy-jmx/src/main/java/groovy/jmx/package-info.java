@@ -16,7 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 /**
- * Classes for the JMX Builder.
+ * Classes for working with the <a href="https://docs.oracle.com/javase/tutorial/jmx/">Java Management Extensions (JMX)</a> technology.
  */
-package groovy.jmx.builder
+package groovy.jmx;
