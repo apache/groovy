@@ -28,6 +28,7 @@ import org.junit.rules.TestName
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
+import static groovy.test.GroovyAssert.isAtLeastJdk
 import static org.junit.Assume.assumeTrue
 
 /**
@@ -42,9 +43,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
     void setUp() {
         super.setUp()
         // check java version requirements
-        def v = System.getProperty("java.specification.version")
-        assert v
-        assumeTrue('Test requires jre8+', nameRule.methodName.endsWith('_vm8').implies(new BigDecimal(v) >= 1.8))
+        assumeTrue(nameRule.methodName.endsWith('_vm8').implies(isAtLeastJdk('1.8')))
     }
 
     @After
