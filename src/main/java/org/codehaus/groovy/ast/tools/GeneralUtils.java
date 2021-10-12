@@ -1025,6 +1025,18 @@ public class GeneralUtils {
         return false;
     }
 
+    public static MethodNode findDeclaredMethod(final ClassNode cNode, final String name, final int argsCount) {
+        // TODO ignore bridge methods?
+        List<MethodNode> methods = cNode.getDeclaredMethods(name);
+        for (MethodNode method : methods) {
+            Parameter[] params = method.getParameters();
+            if (params != null && params.length == argsCount) {
+                return method;
+            }
+        }
+        return null;
+    }
+
     public static boolean inSamePackage(final ClassNode first, final ClassNode second) {
         PackageNode firstPackage = first.getPackage();
         PackageNode secondPackage = second.getPackage();

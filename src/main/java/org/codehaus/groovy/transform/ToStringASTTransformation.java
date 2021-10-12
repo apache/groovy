@@ -20,12 +20,14 @@ package org.codehaus.groovy.transform;
 
 import groovy.transform.ToString;
 import groovy.transform.stc.POJO;
+import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -82,6 +84,8 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
     private static final ClassNode STRINGBUILDER_TYPE = make(StringBuilder.class);
     private static final ClassNode INVOKER_TYPE = make(InvokerHelper.class);
     private static final ClassNode POJO_TYPE = make(POJO.class);
+    private static final String TO_STRING = "toString";
+    private static final String UNDER_TO_STRING = "_toString";
 
     @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
@@ -157,8 +161,14 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
 
     public static void createToString(ClassNode cNode, boolean includeSuper, boolean includeFields, List<String> excludes, List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean cache, boolean includeSuperProperties, boolean allProperties, boolean allNames, boolean includeSuperFields, boolean pojo) {
         // make a public method if none exists otherwise try a private method with leading underscore
-        boolean hasExistingToString = hasDeclaredMethod(cNode, "toString", 0);
-        if (hasExistingToString && hasDeclaredMethod(cNode, "_toString", 0)) return;
+        boolean hasExistingToString = hasDeclaredMethod(cNode, TO_STRING, 0);
+        if (hasExistingToString) {
+            // no point in the private method if one with that name already exists
+            if (hasDeclaredMethod(cNode, UNDER_TO_STRING, 0)) return;
+            // an existing generated method also takes precedence
+            MethodNode toString = cNode.getDeclaredMethod(TO_STRING, Parameter.EMPTY_ARRAY);
+            if (AnnotatedNodeUtils.isGenerated(toString)) return;
+        }
 
         final BlockStatement body = new BlockStatement();
         Expression tempToString;
@@ -175,7 +185,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         }
         body.addStatement(returnS(tempToString));
 
-        addGeneratedMethod(cNode, hasExistingToString ? "_toString" : "toString", hasExistingToString ? ACC_PRIVATE : ACC_PUBLIC,
+        addGeneratedMethod(cNode, hasExistingToString ? UNDER_TO_STRING : TO_STRING, hasExistingToString ? ACC_PRIVATE : ACC_PUBLIC,
                 ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
@@ -195,7 +205,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         // def _result = new StringBuilder()
         final Expression result = localVarX("_result");
         body.addStatement(declS(result, ctorX(STRINGBUILDER_TYPE)));
-        List<ToStringElement> elements = new ArrayList<ToStringElement>();
+        List<ToStringElement> elements = new ArrayList<>();
 
         // def $toStringFirst = true
         final VariableExpression first = localVarX("$toStringFirst");
@@ -205,7 +215,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         String className = (includePackage) ? cNode.getName() : cNode.getNameWithoutPackage();
         body.addStatement(appendS(result, constX(className + "(")));
 
-        Set<String> names = new HashSet<String>();
+        Set<String> names = new HashSet<>();
         List<PropertyNode> superList;
         if (includeSuperProperties || includeSuperFields) {
             superList = getAllProperties(names, cNode, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, allProperties, false, true, true, true, allNames, false);
@@ -231,7 +241,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         // append super if needed
         if (includeSuper) {
             // not through MOP to avoid infinite recursion
-            elements.add(new ToStringElement(callSuperX("toString"), "super", false));
+            elements.add(new ToStringElement(callSuperX(TO_STRING), "super", false));
         }
 
         if (includes != null) {
@@ -254,7 +264,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         final Statement appendValue = ignoreNulls ? ifS(notNullX(value), thenBlock) : thenBlock;
         appendCommaIfNotFirst(thenBlock, result, first);
         appendPrefix(thenBlock, result, name, includeNames);
-        Expression toString = pojo ? toStringX(value) : callX(INVOKER_TYPE, "toString", value);
+        Expression toString = pojo ? toStringX(value) : callX(INVOKER_TYPE, TO_STRING, value);
         if (canBeSelf) {
             thenBlock.addStatement(ifElseS(
                     sameX(value, varX("this")),
