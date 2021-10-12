@@ -59,7 +59,9 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.runtime.memoize.UnlimitedConcurrentCache;
+import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
@@ -69,6 +71,7 @@ import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -1122,13 +1125,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     protected Expression transformConstructorCallExpression(final ConstructorCallExpression cce) {
-        ClassNode type = cce.getType();
-        if (cce.isUsingAnonymousInnerClass()) { // GROOVY-9642
-            resolveOrFail(type.getUnresolvedSuperClass(false), type);
-        } else {
-            resolveOrFail(type, cce);
-            if (type.isAbstract()) {
-                addError("You cannot create an instance from the abstract " + getDescription(type) + ".", cce);
+        if (!cce.isUsingAnonymousInnerClass()) { // GROOVY-9642
+            ClassNode cceType = cce.getType();
+            resolveOrFail(cceType, cce);
+            if (cceType.isAbstract()) {
+                addError("You cannot create an instance from the abstract " + getDescription(cceType) + ".", cce);
             }
         }
 
@@ -1274,19 +1275,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if (Modifier.isStatic(node.getModifiers())) {
                 genericParameterNames = new HashMap<>();
             }
-
-            InnerClassNode innerClassNode = (InnerClassNode) node;
-            if (innerClassNode.isAnonymous()) {
-                MethodNode enclosingMethod = innerClassNode.getEnclosingMethod();
-                if (null != enclosingMethod) {
-                    resolveGenericsHeader(enclosingMethod.getGenericsTypes());
-                }
-            }
         } else {
             genericParameterNames = new HashMap<>();
         }
 
-        visitTypeAnnotations(node);
         resolveGenericsHeader(node.getGenericsTypes());
 
         ModuleNode module = node.getModule();
@@ -1348,14 +1340,35 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
         }
 
+        // VariableScopeVisitor visits anon. inner class body inline, so resolve now
+        for (Iterator<InnerClassNode> it = node.getInnerClasses(); it.hasNext(); ) {
+            InnerClassNode cn = it.next();
+            if (cn.isAnonymous()) {
+                MethodNode enclosingMethod = cn.getEnclosingMethod();
+                if (enclosingMethod != null) {
+                    resolveGenericsHeader(enclosingMethod.getGenericsTypes()); // GROOVY-6977
+                }
+                resolveOrFail(cn.getUnresolvedSuperClass(false), cn); // GROOVY-9642
+            }
+        }
+        // initialize scopes/variables now that imports and super types are resolved
+        new VariableScopeVisitor(source).visitClass(node);
+
+        visitTypeAnnotations(node);
         super.visitClass(node);
 
         currentClass = oldNode;
     }
 
+    private void addFatalError(final String text, final ASTNode node) {
+        source.getErrorCollector().addFatalError(
+                org.codehaus.groovy.control.messages.Message.create(new SyntaxException(text, node), source)
+        );
+    }
+
     private void checkCyclicInheritance(final ClassNode node, final ClassNode type) {
         if (type.redirect() == node || type.getOuterClasses().contains(node)) {
-            addError("Cycle detected: the type " + node.getName() + " cannot extend/implement itself or one of its own member types", type);
+            addFatalError("Cycle detected: the type " + node.getName() + " cannot extend/implement itself or one of its own member types", type);
         } else if (type != ClassHelper.OBJECT_TYPE) {
             Set<ClassNode> done = new HashSet<>();
             done.add(ClassHelper.OBJECT_TYPE);
@@ -1370,8 +1383,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 if (!done.add(next)) continue;
                 if (next.redirect() == node) {
                     ClassNode cn = type; while (cn.getOuterClass() != null) cn = cn.getOuterClass();
-                    addError("Cycle detected: a cycle exists in the type hierarchy between " + node.getName() + " and " + cn.getName(), type);
-                    return;
+                    addFatalError("Cycle detected: a cycle exists in the type hierarchy between " + node.getName() + " and " + cn.getName(), type);
                 }
                 Collections.addAll(todo, next.getInterfaces());
                 todo.add(next.getUnresolvedSuperClass());
