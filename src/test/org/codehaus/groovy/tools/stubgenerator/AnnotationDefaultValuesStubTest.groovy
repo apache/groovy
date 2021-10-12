@@ -21,7 +21,7 @@ package org.codehaus.groovy.tools.stubgenerator
 /**
  * Checks that default values from annotation definitions appear within stubs.
  */
-class AnnotationDefaultValuesStubTest extends StringSourcesStubTestCase {
+final class AnnotationDefaultValuesStubTest extends StringSourcesStubTestCase {
 
     Map<String, String> provideSources() {
         [
@@ -73,8 +73,8 @@ class AnnotationDefaultValuesStubTest extends StringSourcesStubTestCase {
         assert stubSource.contains('float f() default 3.0f;')
         assert stubSource.contains('double d() default 3.0d;')
         assert stubSource.contains('long l() default 3L;')
-        assert stubSource.contains('byte me() default 3;')
-        assert stubSource.contains('short s() default 3;')
+        assert stubSource.contains('byte me() default (byte)3;')
+        assert stubSource.contains('short s() default (short)3;')
         assert stubSource.contains("char c1() default 'A';")
         assert stubSource.contains("char c2() default 'A';")
         assert stubSource.contains("char c3() default 'A';")
