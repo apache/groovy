@@ -3674,6 +3674,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
 
+        if (methodReferenceParamIndexList.isEmpty()) return; // GROOVY-10269
+
         visitMethodCallArguments(receiver, args(newArgumentExpressionList), true, selectedMethod);
 
         for (int index : methodReferenceParamIndexList) {

@@ -626,4 +626,22 @@ final class MethodReferenceTest {
 
         assert err.message.contains('Failed to find the expected method[toLowerCaseX(java.lang.String)] in the type[java.lang.String]')
     }
+
+    @Test // GROOVY-10269
+    void testNotFunctionalInterface() {
+        def err = shouldFail shell, '''
+            void foo(Integer y) {
+            }
+            void bar(Consumer<Integer> x) {
+            }
+            @CompileStatic
+            void test() {
+                bar(this::foo)
+                def baz = { Consumer<Integer> x -> }
+                baz(this::foo) // not yet supported!
+            }
+        '''
+
+        assert err =~ /The argument is a method reference, but the parameter type is not a functional interface/
+    }
 }
