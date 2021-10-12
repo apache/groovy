@@ -20,7 +20,8 @@ package groovy.transform.stc
 
 import groovy.test.GroovyTestCase
 
-class MethodReferenceTest extends GroovyTestCase {
+final class MethodReferenceTest extends GroovyTestCase {
+
     // class::instanceMethod
     void testFunctionCI() {
         assertScript '''
@@ -565,22 +566,9 @@ class MethodReferenceTest extends GroovyTestCase {
         '''
     }
 
-    void testMethodNotFound() {
-        def errMsg = shouldFail '''
-            @groovy.transform.CompileStatic
-            void p() {
-                [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, BigDecimal::addx)
-            }
-
-            p()
-        '''
-
-        assert errMsg.contains('Failed to find the expected method[addx(java.math.BigDecimal,java.math.BigDecimal)] in the type[java.math.BigDecimal]')
-    }
-
     // class::instanceMethod
     void testFunctionCI_WRONGTYPE() {
-        def errMsg = shouldFail '''
+        def err = shouldFail '''
             import java.util.stream.Collectors
 
             @groovy.transform.CompileStatic
@@ -593,7 +581,7 @@ class MethodReferenceTest extends GroovyTestCase {
             p()
         '''
 
-        assert errMsg.contains('Invalid receiver type: java.lang.Integer is not compatible with java.lang.String')
+        assert err =~ /Invalid receiver type: java.lang.Integer is not compatible with java.lang.String/
     }
 
     // class::instanceMethod, actually class::staticMethod
@@ -658,5 +646,50 @@ class MethodReferenceTest extends GroovyTestCase {
 
             p()
         '''
+    }
+
+    void testMethodNotFound1() {
+        def err = shouldFail '''
+            @groovy.transform.CompileStatic
+            void p() {
+                [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, BigDecimal::addx)
+            }
+        '''
+
+        assert err.contains('Failed to find the expected method[addx(java.math.BigDecimal,java.math.BigDecimal)] in the type[java.math.BigDecimal]')
+    }
+
+    // GROOVY-9463
+    void testMethodNotFound2() {
+        def err = shouldFail '''
+            import java.util.function.Function
+
+            @groovy.transform.CompileStatic
+            void p() {
+                Function<String,String> reference = String::toLowerCaseX
+            }
+        '''
+
+        assert err.contains('Failed to find the expected method[toLowerCaseX(java.lang.String)] in the type[java.lang.String]')
+    }
+
+    // GROOVY-10269
+    void testNotFunctionalInterface() {
+        def err = shouldFail '''
+            import java.util.function.Consumer
+
+            void foo(Integer y) {
+            }
+            void bar(Consumer<Integer> x) {
+            }
+            @groovy.transform.CompileStatic
+            void test() {
+                bar(this::foo)
+                def baz = { Consumer<Integer> x -> }
+                baz(this::foo) // not yet supported!
+            }
+        '''
+
+        assert err =~ /The argument is a method reference, but the parameter type is not a functional interface/
     }
 }
