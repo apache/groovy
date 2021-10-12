@@ -18,20 +18,32 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-final class Groovy10299 extends StringSourcesStubTestCase {
+final class Groovy9927 extends StringSourcesStubTestCase {
 
     @Override
     Map<String, String> provideSources() {
         [
-            'Pogo.groovy': '''
-                class Pogo {
-                    public final boolean must_init
+            'model/Outer.groovy': '''
+                package model
+                class Logger {
+                    enum Level {
+                        INFO, WARN, ERROR
+                    }
+                }
+            ''',
+            'other/Thing.groovy': '''
+                package other
+                import model.Logger
+                class Thing {
+                    String describe(Logger.Level level) {
+                        return level.name()
+                    }
                 }
             ''',
             'Main.java': '''
                 public class Main {
                     public static void main(String[] args) {
-                        new Pogo();
+                        new other.Thing();
                     }
                 }
             ''',
@@ -40,9 +52,7 @@ final class Groovy10299 extends StringSourcesStubTestCase {
 
     @Override
     void verifyStubs() {
-        String stub = stubJavaSourceFor('Pogo')
-        assert stub.contains('must_init = false;')
-        assert !stub.contains('boolean -> boolean')
-        assert !stub.contains('new java.lang.Boolean')
+        String stub = stubJavaSourceFor('other.Thing')
+        assert stub.contains('java.lang.String describe(model.Logger.Level ')
     }
 }
