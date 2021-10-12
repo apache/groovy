@@ -498,6 +498,25 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10222
+    void testReturnTypeInferenceWithMethodGenerics19() {
+        assertScript '''
+            class Task {
+                def <T> T exec(args) {
+                    args
+                }
+            }
+            class Test {
+                Task task
+                def <T> T exec(args) {
+                    task.exec(args) // Cannot return value of type #T on method returning type T
+                }
+            }
+            String result = new Test(task: new Task()).exec('works')
+            assert result == 'works'
+        '''
+    }
+
     void testDiamondInferrenceFromConstructor1() {
         assertScript '''
             class Foo<U> {
@@ -1013,6 +1032,20 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def map = list.<String,Object,String>collectEntries {
                 [(it): it.hashCode()]
             }
+        '''
+    }
+
+    // GROOVY-10222
+    void testAssignmentShouldWorkForParameterizedType() {
+        assertScript '''
+            class C<T> {
+                def <X> X m() {
+                }
+                void test() {
+                    T x = m() // Cannot assign value of type #X to variable of type T
+                }
+            }
+            new C().test()
         '''
     }
 
@@ -2226,7 +2259,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '#test(int, java.lang.String). Please check if the declared type is correct and if the method exists.'
     }
 
-    // GROOVY-7720
+    @NotYetImplemented // GROOVY-7720
     void testIncompatibleArgumentsForPlaceholders2() {
         shouldFailWithMessages '''
             class Consumer<T> {
@@ -2245,6 +2278,15 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
         ''',
         'Cannot return value of type T on method returning type U'
+
+        shouldFailWithMessages '''
+            class C<X, Y> {
+            }
+            def <X extends C<Number, String>> X[] m() {
+                new X[]{new C<Object, String>()}
+            }
+        ''',
+        'Cannot convert from C<java.lang.Object, java.lang.String> to X'
     }
 
     // GROOVY-9902: incomplete generics should not stop type checking

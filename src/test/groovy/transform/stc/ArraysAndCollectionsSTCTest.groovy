@@ -66,13 +66,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
                 new X[]{new C<Number, String>()}
             }
         '''
-        shouldFailWithMessages '''
-            class C<X, Y> {
-            }
-            def <X extends C<Number, String>> X[] m() {
-                new X[]{new C<Object, String>()}
-            }
-        ''', 'Cannot convert from C<java.lang.Object, java.lang.String> to X'
     }
 
     void testConvertibleTypesInArrayInitializer() {
