@@ -30,68 +30,151 @@ import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite;
 import org.codehaus.groovy.runtime.metaclass.MethodHelper;
 
-import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Comparator;
 
-import static org.codehaus.groovy.reflection.ReflectionUtils.makeAccessibleInPrivilegedAction;
-
+@SuppressWarnings("rawtypes")
 public class CachedMethod extends MetaMethod implements Comparable {
+
     public static final CachedMethod[] EMPTY_ARRAY = new CachedMethod[0];
-    public final CachedClass cachedClass;
 
+    public static CachedMethod find(final Method method) {
+        CachedMethod[] methods = ReflectionCache.getCachedClass(method.getDeclaringClass()).getMethods();
+        int i = Arrays.binarySearch(methods, method, (o1, o2) -> {
+            if (o1 instanceof CachedMethod) {
+                return ((CachedMethod) o1).compareTo(o2);
+            } else if (o2 instanceof CachedMethod) {
+                return -((CachedMethod) o2).compareTo(o1);
+            }
+            // really, this should never happen, it's evidence of corruption if it does
+            throw new ClassCastException("One of the two comparables must be a CachedMethod");
+        });
+        return (i < 0 ? null : methods[i]);
+    }
+
+    //--------------------------------------------------------------------------
+
+    public  final CachedClass cachedClass;
     private final Method cachedMethod;
+
     private int hashCode;
-    private CachedMethod transformedMethod;
-
-    private static final MyComparator COMPARATOR = new MyComparator();
-
-    private SoftReference<Constructor> pogoCallSiteConstructor, pojoCallSiteConstructor, staticCallSiteConstructor;
-
     private boolean skipCompiled;
+    private boolean accessAllowed;
+    private boolean makeAccessibleDone;
+    private CachedMethod transformedMethod;
+    private SoftReference<Constructor<CallSite>> pogoCallSiteConstructor, pojoCallSiteConstructor, staticCallSiteConstructor;
 
-    public CachedMethod(CachedClass clazz, Method method) {
+    public CachedMethod(final CachedClass clazz, final Method method) {
         this.cachedMethod = method;
         this.cachedClass = clazz;
     }
 
-    public CachedMethod(Method method) {
-        this(ReflectionCache.getCachedClass(method.getDeclaringClass()),method);
-    }
-
-    public static CachedMethod find(Method method) {
-        CachedMethod[] methods = ReflectionCache.getCachedClass(method.getDeclaringClass()).getMethods();
-//        for (int i = 0; i < methods.length; i++) {
-//            CachedMethod cachedMethod = methods[i];
-//            if (cachedMethod.cachedMethod.equals(method))
-//                return cachedMethod;
-//        }
-//        return null;
-        int i = Arrays.binarySearch(methods, method, COMPARATOR);
-        if (i < 0)
-          return null;
-
-        return methods[i];
+    public CachedMethod(final Method method) {
+        this(ReflectionCache.getCachedClass(method.getDeclaringClass()), method);
     }
 
     @Override
-    public Class[] getPT() {
-        return cachedMethod.getParameterTypes();
+    public int compareTo(final Object other) {
+        if (other == this) return 0;
+        if (other == null) return -1;
+        return (other instanceof CachedMethod ? compareToCachedMethod((CachedMethod) other) : compareToMethod((Method) other));
+    }
+
+    private int compareToCachedMethod(final CachedMethod other) {
+        int strComp = getName().compareTo(other.getName());
+        if (strComp != 0)
+            return strComp;
+
+        int retComp = getReturnType().getName().compareTo(other.getReturnType().getName());
+        if (retComp != 0)
+            return retComp;
+
+        CachedClass[] params = getParameterTypes();
+        CachedClass[] otherParams = other.getParameterTypes();
+
+        int pd = params.length - otherParams.length;
+        if (pd != 0)
+            return pd;
+
+        for (int i = 0, n = params.length; i < n; i += 1) {
+            final int nameComp = params[i].getName().compareTo(otherParams[i].getName());
+            if (nameComp != 0)
+                return nameComp;
+        }
+
+        final int classComp = cachedClass.toString().compareTo(other.getDeclaringClass().toString());
+        if (classComp != 0)
+            return classComp;
+
+        throw new RuntimeException("Should never happen");
+    }
+
+    private int compareToMethod(final Method other) {
+        int strComp = getName().compareTo(other.getName());
+        if (strComp != 0)
+            return strComp;
+
+        int retComp = getReturnType().getName().compareTo(other.getReturnType().getName());
+        if (retComp != 0)
+            return retComp;
+
+        CachedClass[] params = getParameterTypes();
+        Class<?>[] mparams = other.getParameterTypes();
+
+        int pd = params.length - mparams.length;
+        if (pd != 0)
+            return pd;
+
+        for (int i = 0, n = params.length; i < n; i += 1) {
+            final int nameComp = params[i].getName().compareTo(mparams[i].getName());
+            if (nameComp != 0)
+                return nameComp;
+        }
+
+        return 0;
     }
 
     @Override
-    public String getName() {
-        return cachedMethod.getName();
+    public boolean equals(final Object other) {
+        return (other instanceof CachedMethod && cachedMethod.equals(((CachedMethod) other).cachedMethod))
+            || (other instanceof Method && cachedMethod.equals(other));
     }
 
     @Override
-    public String getDescriptor() {
-        return BytecodeHelper.getMethodDescriptor(getReturnType(), getNativeParameterTypes());
+    public int hashCode() {
+        if (hashCode == 0) {
+           hashCode = cachedMethod.hashCode();
+           if (hashCode == 0) hashCode = 0xcafebebe;
+        }
+        return hashCode;
+    }
+
+    @Override
+    public String toString() {
+        return cachedMethod.toString();
+    }
+
+    //--------------------------------------------------------------------------
+
+    public boolean canAccessLegally(final Class<?> callerClass) {
+        return ReflectionUtils.checkAccessible(callerClass, cachedMethod.getDeclaringClass(), cachedMethod.getModifiers(), false);
+    }
+
+    public <T extends Annotation> T getAnnotation(final Class<T> annotationClass) {
+        return cachedMethod.getAnnotation(annotationClass);
+    }
+
+    public Method getCachedMethod() {
+        makeAccessibleIfNecessary();
+        if (!accessAllowed) {
+            AccessPermissionChecker.checkAccessPermission(cachedMethod);
+            accessAllowed = true;
+        }
+        return cachedMethod;
     }
 
     @Override
@@ -100,9 +183,153 @@ public class CachedMethod extends MetaMethod implements Comparable {
     }
 
     @Override
-    public final Object invoke(Object object, Object[] arguments) {
-        makeAccessibleIfNecessary();
+    public String getDescriptor() {
+        return BytecodeHelper.getMethodDescriptor(getReturnType(), getNativeParameterTypes());
+    }
 
+    @Override
+    public int getModifiers() {
+        return cachedMethod.getModifiers();
+    }
+
+    @Override
+    public String getName() {
+        return cachedMethod.getName();
+    }
+
+    public int getParamsCount() {
+        return getParameterTypes().length;
+    }
+
+    public ParameterTypes getParamTypes() {
+        return null;
+    }
+
+    @Override
+    public Class[] getPT() {
+        return cachedMethod.getParameterTypes();
+    }
+
+    @Override
+    public Class getReturnType() {
+        return cachedMethod.getReturnType();
+    }
+
+    @Override
+    public String getSignature() {
+        return getName() + getDescriptor();
+    }
+
+    public CachedMethod getTransformedMethod() {
+        return transformedMethod;
+    }
+
+    public void setTransformedMethod(final CachedMethod transformedMethod) {
+        this.transformedMethod = transformedMethod;
+    }
+
+    @Override
+    public boolean isStatic() {
+        return MethodHelper.isStatic(cachedMethod);
+    }
+
+    public boolean isSynthetic() {
+        return cachedMethod.isSynthetic();
+    }
+
+    //--------------------------------------------------------------------------
+
+    public CallSite createPogoMetaMethodSite(final CallSite site, final MetaClassImpl metaClass, final Class[] params) {
+        if (!skipCompiled) {
+            Constructor<CallSite> ctor = deref(pogoCallSiteConstructor);
+            if (ctor == null) {
+                if (CallSiteGenerator.isCompilable(this)) {
+                    ctor = CallSiteGenerator.compilePogoMethod(this);
+                }
+                if (ctor != null) {
+                    pogoCallSiteConstructor = new SoftReference<>(ctor);
+                } else {
+                    skipCompiled = true;
+                }
+            }
+
+            if (ctor != null) {
+                try {
+                    return ctor.newInstance(site, metaClass, this, params, ctor);
+                } catch (Error e) {
+                    skipCompiled = true;
+                    throw e;
+                } catch (Throwable e) {
+                    skipCompiled = true;
+                }
+            }
+        }
+        return new PogoMetaMethodSite.PogoCachedMethodSiteNoUnwrapNoCoerce(site, metaClass, this, params);
+    }
+
+    public CallSite createPojoMetaMethodSite(final CallSite site, final MetaClassImpl metaClass, final Class[] params) {
+        if (!skipCompiled) {
+            Constructor<CallSite> ctor = deref(pojoCallSiteConstructor);
+            if (ctor == null) {
+                if (CallSiteGenerator.isCompilable(this)) {
+                    ctor = CallSiteGenerator.compilePojoMethod(this);
+                }
+                if (ctor != null) {
+                    pojoCallSiteConstructor = new SoftReference<>(ctor);
+                } else {
+                    skipCompiled = true;
+                }
+            }
+
+            if (ctor != null) {
+                try {
+                    return ctor.newInstance(site, metaClass, this, params, ctor);
+                } catch (Error e) {
+                    skipCompiled = true;
+                    throw e;
+                } catch (Throwable e) {
+                    skipCompiled = true;
+                }
+            }
+        }
+        return new PojoMetaMethodSite.PojoCachedMethodSiteNoUnwrapNoCoerce(site, metaClass, this, params);
+    }
+
+    public CallSite createStaticMetaMethodSite(final CallSite site, final MetaClassImpl metaClass, final Class[] params) {
+        if (!skipCompiled) {
+            Constructor<CallSite> ctor = deref(staticCallSiteConstructor);
+            if (ctor == null) {
+                if (CallSiteGenerator.isCompilable(this)) {
+                    ctor = CallSiteGenerator.compileStaticMethod(this);
+                }
+                if (ctor != null) {
+                    staticCallSiteConstructor = new SoftReference<>(ctor);
+                } else {
+                    skipCompiled = true;
+                }
+            }
+
+            if (ctor != null) {
+                try {
+                    return ctor.newInstance(site, metaClass, this, params, ctor);
+                } catch (Error e) {
+                    skipCompiled = true;
+                    throw e;
+                } catch (Throwable e) {
+                    skipCompiled = true;
+                }
+            }
+        }
+        return new StaticMetaMethodSite.StaticMetaMethodSiteNoUnwrapNoCoerce(site, metaClass, this, params);
+    }
+
+    private static <T> Constructor<T> deref(final SoftReference<Constructor<T>> ref) {
+        return (ref != null ? ref.get() : null);
+    }
+
+    @Override
+    public final Object invoke(final Object object, final Object[] arguments) {
+        makeAccessibleIfNecessary();
         if (!accessAllowed) {
             try {
                 AccessPermissionChecker.checkAccessPermission(cachedMethod);
@@ -117,287 +344,19 @@ public class CachedMethod extends MetaMethod implements Comparable {
         } catch (IllegalArgumentException | IllegalAccessException e) {
             throw new InvokerInvocationException(e);
         } catch (InvocationTargetException e) {
-            Throwable cause = e.getCause(); 
-            throw (cause instanceof RuntimeException && !(cause instanceof MissingMethodException)) ? 
-                    (RuntimeException) cause : new InvokerInvocationException(e);
+            Throwable cause = e.getCause();
+            throw (cause instanceof RuntimeException && !(cause instanceof MissingMethodException)) ? (RuntimeException) cause : new InvokerInvocationException(e);
         }
     }
 
-    public ParameterTypes getParamTypes() {
-        return null;
-    }
-
-    @Override
-    public Class getReturnType() {
-        return cachedMethod.getReturnType();
-    }
-
-    public int getParamsCount() {
-        return getParameterTypes().length;
-    }
-
-    @Override
-    public int getModifiers() {
-        return cachedMethod.getModifiers();
-    }
-
-
-    @Override
-    public String getSignature() {
-        return getName() + getDescriptor();
-    }
-
-    public final Method setAccessible() {
-        makeAccessibleIfNecessary();
-
-        if (!accessAllowed) {
-            AccessPermissionChecker.checkAccessPermission(cachedMethod);
-            accessAllowed = true;
-        }
-
-//        if (queuedToCompile.compareAndSet(false,true)) {
-//            if (isCompilable())
-//              CompileThread.addMethod(this);
-//        }
-        return cachedMethod;
-    }
-
-    @Override
-    public boolean isStatic() {
-        return MethodHelper.isStatic(cachedMethod);
-    }
-
-    public CachedMethod getTransformedMethod() {
-        return transformedMethod;
-    }
-
-    public void setTransformedMethod(CachedMethod transformedMethod) {
-        this.transformedMethod = transformedMethod;
-    }
-
-    @Override
-    public int compareTo(Object o) {
-      if (o instanceof CachedMethod)
-        return compareToCachedMethod((CachedMethod)o);
-      else
-        return compareToMethod((Method)o);
-    }
-
-    private int compareToCachedMethod(CachedMethod other) {
-        if (other == null)
-            return -1;
-
-        final int strComp = getName().compareTo(other.getName());
-        if (strComp != 0)
-            return strComp;
-
-        final int retComp = getReturnType().getName().compareTo(other.getReturnType().getName());
-        if (retComp != 0)
-            return retComp;
-
-        CachedClass[] params = getParameterTypes();
-        CachedClass[] otherParams = other.getParameterTypes();
-
-        final int pd = params.length - otherParams.length;
-        if (pd != 0)
-            return pd;
-
-        for (int i = 0; i != params.length; ++i) {
-            final int nameComp = params[i].getName().compareTo(otherParams[i].getName());
-            if (nameComp != 0)
-                return nameComp;
-        }
-
-        final int classComp = cachedClass.toString().compareTo(other.getDeclaringClass().toString());
-        if (classComp != 0)
-            return classComp;
-
-        throw new RuntimeException("Should never happen");
-    }
-
-    private int compareToMethod(Method other) {
-        if (other == null)
-            return -1;
-
-        final int strComp = getName().compareTo(other.getName());
-        if (strComp != 0)
-            return strComp;
-
-        final int retComp = getReturnType().getName().compareTo(other.getReturnType().getName());
-        if (retComp != 0)
-            return retComp;
-
-        CachedClass[] params = getParameterTypes();
-        Class[] mparams = other.getParameterTypes();
-
-        final int pd = params.length - mparams.length;
-        if (pd != 0)
-            return pd;
-
-        for (int i = 0; i != params.length; ++i) {
-            final int nameComp = params[i].getName().compareTo(mparams[i].getName());
-            if (nameComp != 0)
-                return nameComp;
-        }
-
-        return 0;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        return (o instanceof CachedMethod && cachedMethod.equals(((CachedMethod)o).cachedMethod))
-                || (o instanceof Method && cachedMethod.equals(o));
-    }
-
-    @Override
-    public int hashCode() {
-        if (hashCode == 0) {
-           hashCode = cachedMethod.hashCode();
-           if (hashCode == 0)
-             hashCode = 0xcafebebe;
-        }
-        return hashCode;
-    }
-
-    @Override
-    public String toString() {
-        return cachedMethod.toString();
-    }
-
-    private static Constructor getConstructor(SoftReference<Constructor> ref) {
-        if (ref==null) return null;
-        return ref.get();
-    }
-
-    public CallSite createPogoMetaMethodSite(CallSite site, MetaClassImpl metaClass, Class[] params) {
-        if (!skipCompiled) {
-            Constructor constr = getConstructor(pogoCallSiteConstructor);
-            if (constr==null) {
-                if (CallSiteGenerator.isCompilable(this)) {
-                  constr = CallSiteGenerator.compilePogoMethod(this);
-                }
-                if (constr != null) {
-                     pogoCallSiteConstructor = new SoftReference<Constructor> (constr);
-                } else {
-                    skipCompiled = true;
-                }
-            }
-
-            if (constr!=null) {
-                try {
-                    return (CallSite) constr.newInstance(site, metaClass, this, params, constr);
-                } catch (Error e) {
-                    skipCompiled=true;
-                    throw e;
-                } catch (Throwable e) {
-                    skipCompiled=true;
-                }
-            }
-        }
-        return new PogoMetaMethodSite.PogoCachedMethodSiteNoUnwrapNoCoerce(site, metaClass, this, params);
-    }
-
-
-    public CallSite createPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, Class[] params) {
-        if (!skipCompiled) {
-            Constructor constr = getConstructor(pojoCallSiteConstructor);
-            if (constr==null) {
-                if (CallSiteGenerator.isCompilable(this)) {
-                  constr = CallSiteGenerator.compilePojoMethod(this);
-                }
-                if (constr != null) {
-                    pojoCallSiteConstructor = new SoftReference<Constructor> (constr);
-                } else {
-                    skipCompiled = true;
-                }
-            }
-
-            if (constr!=null) {
-                try {
-                    return (CallSite) constr.newInstance(site, metaClass, this, params, constr);
-                } catch (Error e) {
-                    skipCompiled=true;
-                    throw e;
-                } catch (Throwable e) {
-                    skipCompiled=true;
-                }
-            }
-        }
-        return new PojoMetaMethodSite.PojoCachedMethodSiteNoUnwrapNoCoerce(site, metaClass, this, params);
-    }
-
-    public CallSite createStaticMetaMethodSite(CallSite site, MetaClassImpl metaClass, Class[] params) {
-        if (!skipCompiled) {
-            Constructor constr = getConstructor(staticCallSiteConstructor);
-            if (constr==null) {
-                if (CallSiteGenerator.isCompilable(this)) {
-                  constr = CallSiteGenerator.compileStaticMethod(this);
-                }
-                if (constr != null) {
-                    staticCallSiteConstructor = new SoftReference<Constructor> (constr);
-                } else {
-                    skipCompiled = true;
-                }
-            }
-
-            if (constr!=null) {
-                try {
-                    return (CallSite) constr.newInstance(site, metaClass, this, params, constr);
-                } catch (Error e) {
-                    skipCompiled=true;
-                    throw e;
-                } catch (Throwable e) {
-                    skipCompiled=true;
-                }
-            }
-        }
-
-        return new StaticMetaMethodSite.StaticMetaMethodSiteNoUnwrapNoCoerce(site, metaClass, this, params);
-    }
-
-    private static class MyComparator implements Comparator, Serializable {
-        private static final long serialVersionUID = 8909277090690131302L;
-
-        @Override
-        public int compare(Object o1, Object o2) {
-            if (o1 instanceof CachedMethod)
-                return ((CachedMethod)o1).compareTo(o2);
-            else if (o2 instanceof CachedMethod)
-                return -((CachedMethod)o2).compareTo(o1);
-            else
-                // really, this should never happen, it's evidence of corruption if it does
-                throw new ClassCastException("One of the two comparables must be a CachedMethod");
-        }
-    }
-
-    public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-        return cachedMethod.getAnnotation(annotationClass);
-    }
-
-    public boolean isSynthetic() {
-        return cachedMethod.isSynthetic();
-    }
-
-    public Method getCachedMethod() {
-        makeAccessibleIfNecessary();
-        if (!accessAllowed) {
-            AccessPermissionChecker.checkAccessPermission(cachedMethod);
-            accessAllowed = true;
-        }
-        return cachedMethod;
-    }
-
-    public boolean canAccessLegally(Class<?> callerClass) {
-        return ReflectionUtils.checkAccessible(callerClass, cachedMethod.getDeclaringClass(), cachedMethod.getModifiers(), false);
-    }
-
-    private boolean makeAccessibleDone = false;
     private void makeAccessibleIfNecessary() {
         if (!makeAccessibleDone) {
-            makeAccessibleInPrivilegedAction(cachedMethod);
+            ReflectionUtils.makeAccessibleInPrivilegedAction(cachedMethod);
             makeAccessibleDone = true;
         }
     }
 
-    private boolean accessAllowed = false;
+    public final Method setAccessible() {
+        return getCachedMethod();
+    }
 }
