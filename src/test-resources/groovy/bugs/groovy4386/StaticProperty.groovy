@@ -16,17 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package groovy.bugs.groovy4386
 
-import groovy.test.GroovyTestCase
-import org.apache.groovy.util.ScriptRunner
+import static groovy.bugs.groovy4386.Constants.TWOPI
 
-class Groovy4287Bug extends GroovyTestCase {
-    void testResolvingOuterStaticNestedClass() {
-        ScriptRunner.runScript('/groovy/bugs/groovy4287/Main.groovy')
-    }
-
-    void testResolvingOuterStaticNestedClassAlias() {
-        ScriptRunner.runScript('/groovy/bugs/groovy4287/Main2.groovy')
+class Test {
+    static test() {
+        assert TWOPI == 6.28
     }
 }
+
+Test.test()

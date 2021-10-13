@@ -16,18 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package bugs.groovy9236;
+package groovy.bugs.groovy9236
 
-import groovy.lang.GroovyClassLoader;
-
-import java.util.ArrayList;
-import java.util.List;
-
-public class Groovy9236ClassLoader extends GroovyClassLoader {
-    final List<String> guessedClassNameList = new ArrayList<>();
-
-    protected Class<?> findClass(final String name) throws ClassNotFoundException {
-        guessedClassNameList.add(name);
-        return super.findClass(name);
-    }
+interface Type {
 }

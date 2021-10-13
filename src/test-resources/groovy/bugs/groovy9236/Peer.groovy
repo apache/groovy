@@ -18,15 +18,7 @@
  */
 package groovy.bugs.groovy9236
 
-class Outer {
-    static class Type {
-    }
+import groovy.transform.PackageScope
 
-    void test() {
-        assert new Peer()
-        assert new Type()
-        assert new Outer.Type()
-    }
+@PackageScope class Peer {
 }
-
-new Outer().test()

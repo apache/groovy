@@ -16,8 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs.groovy9236
+package groovy.bugs.groovy4386
 
-class Groovy9236SamePkg {
-
+class Constants {
+    public static final PI = 3.14
+    static final TWOPI = 6.28
 }
