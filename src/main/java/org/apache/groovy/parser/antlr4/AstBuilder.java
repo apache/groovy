@@ -372,6 +372,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -1989,17 +1990,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             }
         });
 
-        final String closureVarName = "$c" + System.nanoTime();
-        List<Expression> argExpressionList = Arrays.stream(parameters).flatMap(p -> {
-            String parameterName = p.getName();
-            return Stream.of(constX(parameterName), varX(parameterName));
-        }).collect(Collectors.toList());
         Statement block = block(
-                declS(localVarX(closureVarName), closureX(code)),
-                stmt(callX(varX(closureVarName), "call")),
-                returnS(callX(ClassHelper.makeCached(Maps.class), "of", args(argExpressionList)))
+                stmt(callX(closureX(code), "call")),
+                returnS(mapX(Arrays.stream(parameters).map(p -> {
+                    String parameterName = p.getName();
+                    return new MapEntryExpression(constX(parameterName), varX(parameterName));
+                }).collect(Collectors.toList())))
         );
-        MethodNode methodNode = classNode.addSyntheticMethod(RECORD_COMPACT_CONSTRUCTOR_NAME, Opcodes.ACC_PRIVATE, returnType, parameters, ClassNode.EMPTY_ARRAY, block);
+        MethodNode methodNode = classNode.addSyntheticMethod(RECORD_COMPACT_CONSTRUCTOR_NAME, Opcodes.ACC_PRIVATE,
+                                                                returnType, parameters, ClassNode.EMPTY_ARRAY, block);
 
         modifierManager.attachAnnotations(methodNode);
         attachMapConstructorAnnotationToRecord(classNode, parameters);
