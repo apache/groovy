@@ -25,7 +25,6 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.objectweb.asm.MethodVisitor;
 
-import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -40,6 +39,7 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_BRIDGE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
@@ -99,7 +99,7 @@ public class MopWriter {
     }
 
     /**
-     * Filters a list of method for MOP methods. For all methods that are no
+     * Filters a list of method for MOP methods. For all methods that are not
      * MOP methods a MOP method is created if the method is not public and the
      * call would be a call on "this" (isThis == true). If the call is not on
      * "this", then the call is a call on "super" and all methods are used,
@@ -111,37 +111,31 @@ public class MopWriter {
      * @see #generateMopCalls(LinkedList, boolean)
      */
     private void visitMopMethodList(List<MethodNode> methods, boolean isThis, Set<MopKey> useOnlyIfDeclaredHereToo, List<String> orNameMentionedHere) {
-        Map<MopKey, MethodNode> mops = new HashMap<>();
-        LinkedList<MethodNode> mopCalls = new LinkedList<>();
+        LinkedList<MethodNode> list = new LinkedList<>();
+        Map<MopKey, MethodNode> map = new HashMap<>();
         for (MethodNode mn : methods) {
             // mop methods are helper for this and super calls and do direct calls
-            // to the target methods. Such a method cannot be abstract or a bridge
-            if ((mn.getModifiers() & (ACC_ABSTRACT | ACC_BRIDGE)) != 0) continue;
-            if (mn.isStatic()) continue;
+            // to the target methods; such a method cannot be abstract or a bridge
+            if ((mn.getModifiers() & (ACC_ABSTRACT | ACC_BRIDGE | ACC_STATIC)) != 0) continue;
             // no this$ methods for non-private isThis=true
             // super$ method for non-private isThis=false
             // --> results in XOR
-            boolean isPrivate = Modifier.isPrivate(mn.getModifiers());
-            if (isThis ^ isPrivate) continue;
+            if (isThis ^ mn.isPrivate()) continue;
+
             String methodName = mn.getName();
+            Parameter[] parameters = mn.getParameters();
             if (isMopMethod(methodName)) {
-                mops.put(new MopKey(methodName, mn.getParameters()), mn);
-                continue;
+                map.put(new MopKey(methodName, parameters), mn);
+            } else if (!methodName.startsWith("<")) {
+                if (!useOnlyIfDeclaredHereToo.contains(new MopKey(methodName, parameters)) && !orNameMentionedHere.contains(methodName)) {
+                    continue;
+                }
+                if (map.put(new MopKey(getMopMethodName(mn, isThis), parameters), mn) == null) {
+                    list.add(mn);
+                }
             }
-            if (methodName.startsWith("<")) continue;
-            if (!useOnlyIfDeclaredHereToo.contains(new MopKey(methodName, mn.getParameters())) &&
-                    !orNameMentionedHere.contains(methodName)) {
-                continue;
-            }
-            String name = getMopMethodName(mn, isThis);
-            MopKey key = new MopKey(name, mn.getParameters());
-            if (mops.containsKey(key)) continue;
-            mops.put(key, mn);
-            mopCalls.add(mn);
         }
-        generateMopCalls(mopCalls, isThis);
-        mopCalls.clear();
-        mops.clear();
+        generateMopCalls(list, isThis);
     }
 
     /**

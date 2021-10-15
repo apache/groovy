@@ -277,12 +277,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
 
     public String getMopName() {
         if (mopName == null) {
-          String name = getName();
-          CachedClass declaringClass = getDeclaringClass();
-          if (Modifier.isPrivate(getModifiers()))
-            mopName = "this$" + declaringClass.getSuperClassDistance() + "$" + name;
-          else
-            mopName = "super$" + declaringClass.getSuperClassDistance() + "$" + name;
+            mopName = (isPrivate() ? "this" : "super") + '$' + getDeclaringClass().getSuperClassDistance() + '$' + getName();
         }
         return mopName;
     }

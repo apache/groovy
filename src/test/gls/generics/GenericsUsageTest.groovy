@@ -210,11 +210,12 @@ final class GenericsUsageTest extends CompilableTestSupport {
     // GROOVY-3975
     void testGenericsForClosureParameters() {
         def cl = { List<String> s -> }
-        def type = cl.getClass().getMethod("call", List).genericParameterTypes[0]
-        assert type.toString().contains("java.util.List<java.lang.String>")
 
-        type = cl.getClass().getMethod("doCall", List).genericParameterTypes[0]
-        assert type.toString().contains("java.util.List<java.lang.String>")
+        String type = cl.getClass().getMethod('call', List).genericParameterTypes[0]
+        assert type.contains('java.util.List<java.lang.String>')
+
+        type = cl.getClass().getMethod('doCall', List).genericParameterTypes[0]
+        assert type.contains('java.util.List<java.lang.String>')
     }
 
     // GROOVY-4974

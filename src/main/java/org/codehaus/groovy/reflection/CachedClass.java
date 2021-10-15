@@ -43,8 +43,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.codehaus.groovy.reflection.ReflectionUtils.checkCanSetAccessible;
-
 public class CachedClass {
 
     public static final CachedClass[] EMPTY_ARRAY = new CachedClass[0];
@@ -57,7 +55,7 @@ public class CachedClass {
         @Override
         public CachedField[] initValue() {
             PrivilegedAction<CachedField[]> action = () -> Arrays.stream(getTheClass().getDeclaredFields())
-                .filter(f -> checkCanSetAccessible(f, CachedClass.class))
+                .filter(f -> ReflectionUtils.checkCanSetAccessible(f, CachedClass.class))
                 .map(CachedField::new).toArray(CachedField[]::new);
             return AccessController.doPrivileged(action);
         }
@@ -70,7 +68,7 @@ public class CachedClass {
         public CachedConstructor[] initValue() {
             PrivilegedAction<CachedConstructor[]> action = () -> Arrays.stream(getTheClass().getDeclaredConstructors())
                 .filter(c -> !c.isSynthetic()) // GROOVY-9245: exclude inner class ctors
-                .filter(c -> checkCanSetAccessible(c, CachedClass.class))
+                .filter(c -> ReflectionUtils.checkCanSetAccessible(c, CachedClass.class))
                 .map(c -> new CachedConstructor(CachedClass.this, c))
                 .toArray(CachedConstructor[]::new);
             return AccessController.doPrivileged(action);
@@ -87,7 +85,7 @@ public class CachedClass {
                     return Arrays.stream(getTheClass().getDeclaredMethods())
                         // skip synthetic methods inserted by JDK 1.5+ compilers
                         .filter(m -> !m.isBridge() && m.getName().indexOf('+') < 0)
-                        .filter(m -> checkCanSetAccessible(m, CachedClass.class))
+                        .filter(m -> ReflectionUtils.checkCanSetAccessible(m, CachedClass.class))
                         .map(m -> new CachedMethod(CachedClass.this, m))
                         .toArray(CachedMethod[]::new);
                 } catch (LinkageError e) {
@@ -113,7 +111,9 @@ public class CachedClass {
                 superClass.getMethods(); // populate mopMethods
                 Collections.addAll(mopMethods, superClass.mopMethods);
             }
-            mopMethods.sort(CachedMethodComparatorByName.INSTANCE);
+            if (mopMethods.size() > 1)
+                mopMethods.sort(CachedMethodComparatorByName.INSTANCE);
+
             CachedClass.this.mopMethods = mopMethods.toArray(CachedMethod.EMPTY_ARRAY);
 
             return methods.toArray(CachedMethod.EMPTY_ARRAY);

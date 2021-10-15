@@ -20,31 +20,23 @@ package org.codehaus.groovy.vmplugin.v10;
 
 import org.codehaus.groovy.vmplugin.v9.Java9;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.Arrays;
 
-/**
- * Additional Java 10 based functions will be added here as needed.
- */
 public class Java10 extends Java9 {
-    private final Class<?>[] PLUGIN_DGM;
-
-    public Java10() {
-        super();
-        List<Class<?>> dgmClasses = new ArrayList<>();
-        Collections.addAll(dgmClasses, super.getPluginDefaultGroovyMethods());
-        dgmClasses.add(PluginDefaultGroovyMethods.class);
-        PLUGIN_DGM = dgmClasses.toArray(new Class<?>[0]);
-    }
-
-    @Override
-    public Class<?>[] getPluginDefaultGroovyMethods() {
-        return PLUGIN_DGM;
-    }
 
     @Override
     public int getVersion() {
         return 10;
+    }
+
+    @Override
+    public Class<?>[] getPluginDefaultGroovyMethods() {
+        Class<?>[] answer = super.getPluginDefaultGroovyMethods();
+
+        final int n = answer.length;
+        answer = Arrays.copyOf(answer, n + 1);
+        answer[n] = PluginDefaultGroovyMethods.class;
+
+        return answer;
     }
 }

@@ -31,32 +31,69 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.stream.Collectors;
 
 /**
  * Additional Java 16 based functions will be added here as needed.
  */
 public class Java16 extends Java10 {
-    private final Class<?>[] PLUGIN_DGM;
 
-    public Java16() {
-        super();
-        List<Class<?>> dgmClasses = new ArrayList<>();
-        Collections.addAll(dgmClasses, super.getPluginDefaultGroovyMethods());
-        dgmClasses.add(PluginDefaultGroovyMethods.class);
-        PLUGIN_DGM = dgmClasses.toArray(new Class<?>[0]);
+    @Override
+    public int getVersion() {
+        return 16;
+    }
+
+    @Override
+    public Object getInvokeSpecialHandle(final Method method, final Object receiver) {
+        try {
+            final Class<?> receiverType = receiver.getClass();
+            if (method.isDefault() && Proxy.isProxyClass(receiverType)) {
+                return new ProxyDefaultMethodHandle((Proxy) receiver, method);
+            }
+
+            MethodHandles.Lookup lookup = getLookup(receiver);
+            if (0 != (MethodHandles.Lookup.PRIVATE & lookup.lookupModes())) {
+                return lookup.unreflectSpecial(method, receiverType).bindTo(receiver);
+            }
+            return lookup.unreflect(method).bindTo(receiver);
+        } catch (ReflectiveOperationException e) {
+            return new GroovyRuntimeException(e);
+        }
+    }
+
+    @Override
+    public Object invokeHandle(final Object handle, final Object[] args) throws Throwable {
+        if (handle instanceof ProxyDefaultMethodHandle) {
+            return ((ProxyDefaultMethodHandle) handle).invokeWithArguments(args);
+        }
+        if (handle instanceof Throwable) throw (Throwable) handle;
+        MethodHandle mh = (MethodHandle) handle;
+        return mh.invokeWithArguments(args);
+    }
+
+    @Override
+    protected void makeRecordComponents(final CompileUnit cu, final ClassNode classNode, final Class<?> clazz) {
+        if (!clazz.isRecord()) return;
+        classNode.setRecordComponentNodes(Arrays.stream(clazz.getRecordComponents())
+                .map(rc -> {
+                    ClassNode type = makeClassNode(cu, rc.getGenericType(), rc.getType());
+                    type.addTypeAnnotations(Arrays.stream(rc.getAnnotatedType().getAnnotations()).map(annotation -> {
+                        AnnotationNode node = new AnnotationNode(ClassHelper.make(annotation.annotationType()));
+                        configureAnnotation(node, annotation);
+                        return node;
+                    }).collect(Collectors.toList()));
+                    return new RecordComponentNode(classNode, rc.getName(), type, Arrays.stream(rc.getAnnotations()).map(annotation -> {
+                        AnnotationNode node = new AnnotationNode(ClassHelper.make(annotation.annotationType()));
+                        configureAnnotation(node, annotation);
+                        return node;
+                    }).collect(Collectors.toList()));
+                })
+                .collect(Collectors.toList()));
     }
 
     @Override
     protected MethodHandles.Lookup newLookup(final Class<?> declaringClass) {
-        return of(declaringClass);
-    }
-
-    public static MethodHandles.Lookup of(final Class<?> declaringClass) {
         try {
             final Method privateLookup = getPrivateLookup();
             if (privateLookup != null) {
@@ -81,65 +118,5 @@ public class Java16 extends Java10 {
         } catch (final InvocationTargetException e) {
             throw new GroovyRuntimeException(e);
         }
-    }
-
-    @Override
-    public Object getInvokeSpecialHandle(Method method, Object receiver) {
-        try {
-            final Class<?> receiverType = receiver.getClass();
-            if (method.isDefault() && Proxy.isProxyClass(receiverType)) {
-                return new ProxyDefaultMethodHandle((Proxy) receiver, method);
-            }
-
-            MethodHandles.Lookup lookup = getLookup(receiver);
-            if (0 != (MethodHandles.Lookup.PRIVATE & lookup.lookupModes())) {
-                return lookup.unreflectSpecial(method, receiverType).bindTo(receiver);
-            }
-            return lookup.unreflect(method).bindTo(receiver);
-        } catch (ReflectiveOperationException e) {
-            return new GroovyRuntimeException(e);
-        }
-    }
-
-    @Override
-    public Object invokeHandle(Object handle, Object[] args) throws Throwable {
-        if (handle instanceof ProxyDefaultMethodHandle) {
-            return ((ProxyDefaultMethodHandle) handle).invokeWithArguments(args);
-        }
-        if (handle instanceof Throwable) throw (Throwable) handle;
-        MethodHandle mh = (MethodHandle) handle;
-        return mh.invokeWithArguments(args);
-    }
-
-    @Override
-    protected void makeRecordComponents(final CompileUnit cu, final ClassNode classNode, final Class<?> clazz) {
-        if (!clazz.isRecord()) return;
-        List<RecordComponentNode> recordComponentNodeList = Arrays.stream(clazz.getRecordComponents())
-                .map(r -> {
-                    List<AnnotationNode> annotationNodeList = Arrays.stream(r.getAnnotations()).map(annotation -> {
-                        AnnotationNode node = new AnnotationNode(ClassHelper.make(annotation.annotationType()));
-                        configureAnnotation(node, annotation);
-                        return node;
-                    }).collect(Collectors.toList());
-                    ClassNode type = makeClassNode(cu, r.getGenericType(), r.getType());
-                    type.addTypeAnnotations(Arrays.stream(r.getAnnotatedType().getAnnotations()).map(annotation -> {
-                        AnnotationNode node = new AnnotationNode(ClassHelper.make(annotation.annotationType()));
-                        configureAnnotation(node, annotation);
-                        return node;
-                    }).collect(Collectors.toList()));
-                    return new RecordComponentNode(classNode, r.getName(), type, annotationNodeList);
-                })
-                .collect(Collectors.toList());
-        classNode.setRecordComponentNodes(recordComponentNodeList);
-    }
-
-    @Override
-    public Class<?>[] getPluginDefaultGroovyMethods() {
-        return PLUGIN_DGM;
-    }
-
-    @Override
-    public int getVersion() {
-        return 16;
     }
 }
