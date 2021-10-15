@@ -2599,53 +2599,41 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
             staticPropertyIndex.put(entry.getKey(), mp);
         }
-
     }
 
-    private static MetaProperty establishStaticMetaProperty(MetaProperty mp) {
+    private static MetaProperty establishStaticMetaProperty(final MetaProperty mp) {
         MetaBeanProperty mbp = (MetaBeanProperty) mp;
-        MetaProperty result = null;
         final MetaMethod getterMethod = mbp.getGetter();
         final MetaMethod setterMethod = mbp.getSetter();
-        final CachedField metaField = mbp.getField();
+        final CachedField staticField = Optional.ofNullable(mbp.getField()).filter(f -> f.isStatic()).orElse(null);
 
         boolean getter = getterMethod == null || getterMethod.isStatic();
         boolean setter = setterMethod == null || setterMethod.isStatic();
-        boolean field = metaField == null || metaField.isStatic();
+        boolean field = staticField != null;
 
-        if (!getter && !setter && !field) {
-            return result;
-        } else {
-            final String propertyName = mbp.getName();
-            final Class propertyType = mbp.getType();
-
-            if (setter && getter) {
+        MetaProperty staticProperty = staticField;
+        if (getter || setter || field) {
+            if (getter && setter) {
                 if (field) {
-                    result = mbp; // nothing to do
+                    staticProperty = mbp; // mbp has static field, null or static getter and null or static setter
                 } else {
-                    result = new MetaBeanProperty(propertyName, propertyType, getterMethod, setterMethod);
+                    staticProperty = new MetaBeanProperty(mbp.getName(), mbp.getType(), getterMethod, setterMethod);
                 }
-            } else if (getter && !setter) {
-                if (getterMethod == null) {
-                    result = metaField;
-                } else {
-                    MetaBeanProperty newmp = new MetaBeanProperty(propertyName, propertyType, getterMethod, null);
-                    if (field) newmp.setField(metaField);
-                    result = newmp;
+            } else if (getter) {
+                if (getterMethod != null) {
+                    MetaBeanProperty newmp = new MetaBeanProperty(mbp.getName(), mbp.getType(), getterMethod, null);
+                    newmp.setField(staticField);
+                    staticProperty = newmp;
                 }
-            } else if (setter && !getter) {
-                if (setterMethod == null) {
-                    result = metaField;
-                } else {
-                    MetaBeanProperty newmp = new MetaBeanProperty(propertyName, propertyType, null, setterMethod);
-                    if (field) newmp.setField(metaField);
-                    result = newmp;
+            } else if (setter) {
+                if (setterMethod != null) {
+                    MetaBeanProperty newmp = new MetaBeanProperty(mbp.getName(), mbp.getType(), null, setterMethod);
+                    newmp.setField(staticField);
+                    staticProperty = newmp;
                 }
-            } else {
-                result = metaField;
             }
         }
-        return result;
+        return staticProperty;
     }
 
     private void copyClassPropertyIndexForSuper(Map<CachedClass, LinkedHashMap<String, MetaProperty>> dest) {
@@ -2845,8 +2833,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (staticProperty != null) {
             staticPropertyIndex.put(mp.getName(), mp);
         } else {
-            LinkedHashMap<String, MetaProperty> propertyMap = classPropertyIndex.computeIfAbsent(theCachedClass, k -> new LinkedHashMap<>());
-            //keep field
+            Map<String, MetaProperty> propertyMap = classPropertyIndex.computeIfAbsent(theCachedClass, k -> new LinkedHashMap<>());
+            // remember field
             CachedField field;
             MetaProperty old = propertyMap.get(mp.getName());
             if (old != null) {
@@ -3037,23 +3025,23 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private MetaProperty getMetaProperty(Class _clazz, String name, boolean useSuper, boolean useStatic) {
-        if (_clazz == theClass)
+    private MetaProperty getMetaProperty(final Class clazz, final String name, final boolean useSuper, final boolean useStatic) {
+        if (clazz == theClass)
             return getMetaProperty(name, useStatic);
 
-        CachedClass clazz = ReflectionCache.getCachedClass(_clazz);
+        CachedClass cachedClass = ReflectionCache.getCachedClass(clazz);
         while (true) {
             Map<String, MetaProperty> propertyMap;
             if (useStatic) {
                 propertyMap = staticPropertyIndex;
             } else if (useSuper) {
-                propertyMap = classPropertyIndexForSuper.get(clazz);
+                propertyMap = classPropertyIndexForSuper.get(cachedClass);
             } else {
-                propertyMap = classPropertyIndex.get(clazz);
+                propertyMap = classPropertyIndex.get(cachedClass);
             }
             if (propertyMap == null) {
-                if (clazz != theCachedClass) {
-                    clazz = theCachedClass;
+                if (cachedClass != theCachedClass) {
+                    cachedClass = theCachedClass;
                     continue;
                 } else {
                     return null;
@@ -3063,7 +3051,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private MetaProperty getMetaProperty(String name, boolean useStatic) {
+    private MetaProperty getMetaProperty(final String name, final boolean useStatic) {
         CachedClass clazz = theCachedClass;
         Map<String, MetaProperty> propertyMap;
         if (useStatic) {
