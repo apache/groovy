@@ -368,15 +368,11 @@ public class CompileStack {
             if (thisEndLabel == null) setEndLabels();
 
             if (!scope.isInStaticContext()) {
-                // write "this"
                 mv.visitLocalVariable("this", className, null, thisStartLabel, thisEndLabel, 0);
             }
-
             for (BytecodeVariable v : usedVariables) {
                 String type = BytecodeHelper.getTypeDescription(v.isHolder() ? ClassHelper.REFERENCE_TYPE : v.getType());
-                Label start = v.getStartLabel();
-                Label end = v.getEndLabel();
-                mv.visitLocalVariable(v.getName(), type, null, start, end, v.getIndex());
+                mv.visitLocalVariable(v.getName(), type, null, v.getStartLabel(), v.getEndLabel(), v.getIndex());
             }
         }
 
@@ -606,9 +602,9 @@ public class CompileStack {
                     controller.getOperandStack().load(type, currentVariableIndex);
                     controller.getOperandStack().box();
 
-                    // GROOVY-4237, the original variable should always appear
+                    // GROOVY-4237: the original variable should always appear
                     // in the variable index, otherwise some programs get into
-                    // trouble. So we define a dummy variable for the packaging
+                    // trouble; so define a dummy variable for the packaging
                     // phase and let it end right away before the normal
                     // reference will be used
                     Label newStart = new Label();
@@ -669,15 +665,18 @@ public class CompileStack {
 
     public BytecodeVariable defineVariable(final Variable v, final ClassNode variableType, final boolean initFromStack) {
         String name = v.getName();
-        BytecodeVariable answer = defineVar(name, variableType, v.isClosureSharedVariable(), v.isClosureSharedVariable());
-        stackVariables.put(name, answer);
-
         MethodVisitor mv = controller.getMethodVisitor();
-        Label startLabel  = new Label();
-        answer.setStartLabel(startLabel);
-        ClassNode type = answer.getType().redirect();
         OperandStack operandStack = controller.getOperandStack();
 
+        BytecodeVariable answer = defineVar(name, variableType, v.isClosureSharedVariable(), v.isClosureSharedVariable());
+        BytecodeVariable before = stackVariables.put(name, answer);
+        Label startLabel = new Label();
+        answer.setStartLabel(startLabel);
+        if (before != null) {//GROOVY-10303
+            before.setEndLabel(startLabel);
+        }
+
+        ClassNode type = answer.getType();
         if (!initFromStack) {
             if (ClassHelper.isPrimitiveType(v.getOriginType()) && ClassHelper.getWrapper(v.getOriginType()).equals(variableType)) {
                 pushInitValue(v.getOriginType(), mv);
@@ -685,11 +684,11 @@ public class CompileStack {
                 operandStack.box();
                 operandStack.remove(1);
             } else {
-                pushInitValue(type, mv);
+                pushInitValue(type.redirect(), mv);
             }
         }
-        operandStack.push(answer.getType());
-        if (answer.isHolder())  {
+        operandStack.push(type);
+        if (answer.isHolder()) {
             operandStack.box();
             operandStack.remove(1);
             createReference(answer);
