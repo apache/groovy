@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
@@ -62,6 +63,7 @@ import static org.codehaus.groovy.ast.AnnotationNode.LOCAL_VARIABLE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.METHOD_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.PACKAGE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.PARAMETER_TARGET;
+import static org.codehaus.groovy.ast.AnnotationNode.RECORD_COMPONENT_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_PARAMETER_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_USE_TARGET;
@@ -115,12 +117,29 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         for (ClassNode anInterface : interfaces) {
             visitTypeAnnotations(anInterface);
         }
+        if (node.isRecord()) {
+            visitRecordComponents(node);
+        }
         node.visitContents(this);
+    }
+
+    private void visitRecordComponents(ClassNode node) {
+        for (RecordComponentNode recordComponentNode : node.getRecordComponentNodes()) {
+            visitAnnotations(recordComponentNode, RECORD_COMPONENT_TARGET);
+            visitTypeAnnotations(recordComponentNode.getType());
+            extractTypeUseAnnotations(recordComponentNode.getAnnotations(), recordComponentNode.getType(), RECORD_COMPONENT_TARGET);
+        }
     }
 
     @Override
     public void visitField(FieldNode node) {
         visitAnnotations(node, FIELD_TARGET);
+
+        if (!node.isStatic() && this.currentClass.isRecord()) {
+            // record's instance fields are created by compiler and reuse type instance of record components.
+            // return here to avoid processing type instance repeatedly.
+            return;
+        }
         visitTypeAnnotations(node.getType());
         extractTypeUseAnnotations(node.getAnnotations(), node.getType(), FIELD_TARGET);
     }
