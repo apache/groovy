@@ -65,10 +65,10 @@ import static org.codehaus.groovy.ast.AnnotationNode.PARAMETER_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_PARAMETER_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_USE_TARGET;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
-import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.evaluateExpression;
 
 /**
@@ -255,10 +255,6 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             return;
         }
         this.currentClass.setAnnotated(true);
-        if (!isAnnotationCompatible()) {
-            addError("Annotations are not supported in the current runtime. " + JVM_ERROR_MESSAGE, node);
-            return;
-        }
         Map<String, List<AnnotationNode>> nonSourceAnnotations = new LinkedHashMap<>();
         for (AnnotationNode unvisited : annotations) {
             AnnotationNode visited;
@@ -458,6 +454,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
      *
      * @return true if running on a 1.5+ runtime
      */
+    @Deprecated
     protected boolean isAnnotationCompatible() {
         return CompilerConfiguration.isPostJDK5(this.source.getConfiguration().getTargetBytecode());
     }
