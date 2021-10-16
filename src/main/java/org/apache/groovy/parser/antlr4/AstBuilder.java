@@ -2007,7 +2007,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         attachMapConstructorAnnotationToRecord(classNode, parameters);
         attachTupleConstructorAnnotationToRecord(classNode, parameters);
 
-        return methodNode;
+        return configureAST(methodNode, ctx);
     }
 
     private void attachMapConstructorAnnotationToRecord(ClassNode classNode, Parameter[] parameters) {
