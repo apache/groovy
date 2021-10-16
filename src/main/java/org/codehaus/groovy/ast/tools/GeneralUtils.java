@@ -62,6 +62,8 @@ import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.SwitchStatement;
+import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.classgen.BytecodeExpression;
@@ -1070,5 +1072,36 @@ public class GeneralUtils {
             sb.append(p.getType()).append(',');
         }
         return sb.toString();
+    }
+
+    public static boolean maybeFallsThrough(final Statement statement) {
+        if (statement.isEmpty()) return true;
+
+        if (statement instanceof ReturnStatement) {
+            return false;
+        } else if (statement instanceof ThrowStatement) {
+            return false;
+        } else if (statement instanceof BlockStatement) {
+            List<Statement> list = ((BlockStatement) statement).getStatements();
+            final int last = list.size() - 1;
+            if (!maybeFallsThrough(list.get(last))) return false;
+            for (int i = 0; i < last; i += 1)
+                if (!maybeFallsThrough(list.get(i))) return false;
+        } else if (statement instanceof IfStatement) {
+            return maybeFallsThrough(((IfStatement) statement).getElseBlock())
+                || maybeFallsThrough(((IfStatement) statement).getIfBlock());
+        } else if (statement instanceof SwitchStatement) {
+            // TODO
+        } else if (statement instanceof TryCatchStatement) {
+            TryCatchStatement tryCatch = (TryCatchStatement) statement;
+            if (!maybeFallsThrough(tryCatch.getFinallyStatement())) return false;
+            for (CatchStatement cs : tryCatch.getCatchStatements())
+                if (maybeFallsThrough(cs.getCode())) return true;
+            return maybeFallsThrough(tryCatch.getTryStatement());
+        } else if (statement instanceof SynchronizedStatement) {
+            return maybeFallsThrough(((SynchronizedStatement) statement).getCode());
+        }
+
+        return true;
     }
 }

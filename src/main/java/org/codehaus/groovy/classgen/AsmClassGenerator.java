@@ -152,6 +152,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PROPERTY_OWNER;
@@ -579,7 +580,7 @@ public class AsmClassGenerator extends ClassGenerator {
         MethodVisitor mv = controller.getMethodVisitor();
         if (isConstructor && (code == null || !((ConstructorNode) node).firstStatementIsSpecialConstructorCall())) {
             boolean hasCallToSuper = false;
-            if (code != null && isInnerClass()) {
+            if (code != null && controller.getClassNode().getOuterClass() != null) {
                 // GROOVY-4471: if the class is an inner class node, there are chances that
                 // the call to super is already added so we must ensure not to add it twice
                 if (code instanceof BlockStatement) {
@@ -602,7 +603,7 @@ public class AsmClassGenerator extends ClassGenerator {
             code.visit(this);
         }
 
-        if (!isLastStatementReturnOrThrow(code)) {
+        if (code == null || maybeFallsThrough(code)) {
             if (code != null) { // GROOVY-7647, GROOVY-9373
                 controller.visitLineNumber(code.getLastLineNumber());
             }
@@ -625,21 +626,6 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         controller.getCompileStack().clear();
-    }
-
-    private boolean isLastStatementReturnOrThrow(final Statement code) {
-        if (code instanceof BlockStatement) {
-            BlockStatement blockStatement = (BlockStatement) code;
-            List<Statement> statementList = blockStatement.getStatements();
-            int nStatements = statementList.size();
-            if (nStatements > 0) {
-                Statement lastStatement = statementList.get(nStatements - 1);
-                if (lastStatement instanceof ReturnStatement || lastStatement instanceof ThrowStatement) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     private void visitAnnotationDefaultExpression(final AnnotationVisitor av, final ClassNode type, final Expression exp) {
@@ -880,10 +866,11 @@ public class AsmClassGenerator extends ClassGenerator {
      * Loads either this object or if we're inside a closure then load the top level owner
      */
     protected void loadThisOrOwner() {
-        if (isInnerClass()) {
-            fieldX(controller.getClassNode().getDeclaredField("owner")).visit(this);
-        } else {
+        ClassNode classNode = controller.getClassNode();
+        if (classNode.getOuterClass() == null) {
             loadThis(VariableExpression.THIS_EXPRESSION);
+        } else {
+            fieldX(classNode.getDeclaredField("owner")).visit(this);
         }
     }
 
@@ -1347,7 +1334,6 @@ public class AsmClassGenerator extends ClassGenerator {
             operandStack.push(type);
         }
     }
-
 
     /**
      * RHS instance field. should move most of the code in the BytecodeHelper
@@ -2339,6 +2325,13 @@ public class AsmClassGenerator extends ClassGenerator {
     // Implementation methods
     //--------------------------------------------------------------------------
 
+    public boolean addInnerClass(final ClassNode innerClass) {
+        ModuleNode mn = controller.getClassNode().getModule();
+        innerClass.setModule(mn);
+        mn.getUnit().addGeneratedInnerClass((InnerClassNode) innerClass);
+        return innerClasses.add(innerClass);
+    }
+
     public static int argumentSize(final Expression arguments) {
         if (arguments instanceof TupleExpression) {
             TupleExpression tupleExpression = (TupleExpression) arguments;
@@ -2378,10 +2371,6 @@ public class AsmClassGenerator extends ClassGenerator {
         return false;
     }
 
-    private boolean isInnerClass() {
-        return controller.getClassNode().getOuterClass() != null;
-    }
-
     @Deprecated
     public static boolean isThisExpression(final Expression expression) {
         return ExpressionUtils.isThisExpression(expression);
@@ -2399,13 +2388,6 @@ public class AsmClassGenerator extends ClassGenerator {
 
     private static boolean isVargs(final Parameter[] parameters) {
         return (parameters.length > 0 && parameters[parameters.length - 1].getType().isArray());
-    }
-
-    public boolean addInnerClass(final ClassNode innerClass) {
-        ModuleNode mn = controller.getClassNode().getModule();
-        innerClass.setModule(mn);
-        mn.getUnit().addGeneratedInnerClass((InnerClassNode)innerClass);
-        return innerClasses.add(innerClass);
     }
 
     public void onLineNumber(final ASTNode statement, final String message) {

@@ -54,6 +54,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ATHROW;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
@@ -332,8 +333,11 @@ public class StatementWriter {
 
         // skip past catch block(s)
         Label finallyStart = new Label();
-        mv.visitJumpInsn(GOTO, finallyStart);
-
+        boolean fallthroughFinally = false;
+        if (maybeFallsThrough(tryStatement)) {
+            mv.visitJumpInsn(GOTO, finallyStart);
+            fallthroughFinally = true;
+        }
         closeRange(tryBlock, mv);
         // pop for BlockRecorder
         compileStack.pop();
@@ -355,13 +359,16 @@ public class StatementWriter {
 
             // end of catch
             closeRange(catches, mv);
-            mv.visitJumpInsn(GOTO, finallyStart);
+            if (maybeFallsThrough(catchStatement.getCode())) {
+                mv.visitJumpInsn(GOTO, finallyStart);
+                fallthroughFinally = true;
+            }
             compileStack.writeExceptionTable(tryBlock, catchBlock,
                     BytecodeHelper.getClassInternalName(catchStatement.getExceptionType()));
         }
 
         // used to handle exceptions in catches and regularly visited finals
-        Label catchAll = new Label();
+        Label catchAll = new Label(), afterCatchAll = new Label();
 
         // add "catch all" block to exception table for try part; we do this
         // after the exception blocks so they are not superseded by this one
@@ -372,26 +379,27 @@ public class StatementWriter {
         // pop for BlockRecorder
         compileStack.pop();
 
-        // start finally
-        mv.visitLabel(finallyStart);
-        finallyStatement.visit(controller.getAcg());
+        if (fallthroughFinally) {
+            mv.visitLabel(finallyStart);
+            finallyStatement.visit(controller.getAcg());
 
-        // skip past all-catching block
-        Label afterCatchAll = new Label();
-        mv.visitJumpInsn(GOTO, afterCatchAll);
+            // skip over the catch-finally-rethrow
+            mv.visitJumpInsn(GOTO, afterCatchAll);
+        }
 
         mv.visitLabel(catchAll);
         operandStack.push(ClassHelper.make(Throwable.class));
-        int anyThrowableIndex = compileStack.defineTemporaryVariable("throwable", true);
+        int anyThrowable = compileStack.defineTemporaryVariable("throwable", true);
 
         finallyStatement.visit(controller.getAcg());
 
         // load the throwable and rethrow it
-        mv.visitVarInsn(ALOAD, anyThrowableIndex);
+        mv.visitVarInsn(ALOAD, anyThrowable);
         mv.visitInsn(ATHROW);
 
-        mv.visitLabel(afterCatchAll);
-        compileStack.removeVar(anyThrowableIndex);
+        if (fallthroughFinally)
+            mv.visitLabel(afterCatchAll);
+        compileStack.removeVar(anyThrowable);
     }
 
     private BlockRecorder makeBlockRecorder(final Statement finallyStatement) {
