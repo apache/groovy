@@ -2000,6 +2000,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         MethodNode methodNode = classNode.addSyntheticMethod(RECORD_COMPACT_CONSTRUCTOR_NAME, Opcodes.ACC_PRIVATE,
                                                                 returnType, parameters, ClassNode.EMPTY_ARRAY, block);
 
+        ConstructorNode dummyConstructorNode = configureAST(new ConstructorNode(modifierManager.getClassMemberModifiersOpValue(), block), ctx);
+        modifierManager.validate(dummyConstructorNode);
+
         modifierManager.attachAnnotations(methodNode);
         attachMapConstructorAnnotationToRecord(classNode, parameters);
         attachTupleConstructorAnnotationToRecord(classNode, parameters);
