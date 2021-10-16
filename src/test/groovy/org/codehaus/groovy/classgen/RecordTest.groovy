@@ -267,4 +267,52 @@ class RecordTest {
             assert 22 == m.getParameterCount()
         '''
     }
+
+    @Test
+    void testCoerce() {
+        assertScript '''
+            record PersonDynamic(String name, int age) {}
+            @groovy.transform.CompileStatic
+            record PersonStatic(String name, int age) {}
+            
+            def testDynamic() {
+                PersonDynamic p = ['Daniel', 37]
+                assert 'Daniel' == p.name()
+                assert 37 == p.age()
+                
+                PersonDynamic p2 = [age: 37, name: 'Daniel']
+                assert 'Daniel' == p2.name()
+                assert 37 == p2.age()
+                
+                PersonStatic p3 = ['Daniel', 37]
+                assert 'Daniel' == p3.name()
+                assert 37 == p3.age()
+                
+                PersonStatic p4 = [age: 37, name: 'Daniel']
+                assert 'Daniel' == p4.name()
+                assert 37 == p4.age()
+            }
+            testDynamic()
+            
+            @groovy.transform.CompileStatic
+            def testStatic() {
+                PersonStatic p = ['Daniel', 37]
+                assert 'Daniel' == p.name()
+                assert 37 == p.age()
+                
+                PersonStatic p2 = [age: 37, name: 'Daniel']
+                assert 'Daniel' == p2.name()
+                assert 37 == p2.age()
+                
+                PersonDynamic p3 = ['Daniel', 37]
+                assert 'Daniel' == p3.name()
+                assert 37 == p3.age()
+                
+                PersonDynamic p4 = [age: 37, name: 'Daniel']
+                assert 'Daniel' == p4.name()
+                assert 37 == p4.age()
+            }
+            testStatic()
+        '''
+    }
 }
