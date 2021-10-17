@@ -517,6 +517,39 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9500
+    void testReturnTypeInferenceWithMethodGenerics20() {
+        assertScript '''
+            trait Entity<D> {
+            }
+
+            abstract class Path<F extends Entity, T extends Entity> implements Iterable<Path.Segment<F,T>> {
+                interface Segment<F, T> {
+                    F start()
+                    T end()
+                }
+
+                abstract F start()
+                T end() {
+                  end // Cannot return value of type Path$Segment<F,T> on method returning type T
+                }
+                T end
+
+                @Override
+                void forEach(java.util.function.Consumer<? super Segment<F, T>> action) {
+                }
+                @Override
+                Spliterator<Segment<F, T>> spliterator() {
+                }
+                @Override
+                Iterator<Segment<F, T>> iterator() {
+                }
+            }
+
+            null
+        '''
+    }
+
     void testDiamondInferrenceFromConstructor1() {
         assertScript '''
             class Foo<U> {
