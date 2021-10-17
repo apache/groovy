@@ -109,6 +109,7 @@ public class ClassHelper {
             STRING_TYPE = makeCached(String.class),
             SCRIPT_TYPE = makeCached(Script.class),
             BINDING_TYPE = makeCached(Binding.class),
+            THROWABLE_TYPE = makeCached(Throwable.class),
 
             boolean_TYPE = makeCached(boolean.class),
             char_TYPE = makeCached(char.class),

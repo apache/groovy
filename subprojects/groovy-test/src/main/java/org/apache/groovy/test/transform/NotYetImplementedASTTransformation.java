@@ -51,8 +51,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class NotYetImplementedASTTransformation extends AbstractASTTransformation {
-
-    private static final ClassNode CATCH_TYPE = ClassHelper.make(Throwable.class);
     private static final ClassNode DEFAULT_THROW_TYPE = ClassHelper.make(AssertionError.class);
 
     @Override
@@ -76,7 +74,7 @@ public class NotYetImplementedASTTransformation extends AbstractASTTransformatio
             TryCatchStatement tryCatchStatement = tryCatchS(
                     methodNode.getCode(),
                     EmptyStatement.INSTANCE,
-                    catchS(param(CATCH_TYPE, "ignore"), ReturnStatement.RETURN_NULL_OR_VOID));
+                    catchS(param(ClassHelper.THROWABLE_TYPE.getPlainNodeReference(), "ignore"), ReturnStatement.RETURN_NULL_OR_VOID));
 
             ThrowStatement throwStatement = throwS(ctorX(exception, args(constX("Method is marked with @NotYetImplemented but passes unexpectedly"))));
 

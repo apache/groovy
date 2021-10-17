@@ -194,7 +194,7 @@ public class TryWithResourcesASTTransformation {
 
         // Throwable #primaryExc = null;
         String primaryExcName = this.genPrimaryExcName();
-        VariableExpression primaryExcX = localVarX(primaryExcName, ClassHelper.make(Throwable.class));
+        VariableExpression primaryExcX = localVarX(primaryExcName, ClassHelper.THROWABLE_TYPE.getPlainNodeReference());
         ExpressionStatement primaryExcDeclarationStatement =
                 new ExpressionStatement(
                         new DeclarationExpression(
@@ -250,7 +250,7 @@ public class TryWithResourcesASTTransformation {
         astBuilder.appendStatementsToBlockStatement(blockStatement, throwTExcStatement);
 
         // Throwable #t
-        Parameter tExcParameter = new Parameter(ClassHelper.make(Throwable.class), tExcName);
+        Parameter tExcParameter = new Parameter(ClassHelper.THROWABLE_TYPE.getPlainNodeReference(), tExcName);
 
         return new CatchStatement(tExcParameter, blockStatement);
     }
@@ -309,7 +309,7 @@ public class TryWithResourcesASTTransformation {
         newTryCatchStatement.addCatch(
                 // catch (Throwable #suppressedExc) { .. }
                 new CatchStatement(
-                        new Parameter(ClassHelper.make(Throwable.class), suppressedExcName),
+                        new Parameter(ClassHelper.THROWABLE_TYPE.getPlainNodeReference(), suppressedExcName),
                         astBuilder.createBlockStatement(this.createAddSuppressedStatement(primaryExcName, suppressedExcName)) // #primaryExc.addSuppressed(#suppressedExc);
                 )
         );

@@ -714,7 +714,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
 
     @Override
     public void visitCatchStatement(CatchStatement cs) {
-        if (!(cs.getExceptionType().isDerivedFrom(ClassHelper.make(Throwable.class)))) {
+        if (!(cs.getExceptionType().isDerivedFrom(ClassHelper.THROWABLE_TYPE))) {
             addError("Catch statement parameter type is not a subclass of Throwable.", cs);
         }
         super.visitCatchStatement(cs);
