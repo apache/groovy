@@ -161,18 +161,15 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     private void replaceExtendsByImplements(final ClassNode cNode) {
         ClassNode superClass = cNode.getUnresolvedSuperClass();
         if (Traits.isTrait(superClass)) {
-            // move from super class to interface;
+            // move from super class to interface
             cNode.setSuperClass(ClassHelper.OBJECT_TYPE);
             cNode.setUnresolvedSuperClass(ClassHelper.OBJECT_TYPE);
             cNode.addInterface(superClass);
-            resolveScope(cNode);
         }
     }
 
     private void resolveScope(final ClassNode cNode) {
-        // we need to resolve again!
-        VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(sourceUnit);
-        scopeVisitor.visitClass(cNode);
+        new VariableScopeVisitor(sourceUnit).visitClass(cNode);
     }
 
     private void checkNoConstructor(final ClassNode cNode) {

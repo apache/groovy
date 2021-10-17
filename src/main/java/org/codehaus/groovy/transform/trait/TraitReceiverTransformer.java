@@ -300,28 +300,35 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
     private Expression transformMethodCallOnThis(final MethodCallExpression call) {
         Expression method = call.getMethod();
         Expression arguments = call.getArguments();
-        Expression objectExpr = call.getObjectExpression();
+        Expression thisExpr = call.getObjectExpression();
 
         if (method instanceof ConstantExpression) {
             String methodName = call.getMethodAsString();
             for (MethodNode methodNode : traitClass.getMethods(methodName)) {
                 if (methodName.equals(methodNode.getName()) && (methodNode.isStatic() || methodNode.isPrivate())) {
-                    ArgumentListExpression newArgs = createArgumentList(methodNode.isStatic() ? asClass(objectExpr) : weaved, arguments);
-                    MethodCallExpression newCall = callX(inClosure ? classX(traitHelperClass) : varX("this"), methodName, newArgs);
-                    newCall.setImplicitThis(true);
-                    newCall.setSafe(call.isSafe());
-                    newCall.setSourcePosition(call);
+                    MethodCallExpression newCall;
+                    if (!inClosure && methodNode.isStatic()) { // GROOVY-10312: $self or $static$self.staticMethod(...)
+                        newCall = callX(varX(weaved), methodName, transform(arguments));
+                        newCall.setImplicitThis(false);
+                        newCall.setSafe(false);
+                    } else {
+                        ArgumentListExpression newArgs = createArgumentList(methodNode.isStatic() ? asClass(varX("this")) : weaved, arguments);
+                        newCall = callX(inClosure ? classX(traitHelperClass) : thisExpr, methodName, newArgs);
+                        newCall.setImplicitThis(true);
+                        newCall.setSafe(call.isSafe());
+                    }
                     newCall.setSpreadSafe(call.isSpreadSafe());
+                    newCall.setSourcePosition(call);
                     return newCall;
                 }
             }
         }
 
-        MethodCallExpression newCall = callX(inClosure ? objectExpr : weaved, method, transform(arguments));
+        MethodCallExpression newCall = callX(inClosure ? thisExpr : weaved, method, transform(arguments));
         newCall.setImplicitThis(inClosure ? call.isImplicitThis() : false);
-        newCall.setSafe(call.isSafe());
-        newCall.setSourcePosition(call);
+        newCall.setSafe(inClosure ? call.isSafe() : false);
         newCall.setSpreadSafe(call.isSpreadSafe());
+        newCall.setSourcePosition(call);
         return newCall;
     }
 
