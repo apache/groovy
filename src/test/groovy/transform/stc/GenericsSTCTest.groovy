@@ -179,20 +179,20 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testReturnTypeInferenceWithMethodGenerics() {
+    void testReturnTypeInferenceWithMethodGenerics1() {
         assertScript '''
             List<Long> list = Arrays.asList([0L,0L] as Long[])
         '''
     }
 
-    void testReturnTypeInferenceWithMethodGenericsAndVarArg() {
+    void testReturnTypeInferenceWithMethodGenerics2() {
         assertScript '''
             List<Long> list = Arrays.asList(0L,0L)
         '''
     }
 
     // GROOVY-8638
-    void testReturnTypeInferenceWithMethodGenerics17() {
+    void testReturnTypeInferenceWithMethodGenerics3() {
         assertScript '''
             @Grab('com.google.guava:guava:30.1.1-jre')
             import com.google.common.collect.*
@@ -209,7 +209,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10098
-    void testReturnTypeInferenceWithMethodGenerics16() {
+    void testReturnTypeInferenceWithMethodGenerics4() {
         assertScript '''
             @groovy.transform.TupleConstructor(defaults=false)
             class C<T extends Number> {
@@ -220,6 +220,35 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
               }
             }
             assert new C<>(42).m() == 42
+        '''
+    }
+
+    // GROOVY-9500
+    void testReturnTypeInferenceWithMethodGenerics5() {
+        assertScript '''
+            trait Entity<D> {
+            }
+            abstract class Path<F extends Entity, T extends Entity> implements Iterable<Path.Segment<F,T>> {
+                interface Segment<F, T> {
+                    F start()
+                    T end()
+                }
+                abstract F start()
+                T end() {
+                  end // Cannot return value of type Path$Segment<F,T> on method returning type T
+                }
+                T end
+                @Override
+                void forEach(java.util.function.Consumer<? super Segment<F, T>> action) {
+                }
+                @Override
+                Spliterator<Segment<F, T>> spliterator() {
+                }
+                @Override
+                Iterator<Segment<F, T>> iterator() {
+                }
+            }
+            null
         '''
     }
 
@@ -246,6 +275,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Set<Number> s4 = new HashSet<Number>(Arrays.asList(0L,0L))
         '''
     }
+
     // GROOVY-9984
     void testDiamondInferrenceFromConstructor5() {
         assertScript '''
