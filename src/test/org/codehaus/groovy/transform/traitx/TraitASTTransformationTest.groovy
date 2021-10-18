@@ -3302,15 +3302,16 @@ final class TraitASTTransformationTest {
     @Test // GROOVY-10312
     void testTraitAccessToInheritedStaticMethods3() {
         assertScript '''
-            trait Foo {
+            interface Foo {
                 public static final String BANG = '!'
-
+            }
+            trait Bar implements Foo {
                 static String staticMethodWithDefaultArgument(String string = 'works') {
-                    string + this.BANG
+                    string + BANG
                 }
             }
 
-            class Main implements Foo {
+            class Main implements Bar {
                 static test1() {
                     String result = staticMethodWithDefaultArgument()
                     assert result == 'works!'

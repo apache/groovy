@@ -23,7 +23,6 @@ import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
@@ -64,6 +63,11 @@ import java.util.Set;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
 import static org.apache.groovy.util.BeanUtils.capitalize;
+import static org.codehaus.groovy.ast.ClassHelper.CLASS_Type;
+import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.OVERRIDE_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.SEALED_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperBoolean;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -102,11 +106,6 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     public static final String DO_DYNAMIC = TraitReceiverTransformer.class + ".doDynamic";
     public static final String POST_TYPECHECKING_REPLACEMENT = TraitReceiverTransformer.class + ".replacement";
 
-    private static final ClassNode INVOKERHELPER_CLASSNODE = ClassHelper.make(InvokerHelper.class);
-    private static final ClassNode OVERRIDE_CLASSNODE = ClassHelper.OVERRIDE_TYPE;
-    private static final ClassNode SEALED_CLASSNODE = ClassHelper.SEALED_TYPE;
-
-    private SourceUnit sourceUnit;
     private CompilationUnit compilationUnit;
 
     @Override
@@ -116,39 +115,26 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
     @Override
     public void visit(final ASTNode[] nodes, final SourceUnit source) {
-        AnnotatedNode parent = (AnnotatedNode) nodes[1];
+        AnnotatedNode node = (AnnotatedNode) nodes[1];
         AnnotationNode anno = (AnnotationNode) nodes[0];
-        if (!Traits.TRAIT_CLASSNODE.equals(anno.getClassNode())) return;
-        sourceUnit = source;
+        if (!anno.getClassNode().equals(Traits.TRAIT_CLASSNODE)) return;
         init(nodes, source);
-        if (parent instanceof ClassNode) {
-            ClassNode cNode = (ClassNode) parent;
+        if (node instanceof ClassNode) {
+            ClassNode cNode = (ClassNode) node;
             if (!checkNotInterface(cNode, Traits.TRAIT_TYPE_NAME)) return;
+
             checkNoConstructor(cNode);
             checkExtendsClause(cNode);
-            generateMethodsWithDefaultArgs(cNode);
             replaceExtendsByImplements(cNode);
-            ClassNode helperClassNode = createHelperClass(cNode);
-            resolveHelperClassIfNecessary(helperClassNode);
+            generateMethodsWithDefaultArgs(cNode);
+            resolveHelperClassIfNecessary(createHelperClass(cNode));
         }
     }
 
-    private void resolveHelperClassIfNecessary(final ClassNode helperClassNode) {
-        if (helperClassNode == null) {
-            return;
+    private void checkNoConstructor(final ClassNode cNode) {
+        if (!cNode.getDeclaredConstructors().isEmpty()) {
+            addError("Error processing trait '" + cNode.getName() + "'. " + " Constructors are not allowed.", cNode);
         }
-        for (ClassNode cNode : sourceUnit.getAST().getClasses()) {
-            ClassNode unresolvedHelperNode = cNode.getNodeMetaData(UNRESOLVED_HELPER_CLASS);
-            if (unresolvedHelperNode != null
-                    && unresolvedHelperNode.getName().equals(helperClassNode.getName())) {
-                unresolvedHelperNode.setRedirect(helperClassNode);
-            }
-        }
-    }
-
-    private static void generateMethodsWithDefaultArgs(final ClassNode cNode) {
-        DefaultArgsMethodsAdder adder = new DefaultArgsMethodsAdder();
-        adder.addDefaultParameterMethods(cNode);
     }
 
     private void checkExtendsClause(final ClassNode cNode) {
@@ -158,24 +144,18 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         }
     }
 
-    private void replaceExtendsByImplements(final ClassNode cNode) {
+    private static void replaceExtendsByImplements(final ClassNode cNode) {
         ClassNode superClass = cNode.getUnresolvedSuperClass();
         if (Traits.isTrait(superClass)) {
             // move from super class to interface
-            cNode.setSuperClass(ClassHelper.OBJECT_TYPE);
-            cNode.setUnresolvedSuperClass(ClassHelper.OBJECT_TYPE);
+            cNode.setSuperClass(OBJECT_TYPE);
+            cNode.setUnresolvedSuperClass(OBJECT_TYPE);
             cNode.addInterface(superClass);
         }
     }
 
-    private void resolveScope(final ClassNode cNode) {
-        new VariableScopeVisitor(sourceUnit).visitClass(cNode);
-    }
-
-    private void checkNoConstructor(final ClassNode cNode) {
-        if (!cNode.getDeclaredConstructors().isEmpty()) {
-            addError("Error processing trait '" + cNode.getName() + "'. " + " Constructors are not allowed.", cNode);
-        }
+    private static void generateMethodsWithDefaultArgs(final ClassNode cNode) {
+        new DefaultArgsMethodsAdder().addDefaultParameterMethods(cNode);
     }
 
     private ClassNode createHelperClass(final ClassNode cNode) {
@@ -183,11 +163,11 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 cNode,
                 Traits.helperClassName(cNode),
                 ACC_PUBLIC | ACC_STATIC | ACC_ABSTRACT | ACC_SYNTHETIC,
-                ClassHelper.OBJECT_TYPE,
+                OBJECT_TYPE,
                 ClassNode.EMPTY_ARRAY,
                 null
         );
-        cNode.setModifiers(ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT);
+        cNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT | ACC_INTERFACE);
 
         checkInnerClasses(cNode);
 
@@ -217,14 +197,14 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                     cNode,
                     Traits.fieldHelperClassName(cNode),
                     ACC_PUBLIC | ACC_STATIC | ACC_ABSTRACT | ACC_INTERFACE | ACC_SYNTHETIC,
-                    ClassHelper.OBJECT_TYPE
+                    OBJECT_TYPE
             );
             if (hasStatic) {
                 staticFieldHelper = new InnerClassNode(
                         cNode,
                         Traits.staticFieldHelperClassName(cNode),
                         ACC_PUBLIC | ACC_STATIC | ACC_ABSTRACT | ACC_INTERFACE | ACC_SYNTHETIC,
-                        ClassHelper.OBJECT_TYPE
+                        OBJECT_TYPE
                 );
             }
         }
@@ -316,7 +296,22 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         return helper;
     }
 
-    private BlockStatement getBlockStatement(final MethodNode targetMethod, final Statement code) {
+    private void resolveHelperClassIfNecessary(final ClassNode helperClass) {
+        for (ClassNode cn : sourceUnit.getAST().getClasses()) {
+            ClassNode unresolvedHelperClass = cn.getNodeMetaData(UNRESOLVED_HELPER_CLASS);
+            if (unresolvedHelperClass != null && unresolvedHelperClass.getName().equals(helperClass.getName())) {
+                unresolvedHelperClass.setRedirect(helperClass);
+            }
+        }
+    }
+
+    //--------------------------------------------------------------------------
+
+    private void resolveScope(final ClassNode cNode) {
+        new VariableScopeVisitor(sourceUnit).visitClass(cNode);
+    }
+
+    private static BlockStatement getBlockStatement(final MethodNode targetMethod, final Statement code) {
         BlockStatement blockStmt;
         if (code instanceof BlockStatement) {
             blockStmt = (BlockStatement) code;
@@ -331,7 +326,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         MethodNode initializer = new MethodNode(
                 isStatic ? Traits.STATIC_INIT_METHOD : Traits.INIT_METHOD,
                 ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC,
-                ClassHelper.VOID_TYPE,
+                VOID_TYPE,
                 new Parameter[]{createSelfParameter(cNode, isStatic)},
                 ClassNode.EMPTY_ARRAY,
                 new BlockStatement()
@@ -367,7 +362,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         List<AnnotationNode> annotations = cNode.getAnnotations();
         for (AnnotationNode annotation : annotations) {
             if (!annotation.getClassNode().equals(Traits.TRAIT_CLASSNODE)
-                    && !annotation.getClassNode().equals(SEALED_CLASSNODE)) {
+                    && !annotation.getClassNode().equals(SEALED_TYPE)) {
                 helper.addAnnotation(annotation);
             }
         }
@@ -377,7 +372,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         for (Iterator<InnerClassNode> it = cNode.getInnerClasses(); it.hasNext(); ) {
             InnerClassNode origin = it.next();
             if ((origin.getModifiers() & ACC_STATIC) == 0) {
-                sourceUnit.addError(new SyntaxException("Cannot have non-static inner class inside a trait ("+origin.getName()+")", origin.getLineNumber(), origin.getColumnNumber()));
+                sourceUnit.addError(new SyntaxException("Cannot have non-static inner class inside a trait (" + origin.getName() + ")", origin.getLineNumber(), origin.getColumnNumber()));
             }
         }
     }
@@ -437,7 +432,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             Parameter setterParameter = new Parameter(node.getType(), name);
             var.setAccessedVariable(setterParameter);
 
-            MethodNode setter = new MethodNode(setterName, propNodeModifiers, ClassHelper.VOID_TYPE, params(setterParameter), ClassNode.EMPTY_ARRAY, setterBlock);
+            MethodNode setter = new MethodNode(setterName, propNodeModifiers, VOID_TYPE, params(setterParameter), ClassNode.EMPTY_ARRAY, setterBlock);
             setter.setSynthetic(true);
             cNode.addMethod(setter);
         }
@@ -488,7 +483,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                         target = staticFieldHelper;
                     }
                     mce = callX(
-                            classX(INVOKERHELPER_CLASSNODE),
+                            classX(InvokerHelper.class),
                             "invokeStaticMethod",
                             args(
                                     thisObject,
@@ -596,11 +591,10 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     private static List<AnnotationNode> filterAnnotations(final List<AnnotationNode> annotations) {
         List<AnnotationNode> result = new ArrayList<>(annotations.size());
         for (AnnotationNode annotation : annotations) {
-            if (!OVERRIDE_CLASSNODE.equals(annotation.getClassNode())) {
+            if (!annotation.getClassNode().equals(OVERRIDE_TYPE)) {
                 result.add(annotation);
             }
         }
-
         return result;
     }
 
@@ -614,7 +608,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         ClassNode type;
         if (isStatic) {
             // Class<TraitClass>
-            type = GenericsUtils.makeClassSafe0(ClassHelper.CLASS_Type, new GenericsType(rawType));
+            type = GenericsUtils.makeClassSafe0(CLASS_Type, new GenericsType(rawType));
         } else {
             // TraitClass
             type = rawType;
@@ -623,13 +617,11 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     }
 
     private Statement processBody(final VariableExpression thisObject, final Statement code, final ClassNode trait, final ClassNode traitHelper, final ClassNode fieldHelper, final Collection<String> knownFields) {
-        if (code == null) return null;
-        NAryOperationRewriter operationRewriter = new NAryOperationRewriter(sourceUnit, knownFields);
-        code.visit(operationRewriter);
-        SuperCallTraitTransformer superTrn = new SuperCallTraitTransformer(sourceUnit);
-        code.visit(superTrn);
-        TraitReceiverTransformer trn = new TraitReceiverTransformer(thisObject, sourceUnit, trait, traitHelper, fieldHelper, knownFields);
-        code.visit(trn);
+        if (code != null) {
+            code.visit(new NAryOperationRewriter(sourceUnit, knownFields));
+            code.visit(new SuperCallTraitTransformer(sourceUnit));
+            code.visit(new TraitReceiverTransformer(thisObject, sourceUnit, trait, traitHelper, fieldHelper, knownFields));
+        }
         return code;
     }
 

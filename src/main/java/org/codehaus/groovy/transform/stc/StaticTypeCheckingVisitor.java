@@ -5663,7 +5663,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private static Map<GenericsTypeName, GenericsType> extractPlaceHolders(final MethodNode method, ClassNode receiver, final ClassNode declaringClass) {
-        Map<GenericsTypeName, GenericsType> resolvedPlaceHolders = null, currentPlaceHolders = new HashMap<>();
+        Map<GenericsTypeName, GenericsType> resolvedPlaceHolders = null;
         if (isPrimitiveType(receiver) && !isPrimitiveType(declaringClass)) {
             receiver = getWrapper(receiver);
         }
@@ -5676,7 +5676,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         for (ClassNode type : todo) {
             ClassNode current = type;
             while (current != null) {
-                currentPlaceHolders.clear();
+                Map<GenericsTypeName, GenericsType> currentPlaceHolders = new HashMap<>();
                 // GROOVY-10055: handle diamond or raw
                 if (current.getGenericsTypes() != null
                         ? current.getGenericsTypes().length == 0

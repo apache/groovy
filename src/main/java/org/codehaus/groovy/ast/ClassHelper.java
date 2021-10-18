@@ -608,34 +608,30 @@ public class ClassHelper {
     }
 
     /**
-     * Returns a super class or interface for a given class depending on a given target.
-     * If the target is no super class or interface, then null will be returned.
-     * For a non-primitive array type, returns an array of the componentType's super class
-     * or interface if the target is also an array.
-     *
-     * @param clazz     the start class
-     * @param goalClazz the goal class
-     * @return the next super class or interface
+     * Returns a super class or interface for a given class depending on supplied
+     * target. If the target is not a super class or interface, then null will be
+     * returned. For a non-primitive array type -- if the target is also an array
+     * -- returns an array of the component type's super class or interface.
      */
-    public static ClassNode getNextSuperClass(final ClassNode clazz, final ClassNode goalClazz) {
-        if (clazz.isArray()) {
-            if (!goalClazz.isArray()) return null;
+    public static ClassNode getNextSuperClass(final ClassNode source, final ClassNode target) {
+        if (source.isArray()) {
+            if (!target.isArray()) return null;
 
-            ClassNode cn = getNextSuperClass(clazz.getComponentType(), goalClazz.getComponentType());
+            ClassNode cn = getNextSuperClass(source.getComponentType(), target.getComponentType());
             if (cn != null) cn = cn.makeArray();
             return cn;
         }
 
-        if (goalClazz.isInterface()) {
-            for (ClassNode face : clazz.getUnresolvedInterfaces()) {
-                if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(face, goalClazz)) {
+        if (target.isInterface()) {
+            for (ClassNode face : source.getUnresolvedInterfaces()) {
+                if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(face, target)) {
                     return face;
                 }
             }
-        } else if (clazz.isInterface()) {
+        } else if (source.isInterface()) {
             return OBJECT_TYPE;
         }
 
-        return clazz.getUnresolvedSuperClass();
+        return source.getUnresolvedSuperClass();
     }
 }
