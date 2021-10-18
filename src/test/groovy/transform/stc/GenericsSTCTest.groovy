@@ -3898,6 +3898,35 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-10055
+    void testSelfReferentialTypeParameter2() {
+        assertScript '''
+            abstract class A<Self extends A<Self>> {
+                Self foo(inputs) {
+                    // ...
+                    this
+                }
+            }
+            abstract class B<Self extends B<Self>> extends A<Self> {
+                Self bar(inputs) {
+                    // ...
+                    this
+                }
+            }
+            class C<Self extends C<Self>> extends B<Self> { // see org.testcontainers.containers.PostgreSQLContainer
+                Self baz(inputs) {
+                    // ...
+                    this
+                }
+            }
+
+            new C<>()
+            .foo('x')
+            .bar('y') // error
+            .baz('z') // error
+        '''
+    }
+
     // GROOVY-7804
     void testParameterlessClosureToGenericSAMTypeArgumentCoercion() {
         assertScript '''

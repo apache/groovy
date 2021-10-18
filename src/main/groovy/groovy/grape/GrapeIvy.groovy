@@ -594,7 +594,7 @@ class GrapeIvy implements GrapeEngine {
 
     URI[] resolve(ClassLoader loader, Map args, List depsInfo, Map... dependencies) {
         // check for mutually exclusive arguments
-        Set<String> keys = args.keySet()
+        Set<String> keys = (Set<String>) args.keySet()
         keys.each { key ->
             Set<String> badArgs = MUTUALLY_EXCLUSIVE_KEYS[key]
             if (badArgs && !badArgs.disjoint(keys)) {

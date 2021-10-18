@@ -5663,7 +5663,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private static Map<GenericsTypeName, GenericsType> extractPlaceHolders(final MethodNode method, ClassNode receiver, final ClassNode declaringClass) {
-        Map<GenericsTypeName, GenericsType> resolvedPlaceholders = null;
+        Map<GenericsTypeName, GenericsType> resolvedPlaceHolders = null, currentPlaceHolders = new HashMap<>();
         if (isPrimitiveType(receiver) && !isPrimitiveType(declaringClass)) {
             receiver = getWrapper(receiver);
         }
@@ -5676,54 +5676,55 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         for (ClassNode type : todo) {
             ClassNode current = type;
             while (current != null) {
-                boolean continueLoop = true;
-                // extract the place holders
-                Map<GenericsTypeName, GenericsType> currentPlaceHolders = new HashMap<>();
-                if (isGenericsPlaceHolderOrArrayOf(declaringClass) || declaringClass.equals(current)) {
+                currentPlaceHolders.clear();
+                // GROOVY-10055: handle diamond or raw
+                if (current.getGenericsTypes() != null
+                        ? current.getGenericsTypes().length == 0
+                        : current.redirect().getGenericsTypes() != null) {
+                    for (GenericsType gt : current.redirect().getGenericsTypes()) {
+                        ClassNode cn = gt.getUpperBounds() != null ? gt.getUpperBounds()[0] : gt.getType().redirect();
+                        currentPlaceHolders.put(new GenericsTypeName(gt.getName()), cn.getPlainNodeReference().asGenericsType());
+                    }
+                }
+
+                boolean currentIsDeclaring = current.equals(declaringClass) || isGenericsPlaceHolderOrArrayOf(declaringClass);
+                if (currentIsDeclaring) {
                     extractGenericsConnections(currentPlaceHolders, current, declaringClass);
-                    if (method != null) addMethodLevelDeclaredGenerics(method, currentPlaceHolders);
-                    continueLoop = false;
+                    if (method != null)
+                        addMethodLevelDeclaredGenerics(method, currentPlaceHolders);
                 } else {
                     GenericsUtils.extractPlaceholders(current, currentPlaceHolders);
                 }
 
-                if (resolvedPlaceholders != null) {
-                    // merge maps
+                if (resolvedPlaceHolders != null) { // merge maps
                     for (Map.Entry<GenericsTypeName, GenericsType> entry : currentPlaceHolders.entrySet()) {
                         GenericsType gt = entry.getValue();
                         if (!gt.isPlaceholder()) continue;
-                        GenericsType referenced = resolvedPlaceholders.get(new GenericsTypeName(gt.getName()));
+                        GenericsType referenced = resolvedPlaceHolders.get(new GenericsTypeName(gt.getName()));
                         if (referenced == null) continue;
                         entry.setValue(referenced);
                     }
                 }
-                resolvedPlaceholders = currentPlaceHolders;
+                resolvedPlaceHolders = currentPlaceHolders;
 
                 // we are done if we are now in the declaring class
-                if (!continueLoop) break;
+                if (currentIsDeclaring) break;
 
-                boolean isRawType = (current.getGenericsTypes() == null
-                        && current.redirect().getGenericsTypes() != null);
                 current = getNextSuperClass(current, declaringClass);
                 if (current == null && isClassType(declaringClass)) {
                     // this can happen if the receiver is Class<Foo>, then
                     // the actual receiver is Foo and declaringClass is Class
                     current = declaringClass;
-                } else if (isRawType) {
-                    current = current.getPlainNodeReference();
+                } else {
+                    current = applyGenericsContext(currentPlaceHolders, current);
                 }
             }
         }
-        if (resolvedPlaceholders == null) {
-            String descriptor = "<>";
-            if (method != null) descriptor = method.getTypeDescriptor();
-            throw new GroovyBugError(
-                    "Declaring class for method call to '" +
-                            descriptor + "' declared in " + declaringClass.getName() +
-                            " was not matched with found receiver " + receiver.getName() + "." +
-                            " This should not have happened!");
+        if (resolvedPlaceHolders == null) {
+            throw new GroovyBugError("Declaring class for method call to '" + (method != null ? method.getTypeDescriptor() : "<>") +
+                    "' declared in " + declaringClass.getName() + " was not matched with found receiver " + receiver.getName() + ". This should not have happened!");
         }
-        return resolvedPlaceholders;
+        return resolvedPlaceHolders;
     }
 
     protected boolean typeCheckMethodsWithGenericsOrFail(final ClassNode receiver, final ClassNode[] arguments, final MethodNode candidateMethod, final Expression location) {
