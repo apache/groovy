@@ -510,6 +510,26 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10319
+    void testArrayClone() {
+        assertScript '''
+            package p // must be in package for protected method check
+
+            @groovy.transform.ToString(includeFields=true)
+            class C implements Cloneable {
+                private int[] array = [1]
+                @Override
+                C clone() {
+                    C c = (C) super.clone()
+                    c.array = array.clone()
+                    return c
+                }
+            }
+
+            assert new C().clone().toString() == 'p.C([1])'
+        '''
+    }
+
     // GROOVY-5797
     void testShouldAllowExpressionAsMapPropertyKey() {
         assertScript '''
