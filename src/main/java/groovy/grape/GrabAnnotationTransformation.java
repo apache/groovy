@@ -548,7 +548,8 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         }
 
         if (allstr.contains("#")) {
-            // see: http://ant.apache.org/ivy/history/latest-milestone/textual.html
+            // Support for Ivy syntax
+            // see: https://ant.apache.org/ivy/history/latest-milestone/textual.html
             Matcher m = IVY_PATTERN.matcher(allstr);
             if (!m.find()) return;
             if (m.group(1) == null || m.group(2) == null) return;
@@ -559,8 +560,9 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             else if (!exclude && node.getMember("version") == null) node.addMember("version", constX("*"));
             node.getMembers().remove("value");
         } else if (allstr.contains(":")) {
-            // assume gradle syntax
-            // see: http://www.gradle.org/latest/docs/userguide/dependency_management.html#sec:how_to_declare_your_dependencies
+            // Support for Gradle syntax (covers Gradle/Maven)
+            // see: https://docs.gradle.org/3.5.1/userguide/dependency_management.html#sec:how_to_declare_your_dependencies
+            // see: https://docs.gradle.org/7.2/userguide/declaring_dependencies.html
             Map<String, Object> parts = GrapeUtil.getIvyParts(allstr);
             for (Map.Entry<String, Object> entry : parts.entrySet()) {
                 String key = entry.getKey();
