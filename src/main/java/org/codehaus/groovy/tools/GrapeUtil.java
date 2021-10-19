@@ -29,8 +29,8 @@ public class GrapeUtil {
         if (allstr.contains("@")) {
             parts = allstr.split("@");
             if (parts.length > 2) return result;
-            allstr = parts[0];
-            ext = parts[1];
+            if (parts.length > 1) ext = parts[1];
+            if (parts.length > 0) allstr = parts[0];
         }
         parts = allstr.split(":");
         if (parts.length > 4) return result;
@@ -38,8 +38,8 @@ public class GrapeUtil {
         if (parts.length > 2) result.put("version", parts[2]);
         else result.put("version", "*");
         if (ext.length() > 0) result.put("ext", ext);
-        result.put("module", parts[1]);
-        result.put("group", parts[0]);
+        if (parts.length > 1) result.put("module", parts[1]);
+        if (parts.length > 0) result.put("group", parts[0]);
         return result;
     }
 }
