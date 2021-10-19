@@ -206,21 +206,20 @@ public class GenericsType extends ASTNode {
             if (genericsTypes == null) {
                 return true;
             }
-            if (isWildcard()) {
-                if (getLowerBound() != null) {
-                    ClassNode lowerBound = getLowerBound();
-                    return genericsTypes[0].name.equals(lowerBound.getUnresolvedName());
+            String name0 = genericsTypes[0].getName();
+            if (!isWildcard()) {
+                return name0.equals(getName());
+            }
+            if (getLowerBound() != null) {
+                if (name0.equals(getLowerBound().getUnresolvedName())) {
+                    return true;
                 }
-                if (getUpperBounds() != null) {
-                    for (ClassNode upperBound : getUpperBounds()) {
-                        if (genericsTypes[0].name.equals(upperBound.getUnresolvedName())) {
-                            return true;
-                        }
-                    }
-                    return false;
+            } else if (getUpperBounds() != null) {
+                if (name0.equals(getUpperBounds()[0].getUnresolvedName())) {
+                    return true;
                 }
             }
-            return genericsTypes[0].name.equals(name);
+            return checkGenerics(classNode);
         }
         if (isWildcard() || isPlaceholder()) {
             // if the generics spec is a wildcard or a placeholder then check the bounds

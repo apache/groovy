@@ -458,15 +458,12 @@ public abstract class StaticTypeCheckingSupport {
             return true;
         }
         if (implementsInterfaceOrIsSubclassOf(type, toBeAssignedTo)) {
-            if (toBeAssignedTo.getGenericsTypes() != null) {
-                // perform additional check on generics
-                // ? extends toBeAssignedTo
-                GenericsType gt = GenericsUtils.buildWildcardType(toBeAssignedTo);
+            if (toBeAssignedTo.getGenericsTypes() != null) { // perform additional check on generics
+                GenericsType gt = toBeAssignedTo.isGenericsPlaceHolder() ? toBeAssignedTo.getGenericsTypes()[0] : GenericsUtils.buildWildcardType(toBeAssignedTo);
                 return gt.isCompatibleWith(type);
             }
             return true;
         }
-        // SAM check
         if (type.isDerivedFrom(CLOSURE_TYPE) && isSAMType(toBeAssignedTo)) {
             return true;
         }
@@ -1419,7 +1416,7 @@ public abstract class StaticTypeCheckingSupport {
         applyGenericsConnections(classGTs, resolvedMethodGenerics);
         // and then start our checks with the receiver
         if (!skipBecauseOfInnerClassNotReceiver) {
-            failure = failure || inferenceCheck(Collections.emptySet(), resolvedMethodGenerics, candidateMethod.getDeclaringClass(), receiver, false);
+            failure = inferenceCheck(Collections.emptySet(), resolvedMethodGenerics, candidateMethod.getDeclaringClass(), receiver, false);
         }
         // the outside context parts till now define placeholder we are not allowed to
         // generalize, thus we save that for later use...
