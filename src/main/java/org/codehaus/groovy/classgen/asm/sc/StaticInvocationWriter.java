@@ -626,10 +626,11 @@ public class StaticInvocationWriter extends InvocationWriter {
                     origMCE.getArguments()
             );
             MethodNode methodTarget = origMCE.getMethodTarget();
+            newMCE.setImplicitThis(origMCE.isImplicitThis());
             newMCE.setMethodTarget(methodTarget);
             newMCE.setSafe(false);
-            newMCE.setImplicitThis(origMCE.isImplicitThis());
             newMCE.setSourcePosition(origMCE);
+            newMCE.getObjectExpression().setSourcePosition(origMCE.getObjectExpression());
             newMCE.visit(controller.getAcg());
             compileStack.removeVar(slot.getIndex());
             ClassNode returnType = operandStack.getTopOperand();

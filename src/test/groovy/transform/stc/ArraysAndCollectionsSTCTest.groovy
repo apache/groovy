@@ -661,7 +661,27 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
                 assert node.getNodeMetaData(INFERRED_TYPE) == int_TYPE.makeArray().makeArray()
             })
             int[][] array = [[1]] as int[][]
-            array[0].length
+            assert array[0].length == 1
+        '''
+    }
+
+    // GROOVY-10319
+    void testArrayClone() {
+        assertScript '''
+            package p // must be in package for protected method check
+
+            @groovy.transform.ToString(includeFields=true)
+            class C implements Cloneable {
+                private int[] array = [1]
+                @Override
+                C clone() {
+                    C c = (C) super.clone()
+                    c.array = array.clone()
+                    return c
+                }
+            }
+
+            assert new C().clone().toString() == 'p.C([1])'
         '''
     }
 
