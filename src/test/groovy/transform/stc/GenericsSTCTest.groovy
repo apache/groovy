@@ -2797,6 +2797,38 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-10320
+    void testPlusOverride() {
+        assertScript '''
+            interface I<T extends I> {
+              T plus(T t_aka_i)
+            }
+            @groovy.transform.TupleConstructor(defaults=false)
+            class C implements I<C> {
+                final BigDecimal n
+                @Override
+                C plus(C c) {
+                    if (!c) return this
+                    new C((n ?: 0.0) + (c.n ?: 0.0))
+                }
+            }
+
+            def <X extends I> X test(List<X> items) {
+                X total = null
+                for (it in items) {
+                    if (!total)
+                        total = it
+                    else
+                        total += it // Cannot call X#plus(T) with arguments [X]
+                }
+                total
+            }
+
+            def total = test([new C(1.1), new C(2.2)])
+            assert total.n == 3.3
+        '''
+    }
+
     void testShouldNotCreateStackOverflow() {
         assertScript '''
             class Element {
