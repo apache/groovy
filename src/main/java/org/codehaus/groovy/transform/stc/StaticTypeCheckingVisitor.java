@@ -4358,8 +4358,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return mathResultType;
         }
 
-        // GROOVY-5890
-        // do not mix Class<Foo> with Foo
+        // GROOVY-9006: compare to null for types that overload equals
+        if ("equals".equals(operationName) && (left == UNKNOWN_PARAMETER_TYPE
+                                            || right == UNKNOWN_PARAMETER_TYPE)) {
+            return boolean_TYPE;
+        }
+
+        // GROOVY-5890: do not mix Class<Type> with Type
         if (leftExpression instanceof ClassExpression) {
             left = CLASS_Type.getPlainNodeReference();
         }
