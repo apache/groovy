@@ -142,14 +142,29 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         assertScript '''
             class C {
                 int i
-
-                static main(args) {
-                    def c = new C()
-                    c.i = 5
-                    c.i += 10
-                    assert c.i == 15
-                }
             }
+            def c = new C(i: 5)
+            def ret = c.i += 10
+
+            assert c.i == 15
+            assert ret == 15
+        '''
+    }
+
+    // GROOVY-5746
+    void testPlusEqualsAndSubscript() {
+        assertScript '''
+            import groovy.transform.Field
+
+            @Field int i = 0
+            int getIndex() { i++ }
+            def list = ['x','y','z']
+            def x = (list[index] += '!')
+            def y = (list[index] += '!')
+
+            assert x == 'x!'
+            assert y == 'y!'
+            assert list.toString() == '[x!, y!, z]'
         '''
     }
 

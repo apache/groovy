@@ -39,6 +39,7 @@ import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
+import org.codehaus.groovy.transform.sc.TemporaryVariableExpression;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
@@ -212,37 +213,42 @@ public class BinaryExpressionTransformer {
                 return expr;
             }
 
-            Expression optimized = tryOptimizeCharComparison(left, right, bin);
-            if (optimized != null) {
-                optimized.removeNodeMetaData(StaticCompilationMetadataKeys.BINARY_EXP_TARGET);
-                optimized.removeNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
-                return optimized;
+            Expression expr = tryOptimizeCharComparison(left, right, bin);
+            if (expr != null) {
+                expr.removeNodeMetaData(StaticCompilationMetadataKeys.BINARY_EXP_TARGET);
+                expr.removeNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+                return expr;
             }
 
-            String name = (String) list[1];
-            MethodNode node = (MethodNode) list[0];
-            boolean isAssignment = Types.isAssignment(operationType);
-            Expression expr = left; // TODO: if (isAssignment) scrub source offsets from new copy of left?
+            // replace the binary expression with a method call to ScriptBytecodeAdapter or something else
             MethodNode adapter = StaticCompilationTransformer.BYTECODE_BINARY_ADAPTERS.get(operationType);
             if (adapter != null) {
                 Expression sba = classX(StaticCompilationTransformer.BYTECODE_ADAPTER_CLASS);
-                call = callX(sba, adapter.getName(), args(expr, right));
+                call = callX(sba, adapter.getName(), args(left, right));
                 call.setMethodTarget(adapter);
             } else {
-                call = callX(expr, name, args(right));
-                call.setMethodTarget(node);
+                call = callX(left, (String) list[1], args(right));
+                call.setMethodTarget((MethodNode) list[0]);
             }
             call.setImplicitThis(false);
-            if (!isAssignment) {
-                call.setSourcePosition(bin);
-                return call;
+            if (Types.isAssignment(operationType)) { // +=, -=, /=, ...
+                // GROOVY-5746: one execution of receiver and subscript
+                if (left instanceof BinaryExpression) {
+                    BinaryExpression be = (BinaryExpression) left;
+                    if (be.getOperation().getType() == Types.LEFT_SQUARE_BRACKET) {
+                        be.setLeftExpression(new TemporaryVariableExpression(be.getLeftExpression()));
+                        be.setRightExpression(new TemporaryVariableExpression(be.getRightExpression()));
+                    }
+                }
+                // call handles the operation, so we must add the assignment now
+                expr = binX(left, Token.newSymbol(Types.ASSIGN, operation.getStartLine(), operation.getStartColumn()), call);
+            } else {
+                expr = call;
             }
-            // case of +=, -=, /=, ...
-            // the method represents the operation type only, and we must add an assignment
-            expr = binX(left, Token.newSymbol(Types.ASSIGN, operation.getStartLine(), operation.getStartColumn()), call);
             expr.setSourcePosition(bin);
             return expr;
         }
+
         if (operationType == Types.ASSIGN && leftExpression instanceof TupleExpression && rightExpression instanceof ListExpression) {
             // multiple assignment
             ListOfExpressionsExpression cle = new ListOfExpressionsExpression();

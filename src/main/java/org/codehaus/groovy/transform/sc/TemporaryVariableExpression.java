@@ -26,6 +26,8 @@ import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.ExpressionAsVariableSlot;
 import org.codehaus.groovy.classgen.asm.WriterController;
 
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
+
 /**
  * A front-end class for {@link org.codehaus.groovy.classgen.asm.ExpressionAsVariableSlot} which
  * allows defining temporary variables loaded from variable slots directly at the AST level,
@@ -37,36 +39,37 @@ public class TemporaryVariableExpression extends Expression {
 
     private final Expression expression;
 
-    private ExpressionAsVariableSlot variable;
+    private ExpressionAsVariableSlot[] variable = {null};
 
     public TemporaryVariableExpression(final Expression expression) {
         this.expression = expression;
+        putNodeMetaData(INFERRED_TYPE, expression.getNodeMetaData(INFERRED_TYPE));
     }
 
     @Override
     public Expression transformExpression(final ExpressionTransformer transformer) {
         TemporaryVariableExpression result = new TemporaryVariableExpression(transformer.transform(expression));
         result.copyNodeMetaData(this);
+        result.variable = variable;
         return result;
     }
 
     @Override
     public void visit(final GroovyCodeVisitor visitor) {
         if (visitor instanceof AsmClassGenerator) {
-            if (variable == null) {
-                AsmClassGenerator acg = (AsmClassGenerator) visitor;
-                WriterController controller = acg.getController();
-                variable = new ExpressionAsVariableSlot(controller, expression);
+            if (variable[0] == null) {
+                WriterController controller = ((AsmClassGenerator) visitor).getController();
+                variable[0] = new ExpressionAsVariableSlot(controller, expression);
             }
-            variable.visit(visitor);
+            variable[0].visit(visitor);
         } else {
             expression.visit(visitor);
         }
     }
 
     public void remove(final WriterController controller) {
-        controller.getCompileStack().removeVar(variable.getIndex());
-        variable = null;
+        controller.getCompileStack().removeVar(variable[0].getIndex());
+        variable[0] = null;
     }
 
     @Override
