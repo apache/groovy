@@ -68,8 +68,6 @@ import java.lang.annotation.Target
  * </ul>
  * Record-like classes are particularly useful for data structures.
  *
- * @see ToString
- * @see EqualsAndHashCode
  * @see RecordBase
  * @see ImmutableOptions
  * @see PropertyOptions
@@ -80,14 +78,13 @@ import java.lang.annotation.Target
  * @since 4.0.0
  */
 @RecordBase
-@ToString(cache = true, includeNames = true)
-@EqualsAndHashCode(cache = true, useCanEqual = false)
 @ImmutableOptions
 @PropertyOptions(propertyHandler = ImmutablePropertyHandler)
 @TupleConstructor(defaults = false)
 @MapConstructor
 @KnownImmutable
 @POJO
+@CompileStatic
 @AnnotationCollector(mode = AnnotationCollectorMode.PREFER_EXPLICIT_MERGED)
 @Retention(RetentionPolicy.RUNTIME)
 @Target([ElementType.TYPE])

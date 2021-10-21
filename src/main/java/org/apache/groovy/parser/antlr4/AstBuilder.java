@@ -40,6 +40,7 @@ import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.apache.groovy.internal.util.Function;
 import org.apache.groovy.parser.antlr4.GroovyParser.AdditiveExprAltContext;
 import org.apache.groovy.parser.antlr4.GroovyParser.AndExprAltContext;
@@ -1572,7 +1573,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             classNode.addAnnotation(new AnnotationNode(ClassHelper.makeCached(Trait.class)));
         }
         if (isRecord) {
-            classNode.addAnnotation(new AnnotationNode(ClassHelper.makeWithoutCaching(RECORD_TYPE_NAME)));
+            classNode.addAnnotation(new AnnotationNode(RECORD_TYPE_CLASS));
         }
         classNode.addAnnotations(modifierManager.getAnnotations());
 
@@ -1603,20 +1604,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             this.initUsingGenerics(classNode);
             this.hackMixins(classNode);
 
-        } else if (isEnum) {
+        } else if (isEnum || isRecord) {
             classNode.setInterfaces(this.visitTypeList(ctx.is));
             this.initUsingGenerics(classNode);
+            if (isRecord) {
+                transformRecordHeaderToProperties(ctx, classNode);
+            }
 
         } else if (isAnnotation) {
             classNode.setModifiers(classNode.getModifiers() | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT | Opcodes.ACC_ANNOTATION);
             classNode.addInterface(ClassHelper.Annotation_TYPE);
             this.hackMixins(classNode);
-
-        } else if (isRecord) {
-            classNode.setModifiers(classNode.getModifiers() | Opcodes.ACC_RECORD | Opcodes.ACC_FINAL);
-            classNode.setRecordComponentNodes(this.transformRecordHeaderToProperties(ctx, classNode));
-            classNode.setInterfaces(this.visitTypeList(ctx.is));
-            this.initUsingGenerics(classNode);
 
         } else {
             throw createParsingFailedException("Unsupported class declaration: " + ctx.getText(), ctx);
@@ -1652,12 +1650,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return classNode;
     }
 
-    private List<RecordComponentNode> transformRecordHeaderToProperties(ClassDeclarationContext ctx, ClassNode classNode) {
+    private void transformRecordHeaderToProperties(ClassDeclarationContext ctx, ClassNode classNode) {
         Parameter[] parameters = this.visitFormalParameters(ctx.formalParameters());
         classNode.putNodeMetaData(RECORD_HEADER, parameters);
 
         final int n = parameters.length;
-        List<RecordComponentNode> components = new ArrayList<>(n);
         for (int i = 0; i < n; i += 1) {
             Parameter parameter = parameters[i];
             FormalParameterContext parameterCtx = parameter.getNodeMetaData(PARAMETER_CONTEXT);
@@ -1666,10 +1663,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             PropertyNode propertyNode = declareProperty(parameterCtx, parameterModifierManager, originType,
                     classNode, i, parameter, parameter.getName(), parameter.getModifiers(), parameter.getInitialExpression());
             propertyNode.getField().putNodeMetaData(IS_RECORD_GENERATED, Boolean.TRUE);
-
-            components.add(new RecordComponentNode(classNode, parameter.getName(), originType, parameter.getAnnotations()));
         }
-        return components;
     }
 
     @SuppressWarnings("unchecked")
@@ -1958,7 +1952,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         ClassNode classNode = ctx.getNodeMetaData(CLASS_DECLARATION_CLASS_NODE);
         Objects.requireNonNull(classNode, "classNode should not be null");
 
-        if (!classNode.isRecord()) {
+        if (!AnnotatedNodeUtils.hasAnnotation(classNode, RECORD_TYPE_CLASS)) {
             createParsingFailedException("Only `record` can have compact constructor", ctx);
         }
 
@@ -5266,6 +5260,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private static final String PARAMETER_CONTEXT = "_PARAMETER_CONTEXT";
     private static final String IS_RECORD_GENERATED = "_IS_RECORD_GENERATED";
     private static final String RECORD_HEADER = "_RECORD_HEADER";
-    private static final String RECORD_TYPE_NAME = "groovy.transform.RecordType";
     private static final String RECORD_COMPACT_CONSTRUCTOR_NAME = "$compactInit";
+    private static final String RECORD_TYPE_NAME = "groovy.transform.RecordType";
+    private static final ClassNode RECORD_TYPE_CLASS = ClassHelper.makeWithoutCaching(RECORD_TYPE_NAME);
 }

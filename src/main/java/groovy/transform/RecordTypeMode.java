@@ -16,15 +16,27 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package core
+package groovy.transform;
 
-record Fruit(String name, double price) {}
+/**
+ * Intended mode to use for records when using the {@code @RecordType} annotation (or {@code record} keyword).
+ *
+ * @since 4.0.0
+ * @see RecordType
+ */
+public enum RecordTypeMode {
+    /**
+     * Produce a record-like class.
+     */
+    EMULATE,
 
-@groovy.transform.CompileStatic
-void test() {
-    def apple = new Fruit('Apple', 11.6D)
-    assert 'Apple' == apple.name()
-    assert 11.6 == apple.price()
+    /**
+     * Produce a Java-like "native" record (JEP 359/384/395).
+     */
+    NATIVE,
+
+    /**
+     * Produce native records when compiling for a suitable target bytecode (JDK16+).
+     */
+    AUTO
 }
-
-test()

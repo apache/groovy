@@ -21,6 +21,7 @@ package org.codehaus.groovy.transform;
 import groovy.lang.GroovyClassLoader;
 import groovy.transform.CompilationUnitAware;
 import groovy.transform.RecordBase;
+import groovy.transform.RecordTypeMode;
 import groovy.transform.options.PropertyHandler;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -29,32 +30,53 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.RecordComponentNode;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceProperties;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
+import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.ARETURN;
+import static org.objectweb.asm.Opcodes.IRETURN;
 
 /**
  * Handles generation of code for the @RecordType annotation.
  */
-@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
+@GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class RecordTypeASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
     private CompilationUnit compilationUnit;
+    private static final String RECORD_CLASS_NAME = "java.lang.Record";
 
     private static final Class<? extends Annotation> MY_CLASS = RecordBase.class;
     public static final ClassNode MY_TYPE = makeWithoutCaching(MY_CLASS, false);
@@ -77,12 +99,42 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             final PropertyHandler handler = PropertyHandler.createPropertyHandler(this, classLoader, (ClassNode) parent);
             if (handler == null) return;
             if (!handler.validateAttributes(this, anno)) return;
-            doMakeImmutable((ClassNode) parent, anno, handler);
+            doProcessRecordType((ClassNode) parent, anno, handler);
         }
     }
 
-    private void doMakeImmutable(ClassNode cNode, AnnotationNode node, PropertyHandler handler) {
-        List<PropertyNode> newProperties = new ArrayList<PropertyNode>();
+    private void doProcessRecordType(ClassNode cNode, AnnotationNode node, PropertyHandler handler) {
+        RecordTypeMode mode = getMode(node, "mode");
+        boolean isPostJDK16 = false;
+        String message = "Expecting JDK16+ but unable to determine target bytecode";
+        if (sourceUnit != null) {
+            CompilerConfiguration config = sourceUnit.getConfiguration();
+            String targetBytecode = config.getTargetBytecode();
+            isPostJDK16 = CompilerConfiguration.isPostJDK16(targetBytecode);
+            message = "Expecting JDK16+ but found " + targetBytecode;
+        }
+        boolean isNative = isPostJDK16 && mode != RecordTypeMode.EMULATE;
+        if (isNative) {
+            String sName = cNode.getUnresolvedSuperClass().getName();
+            // don't expect any parent to be set at this point but we only check at grammar
+            // level when using the record keyword so do a few more sanity checks here
+            if (!sName.equals("java.lang.Object") && !sName.equals(RECORD_CLASS_NAME)) {
+                addError("Invalid superclass for native record found: " + sName, cNode);
+            }
+            cNode.setSuperClass(ClassHelper.makeWithoutCaching(RECORD_CLASS_NAME));
+            cNode.setModifiers(cNode.getModifiers() | Opcodes.ACC_RECORD);
+            final List<PropertyNode> pList = getInstanceProperties(cNode);
+            if (!pList.isEmpty()) {
+                cNode.setRecordComponentNodes(new ArrayList<>());
+            }
+            for (PropertyNode pNode : pList) {
+                cNode.getRecordComponentNodes().add(new RecordComponentNode(cNode, pNode.getName(), pNode.getOriginType(), pNode.getAnnotations()));
+            }
+        } else if (mode == RecordTypeMode.NATIVE) {
+            addError(message + " when attempting to create a native record", cNode);
+        }
+
+        List<PropertyNode> newProperties = new ArrayList<>();
 
         String cName = cNode.getName();
         if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
@@ -109,6 +161,25 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         if (cNode.getDeclaredField("serialVersionUID") == null) {
             cNode.addField("serialVersionUID", ACC_PRIVATE | ACC_STATIC | ACC_FINAL, ClassHelper.long_TYPE, constX(0L));
         }
+
+        if (!hasAnnotation(cNode, ToStringASTTransformation.MY_TYPE)) {
+            if (isNative) {
+                createRecordToString(cNode);
+            } else {
+                ToStringASTTransformation.createToString(cNode, false, false, null, null, true, false, true, true);
+            }
+        }
+
+        if (!hasAnnotation(cNode, EqualsAndHashCodeASTTransformation.MY_TYPE)) {
+            if (isNative) {
+                createRecordEquals(cNode);
+                createRecordHashCode(cNode);
+            } else {
+                EqualsAndHashCodeASTTransformation.createEquals(cNode, false, false, false, null, null);
+                EqualsAndHashCodeASTTransformation.createHashCode(cNode, false, false, false, null, null);
+            }
+        }
+
         if (hasAnnotation(cNode, TupleConstructorASTTransformation.MY_TYPE)) {
             AnnotationNode tupleCons = cNode.getAnnotations(TupleConstructorASTTransformation.MY_TYPE).get(0);
             if (unsupportedTupleAttribute(tupleCons, "excludes")) return;
@@ -116,8 +187,93 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             if (unsupportedTupleAttribute(tupleCons, "includeProperties")) return;
             if (unsupportedTupleAttribute(tupleCons, "includeSuperFields")) return;
             if (unsupportedTupleAttribute(tupleCons, "callSuper")) return;
-            if (unsupportedTupleAttribute(tupleCons, "force")) return;
+            unsupportedTupleAttribute(tupleCons, "force");
         }
+    }
+
+    private void createRecordToString(ClassNode cNode) {
+        String desc = BytecodeHelper.getMethodDescriptor(ClassHelper.STRING_TYPE, new ClassNode[]{cNode});
+        Statement body = stmt(bytecodeX(ClassHelper.STRING_TYPE, mv -> {
+                    mv.visitVarInsn(ALOAD, 0);
+                    mv.visitInvokeDynamicInsn("toString", desc, createBootstrapMethod(), createBootstrapMethodArguments(cNode));
+                    mv.visitInsn(ARETURN);
+                    mv.visitMaxs(0, 0);
+                    mv.visitEnd();
+                })
+        );
+        addGeneratedMethod(cNode, "toString", ACC_PUBLIC | ACC_FINAL, ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+    }
+
+    private void createRecordEquals(ClassNode cNode) {
+        String desc = BytecodeHelper.getMethodDescriptor(ClassHelper.boolean_TYPE, new ClassNode[]{cNode, ClassHelper.OBJECT_TYPE});
+        Statement body = stmt(bytecodeX(ClassHelper.boolean_TYPE, mv -> {
+                    mv.visitVarInsn(ALOAD, 0);
+                    mv.visitVarInsn(ALOAD, 1);
+                    mv.visitInvokeDynamicInsn("equals", desc, createBootstrapMethod(), createBootstrapMethodArguments(cNode));
+                    mv.visitInsn(IRETURN);
+                    mv.visitMaxs(0, 0);
+                    mv.visitEnd();
+                })
+        );
+        addGeneratedMethod(cNode, "equals", ACC_PUBLIC | ACC_FINAL, ClassHelper.boolean_TYPE, params(param(ClassHelper.OBJECT_TYPE, "other")), ClassNode.EMPTY_ARRAY, body);
+    }
+
+    private void createRecordHashCode(ClassNode cNode) {
+        String desc = BytecodeHelper.getMethodDescriptor(ClassHelper.int_TYPE, new ClassNode[]{cNode});
+        Statement body = stmt(bytecodeX(ClassHelper.int_TYPE, mv -> {
+                    mv.visitVarInsn(ALOAD, 0);
+                    mv.visitInvokeDynamicInsn("hashCode", desc, createBootstrapMethod(), createBootstrapMethodArguments(cNode));
+                    mv.visitInsn(IRETURN);
+                    mv.visitMaxs(0, 0);
+                    mv.visitEnd();
+                })
+        );
+        addGeneratedMethod(cNode, "hashCode", ACC_PUBLIC | ACC_FINAL, ClassHelper.int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+    }
+
+    private Object[] createBootstrapMethodArguments(ClassNode cNode) {
+        String internalName = cNode.getName().replace('.', '/');
+        String names = cNode.getRecordComponentNodes().stream().map(RecordComponentNode::getName).collect(Collectors.joining(";"));
+        List<Object> args = new LinkedList<>();
+        args.add(Type.getType(BytecodeHelper.getTypeDescription(cNode)));
+        args.add(names);
+        cNode.getRecordComponentNodes().stream().forEach(rcn -> args.add(createFieldHandle(rcn, internalName)));
+        return args.toArray();
+    }
+
+    private Object createFieldHandle(RecordComponentNode rcn, String cName) {
+        return new Handle(
+                Opcodes.H_GETFIELD,
+                cName,
+                rcn.getName(),
+                BytecodeHelper.getTypeDescription(rcn.getType()),
+                false
+        );
+    }
+
+    private Handle createBootstrapMethod() {
+        return new Handle(
+                Opcodes.H_INVOKESTATIC,
+                "java/lang/runtime/ObjectMethods",
+                "bootstrap",
+                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/TypeDescriptor;Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;",
+                false
+        );
+    }
+
+    private static RecordTypeMode getMode(AnnotationNode node, String name) {
+        final Expression member = node.getMember(name);
+        if (member instanceof PropertyExpression) {
+            PropertyExpression prop = (PropertyExpression) member;
+            Expression oe = prop.getObjectExpression();
+            if (oe instanceof ClassExpression) {
+                ClassExpression ce = (ClassExpression) oe;
+                if (ce.getType().getName().equals("groovy.transform.RecordTypeMode")) {
+                    return RecordTypeMode.valueOf(prop.getPropertyAsString());
+                }
+            }
+        }
+        return null;
     }
 
     private boolean unsupportedTupleAttribute(AnnotationNode anno, String memberName) {

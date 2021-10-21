@@ -4716,16 +4716,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         if (receiver.isInterface()) {
             methods.addAll(OBJECT_TYPE.getMethods(name));
-        } else if (receiver.isRecord()) {
-            if (methods.stream().noneMatch(MethodNodeUtils::isGetterCandidate)) {
-                PropertyNode p = receiver.getProperty(name);
-                if (null != p) {
-                    MethodNode getter = new MethodNode(p.getGetterName(), Modifier.PUBLIC, p.getType(), Parameter.EMPTY_ARRAY,
-                            ClassNode.EMPTY_ARRAY, block(returnS(varX(p.getName()))));
-                    getter.setDeclaringClass(receiver);
-                    methods.add(getter);
-                }
-            }
         }
 
         if (methods.isEmpty() || receiver.isResolved()) {
@@ -4837,9 +4827,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (pname == null) {
                     pname = extractPropertyNameFromMethodName("is", name);
                 }
+                PropertyNode property = null;
                 if (pname != null) {
                     // we don't use property exists there because findMethod is called on super clases recursively
-                    PropertyNode property = null;
                     ClassNode curNode = receiver;
                     while (property == null && curNode != null) {
                         property = curNode.getProperty(pname);
@@ -4854,12 +4844,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
                         curNode = curNode.getSuperClass();
                     }
-                    if (property != null) {
-                        int mods = Opcodes.ACC_PUBLIC | (property.isStatic() ? Opcodes.ACC_STATIC : 0);
-                        MethodNode node = new MethodNode(name, mods, property.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
-                        node.setDeclaringClass(property.getDeclaringClass());
-                        return Collections.singletonList(node);
+                } else {
+                    // look for a property with the getterName set since it may not match above
+                    ClassNode curNode = receiver;
+                    while (property == null && curNode != null && !curNode.isStaticClass()) {
+                        for (PropertyNode p : curNode.getProperties()) {
+                            if (name.equals(p.getGetterName())) {
+                                property = p;
+                                receiver = curNode;
+                                break;
+                            }
+                        }
+                        curNode = curNode.getSuperClass();
                     }
+                }
+                if (property != null) {
+                    int mods = Opcodes.ACC_PUBLIC | (property.isStatic() ? Opcodes.ACC_STATIC : 0);
+                    MethodNode node = new MethodNode(name, mods, property.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
+                    node.setDeclaringClass(property.getDeclaringClass());
+                    return Collections.singletonList(node);
                 }
             } else if (methods.isEmpty() && args != null && args.length == 1) {
                 // maybe we are looking for a setter ?

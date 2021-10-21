@@ -19,7 +19,6 @@
 package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.InterfaceHelperClassNode;
@@ -97,11 +96,6 @@ public class WriterController {
         this.internalClassName = BytecodeHelper.getClassInternalName(cn);
 
         this.bytecodeVersion = chooseBytecodeVersion(invokedynamic, config.isPreviewFeatures(), config.getTargetBytecode());
-
-        if (bytecodeVersion >= Opcodes.V16 && cn.isRecord() && config.isRecordsNative()) {
-            // `java.lang.Record` has been added since JDK16
-            cn.setSuperClass(ClassHelper.makeWithoutCaching(RECORD_CLASS_NAME));
-        }
 
         if (invokedynamic) {
             this.invocationWriter = new InvokeDynamicWriter(this);

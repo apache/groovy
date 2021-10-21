@@ -25,7 +25,7 @@ record Person(String name, int age) {
     }
 }
 
-assert 'core.Person(name:Daniel, age:37)' == new Person('Daniel', 37).toString()
+assert 'Person[name=Daniel, age=37]' == new Person('Daniel', 37).toString()
 try {
     new Person('Peter', 3)
     assert false, 'should failed because of invalid age'

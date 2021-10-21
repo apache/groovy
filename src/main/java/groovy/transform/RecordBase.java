@@ -39,4 +39,8 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.RecordTypeASTTransformation")
 public @interface RecordBase {
+    /**
+     * Mode to use when creating record type classes.
+     */
+    RecordTypeMode mode() default RecordTypeMode.AUTO;
 }

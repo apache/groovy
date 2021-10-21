@@ -165,6 +165,7 @@ public class ClassNode extends AnnotatedNode {
     private List<ClassNode> permittedSubclasses = new ArrayList<>(4);
     private List<AnnotationNode> typeAnnotations = Collections.emptyList();
     private List<RecordComponentNode> recordComponentNodes = Collections.emptyList();
+    private boolean isRecord = false;
 
     /**
      * The AST Transformations to be applied during compilation.
@@ -1360,14 +1361,14 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * Checks if the {@link ClassNode} instance represents {@code record}
+     * Checks if the {@link ClassNode} instance represents a native {@code record}.
+     * Check instead for the {@code RecordType} annotation if looking for records and record-like classes.
      *
-     * @return {@code true} if the instance represents {@code record}
+     * @return {@code true} if the instance represents a native {@code record}
      * @since 4.0.0
      */
     public boolean isRecord() {
-        List<RecordComponentNode> recordComponentNodes = getRecordComponentNodes();
-        return null != recordComponentNodes && !recordComponentNodes.isEmpty();
+        return getUnresolvedSuperClass() != null && "java.lang.Record".equals(getUnresolvedSuperClass().getName());
     }
 
     /**
