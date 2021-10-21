@@ -48,21 +48,20 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
 
     @Override
     protected void assertScript(final String script) throws Exception {
-        GroovyShell shell = new GroovyShell()
-        def unit
-        shell.loader = new GroovyClassLoader() {
+        CompilationUnit unit = null
+        GroovyShell shell = new GroovyShell(new GroovyClassLoader() {
             @Override
             protected CompilationUnit createCompilationUnit(final CompilerConfiguration config, final CodeSource source) {
                 unit = super.createCompilationUnit(config, source)
             }
-        }
+        })
         try {
             shell.evaluate(script, testClassName)
         } finally {
-            if (unit) {
+            if (unit != null) {
                 try {
                     sequence = extractSequence(unit.classes[0].bytes, extractionOptions)
-                    if (extractionOptions.print) println sequence
+                    if (extractionOptions.print) println(sequence)
                 } catch (e) {
                     // probably an error in the script
                 }
