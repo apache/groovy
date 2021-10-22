@@ -767,10 +767,10 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             [x:1,y:2,z:3]*.value = ""
         ''', 'Cannot assign java.util.List<java.lang.String> to: java.util.List<java.lang.Integer>'
 
-        def fail = shouldFail '''
-            [x:1,y:2,z:3]*.key = ""
-        '''
-        assert fail == 'Cannot set readonly property: key for class: java.util.LinkedHashMap$Entry'
+        // GROOVY-10326
+        shouldFailWithMessages '''
+            [x:1,y:2,z:3]*.key = null
+        ''', 'Cannot set read-only property: key'
     }
 
     void testFlowTypingWithStringVariable() {

@@ -1766,8 +1766,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (isOrImplements(testClass, MAP_TYPE)) {
             ClassNode mapType = testClass.equals(MAP_TYPE) ? testClass
                     : GenericsUtils.parameterizeType(testClass, MAP_TYPE);
-            GenericsType[] gts = mapType.getGenericsTypes();//<K,V>
-            if (gts == null || gts.length != 2) return OBJECT_TYPE;
+            GenericsType[] gts = mapType.getGenericsTypes();//<K,V> params
+            if (gts == null || gts.length != 2) gts = new GenericsType[] {
+                OBJECT_TYPE.asGenericsType(), OBJECT_TYPE.asGenericsType()
+            };
 
             if (!pexp.isSpreadSafe()) {
                 return getCombinedBoundType(gts[1]);
@@ -1775,6 +1777,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // map*.property syntax acts on Entry
                 switch (pexp.getPropertyAsString()) {
                 case "key":
+                    pexp.putNodeMetaData(READONLY_PROPERTY,Boolean.TRUE); // GROOVY-10326
                     return makeClassSafe0(LIST_TYPE, gts[0]);
                 case "value":
                     GenericsType v = gts[1];
