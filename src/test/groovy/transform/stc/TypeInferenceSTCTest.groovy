@@ -740,6 +740,39 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method java.lang.Integer#toUpperCase()'
     }
 
+    void testStarOperatorOnMap4() {
+        assertScript '''
+            def map = [x:1,y:2,z:3]
+            map*.value = 0
+
+            assert map*.value == [0,0,0]
+        '''
+
+        assertScript '''
+            Map<String,? extends Object> map = [x:1,y:2,z:3]
+            map*.value = 0
+
+            assert map*.value == [0,0,0]
+        '''
+
+        // GROOVY-10325
+        assertScript '''
+            Map<String,Object> map = [x:1,y:2,z:3]
+            map*.value = 0 // was: Cannot assign List<Integer> to List<Object>
+
+            assert map*.value == [0,0,0]
+        '''
+
+        shouldFailWithMessages '''
+            [x:1,y:2,z:3]*.value = ""
+        ''', 'Cannot assign java.util.List<java.lang.String> to: java.util.List<java.lang.Integer>'
+
+        def fail = shouldFail '''
+            [x:1,y:2,z:3]*.key = ""
+        '''
+        assert fail == 'Cannot set readonly property: key for class: java.util.LinkedHashMap$Entry'
+    }
+
     void testFlowTypingWithStringVariable() {
         // as anything can be assigned to a string, flow typing engine
         // could "erase" the type of the original variable although is must not

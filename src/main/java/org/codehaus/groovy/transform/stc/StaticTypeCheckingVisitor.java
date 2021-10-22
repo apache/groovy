@@ -224,6 +224,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafe0;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isBigDecCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isBigIntCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isDouble;
@@ -1193,14 +1194,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return true;
     }
 
-    private ClassNode adjustTypeForSpreading(final ClassNode inferredRightExpressionType, final Expression leftExpression) {
-        // imagine we have: list*.foo = 100
-        // then the assignment must be checked against [100], not 100
-        ClassNode wrappedRHS = inferredRightExpressionType;
+    private ClassNode adjustTypeForSpreading(final ClassNode rightExpressionType, final Expression leftExpression) {
+        // given "list*.foo = 100" or "map*.value = 100", then the assignment must be checked against [100], not 100
         if (leftExpression instanceof PropertyExpression && ((PropertyExpression) leftExpression).isSpreadSafe()) {
-            wrappedRHS = extension.buildListType(inferredRightExpressionType);
+            return extension.buildListType(rightExpressionType);
         }
-        return wrappedRHS;
+        return rightExpressionType;
     }
 
     private boolean addedReadOnlyPropertyError(final Expression expr) {
@@ -1776,13 +1775,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // map*.property syntax acts on Entry
                 switch (pexp.getPropertyAsString()) {
                 case "key":
-                    ClassNode keyList = LIST_TYPE.getPlainNodeReference();
-                    keyList.setGenericsTypes(new GenericsType[]{gts[0]});
-                    return keyList;
+                    return makeClassSafe0(LIST_TYPE, gts[0]);
                 case "value":
-                    ClassNode valueList = LIST_TYPE.getPlainNodeReference();
-                    valueList.setGenericsTypes(new GenericsType[]{gts[1]});
-                    return valueList;
+                    GenericsType v = gts[1];
+                    if (!v.isWildcard()
+                            && !Modifier.isFinal(v.getType().getModifiers())
+                            && typeCheckingContext.isTargetOfEnclosingAssignment(pexp)) {
+                        v = GenericsUtils.buildWildcardType(v.getType()); // GROOVY-10325
+                    }
+                    return makeClassSafe0(LIST_TYPE, v);
                 default:
                     addStaticTypeError("Spread operator on map only allows one of [key,value]", pexp);
                 }
