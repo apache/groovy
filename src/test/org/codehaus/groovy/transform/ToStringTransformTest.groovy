@@ -450,6 +450,28 @@ class ToStringTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    void testToStringFormatting_Groovy10231() {
+        def toString = evaluate("""
+            package pkg
+            import groovy.transform.*
+
+            @ToString
+            class Foo {
+                String baz = 'FooBaz'
+            }
+
+            @ToString(leftDelimiter="[", rightDelimiter="]", nameValueSeparator="=", includeNames=true, includePackage=false)
+            class Bar {
+                String baz = 'BarBaz'
+            }
+
+            [new Foo(), new Bar()].toString()
+        """)
+
+        assert toString.contains('[pkg.Foo(FooBaz), Bar[baz=BarBaz]]')
+
+    }
+
     void testIncludesWithSuper_Groovy8011() {
         def toString = evaluate("""
             import groovy.transform.*

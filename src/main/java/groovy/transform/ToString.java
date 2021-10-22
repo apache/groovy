@@ -363,4 +363,32 @@ public @interface ToString {
      * @since 4.0.0
      */
     boolean pojo() default false;
+
+    /**
+     * The String to use after the classname and before the list of properties/fields.
+     *
+     * @since 4.0.0
+     */
+    String leftDelimiter() default "(";
+
+    /**
+     * The String to use after the list of properties/fields.
+     *
+     * @since 4.0.0
+     */
+    String rightDelimiter() default ")";
+
+    /**
+     * The string to use between the name of the property/field and its value when {@code includeNames} is true.
+     *
+     * @since 4.0.0
+     */
+    String nameValueSeparator() default ":";
+
+    /**
+     * The string to use between each property/field.
+     *
+     * @since 4.0.0
+     */
+    String fieldSeparator() default ", ";
 }
