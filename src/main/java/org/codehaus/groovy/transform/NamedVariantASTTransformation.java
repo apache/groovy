@@ -121,7 +121,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         } else {
             for (Parameter fromParam : fromParams) {
                 if (!annoFound) {
-                    if (!processImplicitNamedParam(mNode, mapParam, args, propNames, fromParam, coerce)) return;
+                    if (!processImplicitNamedParam(this, mNode, mapParam, args, propNames, fromParam, coerce)) return;
                 } else if (AnnotatedNodeUtils.hasAnnotation(fromParam, NAMED_PARAM_TYPE)) {
                     if (!processExplicitNamedParam(mNode, mapParam, inner, args, propNames, fromParam, coerce)) return;
                 } else if (AnnotatedNodeUtils.hasAnnotation(fromParam, NAMED_DELEGATE_TYPE)) {
@@ -130,18 +130,18 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
                     VariableExpression arg = varX(fromParam);
                     Expression argOrDefault = fromParam.hasInitialExpression() ? elvisX(arg, fromParam.getDefaultValue()) : arg;
                     args.addExpression(asType(argOrDefault, fromParam.getType(), coerce));
-                    if (hasDuplicates(mNode, propNames, fromParam.getName())) return;
+                    if (hasDuplicates(this, mNode, propNames, fromParam.getName())) return;
                     genParams.add(fromParam);
                 }
             }
         }
-        createMapVariant(mNode, anno, mapParam, genParams, cNode, inner, args, propNames);
+        createMapVariant(this, mNode, anno, mapParam, genParams, cNode, inner, args, propNames);
     }
 
-    private boolean processImplicitNamedParam(final MethodNode mNode, final Parameter mapParam, final ArgumentListExpression args, final List<String> propNames, final Parameter fromParam, boolean coerce) {
+    static boolean processImplicitNamedParam(final ErrorCollecting xform, final MethodNode mNode, final Parameter mapParam, final ArgumentListExpression args, final List<String> propNames, final Parameter fromParam, boolean coerce) {
         boolean required = fromParam.hasInitialExpression();
         String name = fromParam.getName();
-        if (hasDuplicates(mNode, propNames, name)) return false;
+        if (hasDuplicates(xform, mNode, propNames, name)) return false;
         AnnotationNode namedParam = new AnnotationNode(NAMED_PARAM_TYPE);
         namedParam.addMember("value", constX(name));
         namedParam.addMember("type", classX(fromParam.getType()));
@@ -163,7 +163,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         if (getMemberValue(namedParam, "type") == null) {
             namedParam.addMember("type", classX(fromParam.getType()));
         }
-        if (hasDuplicates(mNode, propNames, name)) return false;
+        if (hasDuplicates(this, mNode, propNames, name)) return false;
         // TODO: Check specified type is assignable from declared param type?
         //ClassNode type = getMemberClassValue(namedParam, "type");
         if (required) {
@@ -193,7 +193,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         Set<String> names = new HashSet<>();
         List<PropertyNode> props = getAllProperties(names, fromParam.getType(), true, false, false, true, false, true);
         for (String next : names) {
-            if (hasDuplicates(mNode, propNames, next)) return false;
+            if (hasDuplicates(this, mNode, propNames, next)) return false;
         }
         List<MapEntryExpression> entries = new ArrayList<>();
         for (PropertyNode pNode : props) {
@@ -212,16 +212,16 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         return true;
     }
 
-    private boolean hasDuplicates(final MethodNode mNode, final List<String> propNames, final String next) {
+    private static boolean hasDuplicates(final ErrorCollecting xform, final MethodNode mNode, final List<String> propNames, final String next) {
         if (propNames.contains(next)) {
-            addError("Error during " + NAMED_VARIANT + " processing. Duplicate property '" + next + "' found.", mNode);
+            xform.addError("Error during " + NAMED_VARIANT + " processing. Duplicate property '" + next + "' found.", mNode);
             return true;
         }
         propNames.add(next);
         return false;
     }
 
-    private void createMapVariant(final MethodNode mNode, final AnnotationNode anno, final Parameter mapParam, final List<Parameter> genParams, final ClassNode cNode, final BlockStatement inner, final ArgumentListExpression args, final List<String> propNames) {
+    static void createMapVariant(final ErrorCollecting xform, final MethodNode mNode, final AnnotationNode anno, final Parameter mapParam, final List<Parameter> genParams, final ClassNode cNode, final BlockStatement inner, final ArgumentListExpression args, final List<String> propNames) {
         Parameter namedArgKey = param(STRING_TYPE, "namedArgKey");
         inner.addStatement(
                 new ForStatement(
@@ -233,7 +233,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         Parameter[] genParamsArray = genParams.toArray(Parameter.EMPTY_ARRAY);
         // TODO account for default params giving multiple signatures
         if (cNode.hasMethod(mNode.getName(), genParamsArray)) {
-            addError("Error during " + NAMED_VARIANT + " processing. Class " + cNode.getNameWithoutPackage() +
+            xform.addError("Error during " + NAMED_VARIANT + " processing. Class " + cNode.getNameWithoutPackage() +
                     " already has a named-arg " + (mNode instanceof ConstructorNode ? "constructor" : "method") +
                     " of type " + genParams, mNode);
             return;
@@ -264,7 +264,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private Expression asType(Expression expression, ClassNode classNode, boolean coerce) {
+    private static Expression asType(Expression expression, ClassNode classNode, boolean coerce) {
         if (coerce) {
             return asX(classNode, expression);
         } else {

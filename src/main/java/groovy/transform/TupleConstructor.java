@@ -325,6 +325,15 @@ public @interface TupleConstructor {
     boolean allProperties() default false;
 
     /**
+     * If true, add a map-based named-arg variant.
+     * Similar to using {@code @MapConstructor} but handles just the parameters handled by the generated tuple constructor.
+     * Setting {@code namedVariant=true} is incompatible with using {@code @MapConstructor}.
+     *
+     * @since 4.0.0
+     */
+    boolean namedVariant() default false;
+
+    /**
      * If specified, must match the "id" attribute in a VisibilityOptions annotation to enable a custom visibility.
      *
      * @since 2.5.0

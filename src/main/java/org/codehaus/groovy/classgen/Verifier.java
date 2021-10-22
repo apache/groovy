@@ -814,25 +814,17 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
 
         if (getterBlock != null) {
-            boolean toVisitGetter = true;
-            if (classNode.isRecord()) {
-                boolean isGetterDefined = classNode.getDeclaredMethods(name).stream()
-                        .anyMatch(MethodNodeUtils::isGetterCandidate);
-                toVisitGetter = !isGetterDefined;
-            }
+            visitGetter(node, field, getterBlock, getterModifiers, getterName);
 
-            if (toVisitGetter) {
-                visitGetter(node, field, getterBlock, getterModifiers, getterName);
-
-                if (node.getGetterName() == null && getterName.startsWith("get") && isPrimitiveBoolean(node.getType())) {
-                    String altGetterName = "is" + capitalize(name);
-                    MethodNode altGetter = classNode.getGetterMethod(altGetterName, !node.isStatic());
-                    if (methodNeedsReplacement(altGetter)) {
-                        visitGetter(node, field, getterBlock, getterModifiers, altGetterName);
-                    }
+            if (node.getGetterName() == null && getterName.startsWith("get") && isPrimitiveBoolean(node.getType())) {
+                String altGetterName = "is" + capitalize(name);
+                MethodNode altGetter = classNode.getGetterMethod(altGetterName, !node.isStatic());
+                if (methodNeedsReplacement(altGetter)) {
+                    visitGetter(node, field, getterBlock, getterModifiers, altGetterName);
                 }
             }
         }
+
         if (setterBlock != null) {
             Parameter[] setterParameterTypes = {new Parameter(node.getType(), "value")};
             MethodNode setter = new MethodNode(setterName, accessorModifiers, ClassHelper.VOID_TYPE, setterParameterTypes, ClassNode.EMPTY_ARRAY, setterBlock);

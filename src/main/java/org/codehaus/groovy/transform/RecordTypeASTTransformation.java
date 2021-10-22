@@ -23,6 +23,7 @@ import groovy.transform.CompilationUnitAware;
 import groovy.transform.RecordBase;
 import groovy.transform.RecordTypeMode;
 import groovy.transform.options.PropertyHandler;
+import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -134,8 +135,6 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             addError(message + " when attempting to create a native record", cNode);
         }
 
-        List<PropertyNode> newProperties = new ArrayList<>();
-
         String cName = cNode.getName();
         if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
         makeClassFinal(this, cNode);
@@ -143,15 +142,8 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
 
         final List<PropertyNode> pList = getInstanceProperties(cNode);
         for (PropertyNode pNode : pList) {
-            adjustPropertyForImmutability(pNode, newProperties, handler);
-        }
-        // replace props with final version of self
-        for (PropertyNode oldProp : newProperties) {
-            cNode.getProperties().remove(oldProp);
-            PropertyNode newProp = new PropertyNode(oldProp.getField(), oldProp.getModifiers() | ACC_FINAL, oldProp.getGetterBlock(), null);
-            newProp.setGetterName(oldProp.getGetterNameOrDefault());
-            cNode.removeField(oldProp.getField().getName());
-            cNode.addProperty(newProp);
+            adjustPropertyForImmutability(cNode, pNode, handler);
+            pNode.setModifiers(pNode.getModifiers() | ACC_FINAL);
         }
         final List<FieldNode> fList = cNode.getFields();
         for (FieldNode fNode : fList) {
@@ -166,7 +158,10 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             if (isNative) {
                 createRecordToString(cNode);
             } else {
-                ToStringASTTransformation.createToString(cNode, false, false, null, null, true, false, true, true);
+                ToStringASTTransformation.createToString(cNode, false, false, null,
+                        null, true, false, false, true,
+                        false, false, false, false, false,
+                        new String[]{"[", "]", "=", ", "});
             }
         }
 
@@ -310,15 +305,18 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         }
     }
 
-    private static void adjustPropertyForImmutability(PropertyNode pNode, List<PropertyNode> newNodes, PropertyHandler handler) {
+    private static void adjustPropertyForImmutability(ClassNode cNode, PropertyNode pNode, PropertyHandler handler) {
         final FieldNode fNode = pNode.getField();
         fNode.setModifiers((pNode.getModifiers() & (~ACC_PUBLIC)) | ACC_FINAL | ACC_PRIVATE);
-        Statement getter = handler.createPropGetter(pNode);
-        if (getter != null) {
-            pNode.setGetterBlock(getter);
-            pNode.setGetterName(pNode.getName());
+        boolean isGetterDefined = cNode.getDeclaredMethods(pNode.getName()).stream()
+                .anyMatch(MethodNodeUtils::isGetterCandidate);
+        if (!isGetterDefined) {
+            Statement getter = handler.createPropGetter(pNode);
+            if (getter != null) {
+                pNode.setGetterBlock(getter);
+                pNode.setGetterName(pNode.getName());
+            }
         }
-        newNodes.add(pNode);
     }
 
     @Override

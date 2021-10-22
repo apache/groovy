@@ -19,12 +19,14 @@
 package core
 
 @groovy.transform.CompileStatic
+@groovy.transform.TupleConstructor(defaults=false)
 record Point(int x, int y, String color) {
     public Point {
-        x = -x;
-        if (x < 0) return
-        Objects.requireNonNull(color);
-        color = color.toUpperCase();
+        x = -x
+        if (x >= 0) {
+            Objects.requireNonNull(color)
+            color = color.toUpperCase()
+        }
     }
 
     public Point(int x, int y) {

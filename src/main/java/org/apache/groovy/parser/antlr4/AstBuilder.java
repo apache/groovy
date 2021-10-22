@@ -21,7 +21,6 @@ package org.apache.groovy.parser.antlr4;
 import groovy.lang.Tuple2;
 import groovy.lang.Tuple3;
 import groovy.transform.CompileStatic;
-import groovy.transform.MapConstructor;
 import groovy.transform.NonSealed;
 import groovy.transform.Sealed;
 import groovy.transform.Trait;
@@ -41,7 +40,6 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
-import org.apache.groovy.internal.util.Function;
 import org.apache.groovy.parser.antlr4.GroovyParser.AdditiveExprAltContext;
 import org.apache.groovy.parser.antlr4.GroovyParser.AndExprAltContext;
 import org.apache.groovy.parser.antlr4.GroovyParser.AnnotatedQualifiedClassNameContext;
@@ -237,7 +235,6 @@ import org.codehaus.groovy.ast.NodeMetaDataHandler;
 import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
@@ -361,19 +358,14 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.SUB;
 import static org.apache.groovy.parser.antlr4.GroovyParser.VAR;
 import static org.apache.groovy.parser.antlr4.util.PositionConfigureUtils.configureAST;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.cloneParams;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.closureX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -1967,10 +1959,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         if (!methodName.equals(className)) {
             createParsingFailedException("Compact constructor should have the same name with record: " + className, ctx.methodName());
         }
-        ClassNode returnType = ClassHelper.MAP_TYPE.getPlainNodeReference();
 
         Parameter[] header = classNode.getNodeMetaData(RECORD_HEADER);
-        Objects.requireNonNull(classNode, "record header should not be null");
+        Objects.requireNonNull(header, "record header should not be null");
 
         final Parameter[] parameters = cloneParams(header);
         Statement code = this.visitMethodBody(ctx.methodBody());
@@ -1985,51 +1976,18 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             }
         });
 
-        Statement block = block(
-                stmt(callX(closureX(code), "call")),
-                returnS(mapX(Arrays.stream(parameters).map(p -> {
-                    String parameterName = p.getName();
-                    return new MapEntryExpression(constX(parameterName), varX(parameterName));
-                }).collect(Collectors.toList())))
-        );
-        MethodNode methodNode = classNode.addSyntheticMethod(RECORD_COMPACT_CONSTRUCTOR_NAME, Opcodes.ACC_PRIVATE,
-                                                                returnType, parameters, ClassNode.EMPTY_ARRAY, block);
-
-        ConstructorNode dummyConstructorNode = configureAST(new ConstructorNode(modifierManager.getClassMemberModifiersOpValue(), block), ctx);
-        modifierManager.validate(dummyConstructorNode);
-
-        modifierManager.attachAnnotations(methodNode);
-        attachMapConstructorAnnotationToRecord(classNode, parameters);
-        attachTupleConstructorAnnotationToRecord(classNode, parameters);
-
-        return configureAST(methodNode, ctx);
+        attachTupleConstructorAnnotationToRecord(classNode, parameters, code);
+        return null;
     }
 
-    private void attachMapConstructorAnnotationToRecord(ClassNode classNode, Parameter[] parameters) {
-        doAttachConstructorAnnotationToRecord(classNode, MapConstructor.class,
-                parameters, p -> castX(p.getOriginType(), callX(varX("args"), "get", args(constX(p.getName())))));
-    }
-
-    private void attachTupleConstructorAnnotationToRecord(ClassNode classNode, Parameter[] parameters) {
-        doAttachConstructorAnnotationToRecord(classNode, TupleConstructor.class,
-                parameters, p -> castX(p.getOriginType(), varX(p.getName())));
-    }
-
-    private void doAttachConstructorAnnotationToRecord(ClassNode classNode, Class<?> annotationClass, Parameter[] parameters, Function<? super Parameter, ? extends Expression> mapper) {
-        AnnotationNode tupleConstructorAnnotationNode = new AnnotationNode(ClassHelper.makeCached(annotationClass));
-        List<Expression> argExpressionList =
-                Arrays.stream(parameters)
-                        .map(mapper::apply)
-                        .collect(Collectors.toList());
-        final String resultVarName = "$r" + System.nanoTime();
-        tupleConstructorAnnotationNode.setMember("pre", closureX(block(
-                declS(localVarX(resultVarName), castX(ClassHelper.MAP_TYPE.getPlainNodeReference(), callX(varX("this"), RECORD_COMPACT_CONSTRUCTOR_NAME, args(argExpressionList)))),
-                assignS(
-                        new TupleExpression(Arrays.stream(parameters).map(p -> varX(p.getName())).collect(Collectors.toList())),
-                        listX(Arrays.stream(parameters).map(p -> castX(p.getOriginType(), callX(varX(resultVarName), "get", args(constX(p.getName()))))).collect(Collectors.toList()))
-                )
-        )));
-        classNode.addAnnotation(tupleConstructorAnnotationNode);
+    private void attachTupleConstructorAnnotationToRecord(ClassNode classNode, Parameter[] parameters, Statement block) {
+        ClassNode tupleConstructorType = ClassHelper.makeCached(TupleConstructor.class);
+        List<AnnotationNode> annos = classNode.getAnnotations(tupleConstructorType);
+        AnnotationNode tupleConstructor = annos.isEmpty() ? new AnnotationNode(tupleConstructorType) : annos.get(0);
+        tupleConstructor.setMember("pre", closureX(block));
+        if (annos.isEmpty()) {
+            classNode.addAnnotation(tupleConstructor);
+        }
     }
 
     @Override
@@ -5260,7 +5218,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private static final String PARAMETER_CONTEXT = "_PARAMETER_CONTEXT";
     private static final String IS_RECORD_GENERATED = "_IS_RECORD_GENERATED";
     private static final String RECORD_HEADER = "_RECORD_HEADER";
-    private static final String RECORD_COMPACT_CONSTRUCTOR_NAME = "$compactInit";
     private static final String RECORD_TYPE_NAME = "groovy.transform.RecordType";
     private static final ClassNode RECORD_TYPE_CLASS = ClassHelper.makeWithoutCaching(RECORD_TYPE_NAME);
 }

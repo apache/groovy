@@ -72,7 +72,6 @@ import java.lang.annotation.Target
  * @see ImmutableOptions
  * @see PropertyOptions
  * @see TupleConstructor
- * @see MapConstructor
  * @see KnownImmutable
  * @see POJO
  * @since 4.0.0
@@ -80,8 +79,7 @@ import java.lang.annotation.Target
 @RecordBase
 @ImmutableOptions
 @PropertyOptions(propertyHandler = ImmutablePropertyHandler)
-@TupleConstructor(defaults = false)
-@MapConstructor
+@TupleConstructor(namedVariant = true)
 @KnownImmutable
 @POJO
 @CompileStatic

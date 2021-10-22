@@ -38,7 +38,7 @@ public class PropertyNode extends AnnotatedNode implements Variable {
     private Statement setterBlock;
     private String getterName = null;
     private String setterName = null;
-    private final int modifiers;
+    private int modifiers;
 
     public PropertyNode(
             String name, int modifiers, ClassNode type, ClassNode owner,
@@ -115,6 +115,10 @@ public class PropertyNode extends AnnotatedNode implements Variable {
     @Override
     public int getModifiers() {
         return modifiers;
+    }
+
+    public void setModifiers(int modifiers) {
+        this.modifiers = modifiers;
     }
 
     @Override

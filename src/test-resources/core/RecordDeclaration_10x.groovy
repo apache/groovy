@@ -18,6 +18,7 @@
  */
 package core
 
+@groovy.transform.TupleConstructor(defaults=false)
 record Point(int x, int y, String color) {
     public Point {
         x = -x;
@@ -26,11 +27,11 @@ record Point(int x, int y, String color) {
     }
 
     public Point(int x, int y) {
-        this(x, y, "Blue");
+        this(x, y, 'Blue');
     }
 }
 
-def p1 = new Point(5, 10, "Green")
+def p1 = new Point(5, 10, 'Green')
 assert -5 == p1.x()
 assert 10 == p1.y()
 assert 'GREEN' == p1.color()
@@ -39,3 +40,9 @@ def p2 = new Point(0, 20)
 assert 0 == p2.x()
 assert 20 == p2.y()
 assert 'BLUE' == p2.color()
+
+def p3 = new Point(x: 100, y: 200, color: 'Red')
+assert -100 == p3.x()
+assert 200 == p3.y()
+assert 'RED' == p3.color()
+
