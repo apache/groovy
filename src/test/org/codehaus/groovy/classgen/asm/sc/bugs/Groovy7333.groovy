@@ -21,7 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
-final class Groovy7333Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy7333 extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
     // GROOVY-7333
     void testIncorrectInstanceOfInference1() {
@@ -49,7 +49,7 @@ final class Groovy7333Bug extends StaticTypeCheckingTestCase implements StaticCo
             void test(A a) {
                 if (a instanceof B) {
                     @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                        def type = node.rightExpression.getNodeMetaData(INFERRED_RETURN_TYPE)
+                        def type = node.rightExpression.getNodeMetaData(INFERRED_TYPE)
                         assert type.text == 'B' // not '<UnionType:A+B>'
                     })
                     def x = a

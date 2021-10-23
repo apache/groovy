@@ -641,7 +641,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // GROOVY-9454
                 ClassNode inferredType = getInferredTypeFromTempInfo(vexp, null);
                 if (inferredType != null && !isObjectType(inferredType)) {
-                    vexp.putNodeMetaData(INFERRED_RETURN_TYPE, inferredType);
+                    vexp.putNodeMetaData(INFERRED_TYPE, inferredType);
                 } else {
                     storeType(vexp, getType(vexp));
                 }
@@ -673,7 +673,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode inferredType = localVariable.getNodeMetaData(INFERRED_TYPE);
             inferredType = getInferredTypeFromTempInfo(localVariable, inferredType);
             if (inferredType != null && !isObjectType(inferredType) && !inferredType.equals(accessedVariable.getType())) {
-                vexp.putNodeMetaData(INFERRED_RETURN_TYPE, inferredType);
+                vexp.putNodeMetaData(INFERRED_TYPE, inferredType);
             }
         }
     }
@@ -780,11 +780,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 lType = getType(leftExpression);
             } else {
                 if (op != ASSIGN && op != ELVIS_EQUAL) {
-                    if (leftExpression instanceof VariableExpression && hasInferredReturnType(leftExpression)) {
-                        lType = getInferredReturnType(leftExpression);
-                    } else {
-                        lType = getType(leftExpression);
-                    }
+                    lType = getType(leftExpression);
                 } else {
                     lType = getOriginalDeclarationType(leftExpression);
 
@@ -1321,23 +1317,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // TODO: need errors for write-only too!
         if (addedReadOnlyPropertyError(leftExpression)) return;
 
-        ClassNode rTypeInferred, rTypeWrapped; // check for instanceof and spreading
-        if (rightExpression instanceof VariableExpression && hasInferredReturnType(rightExpression) && assignmentExpression.getOperation().getType() == ASSIGN) {
-            rTypeInferred = getInferredReturnType(rightExpression);
-        } else {
-            rTypeInferred = rightExpressionType;
-        }
-        rTypeWrapped = adjustTypeForSpreading(rTypeInferred, leftExpression);
+        ClassNode rTypeWrapped = adjustTypeForSpreading(rightExpressionType, leftExpression);
 
         if (!checkCompatibleAssignmentTypes(leftExpressionType, rTypeWrapped, rightExpression)) {
-            if (!extension.handleIncompatibleAssignment(leftExpressionType, rTypeInferred, assignmentExpression)) {
-                addAssignmentError(leftExpressionType, rTypeInferred, rightExpression);
+            if (!extension.handleIncompatibleAssignment(leftExpressionType, rightExpressionType, assignmentExpression)) {
+                addAssignmentError(leftExpressionType, rightExpressionType, rightExpression);
             }
         } else {
             ClassNode lTypeRedirect = leftExpressionType.redirect();
-            addPrecisionErrors(lTypeRedirect, leftExpressionType, rTypeInferred, rightExpression);
+            addPrecisionErrors(lTypeRedirect, leftExpressionType, rightExpressionType, rightExpression);
             if (rightExpression instanceof ListExpression) {
-                addListAssignmentConstructorErrors(lTypeRedirect, leftExpressionType, rTypeInferred, rightExpression, assignmentExpression);
+                addListAssignmentConstructorErrors(lTypeRedirect, leftExpressionType, rightExpressionType, rightExpression, assignmentExpression);
             } else if (rightExpression instanceof MapExpression) {
                 addMapAssignmentConstructorErrors(lTypeRedirect, leftExpression, rightExpression);
             }
@@ -1954,12 +1944,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             super.visitForLoop(forLoop);
         } else {
             collectionExpression.visit(this);
-            ClassNode collectionType;
-            if (collectionExpression instanceof VariableExpression && hasInferredReturnType(collectionExpression)) {
-                collectionType = getInferredReturnType(collectionExpression);
-            } else {
-                collectionType = getType(collectionExpression);
-            }
+            ClassNode collectionType = getType(collectionExpression);
             ClassNode forLoopVariableType = forLoop.getVariableType();
             ClassNode componentType;
             if (isWrapperCharacter(getWrapper(forLoopVariableType)) && isStringType(collectionType)) {
@@ -2203,12 +2188,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected ClassNode checkReturnType(final ReturnStatement statement) {
         Expression expression = statement.getExpression();
-        ClassNode type;
-        if (expression instanceof VariableExpression && hasInferredReturnType(expression)) {
-            type = getInferredReturnType(expression);
-        } else {
-            type = getType(expression);
-        }
+        ClassNode type = getType(expression);
         if (typeCheckingContext.getEnclosingClosure() != null) {
             ClassNode inferredReturnType = getInferredReturnType(typeCheckingContext.getEnclosingClosure().getClosureExpression());
             // GROOVY-9995: return ctor call with diamond operator
@@ -3316,18 +3296,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         objectExpression.visit(this);
         call.getMethod().visit(this);
 
-        ClassNode receiver;
-        if (objectExpression instanceof VariableExpression && hasInferredReturnType(objectExpression)) {
-            receiver = getInferredReturnType(objectExpression);
-        } else {
-            receiver = getType(objectExpression);
-        }
-        // if it's a spread operator call, then make sure receiver is array or collection
-        if (call.isSpreadSafe()) {
+        ClassNode receiver = getType(objectExpression);
+        if (call.isSpreadSafe()) { // make sure receiver is array or collection then check element type
             if (!receiver.isArray() && !implementsInterfaceOrIsSubclassOf(receiver, Collection_TYPE)) {
                 addStaticTypeError("Spread operator can only be used on collection types", objectExpression);
             } else {
-                // type check call as if it was made on component type
                 ClassNode componentType = inferComponentType(receiver, int_TYPE);
                 MethodCallExpression subcall = callX(castX(componentType, EmptyExpression.INSTANCE), name, call.getArguments());
                 subcall.setLineNumber(call.getLineNumber()); subcall.setColumnNumber(call.getColumnNumber());
@@ -3751,11 +3724,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         visitClosureExpression(closure);
 
-        if (getInferredReturnType(closure) != null) {
-            return getInferredReturnType(closure);
-        }
-
-        return null;
+        return getInferredReturnType(closure);
     }
 
     /**
@@ -4206,7 +4175,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param type the inferred type of {@code expr}
      */
     private ClassNode checkForTargetType(final Expression expr, final ClassNode type) {
-        ClassNode sourceType = (hasInferredReturnType(expr) ? getInferredReturnType(expr) : type);
+        ClassNode sourceType = Optional.ofNullable(getInferredReturnType(expr)).orElse(type);
 
         ClassNode targetType = null;
         MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
@@ -4279,11 +4248,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private static boolean isEmptyMap(final Expression expr) {
         return expr instanceof MapExpression && ((MapExpression) expr).getMapEntryExpressions().isEmpty();
-    }
-
-    private static boolean hasInferredReturnType(final Expression expression) {
-        ClassNode type = expression.getNodeMetaData(INFERRED_RETURN_TYPE);
-        return type != null && !type.getName().equals(ClassHelper.OBJECT);
     }
 
     @Override

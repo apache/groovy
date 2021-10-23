@@ -18,6 +18,7 @@
  */
 package groovy.transform.stc
 
+import groovy.test.NotYetImplemented
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
@@ -614,7 +615,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-   void testCallMethodInWithContextAndShadowing() {
+    void testCallMethodInWithContextAndShadowing() {
        // make sure that the method which is found in 'with' is actually the one from class A
        // which returns a String
        assertScript '''
@@ -774,11 +775,38 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testFlowTypingWithStringVariable() {
-        // as anything can be assigned to a string, flow typing engine
-        // could "erase" the type of the original variable although is must not
         assertScript '''
-            String str = new Object() // type checker will not complain, anything assignable to a String
-            str.toUpperCase() // should not complain
+            String s = new Object() // anything assignable to String
+            s.toUpperCase()
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-10294
+    void testFlowTypingWithNullAssignment() {
+        assertScript '''
+            class C {
+            }
+            C test() {
+                def x = new C()
+                if (false) {
+                    x = null
+                }
+                x
+            }
+            assert test() != null
+        '''
+    }
+
+    // GROOVY-10308
+    void testFlowTypingWithNullAssignment2() {
+        assertScript '''
+            class C<T> {
+                T p
+            }
+            def x = { -> new C<String>() }
+            def y = x()
+            def z = y.p // false positive: field access error
+            y = null
         '''
     }
 
@@ -870,7 +898,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testGroovy6215() {
+    // GROOVY-6215
+    void testSwitchCaseAnalysis2() {
         assertScript '''
             def processNumber(int x) {
                 def value = getValueForNumber(x)
