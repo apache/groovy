@@ -788,6 +788,21 @@ Printer
         '''
     }
 
+    // GROOVY-9006
+    void testAmbiguousMethodResolutionTimestampComparedToNull() {
+        assertScript '''
+            import java.sql.Timestamp
+
+            def test(Timestamp timestamp) {
+                if (timestamp != null) { // Reference to method is ambiguous
+                    return 'not null'
+                }
+            }
+            def result = test(new Timestamp(new Date().getTime()))
+            assert result == 'not null'
+        '''
+    }
+
     // GROOVY-6911
     void testShouldNotThrowArrayIndexOfOutBoundsException() {
         assertScript '''
