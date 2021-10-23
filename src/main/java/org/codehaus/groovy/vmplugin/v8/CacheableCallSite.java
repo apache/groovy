@@ -25,6 +25,7 @@ import org.codehaus.groovy.runtime.memoize.MemoizeCache;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
+import java.lang.ref.SoftReference;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -34,8 +35,8 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class CacheableCallSite extends MutableCallSite {
     private static final int CACHE_SIZE = SystemUtil.getIntegerSafe("groovy.indy.callsite.cache.size", 16);
-    private final MemoizeCache<String, MethodHandleWrapper> cache = new LRUCache<>(CACHE_SIZE);
-    private volatile MethodHandleWrapper latestHitMethodHandleWrapper = null;
+    private volatile SoftReference<MemoizeCache<String, MethodHandleWrapper>> cacheSoftReference;
+    private volatile MethodHandleWrapper latestHitMethodHandleWrapper;
     private final AtomicLong fallbackCount = new AtomicLong(0);
     private MethodHandle defaultTarget;
     private MethodHandle fallbackTarget;
@@ -45,6 +46,7 @@ public class CacheableCallSite extends MutableCallSite {
     }
 
     public MethodHandleWrapper getAndPut(String className, MemoizeCache.ValueProvider<? super String, ? extends MethodHandleWrapper> valueProvider) {
+        final MemoizeCache<String, MethodHandleWrapper> cache = getCache();
         final MethodHandleWrapper result = cache.getAndPut(className, valueProvider);
         final MethodHandleWrapper lhmh = latestHitMethodHandleWrapper;
 
@@ -61,7 +63,7 @@ public class CacheableCallSite extends MutableCallSite {
     }
 
     public MethodHandleWrapper put(String name, MethodHandleWrapper mhw) {
-        return cache.put(name, mhw);
+        return getCache().put(name, mhw);
     }
 
     public long incrementFallbackCount() {
@@ -86,5 +88,19 @@ public class CacheableCallSite extends MutableCallSite {
 
     public void setFallbackTarget(MethodHandle fallbackTarget) {
         this.fallbackTarget = fallbackTarget;
+    }
+
+    private MemoizeCache<String, MethodHandleWrapper> getCache() {
+        MemoizeCache<String, MethodHandleWrapper> cache;
+        SoftReference<MemoizeCache<String, MethodHandleWrapper>> ref = cacheSoftReference;
+        if (null == ref || null == (cache = ref.get())) {
+            synchronized (this) {
+                ref = cacheSoftReference;
+                if (null == ref || null == (cache = ref.get())) {
+                    this.cacheSoftReference = new SoftReference<>(cache = new LRUCache<>(CACHE_SIZE));
+                }
+            }
+        }
+        return cache;
     }
 }
