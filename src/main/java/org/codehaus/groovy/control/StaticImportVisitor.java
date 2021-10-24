@@ -204,6 +204,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             if (left instanceof StaticMethodCallExpression) {
                 StaticMethodCallExpression smce = (StaticMethodCallExpression) left;
                 StaticMethodCallExpression result = new StaticMethodCallExpression(smce.getOwnerType(), smce.getMethod(), right);
+                result.copyNodeMetaData(smce);
                 setSourcePosition(result, be);
                 return result;
             }
@@ -428,59 +429,80 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     }
 
     private Expression findStaticMethodImportFromModule(Expression method, Expression args) {
-        ModuleNode module = currentClass.getModule();
-        if (module == null || !(method instanceof ConstantExpression)) return null;
-        Map<String, ImportNode> importNodes = module.getStaticImports();
-        ConstantExpression ce = (ConstantExpression) method;
+        if (currentClass.getModule() == null) return null;
+        if (!(method instanceof ConstantExpression)) return null;
+        if (!(((ConstantExpression) method).getValue() instanceof String)) return null;
+
         Expression expression;
-        Object value = ce.getValue();
-        // skip non-Strings, e.g. Integer
-        if (!(value instanceof String)) return null;
-        final String name = (String) value;
+        String name = method.getText();
+        Map<String, ImportNode> staticImports = currentClass.getModule().getStaticImports();
         // look for one of these:
-        //   import static SomeClass.method [as otherName]
-        // when resolving methodCall() or getProp() or setProp()
-        if (importNodes.containsKey(name)) {
-            ImportNode importNode = importNodes.get(name);
+        //   import static MyClass.field [as alias]
+        //   import static MyClass.method [as alias]
+        //   import static MyClass.property [as alias]
+        // when resolving implicit-this call name(args)
+        if (staticImports.containsKey(name)) {
+            ImportNode importNode = staticImports.get(name);
             expression = findStaticMethod(importNode.getType(), importNode.getFieldName(), args);
-            if (expression != null) return expression;
-            expression = findStaticPropertyAccessorGivenArgs(importNode.getType(), getPropNameForAccessor(importNode.getFieldName()), args);
             if (expression != null) {
-                return newStaticMethodCallX(importNode.getType(), importNode.getFieldName(), args);
+                return expression;
             }
-        }
-        // look for one of these:
-        //   import static SomeClass.someProp [as otherName]
-        // when resolving getProp() or setProp()
-        if (isValidAccessorName(name)) {
-            String propName = getPropNameForAccessor(name);
-            if (importNodes.containsKey(propName)) {
-                ImportNode importNode = importNodes.get(propName);
-                ClassNode importClass = importNode.getType();
-                String importMember = importNode.getFieldName();
-                expression = findStaticMethod(importClass, prefix(name) + capitalize(importMember), args);
-                if (expression != null) return expression;
-                expression = findStaticPropertyAccessorGivenArgs(importClass, importMember, args);
-                if (expression != null) {
-                    return newStaticMethodCallX(importClass, prefix(name) + capitalize(importMember), args);
+            if (!inClosure) {
+                expression = findStaticPropertyOrField(importNode.getType(), importNode.getFieldName());
+                if (expression != null) { // assume name refers to a callable static field or property
+                    MethodCallExpression call = new MethodCallExpression(expression, "call", args);
+                    call.setImplicitThis(false);
+                    return call;
                 }
             }
         }
-        Map<String, ImportNode> starImports = module.getStaticStarImports();
-        ClassNode starImportType;
-        if (currentClass.isEnum() && starImports.containsKey(currentClass.getName())) {
-            ImportNode importNode = starImports.get(currentClass.getName());
-            starImportType = importNode == null ? null : importNode.getType();
-            expression = findStaticMethod(starImportType, name, args);
-            return expression;
-        } else {
-            for (ImportNode importNode : starImports.values()) {
-                starImportType = importNode == null ? null : importNode.getType();
-                expression = findStaticMethod(starImportType, name, args);
+        // look for one of these:
+        //   import static MyClass.property [as alias]
+        //   import static MyClass.isProperty [as alias]
+        //   import static MyClass.getProperty [as alias]
+        //   import static MyClass.setProperty [as alias]
+        // when resolving isName(), getName() or setName(args)
+        boolean accessor = isValidAccessorName(name);
+        if (accessor) {
+            ImportNode importNode = staticImports.get(name);
+            if (importNode != null) {
+                String propName = getPropNameForAccessor(importNode.getFieldName());
+                expression = findStaticPropertyAccessorGivenArgs(importNode.getType(), propName, args);
+                if (expression != null) { // expression may refer to getter or setter, so make new call
+                    return newStaticMethodCallX(importNode.getType(), importNode.getFieldName(), args);
+                }
+            }
+            importNode = staticImports.get(getPropNameForAccessor(name));
+            if (importNode != null) {
+                ClassNode importType = importNode.getType();
+                String importMember = importNode.getFieldName();
+                expression = findStaticMethod(importType, prefix(name) + capitalize(importMember), args);
                 if (expression != null) return expression;
-                expression = findStaticPropertyAccessorGivenArgs(starImportType, getPropNameForAccessor(name), args);
+                expression = findStaticPropertyAccessorGivenArgs(importType, importMember, args);
                 if (expression != null) {
-                    return newStaticMethodCallX(starImportType, name, args);
+                    return newStaticMethodCallX(importType, prefix(name) + capitalize(importMember), args);
+                }
+            }
+        }
+
+        Map<String, ImportNode> staticStarImports = currentClass.getModule().getStaticStarImports();
+        if (currentClass.isEnum() && staticStarImports.containsKey(currentClass.getName())) {
+            ImportNode importNode = staticStarImports.get(currentClass.getName());
+            expression = findStaticMethod(importNode.getType(), name, args);
+            return expression;
+        }
+        // look for one of these:
+        //   import static MyClass.*
+        // when resolving name(args), getName(), etc.
+        for (ImportNode importNode : staticStarImports.values()) {
+            ClassNode importType = importNode.getType();
+            expression = findStaticMethod(importType, name, args);
+            if (expression != null) return expression;
+            if (accessor) {
+                String propName = getPropNameForAccessor(name);
+                expression = findStaticPropertyAccessorGivenArgs(importType, propName, args);
+                if (expression != null) { // expression may refer to getter or setter, so ...
+                    return newStaticMethodCallX(importType, name, args);
                 }
             }
         }

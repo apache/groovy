@@ -142,43 +142,85 @@ final class StaticImportTest extends groovy.test.GroovyTestCase {
     }
 
     void testStaticImportProperty() {
-        def sources = [
-            "class Foo { static x = 'foo'" + " }",
-            "class Foo { static x = 'foo'" + "; static getX() { x + '_get' } }",
-            "class Foo { static x = 'foo'" + ";                               static void setX(newx) { x = newx + '_set' } }",
-            "class Foo { static x = 'foo'" + "; static getX() { x + '_get' }; static void setX(newx) { x = newx + '_set' } }"
-        ]
-        def imports = [
-            "import static Foo.*",
-            "import static Foo.getX; import static Foo.setX"
-        ]
-        def results = [
-            "assert x == 'foo';     x = 'bar'; assert getX() == 'bar';         setX('baz'); assert 'baz'         == x",
-            "assert x == 'foo_get'; x = 'bar'; assert getX() == 'bar_get';     setX('baz'); assert 'baz_get'     == x",
-            "assert x == 'foo';     x = 'bar'; assert getX() == 'bar_set';     setX('baz'); assert 'baz_set'     == x",
-            "assert x == 'foo_get'; x = 'bar'; assert getX() == 'bar_set_get'; setX('baz'); assert 'baz_set_get' == x"
-        ]
-        [0..<sources.size(), 0..<imports.size()].combinations().each { i, j ->
-            assertScript sources[i] + "\n" + imports[j] + "\n" + results[i]
+        for (imports in ['import static Foo.*', 'import static Foo.getX; import static Foo.setX']) {
+            assertScript """
+                $imports
+                class Foo {
+                    static x = 'foo'
+                }
+                assert x == 'foo'
+                x = 'bar'
+                assert getX() == 'bar'
+                setX('baz')
+                assert 'baz' == x
+            """
+            assertScript """
+                $imports
+                class Foo {
+                    static x = 'foo'
+                    static getX() { x + '_get' }
+                }
+                assert x == 'foo_get'
+                x = 'bar'
+                assert getX() == 'bar_get'
+                setX('baz')
+                assert 'baz_get' == x
+            """
+            assertScript """
+                $imports
+                class Foo {
+                    static x = 'foo'
+                    static void setX(newx) { x = newx + '_set' }
+                }
+                assert x == 'foo'
+                x = 'bar'
+                assert getX() == 'bar_set'
+                setX('baz')
+                assert 'baz_set' == x
+            """
+            assertScript """
+                $imports
+                class Foo {
+                    static x = 'foo'
+                    static getX() { x + '_get' }
+                    static void setX(newx) { x = newx + '_set' } 
+                }
+                assert x == 'foo_get'
+                x = 'bar'
+                assert getX() == 'bar_set_get'
+                setX('baz')
+                assert 'baz_set_get' == x
+            """
         }
     }
 
     void testStaticImportPropertyBooleanAlternative() {
-        def sources = [
-            "class Foo { static x = null" + "; static boolean isX() { x } }",
-            "class Foo { static x = null" + "; static boolean isX() { x }; static void setX(newx) { x = newx } }"
-        ]
-        def imports = [
-            "import static Foo.*",
-            "import static Foo.x",
-            "import static Foo.isX; import static Foo.setX"
-        ]
-        def results = [
-            "assert !x; x = true ; assert  isX(); setX(false); assert !x",
-            "assert !x; x = false; assert !isX(); setX(true);  assert  x"
-        ]
-        [0..<sources.size(), 0..<imports.size()].combinations().each { i, j ->
-            assertScript sources[i] + "\n" + imports[j] + "\n" + results[i]
+        for (imports in ['import static Foo.*', 'import static Foo.x', 'import static Foo.isX; import static Foo.setX']) {
+            assertScript """
+                $imports
+                class Foo {
+                    static x
+                    static boolean isX() { !!x }
+                }
+                assert !x
+                x = true
+                assert isX()
+                setX(false)
+                assert !x
+            """
+            assertScript """
+                $imports
+                class Foo {
+                    static x
+                    static boolean isX() { !!x }
+                    static void setX(newx) { x = newx }
+                }
+                assert !x
+                x = false
+                assert !isX()
+                setX(true)
+                assert x
+            """
         }
     }
 
@@ -257,6 +299,94 @@ final class StaticImportTest extends groovy.test.GroovyTestCase {
             y
         '''
         assert err =~ /No such property: y for class/
+    }
+
+    // GROOVY-8389
+    void testStaticImportPropertyWithClosure() {
+        assertScript '''
+            import static Foo.bar
+            import static Foo.baz
+            class Foo {
+                static Closure<String> bar = { -> 'property' }
+                static Closure<String> baz = { -> 'property' }
+            }
+            String bar() {
+                'method'
+            }
+            @groovy.transform.CompileStatic
+            def test() {
+                bar() + ':' + baz()
+            }
+            String result = test()
+            assert result == 'method:property'
+        '''
+    }
+
+    // GROOVY-8389
+    void testStaticImportMethodVsLocalMethod() {
+        assertScript '''
+            import static Foo.bar
+            class Foo {
+                static bar = 'foo'
+            }
+            def bar() {
+                'bar'
+            }
+            @groovy.transform.CompileStatic
+            def test() {
+                bar()
+            }
+            assert test() == 'bar'
+        '''
+
+        assertScript '''
+            import static Foo.bar
+            class Foo {
+                static bar = 'foo'
+            }
+            static bar() {
+                'bar'
+            }
+            @groovy.transform.CompileStatic
+            def test() {
+                bar()
+            }
+            assert test() == 'bar'
+        '''
+
+        assertScript '''
+            import static Foo.baz
+            import static Foo.bar
+            class Foo {
+                static bar() { 'foobar' }
+                static baz() { 'foobaz' }
+            }
+            def bar() {
+                'bar'
+            }
+            @groovy.transform.CompileStatic
+            def test() {
+                "${bar()}${baz()}"
+            }
+            assert test() == 'barfoobaz'
+        '''
+
+        assertScript '''
+            import static Foo.baz
+            import static Foo.bar
+            class Foo {
+                static bar() { 'foobar' }
+                static baz() { 'foobaz' }
+            }
+            static bar() {
+                'bar'
+            }
+            @groovy.transform.CompileStatic
+            def test() {
+                "${bar()}${baz()}"
+            }
+            assert test() == 'barfoobaz'
+        '''
     }
 
     void testConstructorArgsAliasing() {
