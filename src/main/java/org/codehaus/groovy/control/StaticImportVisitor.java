@@ -439,9 +439,9 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             if (expression != null) {
                 return expression;
             }
-            if (!inClosure) {
+            if (!inClosure && !inLeftExpression) {
                 expression = findStaticPropertyOrField(importNode.getType(), importNode.getFieldName());
-                if (expression != null) { // assume name refers to a callable static field or property
+                if (expression != null) { // assume name refers to a callable static field/property
                     MethodCallExpression call = new MethodCallExpression(expression, "call", args);
                     call.setImplicitThis(false);
                     return call;
@@ -490,6 +490,14 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             ClassNode importType = importNode.getType();
             expression = findStaticMethod(importType, name, args);
             if (expression != null) return expression;
+            if (!inClosure && !inLeftExpression) { // GROOVY-10329
+                expression = findStaticPropertyOrField(importType, name);
+                if (expression != null) { // assume name refers to a callable static field/property
+                    MethodCallExpression call = new MethodCallExpression(expression, "call", args);
+                    call.setImplicitThis(false);
+                    return call;
+                }
+            }
             if (accessor) {
                 String propName = getPropNameForAccessor(name);
                 expression = findStaticPropertyAccessorGivenArgs(importType, propName, args);
@@ -584,12 +592,12 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return null;
     }
 
-    private static PropertyExpression newStaticPropertyX(ClassNode type, String name) {
-        return new PropertyExpression(new ClassExpression(type.getPlainNodeReference()), name);
-    }
-
     private static StaticMethodCallExpression newStaticMethodCallX(ClassNode type, String name, Expression args) {
         return new StaticMethodCallExpression(type.getPlainNodeReference(), name, args);
+    }
+
+    private static PropertyExpression newStaticPropertyX(ClassNode type, String name) {
+        return new PropertyExpression(new ClassExpression(type.getPlainNodeReference()), name);
     }
 
     @Override
