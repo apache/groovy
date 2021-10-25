@@ -26,12 +26,10 @@ import static junit.framework.Assert.format
 import static junit.framework.Assert.assertEquals
 import static groovy.StaticImportTarget.x
 import static groovy.StaticImportTarget.z // do not remove
-import static groovy.StaticImportTarget.getCl
 import static java.lang.Math.*
 import static java.util.Calendar.getInstance as now
 import static groovy.API.*
 import static groovy.StaticImportChild.*
-import static groovy.bugs.Groovy4145.foo4145
 import static groovy.Outer1.*
 import static groovy.Outer2.Inner2
 import static groovy.Outer2.Inner2 as InnerAlias2
@@ -418,13 +416,43 @@ final class StaticImportTest extends groovy.test.GroovyTestCase {
     }
 
     // GROOVY-3945
-    void testStaticImportOfAClosureProperty() {
-        assert cl() == 'StaticImportTarget#static closure called'
+    void testStaticImportOfClosureProperty() {
+        assertScript '''
+            import static groovy.StaticImportTarget.cl
+            String result = cl()
+            assert result == 'StaticImportTarget#static closure called'
+        '''
+    }
+
+    // GROOVY-7490
+    void testStaticImportOfCallableProperty() {
+        assertScript '''
+            class WithCall {
+                String call(String input) {
+                    return input
+                }
+            }
+            class Pogo {
+                static final WithCall callable_property = new WithCall()
+            }
+
+            import static Pogo.callable_property
+
+            @groovy.transform.CompileStatic
+            def usage() {
+                callable_property('works')
+            }
+            String result = usage()
+            assert result == 'works'
+        '''
     }
 
     // GROOVY-4145
     void testStaticPropertyImportedImplementedAsGetter() {
-        assert foo4145 == 3
+        assertScript '''
+            import static groovy.bugs.Groovy4145.foo4145
+            assert foo4145 == 3
+        '''
     }
 
     void testMethodCallExpressionInStaticContextWithInstanceVariableShouldFail() { //GROOVY-4228

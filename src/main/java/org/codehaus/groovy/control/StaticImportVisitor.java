@@ -254,14 +254,6 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                     setSourcePosition(result, mce);
                     return result;
                 }
-                if (name != null && !inLeftExpression) { // maybe a closure field
-                    result = findStaticFieldOrPropertyAccessorImportFromModule(name);
-                    if (result != null) {
-                        result = new MethodCallExpression(result, "call", args);
-                        result.setSourcePosition(mce);
-                        return result;
-                    }
-                }
             }
         } else if (currentMethod != null && currentMethod.isStatic() && isSuperExpression(object)) {
             Expression result = new MethodCallExpression(new ClassExpression(currentClass.getSuperClass()), method, args);
