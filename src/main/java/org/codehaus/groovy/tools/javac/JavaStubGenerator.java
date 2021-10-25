@@ -1013,35 +1013,32 @@ public class JavaStubGenerator {
     }
 
     private static void printImports(PrintWriter out, ClassNode classNode) {
-        List<String> imports = new ArrayList<String>();
+        List<String> imports = new ArrayList<>();
+        ModuleNode module = classNode.getModule();
 
-        ModuleNode moduleNode = classNode.getModule();
-        for (ImportNode importNode : moduleNode.getStarImports()) {
-            imports.add(importNode.getPackageName());
+        for (ImportNode imp : module.getImports()) {
+            if (imp.getAlias() == null) imports.add(imp.getType().getName());
         }
 
-        for (ImportNode imp : moduleNode.getImports()) {
-            if (imp.getAlias() == null)
-                imports.add(imp.getType().getName());
+        for (ImportNode imp : module.getStarImports()) {
+            imports.add(imp.getPackageName());
         }
 
-        imports.addAll(Arrays.asList(ResolveVisitor.DEFAULT_IMPORTS));
+        Collections.addAll(imports, ResolveVisitor.DEFAULT_IMPORTS);
 
-        for (Map.Entry<String, ImportNode> entry : moduleNode.getStaticImports().entrySet()) {
-            if (entry.getKey().equals(entry.getValue().getFieldName()))
-                imports.add("static "+entry.getValue().getType().getName()+"."+entry.getKey());
+        for (Map.Entry<String, ImportNode> entry : module.getStaticImports().entrySet()) {
+            String memberName = entry.getKey();
+            if (memberName.equals(entry.getValue().getFieldName())
+                    && !Character.isLowerCase(memberName.charAt(0))) // GROOVY-7510
+                imports.add("static " + entry.getValue().getType().getName() + "." + memberName);
         }
 
-        for (Map.Entry<String, ImportNode> entry : moduleNode.getStaticStarImports().entrySet()) {
-            imports.add("static "+entry.getValue().getType().getName()+".");
+        for (Map.Entry<String, ImportNode> entry : module.getStaticStarImports().entrySet()) {
+            imports.add("static " + entry.getValue().getType().getName() + ".");
         }
 
         for (String imp : imports) {
-            String s = ("import " +
-                    imp +
-                    ((imp.charAt(imp.length() - 1) == '.') ? "*;" : ";"))
-                    .replace('$', '.');
-            out.println(s);
+            out.println("import " + imp.replace('$', '.') + (imp.endsWith(".") ? "*;" : ";"));
         }
         out.println();
     }
