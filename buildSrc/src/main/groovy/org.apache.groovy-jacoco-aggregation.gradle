@@ -21,13 +21,13 @@ if (sharedConfiguration.hasCodeCoverage.get()) {
     // we only apply the jacoco configuration if a system property is set, in order to avoid instrumentation if we
     // are not specifically asking for code coverage
     tasks.register("jacocoAllReport", JacocoReport) {
-        subprojects { subproject ->
-            subproject.plugins.withType(JacocoPlugin).configureEach {
-                if (subproject.sourceSets.test.allSource.srcDirs.any { it.exists() }) {
+        allprojects { p ->
+            p.plugins.withType(JacocoPlugin).configureEach {
+                if (p.sourceSets.test.allSource.srcDirs.any { it.exists() }) {
                     def testTasks = []
-                    subproject.tasks.matching({ t -> t.extensions.findByType(JacocoTaskExtension) }).each { testTask ->
+                    p.tasks.matching({ t -> t.extensions.findByType(JacocoTaskExtension) }).each { testTask ->
                         if ((testTask instanceof Test)) {
-                            sourceSets subproject.sourceSets.main
+                            sourceSets p.sourceSets.main
                             executionData(testTask)
                             testTasks << testTask
                         }
