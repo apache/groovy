@@ -49,6 +49,9 @@ final class Message extends Record {
     final boolean equals(Object other) { /*...*/ }
 
     final int hashCode() { /*...*/ }
+
+    String from() { from }
+    // other getters ...
 }
 // end::record_message_equivalent[]
 '''

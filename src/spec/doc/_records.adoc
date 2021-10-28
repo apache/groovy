@@ -56,6 +56,9 @@ for the following rough equivalent:
 include::../test/RecordSpecificationTest.groovy[tags=record_message_equivalent,indent=0]
 ----
 
+Note the special naming convention for record getters. They are the same name as the field
+(rather than the otherwise common JavaBean convention of capitalized with a "get" prefix).
+
 Like in Java, you can override the normally implicitly supplied methods
 by writing your own:
 
@@ -153,8 +156,8 @@ Groovy's record feature offering three levels of convenience:
 == Other differences to Java
 
 Groovy supports creating record-like classes as well as native records.
-Record-like classes don't extend Java's `Record` class and won't be seen
-by Java as records but will otherwise have similar properties.
+Record-like classes don't extend Java's `Record` class and such classes
+won't be seen by Java as records but will otherwise have similar properties.
 
 The `@RecordBase` annotation (part of `@RecordType`) supports a `mode` annotation attribute
 which can take one of three values (with `AUTO` being the default):
@@ -162,7 +165,7 @@ which can take one of three values (with `AUTO` being the default):
 NATIVE::
 Produces a class similar to what Java would do. Produces an error when compiling on JDKs earlier than JDK16.
 EMULATE::
-Produces a record-like class.
+Produces a record-like class for all JDK versions.
 AUTO::
 Produces a native record for JDK16+ and emulates the record otherwise.
 
