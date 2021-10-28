@@ -1235,4 +1235,6 @@ single one corresponding to `@CompileStatic(TypeCheckingMode.SKIP)`.
 
 include::_traits.adoc[leveloffset=+1]
 
+include::_records.adoc[leveloffset=+1]
+
 include::_sealed.adoc[leveloffset=+1]

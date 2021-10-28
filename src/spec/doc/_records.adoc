@@ -1,0 +1,170 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Record classes (incubating)
+
+Record classes, or _records_ for short, are a special kind of class
+useful for modelling plain data aggregates.
+They provide a compact syntax with less ceremony than normal classes.
+Groovy already has AST transforms such as `@Immutable` and `@Canonical`
+which already dramatically reduce ceremony but records have been
+introduced in Java and record classes in Groovy are designed to align
+with Java record classes.
+
+For example, suppose we want to create a `Message` record
+representing an email message. For the purposes of this example,
+let's simplify such a message to contain just a _from_ email address,
+a _to_ email address, and a message _body_. We would define such
+a record as follows:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_message_def,indent=0]
+----
+
+We'd use the record class in the same way as a normal class, as shown below:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_message_usage,indent=0]
+----
+
+The reduced ceremony saves us from defining explicit fields, getters and
+`toString`, `equals` and `hashCode` methods. In fact, it's a shorthand
+for the following rough equivalent:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_message_equivalent,indent=0]
+----
+
+Like in Java, you can override the normally implicitly supplied methods
+by writing your own:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_point3d,indent=0]
+----
+
+== Compact constructor
+
+Records have an implicit constructor. This can be overridden in the normal way
+by providing your own constructor - you need to make sure you set all of the fields
+if you do this.
+However, for succinctness, a compact constructor syntax can be used where
+the parameter declaration part of a normal constructor is elided.
+For this special case, the normal implicit constructor is still provided
+but is augmented by the supplied statements in the compact constructor definition:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_compact_constructor,indent=0]
+----
+
+== Groovy enhancements
+
+Groovy supports default values for constructor arguments.
+This capability is also available for records as shown in the following record definition
+which has default values for `y` and `color`:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_point_defn,indent=0]
+----
+
+Arguments when left off (dropping one or more arguments from the right) are replaced
+with their defaults values as shown in the following example:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_point_defaults,indent=0]
+----
+
+Named arguments may also be used (default values also apply here):
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_point_named_args,indent=0]
+----
+
+== Diving deeper
+
+We previously described a `Message` record and displayed it's rough equivalent.
+Groovy in fact steps through an intermediate stage where the `record` keyword
+is replaced by the `class` keyword and an accompanying `@RecordType` annotation:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_message_annotation_defn,indent=0]
+----
+
+Then `@RecordType` itself is processed as a _meta-annotation_ (annotation collector)
+and expanded into its constituent sub-annotations such as `@TupleConstructor`, `@POJO`,
+`@RecordBase`, and others. This is in some sense an implementation detail which can often be ignored.
+However, if you wish to customise or configure the record implementation,
+you may wish to drop back to the `@RecordType` style or augment your record class
+with one of the constituent sub-annotations.
+
+As an example, you can a three-dimensional point record as follows:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_point3d_tostring_annotation,indent=0]
+----
+
+We customise the `toString` by including the package name (excluded by default for records)
+and by caching the `toString` value since it won't change for this immutable record.
+We are also ignoring null values (the default value for `z` in our definition).
+
+We can have a similar definition for a two-dimensional point:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_point2d_tostring_annotation,indent=0]
+----
+
+We can see here that without the package name it would have the same toString as our previous example.
+
+This example was somewhat contrived but in general illustrates the principal behind
+Groovy's record feature offering three levels of convenience:
+
+* Using the `record` keyword for maximum succinctness
+* Support low-ceremony customization using declarative annotations
+* Provide normal method implementations when full control is required
+
+== Other differences to Java
+
+Groovy supports creating record-like classes as well as native records.
+Record-like classes don't extend Java's `Record` class and won't be seen
+by Java as records but will otherwise have similar properties.
+
+The `@RecordBase` annotation (part of `@RecordType`) supports a `mode` annotation attribute
+which can take one of three values (with `AUTO` being the default):
+
+NATIVE::
+Produces a class similar to what Java would do. Produces an error when compiling on JDKs earlier than JDK16.
+EMULATE::
+Produces a record-like class.
+AUTO::
+Produces a native record for JDK16+ and emulates the record otherwise.
+
+Whether you use the `record` keyword or the `@RecordType` annotation
+is independent of the mode.
