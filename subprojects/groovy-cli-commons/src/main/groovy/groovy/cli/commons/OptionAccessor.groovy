@@ -98,7 +98,7 @@ class OptionAccessor {
     }
 
     private <T> T getTypedValue(Class<T> type, String optionName, String optionValue) {
-        if (savedTypeOptions[optionName]?.cliOption?.numberOfArgs == 0) {
+        if (savedTypeOptions[optionName]?.cliOption?.args == 0) {
             return (T) commandLine.hasOption(optionName)
         }
         def convert = savedTypeOptions[optionName]?.convert

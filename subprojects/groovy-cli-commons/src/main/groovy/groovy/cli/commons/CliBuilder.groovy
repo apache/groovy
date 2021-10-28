@@ -552,8 +552,8 @@ class CliBuilder {
         if (conv && conv instanceof Class) {
             savedTypeOptions[name].convert = conv.newInstance(t, t)
         }
-        boolean hasArg = savedTypeOptions[name]?.cliOption?.numberOfArgs == 1
-        boolean noArg = savedTypeOptions[name]?.cliOption?.numberOfArgs == 0
+        boolean hasArg = savedTypeOptions[name]?.cliOption?.args == 1
+        boolean noArg = savedTypeOptions[name]?.cliOption?.args == 0
         if (namesAreSetters) {
             def isBoolArg = m.parameterTypes.size() > 0 && m.parameterTypes[0].simpleName.toLowerCase() == 'boolean'
             boolean isFlag = (isBoolArg && !hasArg) || noArg

@@ -463,6 +463,11 @@
             <pgp value="cd5464315f0b98c77e6e8ecd9daadc1c9fcc82d0"/>
          </artifact>
       </component>
+      <component group="commons-cli" name="commons-cli" version="1.5.0">
+         <artifact name="commons-cli-1.5.0.jar">
+            <pgp value="b6e73d84ea4fcc47166087253faad2cd5ecbb314"/>
+         </artifact>
+      </component>
       <component group="commons-codec" name="commons-codec" version="1.13">
          <artifact name="commons-codec-1.13.jar">
             <pgp value="2db4f1ef0fa761ecc4ea935c86fdc7e2a11262cb"/>
