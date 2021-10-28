@@ -274,7 +274,7 @@ But it is also possible to have a dependency on another script. To illustrate th
 the same directory, without interrupting the executing script:
 
 [source,groovy]
-.Depencency.groovy
+.Dependency.groovy
 ----
 include::../test-resources/reloading/dependency1.groovy[tags=dependency,indent=0]
 ----
@@ -300,7 +300,7 @@ Hello, dependency 1!
 And as a last test, you can update the `Dependency.groovy` file without touching the `ReloadingTest` file:
 
 [source,groovy]
-.Depencency.groovy
+.Dependency.groovy
 ----
 include::../test-resources/reloading/dependency2.groovy[tags=dependency,indent=0]
 ----
