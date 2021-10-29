@@ -37,7 +37,7 @@ a record as follows:
 
 [source,groovy]
 ----
-include::../test/RecordSpecificationTest.groovy[tags=record_message_def,indent=0]
+include::../test/RecordSpecificationTest.groovy[tags=record_message_defn,indent=0]
 ----
 
 We'd use the record class in the same way as a normal class, as shown below:
@@ -126,6 +126,8 @@ However, if you wish to customise or configure the record implementation,
 you may wish to drop back to the `@RecordType` style or augment your record class
 with one of the constituent sub-annotations.
 
+=== ToString
+
 As an example, you can a three-dimensional point record as follows:
 
 [source,groovy]
@@ -146,7 +148,28 @@ include::../test/RecordSpecificationTest.groovy[tags=record_point2d_tostring_ann
 
 We can see here that without the package name it would have the same toString as our previous example.
 
-This example was somewhat contrived but in general illustrates the principal behind
+=== CopyWith
+
+For a record with many fields, it can be useful to make a copy with one or more fields changes.
+This can be enabled by setting the `copyWith` annotation attribute to `true`:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_copywith,indent=0]
+----
+
+=== Deep immutability
+
+As with Java, records by default offer shallow immutability.
+Groovy's `@Immutable` transform performs defensive copying for a range of mutable
+data types. Records can make use of this defensive copying to gain deep immutability as follows:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_immutable,indent=0]
+----
+
+These examples illustrates the principal behind
 Groovy's record feature offering three levels of convenience:
 
 * Using the `record` keyword for maximum succinctness
@@ -155,7 +178,7 @@ Groovy's record feature offering three levels of convenience:
 
 == Other differences to Java
 
-Groovy supports creating record-like classes as well as native records.
+Groovy supports creating _record-like_ classes as well as native records.
 Record-like classes don't extend Java's `Record` class and such classes
 won't be seen by Java as records but will otherwise have similar properties.
 

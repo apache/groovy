@@ -43,4 +43,28 @@ public @interface RecordBase {
      * Mode to use when creating record type classes.
      */
     RecordTypeMode mode() default RecordTypeMode.AUTO;
-}
+
+    /**
+     * If {@code true}, this adds a method {@code copyWith} which takes a Map of
+     * new property values and returns a new instance of the record class with
+     * these values set.
+     * Example:
+     * <pre class="groovyTestCase">
+     * {@code @groovy.transform.RecordType}(copyWith = true)
+     * class Person {
+     *     String first, last
+     * }
+     *
+     * def tim   = new Person('tim', 'yates')
+     * def alice = tim.copyWith(first:'alice')
+     *
+     * assert tim.toString() == 'Person[first=tim, last=yates]'
+     * assert alice.toString() == 'Person[first=alice, last=yates]'
+     * </pre>
+     * Unknown keys in the map are ignored, and if the values would not change
+     * the object, then the original object is returned.
+     *
+     * If a method called {@code copyWith} that takes a single parameter already
+     * exists in the class, then this setting is ignored, and no method is generated.
+     */
+    boolean copyWith() default false;}

@@ -96,6 +96,37 @@ assert new Point3D(10, 20, 30).toString() == 'Point3D[coords=10,20,30]'
 '''
     }
 
+    void testCopyWith() {
+        assertScript '''
+import groovy.transform.RecordBase
+// tag::record_copywith[]
+@RecordBase(copyWith=true)
+record Fruit(String name, double price) {}
+def apple = new Fruit('Apple', 11.6)
+assert 'Apple' == apple.name()
+assert 11.6 == apple.price()
+
+def orange = apple.copyWith(name: 'Orange')
+assert orange.toString() == 'Fruit[name=Orange, price=11.6]'
+// end::record_copywith[]
+'''
+    }
+
+    void testImmutable() {
+        assertScript '''
+import groovy.transform.ImmutableProperties
+// tag::record_immutable[]
+@ImmutableProperties
+record Shopping(List items) {}
+
+def items = ['bread', 'milk']
+def shop = new Shopping(items)
+items << 'chocolate'
+assert shop.items() == ['bread', 'milk']
+// end::record_immutable[]
+'''
+    }
+
     void testRecordCompactConstructor() {
         assertScript '''
 // tag::record_compact_constructor[]

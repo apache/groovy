@@ -18,7 +18,6 @@
  */
 package groovy.transform
 
-import groovy.transform.options.ImmutablePropertyHandler
 import groovy.transform.stc.POJO
 import org.apache.groovy.lang.annotation.Incubating
 
@@ -44,13 +43,12 @@ import java.lang.annotation.Target
  * </pre>
  *
  * The {@code @RecordType} meta-annotation corresponds to adding the following annotations:
- * {@link RecordBase},
- * {@link ToString},
- * {@link EqualsAndHashCode},
+ * {@link RecordBase} (which internally piggybacks on {@code @ToString} and {@code @EqualsAndHashCode}),
  * {@link ImmutableOptions},
  * {@link PropertyOptions},
- * {@link TupleConstructor},
- * {@link MapConstructor} and
+ * {@link CompileStatic},
+ * {@link POJO},
+ * {@link TupleConstructor} and
  * {@link KnownImmutable}.
  *
  * Together these annotations instruct the compiler to execute the necessary transformations to add
@@ -73,13 +71,13 @@ import java.lang.annotation.Target
  * @see PropertyOptions
  * @see TupleConstructor
  * @see KnownImmutable
+ * @see CompileStatic
  * @see POJO
  * @since 4.0.0
  */
 @RecordBase
-@ImmutableOptions
-@PropertyOptions(propertyHandler = ImmutablePropertyHandler)
-@TupleConstructor(namedVariant = true)
+@TupleConstructor(namedVariant = true, force = true)
+@PropertyOptions
 @KnownImmutable
 @POJO
 @CompileStatic

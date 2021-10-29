@@ -58,6 +58,7 @@ import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceProperties;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.hasDeclaredMethod;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
@@ -142,7 +143,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
 
         final List<PropertyNode> pList = getInstanceProperties(cNode);
         for (PropertyNode pNode : pList) {
-            adjustPropertyForImmutability(cNode, pNode, handler);
+            adjustPropertyForShallowImmutability(cNode, pNode, handler);
             pNode.setModifiers(pNode.getModifiers() | ACC_FINAL);
         }
         final List<FieldNode> fList = cNode.getFields();
@@ -182,7 +183,10 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             if (unsupportedTupleAttribute(tupleCons, "includeProperties")) return;
             if (unsupportedTupleAttribute(tupleCons, "includeSuperFields")) return;
             if (unsupportedTupleAttribute(tupleCons, "callSuper")) return;
-            unsupportedTupleAttribute(tupleCons, "force");
+        }
+
+        if (!pList.isEmpty() && memberHasValue(node, "copyWith", Boolean.TRUE) && !hasDeclaredMethod(cNode, "copyWith", 1)) {
+            ImmutableASTTransformation.createCopyWith(cNode, pList);
         }
     }
 
@@ -305,16 +309,17 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         }
     }
 
-    private static void adjustPropertyForImmutability(ClassNode cNode, PropertyNode pNode, PropertyHandler handler) {
+    // guarantee shallow immutability but property handler may do defensive copying
+    private static void adjustPropertyForShallowImmutability(ClassNode cNode, PropertyNode pNode, PropertyHandler handler) {
         final FieldNode fNode = pNode.getField();
         fNode.setModifiers((pNode.getModifiers() & (~ACC_PUBLIC)) | ACC_FINAL | ACC_PRIVATE);
         boolean isGetterDefined = cNode.getDeclaredMethods(pNode.getName()).stream()
                 .anyMatch(MethodNodeUtils::isGetterCandidate);
         if (!isGetterDefined) {
+            pNode.setGetterName(pNode.getName());
             Statement getter = handler.createPropGetter(pNode);
             if (getter != null) {
                 pNode.setGetterBlock(getter);
-                pNode.setGetterName(pNode.getName());
             }
         }
     }

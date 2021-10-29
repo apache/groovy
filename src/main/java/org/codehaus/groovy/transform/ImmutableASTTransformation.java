@@ -287,7 +287,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
         );
     }
 
-    private static void createCopyWith(final ClassNode cNode, final List<PropertyNode> pList) {
+    static void createCopyWith(final ClassNode cNode, final List<PropertyNode> pList) {
         BlockStatement body = new BlockStatement();
         body.addStatement(ifS(
                 orX(
