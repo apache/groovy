@@ -1866,49 +1866,49 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5594
     void testMapEntryUsingPropertyNotation() {
         assertScript '''
-        Map.Entry<Date, Integer> entry = null
+            Map.Entry<Date, Integer> entry = null
 
-        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-            assert node.getNodeMetaData(INFERRED_TYPE) == make(Date)
-        })
-        def k = entry?.key
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == make(Date)
+            })
+            def k = entry?.key
 
-        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-            assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
-        })
-        def v = entry?.value
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == Integer_TYPE
+            })
+            def v = entry?.value
         '''
     }
 
     void testInferenceFromMap() {
         assertScript '''
-        Map<Date, Integer> map = [:]
+            Map<Date, Integer> map = [:]
 
-        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-            def infType = node.getNodeMetaData(INFERRED_TYPE)
-            assert infType == make(Set)
-            def entryInfType = infType.genericsTypes[0].type
-            assert entryInfType == make(Map.Entry)
-            assert entryInfType.genericsTypes[0].type == make(Date)
-            assert entryInfType.genericsTypes[1].type == Integer_TYPE
-        })
-        def entries = map?.entrySet()
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def infType = node.getNodeMetaData(INFERRED_TYPE)
+                assert infType == make(Set)
+                def entryInfType = infType.genericsTypes[0].type
+                assert entryInfType == make(Map.Entry)
+                assert entryInfType.genericsTypes[0].type == make(Date)
+                assert entryInfType.genericsTypes[1].type == Integer_TYPE
+            })
+            def entries = map?.entrySet()
         '''
     }
 
     void testInferenceFromListOfMaps() {
         assertScript '''
-        List<Map<Date, Integer>> maps = []
+            List<Map<Date, Integer>> maps = []
 
-        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-            def listType = node.getNodeMetaData(INFERRED_TYPE)
-            assert listType == Iterator_TYPE
-            def infType = listType.genericsTypes[0].type
-            assert infType == make(Map)
-            assert infType.genericsTypes[0].type == make(Date)
-            assert infType.genericsTypes[1].type == Integer_TYPE
-        })
-        def iter = maps?.iterator()
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def listType = node.getNodeMetaData(INFERRED_TYPE)
+                assert listType == Iterator_TYPE
+                def infType = listType.genericsTypes[0].type
+                assert infType == make(Map)
+                assert infType.genericsTypes[0].type == make(Date)
+                assert infType.genericsTypes[1].type == Integer_TYPE
+            })
+            def iter = maps?.iterator()
         '''
     }
 
@@ -3215,7 +3215,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testHiddenGenerics() {
-        // Groovy-6237
+        // GROOVY-6237
         assertScript '''
             class MyList extends LinkedList<Object> {}
             List<Object> o = new MyList()
@@ -3227,18 +3227,18 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<Blah> o = new MyList()
         ''','Incompatible generic argument types. Cannot assign MyList to: java.util.List<Blah>'
 
-        // Groovy-5873
-        assertScript """
+        // GROOVY-5873
+        assertScript '''
             abstract class Parent<T> {
                 public T value
             }
             class Impl extends Parent<Integer> {}
             Impl impl = new Impl()
             Integer i = impl.value
-        """
+        '''
 
         // GROOVY-5920
-        assertScript """
+        assertScript '''
             class Data<T> {
               T value
             }
@@ -3258,7 +3258,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
               }
             }
             Runner.main(null);
-        """
+        '''
     }
 
     void testReturnTypeInferenceRemovalWithGenerics() {

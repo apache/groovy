@@ -213,10 +213,12 @@ public class WideningCategories {
      */
     public static ClassNode lowestUpperBound(final ClassNode a, final ClassNode b) {
         ClassNode lub = lowestUpperBound(a, b, null, null);
-        if (lub==null || !lub.isUsingGenerics()) return lub;
-        // types may be parameterized. If so, we must ensure that generic type arguments
+        if (lub == null || !lub.isUsingGenerics()
+                || lub.isGenericsPlaceHolder()) { // GROOVY-10330
+            return lub;
+        }
+        // types may be parameterized; if so, ensure that generic type arguments
         // are made compatible
-
         if (lub instanceof LowestUpperBoundClassNode) {
             // no parent super class representing both types could be found
             // or both class nodes implement common interfaces which may have
