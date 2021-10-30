@@ -193,8 +193,32 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign groovy.lang.Closure<X> to: groovy.lang.Closure<A<java.lang.Number>>'
     }
 
-    // GROOVY-8427
+    // GROOVY-10128, GROOVY-10306
     void testClosureReturnTypeInference8() {
+        assertScript '''
+            java.util.function.Function<String, Number> x = { s ->
+                long n = 1
+                return n
+            }
+            assert x.apply('') == 1L
+        '''
+        assertScript '''
+            class C {
+                byte p = 1
+                void m() {
+                    byte v = 2
+                    java.util.function.Supplier<Number> one = { -> p }
+                    java.util.function.Supplier<Number> two = { -> v }
+                    assert one.get() == (byte)1
+                    assert two.get() == (byte)2
+                }
+            }
+            new C().m()
+        '''
+    }
+
+    // GROOVY-8427
+    void testClosureReturnTypeInference9() {
         assertScript '''
             import java.util.function.Consumer
 
@@ -216,7 +240,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8202
-    void testClosureReturnTypeInference9() {
+    void testClosureReturnTypeInference10() {
         assertScript '''
             void proc() {
             }

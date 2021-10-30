@@ -2211,8 +2211,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 type = STRING_TYPE; // GROOVY-9971: convert GString to String at point of return
             } else if (inferredReturnType != null
                     && !GenericsUtils.hasUnresolvedGenerics(inferredReturnType)
-                    &&  GenericsUtils.buildWildcardType(inferredReturnType).isCompatibleWith(type)) {
-                type = inferredReturnType; // GROOVY-8310, GROOVY-10082, GROOVY-10091: allow simple covariance
+                    &&  GenericsUtils.buildWildcardType(inferredReturnType).isCompatibleWith(wrapTypeIfNecessary(type))) {
+                type = inferredReturnType; // GROOVY-8310, GROOVY-10082, GROOVY-10091, GROOVY-10128, GROOVY-10306: allow simple covariance
             }
             return type;
         }
