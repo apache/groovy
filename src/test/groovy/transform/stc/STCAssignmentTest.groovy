@@ -952,14 +952,28 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     // GROOVY-5535
     void testAssignToNullInsideIf() {
         assertScript '''
-            Date foo() {
-                Date result = new Date()
+            Date test() {
+                Date x = new Date()
                 if (true) {
-                    result = null
+                    x = null
                 }
-                return result
+                x
             }
-            assert foo() == null
+            assert test() == null
+        '''
+    }
+
+    // GROOVY-10294
+    void testAssignToNullInsideIf2() {
+        assertScript '''
+            CharSequence test() {
+                def x = 'works'
+                if (false) {
+                    x = null
+                }
+                x
+            }
+            assert test() == 'works'
         '''
     }
 

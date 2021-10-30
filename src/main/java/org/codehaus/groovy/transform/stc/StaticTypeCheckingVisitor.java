@@ -880,8 +880,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
 
                 // track conditional assignment
-                if (!isNullConstant(rightExpression)
-                        && leftExpression instanceof VariableExpression
+                if (leftExpression instanceof VariableExpression
                         && typeCheckingContext.ifElseForWhileAssignmentTracker != null) {
                     Variable accessedVariable = ((VariableExpression) leftExpression).getAccessedVariable();
                     if (accessedVariable instanceof Parameter) {
@@ -1050,14 +1049,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected ClassNode getOriginalDeclarationType(final Expression lhs) {
         if (lhs instanceof VariableExpression) {
             Variable var = findTargetVariable((VariableExpression) lhs);
-            if (var instanceof PropertyNode) {
-                // Do NOT trust the type of the property node!
-                return getType(lhs);
+            if (!(var instanceof DynamicVariable || var instanceof PropertyNode)) {
+                return var.getOriginType();
             }
-            if (var instanceof DynamicVariable) return getType(lhs);
-            return var.getOriginType();
-        }
-        if (lhs instanceof FieldExpression) {
+        } else if (lhs instanceof FieldExpression) {
             return ((FieldExpression) lhs).getField().getOriginType();
         }
         return getType(lhs);
@@ -4088,18 +4083,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private void restoreTypeBeforeConditional() {
         typeCheckingContext.ifElseForWhileAssignmentTracker.forEach((var, types) -> {
-            ClassNode originType = types.get(0);
-            storeType(var, originType);
+            var.putNodeMetaData(INFERRED_TYPE, types.get(0));
         });
     }
 
     protected Map<VariableExpression, ClassNode> popAssignmentTracking(final Map<VariableExpression, List<ClassNode>> oldTracker) {
         Map<VariableExpression, ClassNode> assignments = new HashMap<>();
         typeCheckingContext.ifElseForWhileAssignmentTracker.forEach((var, types) -> {
-            ClassNode type = types.stream().filter(Objects::nonNull) // GROOVY-6099
-                .reduce(WideningCategories::lowestUpperBound).get();
-            assignments.put(var, type);
-            storeType(var, type);
+            types.stream().filter(t -> t != null && t != UNKNOWN_PARAMETER_TYPE) // GROOVY-6099, GROOVY-10294
+                    .reduce(WideningCategories::lowestUpperBound).ifPresent(type -> {
+                assignments.put(var, type);
+                storeType(var, type);
+            });
         });
         typeCheckingContext.ifElseForWhileAssignmentTracker = oldTracker;
         return assignments;
@@ -4348,15 +4343,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (exp instanceof VariableExpression) {
             VariableExpression var = (VariableExpression) exp;
             Variable accessedVariable = var.getAccessedVariable();
-            if (accessedVariable != exp && accessedVariable instanceof VariableExpression) {
-                storeType((VariableExpression) accessedVariable, cn);
+            if (accessedVariable instanceof VariableExpression) {
+                if (accessedVariable != exp)
+                    storeType((VariableExpression) accessedVariable, cn);
+            } else if (accessedVariable instanceof Parameter
+                    || accessedVariable instanceof PropertyNode
+                    && ((PropertyNode) accessedVariable).getField().isSynthetic()) {
+                ((AnnotatedNode) accessedVariable).putNodeMetaData(INFERRED_TYPE, cn);
             }
-            if (accessedVariable instanceof Parameter
-                    || (accessedVariable instanceof PropertyNode
-                        && ((PropertyNode) accessedVariable).getField().isSynthetic())) {
-                ((ASTNode) accessedVariable).putNodeMetaData(INFERRED_TYPE, cn);
-            }
-            if (var.isClosureSharedVariable() && cn != null) {
+            if (cn != null && var.isClosureSharedVariable()) {
                 List<ClassNode> assignedTypes = typeCheckingContext.closureSharedVariablesAssignmentTypes.computeIfAbsent(var, k -> new LinkedList<ClassNode>());
                 assignedTypes.add(cn);
             }
