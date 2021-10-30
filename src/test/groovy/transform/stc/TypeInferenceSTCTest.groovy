@@ -18,7 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.test.NotYetImplemented
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
@@ -778,35 +777,6 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             String s = new Object() // anything assignable to String
             s.toUpperCase()
-        '''
-    }
-
-    @NotYetImplemented // GROOVY-10294
-    void testFlowTypingWithNullAssignment() {
-        assertScript '''
-            class C {
-            }
-            C test() {
-                def x = new C()
-                if (false) {
-                    x = null
-                }
-                x
-            }
-            assert test() != null
-        '''
-    }
-
-    // GROOVY-10308
-    void testFlowTypingWithNullAssignment2() {
-        assertScript '''
-            class C<T> {
-                T p
-            }
-            def x = { -> new C<String>() }
-            def y = x()
-            def z = y.p // false positive: field access error
-            y = null
         '''
     }
 
