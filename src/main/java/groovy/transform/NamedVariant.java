@@ -51,7 +51,7 @@ import java.lang.annotation.Target;
  *     <li>If no parameters with {@code @NamedParam} or {@code @NamedDelegate} annotations are found then:
  *     <ul>
  *         <li>If {@code autoDelegate} is false (the default), all parameters are treated as if they were named parameters</li>
- *         <li>If {@code autoDelegate} is true, the first parameters is treated as if it was a delegate parameter</li>
+ *         <li>If {@code autoDelegate} is true, the first parameter is treated as if it is a delegate parameter</li>
  *     </ul>
  *     </li>
  * </ol>
