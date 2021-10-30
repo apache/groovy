@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.VariableScope;
@@ -287,7 +288,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
         );
     }
 
-    static void createCopyWith(final ClassNode cNode, final List<PropertyNode> pList) {
+    static MethodNode createCopyWith(final ClassNode cNode, final List<PropertyNode> pList) {
         BlockStatement body = new BlockStatement();
         body.addStatement(ifS(
                 orX(
@@ -311,7 +312,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
 
         final ClassNode clonedNode = cNode.getPlainNodeReference();
 
-        addGeneratedMethod(cNode, "copyWith",
+        return addGeneratedMethod(cNode, "copyWith",
                 ACC_PUBLIC | ACC_FINAL,
                 clonedNode,
                 params(new Parameter(new ClassNode(Map.class), "map")),

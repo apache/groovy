@@ -110,6 +110,17 @@ def orange = apple.copyWith(name: 'Orange')
 assert orange.toString() == 'Fruit[name=Orange, price=11.6]'
 // end::record_copywith[]
 '''
+        assertScript '''
+import groovy.transform.RecordBase
+import static groovy.test.GroovyAssert.shouldFail
+
+@RecordBase(copyWith=false)
+record Fruit(String name, double price) {}
+def apple = new Fruit('Apple', 11.6)
+shouldFail(MissingMethodException) {
+    apple.copyWith(name: 'Orange')
+}
+'''
     }
 
     void testImmutable() {

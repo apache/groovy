@@ -57,7 +57,9 @@ include::../test/RecordSpecificationTest.groovy[tags=record_message_equivalent,i
 ----
 
 Note the special naming convention for record getters. They are the same name as the field
-(rather than the otherwise common JavaBean convention of capitalized with a "get" prefix).
+(rather than the often common JavaBean convention of capitalized with a "get" prefix).
+Rather than refering to a records fields or properties, the term _component_
+is typicaly used for records. So our `Message` record has `from`, `to`, and `body` components.
 
 Like in Java, you can override the normally implicitly supplied methods
 by writing your own:
@@ -148,15 +150,21 @@ include::../test/RecordSpecificationTest.groovy[tags=record_point2d_tostring_ann
 
 We can see here that without the package name it would have the same toString as our previous example.
 
-=== CopyWith
+=== Copying
 
-For a record with many fields, it can be useful to make a copy with one or more fields changes.
-This can be enabled by setting the `copyWith` annotation attribute to `true`:
+It can be useful to make a copy of a record with some components changed.
+This can be done using a provided `copyWith` method which takes named arguments.
+Record components are set from the supplied arguments.
+For components not mentioned, a (shallow) copy of the original record commponent is used.
+Here is how you might use `copyWith` for the `Fruit` record:
 
 [source,groovy]
 ----
 include::../test/RecordSpecificationTest.groovy[tags=record_copywith,indent=0]
 ----
+
+The `copyWith` functionality can be disabled by setting the
+`RecordBase#copyWith` annotation attribute to `false`.
 
 === Deep immutability
 
@@ -173,8 +181,8 @@ These examples illustrates the principal behind
 Groovy's record feature offering three levels of convenience:
 
 * Using the `record` keyword for maximum succinctness
-* Support low-ceremony customization using declarative annotations
-* Provide normal method implementations when full control is required
+* Supporting low-ceremony customization using declarative annotations
+* Allowing normal method implementations when full control is required
 
 == Other differences to Java
 

@@ -185,7 +185,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             if (unsupportedTupleAttribute(tupleCons, "callSuper")) return;
         }
 
-        if (!pList.isEmpty() && memberHasValue(node, "copyWith", Boolean.TRUE) && !hasDeclaredMethod(cNode, "copyWith", 1)) {
+        if (!pList.isEmpty() && !memberHasValue(node, "copyWith", Boolean.FALSE) && !hasDeclaredMethod(cNode, "copyWith", 1)) {
             ImmutableASTTransformation.createCopyWith(cNode, pList);
         }
     }
