@@ -5358,7 +5358,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             // in case of "<T, U extends Type<T>>" we can learn about "T" from resolved "U"
             Map<GenericsTypeName, GenericsType> connections = Arrays.stream(methodGenericTypes)
-                    .collect(toMap(gt -> new GenericsTypeName(gt.getName()), Function.identity()));
+                    .collect(toMap(gt -> new GenericsTypeName(gt.getName()), gt -> gt, (v,x) -> v));
             extractGenericsConnectionsForSuperClassAndInterfaces(connections, resolvedPlaceholders);
         }
 
