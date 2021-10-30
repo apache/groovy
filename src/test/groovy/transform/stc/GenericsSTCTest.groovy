@@ -1164,7 +1164,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-10230
+    // GROOVY-10230
     void testDiamondInferrenceFromConstructor23() {
         assertScript '''
             class A {

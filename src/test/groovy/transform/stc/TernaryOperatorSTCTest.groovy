@@ -131,6 +131,28 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10330
+    void testTypeParameterTypeParameter() {
+        assertScript '''
+            class C<T> {
+                T y
+                void m(T x, java.util.function.Function<T, T> f) {
+                    assert f.apply(x) == 'foo'
+                }
+                void test(T x, java.util.function.Function<T, T> f) {
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        def type = node.getNodeMetaData(INFERRED_TYPE)
+                        assert type.isGenericsPlaceHolder()
+                        assert type.unresolvedName == 'T'
+                    })
+                    def z = true ? x : y
+                    m(z, f)
+                }
+            }
+            new C<String>().test('FOO', { it.toLowerCase() })
+        '''
+    }
+
     // GROOVY-10357
     void testAbstractMethodDefault() {
         assertScript '''
