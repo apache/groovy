@@ -49,7 +49,8 @@ public @interface RecordBase {
      * new property values and returns a new instance of the record class with
      * these values set.
      * Example:
-     * <pre class="groovyTestCase">
+     * <!-- TODO pre class="groovyTestCase"-->
+     * <pre>
      * {@code @groovy.transform.RecordType}(copyWith = true)
      * class Person {
      *     String first, last

@@ -288,7 +288,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
         );
     }
 
-    static MethodNode createCopyWith(final ClassNode cNode, final List<PropertyNode> pList) {
+    private static void createCopyWith(final ClassNode cNode, final List<PropertyNode> pList) {
         BlockStatement body = new BlockStatement();
         body.addStatement(ifS(
                 orX(
@@ -312,7 +312,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
 
         final ClassNode clonedNode = cNode.getPlainNodeReference();
 
-        return addGeneratedMethod(cNode, "copyWith",
+        addGeneratedMethod(cNode, "copyWith",
                 ACC_PUBLIC | ACC_FINAL,
                 clonedNode,
                 params(new Parameter(new ClassNode(Map.class), "map")),

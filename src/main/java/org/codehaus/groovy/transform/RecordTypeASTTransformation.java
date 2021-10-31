@@ -20,6 +20,7 @@ package org.codehaus.groovy.transform;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.transform.CompilationUnitAware;
+import groovy.transform.NamedParam;
 import groovy.transform.RecordBase;
 import groovy.transform.RecordTypeMode;
 import groovy.transform.options.PropertyHandler;
@@ -34,15 +35,19 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.RecordComponentNode;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -54,14 +59,26 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
+import static org.codehaus.groovy.ast.ClassHelper.MAP_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.hasDeclaredMethod;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -78,6 +95,10 @@ import static org.objectweb.asm.Opcodes.IRETURN;
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class RecordTypeASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
     private CompilationUnit compilationUnit;
+    private static final String COPY_WITH = "copyWith";
+    private static final String NAMED_ARGS = "namedArgs";
+    private static final ClassNode NAMED_PARAM_TYPE = makeWithoutCaching(NamedParam.class, false);
+    private static final int PUBLIC_FINAL = ACC_PUBLIC | ACC_FINAL;
     private static final String RECORD_CLASS_NAME = "java.lang.Record";
 
     private static final Class<? extends Annotation> MY_CLASS = RecordBase.class;
@@ -185,9 +206,26 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             if (unsupportedTupleAttribute(tupleCons, "callSuper")) return;
         }
 
-        if (!pList.isEmpty() && !memberHasValue(node, "copyWith", Boolean.FALSE) && !hasDeclaredMethod(cNode, "copyWith", 1)) {
-            ImmutableASTTransformation.createCopyWith(cNode, pList);
+        if (!pList.isEmpty() && !memberHasValue(node, COPY_WITH, Boolean.FALSE) && !hasDeclaredMethod(cNode, COPY_WITH, 1)) {
+            createCopyWith(cNode, pList);
         }
+    }
+
+    private void createCopyWith(ClassNode cNode, List<PropertyNode> pList) {
+        ArgumentListExpression args = new ArgumentListExpression();
+        Parameter mapParam = param(GenericsUtils.nonGeneric(MAP_TYPE), NAMED_ARGS);
+        Expression mapArg = varX(NAMED_ARGS, MAP_TYPE);
+        for (PropertyNode pNode : pList) {
+            String name = pNode.getName();
+            args.addExpression(ternaryX(callX(mapArg, "containsKey", args(constX(name))), propX(mapArg, name), thisPropX(true, name)));
+            AnnotationNode namedParam = new AnnotationNode(NAMED_PARAM_TYPE);
+            namedParam.addMember("value", constX(name));
+            namedParam.addMember("type", classX(pNode.getType()));
+            namedParam.addMember("required", constX(false, true));
+            mapParam.addAnnotation(namedParam);
+        }
+        Statement body = returnS(nullX() /*ctorX(cNode.getPlainNodeReference(), args)*/);
+        addGeneratedMethod(cNode, COPY_WITH, PUBLIC_FINAL, cNode.getPlainNodeReference(), params(mapParam), ClassNode.EMPTY_ARRAY, body);
     }
 
     private void createRecordToString(ClassNode cNode) {
@@ -200,7 +238,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
                     mv.visitEnd();
                 })
         );
-        addGeneratedMethod(cNode, "toString", ACC_PUBLIC | ACC_FINAL, ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        addGeneratedMethod(cNode, "toString", PUBLIC_FINAL, ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
     private void createRecordEquals(ClassNode cNode) {
@@ -214,7 +252,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
                     mv.visitEnd();
                 })
         );
-        addGeneratedMethod(cNode, "equals", ACC_PUBLIC | ACC_FINAL, ClassHelper.boolean_TYPE, params(param(ClassHelper.OBJECT_TYPE, "other")), ClassNode.EMPTY_ARRAY, body);
+        addGeneratedMethod(cNode, "equals", PUBLIC_FINAL, ClassHelper.boolean_TYPE, params(param(ClassHelper.OBJECT_TYPE, "other")), ClassNode.EMPTY_ARRAY, body);
     }
 
     private void createRecordHashCode(ClassNode cNode) {
@@ -227,7 +265,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
                     mv.visitEnd();
                 })
         );
-        addGeneratedMethod(cNode, "hashCode", ACC_PUBLIC | ACC_FINAL, ClassHelper.int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        addGeneratedMethod(cNode, "hashCode", PUBLIC_FINAL, ClassHelper.int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
     private Object[] createBootstrapMethodArguments(ClassNode cNode) {
