@@ -3629,39 +3629,38 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         Parameter[] parameters = selectedMethod.getParameters();
+        final int nthParameter = parameters.length - 1;
 
-        List<Integer> methodReferenceParamIndexList = new LinkedList<>();
-        List<Expression> newArgumentExpressionList = new LinkedList<>();
+        List<Integer> methodReferencePositions = new LinkedList<>();
+        List<Expression> newArgumentExpressions = new LinkedList<>();
         for (int i = 0, n = argumentExpressions.size(); i < n; i += 1) {
             Expression argumentExpression = argumentExpressions.get(i);
             if (!(argumentExpression instanceof MethodReferenceExpression)) {
-                newArgumentExpressionList.add(argumentExpression);
-                continue;
+                newArgumentExpressions.add(argumentExpression);
+            } else {
+                Parameter param = parameters[Math.min(i, nthParameter)]; // GROOVY-10336
+                ClassNode paramType = param.getType();
+                if (i >= nthParameter && paramType.isArray())
+                    paramType = paramType.getComponentType();
+
+                if (!isFunctionalInterface(paramType.redirect())) {
+                    addError("The argument is a method reference, but the parameter type is not a functional interface", argumentExpression);
+                    newArgumentExpressions.add(argumentExpression);
+                } else {
+                    methodReferencePositions.add(i);
+                    newArgumentExpressions.add(constructLambdaExpressionForMethodReference(paramType));
+                }
             }
-
-            Parameter param = parameters[i];
-            ClassNode paramType = param.getType();
-
-            if (!isFunctionalInterface(paramType.redirect())) {
-                addError("The argument is a method reference, but the parameter type is not a functional interface", argumentExpression);
-                newArgumentExpressionList.add(argumentExpression);
-                continue;
-            }
-
-            LambdaExpression constructedLambdaExpression = constructLambdaExpressionForMethodReference(paramType);
-
-            newArgumentExpressionList.add(constructedLambdaExpression);
-            methodReferenceParamIndexList.add(i);
         }
 
-        if (methodReferenceParamIndexList.isEmpty()) return; // GROOVY-10269
+        if (methodReferencePositions.isEmpty()) return; // GROOVY-10269
 
-        visitMethodCallArguments(receiver, new ArgumentListExpression(newArgumentExpressionList), true, selectedMethod);
+        visitMethodCallArguments(receiver, args(newArgumentExpressions), true, selectedMethod);
 
-        for (Integer methodReferenceParamIndex : methodReferenceParamIndexList) {
-            LambdaExpression lambdaExpression = (LambdaExpression) newArgumentExpressionList.get(methodReferenceParamIndex);
-            ClassNode[] argumentTypes = lambdaExpression.getNodeMetaData(CLOSURE_ARGUMENTS);
-            argumentExpressions.get(methodReferenceParamIndex).putNodeMetaData(CLOSURE_ARGUMENTS, argumentTypes);
+        for (int index : methodReferencePositions) {
+            Expression lambdaExpression = newArgumentExpressions.get(index);
+            Expression methodReferenceExpression = argumentExpressions.get(index);
+            methodReferenceExpression.putNodeMetaData(CLOSURE_ARGUMENTS, lambdaExpression.getNodeMetaData(CLOSURE_ARGUMENTS));
         }
     }
 
