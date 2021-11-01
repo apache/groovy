@@ -139,6 +139,48 @@ assert shop.items() == ['bread', 'milk']
 '''
     }
 
+    void testToList() {
+        assertScript '''
+// tag::record_to_list[]
+record Point(int x, int y, String color) { }
+
+def p = new Point(100, 200, 'green')
+def (x, y, c) = p.toList()
+assert x == 100
+assert y == 200
+assert c == 'green'
+// end::record_to_list[]
+'''
+    }
+
+    void testComponents() {
+        def assertScript = '''
+// tag::record_components[]
+import groovy.transform.*
+
+@RecordBase(componentTuple=true)
+record Point(int x, int y, String color) { }
+
+@CompileStatic
+def method() {
+    def p1 = new Point(100, 200, 'green')
+    def (int x1, int y1, String c1) = p1.components()
+    assert x1 == 100
+    assert y1 == 200
+    assert c1 == 'green'
+
+    def p2 = new Point(10, 20, 'blue')
+    def (x2, y2, c2) = p2.components()
+    assert x2 * 10 == 100
+    assert y2 ** 2 == 400
+    assert c2.toUpperCase() == 'BLUE'
+}
+
+method()
+// end::record_components[]
+'''
+    }
+
     void testRecordCompactConstructor() {
         assertScript '''
 // tag::record_compact_constructor[]

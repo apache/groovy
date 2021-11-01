@@ -68,4 +68,95 @@ public @interface RecordBase {
      * If a method called {@code copyWith} that takes a single parameter already
      * exists in the class, then this setting is ignored, and no method is generated.
      */
-    boolean copyWith() default false;}
+    boolean copyWith() default false;
+
+    /**
+     * If {@code true}, this adds a method {@code getAt(int)} which given
+     * an integer n, returns the n'th component in the record.
+     * Example:
+     * <pre class="groovyTestCase">
+     * import static groovy.test.GroovyAssert.shouldFail
+     *
+     * record Point(int x, int y, String color) {}
+     *
+     * def p = new Point(100, 200, 'green')
+     * assert p[0] == 100
+     * assert p[1] == 200
+     * assert p[2] == 'green'
+     * shouldFail(IllegalArgumentException) {
+     *     p[-1]
+     * }
+     *
+     * // getAt also enables destructuring
+     * def (x, y, c) = p
+     * assert x == 100
+     * assert y == 200
+     * assert c == 'green'
+     * </pre>
+     *
+     * If a method {@code getAt(int)} already exists in the class,
+     * then this setting is ignored, and no additional method is generated.
+     */
+    boolean getAt() default true;
+
+    /**
+     * If {@code true}, this adds a method {@code toList()} to the record
+     * which returns the record's components as a list.
+     *
+     * Example:
+     * <pre class="groovyTestCase">
+     * record Point(int x, int y, String color) {}
+     * def p = new Point(100, 200, 'green')
+     * assert p.toList() == [100, 200, 'green']
+     * </pre>
+     *
+     * If a method {@code toList()} already exists in the class,
+     * then this setting is ignored, and no additional method is generated.
+     */
+    boolean toList() default true;
+
+    /**
+     * If {@code true}, this adds a method {@code toMap()} to the record.
+     *
+     * Example:
+     * <pre class="groovyTestCase">
+     * record Point(int x, int y, String color) {}
+     * def p = new Point(100, 200, 'green')
+     * assert p.toMap() == [x:100, y:200, color:'green']
+     * </pre>
+     *
+     * If a method {@code toMap()} already exists in the class,
+     * then this setting is ignored, and no additional method is generated.
+     */
+    boolean toMap() default true;
+
+    /**
+     * If {@code true}, this adds a method {@code components()} to the record
+     * which returns its components as a typed tuple {@code Tuple0}, {@code Tuple1}...
+     *
+     * Example:
+     * <pre class="groovyTestCase">
+     * import groovy.transform.*
+     *
+     * {@code @RecordBase(components=true)}
+     * record Point(int x, int y, String color) {}
+     *
+     * def (x, y, c) = new Point(100, 200, 'green').components()
+     * assert x == 100
+     * assert y.intdiv(2) == 100
+     * assert c.toUpperCase() == 'GREEN'
+     * </pre>
+     *
+     * The signature of the components method for this example is:
+     * <pre>
+     * Tuple3<Integer, Integer, String> components()
+     * </pre>
+     * This is suitable for destructuring in {@code TypeChecked} scenarios.
+     *
+     * If a method {@code components()} already exists in the class,
+     * then this setting is ignored, and no additional method is generated.
+     * It is a compile-time error if there are more components in the record
+     * than the largest TupleN class in the Groovy codebase.
+     */
+    boolean components() default false;
+}

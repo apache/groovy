@@ -31,53 +31,65 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
+import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.MAP_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
+import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.caseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.hasDeclaredMethod;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.mapEntryX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.plusX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.switchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -95,11 +107,18 @@ import static org.objectweb.asm.Opcodes.IRETURN;
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class RecordTypeASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
     private CompilationUnit compilationUnit;
+    private static final ClassNode ARRAYLIST_TYPE = makeWithoutCaching(ArrayList.class, false);
+    private static final String COMPONENTS = "components";
     private static final String COPY_WITH = "copyWith";
+    private static final String GET_AT = "getAt";
+    private static final ClassNode ILLEGAL_ARGUMENT = makeWithoutCaching(IllegalArgumentException.class);
+    private static final ClassNode LHMAP_TYPE = makeWithoutCaching(LinkedHashMap.class, false);
     private static final String NAMED_ARGS = "namedArgs";
     private static final ClassNode NAMED_PARAM_TYPE = makeWithoutCaching(NamedParam.class, false);
     private static final int PUBLIC_FINAL = ACC_PUBLIC | ACC_FINAL;
     private static final String RECORD_CLASS_NAME = "java.lang.Record";
+    private static final String TO_LIST = "toList";
+    private static final String TO_MAP = "toMap";
 
     private static final Class<? extends Annotation> MY_CLASS = RecordBase.class;
     public static final ClassNode MY_TYPE = makeWithoutCaching(MY_CLASS, false);
@@ -206,9 +225,79 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             if (unsupportedTupleAttribute(tupleCons, "callSuper")) return;
         }
 
-        if (!pList.isEmpty() && !memberHasValue(node, COPY_WITH, Boolean.FALSE) && !hasDeclaredMethod(cNode, COPY_WITH, 1)) {
+        if (!memberHasValue(node, COPY_WITH, Boolean.FALSE) && !hasDeclaredMethod(cNode, COPY_WITH, 1)) {
             createCopyWith(cNode, pList);
         }
+
+        if (!memberHasValue(node, GET_AT, Boolean.FALSE) && !hasDeclaredMethod(cNode, GET_AT, 1)) {
+            createGetAt(cNode, pList);
+        }
+
+        if (!memberHasValue(node, TO_LIST, Boolean.FALSE) && !hasDeclaredMethod(cNode, TO_LIST, 0)) {
+            createToList(cNode, pList);
+        }
+
+        if (!memberHasValue(node, TO_MAP, Boolean.FALSE) && !hasDeclaredMethod(cNode, TO_MAP, 0)) {
+            createToMap(cNode, pList);
+        }
+
+        if (memberHasValue(node, COMPONENTS, Boolean.TRUE) && !hasDeclaredMethod(cNode, COMPONENTS, 0)) {
+            createComponents(cNode, pList);
+        }
+    }
+
+    private void createComponents(ClassNode cNode, List<PropertyNode> pList) {
+        if (pList.size() > 16) { // Groovy currently only goes to Tuple16
+            addError("Record has too many components for a components() method", cNode);
+        }
+        ClassNode tupleClass = getClass(cNode, "groovy.lang.Tuple" + pList.size());
+        if (tupleClass == null) return;
+        List<GenericsType> gtypes = new ArrayList<>();
+        ArgumentListExpression args = new ArgumentListExpression();
+        for (PropertyNode pNode : pList) {
+            args.addExpression(callThisX(pNode.getName()));
+            gtypes.add(new GenericsType(getWrapper(pNode.getType())));
+        }
+        tupleClass.setGenericsTypes(gtypes.toArray(new GenericsType[0]));
+        Statement body = returnS(ctorX(tupleClass, args));
+        addGeneratedMethod(cNode, COMPONENTS, PUBLIC_FINAL, tupleClass, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+    }
+
+    private ClassNode getClass(ClassNode cNode, String tupleName) {
+        try {
+            return ClassHelper.makeWithoutCaching(Class.forName(tupleName)).getPlainNodeReference();
+        } catch(ClassNotFoundException cnfe) {
+            addError("Unable to find Tuple class '" + tupleName + "'", cNode);
+            return null;
+        }
+    }
+
+    private void createToList(ClassNode cNode, List<PropertyNode> pList) {
+        List<Expression> args = new ArrayList<>();
+        for (PropertyNode pNode : pList) {
+            args.add(callThisX(pNode.getName()));
+        }
+        Statement body = returnS(ctorX(ARRAYLIST_TYPE.getPlainNodeReference(), listX(args)));
+        addGeneratedMethod(cNode, TO_LIST, PUBLIC_FINAL, LIST_TYPE.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+    }
+
+    private void createToMap(ClassNode cNode, List<PropertyNode> pList) {
+        List<MapEntryExpression> entries = new ArrayList<>();
+        for (PropertyNode pNode : pList) {
+            String name = pNode.getName();
+            entries.add(mapEntryX(name, callThisX(name)));
+        }
+        Statement body = returnS(ctorX(LHMAP_TYPE.getPlainNodeReference(), args(mapX(entries))));
+        addGeneratedMethod(cNode, TO_MAP, PUBLIC_FINAL, MAP_TYPE.getPlainNodeReference(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+    }
+
+    private void createGetAt(ClassNode cNode, List<PropertyNode> pList) {
+        Expression i = varX("i");
+        SwitchStatement body = switchS(i, throwS(ctorX(ILLEGAL_ARGUMENT, args(plusX(constX("No record component with index: "), i)))));
+        for (int j = 0; j < pList.size(); j++) {
+            body.addCase(caseS(constX(j), returnS(callThisX(pList.get(j).getName()))));
+        }
+        addGeneratedMethod(cNode, GET_AT, PUBLIC_FINAL, ClassHelper.OBJECT_TYPE.getPlainNodeReference(), params(param(int_TYPE, "i")), ClassNode.EMPTY_ARRAY, body);
     }
 
     private void createCopyWith(ClassNode cNode, List<PropertyNode> pList) {
@@ -224,7 +313,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             namedParam.addMember("required", constX(false, true));
             mapParam.addAnnotation(namedParam);
         }
-        Statement body = returnS(nullX() /*ctorX(cNode.getPlainNodeReference(), args)*/);
+        Statement body = returnS(nullX() /*ctorX(cNode.getPlainNodeReference(), args)*/); // TODO FIX
         addGeneratedMethod(cNode, COPY_WITH, PUBLIC_FINAL, cNode.getPlainNodeReference(), params(mapParam), ClassNode.EMPTY_ARRAY, body);
     }
 
