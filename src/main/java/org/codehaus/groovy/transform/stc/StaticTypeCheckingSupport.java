@@ -77,6 +77,7 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.codehaus.groovy.ast.ClassHelper.BigInteger_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Byte_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.CLASS_Type;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.COLLECTION_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Character_TYPE;
@@ -118,6 +119,7 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafe0;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isBigIntCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isFloatingCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isNumberCategory;
@@ -1587,7 +1589,15 @@ public abstract class StaticTypeCheckingSupport {
                 if (oldValue.isPlaceholder()) { // T=T or V, not T=String or ? ...
                     GenericsTypeName name = new GenericsTypeName(oldValue.getName());
                     GenericsType newValue = connections.get(name); // find "V" in T=V
-                    if (newValue == oldValue || name.getName().charAt(0) == '#') continue;
+                    if (newValue == oldValue) continue;
+                    if (newValue == null) { // GROOVY-10315
+                        newValue = connections.get(entry.getKey());
+                        if (newValue != null) {
+                            ClassNode o = makeClassSafe0(CLASS_Type, oldValue),
+                                      n = makeClassSafe0(CLASS_Type, newValue);
+                            newValue = lowestUpperBound(o,n).getGenericsTypes()[0];
+                        }
+                    }
                     if (newValue == null) {
                         entry.setValue(newValue = applyGenericsContext(connections, oldValue));
                         if (!checkForMorePlaceholders) {
