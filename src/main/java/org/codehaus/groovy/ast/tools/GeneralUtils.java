@@ -55,6 +55,7 @@ import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
@@ -229,6 +230,10 @@ public class GeneralUtils {
 
     public static StaticMethodCallExpression callX(final ClassNode receiver, final String methodName, final Expression args) {
         return new StaticMethodCallExpression(receiver, methodName, args);
+    }
+
+    public static CaseStatement caseS(final Expression expression, Statement code) {
+        return new CaseStatement(expression, code);
     }
 
     public static CastExpression castX(final ClassNode type, final Expression expression) {
@@ -786,6 +791,18 @@ public class GeneralUtils {
 
     public static Statement stmt(final Expression expr) {
         return new ExpressionStatement(expr);
+    }
+
+    public static SwitchStatement switchS(final Expression expr) {
+        return new SwitchStatement(expr);
+    }
+
+    public static SwitchStatement switchS(final Expression expr, final Statement defaultStatement) {
+        return new SwitchStatement(expr, defaultStatement);
+    }
+
+    public static SwitchStatement switchS(final Expression expr, final List<CaseStatement> caseStatements, final Statement defaultStatement) {
+        return new SwitchStatement(expr, caseStatements, defaultStatement);
     }
 
     public static TernaryExpression ternaryX(final Expression cond, final Expression trueExpr, final Expression elseExpr) {
