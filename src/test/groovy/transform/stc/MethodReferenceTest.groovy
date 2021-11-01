@@ -644,4 +644,22 @@ final class MethodReferenceTest {
 
         assert err =~ /The argument is a method reference, but the parameter type is not a functional interface/
     }
+
+    @Test // GROOVY-10336
+    void testNotFunctionalInterface2() {
+        def err = shouldFail shell, '''
+            class C {
+                Integer m() { 1 }
+            }
+            @CompileStatic
+            void test() {
+                Supplier<Long> outer = () -> {
+                    Closure<Long> inner = (Object o, Supplier<Integer> s) -> 2L
+                    inner(new Object(), new C()::m) // TODO: resolve call(Object,Supplier<Integer>)
+                }
+            }
+        '''
+
+        assert err =~ /The argument is a method reference, but the parameter type is not a functional interface/
+    }
 }
