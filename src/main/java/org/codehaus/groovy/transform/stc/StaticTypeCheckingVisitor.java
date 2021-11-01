@@ -859,12 +859,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     // "completed" with generics type information available from the LHS
                     if (lType.equals(resultType)) {
                         if (!lType.isGenericsPlaceHolder()) resultType = lType;
-                    } else { // GROOVY-10235, et al.
+                    } else if (!resultType.isGenericsPlaceHolder()) { // GROOVY-10324
                         Map<GenericsTypeName, GenericsType> gt = new HashMap<>();
                         extractGenericsConnections(gt, resultType, resultType.redirect());
                         extractGenericsConnections(gt, lType, getNextSuperClass(resultType, lType));
 
-                        resultType = applyGenericsContext(gt, resultType.redirect());
+                        resultType = applyGenericsContext(gt, resultType.redirect());// GROOVY-10235, et al.
                     }
                 }
 
