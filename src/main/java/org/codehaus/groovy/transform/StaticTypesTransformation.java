@@ -47,7 +47,6 @@ public class StaticTypesTransformation implements ASTTransformation, Compilation
     public static final String STATIC_ERROR_PREFIX = "[Static type checking] - ";
     protected CompilationUnit compilationUnit;
 
-    //    @Override
     @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         AnnotationNode annotationInformation = (AnnotationNode) nodes[0];
