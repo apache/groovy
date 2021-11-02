@@ -707,6 +707,14 @@ public class GeneralUtils {
         return binX(lhv, LT, rhv);
     }
 
+    public static MapEntryExpression mapEntryX(final Expression keyExpr, final Expression valueExpr) {
+        return new MapEntryExpression(keyExpr, valueExpr);
+    }
+
+    public static MapEntryExpression mapEntryX(final String key, final Expression valueExpr) {
+        return new MapEntryExpression(constX(key), valueExpr);
+    }
+
     public static MapExpression mapX(final List<MapEntryExpression> expressions) {
         return new MapExpression(expressions);
     }
