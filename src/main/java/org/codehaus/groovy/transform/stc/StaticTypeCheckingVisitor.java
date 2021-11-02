@@ -5354,7 +5354,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
                         extractGenericsConnections(connections, wrapTypeIfNecessary(argumentType), paramType);
                         connections.forEach((gtn, gt) -> resolvedPlaceholders.merge(gtn, gt, (gt1, gt2) -> {
-                            return gt2; // TODO
+                            // GROOVY-10339: incorporate additional witness
+                            ClassNode cn1 = makeClassSafe0(CLASS_Type, gt1);
+                            ClassNode cn2 = makeClassSafe0(CLASS_Type, gt2);
+                            return lowestUpperBound(cn1,cn2).getGenericsTypes()[0];
                         }));
                     }
                 }

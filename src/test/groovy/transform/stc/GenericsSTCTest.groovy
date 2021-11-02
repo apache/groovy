@@ -550,6 +550,18 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10339
+    void testReturnTypeInferenceWithMethodGenerics21() {
+        shouldFailWithMessages '''
+            String foo() {
+            }
+            def <T> T bar(T x, T y) {
+            }
+            Integer i = bar(foo(), 1)
+        ''',
+        'Cannot assign value of type'
+    }
+
     void testDiamondInferrenceFromConstructor1() {
         assertScript '''
             class Foo<U> {
