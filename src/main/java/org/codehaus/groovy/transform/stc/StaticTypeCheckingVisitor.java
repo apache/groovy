@@ -1106,22 +1106,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private void adjustGenerics(final ClassNode from, final ClassNode to) {
-        GenericsType[] genericsTypes = from.getGenericsTypes();
-        if (genericsTypes == null) {
-            // case of: def foo = new HashMap<>()
-            genericsTypes = to.redirect().getGenericsTypes();
+    private void adjustGenerics(final ClassNode source, final ClassNode target) {
+        GenericsType[] genericsTypes = source.getGenericsTypes();
+        if (genericsTypes == null) { // Map foo = new HashMap<>()
+            genericsTypes = target.redirect().getGenericsTypes().clone();
+            for (int i = 0, n = genericsTypes.length; i < n; i += 1) {
+                GenericsType gt = genericsTypes[i];
+                // GROOVY-10055: handle diamond or raw
+                ClassNode cn = gt.getUpperBounds() != null
+                        ? gt.getUpperBounds()[0] : gt.getType().redirect();
+                genericsTypes[i] = cn.getPlainNodeReference().asGenericsType();
+            }
+        } else {
+            genericsTypes = genericsTypes.clone();
+            for (int i = 0, n = genericsTypes.length; i < n; i += 1) {
+                GenericsType gt = genericsTypes[i];
+                genericsTypes[i] = new GenericsType(gt.getType(),
+                        gt.getUpperBounds(), gt.getLowerBound());
+            }
         }
-        GenericsType[] copy = new GenericsType[genericsTypes.length];
-        for (int i = 0; i < genericsTypes.length; i++) {
-            GenericsType genericsType = genericsTypes[i];
-            copy[i] = new GenericsType(
-                    wrapTypeIfNecessary(genericsType.getType()),
-                    genericsType.getUpperBounds(),
-                    genericsType.getLowerBound()
-            );
-        }
-        to.setGenericsTypes(copy);
+        target.setGenericsTypes(genericsTypes);
     }
 
     /**
@@ -3303,6 +3307,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         call.getMethod().visit(this);
 
         ClassNode receiver = getType(objectExpression);
+        if (objectExpression instanceof ConstructorCallExpression) { // GROOVY-10228
+            inferDiamondType((ConstructorCallExpression) objectExpression, receiver.getPlainNodeReference());
+        }
         if (call.isSpreadSafe()) { // make sure receiver is array or collection then check element type
             if (!receiver.isArray() && !implementsInterfaceOrIsSubclassOf(receiver, Collection_TYPE)) {
                 addStaticTypeError("Spread operator can only be used on collection types", objectExpression);
