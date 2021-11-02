@@ -1123,6 +1123,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 GenericsType gt = genericsTypes[i];
                 genericsTypes[i] = new GenericsType(gt.getType(),
                         gt.getUpperBounds(), gt.getLowerBound());
+                genericsTypes[i].setWildcard(gt.isWildcard()); // GROOVY-10310
             }
         }
         target.setGenericsTypes(genericsTypes);

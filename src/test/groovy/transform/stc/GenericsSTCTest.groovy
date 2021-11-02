@@ -1038,6 +1038,23 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10310
+    void testDiamondInferrenceFromConstructor21() {
+        assertScript '''
+            @groovy.transform.TupleConstructor
+            class A<T> {
+                T f
+            }
+            class B<T> {
+            }
+            def <T> A<T> m(T t, B<? extends T> b_of_t) {
+                new A<>(t)
+            }
+            def x = 'x'
+            m(x, new B<>()) // Cannot call m(T,B<? extends T>) with arguments...
+        '''
+    }
+
     // GROOVY-10280
     void testTypeArgumentPropagation() {
         assertScript '''
