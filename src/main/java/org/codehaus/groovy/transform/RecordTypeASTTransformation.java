@@ -244,6 +244,10 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         if (memberHasValue(node, COMPONENTS, Boolean.TRUE) && !hasDeclaredMethod(cNode, COMPONENTS, 0)) {
             createComponents(cNode, pList);
         }
+
+        if (!hasDeclaredMethod(cNode, "size", 0)) {
+            addGeneratedMethod(cNode, "size", PUBLIC_FINAL, int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(constX(pList.size())));
+        }
     }
 
     private void createComponents(ClassNode cNode, List<PropertyNode> pList) {
