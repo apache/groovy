@@ -2884,6 +2884,19 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10337
+    void testShouldFindMethodEvenWithRepeatNames4() {
+        assertScript '''
+            class C<X,Y> {
+                C(C<Y,? extends Y> that) {
+                }
+            }
+            def <T> void test() {
+                new C<Number,T>((C<T,T>)null) // cannot call ctor with argument C<T,T>
+            }
+        '''
+    }
+
     // GROOVY-5893
     void testPlusInClosure() {
         ['def', 'var', 'Object', 'Number', 'Integer', 'Comparable'].each { type ->

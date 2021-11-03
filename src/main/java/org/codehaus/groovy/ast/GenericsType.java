@@ -94,34 +94,8 @@ public class GenericsType extends ASTNode {
         return ret.toString();
     }
 
-    private static String nameOf(final ClassNode theType) {
-        StringBuilder ret = new StringBuilder();
-        if (theType.isArray()) {
-            ret.append(nameOf(theType.getComponentType()));
-            ret.append("[]");
-        } else {
-            ret.append(theType.getName());
-        }
-        return ret.toString();
-    }
-
     private static String genericsBounds(final ClassNode theType, final Set<String> visited) {
-        StringBuilder ret = new StringBuilder();
-
-        if (theType.isArray()) {
-            ret.append(nameOf(theType));
-        } else if (theType.getOuterClass() != null) {
-            String parentClassNodeName = theType.getOuterClass().getName();
-            if (Modifier.isStatic(theType.getModifiers()) || theType.isInterface()) {
-                ret.append(parentClassNodeName);
-            } else {
-                ret.append(genericsBounds(theType.getOuterClass(), new HashSet<>()));
-            }
-            ret.append('.');
-            ret.append(theType.getName(), parentClassNodeName.length() + 1, theType.getName().length());
-        } else {
-            ret.append(theType.getName());
-        }
+        StringBuilder ret = appendName(theType, new StringBuilder());
 
         GenericsType[] genericsTypes = theType.getGenericsTypes();
         if (genericsTypes == null || genericsTypes.length == 0) {
@@ -147,6 +121,24 @@ public class GenericsType extends ASTNode {
         ret.append('>');
 
         return ret.toString();
+    }
+
+    private static StringBuilder appendName(final ClassNode theType, final StringBuilder sb) {
+        if (theType.isArray()) {
+            appendName(theType.getComponentType(), sb).append("[]");
+        } else if (theType.getOuterClass() != null) {
+            String parentClassNodeName = theType.getOuterClass().getName();
+            if (Modifier.isStatic(theType.getModifiers()) || theType.isInterface()) {
+                sb.append(parentClassNodeName);
+            } else {
+                sb.append(genericsBounds(theType.getOuterClass(), new HashSet<>()));
+            }
+            sb.append('.');
+            sb.append(theType.getName(), parentClassNodeName.length() + 1, theType.getName().length());
+        } else {
+            sb.append(theType.isGenericsPlaceHolder() ? theType.getUnresolvedName() : theType.getName());
+        }
+        return sb;
     }
 
     public String getName() {

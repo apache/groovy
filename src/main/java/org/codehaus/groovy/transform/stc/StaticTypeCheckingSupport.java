@@ -21,6 +21,7 @@ package org.codehaus.groovy.transform.stc;
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
 import org.codehaus.groovy.ast.InnerClassNode;
@@ -71,7 +72,6 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.stream.BaseStream;
 
-import static java.lang.Math.min;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
@@ -451,7 +451,7 @@ public abstract class StaticTypeCheckingSupport {
         ClassNode elementType = arrayType.getComponentType();
         ClassNode argumentType = argumentTypes[argumentTypes.length - 1];
         if (isNumberType(elementType) && isNumberType(argumentType) && !getWrapper(elementType).equals(getWrapper(argumentType))) return -1;
-        return isAssignableTo(argumentType, elementType) ? min(getDistance(argumentType, arrayType), getDistance(argumentType, elementType)) : -1;
+        return isAssignableTo(argumentType, elementType) ? Math.min(getDistance(argumentType, arrayType), getDistance(argumentType, elementType)) : -1;
     }
 
     /**
@@ -1424,39 +1424,45 @@ public abstract class StaticTypeCheckingSupport {
         }
 
         boolean failure = false;
+        Set<GenericsTypeName> fixedPlaceHolders = Collections.emptySet();
+        Map<GenericsTypeName, GenericsType> resolvedMethodGenerics = new HashMap<>();
         // correct receiver for inner class
         // we assume the receiver is an instance of the declaring class of the
         // candidate method, but findMethod returns also outer class methods
         // for that receiver. For now we skip receiver based checks in that case
         // TODO: correct generics for when receiver is to be skipped
         boolean skipBecauseOfInnerClassNotReceiver = !implementsInterfaceOrIsSubclassOf(receiver, candidateMethod.getDeclaringClass());
-        // we have here different generics contexts we have to deal with.
-        // There is firstly the context given through the class, and the method.
-        // The method context may hide generics given through the class, but use
-        // the non-hidden ones.
-        Map<GenericsTypeName, GenericsType> resolvedMethodGenerics = new HashMap<>();
         if (!skipBecauseOfInnerClassNotReceiver) {
-            addMethodLevelDeclaredGenerics(candidateMethod, resolvedMethodGenerics);
-            if (!resolvedMethodGenerics.isEmpty()) {
-                // first remove hidden generics
-                Map<GenericsTypeName, GenericsType> receiverGenerics = GenericsUtils.extractPlaceholders(receiver);
-                receiverGenerics.keySet().removeAll(resolvedMethodGenerics.keySet());
-                // then use the remaining information to refine the method generics
-                applyGenericsConnections(receiverGenerics, resolvedMethodGenerics);
+            if (candidateMethod instanceof ConstructorNode) {
+                resolvedMethodGenerics = GenericsUtils.extractPlaceholders(receiver);
+                fixedPlaceHolders = new HashSet<>(resolvedMethodGenerics.keySet());
+            } else {
+                // we have here different generics contexts we have to deal with.
+                // There is firstly the context given through the class, and the method.
+                // The method context may hide generics given through the class, but use
+                // the non-hidden ones.
+                addMethodLevelDeclaredGenerics(candidateMethod, resolvedMethodGenerics);
+                if (!resolvedMethodGenerics.isEmpty()) {
+                    // first remove hidden generics
+                    Map<GenericsTypeName, GenericsType> receiverGenerics = GenericsUtils.extractPlaceholders(receiver);
+                    receiverGenerics.keySet().removeAll(resolvedMethodGenerics.keySet());
+                    // then use the remaining information to refine the method generics
+                    applyGenericsConnections(receiverGenerics, resolvedMethodGenerics);
+                }
+                // and then start our checks with the receiver
+                failure = inferenceCheck(fixedPlaceHolders, resolvedMethodGenerics, candidateMethod.getDeclaringClass(), receiver, false);
+                // the outside context parts till now define placeholder we are not allowed to
+                // generalize, thus we save that for later use...
+                // extension methods are special, since they set the receiver as
+                // first parameter. While we normally allow generalization for the first
+                // parameter, in case of an extension method we must not.
+                fixedPlaceHolders = extractResolvedPlaceHolders(resolvedMethodGenerics);
             }
-            // and then start our checks with the receiver
-            failure = inferenceCheck(Collections.emptySet(), resolvedMethodGenerics, candidateMethod.getDeclaringClass(), receiver, false);
         }
-        // the outside context parts till now define placeholder we are not allowed to
-        // generalize, thus we save that for later use...
-        // extension methods are special, since they set the receiver as
-        // first parameter. While we normally allow generalization for the first
-        // parameter, in case of an extension method we must not.
-        Set<GenericsTypeName> fixedPlaceHolders = extractResolvedPlaceHolders(resolvedMethodGenerics);
 
         int lastParamIndex = parameters.length - 1;
         for (int i = 0, n = argumentTypes.length; i < n; i += 1) {
-            ClassNode parameterType = parameters[min(i, lastParamIndex)].getOriginType();
+            ClassNode parameterType = parameters[Math.min(i, lastParamIndex)].getOriginType();
             ClassNode argumentType = StaticTypeCheckingVisitor.wrapTypeIfNecessary(argumentTypes[i]);
             failure |= inferenceCheck(fixedPlaceHolders, resolvedMethodGenerics, parameterType, argumentType, i >= lastParamIndex);
 
@@ -1514,6 +1520,8 @@ public abstract class StaticTypeCheckingSupport {
                 return true; // incompatible
             }
         }
+
+        connections.keySet().removeAll(fixedPlaceHolders); // GROOVY-10337
 
         // apply the new information to refine the method level information so
         // that the information slowly becomes information for the callsite
@@ -1590,9 +1598,9 @@ public abstract class StaticTypeCheckingSupport {
                     GenericsTypeName name = new GenericsTypeName(oldValue.getName());
                     GenericsType newValue = connections.get(name); // find "V" in T=V
                     if (newValue == oldValue) continue;
-                    if (newValue == null) { // GROOVY-10315
+                    if (newValue == null) {
                         newValue = connections.get(entry.getKey());
-                        if (newValue != null) {
+                        if (newValue != null) { // GROOVY-10315, GROOVY-10317
                             ClassNode o = makeClassSafe0(CLASS_Type, oldValue),
                                       n = makeClassSafe0(CLASS_Type, newValue);
                             newValue = lowestUpperBound(o,n).getGenericsTypes()[0];
