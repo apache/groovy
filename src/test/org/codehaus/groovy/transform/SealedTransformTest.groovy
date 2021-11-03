@@ -19,12 +19,13 @@
 package org.codehaus.groovy.transform
 
 import groovy.transform.Sealed
-import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.isAtLeastJdk
 import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.Assume.assumeTrue
 
 class SealedTransformTest {
 
@@ -208,11 +209,12 @@ class SealedTransformTest {
 
     @Test
     void testInferredPermittedNestedClassesWithAnnosDisabled() {
-        def config = new CompilerConfiguration(sealedAnnotations: false)
-        def shapeClass = new GroovyShell(config).evaluate('''
-            import groovy.transform.Sealed
+        assumeTrue(isAtLeastJdk('17.0'))
+        def shapeClass = new GroovyShell().evaluate('''
+            import groovy.transform.SealedOptions
 
-            @Sealed class Shape {
+            @SealedOptions(alwaysAnnotate = false)
+            sealed class Shape {
                 final class Triangle extends Shape { }
                 final class Polygon extends Shape { }
             }

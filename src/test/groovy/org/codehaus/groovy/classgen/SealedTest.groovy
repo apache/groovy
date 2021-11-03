@@ -19,7 +19,6 @@
 package org.codehaus.groovy.classgen
 
 import groovy.transform.CompileStatic
-import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -44,13 +43,15 @@ class SealedTest {
     @Test
     void testInferredPermittedNestedClassesWithNativeDisabled() {
         assumeTrue(isAtLeastJdk('17.0'))
-        assertScript(new GroovyShell(new CompilerConfiguration(sealedNative: false)), '''
+        assertScript '''
+            import groovy.transform.*
+            @SealedOptions(mode=SealedMode.EMULATE)
             sealed class Shape {
                 final class Triangle extends Shape { }
                 final class Polygon extends Shape { }
             }
             List<Class> classes = Shape.getPermittedSubclasses()
             assert !classes
-        ''')
+        '''
     }
 }

@@ -20,6 +20,7 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyRuntimeException;
 import groovy.transform.Sealed;
+import groovy.transform.SealedMode;
 import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.GroovyBugError;
@@ -112,7 +113,6 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.RecordComponentVisitor;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.TypePath;
@@ -155,6 +155,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
+import static org.codehaus.groovy.transform.SealedASTTransformation.SEALED_ALWAYS_ANNOTATE;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PROPERTY_OWNER;
 import static org.objectweb.asm.Opcodes.AASTORE;
 import static org.objectweb.asm.Opcodes.ACC_ENUM;
@@ -377,8 +378,7 @@ public class AsmClassGenerator extends ClassGenerator {
             for (Iterator<InnerClassNode> it = classNode.getInnerClasses(); it.hasNext(); ) {
                 makeInnerClassEntry(it.next());
             }
-            if (bytecodeVersion >= Opcodes.V17 &&
-                    context.getCompileUnit().getConfig().isSealedNative()) {
+            if (classNode.getNodeMetaData(SealedMode.class) == SealedMode.NATIVE) {
                 for (ClassNode sub: classNode.getPermittedSubclasses()) {
                     classVisitor.visitPermittedSubclass(sub.getName());
                 }
@@ -2086,7 +2086,7 @@ public class AsmClassGenerator extends ClassGenerator {
             // skip built-in properties
             if (an.isBuiltIn()) continue;
             if (an.hasSourceRetention()) continue;
-            if (an.getClassNode().getName().equals(Sealed.class.getName()) && !context.getCompileUnit().getConfig().isSealedAnnotations()) continue;
+            if (an.getClassNode().getName().equals(Sealed.class.getName()) && sourceNode.getNodeMetaData(SealedMode.class) == SealedMode.NATIVE && Boolean.FALSE.equals(sourceNode.getNodeMetaData(SEALED_ALWAYS_ANNOTATE))) continue;
 
             AnnotationVisitor av = getAnnotationVisitor(targetNode, an, visitor);
             visitAnnotationAttributes(an, av);
