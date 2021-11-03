@@ -313,7 +313,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
     private void createCopyWith(ClassNode cNode, List<PropertyNode> pList) {
         ArgumentListExpression args = new ArgumentListExpression();
         Parameter mapParam = param(GenericsUtils.nonGeneric(MAP_TYPE), NAMED_ARGS);
-        Expression mapArg = varX(NAMED_ARGS, MAP_TYPE);
+        Expression mapArg = varX(mapParam);
         for (PropertyNode pNode : pList) {
             String name = pNode.getName();
             args.addExpression(ternaryX(callX(mapArg, "containsKey", args(constX(name))), propX(mapArg, name), thisPropX(true, name)));
