@@ -22,6 +22,7 @@ import groovy.lang.GroovyClassLoader;
 import groovy.transform.CompilationUnitAware;
 import groovy.transform.NamedParam;
 import groovy.transform.RecordBase;
+import groovy.transform.RecordOptions;
 import groovy.transform.RecordTypeMode;
 import groovy.transform.options.PropertyHandler;
 import org.apache.groovy.ast.tools.MethodNodeUtils;
@@ -65,6 +66,7 @@ import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.MAP_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
@@ -117,6 +119,8 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
     private static final ClassNode NAMED_PARAM_TYPE = makeWithoutCaching(NamedParam.class, false);
     private static final int PUBLIC_FINAL = ACC_PUBLIC | ACC_FINAL;
     private static final String RECORD_CLASS_NAME = "java.lang.Record";
+    private static final ClassNode RECORD_OPTIONS_TYPE = make(RecordOptions.class);
+    private static final String SIZE = "size";
     private static final String TO_LIST = "toList";
     private static final String TO_MAP = "toMap";
 
@@ -141,12 +145,14 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             final PropertyHandler handler = PropertyHandler.createPropertyHandler(this, classLoader, (ClassNode) parent);
             if (handler == null) return;
             if (!handler.validateAttributes(this, anno)) return;
-            doProcessRecordType((ClassNode) parent, anno, handler);
+            doProcessRecordType((ClassNode) parent, handler);
         }
     }
 
-    private void doProcessRecordType(ClassNode cNode, AnnotationNode node, PropertyHandler handler) {
-        RecordTypeMode mode = getMode(node, "mode");
+    private void doProcessRecordType(ClassNode cNode, PropertyHandler handler) {
+        List<AnnotationNode> annotations = cNode.getAnnotations(RECORD_OPTIONS_TYPE);
+        AnnotationNode options = annotations.isEmpty() ? null : annotations.get(0);
+        RecordTypeMode mode = getMode(options, "mode");
         boolean isPostJDK16 = false;
         String message = "Expecting JDK16+ but unable to determine target bytecode";
         if (sourceUnit != null) {
@@ -225,28 +231,28 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             if (unsupportedTupleAttribute(tupleCons, "callSuper")) return;
         }
 
-        if (!memberHasValue(node, COPY_WITH, Boolean.FALSE) && !hasDeclaredMethod(cNode, COPY_WITH, 1)) {
+        if ((options == null || !memberHasValue(options, COPY_WITH, Boolean.FALSE)) && !hasDeclaredMethod(cNode, COPY_WITH, 1)) {
             createCopyWith(cNode, pList);
         }
 
-        if (!memberHasValue(node, GET_AT, Boolean.FALSE) && !hasDeclaredMethod(cNode, GET_AT, 1)) {
+        if ((options == null || !memberHasValue(options, GET_AT, Boolean.FALSE)) && !hasDeclaredMethod(cNode, GET_AT, 1)) {
             createGetAt(cNode, pList);
         }
 
-        if (!memberHasValue(node, TO_LIST, Boolean.FALSE) && !hasDeclaredMethod(cNode, TO_LIST, 0)) {
+        if ((options == null || !memberHasValue(options, TO_LIST, Boolean.FALSE)) && !hasDeclaredMethod(cNode, TO_LIST, 0)) {
             createToList(cNode, pList);
         }
 
-        if (!memberHasValue(node, TO_MAP, Boolean.FALSE) && !hasDeclaredMethod(cNode, TO_MAP, 0)) {
+        if ((options == null || !memberHasValue(options, TO_MAP, Boolean.FALSE)) && !hasDeclaredMethod(cNode, TO_MAP, 0)) {
             createToMap(cNode, pList);
         }
 
-        if (memberHasValue(node, COMPONENTS, Boolean.TRUE) && !hasDeclaredMethod(cNode, COMPONENTS, 0)) {
+        if (options != null && memberHasValue(options, COMPONENTS, Boolean.TRUE) && !hasDeclaredMethod(cNode, COMPONENTS, 0)) {
             createComponents(cNode, pList);
         }
 
-        if (!hasDeclaredMethod(cNode, "size", 0)) {
-            addGeneratedMethod(cNode, "size", PUBLIC_FINAL, int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(constX(pList.size())));
+        if ((options == null || !memberHasValue(options, SIZE, Boolean.FALSE)) && !hasDeclaredMethod(cNode, SIZE, 0)) {
+            addGeneratedMethod(cNode, SIZE, PUBLIC_FINAL, int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(constX(pList.size())));
         }
     }
 
@@ -392,14 +398,16 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
     }
 
     private static RecordTypeMode getMode(AnnotationNode node, String name) {
-        final Expression member = node.getMember(name);
-        if (member instanceof PropertyExpression) {
-            PropertyExpression prop = (PropertyExpression) member;
-            Expression oe = prop.getObjectExpression();
-            if (oe instanceof ClassExpression) {
-                ClassExpression ce = (ClassExpression) oe;
-                if (ce.getType().getName().equals("groovy.transform.RecordTypeMode")) {
-                    return RecordTypeMode.valueOf(prop.getPropertyAsString());
+        if (node != null) {
+            final Expression member = node.getMember(name);
+            if (member instanceof PropertyExpression) {
+                PropertyExpression prop = (PropertyExpression) member;
+                Expression oe = prop.getObjectExpression();
+                if (oe instanceof ClassExpression) {
+                    ClassExpression ce = (ClassExpression) oe;
+                    if (ce.getType().getName().equals("groovy.transform.RecordTypeMode")) {
+                        return RecordTypeMode.valueOf(prop.getPropertyAsString());
+                    }
                 }
             }
         }

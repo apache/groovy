@@ -92,7 +92,7 @@ class RecordTest {
         assumeTrue(isAtLeastJdk('16.0'))
         assertScript '''
             import groovy.transform.*
-            @RecordBase(mode=RecordTypeMode.EMULATE)
+            @RecordOptions(mode=RecordTypeMode.EMULATE)
             record RecordJDK16plus2(String name) {}
             assert java.lang.Record != RecordJDK16plus2.class.getSuperclass()
         '''
@@ -340,8 +340,8 @@ class RecordTest {
     @Test
     void testCoerce() {
         assertScript '''
+            @groovy.transform.CompileDynamic
             record PersonDynamic(String name, int age) {}
-            @groovy.transform.CompileStatic
             record PersonStatic(String name, int age) {}
             
             def testDynamic() {

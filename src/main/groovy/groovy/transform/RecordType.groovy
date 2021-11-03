@@ -76,6 +76,7 @@ import java.lang.annotation.Target
  * @since 4.0.0
  */
 @RecordBase
+@RecordOptions
 @TupleConstructor(namedVariant = true, force = true)
 @PropertyOptions
 @KnownImmutable

@@ -98,9 +98,9 @@ assert new Point3D(10, 20, 30).toString() == 'Point3D[coords=10,20,30]'
 
     void testCopyWith() {
         assertScript '''
-import groovy.transform.RecordBase
+import groovy.transform.RecordOptions
 // tag::record_copywith[]
-@RecordBase(copyWith=true)
+@RecordOptions(copyWith=true)
 record Fruit(String name, double price) {}
 def apple = new Fruit('Apple', 11.6)
 assert 'Apple' == apple.name()
@@ -112,10 +112,10 @@ def orange = apple.copyWith(name: 'Orange')
 // end::record_copywith[]
 '''
         assertScript '''
-import groovy.transform.RecordBase
+import groovy.transform.RecordOptions
 import static groovy.test.GroovyAssert.shouldFail
 
-@RecordBase(copyWith=false)
+@RecordOptions(copyWith=false)
 record Fruit(String name, double price) {}
 def apple = new Fruit('Apple', 11.6)
 shouldFail(MissingMethodException) {
@@ -158,7 +158,7 @@ assert c == 'green'
 // tag::record_components[]
 import groovy.transform.*
 
-@RecordBase(componentTuple=true)
+@RecordOptions(componentTuple=true)
 record Point(int x, int y, String color) { }
 
 @CompileStatic
