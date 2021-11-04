@@ -262,16 +262,16 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         }
         ClassNode tupleClass = getClass(cNode, "groovy.lang.Tuple" + pList.size());
         if (tupleClass == null) return;
-        List<GenericsType> gtypes = new ArrayList<>();
-        ArgumentListExpression args = new ArgumentListExpression();
-        for (PropertyNode pNode : pList) {
-            args.addExpression(callThisX(pNode.getName()));
-            gtypes.add(new GenericsType(getWrapper(pNode.getType())));
-        }
         Statement body;
         if (pList.isEmpty()) {
             body = returnS(propX(classX(tupleClass), "INSTANCE"));
         } else {
+            List<GenericsType> gtypes = new ArrayList<>();
+            ArgumentListExpression args = new ArgumentListExpression();
+            for (PropertyNode pNode : pList) {
+                args.addExpression(callThisX(pNode.getName()));
+                gtypes.add(new GenericsType(getWrapper(pNode.getType())));
+            }
             tupleClass.setGenericsTypes(gtypes.toArray(new GenericsType[0]));
             body = returnS(ctorX(tupleClass, args));
         }
