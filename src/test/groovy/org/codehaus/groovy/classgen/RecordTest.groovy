@@ -343,45 +343,101 @@ class RecordTest {
             @groovy.transform.CompileDynamic
             record PersonDynamic(String name, int age) {}
             record PersonStatic(String name, int age) {}
-            
+
             def testDynamic() {
                 PersonDynamic p = ['Daniel', 37]
                 assert 'Daniel' == p.name()
                 assert 37 == p.age()
-                
+
                 PersonDynamic p2 = [age: 37, name: 'Daniel']
                 assert 'Daniel' == p2.name()
                 assert 37 == p2.age()
-                
+
                 PersonStatic p3 = ['Daniel', 37]
                 assert 'Daniel' == p3.name()
                 assert 37 == p3.age()
-                
+
                 PersonStatic p4 = [age: 37, name: 'Daniel']
                 assert 'Daniel' == p4.name()
                 assert 37 == p4.age()
             }
             testDynamic()
-            
+
             @groovy.transform.CompileStatic
             def testStatic() {
                 PersonStatic p = ['Daniel', 37]
                 assert 'Daniel' == p.name()
                 assert 37 == p.age()
-                
+
                 PersonStatic p2 = [age: 37, name: 'Daniel']
                 assert 'Daniel' == p2.name()
                 assert 37 == p2.age()
-                
+
                 PersonDynamic p3 = ['Daniel', 37]
                 assert 'Daniel' == p3.name()
                 assert 37 == p3.age()
-                
+
                 PersonDynamic p4 = [age: 37, name: 'Daniel']
                 assert 'Daniel' == p4.name()
                 assert 37 == p4.age()
             }
             testStatic()
+        '''
+    }
+
+    @Test
+    void testSerialization() {
+        // inspired by:
+        // https://inside.java/2020/07/20/record-serialization/
+
+        assertScript '''
+        @groovy.transform.ToString(includeNames=true, includeFields=true)
+        class RangeClass implements Serializable {
+            private final int lo
+            private final int hi
+            RangeClass(int lo, int hi) {
+                this.lo = lo
+                this.hi = hi
+                if (lo > hi) throw new IllegalArgumentException("$lo should not be greater than $hi")
+            }
+            // backdoor to emulate hacking of datastream
+            RangeClass(int[] pair) {
+                this.lo = pair[0]
+                this.hi = pair[1]
+            }
+        }
+
+        var data = File.createTempFile("serial", ".data")
+        var rc = [new RangeClass([5, 10] as int[]), new RangeClass([10, 5] as int[])]
+        data.withObjectOutputStream { out -> rc.each{ out << it } }
+        data.withObjectInputStream(getClass().classLoader) { in ->
+            assert in.readObject().toString() == 'RangeClass(lo:5, hi:10)'
+            assert in.readObject().toString() == 'RangeClass(lo:10, hi:5)'
+        }
+        '''
+
+        assertScript '''
+        import static groovy.test.GroovyAssert.shouldFail
+
+        record RangeRecord(int lo, int hi) implements Serializable {
+            public RangeRecord {
+                if (lo > hi) throw new IllegalArgumentException("$lo should not be greater than $hi")
+            }
+            // backdoor to emulate hacking of datastream
+            RangeRecord(int[] pair) {
+                this.lo = pair[0]
+                this.hi = pair[1]
+            }
+        }
+
+        var data = File.createTempFile("serial", ".data")
+        var rr = [new RangeRecord([5, 10] as int[]), new RangeRecord([10, 5] as int[])]
+        data.withObjectOutputStream { out -> rr.each{ out << it } }
+        data.withObjectInputStream(getClass().classLoader) { in ->
+            assert in.readObject().toString() == 'RangeRecord[lo=5, hi=10]'
+            def ex = shouldFail(InvalidObjectException) { in.readObject() }
+            assert ex.message == '10 should not be greater than 5'
+        }
         '''
     }
 }
