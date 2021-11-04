@@ -69,6 +69,20 @@ by writing your own:
 include::../test/RecordSpecificationTest.groovy[tags=record_point3d,indent=0]
 ----
 
+You can also use generics with records in the normal way. For example, consider the following `Coord` record definition:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_generics_defn,indent=0]
+----
+
+It can be used as follows:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_generics_usage,indent=0]
+----
+
 == Compact constructor
 
 Records have an implicit constructor. This can be overridden in the normal way
@@ -164,7 +178,7 @@ include::../test/RecordSpecificationTest.groovy[tags=record_copywith,indent=0]
 ----
 
 The `copyWith` functionality can be disabled by setting the
-`RecordBase#copyWith` annotation attribute to `false`.
+`RecordOptions#copyWith` annotation attribute to `false`.
 
 === Deep immutability
 
@@ -190,7 +204,7 @@ Groovy supports creating _record-like_ classes as well as native records.
 Record-like classes don't extend Java's `Record` class and such classes
 won't be seen by Java as records but will otherwise have similar properties.
 
-The `@RecordBase` annotation (part of `@RecordType`) supports a `mode` annotation attribute
+The `@RecordOptions` annotation (part of `@RecordType`) supports a `mode` annotation attribute
 which can take one of three values (with `AUTO` being the default):
 
 NATIVE::

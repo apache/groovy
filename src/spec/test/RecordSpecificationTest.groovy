@@ -153,6 +153,28 @@ assert c == 'green'
 '''
     }
 
+    void testGenerics() {
+        assertScript '''
+import groovy.transform.CompileStatic
+
+// tag::record_generics_defn[]
+record Coord<T extends Number>(T v1, T v2){
+    double distFromOrigin() { Math.sqrt(v1()**2 + v2()**2 as double) }
+}
+// end::record_generics_defn[]
+
+@groovy.transform.CompileStatic def method() {
+// tag::record_generics_usage[]
+def r1 = new Coord<Integer>(3, 4)
+assert r1.distFromOrigin() == 5
+def r2 = new Coord<Double>(6d, 2.5d)
+assert r2.distFromOrigin() == 6.5d
+// end::record_generics_usage[]
+}
+method()
+'''
+    }
+
     void testComponents() {
         def assertScript = '''
 // tag::record_components[]
