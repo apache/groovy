@@ -29,7 +29,7 @@ class SealedSpecificationTest extends GroovyTestCase {
 // tag::sealed_ADT[]
 import groovy.transform.*
 
-@Sealed interface Tree<T> {}
+sealed interface Tree<T> {}
 @Singleton final class Empty implements Tree {
     String toString() { 'Empty' }
 }
@@ -44,15 +44,41 @@ assert tree.toString() == 'Node(42, Node(0, Empty, Empty), Empty)'
 '''
     }
 
+    void testSealedRecordADT() {
+        assertScript '''
+// tag::sealedRecord_ADT[]
+sealed interface Expr {}
+record ConstExpr(int i) implements Expr {}
+record PlusExpr(Expr e1, Expr e2) implements Expr {}
+record MinusExpr(Expr e1, Expr e2) implements Expr {}
+record NegExpr(Expr e) implements Expr {}
+
+def threePlusNegOne = new PlusExpr(new ConstExpr(3), new NegExpr(new ConstExpr(1)))
+assert threePlusNegOne.toString() == 'PlusExpr[e1=ConstExpr[i=3], e2=NegExpr[e=ConstExpr[i=1]]]'
+// end::sealedRecord_ADT[]
+'''
+    }
+
     void testSimpleSealedHierarchyInterfaces() {
         assertScript '''
 import groovy.transform.Sealed
 
-// tag::simple_interface[]
+// tag::simple_interface_keyword[]
+sealed interface ShapeI permits Circle,Square { }
+final class Circle implements ShapeI { }
+final class Square implements ShapeI { }
+// end::simple_interface_keyword[]
+
+assert [new Circle(), new Square()]*.class.name == ['Circle', 'Square']
+'''
+        assertScript '''
+import groovy.transform.Sealed
+
+// tag::simple_interface_annotations[]
 @Sealed(permittedSubclasses=[Circle,Square]) interface ShapeI { }
 final class Circle implements ShapeI { }
 final class Square implements ShapeI { }
-// end::simple_interface[]
+// end::simple_interface_annotations[]
 
 assert [new Circle(), new Square()]*.class.name == ['Circle', 'Square']
 '''
@@ -64,6 +90,25 @@ import groovy.transform.Sealed
 import groovy.transform.NonSealed
 
 // tag::general_sealed_class[]
+sealed class Shape permits Circle,Polygon,Rectangle { }
+
+final class Circle extends Shape { }
+
+class Polygon extends Shape { }
+non-sealed class RegularPolygon extends Polygon { }
+final class Hexagon extends Polygon { }
+
+sealed class Rectangle extends Shape permits Square{ }
+final class Square extends Rectangle { }
+// end::general_sealed_class[]
+
+assert [new Circle(), new Square(), new Hexagon()]*.class.name == ['Circle', 'Square', 'Hexagon']
+'''
+        assertScript '''
+import groovy.transform.Sealed
+import groovy.transform.NonSealed
+
+// tag::general_sealed_class_annotations[]
 @Sealed(permittedSubclasses=[Circle,Polygon,Rectangle]) class Shape { }
 
 final class Circle extends Shape { }
@@ -74,7 +119,7 @@ final class Hexagon extends Polygon { }
 
 @Sealed(permittedSubclasses=Square) class Rectangle extends Shape { }
 final class Square extends Rectangle { }
-// end::general_sealed_class[]
+// end::general_sealed_class_annotations[]
 
 assert [new Circle(), new Square(), new Hexagon()]*.class.name == ['Circle', 'Square', 'Hexagon']
 '''
@@ -95,7 +140,7 @@ assert forecast.toString() == '[Rainy, Sunny, Cloudy]'
 import groovy.transform.*
 
 // tag::weather_sealed[]
-@Sealed abstract class Weather { }
+sealed abstract class Weather { }
 @Immutable(includeNames=true) class Rainy extends Weather { Integer expectedRainfall }
 @Immutable(includeNames=true) class Sunny extends Weather { Integer expectedTemp }
 @Immutable(includeNames=true) class Cloudy extends Weather { Integer expectedUV }

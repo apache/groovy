@@ -22,26 +22,43 @@
 = Sealed hierarchies (incubating)
 
 Sealed classes, interfaces and traits restrict which subclasses can extend/implement them.
-A final class allows no extension. A public non-final class allows extension by anyone.
-Access modifiers like protected and package-private give some ability to restrict inheritance
+Prior to sealed classes, class hierarchy designers had two main options:
+
+* Make a class final to allow no extension.
+* Make the class public and non-final to allow extension by anyone.
+
+Sealed classes provide a middle-ground compared to these all or nothing choices.
+
+Sealed classes are also more flexible than other tricks previously used
+to try to achieve a middle-ground. For example, for class hierarchies,
+access modifiers like protected and package-private give some ability to restrict inheritance
 hierarchies but often at the expense of flexible use of those hierarchies.
 
-Sealed hierarchies provide full inheritance within a known hierarchy of classes, interfaces and traits
-but disable or only provide controlled inheritance outside the hierarchy.
+Sealed hierarchies provide full inheritance within a known hierarchy of classes, interfaces
+and traits but disable or only provide controlled inheritance outside the hierarchy.
 
-For example, suppose we want to create a shape hierarchy containing
+As an example, suppose we want to create a shape hierarchy containing
 only circles and squares. We also want a shape interface to
-be able to refer to instances in our hierarchy. We can create the
-hierarchy as follows:
+be able to refer to instances in our hierarchy.
+We can create the hierarchy as follows:
 
 [source,groovy]
 ----
-include::../test/SealedSpecificationTest.groovy[tags=simple_interface,indent=0]
+include::../test/SealedSpecificationTest.groovy[tags=simple_interface_keyword,indent=0]
 ----
 
-We can have a reference of type `ShapeI` which can point to either a `Circle` or `Square`
-and, since our classes are `final`, we know no additional classes will be added to our hierarchy in the future.
-At least not without changing the `permittedSubclasses` and recompiling.
+Groovy also supports an alternative annotation syntax.
+We think the keyword style is nicer but you might choose the annotation style if your editor doesn't yet have Groovy 4 support.
+
+[source,groovy]
+----
+include::../test/SealedSpecificationTest.groovy[tags=simple_interface_annotations,indent=0]
+----
+
+We can have a reference of type `ShapeI` which, thanks to the `permits` clause,
+can point to either a `Circle` or `Square` and, since our classes are `final`,
+we know no additional classes will be added to our hierarchy in the future.
+At least not without changing the `permits` clause and recompiling.
 
 In general, we might want to have some parts of our class hierarchy
 immediately locked down like we have here, where we marked the
@@ -53,9 +70,19 @@ controlled inheritance.
 include::../test/SealedSpecificationTest.groovy[tags=general_sealed_class,indent=0]
 ----
 
+.<Click to see the alternate annotations syntax>
+[%collapsible]
+====
+[source,groovy]
+----
+include::../test/SealedSpecificationTest.groovy[tags=general_sealed_class_annotations,indent=0]
+----
+====
+
+&nbsp; +
 In this example, our permitted subclasses for `Shape` are `Circle`, `Polygon`, and `Rectangle`.
 `Circle` is `final` and hence that part of the hierarchy cannot be extended.
-`Polygon` is implicitly non-sealed and `RegularPolygon` is explicitly marked as `@NonSealed`.
+`Polygon` is implicitly non-sealed and `RegularPolygon` is explicitly marked as `non-sealed`.
 That means our heiarchy is open to any further extension by subclassing,
 as seen with `Polygon -> RegularPolygon` and `RegularPolygon -> Hexagon`.
 `Rectangle` is itself sealed which means that part of the hierarchy can be extended
@@ -84,15 +111,39 @@ Sealed hierarchies are also useful when specifying Algebraic or Abstract Data Ty
 include::../test/SealedSpecificationTest.groovy[tags=sealed_ADT,indent=0]
 ----
 
+Sealed hierarchies work well with records as shown in the following example:
+
+[source,groovy]
+----
+include::../test/SealedSpecificationTest.groovy[tags=sealedRecord_ADT,indent=0]
+----
+
 == Differences to Java
 
 * Java provides no default modifier for subclasses of sealed classes
 and requires that one of `final`, `sealed` or `non-sealed` be specified.
-Groovy defaults to _non-sealed_ but you can still use `@NonSealed` if you wish.
+Groovy defaults to _non-sealed_ but you can still use `non-sealed/@NonSealed` if you wish.
 We anticipate the style checking tool CodeNarc will eventually have a rule that
-looks for the presence of `@Nonsealed` so developers wanting that stricter
+looks for the presence of `non-sealed` so developers wanting that stricter
 style will be able to use CodeNarc and that rule if they want.
 
 * Currently, Groovy doesn't check that all classes mentioned in `permittedSubclasses`
 are available at compile-time and compiled along with the base sealed class.
 This may change in a future version of Groovy.
+
+Groovy supports annotating classes as sealed as well as "native" sealed classes.
+
+The `@SealedOptions` annotation supports a `mode` annotation attribute
+which can take one of three values (with `AUTO` being the default):
+
+NATIVE::
+Produces a class similar to what Java would do.
+Produces an error when compiling on JDKs earlier than JDK17.
+EMULATE::
+Indicates the class is sealed using the `@Sealed` annotation.
+This mechanism works with the Groovy compiler for JDK8+ but is not recognised by the Java compiler.
+AUTO::
+Produces a native record for JDK17+ and emulates the record otherwise.
+
+Whether you use the `sealed` keyword or the `@Sealed` annotation
+is independent of the mode.
