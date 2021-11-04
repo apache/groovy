@@ -583,7 +583,8 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             String[] arr = ['abc']
             arr.putAt(0, new Object())
-        ''', 'Cannot call <T,U extends T> java.lang.String[]#putAt(int, U) with arguments [int, java.lang.Object]'
+        ''',
+        '#putAt(T[], int, U) with arguments [java.lang.String[], int, java.lang.Object]'
     }
 
     void testStringArrayPutWithSubType() {
@@ -604,7 +605,8 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             Serializable[] arr = ['abc']
             arr.putAt(0, new groovy.xml.XmlSlurper())
-        ''', 'Cannot call <T,U extends T> java.io.Serializable[]#putAt(int, U) with arguments [int, groovy.xml.XmlSlurper]'
+        ''',
+        '#putAt(T[], int, U) with arguments [java.io.Serializable[], int, groovy.xml.XmlSlurper]'
     }
 
     void testArrayGetOnPrimitiveArray() {

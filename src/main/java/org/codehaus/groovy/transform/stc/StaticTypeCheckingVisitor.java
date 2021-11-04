@@ -260,7 +260,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Linked
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Matcher_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.NUMBER_OPS;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.UNKNOWN_PARAMETER_TYPE;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.addMethodLevelDeclaredGenerics;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.allParametersAndArgumentsMatchWithDefaultParams;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.applyGenericsConnections;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.applyGenericsContext;
@@ -1008,8 +1007,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         Function<MethodNode, ClassNode> setterType = setter -> {
             ClassNode type = setter.getParameters()[0].getOriginType();
             if (!setter.isStatic() && !(setter instanceof ExtensionMethodNode) && GenericsUtils.hasUnresolvedGenerics(type)) {
-                Map<GenericsTypeName, GenericsType> spec = extractPlaceHolders(null, setterInfo.receiverType, setter.getDeclaringClass());
-                type = applyGenericsContext(spec, type);
+                type = applyGenericsContext(extractPlaceHolders(setterInfo.receiverType, setter.getDeclaringClass()), type);
             }
             return type;
         };
@@ -1867,8 +1865,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private void storeWithResolve(ClassNode type, final ClassNode receiver, final ClassNode declaringClass, final boolean isStatic, final Expression expressionToStoreOn) {
-        if (GenericsUtils.hasUnresolvedGenerics(type)) {
-            type = resolveGenericsWithContext(resolvePlaceHoldersFromDeclaration(receiver, declaringClass, null, isStatic), type);
+        if (!isStatic && GenericsUtils.hasUnresolvedGenerics(type)) {
+            type = resolveGenericsWithContext(extractPlaceHolders(receiver, declaringClass), type);
         }
         if (expressionToStoreOn instanceof PropertyExpression) {
             storeInferredTypeForPropertyExpression((PropertyExpression) expressionToStoreOn, type);
@@ -2906,7 +2904,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
         } else if (isSAMType(target.getOriginType())) { // SAM-type coercion
-            Map<GenericsTypeName, GenericsType> context = method.isStatic() ? new HashMap<>() : extractPlaceHolders(null, receiver, getDeclaringClass(method, arguments));
+            Map<GenericsTypeName, GenericsType> context = extractPlaceHoldersVisibleToDeclaration(receiver, method, arguments);
             GenericsType[] typeParameters = method instanceof ConstructorNode ? method.getDeclaringClass().getGenericsTypes() : applyGenericsContext(context, method.getGenericsTypes());
 
             if (typeParameters != null) {
@@ -3516,8 +3514,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         // GROOVY-7106, GROOVY-7274, GROOVY-8909, GROOVY-8961, GROOVY-9734, GROOVY-9844, GROOVY-9915, et al.
                         Parameter[] parameters = directMethodCallCandidate.getParameters();
                         if (chosenReceiver.getType().getGenericsTypes() != null && !directMethodCallCandidate.isStatic() && !(directMethodCallCandidate instanceof ExtensionMethodNode)) {
-                            Map<GenericsTypeName, GenericsType> context = extractPlaceHolders(null, chosenReceiver.getType(), getDeclaringClass(directMethodCallCandidate, argumentList));
-                            parameters = Arrays.stream(parameters).map(param -> new Parameter(applyGenericsContext(context, param.getType()), param.getName())).toArray(Parameter[]::new);
+                            Map<GenericsTypeName, GenericsType> context = extractPlaceHoldersVisibleToDeclaration(chosenReceiver.getType(), directMethodCallCandidate, argumentList);
+                            parameters = Arrays.stream(parameters).map(p -> new Parameter(applyGenericsContext(context, p.getType()), p.getName())).toArray(Parameter[]::new);
                         }
                         resolvePlaceholdersFromImplicitTypeHints(args, argumentList, parameters);
 
@@ -4986,13 +4984,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (vexp.isSuperExpression()) return makeSuper();
             Variable variable = vexp.getAccessedVariable();
             if (variable instanceof FieldNode) {
-                ClassNode fieldType = variable.getOriginType();
-                if (isUsingGenericsOrIsArrayUsingGenerics(fieldType)) {
-                    boolean isStatic = (variable.getModifiers() & Opcodes.ACC_STATIC) != 0;
-                    ClassNode thisType = typeCheckingContext.getEnclosingClassNode(), declType = ((FieldNode) variable).getDeclaringClass();
-                    Map<GenericsTypeName, GenericsType> placeholders = resolvePlaceHoldersFromDeclaration(thisType, declType, null, isStatic);
-
-                    fieldType = resolveGenericsWithContext(placeholders, fieldType);
+                FieldNode fieldNode = (FieldNode) variable;
+                ClassNode fieldType = fieldNode.getOriginType();
+                if (!fieldNode.isStatic() && GenericsUtils.hasUnresolvedGenerics(fieldType)) {
+                    ClassNode declType = fieldNode.getDeclaringClass(), thisType = typeCheckingContext.getEnclosingClassNode();
+                    fieldType = resolveGenericsWithContext(extractPlaceHolders(thisType, declType), fieldType);
                 }
                 return fieldType;
             }
@@ -5278,9 +5274,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return inferReturnTypeGenerics(receiver, extension, args, explicitTypeHints);
         }
 
-        // TODO: remove name conflicts from context before applying to method generics or parameters
         Map<GenericsTypeName, GenericsType> context = method.isStatic() || method instanceof ConstructorNode
-                                            ? null : extractPlaceHolders(null, receiver, getDeclaringClass(method, arguments));
+                                            ? null : extractPlaceHoldersVisibleToDeclaration(receiver, method, arguments);
         GenericsType[] methodGenericTypes = method instanceof ConstructorNode ? method.getDeclaringClass().getGenericsTypes() : applyGenericsContext(context, method.getGenericsTypes());
 
         // 1) resolve type parameters of method
@@ -5590,21 +5585,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return getInferredTypeFromTempInfo(expression, declaredOrInferred);
     }
 
-    private static ClassNode getDeclaringClass(final MethodNode method, final Expression arguments) {
-        ClassNode declaringClass = method.getDeclaringClass();
-
-        // correcting declaring class for extension methods:
-        if (arguments instanceof ArgumentListExpression) {
-            ArgumentListExpression al = (ArgumentListExpression) arguments;
-            List<Expression> list = al.getExpressions();
-            if (list.isEmpty()) return declaringClass;
-            Expression exp = list.get(0);
-            ClassNode cn = exp.getNodeMetaData(ExtensionMethodDeclaringClass.class);
-            if (cn != null) return cn;
-        }
-        return declaringClass;
-    }
-
     private static class ExtensionMethodDeclaringClass {
     }
 
@@ -5629,64 +5609,45 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return cn.isGenericsPlaceHolder();
     }
 
-    private static Map<GenericsTypeName, GenericsType> resolvePlaceHoldersFromDeclaration(final ClassNode receiver, final ClassNode declaration, final MethodNode method, final boolean isStaticTarget) {
-        Map<GenericsTypeName, GenericsType> resolvedPlaceholders;
-        if (isStaticTarget
-                && isClassType(receiver)
-                && receiver.getGenericsTypes() != null
-                && receiver.getGenericsTypes().length > 0
-                && !isObjectType(receiver.getGenericsTypes()[0].getType())) {
-            return resolvePlaceHoldersFromDeclaration(receiver.getGenericsTypes()[0].getType(), declaration, method, isStaticTarget);
-        } else {
-            resolvedPlaceholders = extractPlaceHolders(method, receiver, declaration);
-        }
-        return resolvedPlaceholders;
-    }
-
-    private static Map<GenericsTypeName, GenericsType> extractPlaceHolders(final MethodNode method, ClassNode receiver, final ClassNode declaringClass) {
-        Map<GenericsTypeName, GenericsType> resolvedPlaceHolders = null;
-        if (isPrimitiveType(receiver) && !isPrimitiveType(declaringClass)) {
-            receiver = getWrapper(receiver);
-        }
+    private static Map<GenericsTypeName, GenericsType> extractPlaceHolders(final ClassNode receiver, final ClassNode declaringClass) {
+        Map<GenericsTypeName, GenericsType> result = null;
         ClassNode[] todo;
         if (receiver instanceof UnionTypeClassNode) {
             todo = ((UnionTypeClassNode) receiver).getDelegates();
         } else {
-            todo = new ClassNode[] {receiver};
+            todo = new ClassNode[] {!isPrimitiveType(declaringClass) ? wrapTypeIfNecessary(receiver) : receiver};
         }
         for (ClassNode type : todo) {
             ClassNode current = type;
             while (current != null) {
-                Map<GenericsTypeName, GenericsType> currentPlaceHolders = new HashMap<>();
+                Map<GenericsTypeName, GenericsType> placeHolders = new HashMap<>();
                 // GROOVY-10055: handle diamond or raw
                 if (current.getGenericsTypes() != null
                         ? current.getGenericsTypes().length == 0
                         : current.redirect().getGenericsTypes() != null) {
                     for (GenericsType gt : current.redirect().getGenericsTypes()) {
                         ClassNode cn = gt.getUpperBounds() != null ? gt.getUpperBounds()[0] : gt.getType().redirect();
-                        currentPlaceHolders.put(new GenericsTypeName(gt.getName()), cn.getPlainNodeReference().asGenericsType());
+                        placeHolders.put(new GenericsTypeName(gt.getName()), cn.getPlainNodeReference().asGenericsType());
                     }
                 }
 
                 boolean currentIsDeclaring = current.equals(declaringClass) || isGenericsPlaceHolderOrArrayOf(declaringClass);
                 if (currentIsDeclaring) {
-                    extractGenericsConnections(currentPlaceHolders, current, declaringClass);
-                    if (method != null)
-                        addMethodLevelDeclaredGenerics(method, currentPlaceHolders);
+                    extractGenericsConnections(placeHolders, current, declaringClass);
                 } else {
-                    GenericsUtils.extractPlaceholders(current, currentPlaceHolders);
+                    GenericsUtils.extractPlaceholders(current, placeHolders);
                 }
 
-                if (resolvedPlaceHolders != null) { // merge maps
-                    for (Map.Entry<GenericsTypeName, GenericsType> entry : currentPlaceHolders.entrySet()) {
+                if (result != null) { // merge maps
+                    for (Map.Entry<GenericsTypeName, GenericsType> entry : placeHolders.entrySet()) {
                         GenericsType gt = entry.getValue();
                         if (!gt.isPlaceholder()) continue;
-                        GenericsType referenced = resolvedPlaceHolders.get(new GenericsTypeName(gt.getName()));
+                        GenericsType referenced = result.get(new GenericsTypeName(gt.getName()));
                         if (referenced == null) continue;
                         entry.setValue(referenced);
                     }
                 }
-                resolvedPlaceHolders = currentPlaceHolders;
+                result = placeHolders;
 
                 // we are done if we are now in the declaring class
                 if (currentIsDeclaring) break;
@@ -5697,40 +5658,66 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     // the actual receiver is Foo and declaringClass is Class
                     current = declaringClass;
                 } else {
-                    current = applyGenericsContext(currentPlaceHolders, current);
+                    current = applyGenericsContext(placeHolders, current);
                 }
             }
         }
-        if (resolvedPlaceHolders == null) {
-            throw new GroovyBugError("Declaring class for method call to '" + (method != null ? method.getTypeDescriptor() : "<>") +
-                    "' declared in " + declaringClass.getName() + " was not matched with found receiver " + receiver.getName() + ". This should not have happened!");
+        if (result == null) {
+            throw new GroovyBugError("Declaring class " + prettyPrintTypeName(declaringClass) + " was not matched with receiver " + prettyPrintTypeName(receiver) + ". This should not have happened!");
         }
-        return resolvedPlaceHolders;
+        return result;
+    }
+
+    private static Map<GenericsTypeName, GenericsType> extractPlaceHoldersVisibleToDeclaration(final ClassNode receiver, final MethodNode method, final Expression argument) {
+        Map<GenericsTypeName, GenericsType> result;
+        if (method.isStatic()) {
+            result = new HashMap<>();
+        } else {
+            ClassNode declaring = method.getDeclaringClass();
+            if (argument instanceof ArgumentListExpression) { // resolve extension method class
+                List<Expression> arguments = ((ArgumentListExpression) argument).getExpressions();
+                if (!arguments.isEmpty()) {
+                    ClassNode cn = arguments.get(0).getNodeMetaData(ExtensionMethodDeclaringClass.class);
+                    if (cn != null)
+                        declaring = cn;
+                }
+            }
+            result = extractPlaceHolders(receiver, declaring);
+            if (!result.isEmpty()) Optional.ofNullable(method.getGenericsTypes()).ifPresent(methodGenerics ->
+                Arrays.stream(methodGenerics).map(gt -> new GenericsTypeName(gt.getName())).forEach(result::remove)); // GROOVY-10322
+        }
+        return result;
     }
 
     protected boolean typeCheckMethodsWithGenericsOrFail(final ClassNode receiver, final ClassNode[] arguments, final MethodNode candidateMethod, final Expression location) {
         if (!typeCheckMethodsWithGenerics(receiver, arguments, candidateMethod)) {
-            Map<GenericsTypeName, GenericsType> generics = GenericsUtils.extractPlaceholders(receiver);
-            applyGenericsConnections(extractGenericsParameterMapOfThis(typeCheckingContext), generics);
-            addMethodLevelDeclaredGenerics(candidateMethod, generics);
-            Parameter[] parameters = candidateMethod.getParameters();
+            ClassNode r = receiver, at[] = arguments; MethodNode m = candidateMethod;
+            if (candidateMethod instanceof ExtensionMethodNode) {
+                m = ((ExtensionMethodNode) candidateMethod).getExtensionMethodNode();
+                r = m.getDeclaringClass();
+                at = new ClassNode[arguments.length + 1];
+                at[0] = receiver; // object expression is first argument
+                System.arraycopy(arguments, 0, at, 1, arguments.length);
+            }
+            Map<GenericsTypeName, GenericsType> spec = extractPlaceHoldersVisibleToDeclaration(r, m, null);
+            GenericsType[] gt = applyGenericsContext(spec, m.getGenericsTypes()); // class params in bounds
+            GenericsUtils.extractPlaceholders(makeClassSafe0(OBJECT_TYPE, gt), spec);
+
+            Parameter[] parameters = m.getParameters();
             ClassNode[] paramTypes = new ClassNode[parameters.length];
             for (int i = 0, n = parameters.length; i < n; i += 1) {
-                paramTypes[i] = fullyResolveType(parameters[i].getType(), generics);
+                paramTypes[i] = fullyResolveType(parameters[i].getType(), spec);
                 // GROOVY-10010: check for List<String> parameter and ["foo","$bar"] argument
-                if (i < arguments.length && hasGStringStringError(paramTypes[i], arguments[i], location)) {
+                if (i < at.length && hasGStringStringError(paramTypes[i], at[i], location)) {
                     return false;
                 }
             }
-            addStaticTypeError("Cannot call " + toMethodGenericTypesString(candidateMethod) + prettyPrintTypeName(receiver) + "#" +
-                    toMethodParametersString(candidateMethod.getName(), paramTypes) + " with arguments " + formatArgumentList(arguments), location);
+
+            addStaticTypeError("Cannot call " + Optional.ofNullable(gt).map(GenericsUtils::toGenericTypesString).orElse("") +
+                    prettyPrintTypeName(r) + "#" + toMethodParametersString(m.getName(), paramTypes) + " with arguments " + formatArgumentList(at), location);
             return false;
         }
         return true;
-    }
-
-    private static String toMethodGenericTypesString(final MethodNode node) {
-        return Optional.ofNullable(node.getGenericsTypes()).map(GenericsUtils::toGenericTypesString).orElse("");
     }
 
     protected static String formatArgumentList(final ClassNode[] nodes) {
