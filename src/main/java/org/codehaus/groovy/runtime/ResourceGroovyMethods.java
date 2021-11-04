@@ -72,11 +72,11 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * This class defines new groovy methods for Readers, Writers, InputStreams and
- * OutputStreams which appear on normal JDK classes inside the Groovy environment.
+ * This class defines new groovy methods for Files, URLs, URIs which appear
+ * on normal JDK classes inside the Groovy environment.
  * Static methods are used with the first parameter being the destination class,
- * i.e. <code>public static T eachLine(InputStream self, Closure c)</code>
- * provides a <code>eachLine(Closure c)</code> method for <code>InputStream</code>.
+ * i.e. <code>public static long size(File self)</code>
+ * provides a <code>size()</code> method for <code>File</code>.
  * <p>
  * NOTE: While this class contains many 'public' static methods, it is
  * primarily regarded as an internal class (its internal package name
