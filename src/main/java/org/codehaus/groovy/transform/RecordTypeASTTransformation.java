@@ -228,7 +228,6 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             if (unsupportedTupleAttribute(tupleCons, "includes")) return;
             if (unsupportedTupleAttribute(tupleCons, "includeProperties")) return;
             if (unsupportedTupleAttribute(tupleCons, "includeSuperFields")) return;
-            if (unsupportedTupleAttribute(tupleCons, "callSuper")) return;
         }
 
         if ((options == null || !memberHasValue(options, COPY_WITH, Boolean.FALSE)) && !hasDeclaredMethod(cNode, COPY_WITH, 1)) {

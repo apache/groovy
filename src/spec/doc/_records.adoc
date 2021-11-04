@@ -83,7 +83,9 @@ It can be used as follows:
 include::../test/RecordSpecificationTest.groovy[tags=record_generics_usage,indent=0]
 ----
 
-== Compact constructor
+== Special record features
+
+=== Compact constructor
 
 Records have an implicit constructor. This can be overridden in the normal way
 by providing your own constructor - you need to make sure you set all of the fields
@@ -97,6 +99,13 @@ but is augmented by the supplied statements in the compact constructor definitio
 ----
 include::../test/RecordSpecificationTest.groovy[tags=record_compact_constructor,indent=0]
 ----
+
+=== Serializability
+
+Groovy _native_ records follow the
+https://docs.oracle.com/en/java/javase/16/docs/specs/records-serialization.html[special conventions]
+for serializability which apply to Java records.
+Groovy _record-like_ classes (discussed below) follow normal Java class serializability conventions.
 
 == Groovy enhancements
 

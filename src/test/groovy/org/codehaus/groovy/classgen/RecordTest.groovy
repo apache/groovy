@@ -386,7 +386,7 @@ class RecordTest {
     }
 
     @Test
-    void testSerialization() {
+    void testClassSerialization() {
         // inspired by:
         // https://inside.java/2020/07/20/record-serialization/
 
@@ -415,7 +415,11 @@ class RecordTest {
             assert in.readObject().toString() == 'RangeClass(lo:10, hi:5)'
         }
         '''
+    }
 
+    @Test
+    void testNativeRecordSerialization() {
+        assumeTrue(isAtLeastJdk('16.0'))
         assertScript '''
         import static groovy.test.GroovyAssert.shouldFail
 
