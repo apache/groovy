@@ -268,8 +268,13 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             args.addExpression(callThisX(pNode.getName()));
             gtypes.add(new GenericsType(getWrapper(pNode.getType())));
         }
-        tupleClass.setGenericsTypes(gtypes.toArray(new GenericsType[0]));
-        Statement body = returnS(ctorX(tupleClass, args));
+        Statement body;
+        if (pList.isEmpty()) {
+            body = returnS(propX(classX(tupleClass), "INSTANCE"));
+        } else {
+            tupleClass.setGenericsTypes(gtypes.toArray(new GenericsType[0]));
+            body = returnS(ctorX(tupleClass, args));
+        }
         addGeneratedMethod(cNode, COMPONENTS, PUBLIC_FINAL, tupleClass, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
