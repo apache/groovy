@@ -1079,6 +1079,40 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10344
+    void testDiamondInferrenceFromConstructor22() {
+        assertScript '''
+            class C<X,Y> {
+            }
+            def <T extends C<? extends Number, ? extends Number>> T m(T t) {
+                return t
+            }
+            def x = m(new C<>())
+            assert x instanceof C
+        '''
+    }
+
+    // GROOVY-10230
+    void testDiamondInferrenceFromConstructor23() {
+        assertScript '''
+            class A {
+                def <T extends C<Number,Number>> T m(T t) {
+                    return t
+                }
+            }
+            class B extends A {
+                @Override
+                def <T extends C<Number,Number>> T m(T t) {
+                    T x = null; super.m(true ? t : x)
+                }
+            }
+            class C<X,Y> {
+            }
+            def x = new B().m(new C<>())
+            assert x instanceof C
+        '''
+    }
+
     // GROOVY-10280
     void testTypeArgumentPropagation() {
         assertScript '''
