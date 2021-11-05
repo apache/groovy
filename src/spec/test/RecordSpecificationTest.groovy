@@ -97,7 +97,6 @@ assert new Point3D(10, 20, 30).toString() == 'Point3D[coords=10,20,30]'
     }
 
     void testCopyWith() {
-        /* TODO FIX
         assertScript '''
 import groovy.transform.RecordOptions
 // tag::record_copywith[]
@@ -111,7 +110,6 @@ def orange = apple.copyWith(name: 'Orange')
 assert orange.toString() == 'Fruit[name=Orange, price=11.6]'
 // end::record_copywith[]
 '''
-         */
         assertScript '''
 import groovy.transform.RecordOptions
 import static groovy.test.GroovyAssert.shouldFail

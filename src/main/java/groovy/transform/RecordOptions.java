@@ -122,7 +122,7 @@ public @interface RecordOptions {
      * new property values and returns a new instance of the record class with
      * these values set.
      * Example:
-     * <pre class="TODO_FIX_groovyTestCase">
+     * <pre class="groovyTestCase">
      * {@code @groovy.transform.RecordType}(copyWith = true)
      * class Person {
      *     String first, last

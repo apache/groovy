@@ -77,7 +77,7 @@ import java.lang.annotation.Target
  */
 @RecordBase
 @RecordOptions
-@TupleConstructor(namedVariant = true, force = true/*, callSuper = true*/)
+@TupleConstructor(namedVariant = true, force = true)
 @PropertyOptions
 @KnownImmutable
 @POJO
