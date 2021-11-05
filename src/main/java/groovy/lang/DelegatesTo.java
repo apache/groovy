@@ -43,7 +43,7 @@ import java.lang.annotation.Target;
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.PARAMETER})
+@Target({ElementType.PARAMETER, ElementType.METHOD})
 public @interface DelegatesTo {
     Class value() default Target.class;
 
