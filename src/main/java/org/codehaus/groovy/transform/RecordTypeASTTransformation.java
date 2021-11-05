@@ -230,7 +230,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             if (unsupportedTupleAttribute(tupleCons, "includeSuperFields")) return;
         }
 
-        if ((options == null || !memberHasValue(options, COPY_WITH, Boolean.FALSE)) && !hasDeclaredMethod(cNode, COPY_WITH, 1)) {
+        if (options != null && memberHasValue(options, COPY_WITH, Boolean.TRUE) && !hasDeclaredMethod(cNode, COPY_WITH, 1)) {
             createCopyWith(cNode, pList);
         }
 
@@ -327,7 +327,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             namedParam.addMember("required", constX(false, true));
             mapParam.addAnnotation(namedParam);
         }
-        Statement body = returnS(nullX() /*ctorX(cNode.getPlainNodeReference(), args)*/); // TODO FIX
+        Statement body = returnS(ctorX(cNode.getPlainNodeReference(), args));
         addGeneratedMethod(cNode, COPY_WITH, PUBLIC_FINAL, cNode.getPlainNodeReference(), params(mapParam), ClassNode.EMPTY_ARRAY, body);
     }
 

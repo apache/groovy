@@ -43,32 +43,6 @@ public @interface RecordOptions {
     RecordTypeMode mode() default RecordTypeMode.AUTO;
 
     /**
-     * If {@code true}, this adds a method {@code copyWith} which takes a Map of
-     * new property values and returns a new instance of the record class with
-     * these values set.
-     * Example:
-     * <!-- TODO pre class="groovyTestCase"-->
-     * <pre>
-     * {@code @groovy.transform.RecordType}(copyWith = true)
-     * class Person {
-     *     String first, last
-     * }
-     *
-     * def tim   = new Person('tim', 'yates')
-     * def alice = tim.copyWith(first:'alice')
-     *
-     * assert tim.toString() == 'Person[first=tim, last=yates]'
-     * assert alice.toString() == 'Person[first=alice, last=yates]'
-     * </pre>
-     * Unknown keys in the map are ignored, and if the values would not change
-     * the object, then the original object is returned.
-     *
-     * If a method called {@code copyWith} that takes a single parameter already
-     * exists in the class, then this setting is ignored, and no method is generated.
-     */
-    boolean copyWith() default false;
-
-    /**
      * If {@code true}, this adds a method {@code getAt(int)} which given
      * an integer n, returns the n'th component in the record.
      * Example:
@@ -142,6 +116,31 @@ public @interface RecordOptions {
      * then this setting is ignored, and no additional method is generated.
      */
     boolean size() default true;
+
+    /**
+     * If {@code true}, this adds a method {@code copyWith} which takes a Map of
+     * new property values and returns a new instance of the record class with
+     * these values set.
+     * Example:
+     * <pre class="TODO_FIX_groovyTestCase">
+     * {@code @groovy.transform.RecordType}(copyWith = true)
+     * class Person {
+     *     String first, last
+     * }
+     *
+     * def tim   = new Person('tim', 'yates')
+     * def alice = tim.copyWith(first:'alice')
+     *
+     * assert tim.toString() == 'Person[first=tim, last=yates]'
+     * assert alice.toString() == 'Person[first=alice, last=yates]'
+     * </pre>
+     * Unknown keys in the map are ignored, and if the values would not change
+     * the object, then the original object is returned.
+     *
+     * If a method called {@code copyWith} that takes a single parameter already
+     * exists in the class, then this setting is ignored, and no method is generated.
+     */
+    boolean copyWith() default false;
 
     /**
      * If {@code true}, this adds a method {@code components()} to the record
