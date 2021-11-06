@@ -518,6 +518,11 @@
             <pgp value="8756c4f765c9ac3cb6b85d62379ce192d401ab61"/>
          </artifact>
       </component>
+      <component group="info.picocli" name="picocli" version="4.6.2">
+         <artifact name="picocli-4.6.2.jar">
+            <pgp value="aa417737bd805456db3cbdde6601e5c08dccbb96"/>
+         </artifact>
+      </component>
       <component group="io.github.x-stream" name="mxparser" version="1.2.1">
          <artifact name="mxparser-1.2.1.jar">
             <pgp value="050a37a2e0577f4baa095b52602ec18d20c4661c"/>
