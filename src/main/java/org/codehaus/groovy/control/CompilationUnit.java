@@ -110,12 +110,12 @@ public class CompilationUnit extends ProcessingUnit {
         }
     }
 
-    /** Controls behavior of {@link #classgen()} and other routines. */
+    /** If set, outputs a little more information during compilation when errors occur. */
     protected boolean debug;
     /** True after the first {@link #configure(CompilerConfiguration)} operation. */
     protected boolean configured;
 
-    /** A callback for use during {@link #classgen()} */
+    /** A callback called during the {@code classgen} phase of compilation */
     protected ClassgenCallback classgenCallback;
     /** A callback for use during {@link #compile()} */
     protected ProgressCallback progressCallback;
@@ -554,10 +554,10 @@ public class CompilationUnit extends ProcessingUnit {
     // EXTERNAL CALLBACKS
 
     /**
-     * A callback interface you can use to "accompany" the classgen()
-     * code as it traverses the ClassNode tree.  You will be called-back
-     * for each primary and inner class.  Use setClassgenCallback() before
-     * running compile() to set your callback.
+     * A callback interface you can use during the {@code classgen}
+     * phase of compilation as the compiler traverses the ClassNode tree.
+     * You will be called-back for each primary and inner class.
+     * Use setClassgenCallback() before running compile() to set your callback.
      */
     @FunctionalInterface
     public interface ClassgenCallback {
@@ -709,7 +709,7 @@ public class CompilationUnit extends ProcessingUnit {
     }
 
     /**
-     * Runs {@link #classgen()} on a single {@code ClassNode}.
+     * Runs the class generation phase on a single {@code ClassNode}.
      */
     private final IPrimaryClassNodeOperation classgen = new IPrimaryClassNodeOperation() {
         @Override
