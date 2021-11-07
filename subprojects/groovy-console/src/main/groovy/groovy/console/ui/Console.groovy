@@ -56,6 +56,7 @@ import org.codehaus.groovy.runtime.StringGroovyMethods
 import org.codehaus.groovy.syntax.SyntaxException
 import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.transform.ThreadInterruptibleASTTransformation
+import org.codehaus.groovy.vmplugin.VMPluginFactory
 
 import javax.swing.Action
 import javax.swing.Icon
@@ -98,7 +99,6 @@ import java.awt.event.FocusEvent
 import java.awt.event.FocusListener
 import java.util.logging.Logger
 import java.util.prefs.Preferences
-
 /**
  * Groovy Swing console.
  *
@@ -1551,7 +1551,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         // work around GROOVY-1048
         def message = 'Welcome to the Groovy Console for evaluating Groovy scripts\nGroovy version: ' + version
         try {
-            message += "\nJava version: ${System.getProperty('java.version')} (${System.getProperty('java.vendor')})"
+            def javaVersion = VMPluginFactory.getPlugin().version >= 9 ? Runtime.version().toString() : System.getProperty('java.version')
+            message += "\nJava version: ${javaVersion} (${System.getProperty('java.vendor')})"
         } catch(ignore) { }
         try {
             message += "\nOS version: ${System.getProperty('os.version')} (${System.getProperty('os.name')})"
