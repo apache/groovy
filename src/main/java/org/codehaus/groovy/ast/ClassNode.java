@@ -1371,6 +1371,11 @@ public class ClassNode extends AnnotatedNode {
         return getUnresolvedSuperClass() != null && "java.lang.Record".equals(getUnresolvedSuperClass().getName());
     }
 
+    @Deprecated
+    public List<RecordComponentNode> getRecordComponentNodes() {
+        return getRecordComponents();
+    }
+
     /**
      * Get the record components of record type
      *
@@ -1382,6 +1387,11 @@ public class ClassNode extends AnnotatedNode {
             return redirect.getRecordComponents();
         lazyClassInit();
         return recordComponentNodes;
+    }
+
+    @Deprecated
+    public void setRecordComponentNodes(List<RecordComponentNode> recordComponentNodes) {
+        setRecordComponents(recordComponentNodes);
     }
 
     /**
