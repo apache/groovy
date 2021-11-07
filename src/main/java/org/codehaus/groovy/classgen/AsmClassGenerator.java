@@ -400,7 +400,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void visitRecordComponents(final ClassNode classNode) {
-        List<RecordComponentNode> recordComponentNodeList = classNode.getRecordComponentNodes();
+        List<RecordComponentNode> recordComponentNodeList = classNode.getRecordComponents();
         if (null == recordComponentNodeList) return;
 
         for (RecordComponentNode recordComponentNode : recordComponentNodeList) {

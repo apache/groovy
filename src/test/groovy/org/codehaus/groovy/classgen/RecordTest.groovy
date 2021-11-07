@@ -259,7 +259,7 @@ class RecordTest {
 
     private static void doTestNativeRecordClassNode(ClassNode personClassNode, ClassNode notNullClassNode, ClassNode notNull2ClassNode, ClassNode notNull3ClassNode) {
         assert personClassNode.isRecord()
-        def rcns = personClassNode.getRecordComponentNodes()
+        def rcns = personClassNode.getRecordComponents()
         assert 4 == rcns.size()
         assert 'name' == rcns[0].name && ClassHelper.STRING_TYPE == rcns[0].type
         List<AnnotationNode> annotationNodes = rcns[0].getAnnotations()
@@ -295,7 +295,7 @@ class RecordTest {
 
             def cn = ClassHelper.make(jdk.net.UnixDomainPrincipal.class)
             assert cn.isRecord()
-            def rcns = cn.getRecordComponentNodes()
+            def rcns = cn.getRecordComponents()
             assert 2 == rcns.size()
             assert 'user' == rcns[0].name && 'java.nio.file.attribute.UserPrincipal' == rcns[0].type.name
             assert 'group' == rcns[1].name && 'java.nio.file.attribute.GroupPrincipal' == rcns[1].type.name

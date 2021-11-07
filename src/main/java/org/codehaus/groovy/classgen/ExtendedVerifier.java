@@ -124,7 +124,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
     }
 
     private void visitRecordComponents(ClassNode node) {
-        for (RecordComponentNode recordComponentNode : node.getRecordComponentNodes()) {
+        for (RecordComponentNode recordComponentNode : node.getRecordComponents()) {
             visitAnnotations(recordComponentNode, RECORD_COMPONENT_TARGET);
             visitTypeAnnotations(recordComponentNode.getType());
             extractTypeUseAnnotations(recordComponentNode.getAnnotations(), recordComponentNode.getType(), RECORD_COMPONENT_TARGET);

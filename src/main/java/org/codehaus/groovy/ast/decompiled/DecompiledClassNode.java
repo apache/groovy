@@ -204,9 +204,9 @@ public class DecompiledClassNode extends ClassNode {
      * @return {@code RecordComponentNode} instances
      * @since 4.0.0
      */
-    public List<RecordComponentNode> getRecordComponentNodes() {
+    public List<RecordComponentNode> getRecordComponents() {
         lazyInitSupers();
-        return super.getRecordComponentNodes();
+        return super.getRecordComponents();
     }
 
     @Override

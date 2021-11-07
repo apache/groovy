@@ -54,7 +54,7 @@ class ClassSignatureParser {
         }
 
         if (!stub.recordComponents.isEmpty()) {
-            classNode.setRecordComponentNodes(stub.recordComponents.stream().map(r -> {
+            classNode.setRecordComponents(stub.recordComponents.stream().map(r -> {
                 ClassNode type = resolver.resolveType(Type.getType(r.descriptor));
                 ObjectHolder<ClassNode> typeHolder = new ObjectHolder<>(type);
                 if (null != r.signature) {

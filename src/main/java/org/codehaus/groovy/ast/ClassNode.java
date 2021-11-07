@@ -1377,9 +1377,9 @@ public class ClassNode extends AnnotatedNode {
      * @return {@code RecordComponentNode} instances
      * @since 4.0.0
      */
-    public List<RecordComponentNode> getRecordComponentNodes() {
+    public List<RecordComponentNode> getRecordComponents() {
         if (redirect != null)
-            return redirect.getRecordComponentNodes();
+            return redirect.getRecordComponents();
         lazyClassInit();
         return recordComponentNodes;
     }
@@ -1389,9 +1389,9 @@ public class ClassNode extends AnnotatedNode {
      *
      * @since 4.0.0
      */
-    public void setRecordComponentNodes(List<RecordComponentNode> recordComponentNodes) {
+    public void setRecordComponents(List<RecordComponentNode> recordComponentNodes) {
         if (redirect != null) {
-            redirect.setRecordComponentNodes(recordComponentNodes);
+            redirect.setRecordComponents(recordComponentNodes);
         } else {
             this.recordComponentNodes = recordComponentNodes;
         }

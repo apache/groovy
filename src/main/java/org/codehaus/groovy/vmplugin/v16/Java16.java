@@ -75,7 +75,7 @@ public class Java16 extends Java10 {
     @Override
     protected void makeRecordComponents(final CompileUnit cu, final ClassNode classNode, final Class<?> clazz) {
         if (!clazz.isRecord()) return;
-        classNode.setRecordComponentNodes(Arrays.stream(clazz.getRecordComponents())
+        classNode.setRecordComponents(Arrays.stream(clazz.getRecordComponents())
                 .map(rc -> {
                     ClassNode type = makeClassNode(cu, rc.getGenericType(), rc.getType());
                     type.addTypeAnnotations(Arrays.stream(rc.getAnnotatedType().getAnnotations()).map(annotation -> {
