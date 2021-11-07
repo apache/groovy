@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.typecheckers
 
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport
 import org.codehaus.groovy.ast.FieldNode
 import org.codehaus.groovy.ast.Variable
@@ -26,6 +27,7 @@ import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.control.SourceUnit
 
+@CompileStatic
 class CheckingVisitor extends ClassCodeVisitorSupport {
     protected final Map<Expression, Expression> localConstVars = new HashMap<>()
 
