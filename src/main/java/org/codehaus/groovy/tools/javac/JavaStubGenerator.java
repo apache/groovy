@@ -57,7 +57,6 @@ import org.objectweb.asm.Opcodes;
 
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -107,16 +106,21 @@ public class JavaStubGenerator {
     private final ArrayList<ConstructorNode> constructors = new ArrayList<ConstructorNode>();
     private ModuleNode currentModule;
 
+    public JavaStubGenerator(final File outputPath) {
+        this(outputPath, false, Charset.defaultCharset().name());
+    }
+
+    public JavaStubGenerator(final File outputPath, final boolean requireSuperResolved, String encoding) {
+        this(outputPath, requireSuperResolved, true, encoding);
+    }
+
+    @Deprecated
     public JavaStubGenerator(final File outputPath, final boolean requireSuperResolved, final boolean java5, String encoding) {
         this.outputPath = outputPath;
         this.requireSuperResolved = requireSuperResolved;
         this.java5 = java5;
         this.encoding = encoding;
         if (null != outputPath) outputPath.mkdirs(); // when outputPath is null, we generate stubs in memory
-    }
-
-    public JavaStubGenerator(final File outputPath) {
-        this(outputPath, false, false, Charset.defaultCharset().name());
     }
 
     private static void mkdirs(File parent, String relativeFile) {

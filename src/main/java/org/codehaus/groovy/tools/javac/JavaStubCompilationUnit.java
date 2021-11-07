@@ -49,9 +49,8 @@ public class JavaStubCompilationUnit extends CompilationUnit {
             Map<String, Object> options = configuration.getJointCompilationOptions();
             destDir = (File) options.get("stubDir");
         }
-        boolean useJava5 = CompilerConfiguration.isPostJDK5(configuration.getTargetBytecode());
         String encoding = configuration.getSourceEncoding();
-        stubGenerator = new JavaStubGenerator(destDir, false, useJava5, encoding);
+        stubGenerator = new JavaStubGenerator(destDir, false, encoding);
 
         addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
             new VariableScopeVisitor(source).visitClass(classNode);

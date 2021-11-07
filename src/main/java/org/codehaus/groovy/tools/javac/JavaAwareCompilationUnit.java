@@ -69,8 +69,6 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
 
         {
             Map<String, Object> options = this.configuration.getJointCompilationOptions();
-
-            boolean atLeastJava5 = CompilerConfiguration.isPostJDK5(this.configuration.getTargetBytecode());
             String sourceEncoding = this.configuration.getSourceEncoding();
             Object memStub = options.get(CompilerConfiguration.MEM_STUB);
             if (memStub == null) {
@@ -81,7 +79,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
             this.keepStubs = Boolean.TRUE.equals(options.get("keepStubs"));
             this.memStubEnabled = Boolean.TRUE.equals(memStub);
             this.generationGoal = memStubEnabled ? null : (File) options.get("stubDir");
-            this.stubGenerator = new JavaStubGenerator(generationGoal, false, atLeastJava5, sourceEncoding);
+            this.stubGenerator = new JavaStubGenerator(generationGoal, false, sourceEncoding);
         }
 
         addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
