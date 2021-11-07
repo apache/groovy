@@ -85,7 +85,7 @@ public class RecordCompletionASTTransformation extends AbstractASTTransformation
             params.add(param(pNode.getType(), "arg" + i));
         }
 
-        ConstructorNode consNode = cNode.getDeclaredConstructor(params.toArray(new Parameter[0]));
+        ConstructorNode consNode = cNode.getDeclaredConstructor(params.toArray(Parameter.EMPTY_ARRAY));
         if (consNode != null) {
             Statement code = copyWith.getCode();
             if (code instanceof ReturnStatement) {

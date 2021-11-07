@@ -81,7 +81,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.hasDeclaredMethod;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mapEntryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.plusX;
@@ -271,7 +270,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
                 args.addExpression(callThisX(pNode.getName()));
                 gtypes.add(new GenericsType(getWrapper(pNode.getType())));
             }
-            tupleClass.setGenericsTypes(gtypes.toArray(new GenericsType[0]));
+            tupleClass.setGenericsTypes(gtypes.toArray(GenericsType.EMPTY_ARRAY));
             body = returnS(ctorX(tupleClass, args));
         }
         addGeneratedMethod(cNode, COMPONENTS, PUBLIC_FINAL, tupleClass, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
