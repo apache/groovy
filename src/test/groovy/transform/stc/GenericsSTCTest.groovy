@@ -1113,6 +1113,20 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10351
+    void testDiamondInferrenceFromConstructor24() {
+        assertScript '''
+            class C<T> {
+                C(T one, D<T,? extends T> two) {
+                }
+            }
+            class D<U,V> {
+            }
+            D<Integer,? extends Integer> d_of_i_and_i = null
+            C<Integer> c_of_i = new C<>(1,d_of_i_and_i) // 3 witnesses for T
+        '''
+    }
+
     // GROOVY-10280
     void testTypeArgumentPropagation() {
         assertScript '''
