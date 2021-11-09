@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -51,7 +52,6 @@ import org.codehaus.groovy.tools.GroovyClass;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -2147,22 +2147,33 @@ public abstract class StaticTypeCheckingSupport {
      * @return the result of the expression
      */
     public static Object evaluateExpression(final Expression expr, final CompilerConfiguration config) {
+        Expression ce = expr instanceof CastExpression ? ((CastExpression) expr).getExpression() : expr;
+        if (ce instanceof ConstantExpression) {
+            if (expr.getType().equals(ce.getType()))
+                return ((ConstantExpression) ce).getValue();
+        } else if (ce instanceof ListExpression) {
+            if (expr.getType().isArray() && expr.getType().getComponentType().equals(STRING_TYPE))
+                return ((ListExpression) ce).getExpressions().stream().map(e -> evaluateExpression(e, config)).toArray(String[]::new);
+        }
+
         String className = "Expression$" + UUID.randomUUID().toString().replace('-', '$');
-        ClassNode node = new ClassNode(className, Opcodes.ACC_PUBLIC, OBJECT_TYPE);
-        ReturnStatement code = new ReturnStatement(expr);
-        addGeneratedMethod(node, "eval", Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
-        CompilerConfiguration copyConf = new CompilerConfiguration(config);
-        // disable preview features so class can be inspected by this JVM
-        copyConf.setPreviewFeatures(false);
-        CompilationUnit cu = new CompilationUnit(copyConf);
+        ClassNode simpleClass = new ClassNode(className, Opcodes.ACC_PUBLIC, OBJECT_TYPE);
+        addGeneratedMethod(simpleClass, "eval", Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new ReturnStatement(expr));
+
+        // adjust configuration so class can be inspected by this JVM
+        CompilerConfiguration cc = new CompilerConfiguration(config);
+        cc.setPreviewFeatures(false); // unlikely to be required by expression
+        cc.setTargetBytecode(CompilerConfiguration.DEFAULT.getTargetBytecode());
+
+        CompilationUnit cu = new CompilationUnit(cc);
         try {
-            cu.addClassNode(node);
+            cu.addClassNode(simpleClass);
             cu.compile(Phases.CLASS_GENERATION);
             List<GroovyClass> classes = cu.getClasses();
             Class<?> aClass = cu.getClassLoader().defineClass(className, classes.get(0).getBytes());
             try {
                 return aClass.getMethod("eval").invoke(null);
-            } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            } catch (ReflectiveOperationException e) {
                 throw new GroovyBugError(e);
             }
         } finally {

@@ -703,10 +703,10 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     /**
-     * open up the super class define that takes raw bytes
+     * Converts an array of bytes into an instance of {@code Class}.
      */
-    public Class defineClass(String name, byte[] b) {
-        return super.defineClass(name, b, 0, b.length);
+    public Class defineClass(final String name, final byte[] bytes) throws ClassFormatError {
+        return super.defineClass(name, bytes, 0, bytes.length);
     }
 
     /**
