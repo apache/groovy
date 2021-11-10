@@ -328,7 +328,7 @@ public final class EnumSourceParsingTest extends GroovyTestCase {
         ));
     }
 
-    public void _FIXME_testParseEnumWithInnerClass4() {
+    public void testParseEnumWithInnerClass4() {
         parse(getMethodName(), new StringReader(
                 "enum E {\n" +
                         "    X, Y, Z\n" +
@@ -337,7 +337,7 @@ public final class EnumSourceParsingTest extends GroovyTestCase {
         ));
     }
 
-    public void _FIXME_testParseEnumWithInnerClass4a() {
+    public void testParseEnumWithInnerClass4a() {
         parse(getMethodName(), new StringReader(
                 "enum E {\n" +
                         "    X, Y, Z,\n" + // trailing comma
@@ -356,7 +356,8 @@ public final class EnumSourceParsingTest extends GroovyTestCase {
     }
 
     // GROOVY-8507
-    public void testParseEnumWithInnerClass5a() {
+    // `trait` can be both keyword and identifier, so `trait` could be parsed as enum constant too
+    public void _FIXME_testParseEnumWithInnerClass5a() {
         parse(getMethodName(), new StringReader(
                 "enum E {\n" +
                         "    X, Y, Z,\n" + // trailing comma

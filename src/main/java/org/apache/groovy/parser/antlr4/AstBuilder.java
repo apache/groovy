@@ -362,7 +362,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.cloneParams;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.closureX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
@@ -1844,6 +1843,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             ctx.fieldDeclaration().putNodeMetaData(CLASS_DECLARATION_CLASS_NODE, classNode);
             this.visitFieldDeclaration(ctx.fieldDeclaration());
         } else if (asBoolean(ctx.compactConstructorDeclaration())) {
+            ctx.compactConstructorDeclaration().putNodeMetaData(COMPACT_CONSTRUCTOR_DECLARATION_MODIFIERS, this.visitModifiersOpt(ctx.modifiersOpt()));
             ctx.compactConstructorDeclaration().putNodeMetaData(CLASS_DECLARATION_CLASS_NODE, classNode);
             this.visitCompactConstructorDeclaration(ctx.compactConstructorDeclaration());
         } else if (asBoolean(ctx.classDeclaration())) {
@@ -1948,7 +1948,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             createParsingFailedException("Only `record` can have compact constructor", ctx);
         }
 
-        ModifierManager modifierManager = new ModifierManager(this, this.visitModifiers(ctx.modifiers()));
+        List<ModifierNode> modifierNodeList = ctx.getNodeMetaData(COMPACT_CONSTRUCTOR_DECLARATION_MODIFIERS);
+        Objects.requireNonNull(modifierNodeList, "modifierNodeList should not be null");
+        ModifierManager modifierManager = new ModifierManager(this, modifierNodeList);
 
         if (modifierManager.containsAny(VAR)) {
             throw createParsingFailedException("var cannot be used for compact constructor declaration", ctx);
@@ -5207,6 +5209,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private static final String PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN = "_PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN";
     private static final String CMD_EXPRESSION_BASE_EXPR = "_CMD_EXPRESSION_BASE_EXPR";
     private static final String TYPE_DECLARATION_MODIFIERS = "_TYPE_DECLARATION_MODIFIERS";
+    private static final String COMPACT_CONSTRUCTOR_DECLARATION_MODIFIERS = "_COMPACT_CONSTRUCTOR_DECLARATION_MODIFIERS";
     private static final String CLASS_DECLARATION_CLASS_NODE = "_CLASS_DECLARATION_CLASS_NODE";
     private static final String VARIABLE_DECLARATION_VARIABLE_TYPE = "_VARIABLE_DECLARATION_VARIABLE_TYPE";
     private static final String ANONYMOUS_INNER_CLASS_SUPER_CLASS = "_ANONYMOUS_INNER_CLASS_SUPER_CLASS";
