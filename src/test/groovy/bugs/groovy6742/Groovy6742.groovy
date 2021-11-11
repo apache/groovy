@@ -18,75 +18,43 @@
  */
 package groovy.bugs.groovy6742
 
-import groovy.transform.CompileStatic
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-@CompileStatic
 final class Groovy6742 {
 
     @Test
-    void test1() {
+    void testAssignAIC() {
         assertScript '''
             package groovy.bugs.groovy6742
 
             @groovy.transform.TypeChecked
-            class Issue1 {
-                public void issue(){
-                    Function<String,String> function = new Function<String,String>() {
-                        @Override
-                        String apply(String input) {
-                            return "ok"
-                        }
+            def test() {
+                Function<String,String> function = new Function<String,String>() {
+                    @Override
+                    String apply(String input) {
+                        return input + ' world'
                     }
                 }
+                function.apply('hello')
             }
 
-            assert true
+            assert test() == 'hello world'
         '''
     }
 
     @Test
-    void test2() {
+    void testReturnAIC() {
         assertScript '''
             package groovy.bugs.groovy6742
 
             @groovy.transform.TypeChecked
-            class Issue2 {
-                public void issue() {
-                    transform(new Function<String, String>() {
-                        @Override
-                        String apply(String input) {
-                            return "ok"
-                        }
-                    })
-                }
-
-                public <I, O> void transform(Function<? super I, ? extends O> function) {
-                }
-            }
-
-            assert true
-        '''
-    }
-
-    @Test
-    void test3() {
-        assertScript '''
-            package groovy.bugs.groovy6742
-
-            @groovy.transform.TypeChecked
-            class Issue3 {
-                public static <F, T> FutureCallback<F> deferredCallback(DeferredResult<T> deferredResult, final Function<F, T> function) {
-                    return new FutureCallback<F>() {
-                        private F f = null
-                        F f2 = null
-
-                        @Override
-                        void onSuccess(F result) {
-                            deferredResult.setResult(function.apply(result))
-                        }
+            static <R,T> FutureCallback<R> deferredCallback(DeferredResult<R> deferredResult, final Function<R,T> transformation) {
+                new FutureCallback<R>() {
+                    @Override
+                    void onSuccess(R result) {
+                        deferredResult.setResult(transformation.apply(result))
                     }
                 }
             }

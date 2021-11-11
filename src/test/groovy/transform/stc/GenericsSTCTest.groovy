@@ -561,14 +561,54 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-10339
     void testReturnTypeInferenceWithMethodGenerics21() {
-        shouldFailWithMessages '''
-            String foo() {
+        for (type in ['Character', 'Integer']) {
+            shouldFailWithMessages """
+                Character foo() {
+                }
+                def <T> T bar(T x, T y) {
+                }
+                $type z = bar(foo(), 1)
+            """,
+            'Cannot assign value of type'
+        }
+    }
+
+    // GROOVY-10339
+    void testReturnTypeInferenceWithMethodGenerics22() {
+        for (type in ['Comparable', 'Serializable']) {
+            assertScript """
+                String foo() {
+                }
+                def <T> T bar(T x, T y) {
+                }
+                $type z = bar(foo(), 1)
+            """
+        }
+    }
+
+    // GROOVY-10347
+    void testReturnTypeInferenceWithMethodGenerics23() {
+        assertScript '''
+            String[] one = ['foo','bar'], two = ['baz']
+            Map<String,Integer> map = one.collectEntries{[it,1]} + two.collectEntries{[it,2]}
+            assert map == [foo:1, bar:1, baz:2]
+        '''
+    }
+
+    // GROOVY-10347
+    void testReturnTypeInferenceWithMethodGenerics24() {
+        assertScript '''
+            class Pogo {
+                String s
             }
-            def <T> T bar(T x, T y) {
+            class Sorter implements Comparator<Pogo>, Serializable {
+                int compare(Pogo p1, Pogo p2) { p1.s <=> p2.s }
             }
-            Integer i = bar(foo(), 1)
-        ''',
-        'Cannot assign value of type'
+
+            Pogo[] pogos = [new Pogo(s:'foo'), new Pogo(s:'bar')]
+            List<String> strings = pogos.sort(true, new Sorter())*.s // sort(T[],boolean,Comparator<? super T>)
+            assert strings == ['bar', 'foo']
+        '''
     }
 
     void testDiamondInferrenceFromConstructor1() {
