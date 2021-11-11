@@ -186,7 +186,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                         if (name.equals(pn.getName())) return pn;
                     }
 
-                    FieldNode fn = new FieldNode(name, mn.getModifiers() & 0xF, ClassHelper.OBJECT_TYPE, cn, null);
+                    FieldNode fn = new FieldNode(name, mn.getModifiers() & 0xF, ClassHelper.dynamicType(), cn, null);
                     fn.setHasNoRealSourcePosition(true);
                     fn.setDeclaringClass(cn);
                     fn.setSynthetic(true);
@@ -198,9 +198,11 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            for (ClassNode face : cn.getAllInterfaces()) {
-                FieldNode fn = face.getDeclaredField(name);
+            for (ClassNode in : cn.getAllInterfaces()) {
+                FieldNode fn = in.getDeclaredField(name);
                 if (fn != null) return fn;
+                PropertyNode pn = in.getProperty(name);
+                if (pn != null) return pn;
             }
         }
 

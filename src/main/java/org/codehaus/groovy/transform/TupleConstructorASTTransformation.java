@@ -44,7 +44,6 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
@@ -61,10 +60,6 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasExplicitConstructor;
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.checkPropNamesS;
 import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
-import static org.codehaus.groovy.ast.ClassHelper.MAP_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
-import static org.codehaus.groovy.ast.ClassHelper.make;
-import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
@@ -94,12 +89,14 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 public class TupleConstructorASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
 
     private CompilationUnit compilationUnit;
-    static final Class MY_CLASS = TupleConstructor.class;
-    static final ClassNode MY_TYPE = make(MY_CLASS);
+
+    static final Class<?> MY_CLASS = TupleConstructor.class;
+    static final ClassNode MY_TYPE = ClassHelper.make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
+
     private static final String NAMED_ARGS = "__namedArgs";
-    private static final ClassNode LHMAP_TYPE = makeWithoutCaching(LinkedHashMap.class, false);
-    private static final ClassNode POJO_TYPE = make(POJO.class);
+    private static final ClassNode LHMAP_TYPE = ClassHelper.makeWithoutCaching(LinkedHashMap.class, false);
+    private static final ClassNode POJO_TYPE = ClassHelper.make(POJO.class);
 
     @Override
     public String getAnnotationName() {
@@ -107,12 +104,12 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     }
 
     @Override
-    public void setCompilationUnit(CompilationUnit unit) {
+    public void setCompilationUnit(final CompilationUnit unit) {
         compilationUnit = unit;
     }
 
     @Override
-    public void visit(ASTNode[] nodes, SourceUnit source) {
+    public void visit(final ASTNode[] nodes, final SourceUnit source) {
         init(nodes, source);
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         AnnotationNode anno = (AnnotationNode) nodes[0];
@@ -134,8 +131,8 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                 return;
             if (!checkPropertyList(cNode, excludes, "excludes", anno, MY_TYPE_NAME, includeFields, includeSuperProperties, allProperties, includeSuperFields, false))
                 return;
-            final GroovyClassLoader classLoader = compilationUnit != null ? compilationUnit.getTransformLoader() : source.getClassLoader();
-            final PropertyHandler handler = PropertyHandler.createPropertyHandler(this, classLoader, cNode);
+            GroovyClassLoader classLoader = compilationUnit != null ? compilationUnit.getTransformLoader() : source.getClassLoader();
+            PropertyHandler handler = PropertyHandler.createPropertyHandler(this, classLoader, cNode);
             if (handler == null) return;
             if (!handler.validateAttributes(this, anno)) return;
 
@@ -163,13 +160,13 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         }
     }
 
-    private static void createConstructor(AbstractASTTransformation xform, AnnotationNode anno, ClassNode cNode, boolean includeFields,
-                                          boolean includeProperties, boolean includeSuperFields, boolean includeSuperProperties,
-                                          List<String> excludes, final List<String> includes, boolean allNames, boolean allProperties,
-                                          SourceUnit sourceUnit, PropertyHandler handler, ClosureExpression pre, ClosureExpression post) {
+    private static void createConstructor(final AbstractASTTransformation xform, final AnnotationNode anno, final ClassNode cNode, final boolean includeFields,
+                                          final boolean includeProperties, final boolean includeSuperFields, final boolean includeSuperProperties,
+                                          final List<String> excludes, final List<String> includes, final boolean allNames, final boolean allProperties,
+                                          final SourceUnit sourceUnit, final PropertyHandler handler, final ClosureExpression pre, final ClosureExpression post) {
         boolean callSuper = xform.memberHasValue(anno, "callSuper", true);
-        boolean force = xform.memberHasValue(anno, "force", true);
         boolean defaults = !xform.memberHasValue(anno, "defaults", false);
+        boolean force = xform.memberHasValue(anno, "force", true);
         boolean namedVariant = xform.memberHasValue(anno, "namedVariant", true);
         Set<String> names = new HashSet<>();
         List<PropertyNode> superList;
@@ -188,9 +185,9 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         // no processing if existing constructors found unless forced or ImmutableBase in play
         if (hasExplicitConstructor(null, cNode) && !force && !makeImmutable) return;
 
-        final List<Parameter> params = new ArrayList<>();
-        final List<Expression> superParams = new ArrayList<>();
-        final BlockStatement preBody = new BlockStatement();
+        List<Parameter> params = new ArrayList<>();
+        List<Expression> superParams = new ArrayList<>();
+        BlockStatement preBody = new BlockStatement();
         boolean superInPre = false;
         if (pre != null) {
             superInPre = copyStatementsWithSuperAdjustment(pre, preBody);
@@ -200,7 +197,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             }
         }
 
-        final BlockStatement body = new BlockStatement();
+        BlockStatement body = new BlockStatement();
 
         List<PropertyNode> tempList = new ArrayList<>(list);
         tempList.addAll(superList);
@@ -246,16 +243,14 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         }
 
         if (includes != null) {
-            Comparator<Parameter> includeComparator = Comparator.comparingInt(p -> includes.indexOf(p.getName()));
-            params.sort(includeComparator);
+            params.sort(Comparator.comparingInt(p -> includes.indexOf(p.getName())));
         }
 
-        boolean hasMapCons = AnnotatedNodeUtils.hasAnnotation(cNode, MapConstructorASTTransformation.MY_TYPE);
         int modifiers = getVisibility(anno, cNode, ConstructorNode.class, ACC_PUBLIC);
         ConstructorNode consNode = addGeneratedConstructor(cNode, modifiers, params.toArray(Parameter.EMPTY_ARRAY), ClassNode.EMPTY_ARRAY, body);
         if (namedVariant) {
             BlockStatement inner = new BlockStatement();
-            Parameter mapParam = param(GenericsUtils.nonGeneric(MAP_TYPE), NAMED_ARGS);
+            Parameter mapParam = param(ClassHelper.MAP_TYPE.getPlainNodeReference(), NAMED_ARGS);
             List<Parameter> genParams = new ArrayList<>();
             genParams.add(mapParam);
             ArgumentListExpression args = new ArgumentListExpression();
@@ -280,16 +275,17 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         // we don't do it for LinkedHashMap for now (would lead to duplicate signature)
         // or if there is only one Map property (for backwards compatibility)
         // or if there is already a @MapConstructor annotation
-        if (!params.isEmpty() && defaults && !hasMapCons && specialNamedArgCase) {
+        if (defaults && specialNamedArgCase && !params.isEmpty()
+                && !AnnotatedNodeUtils.hasAnnotation(cNode, MapConstructorASTTransformation.MY_TYPE)) {
             ClassNode firstParamType = params.get(0).getType();
-            if (params.size() > 1 || isObjectType(firstParamType)) {
+            if (params.size() > 1 || ClassHelper.isObjectType(firstParamType)) {
                 String message = "The class " + cNode.getName() + " was incorrectly initialized via the map constructor with null.";
                 addSpecialMapConstructors(modifiers, cNode, message, false);
             }
         }
     }
 
-    private static Parameter createParam(FieldNode fNode, String name, boolean defaults, AbstractASTTransformation xform, boolean makeImmutable) {
+    private static Parameter createParam(final FieldNode fNode, final String name, final boolean defaults, final AbstractASTTransformation xform, final boolean makeImmutable) {
         Parameter param = new Parameter(fNode.getType(), name);
         if (defaults) {
             param.setInitialExpression(providedOrDefaultInitialValue(fNode));
@@ -312,7 +308,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         return init;
     }
 
-    public static void addSpecialMapConstructors(int modifiers, ClassNode cNode, String message, boolean addNoArg) {
+    public static void addSpecialMapConstructors(final int modifiers, final ClassNode cNode, final String message, final boolean addNoArg) {
         Parameter[] parameters = params(new Parameter(LHMAP_TYPE, NAMED_ARGS));
         BlockStatement code = new BlockStatement();
         VariableExpression namedArgs = varX(NAMED_ARGS);
@@ -329,11 +325,11 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         }
     }
 
-    private static BlockStatement illegalArgumentBlock(String message) {
-        return block(throwS(ctorX(make(IllegalArgumentException.class), args(constX(message)))));
+    private static BlockStatement illegalArgumentBlock(final String message) {
+        return block(throwS(ctorX(ClassHelper.make(IllegalArgumentException.class), args(constX(message)))));
     }
 
-    private static BlockStatement processArgsBlock(ClassNode cNode, VariableExpression namedArgs) {
+    private static BlockStatement processArgsBlock(final ClassNode cNode, final VariableExpression namedArgs) {
         BlockStatement block = new BlockStatement();
         List<PropertyNode> props = new ArrayList<>();
         for (PropertyNode pNode : cNode.getProperties()) {

@@ -905,7 +905,7 @@ class DesignPatternsTest extends CompilableTestSupport {
 
     void testDecoratorSql() {
         shouldCompile '''
-            @Grab('org.codehaus.groovy:groovy-sql:2.1.6')
+            @Grab('org.apache.groovy:groovy-sql:4.0.0-beta-2')
             import groovy.sql.Sql
             import java.lang.reflect.InvocationHandler
             import java.sql.Connection

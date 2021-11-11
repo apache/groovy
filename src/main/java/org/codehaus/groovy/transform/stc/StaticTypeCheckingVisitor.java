@@ -3654,24 +3654,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private LambdaExpression constructLambdaExpressionForMethodReference(final ClassNode paramType) {
-        Parameter[] newParameters = createParametersForConstructedLambdaExpression(paramType);
-        return new LambdaExpression(newParameters, block());
-    }
-
-    private Parameter[] createParametersForConstructedLambdaExpression(final ClassNode functionalInterfaceType) {
-        MethodNode abstractMethodNode = findSAM(functionalInterfaceType);
-
-        Parameter[] abstractMethodNodeParameters = abstractMethodNode.getParameters();
-        if (abstractMethodNodeParameters == null) {
-            abstractMethodNodeParameters = Parameter.EMPTY_ARRAY;
+    private LambdaExpression constructLambdaExpressionForMethodReference(final ClassNode functionalInterfaceType) {
+        Parameter[] parameters = findSAM(functionalInterfaceType).getParameters().clone();
+        for (int i = 0, n = parameters.length; i < n; i += 1) {
+            parameters[i] = new Parameter(dynamicType(), "p" + System.nanoTime());
         }
 
-        Parameter[] newParameters = new Parameter[abstractMethodNodeParameters.length];
-        for (int i = 0; i < newParameters.length; i += 1) {
-            newParameters[i] = new Parameter(dynamicType(), "p" + System.nanoTime());
-        }
-        return newParameters;
+        return new LambdaExpression(parameters, EmptyStatement.INSTANCE);
     }
 
     /**
@@ -4920,7 +4909,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
 
-        if (isClassClassNodeWrappingConcreteType(receiver)) {
+        if (isClassClassNodeWrappingConcreteType(receiver)) { // GROOVY-6802, GROOVY-6803
             List<MethodNode> result = findMethod(receiver.getGenericsTypes()[0].getType(), name, args);
             if (!result.isEmpty()) return result;
         }
@@ -5344,7 +5333,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                         if (isClosureWithType(argumentType)) {
                             MethodNode sam = findSAM(paramType);
-                            if (sam != null) { // implicit closure coerce
+                            if (sam != null) { // adapt closure to functional interface or other single-abstract-method class
                                 argumentType = convertClosureTypeToSAMType(expressions.get(i), argumentType, sam, paramType);
                             }
                         }
@@ -5716,7 +5705,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            addStaticTypeError("Cannot call " + Optional.ofNullable(gt).map(GenericsUtils::toGenericTypesString).orElse("") +
+            addStaticTypeError("Cannot call " + (gt == null ? "" : GenericsUtils.toGenericTypesString(gt)) +
                     prettyPrintTypeName(r) + "#" + toMethodParametersString(m.getName(), paramTypes) + " with arguments " + formatArgumentList(at), location);
             return false;
         }

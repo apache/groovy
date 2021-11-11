@@ -1662,19 +1662,19 @@ public abstract class StaticTypeCheckingSupport {
         return replacementType;
     }
 
-    private static boolean equalIncludingGenerics(final GenericsType orig, final GenericsType copy) {
-        if (orig == copy) return true;
-        if (orig.isPlaceholder() != copy.isPlaceholder()) return false;
-        if (orig.isWildcard() != copy.isWildcard()) return false;
-        if (!equalIncludingGenerics(orig.getType(), copy.getType())) return false;
-        ClassNode lower1 = orig.getLowerBound();
-        ClassNode lower2 = copy.getLowerBound();
+    private static boolean equalIncludingGenerics(final GenericsType one, final GenericsType two) {
+        if (one == two) return true;
+        if (one.isWildcard() != two.isWildcard()) return false;
+        if (one.isPlaceholder() != two.isPlaceholder()) return false;
+        if (!equalIncludingGenerics(one.getType(), two.getType())) return false;
+        ClassNode lower1 = one.getLowerBound();
+        ClassNode lower2 = two.getLowerBound();
         if ((lower1 == null) ^ (lower2 == null)) return false;
         if (lower1 != lower2) {
             if (!equalIncludingGenerics(lower1, lower2)) return false;
         }
-        ClassNode[] upper1 = orig.getUpperBounds();
-        ClassNode[] upper2 = copy.getUpperBounds();
+        ClassNode[] upper1 = one.getUpperBounds();
+        ClassNode[] upper2 = two.getUpperBounds();
         if ((upper1 == null) ^ (upper2 == null)) return false;
         if (upper1 != upper2) {
             if (upper1.length != upper2.length) return false;
@@ -1685,12 +1685,12 @@ public abstract class StaticTypeCheckingSupport {
         return true;
     }
 
-    private static boolean equalIncludingGenerics(final ClassNode orig, final ClassNode copy) {
-        if (orig == copy) return true;
-        if (orig.isGenericsPlaceHolder() != copy.isGenericsPlaceHolder()) return false;
-        if (!orig.equals(copy)) return false;
-        GenericsType[] gt1 = orig.getGenericsTypes();
-        GenericsType[] gt2 = copy.getGenericsTypes();
+    private static boolean equalIncludingGenerics(final ClassNode one, final ClassNode two) {
+        if (one == two) return true;
+        if (one.isGenericsPlaceHolder() != two.isGenericsPlaceHolder()) return false;
+        if (!one.equals(two)) return false;
+        GenericsType[] gt1 = one.getGenericsTypes();
+        GenericsType[] gt2 = two.getGenericsTypes();
         if ((gt1 == null) ^ (gt2 == null)) return false;
         if (gt1 != gt2) {
             if (gt1.length != gt2.length) return false;

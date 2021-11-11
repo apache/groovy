@@ -87,7 +87,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.SWITCH_CONDITI
  * This is commonly used when you want to wire a new AST Transformation into the compilation.
  */
 public class CompilationUnit extends ProcessingUnit {
-    private static final int COMPUTE_MAX_STACK_AND_FRAMES = ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES;
 
     /** The overall AST for this CompilationUnit. */
     protected CompileUnit ast; // TODO: Switch to private and access through getAST().
@@ -772,8 +771,9 @@ public class CompilationUnit extends ProcessingUnit {
             //
             // Handle any callback that's been set
             //
-            Optional.ofNullable(getClassgenCallback())
-                .ifPresent(callback -> callback.call(classVisitor, classNode));
+            if (classgenCallback != null) {
+                classgenCallback.call(classVisitor, classNode);
+            }
 
             //
             // Recurse for inner classes
@@ -791,7 +791,7 @@ public class CompilationUnit extends ProcessingUnit {
     };
 
     protected ClassVisitor createClassVisitor() {
-        return new ClassWriter(COMPUTE_MAX_STACK_AND_FRAMES) {
+        return new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS) {
             private ClassNode getClassNode(String name) {
                 // try classes under compilation
                 CompileUnit cu = getAST();

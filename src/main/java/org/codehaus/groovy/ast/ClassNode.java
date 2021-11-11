@@ -164,8 +164,7 @@ public class ClassNode extends AnnotatedNode {
     protected List<InnerClassNode> innerClasses;
     private List<ClassNode> permittedSubclasses = new ArrayList<>(4);
     private List<AnnotationNode> typeAnnotations = Collections.emptyList();
-    private List<RecordComponentNode> recordComponentNodes = Collections.emptyList();
-    private boolean isRecord = false;
+    private List<RecordComponentNode> recordComponents = Collections.emptyList();
 
     /**
      * The AST Transformations to be applied during compilation.
@@ -1087,9 +1086,7 @@ public class ClassNode extends AnnotatedNode {
         if (compileUnit != null) compileUnit = cu;
     }
 
-    /**
-     * @return {@code true} if the two arrays are of the same size and have the same contents
-     */
+    @Deprecated
     protected boolean parametersEqual(Parameter[] a, Parameter[] b) {
         return ParameterUtils.parametersEqual(a, b);
     }
@@ -1365,10 +1362,25 @@ public class ClassNode extends AnnotatedNode {
      * Check instead for the {@code RecordType} annotation if looking for records and record-like classes.
      *
      * @return {@code true} if the instance represents a native {@code record}
+     *
      * @since 4.0.0
      */
     public boolean isRecord() {
         return getUnresolvedSuperClass() != null && "java.lang.Record".equals(getUnresolvedSuperClass().getName());
+    }
+
+    /**
+     * Gets the record components of record type.
+     *
+     * @return {@code RecordComponentNode} instances
+     *
+     * @since 4.0.0
+     */
+    public List<RecordComponentNode> getRecordComponents() {
+        if (redirect != null)
+            return redirect.getRecordComponents();
+        lazyClassInit();
+        return recordComponents;
     }
 
     @Deprecated
@@ -1377,34 +1389,21 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * Get the record components of record type
+     * Sets the record components for record type.
      *
-     * @return {@code RecordComponentNode} instances
      * @since 4.0.0
      */
-    public List<RecordComponentNode> getRecordComponents() {
-        if (redirect != null)
-            return redirect.getRecordComponents();
-        lazyClassInit();
-        return recordComponentNodes;
+    public void setRecordComponents(List<RecordComponentNode> recordComponents) {
+        if (redirect != null) {
+            redirect.setRecordComponents(recordComponents);
+        } else {
+            this.recordComponents = recordComponents;
+        }
     }
 
     @Deprecated
     public void setRecordComponentNodes(List<RecordComponentNode> recordComponentNodes) {
         setRecordComponents(recordComponentNodes);
-    }
-
-    /**
-     * Set the record components for record type
-     *
-     * @since 4.0.0
-     */
-    public void setRecordComponents(List<RecordComponentNode> recordComponentNodes) {
-        if (redirect != null) {
-            redirect.setRecordComponents(recordComponentNodes);
-        } else {
-            this.recordComponentNodes = recordComponentNodes;
-        }
     }
 
     public boolean isAbstract() {

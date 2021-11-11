@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.transform.trait.Traits;
 
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isUnboundedWildcard;
@@ -106,10 +107,10 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     public void visitDeclarationExpression(final DeclarationExpression expression) {
         if (expression.isMultipleAssignmentDeclaration()) {
             for (Expression e : expression.getTupleExpression().getExpressions()) {
-                checkGenericsUsage(e.getType());
+                checkGenericsUsage(((VariableExpression) e).getOriginType());
             }
         } else {
-            checkGenericsUsage(expression.getVariableExpression().getType());
+            checkGenericsUsage(expression.getVariableExpression().getOriginType());
         }
 
         super.visitDeclarationExpression(expression);
