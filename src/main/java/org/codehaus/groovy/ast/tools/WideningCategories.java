@@ -95,14 +95,14 @@ public class WideningCategories {
      * always sorted. It is not important what sort is used, as long as the result is constant.
      */
     private static final Comparator<ClassNode> INTERFACE_CLASSNODE_COMPARATOR = (cn1, cn2) -> {
-        int interfaceCountForO1 = cn1.getInterfaces().length;
-        int interfaceCountForO2 = cn2.getInterfaces().length;
-        if (interfaceCountForO1 > interfaceCountForO2) return -1;
-        if (interfaceCountForO1 < interfaceCountForO2) return 1;
-        int methodCountForO1 = cn1.getMethods().size();
-        int methodCountForO2 = cn2.getMethods().size();
-        if (methodCountForO1 > methodCountForO2) return -1;
-        if (methodCountForO1 < methodCountForO2) return 1;
+        int interfaceCount1 = cn1.getInterfaces().length;
+        int interfaceCount2 = cn2.getInterfaces().length;
+        if (interfaceCount1 > interfaceCount2) return -1;
+        if (interfaceCount1 < interfaceCount2) return 1;
+        int methodCount1 = cn1.getMethods().size();
+        int methodCount2 = cn2.getMethods().size();
+        if (methodCount1 > methodCount2) return -1;
+        if (methodCount1 < methodCount2) return 1;
         return cn1.getName().compareTo(cn2.getName());
     };
 
@@ -190,7 +190,7 @@ public class WideningCategories {
      * @return first common supertype
      */
     public static ClassNode lowestUpperBound(final List<ClassNode> nodes) {
-        if (nodes.size()==1) return nodes.get(0);
+        if (nodes.size() == 1) return nodes.get(0);
         return lowestUpperBound(nodes.get(0), lowestUpperBound(nodes.subList(1, nodes.size())));
     }
 
@@ -229,8 +229,8 @@ public class WideningCategories {
             ClassNode psc = superClass.isUsingGenerics()?parameterizeLowestUpperBound(superClass, a, b, lub):superClass;
 
             ClassNode[] interfaces = lub.getInterfaces();
-            ClassNode[] pinterfaces = new ClassNode[interfaces.length];
-            for (int i = 0, interfacesLength = interfaces.length; i < interfacesLength; i++) {
+            ClassNode[] pinterfaces = interfaces.clone();
+            for (int i = 0, n = interfaces.length; i < n; i += 1) {
                 final ClassNode icn = interfaces[i];
                 if (icn.isUsingGenerics()) {
                     pinterfaces[i] = parameterizeLowestUpperBound(icn, a, b, lub);
@@ -259,7 +259,7 @@ public class WideningCategories {
      * @return the class node representing the parameterized lowest upper bound
      */
     private static ClassNode parameterizeLowestUpperBound(final ClassNode lub, final ClassNode a, final ClassNode b, final ClassNode fallback) {
-        if (!lub.isUsingGenerics()) return lub;
+        if (!lub.isUsingGenerics() || a.toString(false).equals(b.toString(false))) return lub;
         // a common super type exists, all we have to do is to parameterize
         // it according to the types provided by the two class nodes
         ClassNode holderForA = findGenericsTypeHolderForClass(a, lub);
