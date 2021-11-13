@@ -898,12 +898,12 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-10002
     void testCollectionTypesInitializedByListLiteral3() {
         shouldFailWithMessages '''
-            Set<String> set = [1,2,3]
-        ''', 'Cannot assign java.util.LinkedHashSet<java.lang.Integer> to: java.util.Set<java.lang.String>'
+            List<String> list = ['a','b',3]
+        ''', 'Cannot assign java.util.ArrayList<java.io.Serializable'
 
         shouldFailWithMessages '''
-            List<String> list = ['a','b',3]
-        ''', 'Cannot assign java.util.ArrayList<java.io.Serializable<? extends java.lang.Object>> to: java.util.List<java.lang.String>'
+            Set<String> set = [1,2,3]
+        ''', 'Cannot assign java.util.LinkedHashSet<java.lang.Integer> to: java.util.Set<java.lang.String>'
 
         shouldFailWithMessages '''
             Iterable<String> iter = [1,2,3]
@@ -914,16 +914,16 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot assign java.util.ArrayList<java.lang.Integer> to: java.util.Collection<java.lang.String>'
 
         shouldFailWithMessages '''
-            Deque<String> deque = [""]
-        ''', 'Cannot assign value of type java.util.List<java.lang.String> to variable of type java.util.Deque<java.lang.String>'
-
-        shouldFailWithMessages '''
             Deque<String> deque = []
         ''', 'Cannot assign value of type java.util.List<E> to variable of type java.util.Deque<java.lang.String>'
 
         shouldFailWithMessages '''
             Queue<String> queue = []
         ''', 'Cannot assign value of type java.util.List<E> to variable of type java.util.Queue<java.lang.String>'
+
+        shouldFailWithMessages '''
+            Deque<String> deque = [""]
+        ''', 'Cannot assign value of type java.util.List<java.lang.String> to variable of type java.util.Deque<java.lang.String>'
     }
 
     // GROOVY-7128
