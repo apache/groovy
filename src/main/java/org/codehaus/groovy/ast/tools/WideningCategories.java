@@ -624,6 +624,11 @@ public class WideningCategories {
         }
 
         @Override
+        public String toString(boolean x) {
+            return text;
+        }
+
+        @Override
         public GenericsType asGenericsType() {
             ClassNode[] ubs;
             if (isObjectType(upper)) {
