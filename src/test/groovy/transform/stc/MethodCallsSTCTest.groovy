@@ -901,7 +901,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             A.staticMethod()
-        ''', 'Non static method A#instanceMethod cannot be called from static context'
+        ''', 'Non-static method A#instanceMethod cannot be called from static context'
     }
 
     void testShouldNotAllowMethodCallFromStaticConstructor() {
@@ -913,7 +913,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             new A()
-        ''', 'Non static method A#instanceMethod cannot be called from static context'
+        ''', 'Non-static method A#instanceMethod cannot be called from static context'
     }
 
     void testShouldNotAllowMethodCallFromStaticField() {
@@ -923,7 +923,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 static FOO = instanceMethod()
             }
             new A()
-        ''', 'Non static method A#instanceMethod cannot be called from static context'
+        ''', 'Non-static method A#instanceMethod cannot be called from static context'
     }
 
     // GROOVY-5495
@@ -1529,7 +1529,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             null
-        ''', 'Non static method Foo#bar cannot be called from static context'
+        ''', 'Non-static method Foo#bar cannot be called from static context'
     }
 
     void testStaticOuterMethodCanBeCalledFromStaticClass() {

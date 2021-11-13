@@ -18,23 +18,27 @@
  */
 package groovy.bugs
 
-import gls.CompilableTestSupport
+import org.junit.Test
 
-class Groovy7987Bug extends CompilableTestSupport {
-    void testBindablePropertySettersHaveValidModifiersForMethod() {
-        def message = shouldNotCompile """
-            @groovy.transform.TypeChecked
+import static groovy.test.GroovyAssert.shouldFail
+
+final class Groovy7987 {
+
+    @Test
+    void testNonStaticMethodViaStaticReceiver() {
+        def err = shouldFail '''
             class Foo {
-                def bar() { }
+                def bar() {
+                }
             }
 
             @groovy.transform.TypeChecked
-            def method() {
+            void test() {
                 Foo.bar()
             }
 
-            method()
-        """
-        assert message.contains('Non static method Foo#bar cannot be called from static context')
+            test()
+        '''
+        assert err =~ 'Non-static method Foo#bar cannot be called from static context'
     }
 }

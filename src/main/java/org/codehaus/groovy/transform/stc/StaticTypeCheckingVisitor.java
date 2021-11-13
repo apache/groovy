@@ -3447,10 +3447,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
                         mn = accessibleMethods;
                         if (accessibleMethods.isEmpty()) {
-                            // choose an arbitrary method to display an error message
-                            MethodNode node = inaccessibleMethods.get(0);
-                            ClassNode owner = node.getDeclaringClass();
-                            addStaticTypeError("Non static method " + owner.getName() + "#" + node.getName() + " cannot be called from static context", call);
+                            MethodNode node = inaccessibleMethods.get(0); // choose an arbitrary method to display an error message
+                            addStaticTypeError("Non-static method " + prettyPrintTypeName(node.getDeclaringClass()) + "#" + node.getName() + " cannot be called from static context", call);
                         }
                     }
 
@@ -3480,11 +3478,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (mn.size() == 1) {
                         MethodNode directMethodCallCandidate = mn.get(0);
                         ClassNode declaringClass = directMethodCallCandidate.getDeclaringClass();
-                        if (call.getNodeMetaData(DYNAMIC_RESOLUTION) == null
-                                && objectExpression instanceof ClassExpression
-                                && !directMethodCallCandidate.isStatic()
-                                && !isClassType(declaringClass)) {
-                            addStaticTypeError("Non static method " + declaringClass.getName() + "#" + directMethodCallCandidate.getName() + " cannot be called from static context", call);
+                        if (!directMethodCallCandidate.isStatic() && !isClassType(declaringClass)
+                                && objectExpression instanceof ClassExpression && call.getNodeMetaData(DYNAMIC_RESOLUTION) == null) {
+                            addStaticTypeError("Non-static method " + prettyPrintTypeName(declaringClass) + "#" + directMethodCallCandidate.getName() + " cannot be called from static context", call);
                         }
                         if (chosenReceiver == null) {
                             chosenReceiver = Receiver.make(declaringClass);
@@ -3550,17 +3546,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
             }
-            // adjust typing for explicit math methods which have special handling - operator variants handled elsewhere
-            if (NUMBER_OPS.containsKey(name) && isNumberType(receiver) && argumentList.getExpressions().size() == 1
-                    && isNumberType(getType(argumentList.getExpression(0)))) {
-                ClassNode right = getType(argumentList.getExpression(0));
-                ClassNode resultType = getMathResultType(NUMBER_OPS.get(name), receiver, right, name);
+            // adjust typing for explicit math methods which have special handling; operator variants handled elsewhere
+            if (args.length == 1 && isNumberType(args[0]) && isNumberType(receiver) && NUMBER_OPS.containsKey(name)) {
+                ClassNode resultType = getMathResultType(NUMBER_OPS.get(name), receiver, args[0], name);
                 if (resultType != null) {
                     storeType(call, resultType);
                 }
             }
 
-            // now that a method has been chosen, we are allowed to visit the closures
             MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
             if (!callArgsVisited) {
                 visitMethodCallArguments(receiver, argumentList, true, target);
