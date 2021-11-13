@@ -569,7 +569,7 @@ public class WideningCategories {
             });
             compileTimeClassNode = isObjectType(upper) && interfaces.length > 0 ? interfaces[0] : upper;
 
-            StringJoiner sj = new StringJoiner(" or "/*, "(", ")"*/);
+            StringJoiner sj = new StringJoiner(" or ", "(", ")");
             if (!isObjectType(upper)) sj.add(upper.getText());
             for (ClassNode i: interfaces) sj.add(i.getText());
             this.text = sj.toString();
