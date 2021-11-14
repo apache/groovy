@@ -41,7 +41,8 @@ import org.codehaus.groovy.control.CompilePhase
  * check on loops (for, while, do) and first statement of closures. By default, also adds an interrupt check
  * statement on the beginning of method calls.
  *
- * @see groovy.transform.ConditionalInterrupt* @since 1.8.0
+ * @see groovy.transform.ConditionalInterrupt
+ * @since 1.8.0
  */
 @CompileStatic
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
