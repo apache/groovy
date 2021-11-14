@@ -457,4 +457,44 @@ class RecordTest {
             assert 'name: Daniel' == new Person('Daniel').name()
         '''
     }
+
+    @Test
+    void testGenerics() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+
+            @CompileStatic
+            record Person<T extends CharSequence>(T name, int age) {
+                Person {
+                    if (name.length() == 0) throw new IllegalArgumentException("name can not be empty")
+                    if (age < 0) throw new IllegalArgumentException("Invalid age: $age")
+                }
+            }
+            
+            @CompileStatic
+            def test() {
+                def p = new Person<String>('Daniel', 37)
+                assert 'daniel' == p.name().toLowerCase()
+                assert 'Person[name=Daniel, age=37]' == p.toString()
+                
+                def p2 = new Person<>('Daniel', 37)
+                assert 'daniel' == p2.name().toLowerCase()
+                assert 'Person[name=Daniel, age=37]' == p2.toString()
+                
+                try {
+                    new Person<String>('', 1)
+                } catch (IllegalArgumentException e) {
+                    assert 'name can not be empty' == e.message
+                }
+                
+                try {
+                    new Person<String>('Unknown', -1)
+                } catch (IllegalArgumentException e) {
+                    assert 'Invalid age: -1' == e.message
+                }
+            }
+            
+            test()
+        '''
+    }
 }
