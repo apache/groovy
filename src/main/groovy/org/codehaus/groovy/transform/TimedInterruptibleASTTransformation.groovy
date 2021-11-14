@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform
 
 import groovy.transform.AutoFinal
+import groovy.transform.CompileStatic
 import groovy.transform.TimedInterrupt
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotatedNode
@@ -36,6 +37,7 @@ import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.DoWhileStatement
 import org.codehaus.groovy.ast.stmt.ForStatement
+import org.codehaus.groovy.ast.stmt.LoopingStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.ast.stmt.WhileStatement
 import org.codehaus.groovy.control.CompilePhase
@@ -68,7 +70,9 @@ import static org.objectweb.asm.Opcodes.ACC_PRIVATE
  * @see groovy.transform.ThreadInterrupt
  * @since 1.8.0
  */
-@AutoFinal @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
+@CompileStatic
+@AutoFinal
+@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
 
     private static final ClassNode MY_TYPE = make(TimedInterrupt)
@@ -80,8 +84,8 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
     @SuppressWarnings('Instanceof')
     void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source)
-        AnnotationNode node = nodes[0]
-        AnnotatedNode annotatedNode = nodes[1]
+        AnnotationNode node = (AnnotationNode) nodes[0]
+        AnnotatedNode annotatedNode = (AnnotatedNode) nodes[1]
         if (!MY_TYPE.equals(node.classNode)) {
             internalError("Transformation called from wrong annotation: $node.classNode.name")
         }
@@ -167,7 +171,7 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
         private final String basename
 
         @SuppressWarnings('ParameterCount')
-        TimedInterruptionVisitor(SourceUnit source, checkOnMethodStart, applyToAllClasses, applyToAllMembers, maximum, unit, thrown, hash) {
+        TimedInterruptionVisitor(SourceUnit source, checkOnMethodStart, applyToAllClasses, applyToAllMembers, maximum, Expression unit, ClassNode thrown, hash) {
             this.sourceUnit = source
             this.checkOnMethodStart = checkOnMethodStart
             this.applyToAllClasses = applyToAllClasses
@@ -213,7 +217,7 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
          * @return a {@link BlockStatement block statement}    which first element is for checking interruption, and the
          * second one the statement to be wrapped.
          */
-        private wrapBlock(statement) {
+        private BlockStatement wrapBlock(Statement statement) {
             block().tap {
                 addStatement(createInterruptStatement())
                 addStatement(statement)
@@ -286,8 +290,8 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
          * Shortcut method which avoids duplicating code for every type of loop.
          * Actually wraps the loopBlock of different types of loop statements.
          */
-        private visitLoop(loopStatement) {
-            def statement = loopStatement.loopBlock
+        private visitLoop(LoopingStatement loopStatement) {
+            Statement statement = loopStatement.loopBlock
             loopStatement.loopBlock = wrapBlock(statement)
         }
 

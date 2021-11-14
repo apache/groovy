@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform
 
+import groovy.transform.CompileStatic
 import groovy.transform.ConditionalInterrupt
 import org.codehaus.groovy.ast.AnnotatedNode
 import org.codehaus.groovy.ast.AnnotationNode
@@ -42,6 +43,7 @@ import org.codehaus.groovy.control.CompilePhase
  *
  * @see groovy.transform.ConditionalInterrupt* @since 1.8.0
  */
+@CompileStatic
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 class ConditionalInterruptibleASTTransformation extends AbstractInterruptibleASTTransformation {
 
@@ -59,7 +61,7 @@ class ConditionalInterruptibleASTTransformation extends AbstractInterruptibleAST
     @SuppressWarnings('Instanceof')
     protected void setupTransform(AnnotationNode node) {
         super.setupTransform(node)
-        def member = node.getMember('value')
+        ClosureExpression member = (ClosureExpression) node.getMember('value')
         if (!member || !(member instanceof ClosureExpression)) internalError("Expected closure value for annotation parameter 'value'. Found $member")
         conditionNode = member
         conditionMethod = 'conditionalTransform' + node.hashCode() + '$condition'
