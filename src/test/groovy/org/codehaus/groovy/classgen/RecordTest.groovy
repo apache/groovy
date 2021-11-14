@@ -444,4 +444,17 @@ class RecordTest {
         }
         '''
     }
+
+    @Test
+    void testCustomizedGetter() {
+        assertScript '''
+            record Person(String name) {
+                String name() {
+                    return "name: $name"
+                }
+            }
+            
+            assert 'name: Daniel' == new Person('Daniel').name()
+        '''
+    }
 }
