@@ -59,17 +59,18 @@ public class MethodNodeUtils {
      * @return the method node's descriptor
      */
     public static String methodDescriptor(final MethodNode mNode) {
-        StringBuilder sb = new StringBuilder(mNode.getName().length() + mNode.getParameters().length * 10);
+        Parameter[] parameters = mNode.getParameters();
+        int nParameters = parameters == null ? 0 : parameters.length;
+        StringBuilder sb = new StringBuilder(mNode.getName().length() * 2 + nParameters * 10);
         sb.append(mNode.getReturnType().getName());
         sb.append(' ');
         sb.append(mNode.getName());
         sb.append('(');
-        for (int i = 0; i < mNode.getParameters().length; i++) {
+        for (int i = 0; i < nParameters; i += 1) {
             if (i > 0) {
                 sb.append(", ");
             }
-            Parameter p = mNode.getParameters()[i];
-            sb.append(ClassNodeUtils.formatTypeName(p.getType()));
+            sb.append(parameters[i].getType().getName());
         }
         sb.append(')');
         return sb.toString();
@@ -140,7 +141,7 @@ public class MethodNodeUtils {
     public static boolean isGetterCandidate(MethodNode m) {
         Parameter[] parameters = m.getParameters();
         return m.isPublic() && !m.isStatic() && !m.isAbstract()
-                && (null == parameters || 0 == parameters.length)
+                && (parameters == null || parameters.length == 0)
                 && !ClassHelper.VOID_TYPE.equals(m.getReturnType());
     }
 }

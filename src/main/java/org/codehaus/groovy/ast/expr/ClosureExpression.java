@@ -18,13 +18,14 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import org.codehaus.groovy.ast.AstToTextHelper;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.runtime.InvokerHelper;
+
+import static org.codehaus.groovy.ast.AstToTextHelper.getParametersText;
+import static org.codehaus.groovy.ast.tools.ClosureUtils.hasImplicitParameter;
 
 /**
  * Represents a closure expression such as <pre>{ statement }</pre>
@@ -36,25 +37,10 @@ public class ClosureExpression extends Expression {
     private Statement code;
     private VariableScope variableScope;
 
-    public ClosureExpression(Parameter[] parameters, Statement code) {
+    public ClosureExpression(final Parameter[] parameters, final Statement code) {
         this.parameters = parameters;
         this.code = code;
         setType(ClassHelper.CLOSURE_TYPE.getPlainNodeReference());
-    }
-
-    @Override
-    public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitClosureExpression(this);
-    }
-
-    @Override
-    public Expression transformExpression(ExpressionTransformer transformer) {
-        return this;
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + InvokerHelper.toString(parameters) + "{ " + code + " }";
     }
 
     /**
@@ -73,7 +59,7 @@ public class ClosureExpression extends Expression {
      *
      * @param code the new Statement
      */
-    public void setCode(Statement code) {
+    public void setCode(final Statement code) {
         this.code = code;
     }
 
@@ -95,17 +81,32 @@ public class ClosureExpression extends Expression {
         return variableScope;
     }
 
-    public void setVariableScope(VariableScope variableScope) {
+    public void setVariableScope(final VariableScope variableScope) {
         this.variableScope = variableScope;
     }
 
     @Override
     public String getText() {
-        String paramText = AstToTextHelper.getParametersText(parameters);
-        if (paramText.length() > 0) {
-            return "{ " + paramText + " -> ... }";
-        } else {
-            return "{ -> ... }";
-        }
+        return toString("...");
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + this.toString(code == null ? "<null>" : code.toString());
+    }
+
+    private String toString(final String bodyText) {
+        if (hasImplicitParameter(this)) return "{ " + bodyText + " }";
+        return "{ " + getParametersText(parameters) + " -> " + bodyText + " }";
+    }
+
+    @Override
+    public Expression transformExpression(final ExpressionTransformer transformer) {
+        return this;
+    }
+
+    @Override
+    public void visit(final GroovyCodeVisitor visitor) {
+        visitor.visitClosureExpression(this);
     }
 }

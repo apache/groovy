@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.ast;
 
-import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 
@@ -26,6 +25,9 @@ import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Optional;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.formatTypeName;
+import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptor;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.toGenericTypesString;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -79,7 +81,7 @@ public class MethodNode extends AnnotatedNode {
      */
     public String getTypeDescriptor() {
         if (typeDescriptor == null) {
-            typeDescriptor = MethodNodeUtils.methodDescriptor(this);
+            typeDescriptor = methodDescriptor(this);
         }
         return typeDescriptor;
     }
@@ -276,23 +278,26 @@ public class MethodNode extends AnnotatedNode {
         this.syntheticPublic = syntheticPublic;
     }
 
-    /**
-     * Provides a nicely formatted string of the method definition. For simplicity, generic types on some of the elements
-     * are not displayed.
-     *
-     * @return string form of node with some generic elements suppressed
-     */
     @Override
     public String getText() {
-        String retType = AstToTextHelper.getClassText(returnType);
-        String exceptionTypes = AstToTextHelper.getThrowsClauseText(exceptions);
-        String params = AstToTextHelper.getParametersText(parameters);
         int mask = this instanceof ConstructorNode ? Modifier.constructorModifiers() : Modifier.methodModifiers();
-        return AstToTextHelper.getModifiersText(modifiers & mask) + " " + retType + " " + name + "(" + params + ") " + exceptionTypes + " { ... }";
+        return new StringBuilder(AstToTextHelper.getModifiersText(getModifiers() & mask))
+            .append(' ')
+            .append(toGenericTypesString(getGenericsTypes()))
+            .append(AstToTextHelper.getClassText(getReturnType()))
+            .append(' ')
+            .append(getName())
+            .append('(')
+            .append(AstToTextHelper.getParametersText(getParameters()))
+            .append(')')
+            .append(AstToTextHelper.getThrowsClauseText(getExceptions()))
+            .append(" { ... }")
+            .toString();
     }
 
     @Override
     public String toString() {
-        return super.toString() + "[" + getDeclaringClass().getName() + "#" + getTypeDescriptor() + "]";
+        ClassNode declaringClass = getDeclaringClass();
+        return super.toString() + "[" + getTypeDescriptor() + (declaringClass == null ? "" : " from " + formatTypeName(declaringClass)) + "]";
     }
 }

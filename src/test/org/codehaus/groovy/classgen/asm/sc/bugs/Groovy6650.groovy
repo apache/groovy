@@ -22,33 +22,32 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
-class Groovy6650Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy6650 extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
     void testShouldChooseVargsMethod() {
-        assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
+        assertScript '''
+            import org.codehaus.groovy.ast.MethodNode
 
-def x = 'a,b,c'.split(',')
-def y = 'd,e,f'.split(',')
-
-@ASTTest(phase=INSTRUCTION_SELECTION,value={
-    def call = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
-    assert call instanceof ExtensionMethodNode
-    def emn = call.extensionMethodNode
-    def typeDesc = emn.typeDescriptor
-    assert typeDesc == '[Ljava.lang.Object; plus(java.lang.Object[], java.lang.Object[])'
-    println emn.typeDescriptor
-})
-String[] result = x + y
-assert result as List == ['a', 'b', 'c', 'd', 'e', 'f']
-'''
+            def x = 'a,b,c'.split(',')
+            def y = 'd,e,f'.split(',')
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                MethodNode target = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                assert target instanceof org.codehaus.groovy.transform.stc.ExtensionMethodNode
+                assert target.parameters[0].type == OBJECT_TYPE.makeArray()
+            })
+            String[] result = x + y
+            assert result.toList() == ['a','b','c','d','e','f']
+        '''
     }
 
     void testShouldNotThrowAmbiguousSelectionError() {
-        assertScript '''import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.MethodNode
+        assertScript '''
+            import org.codehaus.groovy.ast.ClassNode
+            import org.codehaus.groovy.ast.MethodNode
 
-MethodNode methodNode = null
-ClassNode annotation = null
-List annots = methodNode?.getAnnotations(annotation)
-return (annots != null && annots.size() > 0);'''
+            MethodNode methodNode = null; ClassNode annotation = null
+            List annos = methodNode?.getAnnotations(annotation)
+            return (annos != null && !annos.isEmpty())
+        '''
     }
 }

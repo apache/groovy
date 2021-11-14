@@ -19,55 +19,64 @@
 package org.codehaus.groovy.ast
 
 import org.codehaus.groovy.ast.builder.AstBuilder
-import org.codehaus.groovy.ast.stmt.BlockStatement
-import org.objectweb.asm.Opcodes
-
-import junit.framework.TestCase
 import org.codehaus.groovy.control.CompilePhase
+import org.junit.Test
 
-/**
- * Tests the VariableExpressionNode
- */
-class MethodNodeTest extends TestCase implements Opcodes {
+final class MethodNodeTest {
 
-    void testGetTextSimple() {
-        def ast = new AstBuilder().buildFromString CompilePhase.SEMANTIC_ANALYSIS, false, '''
+    private static ClassNode fromString(String source) {
+        new AstBuilder().buildFromString(CompilePhase.SEMANTIC_ANALYSIS, false, source)[1]
+    }
 
-        def myMethod() {
+    @Test
+    void testGetText1() {
+        String result = fromString('def method(){}').getMethod('method').text
+        assert result == 'public java.lang.Object method() { ... }'
+    }
+
+    @Test
+    void testGetText2() {
+        def script = fromString '''
+            private static final <T extends Number> T method(String p1, int p2 = 1) throws Exception, IOException { }
+        '''
+        String result = script.getMethods('method')[0].text
+        assert result == 'private static final <T extends java.lang.Number> T method(java.lang.String p1, int p2 = 1) throws java.lang.Exception, java.io.IOException { ... }'
+    }
+
+    @Test
+    void testToString() {
+        String result = new MethodNode('foo', 0, null, null, null, null)
+        assert result.endsWith('[java.lang.Object foo()]')
+
+        Parameter[] params = [new Parameter(ClassHelper.int_TYPE, 'i'), new Parameter(ClassHelper.int_TYPE.makeArray(), 'j')]
+        result = new MethodNode('foo', 0, ClassHelper.STRING_TYPE.makeArray(), params, null, null).tap {
+            declaringClass = ClassHelper.OBJECT_TYPE
         }
-'''
-        assert ast[1].@methods.get('myMethod')[0].text ==
-                    'public java.lang.Object myMethod()  { ... }'
+        assert result.endsWith('[Ljava.lang.String; foo(int, [I) from java.lang.Object]')
     }
 
-    void testGetTextAdvanced() {
-        def ast = new AstBuilder().buildFromString CompilePhase.SEMANTIC_ANALYSIS, false, '''
-
-        private static final <T> T myMethod(String p1, int p2 = 1) throws Exception, IOException {
-        }
-'''
-        assert ast[1].@methods.get('myMethod')[0].text ==
-                    'private static final java.lang.Object myMethod(java.lang.String p1, int p2 = 1) throws java.lang.Exception, java.io.IOException { ... }'
-    }
-
-    void testIsDynamicReturnTypeExplicitObject() {
-        def methodNode = new MethodNode('foo', ACC_PUBLIC, new ClassNode(Object.class), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement())
-        assert !methodNode.isDynamicReturnType()
-    }
-
-    void testIsDynamicReturnTypeDYNAMIC_TYPE() {
-        MethodNode methodNode = new MethodNode('foo', ACC_PUBLIC, ClassHelper.dynamicType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement())
+    @Test
+    void testIsDynamicReturnType1() {
+        def methodNode = new MethodNode('foo', 0, ClassHelper.dynamicType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null)
         assert methodNode.isDynamicReturnType()
     }
 
-    void testIsDynamicReturnTypeVoid() {
-        MethodNode methodNode = new MethodNode('foo', ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement())
+    @Test
+    void testIsDynamicReturnType2() {
+        def methodNode = new MethodNode('foo', 0, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null)
         assert !methodNode.isDynamicReturnType()
     }
 
-    void testIsDynamicReturnTypeNull() {
-        MethodNode methodNode = new MethodNode('foo', ACC_PUBLIC, null, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement())
+    @Test
+    void testIsDynamicReturnType3() {
+        def methodNode = new MethodNode('foo', 0, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null)
         assert !methodNode.isDynamicReturnType()
-        assertNotNull(methodNode.getReturnType())
+    }
+
+    @Test
+    void testIsDynamicReturnType4() {
+        def methodNode = new MethodNode('foo', 0, null, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null)
+        assert !methodNode.isDynamicReturnType()
+        assert methodNode.returnType != null
     }
 }
