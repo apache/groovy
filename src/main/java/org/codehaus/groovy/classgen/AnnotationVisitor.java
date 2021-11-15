@@ -195,6 +195,8 @@ public class AnnotationVisitor {
         } else if (attrType.isDerivedFrom(ClassHelper.Enum_Type)) {
             if (attrExp instanceof PropertyExpression) {
                 visitEnumExpression(attrName, (PropertyExpression) attrExp, attrType);
+            } else if (attrExp instanceof ConstantExpression) {
+                visitConstantExpression(attrName, getConstantExpression(attrExp, attrType), attrType);
             } else {
                 addError("Expected enum value for attribute " + attrName, attrExp);
             }

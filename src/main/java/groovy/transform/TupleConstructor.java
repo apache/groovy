@@ -276,24 +276,43 @@ public @interface TupleConstructor {
 
     /**
      * Used to set whether default value processing is enabled (the default) or disabled.
+     * Ignored if an explicit value is given for {@code defaultsMode()}.
      *
-     * By default, every constructor parameter is given a default value. This value will
-     * be Java's default for primitive types (zero or false) and null for Objects, unless
-     * an initial value is given when declaring the property or field. A consequence of
+     * By default, every constructor parameter is given a default value.
+     * This is the equivalent of {@link DefaultsMode#ON}.
+     *
+     * When set to false, default values are not allowed for properties and fields.
+     * This is the equivalent of {@link DefaultsMode#OFF}.
+     *
+     * @since 2.5.0
+     */
+    boolean defaults() default true;
+
+    /**
+     * Used to set the mode for default value processing.
+     *
+     * When set to {@code ON} (the default value), every constructor parameter is given a default value.
+     * This value will be Java's default for primitive types (zero or false) and null for Objects,
+     * unless an initial value is given when declaring the property or field. A consequence of
      * this design is that you can leave off parameters from the right if the default
      * value will suffice. As far as Java interoperability is concerned, Groovy will
      * create additional constructors under the covers representing the constructors
      * with parameters left off, all the way from the constructor with all arguments
      * to the no-arg constructor.
      *
-     * However, when set to false, default values are not allowed for properties and fields.
+     * When set to {@code AUTO}, default values are catered for where explicit
+     * default values are given for the respective property/field.
+     * Default values are processed from the right and processing stops when the
+     * first property/field is found without an explicit deault value.
+     *
+     * When set to {@code OFF}, default values are not allowed for properties and fields.
      * Only the constructor containing all arguments will be provided.
      * In particular, a no-arg constructor won't be provided and since this is currently
      * used by Groovy when using named-arguments, the named-argument style won't be available.
      *
-     * @since 2.5.0
+     * @since 4.0.0
      */
-    boolean defaults() default true;
+    DefaultsMode defaultsMode() default DefaultsMode.ON;
 
     /**
      * By default, properties are set directly using their respective field.

@@ -77,7 +77,7 @@ import java.lang.annotation.Target
  */
 @RecordBase
 @RecordOptions
-@TupleConstructor(namedVariant = true, force = true)
+@TupleConstructor(namedVariant = true, force = true, defaultsMode = DefaultsMode.AUTO)
 @PropertyOptions
 @KnownImmutable
 @POJO

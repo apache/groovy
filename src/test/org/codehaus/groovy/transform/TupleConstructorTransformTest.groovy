@@ -369,4 +369,56 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
                 'public Baz(Basep,Basepp,Basepubf,java.lang.Byte,Foop,Foopubf,java.lang.Short,Barp,Barpp,Barpubf,java.lang.Integer,Bazp,Bazpp,Bazpubf,java.lang.Long)'
         '''
     }
+
+    // GROOVY-10361
+    void testTupleConstructorDefaultsModes() {
+        assertScript '''
+            import groovy.transform.*
+            import static groovy.test.GroovyAssert.shouldFail
+
+            @TupleConstructor(defaultsMode = DefaultsMode.OFF, includeFields = true)
+            class A {
+                String won
+                private int too
+            }
+            assert A.declaredConstructors.toString() == '[public A(java.lang.String,int)]'
+
+            shouldFail """
+            @TupleConstructor(defaultsMode = DefaultsMode.OFF, includeFields = true)
+            class B {
+                String won = 'one'
+                private int too = 2
+            }
+            """
+
+            @TupleConstructor(defaultsMode = DefaultsMode.AUTO, includeFields = true)
+            class C {
+                String one = 'won'
+                int too = 2
+                private int three
+                private String four = 'for'
+            }
+
+            assert C.declaredConstructors*.toString().toSet() == [
+                'public C(java.lang.String,int,int,java.lang.String)',
+                'public C(java.lang.String,int,int)'
+            ].toSet()
+
+            @TupleConstructor(defaultsMode = DefaultsMode.ON, includeFields = true)
+            class D {
+                String one = 'won'
+                int too = 2
+                private int three
+                private String four = 'for'
+            }
+
+            assert D.declaredConstructors*.toString().toSet() == [
+                'public D(java.lang.String,int,int,java.lang.String)',
+                'public D(java.lang.String,int,int)',
+                'public D(java.lang.String,int)',
+                'public D(java.lang.String)',
+                'public D()'
+            ].toSet()
+        '''
+    }
 }

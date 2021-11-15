@@ -20,6 +20,7 @@ package org.codehaus.groovy.transform;
 
 import groovy.transform.AutoClone;
 import groovy.transform.AutoCloneStyle;
+import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -27,10 +28,12 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -81,6 +84,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
+import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.COMPILESTATIC_CLASSNODE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PROTECTED;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -236,8 +241,15 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         addSimpleCloneHelperMethod(cNode, fieldNodes, excludes);
         final Expression result = localVarX("_result");
         ClassNode[] exceptions = {make(CloneNotSupportedException.class)};
+        ConstructorCallExpression init = ctorX(cNode);
+        if (AnnotatedNodeUtils.hasAnnotation(cNode, COMPILESTATIC_CLASSNODE) && cNode.getDeclaredConstructor(Parameter.EMPTY_ARRAY) == null) {
+            // constructor may not be added yet which confuses type checking, so add manually
+            MethodNode cons = new ConstructorNode(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+            cons.setDeclaringClass(cNode);
+            init.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, cons);
+        }
         addGeneratedMethod(cNode, "clone", ACC_PUBLIC, GenericsUtils.nonGeneric(cNode), Parameter.EMPTY_ARRAY, exceptions, block(
-            declS(result, ctorX(cNode)),
+            declS(result, init),
             stmt(callThisX("cloneOrCopyMembers", args(result))),
             returnS(result)));
     }
