@@ -776,7 +776,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 lType = getType(leftExpression);
             } else {
-                if (op != ASSIGN && op != ELVIS_EQUAL) {
+                if (op != EQUAL && op != ELVIS_EQUAL) {
                     lType = getType(leftExpression);
                 } else {
                     lType = getOriginalDeclarationType(leftExpression);
@@ -2210,6 +2210,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (isStringType(inferredReturnType) && isGStringOrGStringStringLUB(type)) {
                 type = STRING_TYPE; // GROOVY-9971: convert GString to String at point of return
             } else if (inferredReturnType != null
+                    && !type.equals(inferredReturnType)
+                    && !isPrimitiveVoid(inferredReturnType)
                     && !GenericsUtils.hasUnresolvedGenerics(inferredReturnType)
                     &&  GenericsUtils.buildWildcardType(inferredReturnType).isCompatibleWith(wrapTypeIfNecessary(type))) {
                 type = inferredReturnType; // GROOVY-8310, GROOVY-10082, GROOVY-10091, GROOVY-10128, GROOVY-10306: allow simple covariance
@@ -3295,7 +3297,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     public void visitMethodCallExpression(final MethodCallExpression call) {
         String name = call.getMethodAsString();
         if (name == null) {
-            addStaticTypeError("cannot resolve dynamic method name at compile time.", call.getMethod());
+            addStaticTypeError("Cannot resolve dynamic method name at compile time", call.getMethod());
             return;
         }
         if (extension.beforeMethodCall(call)) {
@@ -3379,7 +3381,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             typeCheckClosureCall(callArguments, args, parameters);
                         }
                         ClassNode type = getType(((ASTNode) variable));
-                        if (CLOSURE_TYPE.equals(type)) { // GROOVY-10098, et al.
+                        if (type.equals(CLOSURE_TYPE)) { // GROOVY-10098, et al.
                             GenericsType[] genericsTypes = type.getGenericsTypes();
                             if (genericsTypes != null && genericsTypes.length == 1
                                     && genericsTypes[0].getLowerBound() == null) {
@@ -3485,21 +3487,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (chosenReceiver == null) {
                             chosenReceiver = Receiver.make(declaringClass);
                         }
+                        // note second pass here to differentiate from extension that sets type
+                        boolean mergeType = (call.getNodeMetaData(INFERRED_TYPE) != null);
+                        storeTargetMethod(call, directMethodCallCandidate);
+
+                        visitMethodCallArguments(chosenReceiver.getType(), argumentList, true, directMethodCallCandidate);
+                        for (Expression argument : argumentList.getExpressions()) {
+                            if (argument instanceof ClosureExpression) {
+                                // GROOVY-10052: return type known now
+                                args = getArgumentTypes(argumentList);
+                                break;
+                            }
+                        }
+                        callArgsVisited = true;
 
                         ClassNode returnType = getType(directMethodCallCandidate);
                         if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
-                            visitMethodCallArguments(chosenReceiver.getType(), argumentList, true, directMethodCallCandidate);
-                            for (Expression argument : argumentList.getExpressions()) {
-                                if (argument instanceof ClosureExpression) {
-                                    // GROOVY-10052: return type known now
-                                    args = getArgumentTypes(argumentList);
-                                    break;
-                                }
-                            }
-                            callArgsVisited = true;
-
                             ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), directMethodCallCandidate, callArguments, call.getGenericsTypes());
-                            returnType = (irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType) ? irtg : returnType);
+                            if (irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType))
+                                returnType = irtg;
                         }
                         // GROOVY-6091: use of "delegate" or "getDelegate()" does not make use of @DelegatesTo metadata
                         if (directMethodCallCandidate == GET_DELEGATE && typeCheckingContext.getEnclosingClosure() != null) {
@@ -3519,11 +3525,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         resolvePlaceholdersFromImplicitTypeHints(args, argumentList, parameters);
 
                         if (typeCheckMethodsWithGenericsOrFail(chosenReceiver.getType(), args, directMethodCallCandidate, call)) {
-                            returnType = adjustWithTraits(directMethodCallCandidate, chosenReceiver.getType(), args, returnType);
-
-                            storeType(call, returnType);
-                            storeTargetMethod(call, directMethodCallCandidate);
-
                             String data = chosenReceiver.getData();
                             if (data != null) {
                                 // the method which has been chosen is supposed to be a call on delegate or owner
@@ -3531,15 +3532,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 call.putNodeMetaData(IMPLICIT_RECEIVER, data);
                             }
                             receiver = chosenReceiver.getType();
+                            if (mergeType || call.getNodeMetaData(INFERRED_TYPE) == null)
+                                storeType(call, adjustWithTraits(directMethodCallCandidate, receiver, args, returnType));
 
-                            // if the object expression is a closure shared variable, we will have to perform a second pass
-                            if (objectExpression instanceof VariableExpression) {
-                                VariableExpression var = (VariableExpression) objectExpression;
-                                if (var.isClosureSharedVariable()) {
-                                    SecondPassExpression<ClassNode[]> wrapper = new SecondPassExpression<>(call, args);
-                                    typeCheckingContext.secondPassExpressions.add(wrapper);
-                                }
+                            if (objectExpression instanceof VariableExpression && ((VariableExpression) objectExpression).isClosureSharedVariable()) {
+                                // if the object expression is a closure shared variable, we will have to perform a second pass
+                                typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<>(call, args));
                             }
+                        } else {
+                            call.removeNodeMetaData(DIRECT_METHOD_CALL_TARGET);
                         }
                     } else {
                         addAmbiguousErrorMessage(mn, name, args, call);
@@ -3559,33 +3560,27 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 visitMethodCallArguments(receiver, argumentList, true, target);
             }
             if (target != null) {
-                List<Expression> arguments = argumentList.getExpressions();
-                Parameter[] parameters = target.getParameters();
-                for (int i = 0, n = Math.min(arguments.size(), parameters.length); i < n; i += 1) {
-                    Expression argument = arguments.get(i);
-                    ClassNode aType = getType(argument), pType = parameters[i].getType();
-                    if (CLOSURE_TYPE.equals(aType) && CLOSURE_TYPE.equals(pType)) {
-                        // GROOVY-8310: check closure generics
-                        if (!isAssignableTo(aType, pType) /*&& !extension.handleIncompatibleReturnType(getReturnStatement(argument), aType)*/) {
-                            addNoMatchingMethodError(receiver, name, getArgumentTypes(argumentList), call);
-                            call.removeNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-                            break;
-                        }
-                        // GROOVY-7996: check delegation metadata of closure parameter used as method call argument
-                        if (argument instanceof VariableExpression && ((VariableExpression) argument).getAccessedVariable() instanceof Parameter) {
-                            // TODO: Check additional delegation metadata like type (see checkClosureWithDelegatesTo).
-                            int incomingStrategy = getResolveStrategy((Parameter) ((VariableExpression) argument).getAccessedVariable());
-                            int outgoingStrategy = getResolveStrategy(parameters[i]);
-                            if (incomingStrategy != outgoingStrategy) {
-                                addStaticTypeError("Closure parameter with resolve strategy " + getResolveStrategyName(incomingStrategy) + " passed to method with resolve strategy " + getResolveStrategyName(outgoingStrategy), argument);
-                            }
-                        }
-                    }
-                }
+                checkClosureMetadata(argumentList.getExpressions(), target.getParameters());
             }
         } finally {
             typeCheckingContext.popEnclosingMethodCall();
             extension.afterMethodCall(call);
+        }
+    }
+
+    private void checkClosureMetadata(final List<Expression> arguments, final Parameter[] parameters) {
+        // TODO: Check additional delegation metadata like type (see checkClosureWithDelegatesTo).
+        for (int i = 0, n = Math.min(arguments.size(), parameters.length); i < n; i += 1) {
+            Expression argument = arguments.get(i);
+            ClassNode aType = getType(argument), pType = parameters[i].getType();
+            // GROOVY-7996: check delegation metadata of closure parameter used as method call argument
+            if (CLOSURE_TYPE.equals(aType) && CLOSURE_TYPE.equals(pType) && argument instanceof VariableExpression && ((VariableExpression) argument).getAccessedVariable() instanceof Parameter) {
+                int incomingStrategy = getResolveStrategy((Parameter) ((VariableExpression) argument).getAccessedVariable());
+                int outgoingStrategy = getResolveStrategy(parameters[i]);
+                if (incomingStrategy != outgoingStrategy) {
+                    addStaticTypeError("Closure parameter with resolve strategy " + getResolveStrategyName(incomingStrategy) + " passed to method with resolve strategy " + getResolveStrategyName(outgoingStrategy), argument);
+                }
+            }
         }
     }
 

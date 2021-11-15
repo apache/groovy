@@ -357,29 +357,24 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
     }
 
     void testDelegatesTo() {
+        String source = '''
+            class Item {
+                void pick() {}
+            }
+            void build(Closure c) {
+                c.delegate = new Item()
+                c.call()
+            }
+            build {
+                pick()
+            }
+        '''
+
         extension = null
-        shouldFailWithMessages '''
-        class Item { void pick(){} }
-        void build(Closure arg) {
-            arg.delegate = new Item()
-            arg()
-        }
-        build {
-            pick()
-        }
-        ''', 'Cannot find matching method'
+        shouldFailWithMessages(source, 'Cannot find matching method')
 
         extension = 'groovy/transform/stc/DelegatesToTestExtension.groovy'
-        assertScript '''
-        class Item { void pick(){} }
-        void build(Closure arg) {
-            arg.delegate = new Item()
-            arg()
-        }
-        build {
-            pick()
-        }
-        '''
+        assertScript(source)
     }
 
     void testIsAnnotatedBy() {
