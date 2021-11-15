@@ -18,9 +18,13 @@
  */
 package groovy.bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class Groovy8764Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy8764 {
+
+    @Test
     void testDgmMethodInClosureInAnonymousInnerClass() {
         assertScript '''
             import groovy.transform.*
@@ -44,7 +48,8 @@ class Groovy8764Bug extends GroovyTestCase {
         '''
     }
 
-    void testDgmMethodInClosureInInnerClass() {
+    @Test
+    void testDgmMethodInClosureInStaticInnerClass() {
         assertScript '''
             import groovy.transform.*
             import java.util.function.Function
@@ -54,10 +59,10 @@ class Groovy8764Bug extends GroovyTestCase {
             class Outer {
                 static class Inner {
                     List<Optional<String>> pets = [Optional.of('goldfish'), Optional.of('cat')]
-                    Optional<Integer> test(int index) {
-                        pets[index].flatMap({ String s ->
-                            // sprintf is a DGM method on Object
-                            sprintf('%s', s).size() == 3 ? Optional.of(index) : Optional.empty()
+                    Optional<Integer> test(int i) {
+                        pets[i].flatMap({ String s ->
+                            // sprintf is a DGM of Object
+                            sprintf('%s', s).size() == 3 ? Optional.of(i) : Optional.<Integer>empty()
                         } as Function<String, Optional<Integer>>)
                     }
                 }

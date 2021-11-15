@@ -197,6 +197,7 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.codehaus.groovy.ast.ClassHelper.isSAMType;
 import static org.codehaus.groovy.ast.ClassHelper.isStringType;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperByte;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperCharacter;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperDouble;
@@ -204,6 +205,7 @@ import static org.codehaus.groovy.ast.ClassHelper.isWrapperFloat;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperInteger;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperLong;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperShort;
+import static org.codehaus.groovy.ast.ClassHelper.isWrapperVoid;
 import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
@@ -4088,17 +4090,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (isClosureWithType(type) && source instanceof ClosureExpression) {
             storeInferredReturnType(source, getCombinedBoundType(type.getGenericsTypes()[0]));
         }
+        ClassNode expect = wrapTypeIfNecessary(getInferredReturnType(source)); // GROOVY-10277
 
         source.visit(this);
 
-        if (!expression.isCoerce() && !checkCast(type, source) && !isDelegateOrOwnerInClosure(source)) {
-            addStaticTypeError("Inconvertible types: cannot cast " + prettyPrintType(getType(source)) + " to " + prettyPrintType(type), expression);
+        if (!expression.isCoerce()) {
+            if (!checkCast(type, source))
+                addStaticTypeError("Inconvertible types: cannot cast " + prettyPrintType(getType(source)) + " to " + prettyPrintType(type), expression);
+        } else if (expect != null && !isObjectType(expect) && !isWrapperVoid(expect) && !isWrapperBoolean(expect)) {
+            ClassNode actual = getInferredReturnType(source); // check return type(s) against the target return type
+            if (actual != null && !GenericsUtils.buildWildcardType(expect).isCompatibleWith(wrapTypeIfNecessary(actual)))
+                addStaticTypeError("Cannot coerce lambda or closure returning " + prettyPrintType(actual) + " to " + prettyPrintType(type), expression);
         }
-    }
-
-    private boolean isDelegateOrOwnerInClosure(final Expression exp) {
-        return typeCheckingContext.getEnclosingClosure() != null && exp instanceof VariableExpression
-                && (("delegate".equals(((VariableExpression) exp).getName())) || ("owner".equals(((VariableExpression) exp).getName())));
     }
 
     protected boolean checkCast(final ClassNode targetType, final Expression source) {
@@ -5846,8 +5849,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @return the wrapped type
      */
     protected static ClassNode wrapTypeIfNecessary(final ClassNode type) {
-        if (isPrimitiveType(type)) return getWrapper(type);
-        return type;
+        return (type != null && isPrimitiveType(type) ? getWrapper(type) : type);
     }
 
     protected static boolean isClassInnerClassOrEqualTo(final ClassNode toBeChecked, final ClassNode start) {

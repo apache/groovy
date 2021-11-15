@@ -124,4 +124,26 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
             assert s == '[]'
         '''
     }
+
+    // GROOVY-10277
+    void testCoerceToFunctionalInterface() {
+        assertScript '''
+            import java.util.function.*
+            Supplier<Number> s = { -> 42 }
+            Predicate<Number> p = { n -> 42 }
+        '''
+        assertScript '''
+            import java.util.function.*
+            def s = { -> 42 } as Supplier<Number>
+            def p = { n -> 42 } as Predicate<Number>
+        '''
+        shouldFailWithMessages '''
+            import java.util.function.*
+            def s = { -> false } as Supplier<Number>
+        ''', 'Cannot coerce lambda or closure returning boolean to java.util.function.Supplier<java.lang.Number>'
+        shouldFailWithMessages '''
+            import java.util.function.*
+            def s = (() -> false) as Supplier<Number>
+        ''', 'Cannot coerce lambda or closure returning boolean to java.util.function.Supplier<java.lang.Number>'
+    }
 }

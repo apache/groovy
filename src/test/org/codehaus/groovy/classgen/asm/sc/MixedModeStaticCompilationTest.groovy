@@ -233,13 +233,13 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
 
     void testAllowMetaClass() {
         assertScript '''import groovy.transform.CompileStatic
-                @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
-                void foo() {
-                    String.metaClass.up = { ((String)delegate).toUpperCase() }
-                }
-                foo()
-                assert 'aaa'.up() == 'AAA'
-'''
+            @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
+            void test() {
+                String.metaClass.up = { -> (delegate as String).toUpperCase() }
+            }
+            test()
+            assert 'aaa'.up() == 'AAA'
+        '''
     }
 
     void testRecognizeStaticMethodCall() {
