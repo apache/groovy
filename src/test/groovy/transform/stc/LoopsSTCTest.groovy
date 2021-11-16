@@ -26,40 +26,34 @@ import groovy.transform.CompileStatic
 class LoopsSTCTest extends StaticTypeCheckingTestCase {
 
     void testMethodCallInLoop() {
-        assertScript '''
-            int foo(int x) { x+1 }
-            int x = 0
-            for (int i=0;i<10;i++) {
-                x = foo(x)
-            }
-        '''
-    }
-
-    void testMethodCallInLoopAndDef() {
-        assertScript '''
-            int foo(int x) { x+1 }
-            def x = 0
-            for (int i=0;i<10;i++) {
-                x = foo(x)
-            }
-        '''
+        for (type in ['int', 'def', 'var']) {
+            assertScript """
+                int foo(int x) { x+1 }
+                $type x = 0
+                for (int i=0;i<10;i++) {
+                    x = foo(x)
+                }
+            """
+        }
     }
 
     // GROOVY-8882
     void testStringCollectionLoop() {
+        for (s in 'abc') assert s instanceof String
+        for (String s in 'abc') assert s instanceof String
+
         for (char c in 'abc') assert c instanceof Character
         for (Character c in 'abc') assert c instanceof Character
-        for (String s in 'abc') assert s instanceof String
-        for (s in 'abc') assert s instanceof String
     }
 
     // GROOVY-8882
     @CompileStatic
     void testStringCollectionLoopCS() {
+        for (s in 'abc') assert s instanceof String
+        for (String s in 'abc') assert s instanceof String
+
         for (char c in 'abc') assert c instanceof Character
         for (Character c in 'abc') assert c instanceof Character
-        for (String s in 'abc') assert s instanceof String
-        for (s in 'abc') assert s instanceof String
     }
 
     void testMethodCallWithEachAndDefAndTwoFooMethods() {
@@ -71,7 +65,8 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
                  // there are two possible target methods. This is not a problem for STC, but it is for static compilation
                 x = foo(x)
             }
-        ''', 'Cannot find matching method'
+        ''',
+        'Cannot find matching method'
     }
 
     void testMethodCallInLoopAndDefAndTwoFooMethods() {
@@ -83,7 +78,8 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
                  // there are two possible target methods. This is not a problem for STC, but it is for static compilation
                 x = foo(x)
             }
-        ''', 'Cannot find matching method'
+        ''',
+        'Cannot find matching method'
     }
 
     void testMethodCallInLoopAndDefAndTwoFooMethodsAndOneWithBadType() {
@@ -96,7 +92,8 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
                 // then called in turn as a parameter of foo(). There's no #foo(Date)
                 x = foo(x)
             }
-        ''', 'Cannot find matching method'
+        ''',
+        'Cannot find matching method'
     }
 
     void testMethodCallInLoopAndDefAndTwoFooMethodsAndOneWithBadTypeAndIndirection() {
@@ -110,7 +107,8 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
                 // then called in turn as a parameter of foo(). There's no #foo(Date)
                 x = y
             }
-        ''', 'Cannot find matching method'
+        ''',
+        'Cannot find matching method'
     }
 
     void testMethodCallWithEachAndDefAndTwoFooMethodsAndOneWithBadTypeAndIndirection() {
@@ -124,7 +122,8 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
                 // then called in turn as a parameter of foo(). There's no #foo(Date)
                 x = y
             }
-        ''', 'Cannot find matching method'
+        ''',
+        'Cannot find matching method'
     }
 
     // GROOVY-5587
@@ -222,7 +221,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''import java.lang.reflect.Field
             import org.codehaus.groovy.ast.stmt.ForStatement
 
-            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 def FIELD_ARRAY = make(Field).makeArray()
                 def forStmt = lookup('myLoop')[0]
                 assert forStmt instanceof ForStatement
@@ -278,7 +277,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5641
     void testShouldInferLoopElementTypeWithUndeclaredType() {
         assertScript '''import org.codehaus.groovy.ast.stmt.ForStatement
-        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+        @ASTTest(phase=INSTRUCTION_SELECTION, value={
             def forStmt = lookup('loop')[0]
             assert forStmt instanceof ForStatement
             def collectionType = forStmt.collectionExpression.getNodeMetaData(INFERRED_TYPE)

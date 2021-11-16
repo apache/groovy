@@ -848,9 +848,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
             }
         }
         // end::cl_pt_failure[]
-        ''',
-        'No such property: age for class: java.lang.Object',
-        '#inviteIf(Person, groovy.lang.Closure<java.lang.Boolean>) with arguments [Person, groovy.lang.Closure<java.lang.Object>]'
+        ''', 'No such property: age for class: java.lang.Object'
 
         assertScript '''
         class Person {

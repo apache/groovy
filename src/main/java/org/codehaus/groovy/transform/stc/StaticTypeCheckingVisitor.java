@@ -197,7 +197,6 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.codehaus.groovy.ast.ClassHelper.isSAMType;
 import static org.codehaus.groovy.ast.ClassHelper.isStringType;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperByte;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperCharacter;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperDouble;
@@ -205,7 +204,6 @@ import static org.codehaus.groovy.ast.ClassHelper.isWrapperFloat;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperInteger;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperLong;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperShort;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperVoid;
 import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
@@ -1273,19 +1271,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private void checkTypeGenerics(final ClassNode leftExpressionType, final ClassNode wrappedRHS, final Expression rightExpression) {
-        // last, check generic type information to ensure that inferred types are compatible
-        if (!leftExpressionType.isUsingGenerics()) return;
-        // example of incomplete type info: "List<Type> list = new LinkedList()"
-        // we assume arity related errors are already handled here
-        if (missesGenericsTypes(wrappedRHS)) return;
-
-        GenericsType gt = GenericsUtils.buildWildcardType(leftExpressionType);
-        if (UNKNOWN_PARAMETER_TYPE.equals(wrappedRHS) ||
-                gt.isCompatibleWith(wrappedRHS) ||
-                isNullConstant(rightExpression)) return;
-
-        addStaticTypeError("Incompatible generic argument types. Cannot assign "
-                + prettyPrintType(wrappedRHS) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
+        if (leftExpressionType.isUsingGenerics()
+                && !isNullConstant(rightExpression)
+                && !(rightExpression instanceof ClosureExpression) // GROOVY-10277
+                && !UNKNOWN_PARAMETER_TYPE.equals(wrappedRHS) && !missesGenericsTypes(wrappedRHS)
+                && !GenericsUtils.buildWildcardType(leftExpressionType).isCompatibleWith(wrappedRHS))
+            addStaticTypeError("Incompatible generic argument types. Cannot assign " + prettyPrintType(wrappedRHS) + " to: " + prettyPrintType(leftExpressionType), rightExpression);
     }
 
     private boolean hasGStringStringError(final ClassNode leftExpressionType, final ClassNode wrappedRHS, final Expression rightExpression) {
@@ -2203,20 +2194,29 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected ClassNode checkReturnType(final ReturnStatement statement) {
         Expression expression = statement.getExpression();
         ClassNode type = getType(expression);
-        if (typeCheckingContext.getEnclosingClosure() != null) {
-            ClassNode inferredReturnType = getInferredReturnType(typeCheckingContext.getEnclosingClosure().getClosureExpression());
+
+        TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
+        if (enclosingClosure != null) {
+            if (enclosingClosure.getClosureExpression().getNodeMetaData(INFERRED_TYPE) != null) return null; // re-visit
+
+            ClassNode inferredReturnType = getInferredReturnType(enclosingClosure.getClosureExpression());
             // GROOVY-9995: return ctor call with diamond operator
             if (expression instanceof ConstructorCallExpression) {
                 inferDiamondType((ConstructorCallExpression) expression, inferredReturnType != null ? inferredReturnType : /*GROOVY-10080:*/dynamicType());
             }
-            if (isStringType(inferredReturnType) && isGStringOrGStringStringLUB(type)) {
-                type = STRING_TYPE; // GROOVY-9971: convert GString to String at point of return
-            } else if (inferredReturnType != null
-                    && !type.equals(inferredReturnType)
+            if (inferredReturnType != null
+                    && !inferredReturnType.equals(type)
+                    && !isObjectType(inferredReturnType)
                     && !isPrimitiveVoid(inferredReturnType)
-                    && !GenericsUtils.hasUnresolvedGenerics(inferredReturnType)
-                    &&  GenericsUtils.buildWildcardType(inferredReturnType).isCompatibleWith(wrapTypeIfNecessary(type))) {
-                type = inferredReturnType; // GROOVY-8310, GROOVY-10082, GROOVY-10091, GROOVY-10128, GROOVY-10306: allow simple covariance
+                    && !isPrimitiveBoolean(inferredReturnType)
+                    && !GenericsUtils.hasUnresolvedGenerics(inferredReturnType)) {
+                if (isStringType(inferredReturnType) && isGStringOrGStringStringLUB(type)) {
+                    type = STRING_TYPE; // GROOVY-9971: convert GString to String at point of return
+                } else if (GenericsUtils.buildWildcardType(wrapTypeIfNecessary(inferredReturnType)).isCompatibleWith(wrapTypeIfNecessary(type))) {
+                    type = inferredReturnType; // GROOVY-8310, GROOVY-10082, GROOVY-10091, GROOVY-10128, GROOVY-10306: allow simple covariance
+                } else if (!isPrimitiveVoid(type) && !extension.handleIncompatibleReturnType(statement, type)) { // GROOVY-10277: incompatible return value
+                    addStaticTypeError("Cannot return value of type " + prettyPrintType(type) + " for " + (enclosingClosure.getClosureExpression() instanceof LambdaExpression ? "lambda" : "closure") + " expecting " + prettyPrintType(inferredReturnType), expression);
+                }
             }
             return type;
         }
@@ -2226,7 +2226,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode returnType = enclosingMethod.getReturnType();
             if (!isPrimitiveVoid(getUnwrapper(type)) && !checkCompatibleAssignmentTypes(returnType, type, null, false)) {
                 if (!extension.handleIncompatibleReturnType(statement, type)) {
-                    addStaticTypeError("Cannot return value of type " + prettyPrintType(type) + " on method returning type " + prettyPrintType(returnType), expression);
+                    addStaticTypeError("Cannot return value of type " + prettyPrintType(type) + " for method returning " + prettyPrintType(returnType), expression);
                 }
             } else if (implementsInterfaceOrIsSubclassOf(type, returnType)) {
                 BinaryExpression dummy = assignX(varX("{target}", returnType), expression, statement);
@@ -3480,37 +3480,29 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     mn = disambiguateMethods(mn, chosenReceiver != null ? chosenReceiver.getType() : null, args, call);
 
                     if (mn.size() == 1) {
-                        MethodNode directMethodCallCandidate = mn.get(0);
-                        ClassNode declaringClass = directMethodCallCandidate.getDeclaringClass();
-                        if (!directMethodCallCandidate.isStatic() && !isClassType(declaringClass)
+                        MethodNode targetMethodCandidate = mn.get(0);
+                        ClassNode declaringClass = targetMethodCandidate.getDeclaringClass();
+                        if (!targetMethodCandidate.isStatic() && !isClassType(declaringClass)
                                 && objectExpression instanceof ClassExpression && call.getNodeMetaData(DYNAMIC_RESOLUTION) == null) {
-                            addStaticTypeError("Non-static method " + prettyPrintTypeName(declaringClass) + "#" + directMethodCallCandidate.getName() + " cannot be called from static context", call);
+                            addStaticTypeError("Non-static method " + prettyPrintTypeName(declaringClass) + "#" + targetMethodCandidate.getName() + " cannot be called from static context", call);
                         }
                         if (chosenReceiver == null) {
                             chosenReceiver = Receiver.make(declaringClass);
                         }
                         // note second pass here to differentiate from extension that sets type
                         boolean mergeType = (call.getNodeMetaData(INFERRED_TYPE) != null);
-                        storeTargetMethod(call, directMethodCallCandidate);
+                        storeTargetMethod(call, targetMethodCandidate);
 
-                        visitMethodCallArguments(chosenReceiver.getType(), argumentList, true, directMethodCallCandidate);
-                        for (Expression argument : argumentList.getExpressions()) {
-                            if (argument instanceof ClosureExpression) {
-                                // GROOVY-10052: return type known now
-                                args = getArgumentTypes(argumentList);
-                                break;
-                            }
-                        }
-                        callArgsVisited = true;
+                        visitMethodCallArguments(chosenReceiver.getType(), argumentList, true, targetMethodCandidate); callArgsVisited = true;
 
-                        ClassNode returnType = getType(directMethodCallCandidate);
+                        ClassNode returnType = getType(targetMethodCandidate);
                         if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
-                            ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), directMethodCallCandidate, callArguments, call.getGenericsTypes());
+                            ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), targetMethodCandidate, callArguments, call.getGenericsTypes());
                             if (irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType))
                                 returnType = irtg;
                         }
                         // GROOVY-6091: use of "delegate" or "getDelegate()" does not make use of @DelegatesTo metadata
-                        if (directMethodCallCandidate == GET_DELEGATE && typeCheckingContext.getEnclosingClosure() != null) {
+                        if (targetMethodCandidate == GET_DELEGATE && typeCheckingContext.getEnclosingClosure() != null) {
                             DelegationMetadata md = getDelegationMetadata(typeCheckingContext.getEnclosingClosure().getClosureExpression());
                             if (md != null) {
                                 returnType = md.getType();
@@ -3519,14 +3511,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             }
                         }
                         // GROOVY-7106, GROOVY-7274, GROOVY-8909, GROOVY-8961, GROOVY-9734, GROOVY-9844, GROOVY-9915, et al.
-                        Parameter[] parameters = directMethodCallCandidate.getParameters();
-                        if (chosenReceiver.getType().getGenericsTypes() != null && !directMethodCallCandidate.isStatic() && !(directMethodCallCandidate instanceof ExtensionMethodNode)) {
-                            Map<GenericsTypeName, GenericsType> context = extractPlaceHoldersVisibleToDeclaration(chosenReceiver.getType(), directMethodCallCandidate, argumentList);
+                        Parameter[] parameters = targetMethodCandidate.getParameters();
+                        if (chosenReceiver.getType().getGenericsTypes() != null && !targetMethodCandidate.isStatic() && !(targetMethodCandidate instanceof ExtensionMethodNode)) {
+                            Map<GenericsTypeName, GenericsType> context = extractPlaceHoldersVisibleToDeclaration(chosenReceiver.getType(), targetMethodCandidate, argumentList);
                             parameters = Arrays.stream(parameters).map(p -> new Parameter(applyGenericsContext(context, p.getType()), p.getName())).toArray(Parameter[]::new);
                         }
                         resolvePlaceholdersFromImplicitTypeHints(args, argumentList, parameters);
 
-                        if (typeCheckMethodsWithGenericsOrFail(chosenReceiver.getType(), args, directMethodCallCandidate, call)) {
+                        if (typeCheckMethodsWithGenericsOrFail(chosenReceiver.getType(), args, targetMethodCandidate, call)) {
                             String data = chosenReceiver.getData();
                             if (data != null) {
                                 // the method which has been chosen is supposed to be a call on delegate or owner
@@ -3535,7 +3527,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             }
                             receiver = chosenReceiver.getType();
                             if (mergeType || call.getNodeMetaData(INFERRED_TYPE) == null)
-                                storeType(call, adjustWithTraits(directMethodCallCandidate, receiver, args, returnType));
+                                storeType(call, adjustWithTraits(targetMethodCandidate, receiver, args, returnType));
 
                             if (objectExpression instanceof VariableExpression && ((VariableExpression) objectExpression).isClosureSharedVariable()) {
                                 // if the object expression is a closure shared variable, we will have to perform a second pass
@@ -4090,17 +4082,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (isClosureWithType(type) && source instanceof ClosureExpression) {
             storeInferredReturnType(source, getCombinedBoundType(type.getGenericsTypes()[0]));
         }
-        ClassNode expect = wrapTypeIfNecessary(getInferredReturnType(source)); // GROOVY-10277
 
         source.visit(this);
 
-        if (!expression.isCoerce()) {
-            if (!checkCast(type, source))
-                addStaticTypeError("Inconvertible types: cannot cast " + prettyPrintType(getType(source)) + " to " + prettyPrintType(type), expression);
-        } else if (expect != null && !isObjectType(expect) && !isWrapperVoid(expect) && !isWrapperBoolean(expect)) {
-            ClassNode actual = getInferredReturnType(source); // check return type(s) against the target return type
-            if (actual != null && !GenericsUtils.buildWildcardType(expect).isCompatibleWith(wrapTypeIfNecessary(actual)))
-                addStaticTypeError("Cannot coerce lambda or closure returning " + prettyPrintType(actual) + " to " + prettyPrintType(type), expression);
+        if (!expression.isCoerce() && !checkCast(type, source)) {
+            addStaticTypeError("Inconvertible types: cannot cast " + prettyPrintType(getType(source)) + " to " + prettyPrintType(type), expression);
         }
     }
 

@@ -47,7 +47,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
             int method() {
                 return 'String'
             }
-        ''', 'Cannot return value of type java.lang.String on method returning type int'
+        ''', 'Cannot return value of type java.lang.String for method returning int'
     }
 
     void testIncompatibleImplicitReturn2() {
@@ -55,7 +55,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
             int method() {
                 'String'
             }
-        ''', 'Cannot return value of type java.lang.String on method returning type int'
+        ''', 'Cannot return value of type java.lang.String for method returning int'
     }
 
     void testIncompatibleImplicitReturn() {
@@ -77,7 +77,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
                     2
                 }
             }
-        ''', 'Cannot return value of type java.lang.String on method returning type int'
+        ''', 'Cannot return value of type java.lang.String for method returning int'
     }
 
     void testImplicitReturnFailureWithIfElse2() {
@@ -89,7 +89,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
                     'String'
                 }
             }
-        ''', 'Cannot return value of type java.lang.String on method returning type int'
+        ''', 'Cannot return value of type java.lang.String for method returning int'
     }
 
     void testImplicitReturnFailureWithIfElse3() {
@@ -102,8 +102,8 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
         ''',
-        'Cannot return value of type java.lang.String on method returning type int', // first branch
-        'Cannot return value of type java.lang.String on method returning type int' // second branch
+        'Cannot return value of type java.lang.String for method returning int', // first branch
+        'Cannot return value of type java.lang.String for method returning int' // second branch
     }
 
     void testImplicitReturnFailureWithSwitch() {
@@ -121,7 +121,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
                  }
              }
          ''',
-         'Cannot return value of type java.lang.String on method returning type int'
+         'Cannot return value of type java.lang.String for method returning int'
     }
 
     void testImplicitReturnFailureWithSwitch2() {
@@ -145,7 +145,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
             double greeting(String name) {
                 new Object()
             }
-        ''', 'Cannot return value of type java.lang.Object on method returning type double'
+        ''', 'Cannot return value of type java.lang.Object for method returning double'
     }
 
     void testRecursiveTypeInferrence() {

@@ -22,11 +22,12 @@ package groovy.transform.stc
  * Unit tests for static type checking : type checking mode.
  */
 class TypeCheckingModeTest extends StaticTypeCheckingTestCase {
+
     void testShouldThrowErrorBecauseTypeCheckingIsOn() {
         shouldFailWithMessages '''
             int foo() { 'foo' }
             1
-        ''', 'Cannot return value of type java.lang.String on method returning type int'
+        ''', 'Cannot return value of type java.lang.String for method returning int'
     }
 
     void testShouldNotThrowErrorBecauseTypeCheckingIsOff() {
@@ -53,7 +54,7 @@ class TypeCheckingModeTest extends StaticTypeCheckingTestCase {
                 int foo() { 'foo' }
             }
             1
-        ''', 'Cannot return value of type java.lang.String on method returning type int'
+        ''', 'Cannot return value of type java.lang.String for method returning int'
     }
 
     void testShouldNotThrowErrorBecauseTypeCheckingIsOffIntoClass() {

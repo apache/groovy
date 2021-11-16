@@ -36,7 +36,8 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             class C { int x }
             C c = new C()
             c.x = '1'
-        ''', 'Cannot assign value of type java.lang.String to variable of type int'
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type int'
     }
 
     void testAssignFinalFieldValue() {
@@ -97,33 +98,39 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             int[] array = []
             array.length = 1
-        ''', 'Cannot set read-only property: length'
+        ''',
+        'Cannot set read-only property: length'
 
         shouldFailWithMessages '''
             class C { final x }
             new C().x = null
-        ''', 'Cannot set read-only property: x'
+        ''',
+        'Cannot set read-only property: x'
 
         // GROOVY-5450
         shouldFailWithMessages '''
             class C { final x }
             new C().@x = null
-        ''', 'Cannot set read-only property: x'
+        ''',
+        'Cannot set read-only property: x'
 
         shouldFailWithMessages '''
             class C { final x }
             new C().with { x = null }
-        ''', 'Cannot set read-only property: x'
+        ''',
+        'Cannot set read-only property: x'
 
         shouldFailWithMessages '''
             class C { final x }
             new C().with { delegate.x = null }
-        ''', 'Cannot set read-only property: x'
+        ''',
+        'Cannot set read-only property: x'
 
         shouldFailWithMessages '''
             class C { final x }
             new C().setX(null)
-        ''', 'Cannot find matching method C#setX(<unknown parameter type>).'
+        ''',
+        'Cannot find matching method C#setX(<unknown parameter type>).'
     }
 
     void testMapDotPropertySyntax() {
@@ -148,14 +155,14 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testAssignFieldValueWithAttributeNotation() {
-        assertScript """
+        assertScript '''
             class A {
                 int x
             }
 
             A a = new A()
             a.@x = 1
-        """
+        '''
     }
 
     void testAssignFieldValueWithWrongTypeAndAttributeNotation() {
@@ -166,7 +173,8 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
              A a = new A()
              a.@x = '1'
-         ''', 'Cannot assign value of type java.lang.String to variable of type int'
+         ''',
+         'Cannot assign value of type java.lang.String to variable of type int'
      }
 
     void testInferenceFromAttributeType() {
@@ -184,7 +192,8 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             Object o = new Object()
             o.x = 0
-        ''', 'No such property: x for class: java.lang.Object'
+        ''',
+        'No such property: x for class: java.lang.Object'
     }
 
     void testShouldComplainAboutMissingProperty2() {
@@ -193,7 +202,8 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             }
             A a = new A()
             a.x = 0
-        ''', 'No such property: x for class: A'
+        ''',
+        'No such property: x for class: A'
     }
 
     @NotYetImplemented
@@ -207,14 +217,16 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     this.x
                 }
             }
-        ''', 'The field A.x is not accessible'
+        ''',
+        'The field A.x is not accessible'
     }
 
     void testShouldComplainAboutMissingAttribute() {
         shouldFailWithMessages '''
             Object o = new Object()
             o.@x = 0
-        ''', 'No such attribute: x for class: java.lang.Object'
+        ''',
+        'No such attribute: x for class: java.lang.Object'
     }
 
     void testShouldComplainAboutMissingAttribute2() {
@@ -223,7 +235,8 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             }
             A a = new A()
             a.@x = 0
-        ''', 'No such attribute: x for class: A'
+        ''',
+        'No such attribute: x for class: A'
     }
 
     void testShouldComplainAboutMissingAttribute3() {
@@ -233,7 +246,8 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             }
             A a = new A()
             println a.@x
-        ''', 'No such attribute: x for class: A'
+        ''',
+        'No such attribute: x for class: A'
     }
 
     void testShouldComplainAboutMissingAttribute4() {
@@ -243,7 +257,8 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             }
             A a = new A()
             a.@x = 0
-        ''', 'No such attribute: x for class: A'
+        ''',
+        'No such attribute: x for class: A'
     }
 
     void testShouldComplainAboutMissingAttribute5() {
@@ -256,7 +271,8 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     this.@x
                 }
             }
-        ''', 'The field A.x is not accessible'
+        ''',
+        'The field A.x is not accessible'
     }
 
     void testPropertyWithInheritance() {
@@ -284,7 +300,8 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             }
             B b = new B()
             b.x = '2'
-        ''', 'Cannot assign value of type java.lang.String to variable of type int'
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type int'
     }
 
     void testPropertyWithInheritanceFromAnotherSourceUnit() {
@@ -302,7 +319,8 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             }
             B b = new B()
             b.x = '2'
-        ''', 'Cannot assign value of type java.lang.String to variable of type int'
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type int'
     }
 
     void testPropertyWithSuperInheritanceFromAnotherSourceUnit() {
@@ -398,26 +416,25 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 int bar = new Date()
             }
             new Foo()
-        ''', 'Cannot assign value of type java.util.Date to variable of type int'
+        ''',
+        'Cannot assign value of type java.util.Date to variable of type int'
     }
 
-    // GROOVY-5443
-    void testFieldInitShouldNotPassBecauseOfIncompatibleTypesWithClosure() {
+    // GROOVY-5443, GROOVY-10277
+    void testFieldInitShouldNotPassBecauseOfIncompatibleTypesWithClosure1() {
         shouldFailWithMessages '''
             class Foo {
                 Closure<List> bar = { Date date -> date.getTime() }
             }
-            new Foo()
-        ''', 'Incompatible generic argument types. Cannot assign groovy.lang.Closure<java.lang.Long> to: groovy.lang.Closure<java.util.List>'
-    }
+        ''',
+        'Cannot return value of type long for closure expecting java.util.List'
 
-    void testFieldInitShouldNotPassBecauseOfIncompatibleTypesWithClosure2() {
         shouldFailWithMessages '''
             class Foo {
-                java.util.function.Supplier<String> bar = { 123 }
+                java.util.function.Supplier<String> bar = { -> 123 }
             }
-            new Foo()
-        ''', 'Incompatible generic argument types. Cannot assign java.util.function.Supplier<java.lang.Integer> to: java.util.function.Supplier<java.lang.String>'
+        ''',
+        'Cannot return value of type int for closure expecting java.lang.String'
     }
 
     // GROOVY-9882
@@ -435,12 +452,15 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             class Foo {
                 java.util.function.Supplier<String> bar = { baz -> '' }
             }
-        ''', 'Wrong number of parameters for method target get()'
+        ''',
+        'Wrong number of parameters for method target get()'
+
         shouldFailWithMessages '''
             class Foo {
                 java.util.function.Consumer<String> bar = { -> null }
             }
-        ''', 'Wrong number of parameters for method target accept(java.lang.String)'
+        ''',
+        'Wrong number of parameters for method target accept(java.lang.String)'
     }
 
     // GROOVY-9991
@@ -482,7 +502,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             list.add(new Elem(value:789))
             assert list.value == [ 123, 456, 789 ]
         '''
-
         assertScript '''class Elem { String value }
             List<Elem> list = new LinkedList<Elem>()
             list.add(new Elem(value:'123'))
@@ -524,16 +543,16 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
     void testSetterUsingPropertyNotationOnInterface() {
         assertScript '''
-                interface FooAware { void setFoo(String arg) }
-                class A implements FooAware {
-                    void setFoo(String foo) { }
-                }
-                void test(FooAware a) {
-                    a.foo = 'foo'
-                }
-                def a = new A()
-                test(a)
-            '''
+            interface FooAware { void setFoo(String arg) }
+            class A implements FooAware {
+                void setFoo(String foo) { }
+            }
+            void test(FooAware a) {
+                a.foo = 'foo'
+            }
+            def a = new A()
+            test(a)
+        '''
     }
 
     // GROOVY-5700
@@ -595,7 +614,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5779
     void testShouldNotUseNonStaticProperty() {
         assertScript '''import java.awt.Color
-        Color c = Color.red // should not be interpreted as Color.getRed()
+            Color c = Color.red // should not be interpreted as Color.getRed()
         '''
     }
 
@@ -640,7 +659,8 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             }
             def i = new Outer.Inner()
             def x = i.m()
-        ''', 'The variable [p] is undeclared.'
+        ''',
+        'The variable [p] is undeclared.'
     }
 
     void testOuterPropertyAccess3() {
@@ -655,7 +675,8 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             }
             def i = new Outer.Inner()
             def x = i.m()
-        ''', 'No such property: p for class: Outer$Inner'
+        ''',
+        'No such property: p for class: Outer$Inner'
     }
 
     // GROOVY-7024
@@ -764,7 +785,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
             }
             new GreetingActor()
-            '''
+        '''
     }
 
     // GROOVY-6610
@@ -887,29 +908,25 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-6489
     void testShouldNotThrowUnmatchedGenericsError() {
-        assertScript '''public class Foo {
-
-    private List<String> names;
-
-    public List<String> getNames() {
-        return names;
-    }
-
-    public void setNames(List<String> names) {
-        this.names = names;
-    }
-}
-
-class FooWorker {
-
-    public void doSomething() {
-        new Foo().with {
-            names = new ArrayList()
-        }
-    }
-}
-
-new FooWorker().doSomething()'''
+        assertScript '''
+            public class Foo {
+                private List<String> names;
+                public List<String> getNames() {
+                    return names;
+                }
+                public void setNames(List<String> names) {
+                    this.names = names;
+                }
+            }
+            class FooWorker {
+                public void doSomething() {
+                    new Foo().with {
+                        names = new ArrayList()
+                    }
+                }
+            }
+            new FooWorker().doSomething()
+        '''
     }
 
     void testShouldFailWithIncompatibleGenericTypes() {
@@ -949,9 +966,11 @@ new FooWorker().doSomething()'''
     }
 
     void testPropertyWithMultipleSetters() {
-        assertScript '''import org.codehaus.groovy.ast.expr.BinaryExpression
-import org.codehaus.groovy.ast.expr.BooleanExpression
-import org.codehaus.groovy.ast.stmt.AssertStatement
+        assertScript '''
+            import org.codehaus.groovy.ast.expr.BinaryExpression
+            import org.codehaus.groovy.ast.expr.BooleanExpression
+            import org.codehaus.groovy.ast.stmt.AssertStatement
+
             class A {
                 private field
                 void setX(Integer a) {field=a}
@@ -1223,7 +1242,8 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
 
             Foo foo = new Foo(bar: new Bar(x: 1))
             Bar bar = foo.bar
-        ''', 'Cannot assign value of type int to variable of type Bar'
+        ''',
+        'Cannot assign value of type int to variable of type Bar'
 
         assertScript '''
             class Foo {

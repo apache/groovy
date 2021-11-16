@@ -18,7 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.test.NotYetImplemented
 import groovy.transform.CompileStatic
 import org.junit.Test
 
@@ -231,7 +230,7 @@ final class LambdaTest {
     }
 
     @Test
-    void testComparator1() {
+    void testComparator() {
         assertScript '''
             @groovy.transform.CompileStatic class T {
                 Comparator<Integer> c = (Integer a, Integer b) -> Integer.compare(a, b)
@@ -239,7 +238,10 @@ final class LambdaTest {
             def t = new T()
             assert t.c.compare(0,0) == 0
         '''
+    }
 
+    //TODO: GROOVY-10277
+    void testComparator2() {
         def err = shouldFail '''
             @groovy.transform.CompileStatic class T {
                 Comparator<Integer> c = (int a, int b) -> Integer.compare(a, b)
@@ -249,16 +251,16 @@ final class LambdaTest {
     }
 
     @Test // GROOVY-9977
-    void testComparator2() {
+    void testComparator3() {
         assertScript '''
             @groovy.transform.CompileStatic
             class T {
                 Comparator<Integer> c = (a, b) -> Integer.compare(a, b)
 
-                static void m1() {
+                void m1() {
                     Comparator<Integer> x = (a, b) -> Integer.compare(a, b)
                 }
-                void m2() {
+                static void m2() {
                     Comparator<Integer> y = (a, b) -> Integer.compare(a, b)
                 }
             }
@@ -268,7 +270,7 @@ final class LambdaTest {
     }
 
     @Test // GROOVY-9997
-    void testComparator3() {
+    void testComparator4() {
         assertScript '''
             @groovy.transform.TypeChecked
             void test() {
@@ -326,7 +328,7 @@ final class LambdaTest {
     }
 
     @Test
-    void testFunctionWithLocalVariables4() {
+    void testFunctionWithLocalVariables3() {
         assertScript '''
             import groovy.transform.CompileStatic
             import java.util.stream.Collectors
@@ -348,7 +350,7 @@ final class LambdaTest {
     }
 
     @Test
-    void testFunctionWithLocalVariables5() {
+    void testFunctionWithLocalVariables4() {
         assertScript '''
             import groovy.transform.CompileStatic
             import java.util.stream.Collectors
@@ -372,7 +374,7 @@ final class LambdaTest {
     }
 
     @Test
-    void testFunctionWithLocalVariables6() {
+    void testFunctionWithLocalVariables5() {
         assertScript '''
             import groovy.transform.CompileStatic
             import java.util.stream.Collectors
@@ -1282,7 +1284,7 @@ final class LambdaTest {
                 def p() {
                     def out = new ByteArrayOutputStream()
                     out.withObjectOutputStream {
-                        Function<Integer, String> f = ((Integer e) -> 'a' + e)
+                        Function<Integer, String> f = (Integer e) -> 'a' + e
                         it.writeObject(f)
                     }
                     return out.toByteArray()
@@ -1373,7 +1375,7 @@ final class LambdaTest {
                 SerializableFunction<Integer, String> f
 
                 {
-                    f = ((Integer e) -> a + e)
+                    f = (Integer e) -> a + e
                 }
 
                 byte[] p() {

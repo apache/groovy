@@ -62,7 +62,6 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             assert c('bar') == 'bar'
             assert c() == 'foo'
         '''
-
         assertScript '''
             def c = { p, q = 'baz' -> '' + p + q }
             assert c('foo', 'bar') == 'foobar'
@@ -121,9 +120,9 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             def c = { int x ->
                 if (x == 0) {
-                    1L // long
+                    1L
                 } else {
-                    x // int
+                    x
                 }
             }
             byte res = c(0)
@@ -160,7 +159,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10082
+    // GROOVY-10082, GROOVY-10277
     void testClosureReturnTypeInference6() {
         assertScript '''
             class A {}
@@ -174,10 +173,10 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             Closure<String> c = { -> 42 }
         ''',
-        'Cannot assign groovy.lang.Closure<java.lang.Integer> to: groovy.lang.Closure<java.lang.String>'
+        'Cannot return value of type int for closure expecting java.lang.String'
     }
 
-    // GROOVY-10091
+    // GROOVY-10091, GROOVY-10277
     void testClosureReturnTypeInference7() {
         shouldFailWithMessages '''
             class A<T> {}
@@ -190,7 +189,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             c = { -> return new X() }
             c = { -> return new Y<String>() }
         ''',
-        'Cannot assign groovy.lang.Closure<X> to: groovy.lang.Closure<A<java.lang.Number>>'
+        'Cannot return value of type X for closure expecting A<java.lang.Number>'
     }
 
     // GROOVY-10128, GROOVY-10306
@@ -370,7 +369,8 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
               def c = x
               c.m()
             }
-        ''', 'Cannot find matching method A#m()'
+        ''',
+        'Cannot find matching method A#m()'
     }
 
     // GROOVY-10052
@@ -458,7 +458,8 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             Closure fib
             fib = { int n -> n<2?n:fib(n-1)+fib(n-2) }
-        ''', 'Cannot find matching method java.lang.Object#plus(java.lang.Object)'
+        ''',
+        'Cannot find matching method java.lang.Object#plus(java.lang.Object)'
     }
 
     void testClosureRecursionWithDef() {
@@ -466,9 +467,9 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             def fib
             fib = { int n -> n<2?n:fib(n-1)+fib(n-2) }
         ''',
-                'Cannot find matching method java.lang.Object#plus(java.lang.Object)',
-                'Cannot find matching method java.lang.Object#call(int)',
-                'Cannot find matching method java.lang.Object#call(int)'
+        'Cannot find matching method java.lang.Object#plus(java.lang.Object)',
+        'Cannot find matching method java.lang.Object#call(int)',
+        'Cannot find matching method java.lang.Object#call(int)'
     }
 
     void testClosureRecursionWithClosureTypeArgument() {
@@ -490,13 +491,13 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5639
     void testShouldNotThrowClosureSharedVariableError() {
         assertScript '''
-        Closure<Void> c = {
-            List<String> list = new ArrayList<String>()
-            String s = "foo"
-            10.times {
-                list.add(s)
+            Closure<Void> c = {
+                List<String> list = new ArrayList<String>()
+                String s = "foo"
+                10.times {
+                    list.add(s)
+                }
             }
-        }
         '''
     }
 
@@ -562,7 +563,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-6219
+    // GROOVY-6219, GROOVY-10277
     void testShouldFailBecauseClosureReturnTypeDoesnMatchMethodSignature() {
         shouldFailWithMessages '''
             void printMessage(Closure<String> messageProvider) {
@@ -573,7 +574,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
                 printMessage { int x, int y -> x+y }
             }
         ''',
-        '#printMessage(groovy.lang.Closure<java.lang.String>) with arguments [groovy.lang.Closure<java.lang.Integer>]'
+        'Cannot return value of type int for closure expecting java.lang.String'
     }
 
     // GROOVY-6189, GROOVY-9852
@@ -621,7 +622,8 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             foo {
                 print 'bar'
             }
-        ''', 'Reference to method is ambiguous. Cannot choose between'
+        ''',
+        'Reference to method is ambiguous. Cannot choose between'
 
         ['', 'x, y ->'].each { params ->
             shouldFailWithMessages """
@@ -630,7 +632,8 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
                 def foo(Function f) { f.apply(0) }
                 def foo(Supplier s) { s.get() }
                 foo { $params 'bar' }
-            """, 'Reference to method is ambiguous. Cannot choose between'
+            """,
+            'Reference to method is ambiguous. Cannot choose between'
         }
     }
 
@@ -662,7 +665,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testSAMVariable() {
-        assertScript """
+        assertScript '''
             interface SAM { def foo(); }
 
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -672,27 +675,27 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             assert s.foo() == 1
             def t = (SAM) {2}
             assert t.foo() == 2
-        """
+        '''
     }
 
     // GROOVY-7927
     void testSAMGenericsInAssignment() {
-        assertScript """
+        assertScript '''
             interface SAM<T,R> { R accept(T t); }
             SAM<Integer,Integer> s = { Integer n -> -n }
             assert s.accept(1) == -1
-        """
+        '''
     }
 
     void testSAMProperty() {
-        assertScript """
+        assertScript '''
             interface SAM { def foo(); }
             class X {
                 SAM s
             }
             def x = new X(s:{1})
             assert x.s.foo() == 1
-        """
+        '''
     }
 
     // GROOVY-7003
@@ -714,7 +717,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testSAMAttribute() {
-        assertScript """
+        assertScript '''
             interface SAM { def foo(); }
             class X {
                 public SAM s
@@ -725,7 +728,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             x = new X()
             x.@s = {2}
             assert x.s.foo() == 2
-        """
+        '''
     }
 
     // GROOVY-10254
@@ -796,36 +799,38 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     void testSAMType() {
-        assertScript """
+        assertScript '''
             interface Foo {int foo()}
             Foo f = {1}
             assert f.foo() == 1
             abstract class Bar implements Foo {}
             Bar b = {2}
             assert b.foo() == 2
-        """
-        shouldFailWithMessages """
+        '''
+        shouldFailWithMessages '''
             interface Foo2 {
                 String toString()
             }
             Foo2 f2 = {int i->"hi"}
-        """, "Cannot assign"
-        shouldFailWithMessages """
+        ''',
+        'Cannot assign'
+        shouldFailWithMessages '''
             interface Foo2 {
                 String toString()
             }
             abstract class Bar2 implements Foo2 {}
             Bar2 b2 = {"there"}
-        """, "Cannot assign"
-        assertScript """
+        ''',
+        'Cannot assign'
+        assertScript '''
             interface Foo3 {
                 boolean equals(Object)
                 int f()
             }
             Foo3 f3 = {1}
             assert f3.f() == 1
-        """
-        shouldFailWithMessages """
+        '''
+        shouldFailWithMessages '''
             interface Foo3 {
                 boolean equals(Object)
                 int f()
@@ -834,7 +839,8 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
                 int f(){2}
             }
             Bar3 b3 = {2}
-        """, "Cannot assign"
+        ''',
+        'Cannot assign'
     }
 
     // GROOVY-6238

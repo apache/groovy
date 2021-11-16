@@ -129,21 +129,33 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
     void testCoerceToFunctionalInterface() {
         assertScript '''
             import java.util.function.*
+            Consumer<Number> c = { n -> }
             Supplier<Number> s = { -> 42 }
             Predicate<Number> p = { n -> 42 }
         '''
         assertScript '''
             import java.util.function.*
+            def c = (Consumer<Number>) { n -> }
+            def s = (Supplier<Number>) { -> 42 }
+            def p = (Predicate<Number>) { n -> 42 }
+        '''
+        assertScript '''
+            import java.util.function.*
+            def c = { n -> } as Consumer<Number>
             def s = { -> 42 } as Supplier<Number>
             def p = { n -> 42 } as Predicate<Number>
         '''
         shouldFailWithMessages '''
             import java.util.function.*
-            def s = { -> false } as Supplier<Number>
-        ''', 'Cannot coerce lambda or closure returning boolean to java.util.function.Supplier<java.lang.Number>'
+            def s = (Supplier<Number>) { -> false }
+        ''', 'Cannot return value of type boolean for closure expecting java.lang.Number'
         shouldFailWithMessages '''
             import java.util.function.*
-            def s = (() -> false) as Supplier<Number>
-        ''', 'Cannot coerce lambda or closure returning boolean to java.util.function.Supplier<java.lang.Number>'
+            def s = { -> false } as Supplier<Number>
+        ''', 'Cannot return value of type boolean for closure expecting java.lang.Number'
+        shouldFailWithMessages '''
+            import java.util.function.*
+            def s = (() -> ['']) as Supplier<Number>
+        ''', 'Cannot return value of type java.util.List<java.lang.String> for lambda expecting java.lang.Number'
     }
 }

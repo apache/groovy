@@ -472,7 +472,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 chars()
             }
         ''',
-        'Cannot return value of type #T on method returning type java.util.List'
+        'Cannot return value of type #T for method returning java.util.List'
     }
 
     // GROOVY-10098
@@ -483,7 +483,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
               T p
               T m() {
                 Closure<T> x = { -> p }
-                x() // Cannot return value of type Object on method returning type T
+                x() // Cannot return value of type Object for method returning T
               }
             }
             assert new C<>(42).m() == 42
@@ -518,7 +518,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             class Test {
                 Task task
                 def <T> T exec(args) {
-                    task.exec(args) // Cannot return value of type #T on method returning type T
+                    task.exec(args) // Cannot return value of type #T for method returning T
                 }
             }
             String result = new Test(task: new Task()).exec('works')
@@ -540,7 +540,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
                 abstract F start()
                 T end() {
-                  end // Cannot return value of type Path$Segment<F,T> on method returning type T
+                  end // Cannot return value of type Path$Segment<F,T> for method returning T
                 }
                 T end
 
@@ -2534,7 +2534,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
         ''',
-        'Cannot return value of type T on method returning type U'
+        'Cannot return value of type T for method returning U'
 
         shouldFailWithMessages '''
             class C<X, Y> {
@@ -4067,7 +4067,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             class Foo<T extends Bar> {
                 T method(T t) {
                     def c = { -> t }
-                    return c() // Cannot return value of type Object on method returning type T
+                    return c() // Cannot return value of type Object for method returning T
                 }
             }
             def bar = new Bar()

@@ -1841,7 +1841,7 @@ final class TraitASTTransformationTest {
                 int foo() { 1+'foo'}
             }
         '''
-        assert err =~ 'Cannot return value of type java.lang.String on method returning type int'
+        assert err =~ 'Cannot return value of type java.lang.String for method returning int'
     }
 
     @Test
