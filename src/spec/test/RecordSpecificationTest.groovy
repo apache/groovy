@@ -74,11 +74,16 @@ assert new ColoredPoint(5).toString() == 'ColoredPoint[x=5, y=0, color=white]'
 
 // tag::record_point_named_args[]
 assert new ColoredPoint(x: 5).toString() == 'ColoredPoint[x=5, y=0, color=white]'
-assert new ColoredPoint(y: 5).toString() == 'ColoredPoint[x=0, y=5, color=white]'
+assert new ColoredPoint(x: 0, y: 5).toString() == 'ColoredPoint[x=0, y=5, color=white]'
 // end::record_point_named_args[]
-assert new ColoredPoint(y: null).toString() == 'ColoredPoint[x=0, y=0, color=white]'
-def ex = shouldFail { new ColoredPoint(z: 5) }
+assert new ColoredPoint(x: 0, y: null).toString() == 'ColoredPoint[x=0, y=0, color=white]'
+def ex = shouldFail { new ColoredPoint(x: 0, z: 5) }
 assert ex.message.contains('Unrecognized namedArgKey: z')
+// tag::record_point_named_args_on[]
+@TupleConstructor(defaultsMode=DefaultsMode.ON)
+record ColoredPoint2(int x, int y = 0, String color = 'white') {}
+assert new ColoredPoint2(y: 5).toString() == 'ColoredPoint2[x=0, y=5, color=white]'
+// end::record_point_named_args_on[]
 '''
     }
 

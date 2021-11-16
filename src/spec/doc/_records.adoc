@@ -133,6 +133,13 @@ Named arguments may also be used (default values also apply here):
 include::../test/RecordSpecificationTest.groovy[tags=record_point_named_args,indent=0]
 ----
 
+You can force all properties to have a default value as shown here:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_point_named_args_on,indent=0]
+----
+
 == Diving deeper
 
 We previously described a `Message` record and displayed it's rough equivalent.

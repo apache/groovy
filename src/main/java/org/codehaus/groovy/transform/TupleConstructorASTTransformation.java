@@ -370,7 +370,12 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     private static DefaultsMode maybeDefaultsMode(AnnotationNode node, String name) {
         if (node != null) {
             final Expression member = node.getMember(name);
-            if (member instanceof PropertyExpression) {
+            if (member instanceof ConstantExpression) {
+                ConstantExpression ce = (ConstantExpression) member;
+                if (ce.getValue() instanceof DefaultsMode) {
+                    return (DefaultsMode) ce.getValue();
+                }
+            } else if (member instanceof PropertyExpression) {
                 PropertyExpression prop = (PropertyExpression) member;
                 Expression oe = prop.getObjectExpression();
                 if (oe instanceof ClassExpression) {

@@ -99,6 +99,19 @@ class RecordTest {
     }
 
     @Test
+    void testRecordsDefaultParams() {
+        assertScript '''
+            record Bar (String a = 'a', long b, Integer c = 24, short d, String e = 'e') { }
+
+            short one = 1
+            assert new Bar(3L, one).toString() == 'Bar[a=a, b=3, c=24, d=1, e=e]'
+            assert new Bar('A', 3L, one).toString() == 'Bar[a=A, b=3, c=24, d=1, e=e]'
+            assert new Bar('A', 3L, 42, one).toString() == 'Bar[a=A, b=3, c=42, d=1, e=e]'
+            assert new Bar('A', 3L, 42, one, 'E').toString() == 'Bar[a=A, b=3, c=42, d=1, e=E]'
+        '''
+    }
+
+    @Test
     void testInnerRecordIsImplicitlyStatic() {
         assertScript '''
             class Test {
