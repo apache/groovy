@@ -254,19 +254,6 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             params.sort(includeComparator);
         }
 
-        if (defaultsMode == AUTO) {
-            boolean foundNoDefault = false;
-            for (int i = params.size() - 1; i >= 0; i--) {
-                Parameter p = params.get(i);
-                if (!p.hasInitialExpression()) {
-                    foundNoDefault = true;
-                }
-                if (foundNoDefault) {
-                    p.setInitialExpression(null);
-                }
-            }
-        }
-
         for (PropertyNode pNode : list) {
             String name = pNode.getName();
             if (shouldSkipUndefinedAware(name, excludes, includes, allNames)) continue;

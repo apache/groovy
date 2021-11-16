@@ -302,8 +302,10 @@ public @interface TupleConstructor {
      *
      * When set to {@code AUTO}, default values are catered for where explicit
      * default values are given for the respective property/field.
-     * Default values are processed from the right and processing stops when the
-     * first property/field is found without an explicit deault value.
+     * Additional positional constructors are generated as per Groovy's normal default value processing.
+     * Properties/fields with an explicit initial value are deemed {@em optional} and may be dropped.
+     * Properties/fields with no initial value are deemed {@em mandatory} and must be supplied as an argument to the respective constructor.
+     * Optional arguments to a positional constructor are dropped from the right.
      *
      * When set to {@code OFF}, default values are not allowed for properties and fields.
      * Only the constructor containing all arguments will be provided.

@@ -401,7 +401,9 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
 
             assert C.declaredConstructors*.toString().toSet() == [
                 'public C(java.lang.String,int,int,java.lang.String)',
-                'public C(java.lang.String,int,int)'
+                'public C(java.lang.String,int,int)',
+                'public C(java.lang.String,int)',
+                'public C(int)'
             ].toSet()
 
             @TupleConstructor(defaultsMode = DefaultsMode.ON, includeFields = true)
@@ -419,6 +421,23 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
                 'public D(java.lang.String)',
                 'public D()'
             ].toSet()
+        '''
+        assertScript '''
+        import groovy.transform.*
+        @Canonical(defaultsMode=DefaultsMode.AUTO)
+        class Bar {
+            String a = 'a'
+            long b
+            Integer c = 24
+            short d
+            String e = 'e'
+        }
+
+        short one = 1
+        assert new Bar(3L, one).toString() == 'Bar(a, 3, 24, 1, e)'
+        assert new Bar('A', 3L, one).toString() == 'Bar(A, 3, 24, 1, e)'
+        assert new Bar('A', 3L, 42, one).toString() == 'Bar(A, 3, 42, 1, e)'
+        assert new Bar('A', 3L, 42, one, 'E').toString() == 'Bar(A, 3, 42, 1, E)'
         '''
     }
 }

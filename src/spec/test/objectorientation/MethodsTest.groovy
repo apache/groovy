@@ -77,6 +77,16 @@ class MethodsTest extends GroovyTestCase {
             assert foo('Marie').age == 1
             // end::default_arguments[]
         '''
+        assertScript '''
+            // tag::default_arguments2[]
+            def baz(a = 'a', int b, c = 'c', boolean d, e = 'e') { "$a $b $c $d $e" }
+
+            assert baz(42, true) == 'a 42 c true e'
+            assert baz('A', 42, true) == 'A 42 c true e'
+            assert baz('A', 42, 'C', true) == 'A 42 C true e'
+            assert baz('A', 42, 'C', true, 'E') == 'A 42 C true E'
+            // end::default_arguments2[]
+        '''
     }
 
     void testVarargs() {

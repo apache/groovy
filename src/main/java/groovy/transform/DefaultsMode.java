@@ -31,8 +31,9 @@ public enum DefaultsMode {
     OFF,
 
     /**
-     * Produce multiple constructors as required to handle any parameters with explicit initial values.
-     * Stops at the first parameter from the right which has no such explicit value.
+     * Produce multiple constructors as required to handle any mandatory and optional arguments.
+     * An argument is optional if the respective property/field has an explicit initial value.
+     * A property/field without an initial value is deemed mandatory.
      */
     AUTO,
 

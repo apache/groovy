@@ -419,14 +419,23 @@ Mix named and positional arguments with caution.
 
 ==== Default arguments
 
-Default arguments make parameters optional. If the argument is not supplied, the method assumes a default value.
+Default arguments make parameters optional.
+If the argument is not supplied, the method assumes a default value.
 
 [source,groovy]
 ----
-include::../test/objectorientation/MethodsTest.groovy[tags=default_arguments ,indent=0]
+include::../test/objectorientation/MethodsTest.groovy[tags=default_arguments,indent=0]
 ----
 
-Note that no mandatory parameter can be defined after a default parameter is present, only other default parameters.
+Parameters are dropped from the right, however mandatory parameters are never dropped.
+
+[source,groovy]
+----
+include::../test/objectorientation/MethodsTest.groovy[tags=default_arguments2,indent=0]
+----
+
+The same rule applies to constructors as well as methods.
+If using `@TupleConstructor`, additional configuration options apply.
 
 ==== Varargs
 
