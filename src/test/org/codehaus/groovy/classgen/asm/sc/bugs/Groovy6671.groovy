@@ -21,7 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
-class Groovy6671Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy6671 extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
     void testGenericsInference() {
         assertScript '''
@@ -53,8 +53,8 @@ class Groovy6671Bug extends StaticTypeCheckingTestCase implements StaticCompilat
                 def holderType = node.getNodeMetaData(INFERRED_TYPE)
                 assert holderType.genericsTypes[0].type == Float_TYPE
 
-                def closureReturnType = node.rightExpression.arguments[0].getNodeMetaData(INFERRED_RETURN_TYPE)
-                assert closureReturnType == float_TYPE
+                def returnType = node.rightExpression.arguments[0].getNodeMetaData(INFERRED_RETURN_TYPE)
+                assert returnType == Float_TYPE
             })
             def h2 = h1.convert {
                 it.floatValue()
@@ -92,8 +92,8 @@ class Groovy6671Bug extends StaticTypeCheckingTestCase implements StaticCompilat
                 def holderType = node.getNodeMetaData(INFERRED_TYPE)
                 assert holderType.genericsTypes[0].type == Float_TYPE
 
-                def closureReturnType = node.rightExpression.arguments[0].getNodeMetaData(INFERRED_RETURN_TYPE)
-                assert closureReturnType == float_TYPE
+                def returnType = node.rightExpression.arguments[0].getNodeMetaData(INFERRED_RETURN_TYPE)
+                assert returnType == Float_TYPE
             })
             def h2 = h1.convert {
                 it.floatValue()

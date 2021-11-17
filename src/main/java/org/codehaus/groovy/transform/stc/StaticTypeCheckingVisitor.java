@@ -2393,38 +2393,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // perform visit
         typeCheckingContext.pushEnclosingClosureExpression(expression);
         DelegationMetadata dmd = getDelegationMetadata(expression);
-        if (dmd == null) {
-            typeCheckingContext.delegationMetadata = new DelegationMetadata(
-                    typeCheckingContext.getEnclosingClassNode(), Closure.OWNER_FIRST, typeCheckingContext.delegationMetadata
-            );
+        if (dmd != null) {
+            typeCheckingContext.delegationMetadata = newDelegationMetadata(dmd.getType(), dmd.getStrategy());
         } else {
-            typeCheckingContext.delegationMetadata = new DelegationMetadata(
-                    dmd.getType(),
-                    dmd.getStrategy(),
-                    typeCheckingContext.delegationMetadata
-            );
+            typeCheckingContext.delegationMetadata = newDelegationMetadata(typeCheckingContext.getEnclosingClassNode(), Closure.OWNER_FIRST);
         }
         super.visitClosureExpression(expression);
         typeCheckingContext.delegationMetadata = typeCheckingContext.delegationMetadata.getParent();
-        MethodNode node = new MethodNode("dummy", 0, OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, expression.getCode());
-        returnAdder.visitMethod(node);
 
-        TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
-        if (!enclosingClosure.getReturnTypes().isEmpty()) {
+        returnAdder.visitMethod(new MethodNode("dummy", 0, OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, expression.getCode()));
+        TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.popEnclosingClosure();
+        if (!enclosingClosure.getReturnTypes().isEmpty()) { // populated by ReturnAdder
             ClassNode returnType = lowestUpperBound(enclosingClosure.getReturnTypes());
-
-            ClassNode expectedReturnType = getInferredReturnType(expression);
-            // type argument can not be of primitive type, we should convert it to the wrapper type
-            if (expectedReturnType != null && isPrimitiveType(returnType) && expectedReturnType.equals(getWrapper(returnType))) {
-                returnType = expectedReturnType;
-            }
-
-            storeInferredReturnType(expression, returnType);
-            ClassNode inferredType = wrapClosureType(returnType);
-            storeType(enclosingClosure.getClosureExpression(), inferredType);
+            storeInferredReturnType(expression, wrapTypeIfNecessary(returnType));
+            storeType(expression, wrapClosureType(returnType));
         }
 
-        typeCheckingContext.popEnclosingClosure();
         // check types of closure shared variables for change
         if (isSecondPassNeededForControlStructure(varTypes, oldTracker)) {
             visitClosureExpression(expression);
@@ -2504,6 +2488,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected DelegationMetadata getDelegationMetadata(final ClosureExpression expression) {
         return expression.getNodeMetaData(DELEGATION_METADATA);
+    }
+
+    private DelegationMetadata newDelegationMetadata(final ClassNode delegateType, final int resolveStrategy) {
+        return new DelegationMetadata(delegateType, resolveStrategy, typeCheckingContext.delegationMetadata);
     }
 
     protected void restoreVariableExpressionMetadata(final Map<VariableExpression, Map<StaticTypesMarker, Object>> typesBeforeVisit) {
@@ -2748,11 +2736,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     addStaticTypeError("Expected parameter type: " + prettyPrintType(receiver) + " but was: " + prettyPrintType(param.getType()), param);
                 }
             }
-            closure.putNodeMetaData(DELEGATION_METADATA, new DelegationMetadata(
-                    receiver,
-                    Closure.DELEGATE_FIRST,
-                    typeCheckingContext.delegationMetadata
-            ));
+            closure.putNodeMetaData(DELEGATION_METADATA, newDelegationMetadata(receiver, Closure.DELEGATE_FIRST));
         }
     }
 
@@ -3182,7 +3166,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                 + ") without @DelegatesTo.Target because generic argument types are not available at runtime", value);
                     }
                     // temporarily store the delegation strategy and the delegate type
-                    expression.putNodeMetaData(DELEGATION_METADATA, new DelegationMetadata(value.getType(), stInt, typeCheckingContext.delegationMetadata));
+                    expression.putNodeMetaData(DELEGATION_METADATA, newDelegationMetadata(value.getType(), stInt));
                 } else if (type != null && !"".equals(type.getText()) && type instanceof ConstantExpression) {
                     String typeString = type.getText();
                     ClassNode[] resolved = GenericsUtils.parseClassNodesFromString(
@@ -3195,7 +3179,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (resolved != null) {
                         if (resolved.length == 1) {
                             resolved = resolveGenericsFromTypeHint(receiver, arguments, mn, resolved);
-                            expression.putNodeMetaData(DELEGATION_METADATA, new DelegationMetadata(resolved[0], stInt, typeCheckingContext.delegationMetadata));
+                            expression.putNodeMetaData(DELEGATION_METADATA, newDelegationMetadata(resolved[0], stInt));
                         } else {
                             addStaticTypeError("Incorrect type hint found in method " + (mn), type);
                         }
@@ -3237,7 +3221,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                             }
                                         }
                                     }
-                                    expression.putNodeMetaData(DELEGATION_METADATA, new DelegationMetadata(actualType, stInt, typeCheckingContext.delegationMetadata));
+                                    expression.putNodeMetaData(DELEGATION_METADATA, newDelegationMetadata(actualType, stInt));
                                     break;
                                 }
                             }
