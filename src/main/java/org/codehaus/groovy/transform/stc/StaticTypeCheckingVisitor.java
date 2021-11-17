@@ -3469,6 +3469,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (!targetMethodCandidate.isStatic() && !isClassType(declaringClass)
                                 && objectExpression instanceof ClassExpression && call.getNodeMetaData(DYNAMIC_RESOLUTION) == null) {
                             addStaticTypeError("Non-static method " + prettyPrintTypeName(declaringClass) + "#" + targetMethodCandidate.getName() + " cannot be called from static context", call);
+                        } else if (targetMethodCandidate.isAbstract() && isSuperExpression(objectExpression)) { // GROOVY-10341
+                            addStaticTypeError("Abstract method " + toMethodParametersString(targetMethodCandidate.getName(), extractTypesFromParameters(targetMethodCandidate.getParameters())) + " cannot be called directly", call);
                         }
                         if (chosenReceiver == null) {
                             chosenReceiver = Receiver.make(declaringClass);

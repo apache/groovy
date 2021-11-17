@@ -1356,6 +1356,22 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10341
+    void testCallAbstractSuperMethod() {
+        shouldFailWithMessages '''
+            abstract class Foo {
+                abstract def m()
+            }
+            class Bar extends Foo {
+                @Override
+                def m() {
+                    super.m()
+                }
+            }
+        ''',
+        'Abstract method m() cannot be called directly'
+    }
+
     // GROOVY-5810
     void testCallStaticSuperMethod() {
         assertScript '''
@@ -1368,7 +1384,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
 
             class Bottom extends Top {
                 public static foo() {
-                    super.foo() // compiles and creates StackOverFlow
+                    super.foo()
                 }
 
             }
