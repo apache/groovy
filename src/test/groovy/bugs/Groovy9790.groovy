@@ -81,7 +81,6 @@ final class Groovy9790 {
 
             test()
         '''
-
-        assert err.toString().contains('The inferred type[int] is not compatible with the parameter type[java.lang.String]')
+        assert err =~ /Expected type int for lambda parameter: s/
     }
 }

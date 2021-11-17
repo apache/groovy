@@ -56,6 +56,7 @@ trait StaticCompilationTestSupport {
                 new ImportCustomizer().tap {
                     addImports(
                             'groovy.transform.ASTTest',
+                            'groovy.transform.stc.ClosureParams',
                             'org.codehaus.groovy.ast.ClassHelper',
                             'org.codehaus.groovy.transform.stc.StaticTypesMarker')
                     addStaticStars(

@@ -42,12 +42,16 @@ abstract class StaticTypeCheckingTestCase extends GroovyTestCase {
         config = new CompilerConfiguration()
         def imports = new ImportCustomizer()
         imports.addImports(
-                'groovy.transform.ASTTest', 'org.codehaus.groovy.transform.stc.StaticTypesMarker',
-                'org.codehaus.groovy.ast.ClassHelper'
-            )
-        imports.addStaticStars('org.codehaus.groovy.control.CompilePhase')
-        imports.addStaticStars('org.codehaus.groovy.transform.stc.StaticTypesMarker')
-        imports.addStaticStars('org.codehaus.groovy.ast.ClassHelper')
+            'groovy.transform.ASTTest',
+            'groovy.transform.stc.ClosureParams',
+            'org.codehaus.groovy.ast.ClassHelper',
+            'org.codehaus.groovy.transform.stc.StaticTypesMarker'
+        )
+        imports.addStaticStars(
+            'org.codehaus.groovy.ast.ClassHelper',
+            'org.codehaus.groovy.control.CompilePhase',
+            'org.codehaus.groovy.transform.stc.StaticTypesMarker'
+        )
         config.addCompilationCustomizers(new ASTTransformationCustomizer(TypeChecked), imports)
         configure()
         shell = new GroovyShell(config)

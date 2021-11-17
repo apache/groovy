@@ -965,14 +965,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (parameter.isDynamicTyped()) {
                     parameter.setType(samParameterTypes[i]);
                     parameter.setOriginType(samParameterTypes[i]);
+                } else {
+                    checkParamType(parameter, samParameterTypes[i], i == n-1, rhsExpression instanceof LambdaExpression);
                 }
             }
         } else {
-            String descriptor = toMethodParametersString(findSAM(lhsType).getName(), samParameterTypes);
-            addStaticTypeError("Wrong number of parameters for method target " + descriptor, rhsExpression);
+            addStaticTypeError("Wrong number of parameters for method target " + toMethodParametersString(findSAM(lhsType).getName(), samParameterTypes), rhsExpression);
         }
 
         storeInferredReturnType(rhsExpression, typeInfo.getV2());
+    }
+
+    private void checkParamType(final Parameter source, final ClassNode target, final boolean isLast, final boolean lambda) {
+        if (/*lambda ? !source.getOriginType().equals(target) :*/!typeCheckMethodArgumentWithGenerics(source.getOriginType(), target, isLast))
+            addStaticTypeError("Expected type " + prettyPrintType(target) + " for " + (lambda ? "lambda" : "closure") + " parameter: " + source.getName(), source);
     }
 
     /**
@@ -2954,10 +2960,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 } else if ((n = p.length) == 0) {
                     // implicit parameter(s)
                     paramTypes = samParamTypes;
-                } else {
-                    paramTypes = new ClassNode[n];
-                    for (int i = 0; i < n; i += 1) {
-                        paramTypes[i] = i < samParamTypes.length ? samParamTypes[i] : null;
+                } else { // TODO: error for length mismatch
+                    paramTypes = Arrays.copyOf(samParamTypes, n);
+                    for (int i = 0; i < Math.min(n, samParamTypes.length); i += 1) {
+                        checkParamType(p[i], paramTypes[i], i == n-1, expression instanceof LambdaExpression);
                     }
                 }
                 expression.putNodeMetaData(CLOSURE_ARGUMENTS, paramTypes);
@@ -3030,25 +3036,24 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
         if (candidates.size() > 1) {
-            Iterator<ClassNode[]> candIt = candidates.iterator();
-            while (candIt.hasNext()) {
+            for (Iterator<ClassNode[]> candIt = candidates.iterator(); candIt.hasNext(); ) {
                 ClassNode[] inferred = candIt.next();
                 for (int i = 0, n = closureParams.length; i < n; i += 1) {
                     Parameter closureParam = closureParams[i];
-                    ClassNode originType = closureParam.getOriginType();
+                    ClassNode declaredType = closureParam.getOriginType();
                     ClassNode inferredType;
-                    if (i < inferred.length - 1 || inferred.length == closureParams.length) {
+                    if (i < inferred.length - 1 || inferred.length == n) {
                         inferredType = inferred[i];
-                    } else { // vargs?
-                        ClassNode lastArgInferred = inferred[inferred.length - 1];
-                        if (lastArgInferred.isArray()) {
-                            inferredType = lastArgInferred.getComponentType();
+                    } else {
+                        ClassNode lastInferred = inferred[inferred.length - 1];
+                        if (lastInferred.isArray()) {
+                            inferredType = lastInferred.getComponentType();
                         } else {
                             candIt.remove();
                             continue;
                         }
                     }
-                    if (!typeCheckMethodArgumentWithGenerics(originType, inferredType, i == (n - 1))) {
+                    if (!typeCheckMethodArgumentWithGenerics(declaredType, inferredType, i == (n - 1))) {
                         candIt.remove();
                     }
                 }
@@ -3067,24 +3072,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else {
                 for (int i = 0, n = closureParams.length; i < n; i += 1) {
                     Parameter closureParam = closureParams[i];
-                    ClassNode originType = closureParam.getOriginType();
+                    ClassNode declaredType = closureParam.getOriginType();
                     ClassNode inferredType = OBJECT_TYPE;
-                    if (i < inferred.length - 1 || inferred.length == closureParams.length) {
+                    if (i < inferred.length - 1 || inferred.length == n) {
                         inferredType = inferred[i];
-                    } else { // vargs?
-                        ClassNode lastArgInferred = inferred[inferred.length - 1];
-                        if (lastArgInferred.isArray()) {
-                            inferredType = lastArgInferred.getComponentType();
+                    } else {
+                        ClassNode lastInferred = inferred[inferred.length - 1];
+                        if (lastInferred.isArray()) {
+                            inferredType = lastInferred.getComponentType();
                         } else {
-                            addError("Incorrect number of parameters. Expected " + inferred.length + " but found " + closureParams.length, expression);
+                            addError("Incorrect number of parameters. Expected " + inferred.length + " but found " + n, expression);
                         }
                     }
-                    boolean lastArg = i == (n - 1);
-
-                    if (!typeCheckMethodArgumentWithGenerics(originType, inferredType, lastArg)) {
-                        addError("Expected parameter of type " + prettyPrintType(inferredType) + " but got " + prettyPrintType(originType), closureParam.getType());
-                    }
-
+                    checkParamType(closureParam, inferredType, i == n-1, false);
                     typeCheckingContext.controlStructureVariables.put(closureParam, inferredType);
                 }
             }

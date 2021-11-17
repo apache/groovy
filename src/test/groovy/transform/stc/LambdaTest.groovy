@@ -240,14 +240,14 @@ final class LambdaTest {
         '''
     }
 
-    //TODO: GROOVY-10277
+    @Test // GROOVY-10372
     void testComparator2() {
         def err = shouldFail '''
             @groovy.transform.CompileStatic class T {
-                Comparator<Integer> c = (int a, int b) -> Integer.compare(a, b)
+                Comparator<Integer> c = (int a, String b) -> 42
             }
         '''
-        assert err =~ /Cannot assign java.util.Comparator<int> to: java.util.Comparator<java.lang.Integer>/
+        assert err =~ /Expected type java.lang.Integer for lambda parameter: b/
     }
 
     @Test // GROOVY-9977
@@ -894,17 +894,33 @@ final class LambdaTest {
                     new Value<>(supplier.get())
                 }
                 def <T> Value<T> replace(Function<? super V, ? extends T> function) {
-                    new Value(function.apply(val))
+                    new Value<>(function.apply(val))
                 }
             }
 
             @groovy.transform.CompileStatic
             void test() {
-                assert new Value(123).replace(() -> 'foo').toString() == 'foo'
-                assert new Value(123).replace((Integer v) -> 'bar').toString() == 'bar'
+                assert new Value<>(123).replace(() -> 'foo').toString() == 'foo'
+                assert new Value<>(123).replace((Integer v) -> 'bar').toString() == 'bar'
             }
             test()
         '''
+    }
+
+    @Test // GROOVY-10372
+    void testFunctionalInterface5() {
+        def err = shouldFail '''
+            interface I {
+                def m(List<String> strings)
+            }
+
+            @groovy.transform.CompileStatic
+            void test() {
+                I face = (List<Object> list) -> null
+            }
+            test()
+        '''
+        assert err =~ /Expected type java.util.List<java.lang.String> for lambda parameter: list/
     }
 
     @Test
