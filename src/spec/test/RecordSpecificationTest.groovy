@@ -79,10 +79,15 @@ assert new ColoredPoint(x: 0, y: 5).toString() == 'ColoredPoint[x=0, y=5, color=
 assert new ColoredPoint(x: 0, y: null).toString() == 'ColoredPoint[x=0, y=0, color=white]'
 def ex = shouldFail { new ColoredPoint(x: 0, z: 5) }
 assert ex.message.contains('Unrecognized namedArgKey: z')
+// tag::record_point_named_args_off[]
+@TupleConstructor(defaultsMode=DefaultsMode.OFF)
+record ColoredPoint2(int x, int y, String color) {}
+assert new ColoredPoint2(4, 5, 'red').toString() == 'ColoredPoint2[x=4, y=5, color=red]'
+// end::record_point_named_args_off[]
 // tag::record_point_named_args_on[]
 @TupleConstructor(defaultsMode=DefaultsMode.ON)
-record ColoredPoint2(int x, int y = 0, String color = 'white') {}
-assert new ColoredPoint2(y: 5).toString() == 'ColoredPoint2[x=0, y=5, color=white]'
+record ColoredPoint3(int x, int y = 0, String color = 'white') {}
+assert new ColoredPoint3(y: 5).toString() == 'ColoredPoint3[x=0, y=5, color=white]'
 // end::record_point_named_args_on[]
 '''
     }
@@ -157,6 +162,39 @@ assert c == 'green'
 '''
     }
 
+    void testToMap() {
+        assertScript '''
+// tag::record_to_map[]
+record Point(int x, int y, String color) { }
+
+def p = new Point(100, 200, 'green')
+assert p.toMap() == [x: 100, y: 200, color: 'green']
+// end::record_to_map[]
+'''
+    }
+
+    void testSize() {
+        assertScript '''
+// tag::record_size[]
+record Point(int x, int y, String color) { }
+
+def p = new Point(100, 200, 'green')
+assert p.size() == 3
+// end::record_size[]
+'''
+    }
+
+    void testGetAt() {
+        assertScript '''
+// tag::record_get_at[]
+record Point(int x, int y, String color) { }
+
+def p = new Point(100, 200, 'green')
+assert p[1] == 200
+// end::record_get_at[]
+'''
+    }
+
     void testGenerics() {
         assertScript '''
 import groovy.transform.CompileStatic
@@ -180,11 +218,11 @@ method()
     }
 
     void testComponents() {
-        def assertScript = '''
+        assert '''
 // tag::record_components[]
 import groovy.transform.*
 
-@RecordOptions(componentTuple=true)
+@RecordOptions(components=true)
 record Point(int x, int y, String color) { }
 
 @CompileStatic
@@ -200,6 +238,9 @@ def method() {
     assert x2 * 10 == 100
     assert y2 ** 2 == 400
     assert c2.toUpperCase() == 'BLUE'
+
+    def p3 = new Point(1, 2, 'red')
+    assert p3.components() instanceof Tuple3
 }
 
 method()

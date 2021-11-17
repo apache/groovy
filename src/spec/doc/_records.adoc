@@ -32,7 +32,7 @@ with Java record classes.
 For example, suppose we want to create a `Message` record
 representing an email message. For the purposes of this example,
 let's simplify such a message to contain just a _from_ email address,
-a _to_ email address, and a message _body_. We would define such
+a _to_ email address, and a message _body_. We can define such
 a record as follows:
 
 [source,groovy]
@@ -58,8 +58,8 @@ include::../test/RecordSpecificationTest.groovy[tags=record_message_equivalent,i
 
 Note the special naming convention for record getters. They are the same name as the field
 (rather than the often common JavaBean convention of capitalized with a "get" prefix).
-Rather than refering to a records fields or properties, the term _component_
-is typicaly used for records. So our `Message` record has `from`, `to`, and `body` components.
+Rather than refering to a record's fields or properties, the term _component_
+is typically used for records. So our `Message` record has `from`, `to`, and `body` components.
 
 Like in Java, you can override the normally implicitly supplied methods
 by writing your own:
@@ -109,6 +109,8 @@ Groovy _record-like_ classes (discussed below) follow normal Java class serializ
 
 == Groovy enhancements
 
+=== Argument defaults
+
 Groovy supports default values for constructor arguments.
 This capability is also available for records as shown in the following record definition
 which has default values for `y` and `color`:
@@ -126,12 +128,31 @@ with their defaults values as shown in the following example:
 include::../test/RecordSpecificationTest.groovy[tags=record_point_defaults,indent=0]
 ----
 
+This processing follows normal Groovy conventions for default arguments for constructors, essentially automatically providing the constructors with the following signatures:
+
+[source,groovy]
+----
+ColoredPoint(int, int, String)
+ColoredPoint(int, int)
+ColoredPoint(int)
+----
+
 Named arguments may also be used (default values also apply here):
 
 [source,groovy]
 ----
 include::../test/RecordSpecificationTest.groovy[tags=record_point_named_args,indent=0]
 ----
+
+You can disable default argument processing as shown here:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_point_named_args_off,indent=0]
+----
+
+This will produce a single constructor as per the default with Java.
+It will be an error if you drop off arguments in this scenario.
 
 You can force all properties to have a default value as shown here:
 
@@ -140,8 +161,10 @@ You can force all properties to have a default value as shown here:
 include::../test/RecordSpecificationTest.groovy[tags=record_point_named_args_on,indent=0]
 ----
 
-== Diving deeper
+Any property/field without an explicit initial value will be given the default value for the argument's type (null, or zero/false for primitives).
 
+.Diving deeper
+****
 We previously described a `Message` record and displayed it's rough equivalent.
 Groovy in fact steps through an intermediate stage where the `record` keyword
 is replaced by the `class` keyword and an accompanying `@RecordType` annotation:
@@ -157,9 +180,13 @@ and expanded into its constituent sub-annotations such as `@TupleConstructor`, `
 However, if you wish to customise or configure the record implementation,
 you may wish to drop back to the `@RecordType` style or augment your record class
 with one of the constituent sub-annotations.
+****
 
-=== ToString
+=== Declarative `toString` customization
 
+As per Java, you can customize a record's `toString` method by writing your own.
+If you prefer a more declarative style, you can alternatively use Groovy's `@ToString` transform
+to override the default record `toString`.
 As an example, you can a three-dimensional point record as follows:
 
 [source,groovy]
@@ -180,10 +207,56 @@ include::../test/RecordSpecificationTest.groovy[tags=record_point2d_tostring_ann
 
 We can see here that without the package name it would have the same toString as our previous example.
 
+=== Obtaining a list of the record component values
+
+We can obtain the component values from a record as a list like so:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_to_list,indent=0]
+----
+
+You can use `@RecordOptions(toList=false)` to disable this feature.
+
+=== Obtaining a map of the record component values
+
+We can obtain the component values from a record as a map like so:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_to_map,indent=0]
+----
+
+You can use `@RecordOptions(toMap=false)` to disable this feature.
+
+=== Obtaining the number of components in a record
+
+We can obtain the number of components in a record like so:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_size,indent=0]
+----
+
+You can use `@RecordOptions(size=false)` to disable this feature.
+
+=== Obtaining the n^th^ component from a record
+
+We can use Groovy's normal positional indexing to obtain a particular component in a record like so:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_get_at,indent=0]
+----
+
+You can use `@RecordOptions(getAt=false)` to disable this feature.
+
+== Optional Groovy features
+
 === Copying
 
 It can be useful to make a copy of a record with some components changed.
-This can be done using a provided `copyWith` method which takes named arguments.
+This can be done using an optional `copyWith` method which takes named arguments.
 Record components are set from the supplied arguments.
 For components not mentioned, a (shallow) copy of the original record commponent is used.
 Here is how you might use `copyWith` for the `Fruit` record:
@@ -213,6 +286,18 @@ Groovy's record feature offering three levels of convenience:
 * Using the `record` keyword for maximum succinctness
 * Supporting low-ceremony customization using declarative annotations
 * Allowing normal method implementations when full control is required
+
+===  Obtaining the components of a record as a typed tuple
+
+You can obtain the components of a record as a typed tuple:
+
+[source,groovy]
+----
+include::../test/RecordSpecificationTest.groovy[tags=record_components,indent=0]
+----
+
+Groovy has a limited number of `TupleN` classes.
+If you have a large number of components in your record, you might not be able to use this feature.
 
 == Other differences to Java
 

@@ -139,7 +139,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
     }
 
     static boolean processImplicitNamedParam(final ErrorCollecting xform, final MethodNode mNode, final Parameter mapParam, final ArgumentListExpression args, final List<String> propNames, final Parameter fromParam, boolean coerce) {
-        boolean required = fromParam.hasInitialExpression();
+        boolean required = !fromParam.hasInitialExpression();
         String name = fromParam.getName();
         if (hasDuplicates(xform, mNode, propNames, name)) return false;
         AnnotationNode namedParam = new AnnotationNode(NAMED_PARAM_TYPE);
