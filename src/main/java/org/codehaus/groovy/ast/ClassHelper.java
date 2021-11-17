@@ -38,11 +38,59 @@ import groovy.lang.Tuple13;
 import groovy.lang.Tuple14;
 import groovy.lang.Tuple15;
 import groovy.lang.Tuple16;
+import groovy.lang.Tuple17;
+import groovy.lang.Tuple18;
+import groovy.lang.Tuple19;
 import groovy.lang.Tuple2;
+import groovy.lang.Tuple20;
+import groovy.lang.Tuple21;
+import groovy.lang.Tuple22;
+import groovy.lang.Tuple23;
+import groovy.lang.Tuple24;
+import groovy.lang.Tuple25;
+import groovy.lang.Tuple26;
+import groovy.lang.Tuple27;
+import groovy.lang.Tuple28;
+import groovy.lang.Tuple29;
 import groovy.lang.Tuple3;
+import groovy.lang.Tuple30;
+import groovy.lang.Tuple31;
+import groovy.lang.Tuple32;
+import groovy.lang.Tuple33;
+import groovy.lang.Tuple34;
+import groovy.lang.Tuple35;
+import groovy.lang.Tuple36;
+import groovy.lang.Tuple37;
+import groovy.lang.Tuple38;
+import groovy.lang.Tuple39;
 import groovy.lang.Tuple4;
+import groovy.lang.Tuple40;
+import groovy.lang.Tuple41;
+import groovy.lang.Tuple42;
+import groovy.lang.Tuple43;
+import groovy.lang.Tuple44;
+import groovy.lang.Tuple45;
+import groovy.lang.Tuple46;
+import groovy.lang.Tuple47;
+import groovy.lang.Tuple48;
+import groovy.lang.Tuple49;
 import groovy.lang.Tuple5;
+import groovy.lang.Tuple50;
+import groovy.lang.Tuple51;
+import groovy.lang.Tuple52;
+import groovy.lang.Tuple53;
+import groovy.lang.Tuple54;
+import groovy.lang.Tuple55;
+import groovy.lang.Tuple56;
+import groovy.lang.Tuple57;
+import groovy.lang.Tuple58;
+import groovy.lang.Tuple59;
 import groovy.lang.Tuple6;
+import groovy.lang.Tuple60;
+import groovy.lang.Tuple61;
+import groovy.lang.Tuple62;
+import groovy.lang.Tuple63;
+import groovy.lang.Tuple64;
 import groovy.lang.Tuple7;
 import groovy.lang.Tuple8;
 import groovy.lang.Tuple9;
@@ -90,10 +138,16 @@ public class ClassHelper {
             Iterator.class, GeneratedClosure.class, GeneratedLambda.class, GroovyObjectSupport.class
     };
 
-    public static final Class[] TUPLE_CLASSES = new Class[]{
-            Tuple0.class, Tuple1.class, Tuple2.class, Tuple3.class, Tuple4.class, Tuple5.class, Tuple6.class,
-            Tuple7.class, Tuple8.class, Tuple9.class, Tuple10.class, Tuple11.class, Tuple12.class, Tuple13.class,
-            Tuple14.class, Tuple15.class, Tuple16.class
+    public static final Class[] TUPLE_CLASSES = new Class[] {
+            Tuple0.class, Tuple1.class, Tuple2.class, Tuple3.class, Tuple4.class, Tuple5.class, Tuple6.class, Tuple7.class,
+            Tuple8.class, Tuple9.class, Tuple10.class, Tuple11.class, Tuple12.class, Tuple13.class, Tuple14.class, Tuple15.class,
+            Tuple16.class, Tuple17.class, Tuple18.class, Tuple19.class, Tuple20.class, Tuple21.class, Tuple22.class, Tuple23.class,
+            Tuple24.class, Tuple25.class, Tuple26.class, Tuple27.class, Tuple28.class, Tuple29.class, Tuple30.class, Tuple31.class,
+            Tuple32.class, Tuple33.class, Tuple34.class, Tuple35.class, Tuple36.class, Tuple37.class, Tuple38.class, Tuple39.class,
+            Tuple40.class, Tuple41.class, Tuple42.class, Tuple43.class, Tuple44.class, Tuple45.class, Tuple46.class, Tuple47.class,
+            Tuple48.class, Tuple49.class, Tuple50.class, Tuple51.class, Tuple52.class, Tuple53.class, Tuple54.class, Tuple55.class,
+            Tuple56.class, Tuple57.class, Tuple58.class, Tuple59.class, Tuple60.class, Tuple61.class, Tuple62.class, Tuple63.class,
+            Tuple64.class
     };
 
     private static final String[] primitiveClassNames = new String[]{
