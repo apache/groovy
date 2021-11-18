@@ -1602,7 +1602,7 @@ final class LambdaTest {
 
                 byte[] test() {
                     def out = new ByteArrayOutputStream()
-                    SerializableFunction<Integer, String> f = (Integer i) -> getS() + i
+                    SerializableFunction<Integer, String> f = (Integer i) -> s + i
                     out.withObjectOutputStream {
                         it.writeObject(f)
                     }
@@ -1633,7 +1633,7 @@ final class LambdaTest {
 
                 byte[] test() {
                     def out = new ByteArrayOutputStream()
-                    SerializableFunction<Integer, String> f = (Integer i) -> getS() + i
+                    SerializableFunction<Integer, String> f = (Integer i) -> s + i
                     out.withObjectOutputStream {
                         it.writeObject(f)
                     }
@@ -1877,17 +1877,6 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-9146
-    void testScriptWithExistingMainCS() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            static void main(args) {
-                java.util.function.Function<String, String> lower = String::toLowerCase
-                assert lower.toString().contains('$$Lambda$')
-            }
-        '''
-    }
-
     @Test
     void testDeserializeNestedLambda4() {
         assertScript '''
@@ -1895,51 +1884,60 @@ final class LambdaTest {
             }
 
             @groovy.transform.CompileStatic
-            class Test1 {
-                static p() {
-                        def out1 = new ByteArrayOutputStream()
-                        SerializableFunction<Integer, String> f1 = (Integer e) -> 'a' + e
-                        out1.withObjectOutputStream {
-                            it.writeObject(f1)
-                        }
-                        def result1 = out1.toByteArray()
+            class C {
+                static test() {
+                    def out1 = new ByteArrayOutputStream()
+                    SerializableFunction<Integer, String> f1 = (Integer i) -> 'a' + i
+                    out1.withObjectOutputStream {
+                        it.writeObject(f1)
+                    }
 
-                        def out2 = new ByteArrayOutputStream()
-                        SerializableFunction<Integer, String> f2 = (Integer e) -> 'b' + e
-                        out2.withObjectOutputStream {
-                            it.writeObject(f2)
-                        }
-                        def result2 = out2.toByteArray()
+                    def out2 = new ByteArrayOutputStream()
+                    SerializableFunction<Integer, String> f2 = (Integer i) -> 'b' + i
+                    out2.withObjectOutputStream {
+                        it.writeObject(f2)
+                    }
 
-                        // nested lambda expression
-                        def out3 = new ByteArrayOutputStream()
-                        SerializableFunction<Integer, String> f3 = (Integer e) -> {
-                            SerializableFunction<Integer, String> nf = ((Integer ne) -> 'n' + ne)
-                            'c' + nf(e)
-                        }
-                        out3.withObjectOutputStream {
-                            it.writeObject(f3)
-                        }
-                        def result3 = out3.toByteArray()
+                    // nested lambda expression
+                    def out3 = new ByteArrayOutputStream()
+                    SerializableFunction<Integer, String> f3 = (Integer i) -> {
+                        SerializableFunction<Integer, String> nf = (Integer j) -> 'c' + j
+                        nf(i) + 'c'
+                    }
+                    out3.withObjectOutputStream {
+                        it.writeObject(f3)
+                    }
 
-                        return [result1, result2, result3]
+                    [out1.toByteArray(), out2.toByteArray(), out3.toByteArray()]
                 }
             }
 
-            def (byte[] serializedLambdaBytes1, byte[] serializedLambdaBytes2, byte[] serializedLambdaBytes3) = Test1.p()
-            new ByteArrayInputStream(serializedLambdaBytes1).withObjectInputStream(Test1.class.classLoader) {
+            def (serializedLambdaBytes1, serializedLambdaBytes2, serializedLambdaBytes3) = C.test()
+
+            new ByteArrayInputStream(serializedLambdaBytes1).withObjectInputStream(this.class.classLoader) {
                 SerializableFunction<Integer, String> f = (SerializableFunction<Integer, String>) it.readObject()
-                assert 'a1' == f.apply(1)
+                assert f.apply(1) == 'a1'
             }
 
-            new ByteArrayInputStream(serializedLambdaBytes2).withObjectInputStream(Test1.class.classLoader) {
+            new ByteArrayInputStream(serializedLambdaBytes2).withObjectInputStream(this.class.classLoader) {
                 SerializableFunction<Integer, String> f = (SerializableFunction<Integer, String>) it.readObject()
-                assert 'b1' == f.apply(1)
+                assert f.apply(1) == 'b1'
             }
 
-            new ByteArrayInputStream(serializedLambdaBytes3).withObjectInputStream(Test1.class.classLoader) {
+            new ByteArrayInputStream(serializedLambdaBytes3).withObjectInputStream(this.class.classLoader) {
                 SerializableFunction<Integer, String> f = (SerializableFunction<Integer, String>) it.readObject()
-                assert 'cn1' == f.apply(1)
+                assert f.apply(1) == 'c1c'
+            }
+        '''
+    }
+
+    @Test // GROOVY-9146
+    void testScriptWithExistingMainCS() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            static void main(args) {
+                java.util.function.Function<String, String> lower = String::toLowerCase
+                assert lower.toString().contains('$$Lambda$')
             }
         '''
     }
