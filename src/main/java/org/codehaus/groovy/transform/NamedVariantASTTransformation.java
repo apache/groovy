@@ -38,6 +38,7 @@ import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
+import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -74,6 +75,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.plusX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
@@ -121,7 +123,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         } else {
             for (Parameter fromParam : fromParams) {
                 if (!annoFound) {
-                    if (!processImplicitNamedParam(this, mNode, mapParam, args, propNames, fromParam, coerce)) return;
+                    if (!processImplicitNamedParam(this, mNode, mapParam, inner, args, propNames, fromParam, coerce)) return;
                 } else if (AnnotatedNodeUtils.hasAnnotation(fromParam, NAMED_PARAM_TYPE)) {
                     if (!processExplicitNamedParam(mNode, mapParam, inner, args, propNames, fromParam, coerce)) return;
                 } else if (AnnotatedNodeUtils.hasAnnotation(fromParam, NAMED_DELEGATE_TYPE)) {
@@ -138,18 +140,24 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         createMapVariant(this, mNode, anno, mapParam, genParams, cNode, inner, args, propNames);
     }
 
-    static boolean processImplicitNamedParam(final ErrorCollecting xform, final MethodNode mNode, final Parameter mapParam, final ArgumentListExpression args, final List<String> propNames, final Parameter fromParam, boolean coerce) {
+    static boolean processImplicitNamedParam(final ErrorCollecting xform, final MethodNode mNode, final Parameter mapParam, final BlockStatement inner, final ArgumentListExpression args, final List<String> propNames, final Parameter fromParam, boolean coerce) {
         boolean required = !fromParam.hasInitialExpression();
         String name = fromParam.getName();
         if (hasDuplicates(xform, mNode, propNames, name)) return false;
         AnnotationNode namedParam = new AnnotationNode(NAMED_PARAM_TYPE);
+        ClassNode type = fromParam.getType();
         namedParam.addMember("value", constX(name));
-        namedParam.addMember("type", classX(fromParam.getType()));
+        namedParam.addMember("type", classX(type));
         namedParam.addMember("required", constX(required, true));
         mapParam.addAnnotation(namedParam);
         PropertyExpression arg = propX(varX(mapParam), name);
-        Expression argOrDefault = fromParam.hasInitialExpression() ? elvisX(arg, fromParam.getDefaultValue()) : arg;
-        args.addExpression(asType(argOrDefault, fromParam.getType(), coerce));
+        Expression fallback = fromParam.getDefaultValue() == null && TypeUtil.isPrimitiveType(type) ? defaultValueX(type) : fromParam.getDefaultValue();
+        Expression argOrDefault = required && !TypeUtil.isPrimitiveType(type) ? arg : ternaryX(arg, arg, fallback);
+        args.addExpression(asType(argOrDefault, type, coerce));
+        if (required) {
+            inner.addStatement(new AssertStatement(boolX(callX(varX(mapParam), "containsKey", args(constX(name)))),
+                    plusX(constX("Missing required named argument '" + name + "'. Keys found: "), callX(varX(mapParam), "keySet"))));
+        }
         return true;
     }
 

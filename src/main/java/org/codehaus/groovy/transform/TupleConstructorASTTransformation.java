@@ -278,7 +278,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             ArgumentListExpression args = new ArgumentListExpression();
             List<String> propNames = new ArrayList<>();
             for (Parameter p : params) {
-                if (!processImplicitNamedParam(xform, consNode, mapParam, args, propNames, p,false)) return;
+                if (!processImplicitNamedParam(xform, consNode, mapParam, inner, args, propNames, p,false)) return;
             }
             NamedVariantASTTransformation.createMapVariant(xform, consNode, anno, mapParam, genParams, cNode, inner, args, propNames);
         }
