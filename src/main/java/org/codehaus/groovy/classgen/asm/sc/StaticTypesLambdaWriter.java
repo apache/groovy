@@ -22,7 +22,6 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -33,8 +32,6 @@ import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.tools.ClosureUtils;
-import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.classgen.BytecodeInstruction;
 import org.codehaus.groovy.classgen.BytecodeSequence;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
@@ -47,7 +44,6 @@ import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.MethodVisitor;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -63,8 +59,10 @@ import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.findSAM;
 import static org.codehaus.groovy.ast.ClassHelper.isGeneratedFunction;
 import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
+import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.cloneParams;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
@@ -150,18 +148,19 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         return new Parameter[]{new Parameter(SERIALIZEDLAMBDA_TYPE, "serializedLambda")};
     }
 
-    private static boolean isAccessingInstanceMembersOfEnclosingClass(final MethodNode syntheticLambdaMethodNode) {
+    private static boolean isAccessingInstanceMembersOfEnclosingClass(final MethodNode lambdaMethod) {
         boolean[] result = new boolean[1];
 
-        GroovyCodeVisitor visitor = new CodeVisitorSupport() {
+        ClassNode enclosingClass = lambdaMethod.getDeclaringClass().getOuterClass();
+
+        lambdaMethod.getCode().visit(new CodeVisitorSupport() {
             @Override
             public void visitVariableExpression(final VariableExpression expression) {
-                if (expression.isThisExpression()) {
+                if (expression.isThisExpression() || enclosingClass.equals(expression.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER))) {
                     result[0] = true;
                 }
             }
-        };
-        syntheticLambdaMethodNode.getCode().visit(visitor);
+        });
 
         return result[0];
     }
@@ -286,7 +285,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
                 "doCall",
                 ACC_PUBLIC,
                 abstractMethod.getReturnType(),
-                Arrays.copyOf(parametersWithExactType, parametersWithExactType.length),
+                parametersWithExactType.clone(),
                 ClassNode.EMPTY_ARRAY,
                 expression.getCode()
         );
@@ -297,10 +296,10 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         return doCallMethod;
     }
 
-    private Parameter[] createParametersWithExactType(final LambdaExpression expression, MethodNode abstractMethod) {
-        Parameter[] targetParameters = GeneralUtils.cloneParams(abstractMethod.getParameters());
-        Parameter[] parameters = ClosureUtils.getParametersSafe(expression);
-        for (int i = 0; i < parameters.length; i++) {
+    private Parameter[] createParametersWithExactType(final LambdaExpression expression, final MethodNode abstractMethod) {
+        Parameter[] targetParameters = cloneParams(abstractMethod.getParameters());
+        Parameter[] parameters = getParametersSafe(expression);
+        for (int i = 0, n = parameters.length; i < n; i += 1) {
             Parameter targetParameter = targetParameters[i];
             Parameter parameter = parameters[i];
             ClassNode inferredType = parameter.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
