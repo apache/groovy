@@ -136,6 +136,19 @@ class RecordTest {
     }
 
     @Test
+    void testRecordWithDefaultParamsAndMissingRequiredParam() {
+        assertScript '''
+            import static groovy.test.GroovyAssert.shouldFail
+            record Point(int i = 5, int j, int k = 10) {}
+            assert new Point(j: 100).toString() == 'Point[i=5, j=100, k=10]'
+            def err = shouldFail(AssertionError) {
+                assert new Point(i: 50).toString() == 'Point[i=50, j=10]'
+            }
+            assert err.message.contains("Missing required named argument 'j'")
+        '''
+    }
+
+    @Test
     void testNativeRecordOnJDK16plus() {
         assumeTrue(isAtLeastJdk('16.0'))
         assertScript '''
