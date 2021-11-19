@@ -116,4 +116,19 @@ class ExtensionModuleTest extends GroovyTestCase {
             """
         '''
     }
+
+    /**
+     * Just to make sure the custom override of {@code #compareTo} is possible and works.
+     * @see TestLocalDateTimeExtension
+     */
+    void testOverrideLocalDateTimeCompareTo() {
+        ExtensionModuleHelperForTests.doInFork '''
+            def d1 = java.time.LocalDateTime.now()
+            def d2 = java.time.LocalDate.now().plusDays(42)
+            def d3 = java.time.LocalDate.now().minusDays(42)
+            
+            assert d1 < d2
+            assert d1 > d3
+        '''
+    }
 }
