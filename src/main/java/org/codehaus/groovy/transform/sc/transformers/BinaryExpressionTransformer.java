@@ -28,8 +28,10 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.tools.WideningCategories;
@@ -53,12 +55,11 @@ import java.util.List;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.ClassHelper.isBigDecimalType;
@@ -169,7 +170,20 @@ public class BinaryExpressionTransformer {
                 return compareToNullExpression;
             }
         } else if (operationType == Types.KEYWORD_IN) {
-            return staticCompilationTransformer.transform(convertInOperatorToTernary(bin, rightExpression, leftExpression));
+            // transform "left in right" into "right.isCase(left)"
+            MethodCallExpression call = callX(rightExpression, "isCase", leftExpression);
+            call.setImplicitThis(false); call.setSourcePosition(bin); call.copyNodeMetaData(bin);
+            call.setMethodTarget(bin.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
+            // GROOVY-7473: no null test for simple cases
+            if (rightExpression instanceof ListExpression
+                    || rightExpression instanceof MapExpression
+                    || rightExpression instanceof RangeExpression
+                    || rightExpression instanceof ConstantExpression
+                                && !isNullConstant(rightExpression))
+                return staticCompilationTransformer.transform(call);
+
+            // then "right == null ? left == null : right.isCase(left)" for null safety
+            return staticCompilationTransformer.transform(ternaryX(isNullX(rightExpression), isNullX(leftExpression), call));
         }
 
         Object[] list = bin.getNodeMetaData(StaticCompilationMetadataKeys.BINARY_EXP_TARGET);
@@ -188,7 +202,7 @@ public class BinaryExpressionTransformer {
 
                 // right == null ? 1 : left.compareTo(right)
                 Expression expr = ternaryX(
-                        boolX(new CompareToNullExpression(right, true)),
+                        new CompareToNullExpression(right, true),
                         CONSTANT_ONE,
                         call
                 );
@@ -196,7 +210,7 @@ public class BinaryExpressionTransformer {
 
                 // left == null ? -1 : (right == null ? 1 : left.compareTo(right))
                 expr = ternaryX(
-                        boolX(new CompareToNullExpression(left, true)),
+                        new CompareToNullExpression(left, true),
                         CONSTANT_MINUS_ONE,
                         expr
                 );
@@ -204,7 +218,7 @@ public class BinaryExpressionTransformer {
 
                 // left === right ? 0 : (left == null ? -1 : (right == null ? 1 : left.compareTo(right)))
                 expr = ternaryX(
-                        boolX(new CompareIdentityExpression(left, right)),
+                        new CompareIdentityExpression(left, right),
                         CONSTANT_ZERO,
                         expr
                 );
@@ -355,19 +369,6 @@ public class BinaryExpressionTransformer {
             }
         }
         return null;
-    }
-
-    private static Expression convertInOperatorToTernary(final BinaryExpression bin, final Expression rightExpression, final Expression leftExpression) {
-        MethodCallExpression call = callX(rightExpression, "isCase", leftExpression);
-        call.setMethodTarget(bin.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
-        call.setSourcePosition(bin);
-        call.copyNodeMetaData(bin);
-        Expression tExp = ternaryX(
-                boolX(binX(rightExpression, Token.newSymbol("==", -1, -1), nullX())),
-                binX(leftExpression, Token.newSymbol("==", -1, -1), nullX()),
-                call
-        );
-        return tExp;
     }
 
     private static DeclarationExpression optimizeConstantInitialization(final BinaryExpression originalDeclaration, final Token operation, final ConstantExpression constant, final Expression leftExpression, final ClassNode declarationType) {
