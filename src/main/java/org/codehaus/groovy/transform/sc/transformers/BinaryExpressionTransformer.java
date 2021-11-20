@@ -114,8 +114,10 @@ public class BinaryExpressionTransformer {
           case Types.KEYWORD_IN:
             return transformInOperation(bin);
           case Types.COMPARE_EQUAL:
+          case Types.COMPARE_IDENTICAL:
             equal = true; //fallthrough
           case Types.COMPARE_NOT_EQUAL:
+          case Types.COMPARE_NOT_IDENTICAL:
             expr = transformEqualityComparison(bin, equal);
             if (expr != null) return expr;
         }
