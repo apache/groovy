@@ -92,11 +92,11 @@ public class BinaryExpressionTransformer {
                 if (c != null)
                     return transformCharacterInitialization(bin, c);
             }
-            // for "float|double|BigDecimal x = n" change n's type
-            if (!rightExpression.getType().equals(declarationType)
-                    && ClassHelper.getWrapper(declarationType).isDerivedFrom(ClassHelper.Number_TYPE)
-                    && WideningCategories.isDoubleCategory(ClassHelper.getUnwrapper(declarationType))) {
-                return transformFloatingPointInitialization(bin, (Number) ((ConstantExpression) rightExpression).getValue(), declarationType);
+            // for "int|long|short|byte|char|float|double|BigDecimal|BigInteger x = n" change n's type
+            if (!declarationType.equals(rightExpression.getType())
+                    && WideningCategories.isDoubleCategory(ClassHelper.getUnwrapper(declarationType))
+                    && ClassHelper.getWrapper(rightExpression.getType()).isDerivedFrom(ClassHelper.Number_TYPE)) {
+                return transformNumericalInitialization(bin, (Number) ((ConstantExpression) rightExpression).getValue(), declarationType);
             }
         }
 
@@ -138,7 +138,7 @@ public class BinaryExpressionTransformer {
         return bin;
     }
 
-    private Expression transformFloatingPointInitialization(final BinaryExpression bin, final Number rhs, final ClassNode lhsType) {
+    private Expression transformNumericalInitialization(final BinaryExpression bin, final Number rhs, final ClassNode lhsType) {
         Expression ce = constX(convertConstant(rhs, ClassHelper.getWrapper(lhsType)), true);
         ce.setSourcePosition(bin.getRightExpression());
         ce.setType(lhsType);
@@ -244,15 +244,23 @@ public class BinaryExpressionTransformer {
     }
 
     private Expression transformEqualityComparison(final BinaryExpression bin, final boolean eq) {
-        if (isNullConstant(bin.getRightExpression())) {
-            Expression ctn = new CompareToNullExpression(staticCompilationTransformer.transform(bin.getLeftExpression()), eq);
+        Expression leftExpression = bin.getLeftExpression(), rightExpression = bin.getRightExpression();
+        if (isNullConstant(rightExpression)) {
+            Expression ctn = new CompareToNullExpression(staticCompilationTransformer.transform(leftExpression), eq);
             ctn.setSourcePosition(bin);
             return ctn;
         }
-        if (isNullConstant(bin.getLeftExpression())) {
-            Expression ctn = new CompareToNullExpression(staticCompilationTransformer.transform(bin.getRightExpression()), eq);
+        if (isNullConstant(leftExpression)) {
+            Expression ctn = new CompareToNullExpression(staticCompilationTransformer.transform(rightExpression), eq);
             ctn.setSourcePosition(bin);
             return ctn;
+        }
+        if (bin.getOperation().getText().length() == 3
+                && !ClassHelper.isPrimitiveType(findType(leftExpression))
+                && !ClassHelper.isPrimitiveType(findType(rightExpression))) {
+            Expression cid = new CompareIdentityExpression(staticCompilationTransformer.transform(leftExpression), eq, staticCompilationTransformer.transform(rightExpression));
+            cid.setSourcePosition(bin);
+            return cid;
         }
         return null;
     }
@@ -408,7 +416,7 @@ public class BinaryExpressionTransformer {
         return staticCompilationTransformer.getTypeChooser().resolveType(e, staticCompilationTransformer.getClassNode());
     }
 
-    private boolean hasCharType(final Expression e) {
+    private static boolean hasCharType(final Expression e) {
         ClassNode inferredType = e.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE); //TODO:findType(e);
         return inferredType != null && ClassHelper.getWrapper(inferredType).equals(ClassHelper.Character_TYPE);
     }
@@ -424,17 +432,17 @@ public class BinaryExpressionTransformer {
     }
 
     private static Object convertConstant(final Number source, final ClassNode target) {
-        if (ClassHelper.isWrapperByte(target)) {
-            return source.byteValue();
-        }
-        if (ClassHelper.isWrapperShort(target)) {
-            return source.shortValue();
-        }
         if (ClassHelper.isWrapperInteger(target)) {
             return source.intValue();
         }
         if (ClassHelper.isWrapperLong(target)) {
             return source.longValue();
+        }
+        if (ClassHelper.isWrapperByte(target)) {
+            return source.byteValue();
+        }
+        if (ClassHelper.isWrapperShort(target)) {
+            return source.shortValue();
         }
         if (ClassHelper.isWrapperFloat(target)) {
             return source.floatValue();
@@ -442,12 +450,15 @@ public class BinaryExpressionTransformer {
         if (ClassHelper.isWrapperDouble(target)) {
             return source.doubleValue();
         }
-        if (ClassHelper.isBigIntegerType(target)) {
-            return DefaultGroovyMethods.asType(source, BigInteger.class);
+        if (ClassHelper.isWrapperCharacter(target)) {
+            return (char) source.intValue();
         }
         if (ClassHelper.isBigDecimalType(target)) {
             return DefaultGroovyMethods.asType(source, BigDecimal.class);
         }
-        throw new IllegalArgumentException("Unsupported numerical conversion");
+        if (ClassHelper.isBigIntegerType(target)) {
+            return DefaultGroovyMethods.asType(source, BigInteger.class);
+        }
+        throw new IllegalArgumentException("Unsupported conversion: " + target.getText());
     }
 }

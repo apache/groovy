@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform.sc.transformers;
 
 import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -26,13 +27,13 @@ import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.ICONST_1;
+import static org.objectweb.asm.Opcodes.IF_ACMPEQ;
 import static org.objectweb.asm.Opcodes.IF_ACMPNE;
 
 /**
@@ -44,43 +45,56 @@ import static org.objectweb.asm.Opcodes.IF_ACMPNE;
  * in the context of reference equality check.
  */
 public class CompareIdentityExpression extends BinaryExpression {
-    private final Expression leftExpression;
-    private final Expression rightExpression;
+
+    public CompareIdentityExpression(final Expression leftExpression, final boolean eq, final Expression rightExpression) {
+        super(leftExpression, Token.newSymbol(eq ? "===" : "!==", -1, -1), rightExpression);
+        super.setType(ClassHelper.boolean_TYPE);
+    }
 
     public CompareIdentityExpression(final Expression leftExpression, final Expression rightExpression) {
-        super(leftExpression, new Token(Types.COMPARE_TO, "==", -1, -1), rightExpression);
-        this.leftExpression = leftExpression;
-        this.rightExpression = rightExpression;
+        this(leftExpression, true, rightExpression);
+    }
+
+    public boolean isEq() {
+        return getOperation().getText().charAt(0) == '=';
+    }
+
+    @Override
+    public void setType(final ClassNode type) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Expression transformExpression(final ExpressionTransformer transformer) {
-        return this;
+        Expression ret = new CompareIdentityExpression(transformer.transform(getLeftExpression()), isEq(), transformer.transform(getRightExpression()));
+        ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
+        return ret;
     }
 
     @Override
     public void visit(final GroovyCodeVisitor visitor) {
-        if (visitor instanceof AsmClassGenerator) {
-            AsmClassGenerator acg = (AsmClassGenerator) visitor;
-            WriterController controller = acg.getController();
-            controller.getTypeChooser().resolveType(leftExpression, controller.getClassNode());
-            controller.getTypeChooser().resolveType(rightExpression, controller.getClassNode());
-            MethodVisitor mv = controller.getMethodVisitor();
-            leftExpression.visit(acg);
-            controller.getOperandStack().box();
-            rightExpression.visit(acg);
-            controller.getOperandStack().box();
-            Label l1 = new Label();
-            mv.visitJumpInsn(IF_ACMPNE, l1);
-            mv.visitInsn(ICONST_1);
-            Label l2 = new Label();
-            mv.visitJumpInsn(GOTO, l2);
-            mv.visitLabel(l1);
-            mv.visitInsn(ICONST_0);
-            mv.visitLabel(l2);
-            controller.getOperandStack().replace(ClassHelper.boolean_TYPE, 2);
-        } else {
+        if (!(visitor instanceof AsmClassGenerator)) {
             super.visit(visitor);
+            return;
         }
+
+        WriterController controller = ((AsmClassGenerator) visitor).getController();
+        MethodVisitor mv = controller.getMethodVisitor();
+        Label no = new Label(), yes = new Label();
+
+        getLeftExpression().visit(visitor);
+        controller.getOperandStack().box();
+        getRightExpression().visit(visitor);
+        controller.getOperandStack().box();
+
+        mv.visitJumpInsn(isEq() ? IF_ACMPNE : IF_ACMPEQ, no);
+        mv.visitInsn(ICONST_1);
+        mv.visitJumpInsn(GOTO, yes);
+        mv.visitLabel(no);
+        mv.visitInsn(ICONST_0);
+        mv.visitLabel(yes);
+
+        controller.getOperandStack().replace(ClassHelper.boolean_TYPE, 2);
     }
 }
