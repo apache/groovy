@@ -27,8 +27,11 @@ import org.objectweb.asm.util.Printer;
 import org.objectweb.asm.util.Textifier;
 
 import java.io.PrintWriter;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Logging bytecode generation, which can make debugging easy
@@ -36,25 +39,19 @@ import java.util.List;
  * @since 2.5.0
  */
 public class LoggableTextifier extends Textifier {
-    private static final String GROOVY = ".groovy.";
-    private static final String LOGGABLE_TEXTIFIER = ".LoggableTextifier";
+
     private final CompilerConfiguration compilerConfiguration;
-    private final int logClassgenStackTraceMaxDepth;
     private final PrintWriter out;
-    private int loggedLineCnt = 0;
+    private int lineCount;
 
     public LoggableTextifier() {
         this(CompilerConfiguration.DEFAULT);
     }
 
-    public LoggableTextifier(CompilerConfiguration compilerConfiguration) {
+    public LoggableTextifier(final CompilerConfiguration compilerConfiguration) {
         super(CompilerConfiguration.ASM_API_VERSION);
         this.compilerConfiguration = compilerConfiguration;
-
-        this.logClassgenStackTraceMaxDepth = compilerConfiguration.getLogClassgenStackTraceMaxDepth();
-        this.out = null == compilerConfiguration.getOutput()
-                        ? new PrintWriter(System.out, true)
-                        : compilerConfiguration.getOutput();
+        this.out = Optional.ofNullable(compilerConfiguration.getOutput()).orElseGet(() -> new PrintWriter(System.out, true));
     }
 
     @Override
@@ -64,59 +61,32 @@ public class LoggableTextifier extends Textifier {
 
     protected void log() {
         int textSize = text.size();
-
-        List<Object> bcList = new LinkedList<>();
-        for (int i = loggedLineCnt; i < textSize; i++) {
+        List<Object> bcList = new ArrayList<>();
+        for (int i = lineCount; i < textSize; i += 1) {
             Object bc = text.get(i);
-
-            if (bc instanceof List && 0 == ((List) bc).size()) {
-                continue;
+            if (!(bc instanceof List && ((List<?>) bc).isEmpty())) {
+                bcList.add(bc);
             }
-
-            bcList.add(bc);
         }
-
-        if (bcList.size() > 0) {
-            List<StackTraceElement> invocationPositionInfo = getInvocationPositionInfo();
-            if (invocationPositionInfo.size() > 0) {
-                out.print(formatInvocationPositionInfo(invocationPositionInfo));
-            }
-
+        if (!bcList.isEmpty()) {
+            out.print(getInvocationPositionInfo());
             for (Object bc : bcList) {
                 out.print(bc);
             }
         }
-
-        loggedLineCnt = textSize;
+        lineCount = textSize;
     }
 
-    private List<StackTraceElement> getInvocationPositionInfo() {
-        StackTraceElement[] stackTraceElements = new Throwable().getStackTrace();
-        List<StackTraceElement> stackTraceElementList = new LinkedList<>();
-
-        for (StackTraceElement stackTraceElement : stackTraceElements) {
-            String className = stackTraceElement.getClassName();
-            if (className.contains(GROOVY) && !className.endsWith(LOGGABLE_TEXTIFIER)) {
-                if (stackTraceElementList.size() >= logClassgenStackTraceMaxDepth) {
-                    break;
-                }
-
-                stackTraceElementList.add(stackTraceElement);
-            }
-        }
-
-        return stackTraceElementList;
+    private String getInvocationPositionInfo() {
+        int maxDepth = compilerConfiguration.getLogClassgenStackTraceMaxDepth();
+        return maxDepth <= 0 ? "" : Arrays.stream(new Throwable().getStackTrace()).filter(stackTraceElement ->
+            stackTraceElement.getClassName().contains(".groovy.") && !stackTraceElement.getClassName().endsWith(".LoggableTextifier")
+        ).map(stackTraceElement ->
+            String.format("%30s// %s#%s:%s%n", "", stackTraceElement.getClassName(), stackTraceElement.getMethodName(), stackTraceElement.getLineNumber())
+        ).limit(maxDepth).collect(Collectors.joining());
     }
 
-    private String formatInvocationPositionInfo(List<StackTraceElement> stackTraceElementList) {
-        StringBuilder sb = new StringBuilder(128);
-        for (StackTraceElement stackTraceElement : stackTraceElementList) {
-            sb.append(String.format("%30s// %s#%s:%s%n", "", stackTraceElement.getClassName(), stackTraceElement.getMethodName(), stackTraceElement.getLineNumber()));
-        }
-
-        return sb.toString();
-    }
-
+    //--------------------------------------------------------------------------
 
     @Override
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
