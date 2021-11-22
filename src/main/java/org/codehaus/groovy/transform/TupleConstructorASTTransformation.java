@@ -92,7 +92,7 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
  * Handles generation of code for the @TupleConstructor annotation.
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
-public class TupleConstructorASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
+public class TupleConstructorASTTransformation extends AbstractASTTransformation implements CompilationUnitAware, TransformWithPriority {
 
     private CompilationUnit compilationUnit;
 
@@ -387,5 +387,10 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             }
         }
         return null;
+    }
+
+    @Override
+    public int priority() {
+        return 5;
     }
 }
