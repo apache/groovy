@@ -43,8 +43,17 @@ public class TemporaryVariableExpression extends Expression {
 
     public TemporaryVariableExpression(final Expression expression) {
         this.expression = expression;
-        setType(expression.getType());
         putNodeMetaData(INFERRED_TYPE, expression.getNodeMetaData(INFERRED_TYPE));
+    }
+
+    @Override
+    public ClassNode getType() {
+        return expression.getType();
+    }
+
+    public void remove(final WriterController controller) {
+        controller.getCompileStack().removeVar(variable[0].getIndex());
+        variable[0] = null;
     }
 
     @Override
@@ -66,15 +75,5 @@ public class TemporaryVariableExpression extends Expression {
         } else {
             expression.visit(visitor);
         }
-    }
-
-    public void remove(final WriterController controller) {
-        controller.getCompileStack().removeVar(variable[0].getIndex());
-        variable[0] = null;
-    }
-
-    @Override
-    public ClassNode getType() {
-        return expression.getType();
     }
 }

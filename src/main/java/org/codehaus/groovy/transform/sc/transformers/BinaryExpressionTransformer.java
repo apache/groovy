@@ -246,12 +246,12 @@ public class BinaryExpressionTransformer {
         return staticCompilationTransformer.transform(ternaryX(isNullX(rightExpression), isNullX(leftExpression), call));
     }
 
-    private Expression transformRepeatedReference(final Expression expr) {
-        if (expr instanceof ConstantExpression || expr instanceof VariableExpression
-                && ((VariableExpression) expr).getAccessedVariable() instanceof Parameter) {
-            return expr;
+    private Expression transformRepeatedReference(final Expression exp) {
+        if (exp instanceof ConstantExpression || exp instanceof VariableExpression
+                && ((VariableExpression) exp).getAccessedVariable() instanceof Parameter) {
+            return exp;
         }
-        return new TemporaryVariableExpression(expr);
+        return new TemporaryVariableExpression(exp);
     }
 
     private Expression transformEqualityComparison(final BinaryExpression bin, final boolean eq) {

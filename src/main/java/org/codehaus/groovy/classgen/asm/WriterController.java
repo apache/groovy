@@ -43,8 +43,6 @@ import java.util.Map;
 import static org.codehaus.groovy.ast.ClassHelper.isGeneratedFunction;
 
 public class WriterController {
-    private static final String RECORD_CLASS_NAME = "java.lang.Record";
-
     private AsmClassGenerator acg;
     private MethodVisitor methodVisitor;
     private CompileStack compileStack;
@@ -136,7 +134,7 @@ public class WriterController {
         this.typeChooser = new StatementMetaTypeChooser();
     }
 
-    private static ClassVisitor createClassVisitor(final ClassVisitor cv, CompilerConfiguration config) {
+    private static ClassVisitor createClassVisitor(final ClassVisitor cv, final CompilerConfiguration config) {
         if (!config.isLogClassgen() || cv instanceof LoggableClassVisitor) {
             return cv;
         }
