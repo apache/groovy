@@ -24,54 +24,52 @@ package groovy.transform.stc
 class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
 
     void testBinaryStringPlus() {
-        assertScript """
+        assertScript '''
             String str = 'a'
             String str2 = 'b'
             str+str2
-        """
+        '''
     }
 
     void testBinaryStringPlusInt() {
-        assertScript """
+        assertScript '''
             String str = 'a'
             int str2 = 2
             str+str2
-        """
+        '''
     }
 
     void testBinaryObjectPlusInt() {
-        shouldFailWithMessages """
+        shouldFailWithMessages '''
             def str = new Object()
             int str2 = 2
             str+str2
-        """, "Cannot find matching method java.lang.Object#plus(int)"
+        ''',
+        'Cannot find matching method java.lang.Object#plus(int)'
     }
 
     void testBinaryIntPlusObject() {
-        shouldFailWithMessages """
+        shouldFailWithMessages '''
             def str = new Object()
             int str2 = 2
             str2+str
-        """, "Cannot find matching method int#plus(java.lang.Object)"
+        ''',
+        'Cannot find matching method int#plus(java.lang.Object)'
     }
 
     void testPrimitiveComparison() {
         assertScript '''
             1<2
         '''
-
         assertScript '''
             1>2
         '''
-
         assertScript '''
             1<=2
         '''
-
         assertScript '''
             1>=2
         '''
-
         assertScript '''
             1==2
         '''
@@ -81,19 +79,15 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         assertScript '''
             1<new Integer(2)
         '''
-
         assertScript '''
             1>new Integer(2)
         '''
-
         assertScript '''
             1<=new Integer(2)
         '''
-
         assertScript '''
             1>=new Integer(2)
         '''
-
         assertScript '''
             1==new Integer(2)
         '''
@@ -103,11 +97,9 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         assertScript '''
             1 << 8
         '''
-
         assertScript '''
             1 >> 8
         '''
-
         assertScript '''
             1 >>> 8
         '''
@@ -119,13 +111,11 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
             int y = 8
             x << y
         '''
-
         assertScript '''
             int x = 1
             int y = 8
             x >> y
         '''
-
         assertScript '''
             int x = 1
             int y = 8
@@ -134,7 +124,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5644
-    void testSpaceshipOperatorShouldNotThrowAmbiguousError() {
+    void testSpaceshipOperatorNoAmbiguousError() {
         assertScript '''
             Integer x = 3
             Integer y = 4
@@ -142,22 +132,67 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-7473
+    void testInOperatorShouldEvaluateOperandsOnce() {
+        assertScript '''
+            import groovy.transform.Field
+
+            @Field int i = 0
+            @Field int j = 0
+            int getA() { i++ }
+            int getB() { j++ }
+
+            def result = a in b
+            assert result
+            assert i == 1
+            assert j == 1
+        '''
+        assertScript '''
+            import groovy.transform.Field
+
+            @Field int i = 0
+            @Field int j = 0
+            def getA() { i++; null }
+            def getB() { j++ }
+
+            def result = a in b
+            assert !result
+            assert i == 1
+            assert j == 1
+        '''
+        assertScript '''
+            import groovy.transform.Field
+
+            @Field int i = 0
+            @Field int j = 0
+            def getA() { i++ }
+            def getB() { j++; null }
+
+            def result = a in b
+            assert !result
+            assert i == 1
+            assert j == 1
+        '''
+    }
+
     void testComparisonOperatorCheckWithIncompatibleTypesOkIfComparableNotImplemented() {
         shouldFailWithMessages '''
             [] < 1
-        ''', "Cannot find matching method java.util.List#compareTo(int)"
+        ''',
+        'Cannot find matching method java.util.List#compareTo(int)'
     }
 
     void testComparisonOperatorCheckWithIncompatibleTypesFailsIfComparableImplemented() {
         shouldFailWithMessages '''
            'abc' < 1
-        ''', "Cannot find matching method java.lang.String#compareTo(int)"
+        ''',
+        'Cannot find matching method java.lang.String#compareTo(int)'
     }
 
     void testCompareToCallCheckWithIncompatibleTypesAlsoFailsIfComparableImplemented() {
         shouldFailWithMessages '''
            'abc'.compareTo(1)
-        ''', "Cannot find matching method java.lang.String#compareTo(int)"
+        ''',
+        'Cannot find matching method java.lang.String#compareTo(int)'
     }
 }
-

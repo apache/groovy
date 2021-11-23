@@ -43,6 +43,7 @@ public class TemporaryVariableExpression extends Expression {
 
     public TemporaryVariableExpression(final Expression expression) {
         this.expression = expression;
+        setType(expression.getType());
         putNodeMetaData(INFERRED_TYPE, expression.getNodeMetaData(INFERRED_TYPE));
     }
 

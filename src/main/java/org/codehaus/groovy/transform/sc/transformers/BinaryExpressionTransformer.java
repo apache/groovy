@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -235,12 +236,22 @@ public class BinaryExpressionTransformer {
         if (rightExpression instanceof ListExpression
                 || rightExpression instanceof MapExpression
                 || rightExpression instanceof RangeExpression
+                || rightExpression instanceof ClassExpression
                 || rightExpression instanceof ConstantExpression
                             && !isNullConstant(rightExpression))
             return staticCompilationTransformer.transform(call);
 
-        // then "right == null ? left == null : right.isCase(left)" for null safety
+        // GROOVY-6137, GROOVY-7473: null safety and one-time evaluation
+        call.setObjectExpression(rightExpression = transformRepeatedReference(rightExpression));
         return staticCompilationTransformer.transform(ternaryX(isNullX(rightExpression), isNullX(leftExpression), call));
+    }
+
+    private Expression transformRepeatedReference(final Expression expr) {
+        if (expr instanceof ConstantExpression || expr instanceof VariableExpression
+                && ((VariableExpression) expr).getAccessedVariable() instanceof Parameter) {
+            return expr;
+        }
+        return new TemporaryVariableExpression(expr);
     }
 
     private Expression transformEqualityComparison(final BinaryExpression bin, final boolean eq) {
@@ -377,8 +388,8 @@ public class BinaryExpressionTransformer {
             if (left instanceof BinaryExpression) {
                 BinaryExpression be = (BinaryExpression) left;
                 if (be.getOperation().getType() == Types.LEFT_SQUARE_BRACKET) {
-                    be.setLeftExpression(new TemporaryVariableExpression(be.getLeftExpression()));
-                    be.setRightExpression(new TemporaryVariableExpression(be.getRightExpression()));
+                    be.setLeftExpression(transformRepeatedReference(be.getLeftExpression()));
+                    be.setRightExpression(transformRepeatedReference(be.getRightExpression()));
                 }
             }
             // call handles the operation, so we must add the assignment now
