@@ -18,6 +18,9 @@
  */
 package groovy.bugs
 
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
+
 class Groovy8964Bug extends GroovyTestCase {
 
     void testInstanceVarargMethodNotMaskedByStaticMethodWithSameNumberOfArgs() {
@@ -70,6 +73,56 @@ class Groovy8964Bug extends GroovyTestCase {
 
             new C().test()
         '''
+    }
+
+    // GROOVY-10379
+    void testInstanceMethodNotMaskedByStaticMethodWithSameNumberOfArgs3() {
+        def config = new CompilerConfiguration(
+            targetDirectory: File.createTempDir(),
+            jointCompilationOptions: [stubDir: File.createTempDir()]
+        )
+
+        def parentDir = File.createTempDir()
+        try {
+            new File(parentDir, 'p').mkdir()
+
+            def a = new File(parentDir, 'p/A.java')
+            a.write '''
+                package p;
+                public abstract class A implements I {
+                    public static String m(Number n) { return "number"; }
+                }
+            '''
+            def b = new File(parentDir, 'p/I.java')
+            b.write '''
+                package p;
+                public interface I {
+                    default String m(String s) { return "string"; }
+                }
+            '''
+            def c = new File(parentDir, 'Main.groovy')
+            c.write '''
+                @groovy.transform.CompileStatic
+                class C extends p.A {
+                    void test() {
+                        String result = m('') // GroovyCastException: Cannot cast object 'class C' with class 'java.lang.Class' to class 'p.I'
+                        assert result == 'string'
+                    }
+                }
+                new C().test()
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b, c)
+            cu.compile()
+
+            loader.loadClass('Main').main()
+        } finally {
+            config.jointCompilationOptions.stubDir.deleteDir()
+            config.targetDirectory.deleteDir()
+            parentDir.deleteDir()
+        }
     }
 
     static abstract class A {
