@@ -1264,6 +1264,13 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                     return true;
                 }
             }
+            for (ClassNode in : cn.getAllInterfaces()) {
+                for (MethodNode mn : in.getDeclaredMethods(name)) {
+                    if (mn.isDefault() && hasCompatibleNumberOfArgs(mn, count)) {
+                        return true;
+                    }
+                }
+            }
         }
 
         return false;
