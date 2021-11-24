@@ -50,7 +50,7 @@ final class TransformsAndCustomClassLoadersTest {
 
     private final URL[] urls = collectUrls(this.class.classLoader) + [GroovyObject.location, this.class.location]
 
-    private final GroovyClassLoader dependencyLoader = new GroovyClassLoader(new URLClassLoader(urls, (VMPluginFactory.plugin.version >= 9 ? ClassLoader.platformClassLoader : (ClassLoader) null)))
+    private final GroovyClassLoader dependencyLoader = new GroovyClassLoader(new URLClassLoader(urls, (ClassLoader) (VMPluginFactory.plugin.version >= 9 ? ClassLoader.platformClassLoader : null)))
     private final GroovyClassLoader transformLoader = new GroovyClassLoader(new URLClassLoader(urls, new GroovyOnlyClassLoader()))
 
     @Before
