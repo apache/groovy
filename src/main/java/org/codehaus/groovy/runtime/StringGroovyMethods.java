@@ -1726,6 +1726,20 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * @since 4.0.0
+     */
+    public static boolean isNotCase(final CharSequence caseValue, final Object switchValue) {
+        return !isCase(caseValue, switchValue);
+    }
+
+    /**
+     * @since 4.0.0
+     */
+    public static boolean isNotCase(final Pattern caseValue, final Object switchValue) {
+        return !isCase(caseValue, switchValue);
+    }
+
+    /**
      * Determines if a CharSequence can be parsed as a Number.
      *
      * @param self a CharSequence
