@@ -19,16 +19,13 @@
 package org.codehaus.groovy.tools.stubgenerator
 
 import groovy.test.GroovyTestCase
-import junit.framework.TestCase
-
-import static groovy.io.FileType.*
-
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
-
 import com.thoughtworks.qdox.JavaDocBuilder
 import com.thoughtworks.qdox.model.JavaClass
 import org.codehaus.groovy.control.CompilationFailedException
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
+
+import static groovy.io.FileType.*
 
 /**
  * Base class for all the stub generator test samples.
@@ -71,8 +68,9 @@ abstract class StubTestCase extends GroovyTestCase {
     protected boolean delete = true;
 
     /**
-     * Prepare the target and stub directories.
+     * Prepares the target and stub directories.
      */
+    @Override
     protected void setUp() {
         // TODO: commented super.setUp() as it generates a stackoverflow, for some reason?!
         // super.setUp()
@@ -88,17 +86,18 @@ abstract class StubTestCase extends GroovyTestCase {
     }
 
     /**
-     * Delete the temporary directories.
+     * Deletes the temporary directories.
      */
+    @Override
     protected void tearDown() {
         if(delete) {
             if (debug) println "Deleting temporary folders"
             targetDir.deleteDir()
             stubDir.deleteDir()
         }
+        loader.close()
         loader = null
         config = null
-        super.tearDown()
     }
 
     /**
@@ -221,20 +220,17 @@ abstract class StubTestCase extends GroovyTestCase {
         return sources
     }
 
-    private static addToClassPath(GroovyClassLoader loader) {
-        loader.addURL(this.getProtectionDomain().getCodeSource().getLocation())
-        loader.addURL(GroovyTestCase.class.getProtectionDomain().getCodeSource().getLocation())
-        loader.addURL(TestCase.class.getProtectionDomain().getCodeSource().getLocation())
-    }
-
     /**
      * Launch the actual compilation -- hence launching the stub generator as well.
      *
      * @param sources the sources to be compiled
      */
     protected void compile(List<File> sources) {
-        loader = new GroovyClassLoader(this.class.classLoader)
-        addToClassPath(loader)
+        loader = new GroovyClassLoader(this.class.classLoader).tap {
+            addURL(this.class.location)
+            addURL(GroovyTestCase.location)
+            addURL(junit.framework.TestCase.location)
+        }
         def cu = new JavaAwareCompilationUnit(config, loader)
         cu.addSources(sources as File[])
         try {

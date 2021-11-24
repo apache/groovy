@@ -623,6 +623,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Allows the usage of addShutdownHook without getting the runtime first.
+     *
+     * @param self    the object the method is called on (ignored)
+     * @param closure the shutdown hook action
+     * @since 1.5.0
+     */
+    public static void addShutdownHook(Object self, Closure closure) {
+        Runtime.getRuntime().addShutdownHook(new Thread(closure));
+    }
+
+    /**
      * Scoped use method with list of categories.
      *
      * @param self              any Object
@@ -633,17 +644,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> T use(Object self, List<Class> categoryClassList, Closure<T> closure) {
         return GroovyCategorySupport.use(categoryClassList, closure);
-    }
-
-    /**
-     * Allows the usage of addShutdownHook without getting the runtime first.
-     *
-     * @param self    the object the method is called on (ignored)
-     * @param closure the shutdown hook action
-     * @since 1.5.0
-     */
-    public static void addShutdownHook(Object self, Closure closure) {
-        Runtime.getRuntime().addShutdownHook(new Thread(closure));
     }
 
     /**
@@ -679,6 +679,44 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         return GroovyCategorySupport.use(list, closure);
     }
+
+    private static Object getClosureOwner(Closure<?> cls) {
+        Object owner =  cls.getOwner();
+        while (owner instanceof GeneratedClosure) {
+            owner = ((Closure<?>) owner).getOwner();
+        }
+        return owner;
+    }
+
+    /**
+     * Inspects returns the String that matches what would be typed into a
+     * terminal to create this object.
+     *
+     * @param self any Object
+     * @return a String that matches what would be typed into a terminal to
+     *         create this object. e.g. [1, 'hello'].inspect() {@code ->} [1, "hello"]
+     * @since 1.0
+     */
+    public static String inspect(Object self) {
+        return InvokerHelper.inspect(self);
+    }
+
+    /**
+     * Provide a dynamic method invocation method which can be overloaded in
+     * classes to implement dynamic proxies easily.
+     *
+     * @param object    any Object
+     * @param method    the name of the method to call
+     * @param arguments the arguments to use
+     * @return the result of the method call
+     * @since 1.0
+     */
+    public static Object invokeMethod(Object object, String method, Object arguments) {
+        return InvokerHelper.invokeMethod(object, method, arguments);
+    }
+
+    //--------------------------------------------------------------------------
+    // print/println/printf/sprintf
 
     /**
      * Print a value formatted Groovy style to self if it
@@ -737,6 +775,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Print to a console in interactive format.
+     *
+     * @param self any Object
+     * @param out  the PrintWriter used for printing
+     * @since 1.0
+     */
+    public static void print(Object self, PrintWriter out) {
+        if (out == null) {
+            out = new PrintWriter(System.out);
+        }
+        out.print(InvokerHelper.toString(self));
+    }
+
+    /**
      * Print a linebreak to the standard output stream.
      *
      * @param self any Object
@@ -762,14 +814,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void println(Closure self) {
         Object owner = getClosureOwner(self);
         InvokerHelper.invokeMethod(owner, "println", EMPTY_OBJECT_ARRAY);
-    }
-
-    private static Object getClosureOwner(Closure cls) {
-        Object owner =  cls.getOwner();
-        while (owner instanceof GeneratedClosure) {
-            owner = ((Closure) owner).getOwner();
-        }
-        return owner;
     }
 
     /**
@@ -826,6 +870,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Print to a console in interactive format.
+     *
+     * @param self any Object
+     * @param out  the PrintWriter used for printing
+     * @since 1.0
+     */
+    public static void println(Object self, PrintWriter out) {
+        if (out == null) {
+            out = new PrintWriter(System.out);
+        }
+        out.println(InvokerHelper.toString(self));
+    }
+
+    /**
      * Printf to the standard output stream.
      *
      * @param self   any Object
@@ -875,22 +933,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sprintf to a string.
-     *
-     * @param self   any Object
-     * @param format a format string
-     * @param values values referenced by the format specifiers in the format string
-     * @return the resulting formatted string
-     * @since 1.5.0
-     */
-    public static String sprintf(Object self, String format, Object[] values) {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        PrintStream out = new PrintStream(outputStream);
-        out.printf(format, values);
-        return outputStream.toString();
-    }
-
-    /**
      * Prints a formatted string using the specified format string and arguments.
      * <p>
      * Examples:
@@ -936,6 +978,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         } catch (IOException e) {
             printf(System.out, format, arg);
         }
+    }
+
+    /**
+     * Sprintf to a string.
+     *
+     * @param self   any Object
+     * @param format a format string
+     * @param values values referenced by the format specifiers in the format string
+     * @return the resulting formatted string
+     * @since 1.5.0
+     */
+    public static String sprintf(Object self, String format, Object[] values) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream out = new PrintStream(outputStream);
+        out.printf(format, values);
+        return outputStream.toString();
     }
 
     /**
@@ -1028,62 +1086,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 throw new RuntimeException("sprintf(String," + arg + ")");
         }
         return sprintf(self, format, ans);
-    }
-
-
-    /**
-     * Inspects returns the String that matches what would be typed into a
-     * terminal to create this object.
-     *
-     * @param self any Object
-     * @return a String that matches what would be typed into a terminal to
-     *         create this object. e.g. [1, 'hello'].inspect() {@code ->} [1, "hello"]
-     * @since 1.0
-     */
-    public static String inspect(Object self) {
-        return InvokerHelper.inspect(self);
-    }
-
-    /**
-     * Print to a console in interactive format.
-     *
-     * @param self any Object
-     * @param out  the PrintWriter used for printing
-     * @since 1.0
-     */
-    public static void print(Object self, PrintWriter out) {
-        if (out == null) {
-            out = new PrintWriter(System.out);
-        }
-        out.print(InvokerHelper.toString(self));
-    }
-
-    /**
-     * Print to a console in interactive format.
-     *
-     * @param self any Object
-     * @param out  the PrintWriter used for printing
-     * @since 1.0
-     */
-    public static void println(Object self, PrintWriter out) {
-        if (out == null) {
-            out = new PrintWriter(System.out);
-        }
-        out.println(InvokerHelper.toString(self));
-    }
-
-    /**
-     * Provide a dynamic method invocation method which can be overloaded in
-     * classes to implement dynamic proxies easily.
-     *
-     * @param object    any Object
-     * @param method    the name of the method to call
-     * @param arguments the arguments to use
-     * @return the result of the method call
-     * @since 1.0
-     */
-    public static Object invokeMethod(Object object, String method, Object arguments) {
-        return InvokerHelper.invokeMethod(object, method, arguments);
     }
 
     //-------------------------------------------------------------------------

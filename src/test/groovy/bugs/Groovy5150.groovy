@@ -22,7 +22,7 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
-final class Groovy8962 {
+final class Groovy5150 {
 
     static final class Constants {
         public static final int constant = 2
@@ -30,113 +30,12 @@ final class Groovy8962 {
     }
 
     @Test
-    void testShouldCompileProperly1_memStub() {
+    void testShouldAllowConstantInSwitch() {
         def sourceDirectory = File.createTempDir()
 
         def config = new CompilerConfiguration(
             targetDirectory: File.createTempDir(),
-            jointCompilationOptions: [memStub: true]
-        )
-        try (def loader = new GroovyClassLoader(this.class.classLoader)) {
-            def a = new File(sourceDirectory, 'A.groovy')
-            a.write '''
-                class A {
-                    Map<String, Map<String, Integer[]>> columnsMap = [:]
-                }
-            '''
-            def b = new File(sourceDirectory, 'B.java')
-            b.write '''
-                public class B {
-                    public void f(A a) {
-                        System.out.println(a.getColumnsMap());
-                    }
-                }
-            '''
-            def cu = new JavaAwareCompilationUnit(config, loader)
-            cu.addSources(a, b)
-            cu.compile()
-        } finally {
-            sourceDirectory.deleteDir()
-            config.targetDirectory.deleteDir()
-        }
-    }
-
-    @Test
-    void testShouldCompileProperly2_memStub() {
-        def sourceDirectory = File.createTempDir()
-
-        def config = new CompilerConfiguration(
-            targetDirectory: File.createTempDir(),
-            jointCompilationOptions: [memStub: true]
-        )
-        try (def loader = new GroovyClassLoader(this.class.classLoader)) {
-            def a = new File(sourceDirectory, 'A.groovy')
-            a.write '''
-                class A {
-                    Map<String, Map<String, List<Integer[]>[]>> columnsMap = [:]
-                }
-            '''
-            def b = new File(sourceDirectory, 'B.java')
-            b.write '''
-                public class B {
-                    public void f(A a) {
-                        System.out.println(a.getColumnsMap());
-                    }
-                }
-            '''
-            def cu = new JavaAwareCompilationUnit(config, loader)
-            cu.addSources(a, b)
-            cu.compile()
-        } finally {
-            sourceDirectory.deleteDir()
-            config.targetDirectory.deleteDir()
-        }
-    }
-
-    @Test
-    void testShouldCompileProperly3_memStub() {
-        def sourceDirectory = File.createTempDir()
-
-        def config = new CompilerConfiguration(
-            targetDirectory: File.createTempDir(),
-            jointCompilationOptions: [memStub: true]
-        )
-        try (def loader = new GroovyClassLoader(this.class.classLoader)) {
-            def a = new File(sourceDirectory, 'A.groovy')
-            a.write '''
-                package x
-                import y.B
-                class A {
-                    Map<String, Map<String, List<Integer[]>[]>> columnsMap = [:]
-                    B b = null
-                }
-            '''
-            def b = new File(sourceDirectory, 'B.java')
-            b.write '''
-                package y;
-                import x.A;
-                public class B {
-                    public void f(A a) {
-                        System.out.println(a.getColumnsMap());
-                    }
-                }
-            '''
-            def cu = new JavaAwareCompilationUnit(config, loader)
-            cu.addSources(a, b)
-            cu.compile()
-        } finally {
-            sourceDirectory.deleteDir()
-            config.targetDirectory.deleteDir()
-        }
-    }
-
-    @Test
-    void testShouldAllowConstantInSwitch_memStub() {
-        def sourceDirectory = File.createTempDir()
-
-        def config = new CompilerConfiguration(
-            targetDirectory: File.createTempDir(),
-            jointCompilationOptions: [memStub: true]
+            jointCompilationOptions: [stubDir: File.createTempDir()]
         )
         try (def loader = new GroovyClassLoader(this.class.classLoader).tap{ addURL(this.class.location) }) {
             def b = new File(sourceDirectory, 'B.java')
@@ -156,18 +55,19 @@ final class Groovy8962 {
         } finally {
             sourceDirectory.deleteDir()
             config.targetDirectory.deleteDir()
+            config.jointCompilationOptions.stubDir.deleteDir()
         }
     }
 
     @Test
-    void testShouldAllowConstantInSwitchWithStubs_memStub() {
+    void testShouldAllowConstantInSwitchWithStubs() {
         def sourceDirectory = File.createTempDir()
 
         def config = new CompilerConfiguration(
             targetDirectory: File.createTempDir(),
-            jointCompilationOptions: [memStub: true]
+            jointCompilationOptions: [stubDir: File.createTempDir()]
         )
-        try (def loader = new GroovyClassLoader(this.class.classLoader)) {
+        try (def loader = new GroovyClassLoader(this.class.classLoader).tap{ addURL(this.class.location) }) {
             def a = new File(sourceDirectory, 'A.groovy')
             a.write '''
                 class A {
@@ -191,16 +91,17 @@ final class Groovy8962 {
         } finally {
             sourceDirectory.deleteDir()
             config.targetDirectory.deleteDir()
+            config.jointCompilationOptions.stubDir.deleteDir()
         }
     }
 
     @Test
-    void testShouldAllowCharConstantInSwitchWithoutStubs_memStub() {
+    void testShouldAllowCharConstantInSwitchWithoutStubs() {
         def sourceDirectory = File.createTempDir()
 
         def config = new CompilerConfiguration(
             targetDirectory: File.createTempDir(),
-            jointCompilationOptions: [memStub: true],
+            jointCompilationOptions: [stubDir: File.createTempDir()],
             classpathList: [new File(this.class.location.toURI()).path]
         )
         try (def loader = new GroovyClassLoader(this.class.classLoader)) {
@@ -221,16 +122,17 @@ final class Groovy8962 {
         } finally {
             sourceDirectory.deleteDir()
             config.targetDirectory.deleteDir()
+            config.jointCompilationOptions.stubDir.deleteDir()
         }
     }
 
     @Test
-    void testShouldAllowCharConstantInSwitchWithStubs_memStub() {
+    void testShouldAllowCharConstantInSwitchWithStubs() {
         def sourceDirectory = File.createTempDir()
 
         def config = new CompilerConfiguration(
             targetDirectory: File.createTempDir(),
-            jointCompilationOptions: [memStub: true]
+            jointCompilationOptions: [stubDir: File.createTempDir()]
         )
         try (def loader = new GroovyClassLoader(this.class.classLoader)) {
             def a = new File(sourceDirectory, 'A.groovy')
@@ -256,16 +158,17 @@ final class Groovy8962 {
         } finally {
             sourceDirectory.deleteDir()
             config.targetDirectory.deleteDir()
+            config.jointCompilationOptions.stubDir.deleteDir()
         }
     }
 
     @Test
-    void testAccessConstantStringFromJavaClass_memStub() {
+    void testAccessConstantStringFromJavaClass() {
         def sourceDirectory = File.createTempDir()
 
         def config = new CompilerConfiguration(
             targetDirectory: File.createTempDir(),
-            jointCompilationOptions: [memStub: true]
+            jointCompilationOptions: [stubDir: File.createTempDir()]
         )
         try (def loader = new GroovyClassLoader(this.class.classLoader)) {
             def a = new File(sourceDirectory, 'A.groovy')
@@ -290,6 +193,7 @@ final class Groovy8962 {
         } finally {
             sourceDirectory.deleteDir()
             config.targetDirectory.deleteDir()
+            config.jointCompilationOptions.stubDir.deleteDir()
         }
     }
 }
