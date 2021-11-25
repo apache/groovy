@@ -521,7 +521,9 @@ public class Node implements Serializable, Cloneable {
      *
      * @param name the QName of interest
      * @return the nodes matching name
+     * @deprecated use {@link #getAt(groovy.namespace.QName)} instead
      */
+    @Deprecated
     public NodeList getAt(groovy.xml.QName name) {
         NodeList answer = new NodeList();
         for (Object child : children()) {
