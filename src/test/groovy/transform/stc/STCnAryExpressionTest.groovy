@@ -142,8 +142,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
             int getA() { i++ }
             int getB() { j++ }
 
-            def result = a in b
-            assert result
+            assert a in b
             assert i == 1
             assert j == 1
         '''
@@ -155,8 +154,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
             def getA() { i++; null }
             def getB() { j++ }
 
-            def result = a in b
-            assert !result
+            assert !(a in b)
             assert i == 1
             assert j == 1
         '''
@@ -168,8 +166,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
             def getA() { i++ }
             def getB() { j++; null }
 
-            def result = a in b
-            assert !result
+            assert !(a in b)
             assert i == 1
             assert j == 1
         '''

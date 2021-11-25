@@ -131,6 +131,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
@@ -824,19 +825,21 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitTernaryExpression(final TernaryExpression expression) {
         onLineNumber(expression, "visitTernaryExpression");
         controller.getBinaryExpressionHelper().evaluateTernary(expression);
+        doPostVisit(expression); // GROOVY-7473
     }
 
     @Override
     public void visitDeclarationExpression(final DeclarationExpression expression) {
-        onLineNumber(expression, "visitDeclarationExpression: \"" + expression.getText() + "\"");
-        controller.getBinaryExpressionHelper().evaluateEqual(expression,true);
+        onLineNumber(expression, "visitDeclarationExpression: " + expression.getText());
+        controller.getBinaryExpressionHelper().evaluateEqual(expression, true);
     }
 
     @Override
     public void visitBinaryExpression(final BinaryExpression expression) {
-        onLineNumber(expression, "visitBinaryExpression: \"" + expression.getOperation().getText() + "\" ");
+        onLineNumber(expression, "visitBinaryExpression: " + expression.getOperation().getText());
         controller.getBinaryExpressionHelper().eval(expression);
         controller.getAssertionWriter().record(expression.getOperation());
+        doPostVisit(expression); // GROOVY-5746
     }
 
     @Override
@@ -1460,24 +1463,6 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private void loadThis(final VariableExpression thisOrSuper) {
-        MethodVisitor mv = controller.getMethodVisitor();
-        mv.visitVarInsn(ALOAD, 0);
-        OperandStack operandStack = controller.getOperandStack();
-        if (controller.isInGeneratedFunction() && !controller.getCompileStack().isImplicitThis()) {
-            mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "getThisObject", "()Ljava/lang/Object;", false);
-            ClassNode expectedType = controller.getTypeChooser().resolveType(thisOrSuper, controller.getOutermostClass());
-            if (!isObjectType(expectedType) && !isPrimitiveType(expectedType)) {
-                BytecodeHelper.doCast(mv, expectedType);
-                operandStack.push(expectedType);
-            } else {
-                operandStack.push(ClassHelper.OBJECT_TYPE);
-            }
-        } else {
-            operandStack.push(controller.getClassNode());
-        }
-    }
-
     protected void createInterfaceSyntheticStaticFields() {
         ClassNode icl =  controller.getInterfaceClassLoadingClass();
 
@@ -1656,31 +1641,6 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    public void despreadList(final List<Expression> expressions, final boolean wrap) {
-        List<Expression> spreadIndexes = new ArrayList<>();
-        List<Expression> spreadExpressions = new ArrayList<>();
-        List<Expression> normalArguments = new ArrayList<>();
-        for (int i = 0, n = expressions.size(); i < n; i += 1) {
-            Expression expr = expressions.get(i);
-            if (!(expr instanceof SpreadExpression)) {
-                normalArguments.add(expr);
-            } else {
-                spreadIndexes.add(new ConstantExpression(i - spreadExpressions.size(), true));
-                spreadExpressions.add(((SpreadExpression) expr).getExpression());
-            }
-        }
-
-        // load normal arguments as array
-        visitTupleExpression(new ArgumentListExpression(normalArguments), wrap);
-        // load spread expressions as array
-        new TupleExpression(spreadExpressions).visit(this);
-        // load insertion index
-        new ArrayExpression(ClassHelper.int_TYPE, spreadIndexes, null).visit(this);
-
-        controller.getOperandStack().remove(1);
-        despreadList.call(controller.getMethodVisitor());
-    }
-
     @Override
     public void visitTupleExpression(final TupleExpression expression) {
         visitTupleExpression(expression, false);
@@ -1705,18 +1665,6 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitInsn(AASTORE);
             operandStack.remove(1);
         }
-    }
-
-    public void loadWrapper(final Expression argument) {
-        MethodVisitor mv = controller.getMethodVisitor();
-        ClassNode goalClass = argument.getType();
-        visitClassExpression(new ClassExpression(goalClass));
-        if (goalClass.isDerivedFromGroovyObject()) {
-            createGroovyObjectWrapperMethod.call(mv);
-        } else {
-            createPojoWrapperMethod.call(mv);
-        }
-        controller.getOperandStack().remove(1);
     }
 
     @Override
@@ -2279,21 +2227,6 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private static int determineCommonArrayType(final List<Expression> values) {
-        Expression expr = values.get(0);
-        int arrayElementType = -1;
-        if (expr instanceof AnnotationConstantExpression) {
-            arrayElementType = 1;
-        } else if (expr instanceof ConstantExpression) {
-            arrayElementType = 2;
-        } else if (expr instanceof ClassExpression || expr instanceof ClosureExpression) {
-            arrayElementType = 3;
-        } else if (expr instanceof PropertyExpression) {
-            arrayElementType = 4;
-        }
-        return arrayElementType;
-    }
-
     private void visitAnnotationArrayElement(final Expression expr, final int arrayElementType, final AnnotationVisitor av) {
         switch (arrayElementType) {
             case 1:
@@ -2370,6 +2303,51 @@ public class AsmClassGenerator extends ClassGenerator {
         return false;
     }
 
+    public void despreadList(final List<Expression> expressions, final boolean wrap) {
+        List<Expression> spreadIndexes = new ArrayList<>();
+        List<Expression> spreadExpressions = new ArrayList<>();
+        List<Expression> normalArguments = new ArrayList<>();
+        for (int i = 0, n = expressions.size(); i < n; i += 1) {
+            Expression expr = expressions.get(i);
+            if (!(expr instanceof SpreadExpression)) {
+                normalArguments.add(expr);
+            } else {
+                spreadIndexes.add(new ConstantExpression(i - spreadExpressions.size(), true));
+                spreadExpressions.add(((SpreadExpression) expr).getExpression());
+            }
+        }
+
+        // load normal arguments as array
+        visitTupleExpression(new ArgumentListExpression(normalArguments), wrap);
+        // load spread expressions as array
+        new TupleExpression(spreadExpressions).visit(this);
+        // load insertion index
+        new ArrayExpression(ClassHelper.int_TYPE, spreadIndexes, null).visit(this);
+
+        controller.getOperandStack().remove(1);
+        despreadList.call(controller.getMethodVisitor());
+    }
+
+    private static int determineCommonArrayType(final List<Expression> values) {
+        Expression expr = values.get(0);
+        int arrayElementType = -1;
+        if (expr instanceof AnnotationConstantExpression) {
+            arrayElementType = 1;
+        } else if (expr instanceof ConstantExpression) {
+            arrayElementType = 2;
+        } else if (expr instanceof ClassExpression || expr instanceof ClosureExpression) {
+            arrayElementType = 3;
+        } else if (expr instanceof PropertyExpression) {
+            arrayElementType = 4;
+        }
+        return arrayElementType;
+    }
+
+    private void doPostVisit(final ASTNode node) {
+        Consumer<WriterController> callback = node.getNodeMetaData("classgen.callback");
+        if (callback != null) callback.accept(controller);
+    }
+
     @Deprecated
     public static boolean isThisExpression(final Expression expression) {
         return ExpressionUtils.isThisExpression(expression);
@@ -2387,6 +2365,36 @@ public class AsmClassGenerator extends ClassGenerator {
 
     private static boolean isVargs(final Parameter[] parameters) {
         return (parameters.length > 0 && parameters[parameters.length - 1].getType().isArray());
+    }
+
+    private void loadThis(final VariableExpression thisOrSuper) {
+        MethodVisitor mv = controller.getMethodVisitor();
+        mv.visitVarInsn(ALOAD, 0);
+        OperandStack operandStack = controller.getOperandStack();
+        if (controller.isInGeneratedFunction() && !controller.getCompileStack().isImplicitThis()) {
+            mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "getThisObject", "()Ljava/lang/Object;", false);
+            ClassNode expectedType = controller.getTypeChooser().resolveType(thisOrSuper, controller.getOutermostClass());
+            if (!isObjectType(expectedType) && !isPrimitiveType(expectedType)) {
+                BytecodeHelper.doCast(mv, expectedType);
+                operandStack.push(expectedType);
+            } else {
+                operandStack.push(ClassHelper.OBJECT_TYPE);
+            }
+        } else {
+            operandStack.push(controller.getClassNode());
+        }
+    }
+
+    public void loadWrapper(final Expression argument) {
+        MethodVisitor mv = controller.getMethodVisitor();
+        ClassNode goalClass = argument.getType();
+        visitClassExpression(new ClassExpression(goalClass));
+        if (goalClass.isDerivedFromGroovyObject()) {
+            createGroovyObjectWrapperMethod.call(mv);
+        } else {
+            createPojoWrapperMethod.call(mv);
+        }
+        controller.getOperandStack().remove(1);
     }
 
     public void onLineNumber(final ASTNode statement, final String message) {

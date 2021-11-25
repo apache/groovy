@@ -159,11 +159,9 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             @Field int i = 0
             int getIndex() { i++ }
             def list = ['x','y','z']
-            def x = (list[index] += '!')
-            def y = (list[index] += '!')
 
-            assert x == 'x!'
-            assert y == 'y!'
+            assert (list[index] += '!') == 'x!'
+            assert (list[index] += '!') == 'y!'
             assert list.toString() == '[x!, y!, z]'
         '''
     }

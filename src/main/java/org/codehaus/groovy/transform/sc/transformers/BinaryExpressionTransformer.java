@@ -36,6 +36,7 @@ import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.tools.WideningCategories;
+import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.sc.StaticPropertyAccessHelper;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.syntax.Token;
@@ -52,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -243,7 +245,9 @@ public class BinaryExpressionTransformer {
 
         // GROOVY-6137, GROOVY-7473: null safety and one-time evaluation
         call.setObjectExpression(rightExpression = transformRepeatedReference(rightExpression));
-        return staticCompilationTransformer.transform(ternaryX(isNullX(rightExpression), isNullX(leftExpression), call));
+        Expression safe = ternaryX(isNullX( rightExpression ), isNullX( leftExpression ), call);
+        safe.putNodeMetaData("classgen.callback", classgenCallback(call.getObjectExpression()));
+        return staticCompilationTransformer.transform(safe);
     }
 
     private Expression transformRepeatedReference(final Expression exp) {
@@ -384,16 +388,19 @@ public class BinaryExpressionTransformer {
         }
         call.setImplicitThis(false);
         if (Types.isAssignment(operationType)) { // +=, -=, /=, ...
+            // call handles the operation, so we must add the assignment now
+            expr = binX(left, Token.newSymbol(Types.ASSIGN, operation.getStartLine(), operation.getStartColumn()), call);
             // GROOVY-5746: one execution of receiver and subscript
             if (left instanceof BinaryExpression) {
                 BinaryExpression be = (BinaryExpression) left;
                 if (be.getOperation().getType() == Types.LEFT_SQUARE_BRACKET) {
                     be.setLeftExpression(transformRepeatedReference(be.getLeftExpression()));
                     be.setRightExpression(transformRepeatedReference(be.getRightExpression()));
+                    expr.putNodeMetaData("classgen.callback", classgenCallback(be.getRightExpression())
+                                                     .andThen(classgenCallback(be.getLeftExpression()))
+                    );
                 }
             }
-            // call handles the operation, so we must add the assignment now
-            expr = binX(left, Token.newSymbol(Types.ASSIGN, operation.getStartLine(), operation.getStartColumn()), call);
         } else {
             expr = call;
         }
@@ -471,5 +478,9 @@ public class BinaryExpressionTransformer {
             return DefaultGroovyMethods.asType(source, BigInteger.class);
         }
         throw new IllegalArgumentException("Unsupported conversion: " + target.getText());
+    }
+
+    private static Consumer<WriterController> classgenCallback(final Expression source) {
+        return (source instanceof TemporaryVariableExpression ? ((TemporaryVariableExpression) source)::remove : wc -> {});
     }
 }
