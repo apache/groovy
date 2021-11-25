@@ -21,9 +21,9 @@ package org.apache.groovy.groovysh
 /**
  * Notification to signal the shell to exit.
  */
-class ExitNotification
-    extends Error
-{
+class ExitNotification extends Error {
+    private static final long serialVersionUID = 6530248218832943112L;
+
     /** The exit code. */
     final int code
 

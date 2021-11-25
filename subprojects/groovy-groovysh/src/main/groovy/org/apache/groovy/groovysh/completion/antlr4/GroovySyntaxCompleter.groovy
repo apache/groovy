@@ -308,6 +308,7 @@ class GroovySyntaxCompleter implements Completer {
     static class InStringException extends Exception {
         int column
         String openDelim
+        private static final long serialVersionUID = -2554041223576762580L;
 
         @Override
         String toString() {

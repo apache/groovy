@@ -24,11 +24,10 @@ import groovy.transform.CompileStatic
  * Thrown to indicate a problem with command execution.
  */
 @CompileStatic
-class CommandException
-    extends Exception
-{
+class CommandException extends Exception {
 
     private final Command command
+    private static final long serialVersionUID = 3904423461953446923L;
 
     CommandException(final Command command, final String msg) {
         super(msg)
