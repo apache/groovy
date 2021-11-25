@@ -198,6 +198,7 @@ public class CompileUnit implements NodeMetaDataHandler {
         return classesToCompile;
     }
 
+    @Deprecated
     public Map<String, ConstructedOuterNestedClassNode> getClassesToResolve() {
         return classesToResolve;
     }
@@ -207,6 +208,7 @@ public class CompileUnit implements NodeMetaDataHandler {
      *
      * @param cn the constructed class node
      */
+    @Deprecated
     public void addClassNodeToResolve(ConstructedOuterNestedClassNode cn) {
         classesToResolve.put(cn.getUnresolvedName(), cn);
     }
@@ -227,6 +229,7 @@ public class CompileUnit implements NodeMetaDataHandler {
      * @see <a href="https://issues.apache.org/jira/browse/GROOVY-7812">GROOVY-7812</a>
      */
     @Internal
+    @Deprecated
     public static class ConstructedOuterNestedClassNode extends ClassNode {
         private final ClassNode enclosingClassNode;
         private final List<BiConsumer<ConstructedOuterNestedClassNode, ClassNode>> setRedirectListenerList = new ArrayList<>();
