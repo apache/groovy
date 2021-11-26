@@ -168,6 +168,7 @@ public class SourceUnit extends ProcessingUnit {
         return false;
     }
 
+    @Deprecated
     protected boolean isEofToken(antlr.Token token) {
         return token.getType() == antlr.Token.EOF_TYPE;
     }
