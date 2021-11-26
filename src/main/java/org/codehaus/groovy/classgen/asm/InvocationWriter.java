@@ -168,16 +168,18 @@ public class InvocationWriter {
         int opcode;
         if (target.isStatic()) {
             opcode = INVOKESTATIC;
+        } else if (isSuperExpression(receiver)) {
+            opcode = INVOKESPECIAL;
         } else if (declaringClass.isInterface()) {
             opcode = INVOKEINTERFACE;
-        } else if (target.isPrivate() || isSuperExpression(receiver)) {
-            opcode = INVOKESPECIAL;
         } else {
             opcode = INVOKEVIRTUAL;
         }
 
         ClassNode ownerClass = declaringClass;
-        if (opcode == INVOKEVIRTUAL && isObjectType(declaringClass)) {
+        if (opcode == INVOKESPECIAL) {
+            ownerClass = receiverType; // GROOVY-8693
+        } else if (opcode == INVOKEVIRTUAL && isObjectType(declaringClass)) {
             // avoid using a narrowed type if the method is defined on Object, because it can interfere
             // with delegate type inference in static compilation mode and trigger a ClassCastException
         } else if (opcode == INVOKEVIRTUAL
@@ -190,7 +192,7 @@ public class InvocationWriter {
             if (!receiverType.equals(operandStack.getTopOperand())) {
                 mv.visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(ownerClass));
             }
-        } else if (opcode != INVOKESPECIAL && (declaringClass.getModifiers() & (ACC_FINAL | ACC_PUBLIC)) == 0 && !receiverType.equals(declaringClass)
+        } else if ((declaringClass.getModifiers() & (ACC_FINAL | ACC_PUBLIC)) == 0 && !receiverType.equals(declaringClass)
                 && (declaringClass.isInterface() ? receiverType.implementsInterface(declaringClass) : receiverType.isDerivedFrom(declaringClass))) {
             // GROOVY-6962, GROOVY-9955, GROOVY-10380: method declared by inaccessible class or interface
             if (declaringClass.isInterface() && !receiverType.isInterface()) opcode = INVOKEVIRTUAL;
