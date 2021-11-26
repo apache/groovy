@@ -1023,6 +1023,14 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     /**
+     * @deprecated use {@link #isFieldDirectlyAccessible(FieldNode, ClassNode)} instead.
+     */
+    @Deprecated
+    public static boolean isValidFieldNodeForByteCodeAccess(final FieldNode field, final ClassNode accessingClass) {
+        return isFieldDirectlyAccessible(field, accessingClass);
+    }
+
+    /**
      * Determines if the given class can directly access the given field (via
      * {@code GETFIELD}, {@code GETSTATIC}, etc. bytecode instructions).
      */
