@@ -371,6 +371,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         GroovyObject obj = new A.B()
         '''
     }
+
     void testCastInnerClassToGroovyObject() {
         assertScript '''
         class A { static class B {} }
@@ -969,6 +970,7 @@ Printer
             }
         '''
     }
+
     void testInnerClassImplementsInterfaceMethodWithTrait() {
         assertScript '''
             class Main {
@@ -994,6 +996,7 @@ Printer
             }
         '''
     }
+
     void testInnerClassImplementsInterfaceMethodWithDelegate() {
         assertScript '''
             class Main {
@@ -1036,6 +1039,19 @@ Printer
 
             def obj = new Outer.Inner('value')
             assert obj.proper == 'value'
+        '''
+    }
+
+    // GROOVY-10380
+    void testInvokeDefaultMethodFromPackagePrivateInterface() {
+        assertScript '''
+            class C extends groovy.transform.stc.Groovy10380 {
+                void test() {
+                    String result = m() // default method
+                    assert result == 'works'
+                }
+            }
+            new C().test()
         '''
     }
 }

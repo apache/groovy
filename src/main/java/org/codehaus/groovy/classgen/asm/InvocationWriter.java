@@ -55,10 +55,10 @@ import java.util.TreeMap;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
-import static org.codehaus.groovy.ast.ClassHelper.isFunctionalInterface;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
+import static org.codehaus.groovy.ast.ClassHelper.isFunctionalInterface;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.codehaus.groovy.ast.ClassHelper.isStringType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
@@ -126,35 +126,28 @@ public class InvocationWriter {
 
     protected boolean writeDirectMethodCall(final MethodNode target, final boolean implicitThis, final Expression receiver, final TupleExpression args) {
         if (target == null) return false;
-
         ClassNode declaringClass = target.getDeclaringClass();
-        String methodName = target.getName();
-        int opcode;
-        if (target.isStatic()) {
-            opcode = INVOKESTATIC;
-        } else if (declaringClass.isInterface()) {
-            opcode = INVOKEINTERFACE;
-        } else if (target.isPrivate() || isSuperExpression(receiver)) {
-            opcode = INVOKESPECIAL;
-        } else {
-            opcode = INVOKEVIRTUAL;
+        ClassNode enclosingClass = controller.getClassNode(), receiverType = enclosingClass;
+        if (receiver != null) {
+            receiverType = controller.getTypeChooser().resolveType(receiver, enclosingClass);
+            if (target.isStatic() && isClassClassNodeWrappingConcreteType(receiverType)) {
+                receiverType = receiverType.getGenericsTypes()[0].getType();
+            }
         }
 
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
         MethodVisitor mv = controller.getMethodVisitor();
-        ClassNode classNode = controller.getClassNode();
+        int startDepth = operandStack.getStackLength();
 
         // handle receiver
-        int argumentsToRemove = 0;
-        if (opcode != INVOKESTATIC) {
-            argumentsToRemove = 1;
+        if (!target.isStatic()) {
             if (receiver != null) {
                 Expression objectExpression = receiver;
                 if (implicitThis
-                        && classNode.getOuterClass() != null
-                        && !classNode.isDerivedFrom(declaringClass)
-                        && !classNode.implementsInterface(declaringClass)) {
+                        && enclosingClass.getOuterClass() != null
+                        && !enclosingClass.isDerivedFrom(declaringClass)
+                        && !enclosingClass.implementsInterface(declaringClass)) {
                     // outer class method invocation
                     compileStack.pushImplicitThis(false);
                     if (!controller.isInGeneratedFunction() && isThis(receiver)) {
@@ -168,54 +161,54 @@ public class InvocationWriter {
                 compileStack.popImplicitThis();
             } else {
                 mv.visitIntInsn(ALOAD, 0);
-                operandStack.push(classNode);
+                operandStack.push(enclosingClass);
             }
         }
 
-        ClassNode receiverType;
-        if (receiver != null) {
-            receiverType = controller.getTypeChooser().resolveType(receiver, classNode);
-            if (isClassClassNodeWrappingConcreteType(receiverType) && target.isStatic())
-                receiverType = receiverType.getGenericsTypes()[0].getType();
+        int opcode;
+        if (target.isStatic()) {
+            opcode = INVOKESTATIC;
+        } else if (declaringClass.isInterface()) {
+            opcode = INVOKEINTERFACE;
+        } else if (target.isPrivate() || isSuperExpression(receiver)) {
+            opcode = INVOKESPECIAL;
         } else {
-            receiverType = declaringClass;
+            opcode = INVOKEVIRTUAL;
         }
 
-        int stackLen = operandStack.getStackLength();
-        String owner = BytecodeHelper.getClassInternalName(declaringClass);
+        ClassNode ownerClass = declaringClass;
         if (opcode == INVOKEVIRTUAL && isObjectType(declaringClass)) {
-            // avoid using a narrowed type if the method is defined on object because it can interfere
+            // avoid using a narrowed type if the method is defined on Object, because it can interfere
             // with delegate type inference in static compilation mode and trigger a ClassCastException
-            receiverType = declaringClass;
         } else if (opcode == INVOKEVIRTUAL
                 && !receiverType.isArray()
                 && !receiverType.isInterface()
                 && !isPrimitiveType(receiverType)
                 && !receiverType.equals(declaringClass)
                 && receiverType.isDerivedFrom(declaringClass)) {
-
-            owner = BytecodeHelper.getClassInternalName(receiverType);
+            ownerClass = receiverType; // use actual for typical call
             if (!receiverType.equals(operandStack.getTopOperand())) {
-                mv.visitTypeInsn(CHECKCAST, owner);
+                mv.visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(ownerClass));
             }
         } else if (opcode != INVOKESPECIAL && (declaringClass.getModifiers() & (ACC_FINAL | ACC_PUBLIC)) == 0 && !receiverType.equals(declaringClass)
                 && (declaringClass.isInterface() ? receiverType.implementsInterface(declaringClass) : receiverType.isDerivedFrom(declaringClass))) {
-            // GROOVY-6962, GROOVY-9955: method declared by inaccessible class
-            owner = BytecodeHelper.getClassInternalName(receiverType);
+            // GROOVY-6962, GROOVY-9955, GROOVY-10380: method declared by inaccessible class or interface
+            if (declaringClass.isInterface() && !receiverType.isInterface()) opcode = INVOKEVIRTUAL;
+            ownerClass = receiverType;
         }
 
         loadArguments(args.getExpressions(), target.getParameters());
 
-        String descriptor = BytecodeHelper.getMethodDescriptor(target.getReturnType(), target.getParameters());
-        mv.visitMethodInsn(opcode, owner, methodName, descriptor, declaringClass.isInterface());
-        ClassNode returnType = target.getReturnType().redirect();
+        String ownerName = BytecodeHelper.getClassInternalName(ownerClass), methodName = target.getName();
+        String signature = BytecodeHelper.getMethodDescriptor(target.getReturnType(), target.getParameters());
+        mv.visitMethodInsn(opcode, ownerName, methodName, signature, ownerClass.isInterface());
+        ClassNode returnType = target.getReturnType();
         if (isPrimitiveVoid(returnType)) {
             returnType = ClassHelper.OBJECT_TYPE;
             mv.visitInsn(ACONST_NULL);
         }
-        argumentsToRemove += (operandStack.getStackLength() - stackLen);
-        operandStack.remove(argumentsToRemove);
-        operandStack.push(returnType);
+        // replace the method call's receiver and argument types with the return type
+        operandStack.replace(returnType, operandStack.getStackLength() - startDepth);
         return true;
     }
 
