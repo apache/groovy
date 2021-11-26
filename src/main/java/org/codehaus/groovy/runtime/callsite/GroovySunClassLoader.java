@@ -33,6 +33,7 @@ import java.security.PrivilegedAction;
 public class GroovySunClassLoader extends SunClassLoader {
 
     public static final SunClassLoader sunVM;
+    @Deprecated
     public static final boolean pre9 = VMPluginFactory.getPlugin().getVersion() < 9;
 
     static {
