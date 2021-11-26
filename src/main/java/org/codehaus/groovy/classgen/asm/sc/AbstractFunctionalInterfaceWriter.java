@@ -138,6 +138,33 @@ public interface AbstractFunctionalInterfaceWriter {
         return type;
     }
 
+    /**
+     * @deprecated use {@link #convertParameterType(ClassNode, ClassNode, ClassNode)} instead
+     */
+    @Deprecated
+    default ClassNode convertParameterType(ClassNode parameterType, ClassNode inferredType) {
+        if (!ClassHelper.getWrapper(inferredType.redirect()).isDerivedFrom(ClassHelper.getWrapper(parameterType.redirect()))) {
+            throw new RuntimeParserException("The inferred type[" + inferredType.redirect() + "] is not compatible with the parameter type[" + parameterType.redirect() + "]", parameterType);
+        } else {
+            boolean isParameterTypePrimitive = ClassHelper.isPrimitiveType(parameterType);
+            boolean isInferredTypePrimitive = ClassHelper.isPrimitiveType(inferredType);
+            ClassNode type;
+            if (!isParameterTypePrimitive && isInferredTypePrimitive) {
+                if (parameterType != ClassHelper.getUnwrapper(parameterType) && inferredType != ClassHelper.getWrapper(inferredType)) {
+                    type = inferredType;
+                } else {
+                    type = ClassHelper.getWrapper(inferredType);
+                }
+            } else if (isParameterTypePrimitive && !isInferredTypePrimitive) {
+                type = ClassHelper.getUnwrapper(inferredType);
+            } else {
+                type = inferredType;
+            }
+
+            return type;
+        }
+    }
+
     default Parameter prependParameter(List<Parameter> methodParameterList, String parameterName, ClassNode parameterType) {
         Parameter parameter = new Parameter(parameterType, parameterName);
 
