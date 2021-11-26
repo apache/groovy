@@ -28,7 +28,7 @@ import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 /**
  * Check if there are any recursive calls in a method
  */
-class HasRecursiveCalls extends CodeVisitorSupport {
+public class HasRecursiveCalls extends CodeVisitorSupport {
     private MethodNode method;
     private boolean hasRecursiveCalls = false;
 

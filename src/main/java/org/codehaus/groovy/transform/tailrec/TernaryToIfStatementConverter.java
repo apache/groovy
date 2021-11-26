@@ -30,7 +30,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asType;
  * Since a ternary statement has more than one exit point tail-recursiveness testing cannot be easily done.
  * Therefore this class translates a ternary statement (or Elvis operator) into the equivalent if-else statement.
  */
-class TernaryToIfStatementConverter {
+public class TernaryToIfStatementConverter {
     @SuppressWarnings("Instanceof")
     public Statement convert(ReturnStatement statementWithInnerTernaryExpression) {
         if (!(statementWithInnerTernaryExpression.getExpression() instanceof TernaryExpression))

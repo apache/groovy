@@ -38,7 +38,7 @@ import java.util.List;
  * <p>
  * Within @TailRecursive it is used to swap ReturnStatements with looping back to RECUR label
  */
-class StatementReplacer extends CodeVisitorSupport {
+public class StatementReplacer extends CodeVisitorSupport {
     public StatementReplacer(Closure<Boolean> when, Closure<Statement> replaceWith) {
         this.when = when;
         this.replaceWith = replaceWith;

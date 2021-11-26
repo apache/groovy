@@ -20,7 +20,7 @@ package org.codehaus.groovy.transform.tailrec;
 
 import org.codehaus.groovy.ast.expr.VariableExpression;
 
-interface VariableReplacedListener {
+public interface VariableReplacedListener {
     VariableReplacedListener NULL = (oldVar, newVar) -> {
         //do nothing
     };

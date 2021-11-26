@@ -23,7 +23,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-class UsedVariableTracker implements VariableReplacedListener {
+public class UsedVariableTracker implements VariableReplacedListener {
     @Override
     public void variableReplaced(VariableExpression oldVar, VariableExpression newVar) {
         usedVariableNames.add(newVar.getName());

@@ -50,7 +50,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.transpose;
  * <li>Method names via a GString are never considered to be recursive</li>
  * </ul>
  */
-class RecursivenessTester {
+public class RecursivenessTester {
     public boolean isRecursive(Map<String, ASTNode> params) {
         ASTNode method = params.get("method");
         assert MethodNode.class.equals(method.getClass());

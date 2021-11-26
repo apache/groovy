@@ -30,7 +30,7 @@ import org.codehaus.groovy.classgen.ReturnAdder;
  * Adds explicit return statements to implicit return points in a closure. This is necessary since
  * tail-recursion is detected by having the recursive call within the return statement.
  */
-class ReturnAdderForClosures extends CodeVisitorSupport {
+public class ReturnAdderForClosures extends CodeVisitorSupport {
     public synchronized void visitMethod(MethodNode method) {
         method.getCode().visit(this);
     }

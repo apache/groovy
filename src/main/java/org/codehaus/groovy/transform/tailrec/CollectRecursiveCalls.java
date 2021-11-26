@@ -31,7 +31,7 @@ import java.util.List;
 /**
  * Collect all recursive calls within method
  */
-class CollectRecursiveCalls extends CodeVisitorSupport {
+public class CollectRecursiveCalls extends CodeVisitorSupport {
 	private final List<Expression> recursiveCalls = new ArrayList<>();
 	private MethodNode method;
 

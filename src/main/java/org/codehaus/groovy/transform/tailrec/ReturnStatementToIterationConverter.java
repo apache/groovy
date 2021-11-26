@@ -50,7 +50,7 @@ import java.util.Set;
  * There's probably place for optimizing the amount of variable copying being done, e.g.
  * parameters that are only handed through must not be copied at all.
  */
-class ReturnStatementToIterationConverter {
+public class ReturnStatementToIterationConverter {
     public ReturnStatementToIterationConverter() {}
 
     public ReturnStatementToIterationConverter(Statement recurStatement) {

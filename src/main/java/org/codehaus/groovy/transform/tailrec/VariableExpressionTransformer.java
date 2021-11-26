@@ -26,7 +26,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 /**
  * An expression transformer used in the process of replacing the access to variables
  */
-class VariableExpressionTransformer implements ExpressionTransformer {
+public class VariableExpressionTransformer implements ExpressionTransformer {
     public VariableExpressionTransformer(Closure<Boolean> when, Closure<VariableExpression> replaceWith) {
         this.when = when;
         this.replaceWith = replaceWith;

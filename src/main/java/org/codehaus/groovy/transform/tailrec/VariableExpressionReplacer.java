@@ -52,8 +52,8 @@ import java.lang.reflect.Method;
  * - to swap the access of method args with the access to iteration variables
  * - to swap the access of iteration variables with the access of temp vars
  */
-class VariableExpressionReplacer extends CodeVisitorSupport {
-    VariableExpressionReplacer(Closure<Boolean> when, Closure<VariableExpression> replaceWith) {
+public class VariableExpressionReplacer extends CodeVisitorSupport {
+    public VariableExpressionReplacer(Closure<Boolean> when, Closure<VariableExpression> replaceWith) {
         this.when = when;
         this.replaceWith = replaceWith;
     }

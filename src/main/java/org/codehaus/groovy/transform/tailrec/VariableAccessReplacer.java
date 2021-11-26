@@ -13,7 +13,7 @@ import java.util.Map;
  * <p>
  * The VariableReplacedListener can be set if clients want to react to variable replacement.
  */
-class VariableAccessReplacer {
+public class VariableAccessReplacer {
     public VariableAccessReplacer(Map<String, Map> nameAndTypeMapping) {
         this.nameAndTypeMapping = nameAndTypeMapping;
     }

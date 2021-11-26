@@ -42,7 +42,7 @@ import java.util.List;
  * <li>"throw LOOP_EXCEPTION" is used by recursive calls within closures b/c you cannot invoke "continue" from there</li>
  * </ol>
  */
-class InWhileLoopWrapper {
+public class InWhileLoopWrapper {
     public void wrap(MethodNode method) {
         BlockStatement oldBody = DefaultGroovyMethods.asType(method.getCode(), BlockStatement.class);
         TryCatchStatement tryCatchStatement = GeneralUtils.tryCatchS(oldBody, EmptyStatement.INSTANCE, GeneralUtils.catchS(GeneralUtils.param(ClassHelper.make(GotoRecurHereException.class), "ignore"), new ContinueStatement(InWhileLoopWrapper.LOOP_LABEL)));
