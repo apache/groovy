@@ -4880,6 +4880,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return null;
     }
 
+    @Deprecated
     protected void collectAllInterfaceMethodsByName(final ClassNode type, final String name, final List<MethodNode> methods) {
         Set<ClassNode> done = new LinkedHashSet<>();
         for (ClassNode next = type; next != null; next = next.getSuperClass()) {
