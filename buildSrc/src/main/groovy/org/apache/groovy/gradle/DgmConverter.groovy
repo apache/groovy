@@ -71,7 +71,7 @@ class DgmConverter extends DefaultTask {
         execOperations.javaexec {
             it.mainClass.set('org.codehaus.groovy.tools.DgmConverter')
             it.classpath = this.classpath
-            it.jvmArgs("-Dgroovy.target.bytecode=1.8")
+            it.jvmArgs("-Dgroovy.target.bytecode=${project.rootProject.extensions.getByType(SharedConfiguration).groovyTargetBytecodeVersion.get()}" as String)
             it.args('--info', outputDirectory.asFile.get().absolutePath)
         }
     }

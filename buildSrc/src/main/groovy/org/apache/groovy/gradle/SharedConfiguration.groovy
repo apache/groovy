@@ -44,6 +44,7 @@ class SharedConfiguration {
     final Provider<String> binaryCompatibilityBaselineVersion
     final Provider<Boolean> hasCodeCoverage
     final Provider<String> targetJavaVersion
+    final Provider<String> groovyTargetBytecodeVersion
     final boolean isRunningOnCI
 
     @Nested
@@ -78,7 +79,8 @@ class SharedConfiguration {
                         providers.provider { startParameter.taskNames.any { it =~ /jacoco/ } }
                 )
                 .orElse(false)
-        targetJavaVersion = objects.property(String).convention("8")
+        targetJavaVersion = providers.gradleProperty("targetJavaVersion")
+        groovyTargetBytecodeVersion = providers.gradleProperty("groovyTargetBytecodeVersion")
         File javaHome = new File(providers.systemProperty('java.home').forUseAtConfigurationTime().get())
         String javaVersion = providers.systemProperty('java.version').forUseAtConfigurationTime().get()
         String userdir = providers.systemProperty('user.dir').forUseAtConfigurationTime().get()
