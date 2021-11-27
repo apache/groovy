@@ -161,7 +161,7 @@ public @interface RecordOptions {
      *
      * The signature of the components method for this example is:
      * <pre>
-     * Tuple3<Integer, Integer, String> components()
+     * Tuple3&lt;Integer, Integer, String> components()
      * </pre>
      * This is suitable for destructuring in {@code TypeChecked} scenarios.
      *

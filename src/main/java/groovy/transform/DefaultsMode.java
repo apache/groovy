@@ -19,7 +19,7 @@
 package groovy.transform;
 
 /**
- * Intended mode to use when generating constructors to emulate default parameter values when using the {@link @TupleConstructor} annotation.
+ * Intended mode to use when generating constructors to emulate default parameter values when using the {@link TupleConstructor} annotation.
  *
  * @since 4.0.0
  * @see TupleConstructor
