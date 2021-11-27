@@ -37,7 +37,6 @@ import static org.objectweb.asm.Opcodes.ATHROW;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.NEW;
-import static org.objectweb.asm.Opcodes.V1_3;
 
 /**
  * To generate a class that has all the fields and methods, except that fields are not initialized
@@ -78,7 +77,7 @@ public class DummyClassGenerator extends ClassGenerator {
             this.internalBaseClassName = BytecodeHelper.getClassInternalName(classNode.getSuperClass());
 
             cv.visit(
-                    V1_3,
+                    classNode.getCompileUnit().getConfig().getBytecodeVersion(),
                     classNode.getModifiers(),
                     internalClassName,
                     null,

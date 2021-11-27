@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.reflection;
 
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
@@ -33,7 +34,6 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.RETURN;
-import static org.objectweb.asm.Opcodes.V1_4;
 
 /**
  * Special class loader, which when running on Sun VM allows to generate accessor classes for any method
@@ -68,8 +68,8 @@ public class SunClassLoader extends ClassLoader {
     }
 
     private void loadMagic() {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        cw.visit(V1_4, ACC_PUBLIC, "sun/reflect/GroovyMagic", null, "sun/reflect/MagicAccessorImpl", null);
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+        cw.visit(CompilerConfiguration.DEFAULT.getBytecodeVersion(), ACC_PUBLIC, "sun/reflect/GroovyMagic", null, "sun/reflect/MagicAccessorImpl", null);
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
@@ -85,7 +85,7 @@ public class SunClassLoader extends ClassLoader {
     protected void loadFromRes(String name) throws IOException {
         try (final InputStream asStream = SunClassLoader.class.getClassLoader().getResourceAsStream(resName(name))) {
             ClassReader reader = new ClassReader(asStream);
-            final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+            final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
             reader.accept(cw, ClassReader.SKIP_DEBUG);
             define(cw.toByteArray(), name);
         }

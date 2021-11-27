@@ -20,10 +20,10 @@ package org.codehaus.groovy.runtime.callsite;
 
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.android.AndroidSupport;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -154,7 +154,7 @@ public class CallSiteGenerator {
     }
 
     private static void classHeader(ClassWriter cw, String internalName, String superName) {
-        cw.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, internalName, null, superName, null);
+        cw.visit(CompilerConfiguration.DEFAULT.getBytecodeVersion(), Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, internalName, null, superName, null);
     }
 
     public static byte[] genPogoMetaMethodSite(CachedMethod cachedMethod, ClassWriter cw, String name) {
@@ -209,11 +209,7 @@ public class CallSiteGenerator {
     }
 
     private static ClassWriter makeClassWriter() {
-        if (VMPluginFactory.getPlugin().getVersion()>=8) {
-            return new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-        } else {
-            return new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        }
+        return new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
     }
 
     public static Constructor compilePogoMethod(CachedMethod cachedMethod) {

@@ -94,7 +94,6 @@ import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Opcodes.POP;
 import static org.objectweb.asm.Opcodes.PUTFIELD;
 import static org.objectweb.asm.Opcodes.RETURN;
-import static org.objectweb.asm.Opcodes.V1_5;
 
 /**
  * A proxy generator responsible for mapping a map of closures to a class implementing a list of interfaces. For
@@ -180,7 +179,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
             final ClassLoader proxyLoader,
             final boolean emptyBody,
             final Class delegateClass) {
-        super(CompilerConfiguration.ASM_API_VERSION, new ClassWriter(0));
+        super(CompilerConfiguration.ASM_API_VERSION, new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES));
         this.loader = proxyLoader != null ? createInnerLoader(proxyLoader, interfaces) : findClassLoader(superClass, interfaces);
         this.visitedMethods = new LinkedHashSet<Object>();
         this.delegatedClosures = closureMap.isEmpty() ? EMPTY_DELEGATECLOSURE_MAP : new HashMap<String, Boolean>();
@@ -221,7 +220,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
 
         // generate bytecode
         ClassWriter writer = (ClassWriter) cv;
-        this.visit(V1_5, ACC_PUBLIC, proxyName, null, null, null);
+        this.visit(CompilerConfiguration.DEFAULT.getBytecodeVersion(), ACC_PUBLIC, proxyName, null, null, null);
         byte[] b = writer.toByteArray();
 //        CheckClassAdapter.verify(new ClassReader(b), true, new PrintWriter(System.err));
         cachedClass = loader.defineClass(proxyName.replace('/', '.'), b);
@@ -374,7 +373,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
             classList.add(GeneratedGroovyProxy.class);
             interfacesSet.add("groovy/lang/GeneratedGroovyProxy");
         }
-        super.visit(V1_5, ACC_PUBLIC, proxyName, signature, BytecodeHelper.getClassInternalName(superClass), interfacesSet.toArray(EMPTY_STRING_ARRAY));
+        super.visit(CompilerConfiguration.DEFAULT.getBytecodeVersion(), ACC_PUBLIC, proxyName, signature, BytecodeHelper.getClassInternalName(superClass), interfacesSet.toArray(EMPTY_STRING_ARRAY));
         visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         addDelegateFields();
         if (addGroovyObjectSupport) {

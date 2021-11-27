@@ -34,7 +34,6 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +66,7 @@ public class WriterController {
     private StatementWriter statementWriter;
     private boolean fastPath;
     private TypeChooser typeChooser;
-    private int bytecodeVersion = Opcodes.V1_8;
+    private int bytecodeVersion = CompilerConfiguration.DEFAULT.getBytecodeVersion();
     private int lineNumber = -1;
     private int helperMethodIndex = 0;
     private List<String> superMethodNames = new ArrayList<>();
@@ -93,7 +92,7 @@ public class WriterController {
         this.outermostClass = null;
         this.internalClassName = BytecodeHelper.getClassInternalName(cn);
 
-        this.bytecodeVersion = chooseBytecodeVersion(invokedynamic, config.isPreviewFeatures(), config.getTargetBytecode());
+        this.bytecodeVersion = config.getBytecodeVersion();
 
         if (invokedynamic) {
             this.invocationWriter = new InvokeDynamicWriter(this);
@@ -139,21 +138,6 @@ public class WriterController {
             return cv;
         }
         return new LoggableClassVisitor(cv, config);
-    }
-
-    private static int chooseBytecodeVersion(final boolean invokedynamic, final boolean previewFeatures, final String targetBytecode) {
-        Integer bytecodeVersion = CompilerConfiguration.JDK_TO_BYTECODE_VERSION_MAP.get(targetBytecode);
-        if (bytecodeVersion == null) {
-            throw new GroovyBugError("Bytecode version [" + targetBytecode + "] is not supported by the compiler");
-        }
-
-        if (invokedynamic && bytecodeVersion <= Opcodes.V1_7) {
-            return Opcodes.V1_7; // invokedynamic added here
-        } else if (previewFeatures) {
-            return bytecodeVersion | Opcodes.V_PREVIEW;
-        } else {
-            return bytecodeVersion;
-        }
     }
 
     //--------------------------------------------------------------------------

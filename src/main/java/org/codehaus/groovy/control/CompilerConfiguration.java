@@ -19,6 +19,7 @@
 package org.codehaus.groovy.control;
 
 import org.apache.groovy.util.Maps;
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.control.io.NullWriter;
 import org.codehaus.groovy.control.messages.WarningMessage;
@@ -1076,6 +1077,27 @@ public class CompilerConfiguration {
      */
     public String getTargetBytecode() {
         return this.targetBytecode;
+    }
+
+    /**
+     * Returns the ASM bytecode version
+     *
+     * @return ASM bytecode version
+     * @since 4.0.0
+     */
+    public int getBytecodeVersion() {
+        Integer bytecodeVersion = CompilerConfiguration.JDK_TO_BYTECODE_VERSION_MAP.get(targetBytecode);
+        if (bytecodeVersion == null) {
+            throw new GroovyBugError("Bytecode version [" + targetBytecode + "] is not supported by the compiler");
+        }
+
+        if (bytecodeVersion <= Opcodes.V1_8) {
+            return Opcodes.V1_8;
+        } else if (previewFeatures) {
+            return bytecodeVersion | Opcodes.V_PREVIEW;
+        } else {
+            return bytecodeVersion;
+        }
     }
 
     /**

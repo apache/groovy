@@ -19,6 +19,7 @@
 package org.codehaus.groovy.tools;
 
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
@@ -52,7 +53,6 @@ import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.IRETURN;
 import static org.objectweb.asm.Opcodes.RETURN;
-import static org.objectweb.asm.Opcodes.V1_3;
 
 public class DgmConverter {
 
@@ -95,8 +95,8 @@ public class DgmConverter {
             record.parameters = method.getNativeParameterTypes();
             record.className = className;
 
-            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-            cw.visit(V1_3, ACC_PUBLIC, className, null, "org/codehaus/groovy/reflection/GeneratedMetaMethod", null);
+            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+            cw.visit(CompilerConfiguration.DEFAULT.getBytecodeVersion(), ACC_PUBLIC, className, null, "org/codehaus/groovy/reflection/GeneratedMetaMethod", null);
 
             createConstructor(cw);
 
