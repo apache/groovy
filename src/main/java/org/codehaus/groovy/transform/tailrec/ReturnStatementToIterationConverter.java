@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.transform.tailrec;
 
-import groovy.lang.Closure;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -29,14 +28,17 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.tools.GeneralUtils;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.minus;
 
 /**
  * Translates all return statements into an invocation of the next iteration. This can be either
@@ -57,13 +59,13 @@ public class ReturnStatementToIterationConverter {
         this.recurStatement = recurStatement;
     }
 
-    public Statement convert(ReturnStatement statement, final Map<Integer, Map> positionMapping) {
+    public Statement convert(ReturnStatement statement, final Map<Integer, Map<String, Object>> positionMapping) {
         Expression recursiveCall = statement.getExpression();
         if (!isAMethodCalls(recursiveCall)) return statement;
 
-        final Map<String, Map> tempMapping = new LinkedHashMap<String, Map>();
+        final Map<String, Map<String, Object>> tempMapping = new LinkedHashMap<>();
         final Map<String, ExpressionStatement> tempDeclarations = new LinkedHashMap<>();
-        final List<ExpressionStatement> argAssignments = new ArrayList<ExpressionStatement>();
+        final List<ExpressionStatement> argAssignments = new ArrayList<>();
 
         final BlockStatement result = new BlockStatement();
         result.copyStatementLabels(statement);
@@ -71,25 +73,20 @@ public class ReturnStatementToIterationConverter {
         /* Create temp declarations for all method arguments.
          * Add the declarations and var mapping to tempMapping and tempDeclarations for further reference.
          */
-        DefaultGroovyMethods.eachWithIndex(getArguments(recursiveCall), new Closure<Void>(this, this) {
-            public void doCall(Expression expression, int index) {
-                ExpressionStatement tempDeclaration = createTempDeclaration(index, positionMapping, tempMapping, tempDeclarations);
-                result.addStatement(tempDeclaration);
-            }
-
-        });
+        final List<Expression> arguments = getArguments(recursiveCall);
+        for (int i = 0, n = arguments.size(); i < n; i++) {
+            ExpressionStatement tempDeclaration = createTempDeclaration(i, positionMapping, tempMapping, tempDeclarations);
+            result.addStatement(tempDeclaration);
+        }
 
         /*
          * Assign the iteration variables their new value before recuring
          */
-        DefaultGroovyMethods.eachWithIndex(getArguments(recursiveCall), new Closure<Void>(this, this) {
-            public void doCall(Expression expression, int index) {
-                ExpressionStatement argAssignment = createAssignmentToIterationVariable(expression, index, positionMapping);
-                argAssignments.add(argAssignment);
-                result.addStatement(argAssignment);
-            }
-
-        });
+        for (int i = 0, n = arguments.size(); i < n; i++) {
+            ExpressionStatement argAssignment = createAssignmentToIterationVariable(arguments.get(i), i, positionMapping);
+            argAssignments.add(argAssignment);
+            result.addStatement(argAssignment);
+        }
 
         Set<String> unusedTemps = replaceAllArgUsages(argAssignments, tempMapping);
         for (String temp : unusedTemps) {
@@ -101,19 +98,19 @@ public class ReturnStatementToIterationConverter {
         return result;
     }
 
-    private ExpressionStatement createAssignmentToIterationVariable(Expression expression, int index, Map<Integer, Map> positionMapping) {
+    private ExpressionStatement createAssignmentToIterationVariable(Expression expression, int index, Map<Integer, Map<String, Object>> positionMapping) {
         String argName = (String) positionMapping.get(index).get("name");
-        ClassNode argAndTempType = DefaultGroovyMethods.asType(positionMapping.get(index).get("type"), ClassNode.class);
-        ExpressionStatement argAssignment = (ExpressionStatement) GeneralUtils.assignS(GeneralUtils.varX(argName, argAndTempType), expression);
+        ClassNode argAndTempType = (ClassNode) positionMapping.get(index).get("type");
+        ExpressionStatement argAssignment = (ExpressionStatement) assignS(varX(argName, argAndTempType), expression);
         return argAssignment;
     }
 
-    private ExpressionStatement createTempDeclaration(int index, Map<Integer, Map> positionMapping, Map<String, Map> tempMapping, Map<String, ExpressionStatement> tempDeclarations) {
-        final String argName = (String) positionMapping.get(index).get("name");
+    private ExpressionStatement createTempDeclaration(int index, Map<Integer, Map<String, Object>> positionMapping, Map<String, Map<String, Object>> tempMapping, Map<String, ExpressionStatement> tempDeclarations) {
+        String argName = (String) positionMapping.get(index).get("name");
+        ClassNode argAndTempType = (ClassNode) positionMapping.get(index).get("type");
         String tempName = "_" + argName + "_";
-        ClassNode argAndTempType = DefaultGroovyMethods.asType(positionMapping.get(index).get("type"), ClassNode.class);
         ExpressionStatement tempDeclaration = AstHelper.createVariableAlias(tempName, argAndTempType, argName);
-        Map<String, Object> map = new LinkedHashMap<String, Object>(2);
+        Map<String, Object> map = new LinkedHashMap<>(2);
         map.put("name", tempName);
         map.put("type", argAndTempType);
         tempMapping.put(argName, map);
@@ -135,19 +132,13 @@ public class ReturnStatementToIterationConverter {
         return MethodCallExpression.class == clazz || StaticMethodCallExpression.class == clazz;
     }
 
-    private Set<String> replaceAllArgUsages(List<ExpressionStatement> iterationVariablesAssignmentNodes, Map<String, Map> tempMapping) {
-        Set<String> unusedTempNames = DefaultGroovyMethods.asType(DefaultGroovyMethods.collect(tempMapping.values(), new Closure<String>(this, this) {
-            public String doCall(Map nameAndType) {
-                return (String) nameAndType.get("name");
-            }
-
-        }), Set.class);
-        VariableReplacedListener tracker = new UsedVariableTracker();
+    private Set<String> replaceAllArgUsages(List<ExpressionStatement> iterationVariablesAssignmentNodes, Map<String, Map<String, Object>> tempMapping) {
+        Set<String> unusedTempNames = tempMapping.values().stream().map(nameAndType -> (String) nameAndType.get("name")).collect(Collectors.toSet());
+        UsedVariableTracker tracker = new UsedVariableTracker();
         for (ExpressionStatement statement : iterationVariablesAssignmentNodes) {
-            replaceArgUsageByTempUsage((BinaryExpression) statement.getExpression(), tempMapping, (UsedVariableTracker) tracker);
+            replaceArgUsageByTempUsage((BinaryExpression) statement.getExpression(), tempMapping, tracker);
         }
-
-        unusedTempNames = DefaultGroovyMethods.minus(unusedTempNames, ((UsedVariableTracker) tracker).getUsedVariableNames());
+        unusedTempNames = minus(unusedTempNames, tracker.getUsedVariableNames());
         return unusedTempNames;
     }
 

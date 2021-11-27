@@ -39,10 +39,10 @@ import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,15 +57,12 @@ public class TailRecursiveASTTransformation extends AbstractASTTransformation {
     @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
-
-        MethodNode method = DefaultGroovyMethods.asType(nodes[1], MethodNode.class);
+        MethodNode method = (MethodNode) nodes[1];
 
         if (method.isAbstract()) {
             addError("Annotation " + TailRecursiveASTTransformation.getMY_TYPE_NAME() + " cannot be used for abstract methods.", method);
             return;
-
         }
-
 
         if (hasAnnotation(method, ClassHelper.make(Memoized.class))) {
             ClassNode memoizedClassNode = ClassHelper.make(Memoized.class);
@@ -74,21 +71,15 @@ public class TailRecursiveASTTransformation extends AbstractASTTransformation {
                 if (annotationNode.getClassNode().equals(memoizedClassNode)) {
                     addError("Annotation " + TailRecursiveASTTransformation.getMY_TYPE_NAME() + " must be placed before annotation @Memoized.", annotationNode);
                     return;
-
                 }
-
             }
-
         }
-
 
         if (!hasRecursiveMethodCalls(method)) {
             AnnotationNode annotationNode = method.getAnnotations(ClassHelper.make(TailRecursive.class)).get(0);
             addError("No recursive calls detected. You must remove annotation " + TailRecursiveASTTransformation.getMY_TYPE_NAME() + ".", annotationNode);
             return;
-
         }
-
 
         transformToIteration(method, source);
         ensureAllRecursiveCallsHaveBeenTransformed(method);
@@ -105,7 +96,6 @@ public class TailRecursiveASTTransformation extends AbstractASTTransformation {
         } else {
             transformNonVoidMethodToIteration(method, source);
         }
-
     }
 
     private void transformVoidMethodToIteration(MethodNode method) {
@@ -140,13 +130,11 @@ public class TailRecursiveASTTransformation extends AbstractASTTransformation {
 
                 return ((ReturnStatement) node).getExpression() instanceof TernaryExpression;
             }
-
         };
         Closure<Statement> replaceWithIfStatement = new Closure<Statement>(this, this) {
             public Statement doCall(ReturnStatement statement) {
                 return ternaryToIfStatement.convert(statement);
             }
-
         };
         StatementReplacer replacer = new StatementReplacer(whenReturnWithTernary, replaceWithIfStatement);
         replacer.replaceIn(method.getCode());
@@ -154,13 +142,17 @@ public class TailRecursiveASTTransformation extends AbstractASTTransformation {
     }
 
     private void addLocalVariablesForAllParameters(MethodNode method, Map<String, Map> nameAndTypeMapping) {
-        final BlockStatement code = DefaultGroovyMethods.asType(method.getCode(), BlockStatement.class);
-        DefaultGroovyMethods.each(nameAndTypeMapping, new Closure<Void>(this, this) {
-            public void doCall(String paramName, Map localNameAndType) {
-                code.getStatements().add(0, AstHelper.createVariableDefinition((String) localNameAndType.get("name"), (ClassNode) localNameAndType.get("type"), new VariableExpression(paramName, (ClassNode) localNameAndType.get("type"))));
-            }
-
-        });
+        final BlockStatement code = (BlockStatement) method.getCode();
+        nameAndTypeMapping.forEach((paramName, localNameAndType) ->
+                code.getStatements().add(
+                        0,
+                        AstHelper.createVariableDefinition(
+                                (String) localNameAndType.get("name"),
+                                (ClassNode) localNameAndType.get("type"),
+                                new VariableExpression(paramName, (ClassNode) localNameAndType.get("type"))
+                        )
+                )
+        );
     }
 
     private void replaceAllAccessToParams(MethodNode method, Map<String, Map> nameAndTypeMapping) {
@@ -168,36 +160,33 @@ public class TailRecursiveASTTransformation extends AbstractASTTransformation {
     }
 
     public Map<String, Map> name2VariableMappingFor(MethodNode method) {
-        final Map<String, Map> nameAndTypeMapping = new LinkedHashMap<String, Map>();
-        DefaultGroovyMethods.each(method.getParameters(), new Closure<LinkedHashMap<String, Object>>(this, this) {
-            public LinkedHashMap<String, Object> doCall(Parameter param) {
-                String paramName = param.getName();
-                ClassNode paramType = DefaultGroovyMethods.asType(param.getType(), ClassNode.class);
-                String iterationVariableName = iterationVariableName(paramName);
-                LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>(2);
-                map.put("name", iterationVariableName);
-                map.put("type", paramType);
-                return putAt0(nameAndTypeMapping, paramName, map);
-            }
-
+        final Map<String, Map> nameAndTypeMapping = new LinkedHashMap<>();
+        Arrays.stream(method.getParameters()).forEach((Parameter param) -> {
+            String paramName = param.getName();
+            ClassNode paramType = param.getType();
+            String iterationVariableName = iterationVariableName(paramName);
+            LinkedHashMap<String, Object> map = new LinkedHashMap<>(2);
+            map.put("name", iterationVariableName);
+            map.put("type", paramType);
+            putAt0(nameAndTypeMapping, paramName, map);
         });
+
         return nameAndTypeMapping;
     }
 
     public Map<Integer, Map> position2VariableMappingFor(MethodNode method) {
-        final Map<Integer, Map> positionMapping = new LinkedHashMap<Integer, Map>();
-        DefaultGroovyMethods.eachWithIndex(method.getParameters(), new Closure<LinkedHashMap<String, Object>>(this, this) {
-            public LinkedHashMap<String, Object> doCall(Parameter param, int index) {
-                String paramName = param.getName();
-                ClassNode paramType = DefaultGroovyMethods.asType(param.getType(), ClassNode.class);
-                String iterationVariableName = TailRecursiveASTTransformation.this.iterationVariableName(paramName);
-                LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>(2);
-                map.put("name", iterationVariableName);
-                map.put("type", paramType);
-                return putAt0(positionMapping, index, map);
-            }
-
-        });
+        final Map<Integer, Map> positionMapping = new LinkedHashMap<>();
+        final Parameter[] parameters = method.getParameters();
+        for (int i = 0, n = parameters.length; i < n; i++) {
+            Parameter param = parameters[i];
+            String paramName = param.getName();
+            ClassNode paramType = param.getType();
+            String iterationVariableName = TailRecursiveASTTransformation.this.iterationVariableName(paramName);
+            LinkedHashMap<String, Object> map = new LinkedHashMap<>(2);
+            map.put("name", iterationVariableName);
+            map.put("type", paramType);
+            putAt0(positionMapping, i, map);
+        }
         return positionMapping;
     }
 
@@ -211,7 +200,7 @@ public class TailRecursiveASTTransformation extends AbstractASTTransformation {
     }
 
     @SuppressWarnings("Instanceof")
-    private void replaceRecursiveReturnsOutsideClosures(final MethodNode method, final Map<Integer, Map> positionMapping) {
+    private void replaceRecursiveReturnsOutsideClosures(final MethodNode method, final Map<Integer, Map<String, Object>> positionMapping) {
         Closure<Boolean> whenRecursiveReturn = new Closure<Boolean>(this, this) {
             public Boolean doCall(Statement statement, boolean inClosure) {
                 if (inClosure) return false;
@@ -232,14 +221,13 @@ public class TailRecursiveASTTransformation extends AbstractASTTransformation {
             public Statement doCall(ReturnStatement statement) {
                 return new ReturnStatementToIterationConverter().convert(statement, positionMapping);
             }
-
         };
         StatementReplacer replacer = new StatementReplacer(whenRecursiveReturn, replaceWithContinueBlock);
         replacer.replaceIn(method.getCode());
     }
 
     @SuppressWarnings("Instanceof")
-    private void replaceRecursiveReturnsInsideClosures(final MethodNode method, final Map<Integer, Map> positionMapping) {
+    private void replaceRecursiveReturnsInsideClosures(final MethodNode method, final Map<Integer, Map<String, Object>> positionMapping) {
         Closure<Boolean> whenRecursiveReturn = new Closure<Boolean>(this, this) {
             public Boolean doCall(Statement statement, boolean inClosure) {
                 if (!inClosure) return false;
@@ -254,13 +242,11 @@ public class TailRecursiveASTTransformation extends AbstractASTTransformation {
 
                 return isRecursiveIn(inner, method);
             }
-
         };
         Closure<Statement> replaceWithThrowLoopException = new Closure<Statement>(this, this) {
             public Statement doCall(ReturnStatement statement) {
                 return new ReturnStatementToIterationConverter(AstHelper.recurByThrowStatement()).convert(statement, positionMapping);
             }
-
         };
         StatementReplacer replacer = new StatementReplacer(whenRecursiveReturn, replaceWithThrowLoopException);
         replacer.replaceIn(method.getCode());
@@ -280,7 +266,6 @@ public class TailRecursiveASTTransformation extends AbstractASTTransformation {
         for (Expression expression : remainingRecursiveCalls) {
             addError("Recursive call could not be transformed by @TailRecursive. Maybe it's not a tail call.", expression);
         }
-
     }
 
     private boolean hasRecursiveMethodCalls(MethodNode method) {

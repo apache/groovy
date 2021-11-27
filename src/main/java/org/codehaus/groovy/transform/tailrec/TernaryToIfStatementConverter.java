@@ -24,7 +24,6 @@ import org.codehaus.groovy.ast.stmt.Statement;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
-import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asType;
 
 /**
  * Since a ternary statement has more than one exit point tail-recursiveness testing cannot be easily done.
@@ -35,7 +34,7 @@ public class TernaryToIfStatementConverter {
     public Statement convert(ReturnStatement statementWithInnerTernaryExpression) {
         if (!(statementWithInnerTernaryExpression.getExpression() instanceof TernaryExpression))
             return statementWithInnerTernaryExpression;
-        TernaryExpression ternary = asType(statementWithInnerTernaryExpression.getExpression(), TernaryExpression.class);
+        TernaryExpression ternary = (TernaryExpression) statementWithInnerTernaryExpression.getExpression();
         return ifElseS(ternary.getBooleanExpression(), returnS(ternary.getTrueExpression()), returnS(ternary.getFalseExpression()));
     }
 }

@@ -39,7 +39,6 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.lang.reflect.Method;
 
@@ -182,7 +181,7 @@ public class VariableExpressionReplacer extends CodeVisitorSupport {
             //Use reflection to enable CompileStatic
             String getterName = GeneralUtils.getGetterName(propName);
             Method getExpressionMethod = node.getClass().getMethod(getterName);
-            return DefaultGroovyMethods.asType(getExpressionMethod.invoke(node), Expression.class);
+            return (Expression) getExpressionMethod.invoke(node);
         } catch (Throwable t) {
             UncheckedThrow.rethrow(t);
             return null;

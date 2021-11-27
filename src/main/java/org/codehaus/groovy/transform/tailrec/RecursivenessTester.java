@@ -29,13 +29,13 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.invokeMethod;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.transpose;
 
 /**
@@ -87,7 +87,7 @@ public class RecursivenessTester {
             return false;
         }
 
-        return ((boolean) (DefaultGroovyMethods.invokeMethod(call.getObjectExpression(), "isThisExpression", new Object[0])));
+        return ((boolean) (invokeMethod(call.getObjectExpression(), "isThisExpression", EMPTY_OBJECT_ARRAY)));
     }
 
     private boolean methodParamsMatchCallArgs(MethodNode method, Expression call) {
@@ -118,4 +118,6 @@ public class RecursivenessTester {
         ClassNode boxedParam = ClassHelper.getWrapper(paramType);
         return boxedArg.isDerivedFrom(boxedParam) || boxedParam.isDerivedFrom(boxedArg);
     }
+
+    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 }

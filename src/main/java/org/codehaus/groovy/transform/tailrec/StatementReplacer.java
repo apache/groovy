@@ -28,10 +28,10 @@ import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Tool for replacing Statement objects in an AST by other Statement instances.
@@ -58,72 +58,42 @@ public class StatementReplacer extends CodeVisitorSupport {
     }
 
     public void visitBlockStatement(final BlockStatement block) {
-        List<Statement> copyOfStatements = new ArrayList<Statement>(block.getStatements());
-        DefaultGroovyMethods.eachWithIndex(copyOfStatements, new Closure<Void>(this, this) {
-            public void doCall(Statement statement, final int index) {
-                replaceIfNecessary(statement, new Closure<Statement>(StatementReplacer.this, StatementReplacer.this) {
-                    public Statement doCall(Statement node) {
-                        block.getStatements().set(index, node);
-                        return node;
-                    }
-                });
-            }
-        });
+        List<Statement> copyOfStatements = new ArrayList<>(block.getStatements());
+        for (int i = 0, n = copyOfStatements.size(); i < n; i++) {
+            final int index = i;
+            Statement statement = copyOfStatements.get(index);
+            replaceIfNecessary(statement, (Statement node) -> block.getStatements().set(index, node));
+        }
         super.visitBlockStatement(block);
     }
 
     public void visitIfElse(final IfStatement ifElse) {
-        replaceIfNecessary(ifElse.getIfBlock(), new Closure<Statement>(this, this) {
-            public Statement doCall(Statement s) {
-                ifElse.setIfBlock(s);
-                return s;
-            }
-        });
-        replaceIfNecessary(ifElse.getElseBlock(), new Closure<Statement>(this, this) {
-            public Statement doCall(Statement s) {
-                ifElse.setElseBlock(s);
-                return s;
-            }
-        });
+        replaceIfNecessary(ifElse.getIfBlock(), ifElse::setIfBlock);
+        replaceIfNecessary(ifElse.getElseBlock(), ifElse::setElseBlock);
         super.visitIfElse(ifElse);
     }
 
     public void visitForLoop(final ForStatement forLoop) {
-        replaceIfNecessary(forLoop.getLoopBlock(), new Closure<Statement>(this, this) {
-            public Statement doCall(Statement s) {
-                forLoop.setLoopBlock(s);
-                return s;
-            }
-        });
+        replaceIfNecessary(forLoop.getLoopBlock(), forLoop::setLoopBlock);
         super.visitForLoop(forLoop);
     }
 
     public void visitWhileLoop(final WhileStatement loop) {
-        replaceIfNecessary(loop.getLoopBlock(), new Closure<Statement>(this, this) {
-            public Statement doCall(Statement s) {
-                loop.setLoopBlock(s);
-                return s;
-            }
-        });
+        replaceIfNecessary(loop.getLoopBlock(), loop::setLoopBlock);
         super.visitWhileLoop(loop);
     }
 
     public void visitDoWhileLoop(final DoWhileStatement loop) {
-        replaceIfNecessary(loop.getLoopBlock(), new Closure<Statement>(this, this) {
-            public Statement doCall(Statement s) {
-                loop.setLoopBlock(s);
-                return s;
-            }
-        });
+        replaceIfNecessary(loop.getLoopBlock(), loop::setLoopBlock);
         super.visitDoWhileLoop(loop);
     }
 
-    private void replaceIfNecessary(Statement nodeToCheck, Closure replacementCode) {
+    private void replaceIfNecessary(Statement nodeToCheck, Consumer<? super Statement> replacementCode) {
         if (conditionFulfilled(nodeToCheck)) {
             Statement replacement = replaceWith.call(nodeToCheck);
             replacement.setSourcePosition(nodeToCheck);
             replacement.copyNodeMetaData(nodeToCheck);
-            replacementCode.call(replacement);
+            replacementCode.accept(replacement);
         }
     }
 

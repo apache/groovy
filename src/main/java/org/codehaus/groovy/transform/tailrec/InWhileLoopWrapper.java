@@ -27,10 +27,15 @@ import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
-import org.codehaus.groovy.ast.tools.GeneralUtils;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.util.List;
+
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.catchS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 
 /**
  * Wrap the body of a method in a while loop, nested in a try-catch.
@@ -44,13 +49,13 @@ import java.util.List;
  */
 public class InWhileLoopWrapper {
     public void wrap(MethodNode method) {
-        BlockStatement oldBody = DefaultGroovyMethods.asType(method.getCode(), BlockStatement.class);
-        TryCatchStatement tryCatchStatement = GeneralUtils.tryCatchS(oldBody, EmptyStatement.INSTANCE, GeneralUtils.catchS(GeneralUtils.param(ClassHelper.make(GotoRecurHereException.class), "ignore"), new ContinueStatement(InWhileLoopWrapper.LOOP_LABEL)));
+        BlockStatement oldBody = (BlockStatement) method.getCode();
+        TryCatchStatement tryCatchStatement = tryCatchS(oldBody, EmptyStatement.INSTANCE, catchS(param(ClassHelper.make(GotoRecurHereException.class), "ignore"), new ContinueStatement(InWhileLoopWrapper.LOOP_LABEL)));
 
-        WhileStatement whileLoop = new WhileStatement(GeneralUtils.boolX(GeneralUtils.constX(true)), GeneralUtils.block(new VariableScope(method.getVariableScope()), tryCatchStatement));
+        WhileStatement whileLoop = new WhileStatement(boolX(constX(true)), block(new VariableScope(method.getVariableScope()), tryCatchStatement));
         List<Statement> whileLoopStatements = ((BlockStatement) whileLoop.getLoopBlock()).getStatements();
         if (whileLoopStatements.size() > 0) whileLoopStatements.get(0).setStatementLabel(LOOP_LABEL);
-        BlockStatement newBody = GeneralUtils.block(new VariableScope(method.getVariableScope()));
+        BlockStatement newBody = block(new VariableScope(method.getVariableScope()));
         newBody.addStatement(whileLoop);
         method.setCode(newBody);
     }
