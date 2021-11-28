@@ -61,7 +61,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.isNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -115,7 +114,9 @@ public class BinaryExpressionTransformer {
             }
             break;
           case Types.KEYWORD_IN:
-            return transformInOperation(bin);
+            equal = true; //fallthrough
+          case Types.COMPARE_NOT_IN:
+            return transformInOperation(bin, equal);
           case Types.COMPARE_EQUAL:
           case Types.COMPARE_IDENTICAL:
             equal = true; //fallthrough
@@ -226,12 +227,12 @@ public class BinaryExpressionTransformer {
                 pos);
     }
 
-    private Expression transformInOperation(final BinaryExpression bin) {
+    private Expression transformInOperation(final BinaryExpression bin, final boolean in) {
         Expression leftExpression = bin.getLeftExpression();
         Expression rightExpression = bin.getRightExpression();
 
-        // transform "left in right" into "right.isCase(left)"
-        MethodCallExpression call = callX(rightExpression, "isCase", leftExpression);
+        // transform "left [!]in right" into "right.is[Not]Case(left)"
+        MethodCallExpression call = callX(rightExpression, in ? "isCase" : "isNotCase", leftExpression);
         call.setImplicitThis(false); call.setSourcePosition(bin); call.copyNodeMetaData(bin);
         call.setMethodTarget(bin.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
         // GROOVY-7473: no null test for simple cases
@@ -245,7 +246,7 @@ public class BinaryExpressionTransformer {
 
         // GROOVY-6137, GROOVY-7473: null safety and one-time evaluation
         call.setObjectExpression(rightExpression = transformRepeatedReference(rightExpression));
-        Expression safe = ternaryX(isNullX( rightExpression ), isNullX( leftExpression ), call);
+        Expression safe = ternaryX(new CompareToNullExpression(rightExpression,true), new CompareToNullExpression(leftExpression,in), call);
         safe.putNodeMetaData("classgen.callback", classgenCallback(call.getObjectExpression()));
         return staticCompilationTransformer.transform(safe);
     }
