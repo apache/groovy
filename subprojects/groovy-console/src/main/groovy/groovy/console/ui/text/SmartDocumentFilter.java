@@ -84,6 +84,8 @@ import static org.apache.groovy.parser.antlr4.GroovyLexer.NATIVE;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.NEW;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.NL;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.NON_SEALED;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.NOT_IN;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.NOT_INSTANCEOF;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.NullLiteral;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.PACKAGE;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.PERMITS;
@@ -382,7 +384,8 @@ public class SmartDocumentFilter extends DocumentFilter {
         for (int t : Arrays.asList(AS, DEF, IN, TRAIT, THREADSAFE,
                 VAR, BuiltInPrimitiveType, ABSTRACT, ASSERT, BREAK, CASE, CATCH, CLASS, CONST, CONTINUE, DEFAULT, DO,
                 ELSE, ENUM, EXTENDS, FINAL, FINALLY, FOR, IF, GOTO, IMPLEMENTS, IMPORT, INSTANCEOF, INTERFACE,
-                NATIVE, NEW, NON_SEALED, PACKAGE, PERMITS, PRIVATE, PROTECTED, PUBLIC, RECORD, RETURN, SEALED, STATIC, STRICTFP, SUPER, SWITCH, SYNCHRONIZED,
+                NATIVE, NEW, NON_SEALED, NOT_IN, NOT_INSTANCEOF, PACKAGE, PERMITS, PRIVATE, PROTECTED, PUBLIC,
+                RECORD, RETURN, SEALED, STATIC, STRICTFP, SUPER, SWITCH, SYNCHRONIZED,
                 THIS, THROW, THROWS, TRANSIENT, TRY, VOID, VOLATILE, WHILE, YIELD, NullLiteral, BooleanLiteral)) {
             Style style = createDefaultStyleByTokenType(t);
             StyleConstants.setBold(style, true);
