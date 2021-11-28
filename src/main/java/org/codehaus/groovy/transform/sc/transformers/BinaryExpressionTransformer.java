@@ -123,6 +123,9 @@ public class BinaryExpressionTransformer {
           case Types.COMPARE_NOT_EQUAL:
           case Types.COMPARE_NOT_IDENTICAL:
             expr = transformEqualityComparison(bin, equal);
+            if (expr != null) return expr; else break;
+          case Types.COMPARE_TO:
+            expr = transformRelationComparison(bin);
             if (expr != null) return expr;
         }
 
@@ -228,8 +231,7 @@ public class BinaryExpressionTransformer {
     }
 
     private Expression transformInOperation(final BinaryExpression bin, final boolean in) {
-        Expression leftExpression = bin.getLeftExpression();
-        Expression rightExpression = bin.getRightExpression();
+        Expression leftExpression = bin.getLeftExpression(), rightExpression = bin.getRightExpression();
 
         // transform "left [!]in right" into "right.is[Not]Case(left)"
         MethodCallExpression call = callX(rightExpression, in ? "isCase" : "isNotCase", leftExpression);
@@ -281,6 +283,41 @@ public class BinaryExpressionTransformer {
         return null;
     }
 
+    private Expression transformRelationComparison(final BinaryExpression bin) {
+        Expression leftExpression = bin.getLeftExpression(), rightExpression = bin.getRightExpression();
+        ClassNode leftType = findType(leftExpression), rightType = findType(rightExpression);
+
+        if (leftType.implementsInterface(ClassHelper.COMPARABLE_TYPE)
+                && rightType.implementsInterface(ClassHelper.COMPARABLE_TYPE)) {
+            // GROOVY-5644, GROOVY-6137, GROOVY-7473, GROOVY-10394: null safety and one-time evaluation
+            Expression left = transformRepeatedReference(staticCompilationTransformer.transform(leftExpression));
+            Expression right = transformRepeatedReference(staticCompilationTransformer.transform(rightExpression));
+
+            MethodCallExpression call = callX(left, "compareTo", args(right));
+            call.setMethodTarget(COMPARE_TO_METHOD);
+            call.setImplicitThis(false);
+            call.setSourcePosition(bin);
+
+            // right == null ? 1 : left.compareTo(right)
+            Expression expr = ternaryX(new CompareToNullExpression(right, true), CONSTANT_ONE, call);
+            expr.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, ClassHelper.int_TYPE);
+
+            // left == null ? -1 : (right == null ? 1 : left.compareTo(right))
+            expr = ternaryX(new CompareToNullExpression(left, true), CONSTANT_MINUS_ONE, expr);
+            expr.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, ClassHelper.int_TYPE);
+
+            // left === right ? 0 : (left == null ? -1 : (right == null ? 1 : left.compareTo(right)))
+            expr = ternaryX(new CompareIdentityExpression(left, right), CONSTANT_ZERO, expr);
+            expr.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, ClassHelper.int_TYPE);
+            expr.putNodeMetaData("classgen.callback", // pop temporary variables
+                    classgenCallback(right).andThen(classgenCallback(left)));
+
+            return expr;
+        }
+
+        return null;
+    }
+
     private Expression transformMultipleAssignment(final BinaryExpression bin) {
         ListOfExpressionsExpression list = new ListOfExpressionsExpression();
         List<Expression> leftExpressions = ((TupleExpression) bin.getLeftExpression()).getExpressions();
@@ -329,46 +366,9 @@ public class BinaryExpressionTransformer {
     }
 
     private Expression transformToTargetMethodCall(final BinaryExpression bin, final MethodNode node, final String name) {
-        MethodCallExpression call;
-        Token operation = bin.getOperation();
-        int operationType = operation.getType();
+        Token operation = bin.getOperation(); int operationType = operation.getType();
         Expression left = staticCompilationTransformer.transform(bin.getLeftExpression());
         Expression right = staticCompilationTransformer.transform(bin.getRightExpression());
-
-        if (operationType == Types.COMPARE_TO
-                && findType(left).implementsInterface(ClassHelper.COMPARABLE_TYPE)
-                && findType(right).implementsInterface(ClassHelper.COMPARABLE_TYPE)) {
-            call = callX(left, "compareTo", args(right));
-            call.setImplicitThis(false);
-            call.setMethodTarget(COMPARE_TO_METHOD);
-            call.setSourcePosition(bin);
-
-            // right == null ? 1 : left.compareTo(right)
-            Expression expr = ternaryX(
-                    new CompareToNullExpression(right, true),
-                    CONSTANT_ONE,
-                    call
-            );
-            expr.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, ClassHelper.int_TYPE);
-
-            // left == null ? -1 : (right == null ? 1 : left.compareTo(right))
-            expr = ternaryX(
-                    new CompareToNullExpression(left, true),
-                    CONSTANT_MINUS_ONE,
-                    expr
-            );
-            expr.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, ClassHelper.int_TYPE);
-
-            // left === right ? 0 : (left == null ? -1 : (right == null ? 1 : left.compareTo(right)))
-            expr = ternaryX(
-                    new CompareIdentityExpression(left, right),
-                    CONSTANT_ZERO,
-                    expr
-            );
-            expr.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, ClassHelper.int_TYPE);
-
-            return expr;
-        }
 
         Expression expr = tryOptimizeCharComparison(left, right, bin);
         if (expr != null) {
@@ -377,6 +377,7 @@ public class BinaryExpressionTransformer {
             return expr;
         }
 
+        MethodCallExpression call;
         // replace the binary expression with a method call to ScriptBytecodeAdapter or something else
         MethodNode adapter = StaticCompilationTransformer.BYTECODE_BINARY_ADAPTERS.get(operationType);
         if (adapter != null) {
