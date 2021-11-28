@@ -46,6 +46,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.codehaus.groovy.control.CompilerConfiguration.MEM_STUB;
+
 public class JavacJavaCompiler implements JavaCompiler {
 
     private static final Locale DEFAULT_LOCALE = Locale.ENGLISH;
@@ -97,7 +99,7 @@ public class JavacJavaCompiler implements JavaCompiler {
             Set<javax.tools.JavaFileObject> compilationUnitSet = cu.getJavaCompilationUnitSet(); // java stubs already added
 
             Map<String, Object> options = this.config.getJointCompilationOptions();
-            if (!Boolean.parseBoolean(options.get(CompilerConfiguration.MEM_STUB).toString())) {
+            if (!Boolean.TRUE.equals(options.get(MEM_STUB))) {
                 // clear the java stubs in the source set of Java compilation
                 compilationUnitSet = new HashSet<>();
 

@@ -19,7 +19,6 @@
 package org.codehaus.groovy.tools.javac;
 
 import groovy.lang.GroovyClassLoader;
-import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.ModuleNode;
@@ -39,6 +38,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static org.codehaus.groovy.control.CompilerConfiguration.MEM_STUB;
 
 /**
  * Compilation Unit capable of compiling Java source files.
@@ -70,14 +71,9 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         {
             Map<String, Object> options = this.configuration.getJointCompilationOptions();
             String sourceEncoding = this.configuration.getSourceEncoding();
-            Object memStub = options.get(CompilerConfiguration.MEM_STUB);
-            if (memStub == null) {
-                memStub = Boolean.parseBoolean(SystemUtil.getSystemPropertySafe("groovy.mem.stub", "false"));
-                options.put(CompilerConfiguration.MEM_STUB, memStub);
-            }
 
             this.keepStubs = Boolean.TRUE.equals(options.get("keepStubs"));
-            this.memStubEnabled = Boolean.TRUE.equals(memStub);
+            this.memStubEnabled = Boolean.TRUE.equals(options.get(MEM_STUB));
             this.generationGoal = memStubEnabled ? null : (File) options.get("stubDir");
             this.stubGenerator = new JavaStubGenerator(generationGoal, false, sourceEncoding);
         }

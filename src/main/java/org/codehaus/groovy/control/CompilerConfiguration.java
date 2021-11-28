@@ -480,6 +480,7 @@ public class CompilerConfiguration {
         handleOptimizationOption(GROOVYDOC, getSystemPropertySafe("groovy.attach.groovydoc"));
         handleOptimizationOption(RUNTIME_GROOVYDOC, getSystemPropertySafe("groovy.attach.runtime.groovydoc"));
         handleOptimizationOption(PARALLEL_PARSE, getSystemPropertySafe("groovy.parallel.parse", "true"));
+        handleOptimizationOption(MEM_STUB, getSystemPropertySafe("groovy.mem.stub", "false"));
     }
 
     private void handleOptimizationOption(String key, String val) {
