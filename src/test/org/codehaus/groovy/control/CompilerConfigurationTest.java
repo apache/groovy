@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
@@ -67,6 +68,7 @@ public final class CompilerConfigurationTest {
         assertEquals(Collections.emptyList(), config.getClasspath());
         assertEquals(".groovy", config.getDefaultScriptExtension());
         assertNotNull(config.getJointCompilationOptions());
+        assertFalse((Boolean) config.getJointCompilationOptions().get(CompilerConfiguration.MEM_STUB));
         assertNotNull(config.getPluginFactory());
         assertNull(config.getScriptBaseClass());
         assertNull(config.getTargetDirectory());
@@ -95,6 +97,7 @@ public final class CompilerConfigurationTest {
         assertEquals(Collections.emptyList(), config.getClasspath());
         assertEquals(".groovy", config.getDefaultScriptExtension());
         assertNotNull(config.getJointCompilationOptions());
+        assertTrue((Boolean) config.getJointCompilationOptions().get(CompilerConfiguration.MEM_STUB));
         assertNotNull(config.getPluginFactory());
         assertNull(config.getScriptBaseClass());
         assertNull(config.getTargetDirectory());
@@ -139,6 +142,7 @@ public final class CompilerConfigurationTest {
         assertEquals(targetDirectory, init.getTargetDirectory());
         assertEquals(".jpp", init.getDefaultScriptExtension());
         assertEquals("somevalue", init.getJointCompilationOptions().get("somekey"));
+        assertNull(init.getJointCompilationOptions().get(CompilerConfiguration.MEM_STUB));
         assertEquals(pluginFactory, init.getPluginFactory());
         assertEquals(1, init.getCompilationCustomizers().size());
         assertTrue(init.isLogClassgen());
@@ -208,6 +212,8 @@ public final class CompilerConfigurationTest {
         assertEquals(100, init.getLogClassgenStackTraceMaxDepth());
         assertEquals(pluginFactory, init.getPluginFactory());
         assertEquals(".jpp", init.getDefaultScriptExtension());
+        assertNotNull(init.getJointCompilationOptions());
+        assertFalse((Boolean) init.getJointCompilationOptions().get(CompilerConfiguration.MEM_STUB));
 
         //
 
@@ -228,6 +234,8 @@ public final class CompilerConfigurationTest {
         assertEquals(100, config.getLogClassgenStackTraceMaxDepth());
         assertEquals(pluginFactory, config.getPluginFactory());
         assertEquals(".jpp", config.getDefaultScriptExtension());
+        assertNotNull(config.getJointCompilationOptions());
+        assertFalse((Boolean) config.getJointCompilationOptions().get(CompilerConfiguration.MEM_STUB));
     }
 
     @Test
