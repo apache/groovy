@@ -26,11 +26,11 @@ import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Reference;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.tools.ErrorReporter;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 /**
@@ -136,7 +136,7 @@ public abstract class CompileTaskSupport
 
     protected GroovyClassLoader createClassLoader() {
         GroovyClassLoader gcl =
-                AccessController.doPrivileged(
+                VMPluginFactory.getPlugin().doPrivileged(
                         (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(ClassLoader.getSystemClassLoader(), config));
 
         Path path = getClasspath();

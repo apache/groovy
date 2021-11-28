@@ -108,6 +108,7 @@ import org.codehaus.groovy.util.ListBufferedIterator;
 import org.codehaus.groovy.util.LongArrayIterable;
 import org.codehaus.groovy.util.LongArrayIterator;
 import org.codehaus.groovy.util.ShortArrayIterator;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -124,7 +125,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.net.URL;
-import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
@@ -461,7 +461,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     if (groovyObject && field.getName().equals("metaClass")) {
                         continue;
                     }
-                    AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
+                    VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<Object>) () -> {
                         ReflectionUtils.trySetAccessible(field);
                         return null;
                     });

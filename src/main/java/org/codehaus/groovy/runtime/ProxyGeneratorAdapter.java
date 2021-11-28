@@ -35,6 +35,7 @@ import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.tools.GroovyClass;
 import org.codehaus.groovy.transform.trait.Traits;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -46,7 +47,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -286,7 +286,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
     }
 
     private static InnerLoader createInnerLoader(final ClassLoader parent, final Class[] interfaces) {
-        return AccessController.doPrivileged((PrivilegedAction<InnerLoader>) () -> new InnerLoader(parent, interfaces));
+        return VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<InnerLoader>) () -> new InnerLoader(parent, interfaces));
     }
 
     private InnerLoader findClassLoader(Class clazz, Class[] interfaces) {

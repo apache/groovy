@@ -18,12 +18,13 @@
  */
 package groovy.console.ui.text;
 
-import java.awt.*;
+import java.awt.AWTPermission;
+import java.awt.Font;
+import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 
 /**
- * Contains all the basic resources and values used by the utility frame work
- * framework.
+ * Contains all the basic resources and values used by the utility framework.
  */
 public final class StructuredSyntaxResources {
 
@@ -31,26 +32,29 @@ public final class StructuredSyntaxResources {
     // ClipBoard
     // ==================================================
 
-    public static final Clipboard SYSTEM_CLIPBOARD;
-    static {
-        Clipboard systemClipboard = null;
+    public static final Clipboard SYSTEM_CLIPBOARD = getSystemOrAppLevelClipboard();
+
+    private static Clipboard getSystemOrAppLevelClipboard() {
+        Clipboard systemClipboard = getSystemClipboard();
+        if (systemClipboard == null) {
+            systemClipboard = new Clipboard("UIResourceMgr");
+        }
+        return systemClipboard;
+    }
+
+    private static Clipboard getSystemClipboard() {
         try {
-            // if we don't have access to the system clipboard, will throw
-            // a security exception
+            // if we don't have access to the system clipboard, will throw a security exception
             SecurityManager mgr = System.getSecurityManager();
             if (mgr != null) {
                 mgr.checkPermission(new AWTPermission("accessClipboard"));
             }
-            systemClipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        }
-        catch (SecurityException e) {
-            // means we can't get to system clipboard, so create app level one
-            systemClipboard = new Clipboard("UIResourceMgr");
+            return Toolkit.getDefaultToolkit().getSystemClipboard();
         }
         catch (Exception e) {
-            e.printStackTrace();
+            // means we can't get to system clipboard
+            return null;
         }
-        SYSTEM_CLIPBOARD = systemClipboard;
     }
 
     // =====================================================

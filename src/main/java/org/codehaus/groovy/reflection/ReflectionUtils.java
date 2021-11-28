@@ -28,7 +28,6 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -207,7 +206,7 @@ public class ReflectionUtils {
     }
 
     public static Optional<AccessibleObject> makeAccessibleInPrivilegedAction(final AccessibleObject ao) {
-        return AccessController.doPrivileged((PrivilegedAction<Optional<AccessibleObject>>) () -> makeAccessible(ao));
+        return VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<Optional<AccessibleObject>>) () -> makeAccessible(ao));
     }
 
     // to be run in PrivilegedAction!

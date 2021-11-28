@@ -18,9 +18,10 @@
  */
 package groovy.grape;
 
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
+
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.List;
@@ -157,7 +158,7 @@ public class Grape {
 
     public static void grab(final Map<String, Object> args, final Map... dependencies) {
         if (enableGrapes) {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            VMPluginFactory.getPlugin().doPrivileged(new PrivilegedAction<Void>() {
                 @Override
                 public Void run() {
                     GrapeEngine instance = getInstance();

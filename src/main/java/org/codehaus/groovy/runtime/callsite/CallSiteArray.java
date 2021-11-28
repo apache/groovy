@@ -25,11 +25,10 @@ import groovy.lang.MetaClassImpl;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.stream.IntStream;
-
 
 public final class CallSiteArray {
     public static final Object[] NOPARAM = new Object[0];
@@ -60,7 +59,7 @@ public final class CallSiteArray {
     }
 
     private static CallSite createCallStaticSite(CallSite callSite, final Class receiver, Object[] args) {
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+        VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<Void>) () -> {
             try {
                 Class.forName(receiver.getName(), true, receiver.getClassLoader());
             } catch (Exception e) {

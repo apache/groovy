@@ -49,6 +49,7 @@ import org.codehaus.groovy.runtime.memoize.EvictableCache;
 import org.codehaus.groovy.runtime.memoize.StampedCommonCache;
 import org.codehaus.groovy.runtime.memoize.UnlimitedConcurrentCache;
 import org.codehaus.groovy.util.URLStreams;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
@@ -66,7 +67,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.net.URLDecoder;
-import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.NoSuchAlgorithmException;
 import java.security.Permission;
@@ -111,7 +111,7 @@ public class GroovyClassLoader extends URLClassLoader {
     private GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
         @Override
         public URL loadGroovySource(final String filename) throws MalformedURLException {
-            return AccessController.doPrivileged((PrivilegedAction<URL>) () -> {
+            return VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<URL>) () -> {
                 for (String extension : config.getScriptExtensions()) {
                     try {
                         URL ret = getSourceFile(filename, extension);
@@ -253,7 +253,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(final String text, final String fileName) throws CompilationFailedException {
-        GroovyCodeSource gcs = AccessController.doPrivileged((PrivilegedAction<GroovyCodeSource>) () -> new GroovyCodeSource(text, fileName, "/groovy/script"));
+        GroovyCodeSource gcs = VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<GroovyCodeSource>) () -> new GroovyCodeSource(text, fileName, "/groovy/script"));
         gcs.setCachable(false);
         return parseClass(gcs);
     }
@@ -278,7 +278,7 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     public Class parseClass(final Reader reader, final String fileName) throws CompilationFailedException {
-        GroovyCodeSource gcs = AccessController.doPrivileged((PrivilegedAction<GroovyCodeSource>) () -> {
+        GroovyCodeSource gcs = VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<GroovyCodeSource>) () -> {
             try {
                 String scriptText = IOGroovyMethods.getText(reader);
                 return new GroovyCodeSource(scriptText, fileName, "/groovy/script");
@@ -425,7 +425,7 @@ public class GroovyClassLoader extends URLClassLoader {
                 perms = new Permissions();
             }
 
-            ProtectionDomain myDomain = AccessController.doPrivileged(new PrivilegedAction<ProtectionDomain>() {
+            ProtectionDomain myDomain = VMPluginFactory.getPlugin().doPrivileged(new PrivilegedAction<ProtectionDomain>() {
                 @Override
                 public ProtectionDomain run() {
                     return getClass().getProtectionDomain();
@@ -643,7 +643,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the ClassCollector
      */
     protected ClassCollector createCollector(CompilationUnit unit, SourceUnit su) {
-        InnerLoader loader = AccessController.doPrivileged((PrivilegedAction<InnerLoader>) () -> new InnerLoader(GroovyClassLoader.this));
+        InnerLoader loader = VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<InnerLoader>) () -> new InnerLoader(GroovyClassLoader.this));
         return new ClassCollector(loader, unit, su);
     }
 
@@ -1082,7 +1082,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #addURL(URL)
      */
     public void addClasspath(final String path) {
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+        VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<Void>) () -> {
 
             URI newURI;
             try {

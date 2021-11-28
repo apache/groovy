@@ -30,8 +30,8 @@ import org.codehaus.groovy.runtime.metaclass.ClosureMetaClass;
 import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.util.LazyReference;
 import org.codehaus.groovy.util.ReferenceBundle;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,7 +57,7 @@ public class CachedClass {
             PrivilegedAction<CachedField[]> action = () -> Arrays.stream(getTheClass().getDeclaredFields())
                 .filter(f -> ReflectionUtils.checkCanSetAccessible(f, CachedClass.class))
                 .map(CachedField::new).toArray(CachedField[]::new);
-            return AccessController.doPrivileged(action);
+            return VMPluginFactory.getPlugin().doPrivileged(action);
         }
     };
 
@@ -71,7 +71,7 @@ public class CachedClass {
                 .filter(c -> ReflectionUtils.checkCanSetAccessible(c, CachedClass.class))
                 .map(c -> new CachedConstructor(CachedClass.this, c))
                 .toArray(CachedConstructor[]::new);
-            return AccessController.doPrivileged(action);
+            return VMPluginFactory.getPlugin().doPrivileged(action);
         }
     };
 
@@ -92,7 +92,7 @@ public class CachedClass {
                     return CachedMethod.EMPTY_ARRAY;
                 }
             };
-            CachedMethod[] declaredMethods = AccessController.doPrivileged(action);
+            CachedMethod[] declaredMethods = VMPluginFactory.getPlugin().doPrivileged(action);
 
             List<CachedMethod> methods = new ArrayList<>(declaredMethods.length);
             List<CachedMethod> mopMethods = new ArrayList<>(declaredMethods.length);
@@ -140,7 +140,7 @@ public class CachedClass {
 
         @Override
         public CallSiteClassLoader initValue() {
-            return AccessController.doPrivileged((PrivilegedAction<CallSiteClassLoader>) () -> new CallSiteClassLoader(CachedClass.this.cachedClass));
+            return VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<CallSiteClassLoader>) () -> new CallSiteClassLoader(CachedClass.this.cachedClass));
         }
     };
 

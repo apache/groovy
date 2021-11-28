@@ -34,6 +34,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.junit.Ignore;
 import org.objectweb.asm.Opcodes;
 
@@ -44,7 +45,6 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 /**
@@ -58,7 +58,7 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
     // ClassLoader parentLoader = Thread.currentThread().getContextClassLoader();
     final ClassLoader parentLoader = getClass().getClassLoader();
     protected final GroovyClassLoader loader =
-            AccessController.doPrivileged(
+            VMPluginFactory.getPlugin().doPrivileged(
                     (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader)
             );
     final CompileUnit unit = new CompileUnit(loader, new CompilerConfiguration());
@@ -147,7 +147,7 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
     protected void assertScript(final String text, final String scriptName) throws Exception {
         log.info("About to execute script");
         log.info(text);
-        GroovyCodeSource gcs = AccessController.doPrivileged(
+        GroovyCodeSource gcs = VMPluginFactory.getPlugin().doPrivileged(
                 (PrivilegedAction<GroovyCodeSource>) () -> new GroovyCodeSource(text, scriptName, "/groovy/testSupport")
         );
         Class groovyClass = loader.parseClass(gcs);

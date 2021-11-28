@@ -27,6 +27,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,7 +35,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
-import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -189,7 +189,7 @@ public class JavacJavaCompiler implements JavaCompiler {
             }
 
             try {
-                CodeSource codeSource = AccessController.doPrivileged(
+                CodeSource codeSource = VMPluginFactory.getPlugin().doPrivileged(
                         (PrivilegedAction<CodeSource>) () -> GroovyObject.class.getProtectionDomain().getCodeSource());
                 if (codeSource != null) {
                     paths.add(new File(codeSource.getLocation().toURI()).getPath());

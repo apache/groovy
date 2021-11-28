@@ -18,10 +18,11 @@
  */
 package org.codehaus.groovy.tools;
 
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
+
 import java.io.FileInputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 /**
@@ -99,7 +100,7 @@ public class GroovyStarter {
             }
         }
         // create loader and execute main class
-        ClassLoader loader = AccessController.doPrivileged((PrivilegedAction<RootLoader>) () -> new RootLoader(lc));
+        ClassLoader loader = VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<RootLoader>) () -> new RootLoader(lc));
         Method m=null;
         try {
             Class c = loader.loadClass(lc.getMainClass());
