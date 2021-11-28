@@ -1279,7 +1279,7 @@ public class CompilerConfiguration {
      */
     public boolean isIndyEnabled() {
         Boolean indyEnabled = getOptimizationOptions().get(INVOKEDYNAMIC);
-        return Optional.ofNullable(indyEnabled).orElse(Boolean.TRUE).booleanValue();
+        return Optional.ofNullable(indyEnabled).orElse(Boolean.TRUE);
     }
 
     /**
@@ -1287,7 +1287,7 @@ public class CompilerConfiguration {
      */
     public boolean isGroovydocEnabled() {
         Boolean groovydocEnabled = getOptimizationOptions().get(GROOVYDOC);
-        return Optional.ofNullable(groovydocEnabled).orElse(Boolean.FALSE).booleanValue();
+        return Optional.ofNullable(groovydocEnabled).orElse(Boolean.FALSE);
     }
 
     /**
@@ -1295,6 +1295,6 @@ public class CompilerConfiguration {
      */
     public boolean isRuntimeGroovydocEnabled() {
         Boolean runtimeGroovydocEnabled = getOptimizationOptions().get(RUNTIME_GROOVYDOC);
-        return Optional.ofNullable(runtimeGroovydocEnabled).orElse(Boolean.FALSE).booleanValue();
+        return Optional.ofNullable(runtimeGroovydocEnabled).orElse(Boolean.FALSE);
     }
 }
