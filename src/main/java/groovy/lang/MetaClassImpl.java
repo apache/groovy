@@ -96,7 +96,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.net.URL;
-import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
@@ -3590,9 +3589,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //     introspect
         try {
             if (isBeanDerivative(theClass)) {
-                info = (BeanInfo) AccessController.doPrivileged((PrivilegedExceptionAction) () -> Introspector.getBeanInfo(theClass, Introspector.IGNORE_ALL_BEANINFO));
+                info = (BeanInfo) VMPluginFactory.getPlugin().doPrivileged((PrivilegedExceptionAction) () -> Introspector.getBeanInfo(theClass, Introspector.IGNORE_ALL_BEANINFO));
             } else {
-                info = (BeanInfo) AccessController.doPrivileged((PrivilegedExceptionAction) () -> Introspector.getBeanInfo(theClass));
+                info = (BeanInfo) VMPluginFactory.getPlugin().doPrivileged((PrivilegedExceptionAction) () -> Introspector.getBeanInfo(theClass));
             }
         } catch (PrivilegedActionException pae) {
             throw new GroovyRuntimeException("exception during bean introspection", pae.getException());

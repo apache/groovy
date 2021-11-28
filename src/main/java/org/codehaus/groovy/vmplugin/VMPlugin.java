@@ -29,6 +29,10 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -137,6 +141,26 @@ public interface VMPlugin {
      * @return the transformed meta method
      */
     MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?> caller);
+
+    /**
+     * Performs the specified PrivilegedAction with privileges enabled on platforms
+     * which support that capability, otherwise the action is performed ignoring privileges.
+     *
+     * @param action the action to be performed
+     * @param <T> the type of the value returned by the PrivilegedAction's run method
+     * @return the value returned by the action's run method
+     */
+    <T> T doPrivileged(PrivilegedAction<T> action);
+
+    /**
+     * Performs the specified PrivilegedExceptionAction with privileges enabled on platforms
+     * which support that capability, otherwise the action is performed ignoring privileges.
+     *
+     * @param action the action to be performed
+     * @param <T> the type of the value returned by the PrivilegedAction's run method
+     * @return the value returned by the action's run method
+     */
+    <T> T doPrivileged(PrivilegedExceptionAction<T> action) throws PrivilegedActionException;
 
     /**
      * transform meta method.

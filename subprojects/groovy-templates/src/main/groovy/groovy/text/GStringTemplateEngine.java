@@ -27,11 +27,11 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Writable;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -193,7 +193,7 @@ public class GStringTemplateEngine extends TemplateEngine {
             final GroovyClassLoader loader =
                     reuseClassLoader && parentLoader instanceof GroovyClassLoader
                             ? (GroovyClassLoader) parentLoader
-                            : AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader));
+                            : VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader));
             final Class groovyClass;
             try {
                 groovyClass = loader.parseClass(new GroovyCodeSource(templateExpressions.toString(), "GStringTemplateScript" + counter.incrementAndGet() + ".groovy", "x"));

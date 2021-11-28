@@ -35,6 +35,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,7 +44,6 @@ import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -101,7 +101,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
                     }
             );
         }
-        groovyClassLoader = AccessController.doPrivileged((PrivilegedAction<TemplateGroovyClassLoader>) () -> new TemplateGroovyClassLoader(parentLoader, compilerConfiguration));
+        groovyClassLoader = VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<TemplateGroovyClassLoader>) () -> new TemplateGroovyClassLoader(parentLoader, compilerConfiguration));
         if (DEBUG_BYTECODE) {
             compilerConfiguration.setBytecodePostprocessor(BytecodeDumper.STANDARD_ERR);
         }
@@ -116,7 +116,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
      * @param tplConfig         template engine configuration
      */
     public MarkupTemplateEngine(final ClassLoader parentLoader, final File templateDirectory, TemplateConfiguration tplConfig) {
-        this(AccessController.doPrivileged(
+        this(VMPluginFactory.getPlugin().doPrivileged(
                 new PrivilegedAction<URLClassLoader>() {
                     @Override
                     public URLClassLoader run() {

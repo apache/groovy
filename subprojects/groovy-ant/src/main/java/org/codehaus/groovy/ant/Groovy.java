@@ -46,6 +46,7 @@ import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.codehaus.groovy.tools.ErrorReporter;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -62,7 +63,6 @@ import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.nio.charset.Charset;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.Vector;
@@ -560,7 +560,7 @@ public class Groovy extends Java {
 
         final String scriptName = computeScriptName();
         final GroovyClassLoader classLoader =
-                AccessController.doPrivileged(
+                VMPluginFactory.getPlugin().doPrivileged(
                         (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(baseClassLoader));
         addClassPathes(classLoader);
         configureCompiler();

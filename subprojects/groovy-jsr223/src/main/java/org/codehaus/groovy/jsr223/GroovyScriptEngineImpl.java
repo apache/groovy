@@ -62,6 +62,7 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.MethodClosure;
 import org.codehaus.groovy.util.ManagedConcurrentValueMap;
 import org.codehaus.groovy.util.ReferenceBundle;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import javax.script.AbstractScriptEngine;
 import javax.script.Bindings;
@@ -79,7 +80,6 @@ import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 /**
@@ -109,7 +109,7 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
     }
 
     public GroovyScriptEngineImpl() {
-        this(AccessController.doPrivileged(new PrivilegedAction<GroovyClassLoader>() {
+        this(VMPluginFactory.getPlugin().doPrivileged(new PrivilegedAction<GroovyClassLoader>() {
             @Override
             public GroovyClassLoader run() {
                 return new GroovyClassLoader(getParentLoader(), new CompilerConfiguration(CompilerConfiguration.DEFAULT));

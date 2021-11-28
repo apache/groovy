@@ -19,13 +19,13 @@
 package org.codehaus.groovy.reflection;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,7 +46,7 @@ public class SunClassLoader extends ClassLoader {
     static {
         SunClassLoader res;
         try {
-            res = AccessController.doPrivileged((PrivilegedAction<SunClassLoader>) () -> {
+            res = VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<SunClassLoader>) () -> {
                 try {
                     return new SunClassLoader();
                 } catch (Throwable e) {

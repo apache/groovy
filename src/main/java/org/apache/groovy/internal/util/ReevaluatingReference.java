@@ -21,13 +21,13 @@ package org.apache.groovy.internal.util;
 
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
 import java.lang.ref.WeakReference;
-import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
@@ -41,7 +41,7 @@ public class ReevaluatingReference<T> {
     static {
         try {
             //TODO Jochen: move the findSpecial to a central place together with others to easy security configuration
-            FALLBACK_HANDLE = AccessController.doPrivileged((PrivilegedExceptionAction<MethodHandle>) () -> MethodHandles.lookup().findSpecial(
+            FALLBACK_HANDLE = VMPluginFactory.getPlugin().doPrivileged((PrivilegedExceptionAction<MethodHandle>) () -> MethodHandles.lookup().findSpecial(
                     ReevaluatingReference.class, "replacePayLoad",
                     MethodType.methodType(Object.class),
                     ReevaluatingReference.class));

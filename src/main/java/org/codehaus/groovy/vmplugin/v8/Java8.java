@@ -69,6 +69,8 @@ import java.lang.reflect.WildcardType;
 import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -619,6 +621,16 @@ public class Java8 implements VMPlugin {
         } catch (Throwable t) {
             return false;
         }
+    }
+
+    @Override
+    public <T> T doPrivileged(PrivilegedAction<T> action) {
+        return AccessController.doPrivileged(action);
+    }
+
+    @Override
+    public <T> T doPrivileged(PrivilegedExceptionAction<T> action) throws PrivilegedActionException {
+        return AccessController.doPrivileged(action);
     }
 
     @Override

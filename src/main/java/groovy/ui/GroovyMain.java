@@ -33,6 +33,7 @@ import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.codehaus.groovy.runtime.StackTraceUtils;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.IVersionProvider;
@@ -54,7 +55,6 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -527,7 +527,7 @@ public class GroovyMain {
             }
         }
 
-        AccessController.doPrivileged(new DoSetContext(shell.getClassLoader()));
+        VMPluginFactory.getPlugin().doPrivileged(new DoSetContext(shell.getClassLoader()));
     }
 
     /**

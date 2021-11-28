@@ -20,13 +20,13 @@ package org.codehaus.groovy.runtime.callsite;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.reflection.SunClassLoader;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 public class GroovySunClassLoader extends SunClassLoader {
@@ -34,7 +34,7 @@ public class GroovySunClassLoader extends SunClassLoader {
     public static final SunClassLoader sunVM;
 
     static {
-        sunVM = AccessController.doPrivileged((PrivilegedAction<SunClassLoader>) () -> {
+        sunVM = VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<SunClassLoader>) () -> {
             try {
                 if (SunClassLoader.sunVM != null) {
                     return new GroovySunClassLoader();

@@ -26,10 +26,10 @@ import groovy.transform.NamedParam;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.SimpleType;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import javax.sql.DataSource;
 
-import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.sql.CallableStatement;
@@ -4269,7 +4269,7 @@ public class Sql implements AutoCloseable {
             // read, and the policy shouldn't have to list them all.
             Connection con;
             try {
-                con = AccessController.doPrivileged(new PrivilegedExceptionAction<Connection>() {
+                con = VMPluginFactory.getPlugin().doPrivileged(new PrivilegedExceptionAction<Connection>() {
                     @Override
                     public Connection run() throws SQLException {
                         return dataSource.getConnection();

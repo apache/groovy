@@ -26,8 +26,8 @@ import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Reference;
 import org.codehaus.groovy.tools.LoaderConfiguration;
 import org.codehaus.groovy.tools.RootLoader;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 /**
@@ -88,7 +88,7 @@ public class RootLoaderRef extends MatchingTask {
             }
             lc.addFile(s);
         }
-        AntClassLoader loader = AccessController.doPrivileged((PrivilegedAction<AntClassLoader>) () -> new AntClassLoader(new RootLoader(lc), true));
+        AntClassLoader loader = VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<AntClassLoader>) () -> new AntClassLoader(new RootLoader(lc), true));
         project.addReference(name, loader);
     }
 

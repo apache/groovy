@@ -29,12 +29,12 @@ import junit.framework.TestResult;
 import junit.framework.TestSuite;
 import junit.textui.ResultPrinter;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.security.AccessControlException;
-import java.security.AccessController;
 import java.security.Permission;
 import java.security.Policy;
 import java.security.PrivilegedAction;
@@ -92,7 +92,7 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
     }
 
     protected GroovyClassLoader loader =
-            AccessController.doPrivileged(
+            VMPluginFactory.getPlugin().doPrivileged(
                     (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(SecurityTestSupport.class.getClassLoader())
             );
 
@@ -132,7 +132,7 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
             }
         }
         currentClassLoader = Thread.currentThread().getContextClassLoader();
-        AccessController.doPrivileged((PrivilegedAction) () -> {
+        VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction) () -> {
             Thread.currentThread().setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 @Override
                 public void uncaughtException(Thread t, Throwable e) {
@@ -145,7 +145,7 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
     }
 
     protected void tearDown() {
-        AccessController.doPrivileged((PrivilegedAction) () -> {
+        VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction) () -> {
             System.setSecurityManager(securityManager);
             Thread.currentThread().setContextClassLoader(currentClassLoader);
             return null;
@@ -271,7 +271,7 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
         // Use our privileged access in order to prevent checks lower in the call stack.  Otherwise we would have
         // to grant access to IDE unit test runners and unit test libs.  We only care about testing the call stack
         // higher upstream from this point of execution.
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+        VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<Void>) () -> {
             GroovyCodeSource gcs = null;
             try {
                 gcs = new GroovyCodeSource(file);
@@ -296,7 +296,7 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
         // Use our privileged access in order to prevent checks lower in the call stack.  Otherwise we would have
         // to grant access to IDE unit test runners and unit test libs.  We only care about testing the call stack
         // higher upstream from this point of execution.
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+        VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<Void>) () -> {
             parseAndExecute(new GroovyCodeSource(scriptStr, generateClassName(), effectiveCodeBase), missingPermission);
             return null;
         });
