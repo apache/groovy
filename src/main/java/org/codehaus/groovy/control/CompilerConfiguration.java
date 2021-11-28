@@ -305,6 +305,16 @@ public class CompilerConfiguration {
         public void setWarningLevel(final int level) {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public void setLogClassgen(boolean logClassgen) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setLogClassgenStackTraceMaxDepth(int logClassgenStackTraceMaxDepth) {
+            throw new UnsupportedOperationException();
+        }
     };
 
     /**

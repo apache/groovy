@@ -31,6 +31,8 @@ import java.util.Properties;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Make sure CompilerConfiguration works.
@@ -119,6 +121,8 @@ public final class CompilerConfigurationTest {
         init.addCompilationCustomizers(new ImportCustomizer().addStarImports("groovy.transform"));
         ParserPluginFactory pluginFactory = ParserPluginFactory.antlr4();
         init.setPluginFactory(pluginFactory);
+        init.setLogClassgen(true);
+        init.setLogClassgenStackTraceMaxDepth(100);
 
         assertEquals(WarningMessage.POSSIBLE_ERRORS, init.getWarningLevel());
         assertEquals(Boolean.TRUE, init.getDebug());
@@ -137,6 +141,8 @@ public final class CompilerConfigurationTest {
         assertEquals("somevalue", init.getJointCompilationOptions().get("somekey"));
         assertEquals(pluginFactory, init.getPluginFactory());
         assertEquals(1, init.getCompilationCustomizers().size());
+        assertTrue(init.isLogClassgen());
+        assertEquals(100, init.getLogClassgenStackTraceMaxDepth());
 
         //
 
@@ -157,6 +163,8 @@ public final class CompilerConfigurationTest {
         assertEquals(".jpp", config.getDefaultScriptExtension());
         assertEquals("somevalue", config.getJointCompilationOptions().get("somekey"));
         assertEquals(pluginFactory, config.getPluginFactory());
+        assertTrue(config.isLogClassgen());
+        assertEquals(100, config.getLogClassgenStackTraceMaxDepth());
         // TODO GROOVY-9585: re-enable below assertion once prod code is fixed
 //        assertEquals(1, config.getCompilationCustomizers().size());
     }
@@ -178,6 +186,11 @@ public final class CompilerConfigurationTest {
         init.setClasspath("");
         File targetDirectory = new File("A wandering path");
         init.setTargetDirectory(targetDirectory);
+        init.setLogClassgen(true);
+        init.setLogClassgenStackTraceMaxDepth(100);
+        ParserPluginFactory pluginFactory = ParserPluginFactory.antlr4();
+        init.setPluginFactory(pluginFactory);
+        init.setDefaultScriptExtension(".jpp");
 
         assertEquals(WarningMessage.POSSIBLE_ERRORS, init.getWarningLevel());
         assertEquals(Boolean.FALSE, init.getDebug());
@@ -191,6 +204,10 @@ public final class CompilerConfigurationTest {
         assertEquals(Boolean.FALSE, init.getRecompileGroovySource());
         assertEquals(Collections.emptyList(), init.getClasspath());
         assertEquals(targetDirectory, init.getTargetDirectory());
+        assertTrue(init.isLogClassgen());
+        assertEquals(100, init.getLogClassgenStackTraceMaxDepth());
+        assertEquals(pluginFactory, init.getPluginFactory());
+        assertEquals(".jpp", init.getDefaultScriptExtension());
 
         //
 
@@ -207,5 +224,69 @@ public final class CompilerConfigurationTest {
         assertEquals(Boolean.FALSE, config.getRecompileGroovySource());
         assertEquals(Collections.emptyList(), config.getClasspath());
         assertEquals(targetDirectory, config.getTargetDirectory());
+        assertTrue(config.isLogClassgen());
+        assertEquals(100, config.getLogClassgenStackTraceMaxDepth());
+        assertEquals(pluginFactory, config.getPluginFactory());
+        assertEquals(".jpp", config.getDefaultScriptExtension());
+    }
+
+    @Test
+    public void testModifyingDefaultConfiguration() {
+        CompilerConfiguration config = CompilerConfiguration.DEFAULT;
+
+        assertThrows(UnsupportedOperationException.class, () -> {
+            config.setWarningLevel(WarningMessage.POSSIBLE_ERRORS);
+        });
+        assertThrows(UnsupportedOperationException.class, () -> {
+            config.setDebug(false);
+        });
+        assertThrows(UnsupportedOperationException.class, () -> {
+            config.setParameters(false);
+        });
+        assertThrows(UnsupportedOperationException.class, () -> {
+            config.setVerbose(true);
+        });
+        assertThrows(UnsupportedOperationException.class, () -> {
+            config.setTolerance(55);
+        });
+        assertThrows(UnsupportedOperationException.class, () -> {
+            config.setMinimumRecompilationInterval(975);
+        });
+        assertThrows(UnsupportedOperationException.class, () -> {
+            config.setScriptBaseClass("");
+        });
+        assertThrows(UnsupportedOperationException.class, () -> {
+            config.setSourceEncoding("Gutenberg");
+        });
+        assertThrows(UnsupportedOperationException.class, () -> {
+            config.setTargetBytecode(CompilerConfiguration.JDK5);
+        });
+        assertThrows(UnsupportedOperationException.class, () -> {
+            config.setRecompileGroovySource(false);
+        });
+        assertThrows(UnsupportedOperationException.class, () -> {
+            config.setClasspath("");
+        });
+        assertThrows(UnsupportedOperationException.class, () -> {
+            File targetDirectory = new File("A wandering path");
+            config.setTargetDirectory(targetDirectory);
+        });
+        assertThrows(UnsupportedOperationException.class, () -> {
+            config.setLogClassgen(true);
+        });
+        assertThrows(UnsupportedOperationException.class, () -> {
+            config.setLogClassgenStackTraceMaxDepth(100);
+        });
+        assertThrows(UnsupportedOperationException.class, () -> {
+            ParserPluginFactory pluginFactory = ParserPluginFactory.antlr4();
+            config.setPluginFactory(pluginFactory);
+        });
+        assertThrows(UnsupportedOperationException.class, () -> {
+            config.setDefaultScriptExtension(".jpp");
+        });
+        assertThrows(UnsupportedOperationException.class, () -> {
+            ImportCustomizer ic = new ImportCustomizer();
+            config.addCompilationCustomizers(ic);
+        });
     }
 }
