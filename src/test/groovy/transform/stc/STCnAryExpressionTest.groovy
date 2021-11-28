@@ -172,6 +172,46 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6137, GROOVY-7473, GROOVY-10383
+    void testInOperatorShouldEvaluateOperandsOnce2() {
+        assertScript '''
+            import groovy.transform.Field
+
+            @Field int i = 0
+            @Field int j = 0
+            int getA() { i++ }
+            int getB() { j++ }
+
+            assert !(a !in b)
+            assert i == 1
+            assert j == 1
+        '''
+        assertScript '''
+            import groovy.transform.Field
+
+            @Field int i = 0
+            @Field int j = 0
+            def getA() { i++; null }
+            def getB() { j++ }
+
+            assert a !in b
+            assert i == 1
+            assert j == 1
+        '''
+        assertScript '''
+            import groovy.transform.Field
+
+            @Field int i = 0
+            @Field int j = 0
+            def getA() { i++ }
+            def getB() { j++; null }
+
+            assert a !in b
+            assert i == 1
+            assert j == 1
+        '''
+    }
+
     void testComparisonOperatorCheckWithIncompatibleTypesOkIfComparableNotImplemented() {
         shouldFailWithMessages '''
             [] < 1
