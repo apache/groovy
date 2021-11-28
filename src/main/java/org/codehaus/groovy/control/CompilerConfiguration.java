@@ -480,11 +480,17 @@ public class CompilerConfiguration {
         handleOptimizationOption(GROOVYDOC, getSystemPropertySafe("groovy.attach.groovydoc"));
         handleOptimizationOption(RUNTIME_GROOVYDOC, getSystemPropertySafe("groovy.attach.runtime.groovydoc"));
         handleOptimizationOption(PARALLEL_PARSE, getSystemPropertySafe("groovy.parallel.parse", "true"));
-        handleOptimizationOption(MEM_STUB, getSystemPropertySafe("groovy.mem.stub", "false"));
+
+        jointCompilationOptions = new HashMap<>(2);
+        handleJointCompilationOptions(MEM_STUB, getSystemPropertySafe("groovy.mem.stub", "false"));
     }
 
     private void handleOptimizationOption(String key, String val) {
         if (val != null) optimizationOptions.put(key, Boolean.valueOf(val));
+    }
+
+    private void handleJointCompilationOptions(String key, String val) {
+        if (val != null) jointCompilationOptions.put(key, Boolean.valueOf(val));
     }
 
     /**
@@ -520,18 +526,16 @@ public class CompilerConfiguration {
         setLogClassgenStackTraceMaxDepth(configuration.getLogClassgenStackTraceMaxDepth());
         setDefaultScriptExtension(configuration.getDefaultScriptExtension());
         setSourceEncoding(configuration.getSourceEncoding());
-        Map<String, Object> jointCompilationOptions = configuration.getJointCompilationOptions();
-        if (jointCompilationOptions != null) {
-            jointCompilationOptions = new HashMap<>(jointCompilationOptions);
-        }
-        // TODO GROOVY-9585: add line below once gradle build issues fixed
-//        compilationCustomizers.addAll(configuration.getCompilationCustomizers());
-        setJointCompilationOptions(jointCompilationOptions);
+
+        setJointCompilationOptions(new HashMap<>(configuration.getJointCompilationOptions()));
         setPluginFactory(configuration.getPluginFactory());
         setDisabledGlobalASTTransformations(configuration.getDisabledGlobalASTTransformations());
         setScriptExtensions(new LinkedHashSet<>(configuration.getScriptExtensions()));
         setOptimizationOptions(new HashMap<>(configuration.getOptimizationOptions()));
         setBytecodePostprocessor(configuration.getBytecodePostprocessor());
+
+        // TODO GROOVY-9585: add line below once gradle build issues fixed
+//        compilationCustomizers.addAll(configuration.getCompilationCustomizers());
     }
 
     /**

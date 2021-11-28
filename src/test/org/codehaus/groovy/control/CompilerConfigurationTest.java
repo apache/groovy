@@ -66,7 +66,7 @@ public final class CompilerConfigurationTest {
         assertEquals(Boolean.FALSE, config.getRecompileGroovySource());
         assertEquals(Collections.emptyList(), config.getClasspath());
         assertEquals(".groovy", config.getDefaultScriptExtension());
-        assertNull(config.getJointCompilationOptions());
+        assertNotNull(config.getJointCompilationOptions());
         assertNotNull(config.getPluginFactory());
         assertNull(config.getScriptBaseClass());
         assertNull(config.getTargetDirectory());
@@ -94,7 +94,7 @@ public final class CompilerConfigurationTest {
         assertEquals(Boolean.FALSE, config.getRecompileGroovySource());
         assertEquals(Collections.emptyList(), config.getClasspath());
         assertEquals(".groovy", config.getDefaultScriptExtension());
-        assertNull(config.getJointCompilationOptions());
+        assertNotNull(config.getJointCompilationOptions());
         assertNotNull(config.getPluginFactory());
         assertNull(config.getScriptBaseClass());
         assertNull(config.getTargetDirectory());
