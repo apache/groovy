@@ -18,15 +18,16 @@
  */
 package bugs.groovy9802
 
-import groovy.test.GroovyTestCase
+
 import groovy.transform.CompileStatic
 import org.junit.Test
 
+import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.isAtLeastJdk
 import static org.junit.Assume.assumeTrue
 
 @CompileStatic
-final class Groovy9802 extends GroovyTestCase {
+final class Groovy9802 {
     @Test
     void test() {
         assumeTrue(isAtLeastJdk('11.0'))
