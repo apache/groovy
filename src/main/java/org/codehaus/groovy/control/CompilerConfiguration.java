@@ -481,16 +481,15 @@ public class CompilerConfiguration {
         handleOptimizationOption(RUNTIME_GROOVYDOC, getSystemPropertySafe("groovy.attach.runtime.groovydoc"));
         handleOptimizationOption(PARALLEL_PARSE, getSystemPropertySafe("groovy.parallel.parse", "true"));
 
-        jointCompilationOptions = new HashMap<>(2);
-        handleJointCompilationOptions(MEM_STUB, getSystemPropertySafe("groovy.mem.stub", "false"));
+        boolean memStubEnabled = Boolean.parseBoolean(getSystemPropertySafe("groovy.mem.stub", "false"));
+        if (memStubEnabled) {
+            jointCompilationOptions = new HashMap<>(2);
+            jointCompilationOptions.put(MEM_STUB, memStubEnabled);
+        }
     }
 
     private void handleOptimizationOption(String key, String val) {
         if (val != null) optimizationOptions.put(key, Boolean.valueOf(val));
-    }
-
-    private void handleJointCompilationOptions(String key, String val) {
-        if (val != null) jointCompilationOptions.put(key, Boolean.valueOf(val));
     }
 
     /**
@@ -526,13 +525,14 @@ public class CompilerConfiguration {
         setLogClassgenStackTraceMaxDepth(configuration.getLogClassgenStackTraceMaxDepth());
         setDefaultScriptExtension(configuration.getDefaultScriptExtension());
         setSourceEncoding(configuration.getSourceEncoding());
-
-        setJointCompilationOptions(new HashMap<>(configuration.getJointCompilationOptions()));
         setPluginFactory(configuration.getPluginFactory());
         setDisabledGlobalASTTransformations(configuration.getDisabledGlobalASTTransformations());
         setScriptExtensions(new LinkedHashSet<>(configuration.getScriptExtensions()));
         setOptimizationOptions(new HashMap<>(configuration.getOptimizationOptions()));
         setBytecodePostprocessor(configuration.getBytecodePostprocessor());
+
+        Map<String, Object> jointCompilationOptions = configuration.getJointCompilationOptions();
+        setJointCompilationOptions(null != jointCompilationOptions ? new HashMap<>(jointCompilationOptions) : jointCompilationOptions);
 
         // TODO GROOVY-9585: add line below once gradle build issues fixed
 //        compilationCustomizers.addAll(configuration.getCompilationCustomizers());
