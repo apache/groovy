@@ -287,6 +287,24 @@ public class BinaryExpressionTransformer {
         Expression leftExpression = bin.getLeftExpression(), rightExpression = bin.getRightExpression();
         ClassNode leftType = findType(leftExpression), rightType = findType(rightExpression);
 
+        // same-type primitive compare
+        if (leftType.equals(rightType)
+                && ClassHelper.isPrimitiveType(leftType)
+                || ClassHelper.isPrimitiveType(rightType)) {
+            ClassNode wrapperType = ClassHelper.getWrapper(leftType);
+            Expression leftAndRight = args(
+                staticCompilationTransformer.transform(leftExpression),
+                staticCompilationTransformer.transform(rightExpression)
+            );
+            // transform "a <=> b" into "[Integer|Long|Short|Byte|Double|Float|...].compare(a,b)"
+            MethodCallExpression call = callX(classX(wrapperType), "compare", leftAndRight);
+            call.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, ClassHelper.int_TYPE);
+            call.setMethodTarget(wrapperType.getMethods("compare").get(0));
+            call.setImplicitThis(false);
+            call.setSourcePosition(bin);
+            return call;
+        }
+
         if (leftType.implementsInterface(ClassHelper.COMPARABLE_TYPE)
                 && rightType.implementsInterface(ClassHelper.COMPARABLE_TYPE)) {
             // GROOVY-5644, GROOVY-6137, GROOVY-7473, GROOVY-10394: null safety and one-time evaluation

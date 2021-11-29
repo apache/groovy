@@ -21,9 +21,22 @@ package org.codehaus.groovy.classgen.asm.sc
 import groovy.transform.stc.STCnAryExpressionTest
 
 /**
- * Unit tests for static type checking : n-ary ops.
+ * Unit tests for static type checking : n-ary operators
  */
 class NaryExpressionTestStaticCompileTest extends STCnAryExpressionTest implements StaticCompilationTestSupport {
 
+    // GROOVY-10395
+    void testUfoOperatorShouldRedirectForPrimitives() {
+        assertScript '''
+            int test(boolean a, boolean b) {
+                a <=> b
+            }
+            assert test(false,false) == 0
+            assert test(false,true) < 0
+            assert test(true,false) > 0
+            assert test(true,true) == 0
+        '''
+        String out = astTrees.values()[0][1]
+        assert out.contains('INVOKESTATIC java/lang/Boolean.compare')
+    }
 }
-
