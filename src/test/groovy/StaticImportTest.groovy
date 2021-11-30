@@ -176,7 +176,7 @@ final class StaticImportTest extends groovy.test.GroovyTestCase {
                 class Foo {
                     static x = 'foo'
                     static getX() { x + '_get' }
-                    static void setX(newx) { x = newx + '_set' } 
+                    static void setX(newx) { x = newx + '_set' }
                 }
                 assert x == 'foo_get'
                 x = 'bar'
@@ -522,6 +522,56 @@ final class StaticImportTest extends groovy.test.GroovyTestCase {
         assert err =~ /Apparent variable 'c' was found in a static scope but doesn't refer to a local variable, static field or class/
     }
 
+    // GROOVY-10396
+    void testStaticImportVersusThisOrSuperMethod1() {
+        assertScript '''
+            import static groovy.Extension10396.*
+
+            static void test() {
+                println 'x'
+            }
+            strings.clear()
+            test()
+
+            assert 'x' in strings
+        '''
+    }
+
+    // GROOVY-10396
+    void testStaticImportVersusThisOrSuperMethod2() {
+        assertScript '''
+            import static groovy.Extension10396.*
+
+            def obj = new Object() { // outer class extends Script
+                String toString() {
+                    println 'AIC::x'
+                    super.toString()
+                }
+            }
+            strings.clear()
+            obj.toString()
+
+            assert 'x' !in strings
+        '''
+    }
+
+    // GROOVY-10396
+    void testStaticImportVersusThisOrSuperMethod3() {
+        assertScript '''
+            import static groovy.Extension10396.*
+
+            static void println(String s) { // static overload
+            }
+            static void test() {
+                println 'x'
+            }
+            strings.clear()
+            test()
+
+            assert 'x' !in strings
+        '''
+    }
+
     void testStaticStarImportOfStaticInnerClass() {
         assert Inner1.class.name == 'groovy.Outer1$Inner1'
     }
@@ -640,5 +690,12 @@ class HolderWrapper {
 
     void setProperty(String name, Object value) {
         holder[name] = value
+    }
+}
+
+class Extension10396 {
+    static final List<String> strings = []
+    static void println(String s) {
+        strings << s
     }
 }

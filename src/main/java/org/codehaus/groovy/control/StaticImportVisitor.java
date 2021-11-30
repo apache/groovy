@@ -245,17 +245,20 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         Expression method = transform(mce.getMethod());
         Expression args = transform(mce.getArguments());
 
+        // GROOVY-10396: skip the instance method checks when the context is static with-respect-to current class
+        boolean staticWrtCurrent = inSpecialConstructorCall || currentMethod != null && currentMethod.isStatic();
+
         if (mce.isImplicitThis()) {
             String name = mce.getMethodAsString();
-            if (currentClass.tryFindPossibleMethod(name, args) == null
-                    && currentClass.getOuterClasses().stream().noneMatch(oc -> oc.tryFindPossibleMethod(name, args) != null)) {
+            boolean thisOrSuperMethod = staticWrtCurrent ? hasPossibleStaticMethod(currentClass, name, args, true) : currentClass.tryFindPossibleMethod(name, args) != null;
+            if (!thisOrSuperMethod && currentClass.getOuterClasses().stream().noneMatch(oc -> oc.tryFindPossibleMethod(name, args) != null)) {
                 Expression result = findStaticMethodImportFromModule(method, args);
                 if (result != null) {
                     setSourcePosition(result, mce);
                     return result;
                 }
             }
-        } else if (currentMethod != null && currentMethod.isStatic() && isSuperExpression(object)) {
+        } else if (staticWrtCurrent && isSuperExpression(object)) {
             Expression result = new MethodCallExpression(new ClassExpression(currentClass.getSuperClass()), method, args);
             result.setSourcePosition(mce);
             return result;
@@ -264,7 +267,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (method instanceof ConstantExpression && ((ConstantExpression) method).getValue() instanceof String && (mce.isImplicitThis() || isThisOrSuper(object))) {
             String methodName = (String) ((ConstantExpression) method).getValue();
 
-            boolean foundInstanceMethod = (currentMethod != null && !currentMethod.isStatic() && currentClass.hasPossibleMethod(methodName, args));
+            boolean foundInstanceMethod = !staticWrtCurrent && currentClass.hasPossibleMethod(methodName, args);
 
             Predicate<ClassNode> hasPossibleStaticMember = cn -> {
                 if (hasPossibleStaticMethod(cn, methodName, args, true)) {
