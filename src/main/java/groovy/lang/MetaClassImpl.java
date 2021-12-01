@@ -355,26 +355,27 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return isGroovyObject;
     }
 
-    /**
-     * Fills the method index
-     */
     private void fillMethodIndex() {
         mainClassMethodHeader = metaMethodIndex.getHeader(theClass);
-        LinkedList<CachedClass> superClasses = getSuperClasses();
-        CachedClass firstGroovySuper = calcFirstGroovySuperClass(superClasses);
 
-        Set<CachedClass> interfaces = theCachedClass.getInterfaces();
-        addInterfaceMethods(interfaces);
+        Set<CachedClass> interfaces    = theCachedClass.getInterfaces();
+        List<CachedClass> superClasses = getSuperClasses(); // in reverse order
+        CachedClass firstGroovySuper   = calcFirstGroovySuperClass(superClasses);
+
+        for (CachedClass c : interfaces) {
+            for (CachedMethod m : c.getMethods()) {
+                addMetaMethodToIndex(m, mainClassMethodHeader);
+            }
+        }
 
         populateMethods(superClasses, firstGroovySuper);
 
         inheritInterfaceNewMetaMethods(interfaces);
-        if (isGroovyObject) {
-            metaMethodIndex.copyMethodsToSuper();
 
+        if (isGroovyObject) {
+            metaMethodIndex.copyMethodsToSuper(); // methods --> methodsForSuper
             connectMultimethods(superClasses, firstGroovySuper);
             removeMultimethodsOverloadedWithPrivateMethods();
-
             replaceWithMOPCalls(theCachedClass.mopMethods);
         }
     }
@@ -435,20 +436,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return myNewMetaMethods;
     }
 
-    private void addInterfaceMethods(final Set<CachedClass> interfaces) {
-        MetaMethodIndex.Header header = metaMethodIndex.getHeader(theClass);
-        for (CachedClass c : interfaces) {
-            for (CachedMethod m : c.getMethods()) {
-                addMetaMethodToIndex(m, header);
-            }
-        }
-    }
-
     protected LinkedList<CachedClass> getSuperClasses() {
         LinkedList<CachedClass> superClasses = new LinkedList<>();
 
         if (theClass.isInterface()) {
-            superClasses.addFirst(ReflectionCache.OBJECT_CLASS);
+            superClasses.add(ReflectionCache.OBJECT_CLASS);
         } else {
             for (CachedClass c = theCachedClass; c != null; c = c.getCachedSuperClass()) {
                 superClasses.addFirst(c);
@@ -511,66 +503,55 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private void replaceWithMOPCalls(final CachedMethod[] mopMethods) {
-        // no MOP methods if not a child of GroovyObject
-        if (!isGroovyObject) return;
+        if (mopMethods == null || mopMethods.length == 0) return;
 
         class MOPIter extends MethodIndexAction {
             boolean useThis;
 
             @Override
             public void methodNameAction(final Class<?> clazz, final MetaMethodIndex.Entry e) {
-                if (useThis) {
-                    if (e.methods == null)
-                        return;
-
-                    if (e.methods instanceof FastArray) {
-                        FastArray methods = (FastArray) e.methods;
-                        processFastArray(methods);
-                    } else {
-                        MetaMethod method = (MetaMethod) e.methods;
-                        if (method instanceof NewMetaMethod)
-                            return;
-                        if (useThis ^ Modifier.isPrivate(method.getModifiers())) return;
-                        String mopName = method.getMopName();
-                        int index = Arrays.binarySearch(mopMethods, mopName, CachedClass.CachedMethodComparatorWithString.INSTANCE);
-                        if (index >= 0) {
-                            int matchingMethod = findMatchingMethod(method, mopName, index, mopMethods);
-                            if (matchingMethod != -1) {
-                                e.methods = mopMethods[matchingMethod];
-                            }
+                Object arrayOrMethod = (useThis ? e.methods : e.methodsForSuper);
+                if (arrayOrMethod instanceof FastArray) {
+                    FastArray methods = (FastArray) arrayOrMethod;
+                    for (int i = 0, n = methods.size(); i < n; i += 1) {
+                        int matchingMethod = mopArrayIndex((MetaMethod) methods.get(i));
+                        if (matchingMethod >= 0) {
+                            methods.set(i, mopMethods[matchingMethod]);
                         }
                     }
-                } else {
-                    if (e.methodsForSuper == null)
-                        return;
-
-                    if (e.methodsForSuper instanceof FastArray) {
-                        FastArray methods = (FastArray) e.methodsForSuper;
-                        processFastArray(methods);
-                    } else {
-                        MetaMethod method = (MetaMethod) e.methodsForSuper;
-                        if (method instanceof NewMetaMethod)
-                            return;
-                        if (useThis ^ Modifier.isPrivate(method.getModifiers())) return;
-                        String mopName = method.getMopName();
-                        // GROOVY-4922: Due to a numbering scheme change, we must find the super$X$method which exists
-                        // with the highest number. If we don't, no method may be found, leading to a stack overflow
-                        String[] decomposedMopName = decomposeMopName(mopName);
-                        int distance = Integer.parseInt(decomposedMopName[1]);
-                        while (distance > 0) {
-                            String fixedMopName = decomposedMopName[0] + distance + decomposedMopName[2];
-                            int index = Arrays.binarySearch(mopMethods, fixedMopName, CachedClass.CachedMethodComparatorWithString.INSTANCE);
-                            if (index >= 0) {
-                                int matchingMethod = findMatchingMethod(method, fixedMopName, index, mopMethods);
-                                if (matchingMethod != -1) {
-                                    e.methodsForSuper = mopMethods[matchingMethod];
-                                    distance = 0;
-                                }
-                            }
-                            distance -= 1;
-                        }
+                } else if (arrayOrMethod != null) {
+                    int matchingMethod = mopArrayIndex((MetaMethod) arrayOrMethod);
+                    if (matchingMethod >= 0) {
+                        if (useThis) e.methods = mopMethods[matchingMethod];
+                        else e.methodsForSuper = mopMethods[matchingMethod];
                     }
                 }
+            }
+
+            private int mopArrayIndex(final MetaMethod method) {
+                if (method instanceof NewMetaMethod) return -1;
+                if (useThis ^ Modifier.isPrivate(method.getModifiers())) return -1;
+
+                String mopName = method.getMopName();
+                if (useThis) {
+                    return mopArrayIndex(method, mopName);
+                }
+                // GROOVY-4922: Due to a numbering scheme change, find the super$number$methodName with
+                // the highest value. If we don't, no method may be found, leading to a stack overflow!
+                String[] tokens = decomposeMopName(mopName);
+                int distance = Integer.parseInt(tokens[1]);
+                while (distance > 0) {
+                    mopName = tokens[0] + distance + tokens[2];
+                    int index = mopArrayIndex(method, mopName);
+                    if (index >= 0) return index;
+                    distance -= 1;
+                }
+                return -1;
+            }
+
+            private int mopArrayIndex(final MetaMethod method, final String mopName) {
+                int index = Arrays.binarySearch(mopMethods, mopName, CachedClass.CachedMethodComparatorWithString.INSTANCE);
+                return index < 0 ? -1 : findMatchingMethod(method, mopName, index, mopMethods);
             }
 
             private String[] decomposeMopName(final String mopName) {
@@ -586,25 +567,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     }
                 }
                 return new String[]{"", "0", mopName};
-            }
-
-            private void processFastArray(final FastArray methods) {
-                final int len = methods.size();
-                final Object[] data = methods.getArray();
-                for (int i = 0; i != len; i += 1) {
-                    MetaMethod method = (MetaMethod) data[i];
-                    if (method instanceof NewMetaMethod) continue;
-                    boolean isPrivate = Modifier.isPrivate(method.getModifiers());
-                    if (useThis ^ isPrivate) continue;
-                    String mopName = method.getMopName();
-                    int index = Arrays.binarySearch(mopMethods, mopName, CachedClass.CachedMethodComparatorWithString.INSTANCE);
-                    if (index >= 0) {
-                        int matchingMethod = findMatchingMethod(method, mopName, index, mopMethods);
-                        if (matchingMethod != -1) {
-                            methods.set(i, mopMethods[matchingMethod]);
-                        }
-                    }
-                }
             }
         }
         MOPIter iter = new MOPIter();
@@ -1532,14 +1494,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return isCallToSuper ? getSuperMethodWithCaching(arguments, e) : getNormalMethodWithCaching(arguments, e);
     }
 
-    private static boolean sameClasses(Class[] params, Class[] arguments) {
+    private static boolean sameClasses(final Class[] params, final Class[] arguments) {
         // we do here a null check because the params field might not have been set yet
-        if (params == null) return false;
-
-        if (params.length != arguments.length)
+        if (params == null || params.length != arguments.length)
             return false;
 
-        for (int i = params.length - 1; i >= 0; i--) {
+        for (int i = params.length - 1; i >= 0; i -= 1) {
             Object arg = arguments[i];
             if (arg != null) {
                 if (params[i] != arguments[i]) return false;
@@ -1552,70 +1512,56 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     // This method should be called by CallSite only
-    private MetaMethod getMethodWithCachingInternal(Class sender, CallSite site, Class[] params) {
+    private MetaMethod getMethodWithCachingInternal(final Class sender, final CallSite site, final Class<?>[] params) {
         if (GroovyCategorySupport.hasCategoryInCurrentThread())
             return getMethodWithoutCaching(sender, site.getName(), params, false);
 
-        final MetaMethodIndex.Entry e = metaMethodIndex.getMethods(sender, site.getName());
-        if (e == null) {
-            return null;
-        }
-
-        MetaMethodIndex.CacheEntry cacheEntry;
-        final Object methods = e.methods;
-        if (methods == null)
+        MetaMethodIndex.Entry e = metaMethodIndex.getMethods(sender, site.getName());
+        if (e == null || e.methods == null)
             return null;
 
-        cacheEntry = e.cachedMethod;
+        MetaMethodIndex.CacheEntry cacheEntry = e.cachedMethod;
         if (cacheEntry != null && (sameClasses(cacheEntry.params, params))) {
             return cacheEntry.method;
         }
 
-        cacheEntry = new MetaMethodIndex.CacheEntry(params, (MetaMethod) chooseMethod(e.name, methods, params));
-        e.cachedMethod = cacheEntry;
+        cacheEntry = e.cachedMethod = new MetaMethodIndex.CacheEntry(params, (MetaMethod) chooseMethod(e.name, e.methods, params));
+
         return cacheEntry.method;
     }
 
-    private MetaMethod getSuperMethodWithCaching(Object[] arguments, MetaMethodIndex.Entry e) {
-        MetaMethodIndex.CacheEntry cacheEntry;
+    private MetaMethod getSuperMethodWithCaching(final Object[] arguments, final MetaMethodIndex.Entry e) {theClass.getSuperclass();
         if (e.methodsForSuper == null)
             return null;
 
-        cacheEntry = e.cachedMethodForSuper;
+        MetaMethodIndex.CacheEntry cacheEntry = e.cachedMethodForSuper;
 
-        if (cacheEntry != null &&
-                MetaClassHelper.sameClasses(cacheEntry.params, arguments, e.methodsForSuper instanceof MetaMethod)) {
-            MetaMethod method = cacheEntry.method;
-            if (method != null) return method;
+        if (cacheEntry != null && cacheEntry.method != null
+                && MetaClassHelper.sameClasses(cacheEntry.params, arguments, e.methodsForSuper instanceof MetaMethod)) {
+            return cacheEntry.method;
         }
 
-        final Class[] classes = MetaClassHelper.convertToTypeArray(arguments);
-        MetaMethod method = (MetaMethod) chooseMethod(e.name, e.methodsForSuper, classes);
-        cacheEntry = new MetaMethodIndex.CacheEntry(classes, method.isAbstract() ? null : method);
-
-        e.cachedMethodForSuper = cacheEntry;
+        Class<?>[] types = MetaClassHelper.convertToTypeArray(arguments);
+        MetaMethod method = (MetaMethod) chooseMethod(e.name, e.methodsForSuper, types);
+        cacheEntry = e.cachedMethodForSuper = new MetaMethodIndex.CacheEntry(types, method.isAbstract() ? null : method);
 
         return cacheEntry.method;
     }
 
-    private MetaMethod getNormalMethodWithCaching(Object[] arguments, MetaMethodIndex.Entry e) {
-        MetaMethodIndex.CacheEntry cacheEntry;
-        final Object methods = e.methods;
-        if (methods == null)
+    private MetaMethod getNormalMethodWithCaching(final Object[] arguments, final MetaMethodIndex.Entry e) {
+        if (e.methods == null)
             return null;
 
-        cacheEntry = e.cachedMethod;
+        MetaMethodIndex.CacheEntry cacheEntry = e.cachedMethod;
 
-        if (cacheEntry != null &&
-                MetaClassHelper.sameClasses(cacheEntry.params, arguments, methods instanceof MetaMethod)) {
-            MetaMethod method = cacheEntry.method;
-            if (method != null) return method;
+        if (cacheEntry != null && cacheEntry.method != null
+                && MetaClassHelper.sameClasses(cacheEntry.params, arguments, e.methods instanceof MetaMethod)) {
+            return cacheEntry.method;
         }
 
-        final Class[] classes = MetaClassHelper.convertToTypeArray(arguments);
-        cacheEntry = new MetaMethodIndex.CacheEntry(classes, (MetaMethod) chooseMethod(e.name, methods, classes));
-
-        e.cachedMethod = cacheEntry;
+        Class<?>[] types = MetaClassHelper.convertToTypeArray(arguments);
+        MetaMethod method = (MetaMethod) chooseMethod(e.name, e.methods, types);
+        cacheEntry = e.cachedMethod = new MetaMethodIndex.CacheEntry(types, method);
 
         return cacheEntry.method;
     }

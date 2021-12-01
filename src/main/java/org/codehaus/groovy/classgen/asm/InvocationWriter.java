@@ -124,6 +124,16 @@ public class InvocationWriter {
         makeCall(origin, new ClassExpression(sender), receiver, message, arguments, adapter, safe, spreadSafe, implicitThis);
     }
 
+    protected void makeCall(final Expression origin, final ClassExpression sender, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
+        boolean containsSpreadExpression = AsmClassGenerator.containsSpreadExpression(arguments);
+        // direct invocation path
+        if (!makeDirectCall(origin, receiver, message, arguments, adapter, implicitThis, containsSpreadExpression))
+            // call site or indy path
+            if (!makeCachedCall(origin, sender, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis, containsSpreadExpression))
+                // ScriptBytecodeAdapter path
+                makeUncachedCall(origin, sender, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis, containsSpreadExpression);
+    }
+
     protected boolean writeDirectMethodCall(final MethodNode target, final boolean implicitThis, final Expression receiver, final TupleExpression args) {
         if (target == null) return false;
         ClassNode declaringClass = target.getDeclaringClass();
@@ -279,33 +289,27 @@ public class InvocationWriter {
 
     protected boolean makeDirectCall(Expression origin, Expression receiver, Expression message, Expression arguments, MethodCallerMultiAdapter adapter, boolean implicitThis, boolean containsSpreadExpression) {
         if (makeClassForNameCall(origin, receiver, message, arguments)) return true;
-
-        // optimization path
-        boolean fittingAdapter = adapter == invokeMethodOnCurrent || adapter == invokeStaticMethod;
-        if (fittingAdapter && controller.optimizeForInt && controller.isFastPath()) {
+        if (controller.optimizeForInt && controller.isFastPath() // optimization path
+                && adapter == invokeMethodOnCurrent || adapter == invokeStaticMethod) {
             String methodName = getMethodName(message);
             if (methodName != null) {
-                TupleExpression args;
-                if (arguments instanceof TupleExpression) {
-                    args = (TupleExpression) arguments;
-                } else {
-                    args = new TupleExpression(receiver);
+                OptimizingStatementWriter.StatementMeta meta = origin.getNodeMetaData(OptimizingStatementWriter.StatementMeta.class);
+                if (meta != null && meta.target != null) {
+                    TupleExpression args;
+                    if (arguments instanceof TupleExpression) {
+                        args = (TupleExpression) arguments;
+                    } else {
+                        args = new TupleExpression(receiver);
+                    }
+                    if (writeDirectMethodCall(meta.target, true, null, args)) return true;
                 }
-
-                OptimizingStatementWriter.StatementMeta meta = null;
-                if (origin != null) meta = origin.getNodeMetaData(OptimizingStatementWriter.StatementMeta.class);
-                MethodNode mn = null;
-                if (meta != null) mn = meta.target;
-
-                if (writeDirectMethodCall(mn, true, null, args)) return true;
             }
         }
-
         if (containsSpreadExpression) return false;
         if (origin instanceof MethodCallExpression) {
             MethodCallExpression mce = (MethodCallExpression) origin;
-            MethodNode target = mce.getMethodTarget();
-            return writeDirectMethodCall(target, implicitThis, receiver, makeArgumentList(arguments));
+            if (mce.getMethodTarget() != null)
+                return writeDirectMethodCall(mce.getMethodTarget(), implicitThis, receiver, makeArgumentList(arguments));
         }
         return false;
     }
@@ -323,8 +327,8 @@ public class InvocationWriter {
     }
 
     protected void makeUncachedCall(Expression origin, ClassExpression sender, Expression receiver, Expression message, Expression arguments, MethodCallerMultiAdapter adapter, boolean safe, boolean spreadSafe, boolean implicitThis, boolean containsSpreadExpression) {
-        OperandStack operandStack = controller.getOperandStack();
         CompileStack compileStack = controller.getCompileStack();
+        OperandStack operandStack = controller.getOperandStack();
         AsmClassGenerator acg = controller.getAcg();
 
         // ensure VariableArguments are read, not stored
@@ -339,7 +343,7 @@ public class InvocationWriter {
 
         String methodName = getMethodName(message);
         if (adapter == invokeMethodOnSuper && methodName != null) {
-            controller.getSuperMethodNames().add(methodName);
+            controller.getSuperMethodNames().add(methodName); // for MOP method
         }
 
         // receiver
@@ -381,19 +385,6 @@ public class InvocationWriter {
 
         compileStack.popLHS();
         operandStack.replace(ClassHelper.OBJECT_TYPE, operandsToRemove);
-    }
-
-    protected void makeCall(Expression origin, ClassExpression sender, Expression receiver, Expression message, Expression arguments, MethodCallerMultiAdapter adapter, boolean safe, boolean spreadSafe, boolean implicitThis) {
-        // direct method call paths
-        boolean containsSpreadExpression = AsmClassGenerator.containsSpreadExpression(arguments);
-
-        if (makeDirectCall(origin, receiver, message, arguments, adapter, implicitThis, containsSpreadExpression)) return;
-
-        // normal path
-        if (makeCachedCall(origin, sender, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis, containsSpreadExpression)) return;
-
-        // path through ScriptBytecodeAdapter
-        makeUncachedCall(origin, sender, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis, containsSpreadExpression);
     }
 
     /**
@@ -445,24 +436,23 @@ public class InvocationWriter {
 
     public void writeInvokeMethod(MethodCallExpression call) {
         if (isClosureCall(call)) {
-            // let's invoke the closure method
             invokeClosure(call.getArguments(), call.getMethodAsString());
         } else {
             if (isFunctionInterfaceCall(call)) {
                 call = transformToRealMethodCall(call);
             }
+            Expression receiver = call.getObjectExpression();
             MethodCallerMultiAdapter adapter = invokeMethod;
-            Expression objectExpression = call.getObjectExpression();
-            if (isSuperExpression(objectExpression)) {
+            if (isSuperExpression(receiver)) {
                 adapter = invokeMethodOnSuper;
-            } else if (isThisExpression(objectExpression)) {
+            } else if (isThisExpression(receiver)) {
                 adapter = invokeMethodOnCurrent;
             }
             if (isStaticInvocation(call)) {
                 adapter = invokeStaticMethod;
             }
             Expression messageName = new CastExpression(ClassHelper.STRING_TYPE, call.getMethod());
-            makeCall(call, objectExpression, messageName, call.getArguments(), adapter, call.isSafe(), call.isSpreadSafe(), call.isImplicitThis());
+            makeCall(call, receiver, messageName, call.getArguments(), adapter, call.isSafe(), call.isSpreadSafe(), call.isImplicitThis());
         }
     }
 
