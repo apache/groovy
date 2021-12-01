@@ -191,6 +191,14 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj != null && obj.getClass().getName().equals("org.codehaus.groovy.ast.decompiled.LazyFieldNode")) {
+            return obj.equals(this);
+        }
+        return super.equals(obj);
+    }
+
+    @Override
     public ClassNode getOriginType() {
         return originType;
     }

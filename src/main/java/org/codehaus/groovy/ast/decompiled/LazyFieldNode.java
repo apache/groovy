@@ -396,6 +396,7 @@ class LazyFieldNode extends FieldNode implements LazyInitializable {
 
     @Override
     public boolean equals(Object obj) {
+        if (obj == this) return true;
         lazyInit();
         return delegate.equals(obj);
     }
