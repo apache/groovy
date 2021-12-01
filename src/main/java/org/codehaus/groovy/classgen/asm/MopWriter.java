@@ -32,8 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toSet;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveDouble;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
@@ -42,10 +42,10 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 import static org.objectweb.asm.Opcodes.ALOAD;
-import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 
 public class MopWriter {
+
     @FunctionalInterface
     public interface Factory {
         MopWriter create(WriterController controller);
@@ -58,7 +58,7 @@ public class MopWriter {
         final String name;
         final Parameter[] params;
 
-        MopKey(String name, Parameter[] params) {
+        MopKey(final String name, final Parameter[] params) {
             this.name = name;
             this.params = params;
             hash = name.hashCode() << 2 + params.length;
@@ -70,7 +70,7 @@ public class MopWriter {
         }
 
         @Override
-        public boolean equals(Object obj) {
+        public boolean equals(final Object obj) {
             if (!(obj instanceof MopKey)) {
                 return false;
             }
@@ -83,19 +83,17 @@ public class MopWriter {
 
     private final WriterController controller;
 
-    public MopWriter(WriterController controller) {
+    public MopWriter(final WriterController controller) {
         this.controller = Objects.requireNonNull(controller);
     }
 
     public void createMopMethods() {
         ClassNode classNode = controller.getClassNode();
-        if (ClassHelper.isGeneratedFunction(classNode)) {
-            return;
+        if (!ClassHelper.isGeneratedFunction(classNode)) {
+            visitMopMethodList(classNode.getMethods(), true, Collections.emptySet(), Collections.emptyList());
+            visitMopMethodList(classNode.getSuperClass().getAllDeclaredMethods(), false, classNode.getMethods().stream()
+                    .map(mn -> new MopKey(mn.getName(), mn.getParameters())).collect(toSet()), controller.getSuperMethodNames());
         }
-        Set<MopKey> currentClassSignatures = classNode.getMethods().stream()
-                .map(mn -> new MopKey(mn.getName(), mn.getParameters())).collect(Collectors.toSet());
-        visitMopMethodList(classNode.getMethods(), true, Collections.emptySet(), Collections.emptyList());
-        visitMopMethodList(classNode.getSuperClass().getAllDeclaredMethods(), false, currentClassSignatures, controller.getSuperMethodNames());
     }
 
     /**
@@ -110,7 +108,7 @@ public class MopWriter {
      *
      * @see #generateMopCalls(LinkedList, boolean)
      */
-    private void visitMopMethodList(List<MethodNode> methods, boolean isThis, Set<MopKey> useOnlyIfDeclaredHereToo, List<String> orNameMentionedHere) {
+    private void visitMopMethodList(final List<MethodNode> methods, final boolean isThis, final Set<MopKey> useOnlyIfDeclaredHereToo, final List<String> orNameMentionedHere) {
         LinkedList<MethodNode> list = new LinkedList<>();
         Map<MopKey, MethodNode> map = new HashMap<>();
         for (MethodNode mn : methods) {
@@ -145,7 +143,7 @@ public class MopWriter {
      * @param useThis if true, then it is a call on "this", "super" else
      * @return the mop method name
      */
-    public static String getMopMethodName(MethodNode method, boolean useThis) {
+    public static String getMopMethodName(final MethodNode method, final boolean useThis) {
         ClassNode declaringNode = method.getDeclaringClass();
         int distance = 0;
         for (; declaringNode != null; declaringNode = declaringNode.getSuperClass()) {
@@ -162,48 +160,53 @@ public class MopWriter {
      * @param methodName name of the method to test
      * @return true if the method is a MOP method
      */
-    public static boolean isMopMethod(String methodName) {
+    public static boolean isMopMethod(final String methodName) {
         return (methodName.startsWith("this$") || methodName.startsWith("super$")) && !methodName.contains("$dist$");
     }
 
     /**
-     * Generates a Meta Object Protocol method, that is used to call a non public
-     * method, or to make a call to super.
+     * Generates a Meta Object Protocol method that is used to call a non-public
+     * method or to make a call to super.
      *
-     * @param mopCalls list of methods a mop call method should be generated for
-     * @param useThis  true if "this" should be used for the naming
+     * @param methods list of methods a MOP call method should be generated for
+     * @param useThis indicates if "this" should be used for the name and call
      */
-    protected void generateMopCalls(LinkedList<MethodNode> mopCalls, boolean useThis) {
-        for (MethodNode method : mopCalls) {
-            String name = getMopMethodName(method, useThis);
+    protected void generateMopCalls(final LinkedList<MethodNode> methods, final boolean useThis) {
+        for (MethodNode method : methods) {
+            ClassNode returnType = method.getReturnType();
             Parameter[] parameters = method.getParameters();
-            String methodDescriptor = BytecodeHelper.getMethodDescriptor(method.getReturnType(), method.getParameters());
-            MethodVisitor mv = controller.getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, name, methodDescriptor, null, null);
+            String mopName = getMopMethodName(method, useThis);
+            String signature = BytecodeHelper.getMethodDescriptor(returnType, parameters);
+            MethodVisitor mv = controller.getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, mopName, signature, null, null);
             controller.setMethodVisitor(mv);
-            mv.visitVarInsn(ALOAD, 0);
-            int newRegister = 1;
+
+            int stackIndex = 0;
+            // load "this" and the parameters
+            mv.visitVarInsn(ALOAD, stackIndex++);
             OperandStack operandStack = controller.getOperandStack();
             for (Parameter parameter : parameters) {
                 ClassNode type = parameter.getType();
-                operandStack.load(parameter.getType(), newRegister);
-                newRegister += 1; // increment to next register; double/long are using two places
-                if (isPrimitiveDouble(type) || isPrimitiveLong(type)) newRegister += 1;
+                operandStack.load(type, stackIndex++);
+                if (isPrimitiveLong(type) || isPrimitiveDouble(type))
+                    stackIndex += 1; // long and double use two slots
             }
             operandStack.remove(parameters.length);
-            ClassNode declaringClass = method.getDeclaringClass();
-            // JDK 8 support for default methods in interfaces
-            // TODO: this should probably be strengthened when we support the A.super.foo() syntax
-            int opcode = declaringClass.isInterface() ? INVOKEINTERFACE : INVOKESPECIAL;
-            mv.visitMethodInsn(opcode, BytecodeHelper.getClassInternalName(declaringClass), method.getName(), methodDescriptor, declaringClass.isInterface());
-            BytecodeHelper.doReturn(mv, method.getReturnType());
+
+            // make call to this or super method with operands
+            ClassNode receiverType = controller.getThisType();
+            if (!useThis) receiverType = receiverType.getSuperClass();
+            mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(receiverType), method.getName(), signature, receiverType.isInterface());
+
+            BytecodeHelper.doReturn(mv, returnType);
             mv.visitMaxs(0, 0);
             mv.visitEnd();
-            controller.getClassNode().addMethod(name, ACC_PUBLIC | ACC_SYNTHETIC, method.getReturnType(), parameters, null, null);
+
+            controller.getClassNode().addMethod(mopName, ACC_PUBLIC | ACC_SYNTHETIC, returnType, parameters, null, null);
         }
     }
 
     @Deprecated
-    public static boolean equalParameterTypes(Parameter[] p1, Parameter[] p2) {
+    public static boolean equalParameterTypes(final Parameter[] p1, final Parameter[] p2) {
         return ParameterUtils.parametersEqual(p1, p2);
     }
 }

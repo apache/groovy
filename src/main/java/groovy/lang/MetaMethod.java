@@ -187,6 +187,14 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     /**
+     * Returns whether or not this method is interface-default.
+     * @return true if this method is default
+     */
+    public boolean isDefault() {
+        return (getModifiers() & (Modifier.ABSTRACT | Modifier.PUBLIC | Modifier.STATIC)) == Modifier.PUBLIC && getDeclaringClass().isInterface;
+    }
+
+    /**
      * Returns whether or not this method is private.
      * @return true if this method is private
      */
