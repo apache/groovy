@@ -519,7 +519,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         int matchingMethod = mopArrayIndex(method);
                         if (matchingMethod >= 0) {
                             methods.set(i, mopMethods[matchingMethod]);
-                        } else if (!useThis && c == method.getDeclaringClass().getTheClass()) {
+                        } else if (!useThis && !(method instanceof NewMetaMethod)
+                                && c == method.getDeclaringClass().getTheClass()) {
                             methods.remove(i--); // not fit for super usage; StackOverflowError
                         }
                     }
@@ -1541,7 +1542,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return cacheEntry.method;
     }
 
-    private MetaMethod getSuperMethodWithCaching(final Object[] arguments, final MetaMethodIndex.Entry e) {theClass.getSuperclass();
+    private MetaMethod getSuperMethodWithCaching(final Object[] arguments, final MetaMethodIndex.Entry e) {
         if (e.methodsForSuper == null)
             return null;
 
