@@ -58,9 +58,9 @@ public class TestDgmConverter extends TestCase {
         }
     }
 
-    public void testRegistry () {
-        final MetaClassRegistryImpl metaClassRegistry = new MetaClassRegistryImpl();
-        final Object [] instanceMethods = metaClassRegistry.getInstanceMethods().getArray();
-        assertTrue(instanceMethods.length > 0);
+    public void testRegistry() {
+        MetaClassRegistryImpl metaClassRegistry = new MetaClassRegistryImpl();
+        int instanceMethods = metaClassRegistry.getInstanceMethods().size();
+        assertTrue(instanceMethods > 0);
     }
 }

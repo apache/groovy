@@ -545,8 +545,8 @@ public class MetaClassHelper {
         Object answer = null;
         int closestDist = -1;
         final int len = methods.size();
+        final Object[] data = methods.getArray();
         for (int i = 0; i != len; ++i) {
-            final Object[] data = methods.getArray();
             Object method = data[i];
             final ParameterTypes pt = (ParameterTypes) method;
             CachedClass[] paramTypes = pt.getParameterTypes();

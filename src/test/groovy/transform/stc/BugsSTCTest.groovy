@@ -1043,15 +1043,33 @@ Printer
     }
 
     // GROOVY-10380
-    void testInvokeDefaultMethodFromPackagePrivateInterface() {
+    void testInvokeDefaultMethodFromPackagePrivateInterface1() {
         assertScript '''
             class C extends groovy.transform.stc.Groovy10380 {
                 void test() {
-                    String result = m() // default method
+                    String result = this.m() // default method
                     assert result == 'works'
                 }
             }
             new C().test()
+        '''
+    }
+
+    void testInvokeSuperMethodFromCovariantOverride() {
+        assertScript '''
+            abstract class A { int i = 0
+                def m(CharSequence cs) {
+                    i += 1
+                }
+            }
+            class C extends A {
+                def m(String s) {
+                    super.m(s)
+                    i += 1
+                }
+            }
+            def n = new C().m("")
+            assert n == 2
         '''
     }
 }

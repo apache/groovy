@@ -513,11 +513,20 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 Object arrayOrMethod = (useThis ? e.methods : e.methodsForSuper);
                 if (arrayOrMethod instanceof FastArray) {
                     FastArray methods = (FastArray) arrayOrMethod;
-                    for (int i = 0, n = methods.size(); i < n; i += 1) {
-                        int matchingMethod = mopArrayIndex((MetaMethod) methods.get(i));
+                    Object[] data = methods.getArray();
+                    for (int i = 0; i < methods.size(); i += 1) {
+                        MetaMethod method = (MetaMethod) data[i];
+                        int matchingMethod = mopArrayIndex(method);
                         if (matchingMethod >= 0) {
                             methods.set(i, mopMethods[matchingMethod]);
+                        } else if (!useThis && c == method.getDeclaringClass().getTheClass()) {
+                            methods.remove(i--); // not fit for super usage; StackOverflowError
                         }
+                    }
+                    if (!useThis) {
+                        int n = methods.size();
+                        if (n == 0) e.methodsForSuper = null;
+                        else if (n == 1) e.methodsForSuper = data[0];
                     }
                 } else if (arrayOrMethod != null) {
                     int matchingMethod = mopArrayIndex((MetaMethod) arrayOrMethod);
@@ -559,16 +568,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     for (index = from; index <= to; index += 1) {
                         CachedClass[] params1 = mopMethods[index].getParameterTypes();
                         CachedClass[] params2 = method.getParameterTypes();
-                        // duplicates MetaMethodIndex#isMatchingMethod:
-                        if (params1.length != params2.length) continue;
-                        boolean match = true;
-                        for (int i = 0, n = params1.length; i < n; i += 1) {
-                            if (params1[i] != params2[i]) {
-                                match = false;
-                                break;
-                            }
-                        }
-                        if (match) {
+                        if (MetaMethod.equal(params1, params2)) {
                             return index;
                         }
                     }
@@ -3332,7 +3332,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         Object methods = getMethods(theClass, aMethod.getName(), false);
         if (methods instanceof FastArray) {
             FastArray m = (FastArray) methods;
-            final int len = m.size;
+            final int len = m.size();
             final Object[] data = m.getArray();
             for (int i = 0; i != len; ++i) {
                 MetaMethod method = (MetaMethod) data[i];
