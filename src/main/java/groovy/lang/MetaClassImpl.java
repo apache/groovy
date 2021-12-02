@@ -509,7 +509,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             boolean useThis;
 
             @Override
-            public void methodNameAction(final Class<?> clazz, final MetaMethodIndex.Entry e) {
+            public void methodNameAction(final Class<?> c, final MetaMethodIndex.Entry e) {
                 Object arrayOrMethod = (useThis ? e.methods : e.methodsForSuper);
                 if (arrayOrMethod instanceof FastArray) {
                     FastArray methods = (FastArray) arrayOrMethod;
@@ -551,7 +551,29 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
             private int mopArrayIndex(final MetaMethod method, final String mopName) {
                 int index = Arrays.binarySearch(mopMethods, mopName, CachedClass.CachedMethodComparatorWithString.INSTANCE);
-                return index < 0 ? -1 : findMatchingMethod(method, mopName, index, mopMethods);
+                if (index >= 0) {
+                    int from = index, to = index; // include overloads in search
+                    while (from > 0 && mopMethods[from - 1].getName().equals(mopName)) from -= 1;
+                    while (to < mopMethods.length - 1 && mopMethods[to + 1].getName().equals(mopName)) to += 1;
+
+                    for (index = from; index <= to; index += 1) {
+                        CachedClass[] params1 = mopMethods[index].getParameterTypes();
+                        CachedClass[] params2 = method.getParameterTypes();
+                        // duplicates MetaMethodIndex#isMatchingMethod:
+                        if (params1.length != params2.length) continue;
+                        boolean match = true;
+                        for (int i = 0, n = params1.length; i < n; i += 1) {
+                            if (params1[i] != params2[i]) {
+                                match = false;
+                                break;
+                            }
+                        }
+                        if (match) {
+                            return index;
+                        }
+                    }
+                }
+                return -1;
             }
 
             private String[] decomposeMopName(final String mopName) {
@@ -577,17 +599,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // replace all calls for this with the correct MOP method
         iter.useThis = true;
         iter.iterate();
-    }
-
-    private int findMatchingMethod(final MetaMethod method, final String mopName, final int index, final CachedMethod[] mopMethods) {
-        int from = index;
-        while (from > 0 && mopMethods[from - 1].getName().equals(mopName))
-            from -= 1;
-        int to = index;
-        while (to < mopMethods.length - 1 && mopMethods[to + 1].getName().equals(mopName))
-            to += 1;
-
-        return findMatchingMethod(mopMethods, from, to, method);
     }
 
     private void inheritInterfaceNewMetaMethods(final Set<CachedClass> interfaces) {
@@ -3312,27 +3323,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // remaining case is false and that means adding the method
         // to our list
         list.add(method);
-    }
-
-    private int findMatchingMethod(CachedMethod[] data, int from, int to, MetaMethod method) {
-        for (int j = from; j <= to; ++j) {
-            CachedMethod aMethod = data[j];
-            CachedClass[] params1 = aMethod.getParameterTypes();
-            CachedClass[] params2 = method.getParameterTypes();
-            if (params1.length == params2.length) {
-                boolean matches = true;
-                for (int i = 0; i < params1.length; i++) {
-                    if (params1[i] != params2[i]) {
-                        matches = false;
-                        break;
-                    }
-                }
-                if (matches) {
-                    return j;
-                }
-            }
-        }
-        return -1;
     }
 
     /**
