@@ -530,7 +530,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
             private int mopArrayIndex(final MetaMethod method) {
                 if (method instanceof NewMetaMethod) return -1;
-                if (useThis ^ Modifier.isPrivate(method.getModifiers())) return -1;
+                if (useThis ^ method.isPrivate()) return -1;
 
                 String mopName = method.getMopName();
                 if (useThis) {

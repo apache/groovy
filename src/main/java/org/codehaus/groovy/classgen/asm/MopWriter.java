@@ -144,10 +144,12 @@ public class MopWriter {
      * @return the mop method name
      */
     public static String getMopMethodName(final MethodNode method, final boolean useThis) {
-        ClassNode declaringNode = method.getDeclaringClass();
-        int distance = 0;
-        for (; declaringNode != null; declaringNode = declaringNode.getSuperClass()) {
-            distance += 1;
+        ClassNode declaringClass = method.getDeclaringClass();
+        int distance = 1;
+        if (!declaringClass.isInterface()) { // GROOVY-8693: fixed distance for interface methods
+            for (ClassNode sc = declaringClass.getSuperClass(); sc != null; sc = sc.getSuperClass()) {
+                distance += 1;
+            }
         }
         return (useThis ? "this" : "super") + "$" + distance + "$" + method.getName();
     }
