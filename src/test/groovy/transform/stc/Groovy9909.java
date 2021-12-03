@@ -16,21 +16,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package groovy.transform.stc;
 
-import groovy.test.GroovyTestCase
-
-class Groovy5285Bug extends GroovyTestCase {
-    void testShouldNotThrowStackOverflow() {
-        assertScript '''
-            class Test {
-                void setMetaClass(MetaClass metaClass) {
-                    super.setMetaClass(metaClass)
-                }
-            }
-
-            def obj = new Test()
-            obj.metaClass = obj.metaClass
-        '''
+public interface Groovy9909 {
+    default String m() {
+        return "works";
     }
 }

@@ -110,17 +110,14 @@ public class InvocationWriter {
 
     public void makeCall(final Expression origin, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, boolean safe, final boolean spreadSafe, boolean implicitThis) {
         ClassNode sender;
-        if (isSuperExpression(receiver) || (isThisExpression(receiver) && !implicitThis)) {
+        if (isSuperExpression(receiver) || isThisExpression(receiver) && !implicitThis) {
+            // GROOVY-6045, GROOVY-8693, et al.
             sender = controller.getThisType();
-            if (isSuperExpression(receiver)) {
-                sender = sender.getSuperClass(); // GROOVY-4035
-                implicitThis = false; // prevent recursion
-                safe = false; // GROOVY-6045
-            }
+            implicitThis = false;
+            safe = false;
         } else {
             sender = controller.getClassNode();
         }
-
         makeCall(origin, new ClassExpression(sender), receiver, message, arguments, adapter, safe, spreadSafe, implicitThis);
     }
 
@@ -187,8 +184,8 @@ public class InvocationWriter {
         }
 
         ClassNode ownerClass = declaringClass;
-        if (opcode == INVOKESPECIAL) {
-            ownerClass = receiverType; // GROOVY-8693
+        if (opcode == INVOKESPECIAL) { // GROOVY-8693, GROOVY-9909
+            if (!declaringClass.isInterface() || receiverType.implementsInterface(declaringClass)) ownerClass = receiverType;
         } else if (opcode == INVOKEVIRTUAL && isObjectType(declaringClass)) {
             // avoid using a narrowed type if the method is defined on Object, because it can interfere
             // with delegate type inference in static compilation mode and trigger a ClassCastException

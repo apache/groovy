@@ -30,9 +30,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveDouble;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
@@ -84,14 +84,14 @@ public class MopWriter {
     private final WriterController controller;
 
     public MopWriter(final WriterController controller) {
-        this.controller = Objects.requireNonNull(controller);
+        this.controller = requireNonNull(controller);
     }
 
     public void createMopMethods() {
         ClassNode classNode = controller.getClassNode();
         if (!ClassHelper.isGeneratedFunction(classNode)) {
             visitMopMethodList(classNode.getMethods(), true, Collections.emptySet(), Collections.emptyList());
-            visitMopMethodList(classNode.getSuperClass().getAllDeclaredMethods(), false, classNode.getMethods().stream()
+            visitMopMethodList(getSuperMethods(classNode)/*GROOVY-8693, et al.*/, false, classNode.getMethods().stream()
                     .map(mn -> new MopKey(mn.getName(), mn.getParameters())).collect(toSet()), controller.getSuperMethodNames());
         }
     }
@@ -108,7 +108,7 @@ public class MopWriter {
      *
      * @see #generateMopCalls(LinkedList, boolean)
      */
-    private void visitMopMethodList(final List<MethodNode> methods, final boolean isThis, final Set<MopKey> useOnlyIfDeclaredHereToo, final List<String> orNameMentionedHere) {
+    private void visitMopMethodList(final Iterable<MethodNode> methods, final boolean isThis, final Set<MopKey> onlyIfThis, final List<String> orThis) {
         LinkedList<MethodNode> list = new LinkedList<>();
         Map<MopKey, MethodNode> map = new HashMap<>();
         for (MethodNode mn : methods) {
@@ -124,46 +124,13 @@ public class MopWriter {
             Parameter[] parameters = mn.getParameters();
             if (isMopMethod(methodName)) {
                 map.put(new MopKey(methodName, parameters), mn);
-            } else if (!methodName.startsWith("<")) {
-                if (!useOnlyIfDeclaredHereToo.contains(new MopKey(methodName, parameters)) && !orNameMentionedHere.contains(methodName)) {
-                    continue;
-                }
+            } else if (!methodName.startsWith("<") && (onlyIfThis.contains(new MopKey(methodName, parameters)) || orThis.contains(methodName))) {
                 if (map.put(new MopKey(getMopMethodName(mn, isThis), parameters), mn) == null) {
                     list.add(mn);
                 }
             }
         }
         generateMopCalls(list, isThis);
-    }
-
-    /**
-     * Creates a MOP method name from a method.
-     *
-     * @param method  the method to be called by the mop method
-     * @param useThis if true, then it is a call on "this", "super" else
-     * @return the mop method name
-     */
-    public static String getMopMethodName(final MethodNode method, final boolean useThis) {
-        ClassNode declaringClass = method.getDeclaringClass();
-        int distance = 1;
-        if (!declaringClass.isInterface()) { // GROOVY-8693: fixed distance for interface methods
-            for (ClassNode sc = declaringClass.getSuperClass(); sc != null; sc = sc.getSuperClass()) {
-                distance += 1;
-            }
-        }
-        return (useThis ? "this" : "super") + "$" + distance + "$" + method.getName();
-    }
-
-    /**
-     * Determines if a method is a MOP method. This is done by the method name.
-     * If the name starts with "this$" or "super$" but does not contain "$dist$",
-     * then it is an MOP method.
-     *
-     * @param methodName name of the method to test
-     * @return true if the method is a MOP method
-     */
-    public static boolean isMopMethod(final String methodName) {
-        return (methodName.startsWith("this$") || methodName.startsWith("super$")) && !methodName.contains("$dist$");
     }
 
     /**
@@ -196,7 +163,12 @@ public class MopWriter {
 
             // make call to this or super method with operands
             ClassNode receiverType = controller.getThisType();
-            if (!useThis) receiverType = receiverType.getSuperClass();
+            if (!useThis) {
+                receiverType = receiverType.getSuperClass();
+                ClassNode declaringType = method.getDeclaringClass();
+                // GROOVY-8693, GROOVY-9909, et al.: method from interface not implemented by super class
+                if (declaringType.isInterface() && !receiverType.implementsInterface(declaringType)) receiverType = declaringType;
+            }
             mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(receiverType), method.getName(), signature, receiverType.isInterface());
 
             BytecodeHelper.doReturn(mv, returnType);
@@ -205,6 +177,50 @@ public class MopWriter {
 
             controller.getClassNode().addMethod(mopName, ACC_PUBLIC | ACC_SYNTHETIC, returnType, parameters, null, null);
         }
+    }
+
+    //--------------------------------------------------------------------------
+
+    private static Iterable<MethodNode> getSuperMethods(final ClassNode classNode) {
+        Map<String, MethodNode> result = classNode.getSuperClass().getDeclaredMethodsMap();
+        for (ClassNode in : classNode.getInterfaces()) { // declared!
+            if (!classNode.getSuperClass().implementsInterface(in)) {
+                for (MethodNode mn : in.getMethods()) { // only direct default methods!
+                    if (mn.isDefault()) result.putIfAbsent(mn.getTypeDescriptor(), mn);
+                }
+            }
+        }
+        return result.values();
+    }
+
+    /**
+     * Creates a MOP method name from a method.
+     *
+     * @param method  the method to be called by the mop method
+     * @param useThis if true, then it is a call on "this", "super" else
+     * @return the mop method name
+     */
+    public static String getMopMethodName(final MethodNode method, final boolean useThis) {
+        ClassNode declaringClass = method.getDeclaringClass();
+        int distance = 1;
+        if (!declaringClass.isInterface()) { // GROOVY-8693: fixed distance for interface methods
+            for (ClassNode sc = declaringClass.getSuperClass(); sc != null; sc = sc.getSuperClass()) {
+                distance += 1;
+            }
+        }
+        return (useThis ? "this" : "super") + "$" + distance + "$" + method.getName();
+    }
+
+    /**
+     * Determines if a method is a MOP method. This is done by the method name.
+     * If the name starts with "this$" or "super$" but does not contain "$dist$",
+     * then it is an MOP method.
+     *
+     * @param methodName name of the method to test
+     * @return true if the method is a MOP method
+     */
+    public static boolean isMopMethod(final String methodName) {
+        return (methodName.startsWith("this$") || methodName.startsWith("super$")) && !methodName.contains("$dist$");
     }
 
     @Deprecated

@@ -503,8 +503,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private void replaceWithMOPCalls(final CachedMethod[] mopMethods) {
-        if (mopMethods == null || mopMethods.length == 0) return;
-
         class MOPIter extends MethodIndexAction {
             boolean useThis;
 
@@ -516,12 +514,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     Object[] data = methods.getArray();
                     for (int i = 0; i < methods.size(); i += 1) {
                         MetaMethod method = (MetaMethod) data[i];
-                        int matchingMethod = mopArrayIndex(method);
-                        if (matchingMethod >= 0) {
-                            methods.set(i, mopMethods[matchingMethod]);
-                        } else if (!useThis && !(method instanceof NewMetaMethod)
-                                && c == method.getDeclaringClass().getTheClass()) {
-                            methods.remove(i--); // not fit for super usage; StackOverflowError
+                        int matchedMethod = mopArrayIndex(method, c);
+                        if (matchedMethod >= 0) {
+                            methods.set(i, mopMethods[matchedMethod]);
+                        } else if (!useThis && !isDGM(method) && c == method.getDeclaringClass().getTheClass()) {
+                            methods.remove(i--); // not fit for super usage
                         }
                     }
                     if (!useThis) {
@@ -530,29 +527,26 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         else if (n == 1) e.methodsForSuper = data[0];
                     }
                 } else if (arrayOrMethod != null) {
-                    int matchingMethod = mopArrayIndex((MetaMethod) arrayOrMethod);
-                    if (matchingMethod >= 0) {
-                        if (useThis) e.methods = mopMethods[matchingMethod];
-                        else e.methodsForSuper = mopMethods[matchingMethod];
+                    MetaMethod method = (MetaMethod) arrayOrMethod;
+                    int matchedMethod = mopArrayIndex(method, c);
+                    if (matchedMethod >= 0) {
+                        if (useThis) e.methods = mopMethods[matchedMethod];
+                        else e.methodsForSuper = mopMethods[matchedMethod];
+                    } else if (!useThis && !isDGM(method) && c == method.getDeclaringClass().getTheClass()) {
+                        e.methodsForSuper = null; // not fit for super usage
                     }
                 }
             }
 
-            private int mopArrayIndex(final MetaMethod method) {
-                if (method instanceof NewMetaMethod) return -1;
-                if (useThis ^ method.isPrivate()) return -1;
-
-                String mopName = method.getMopName();
-                if (useThis) {
-                    return mopArrayIndex(method, mopName);
-                }
+            private int mopArrayIndex(final MetaMethod method, final Class<?> c) {
+                if (mopMethods == null || mopMethods.length == 0) return -1;
+                if (isDGM(method) || (useThis ^ method.isPrivate())) return -1;
+                if (useThis) return mopArrayIndex(method, method.getMopName());
                 // GROOVY-4922: Due to a numbering scheme change, find the super$number$methodName with
                 // the highest value. If we don't, no method may be found, leading to a stack overflow!
-                String[] tokens = decomposeMopName(mopName);
-                int distance = Integer.parseInt(tokens[1]);
+                int distance = ReflectionCache.getCachedClass(c).getSuperClassDistance() - 1;
                 while (distance > 0) {
-                    mopName = tokens[0] + distance + tokens[2];
-                    int index = mopArrayIndex(method, mopName);
+                    int index = mopArrayIndex(method, "super$" + distance + "$" + method.getName());
                     if (index >= 0) return index;
                     distance -= 1;
                 }
@@ -577,19 +571,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 return -1;
             }
 
-            private String[] decomposeMopName(final String mopName) {
-                int idx = mopName.indexOf('$');
-                if (idx > 0) {
-                    int eidx = mopName.indexOf('$', idx + 1);
-                    if (eidx > 0) {
-                        return new String[]{
-                                mopName.substring(0, idx + 1),
-                                mopName.substring(idx + 1, eidx),
-                                mopName.substring(eidx)
-                        };
-                    }
-                }
-                return new String[]{"", "0", mopName};
+            private boolean isDGM(final MetaMethod method) {
+                return method instanceof GeneratedMetaMethod || method instanceof NewMetaMethod;
             }
         }
         MOPIter iter = new MOPIter();
@@ -597,6 +580,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // replace all calls for super with the correct MOP method
         iter.useThis = false;
         iter.iterate();
+
+        if (mopMethods == null || mopMethods.length == 0) return;
+
         // replace all calls for this with the correct MOP method
         iter.useThis = true;
         iter.iterate();
@@ -1092,27 +1078,84 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * <p>Invokes a method on the given receiver for the specified arguments. The sender is the class that invoked the method on the object.
+     * Invokes a method on the given receiver for the specified arguments. The sender is the class that invoked the method on the object.
      * The MetaClass will attempt to establish the method to invoke based on the name and arguments provided.
-     *
-     * <p>The isCallToSuper and fromInsideClass help the Groovy runtime perform optimisations on the call to go directly
+     * <p>
+     * The isCallToSuper and fromInsideClass help the Groovy runtime perform optimisations on the call to go directly
      * to the super class if necessary
      *
      * @param sender            The java.lang.Class instance that invoked the method
      * @param object            The object which the method was invoked on
      * @param methodName        The name of the method
-     * @param originalArguments The arguments to the method
+     * @param arguments         The arguments to the method
      * @param isCallToSuper     Whether the method is a call to a super class method
      * @param fromInsideClass   Whether the call was invoked from the inside or the outside of the class
      * @return The return value of the method
      * @see MetaClass#invokeMethod(Class, Object, String, Object[], boolean, boolean)
      */
     @Override
-    public Object invokeMethod(Class sender, Object object, String methodName, Object[] originalArguments, boolean isCallToSuper, boolean fromInsideClass) {
+    public Object invokeMethod(final Class sender, final Object object, final String methodName, final Object[] arguments, final boolean isCallToSuper, final boolean fromInsideClass) {
         try {
-            return doInvokeMethod(sender, object, methodName, originalArguments, isCallToSuper, fromInsideClass);
+            return doInvokeMethod(sender, object, methodName, arguments, isCallToSuper, fromInsideClass);
         } catch (MissingMethodException mme) {
-            return doInvokeMethodFallback(sender, object, methodName, originalArguments, isCallToSuper, mme);
+            MethodHandles.Lookup lookup = null;
+            if (object instanceof GroovyObject) {
+                lookup = GroovyObjectHelper.lookup((GroovyObject) object).orElseThrow(() -> mme);
+            }
+
+            Class<?> receiverClass = object.getClass();
+
+            if (isCallToSuper) {
+                if (lookup == null) throw mme;
+                MethodHandles.Lookup theLookup = lookup;
+                MethodHandle methodHandle = findMethod(sender.getSuperclass(), methodName, castArgumentsToClassArray(arguments), method -> {
+                    try {
+                        return theLookup.unreflectSpecial(method, receiverClass);
+                    } catch (IllegalAccessException e) {
+                        return null;
+                    }
+                });
+                if (methodHandle == null) throw mme;
+                try {
+                    return methodHandle.bindTo(object).invokeWithArguments(arguments);
+                } catch (Throwable t) {
+                    throw new GroovyRuntimeException(t);
+                }
+            }
+
+            if (receiverClass.isArray()) {
+                if (methodName.equals("clone") && arguments.length == 0) {
+                    try {
+                        return (Object[]) MethodHandleHolder.CLONE_ARRAY_METHOD_HANDLE.invokeExact((Object[]) object);
+                    } catch (Throwable t) {
+                        throw new GroovyRuntimeException(t);
+                    }
+                }
+                throw mme;
+            }
+
+            boolean spyFound = (lookup != null);
+            if (!spyFound) {
+                try {
+                    lookup = MethodHandles.lookup().in(receiverClass);
+                } catch (IllegalArgumentException e) {
+                    throw mme;
+                }
+            }
+            MethodHandles.Lookup theLookup = lookup;
+            MethodHandle methodHandle = findMethod(receiverClass, methodName, castArgumentsToClassArray(arguments), method -> {
+                try {
+                    return spyFound ? theLookup.unreflectSpecial(method, receiverClass) : theLookup.unreflect(method);
+                } catch (IllegalAccessException e) {
+                    return null;
+                }
+            });
+            if (methodHandle == null) throw mme;
+            try {
+                return methodHandle.bindTo(object).invokeWithArguments(arguments);
+            } catch (Throwable t) {
+                throw new GroovyRuntimeException(t);
+            }
         }
     }
 
@@ -1136,83 +1179,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private static final ClassValue<Map<String, Set<Method>>> SPECIAL_METHODS_MAP = new ClassValue<Map<String, Set<Method>>>() {
         @Override
-        protected Map<String, Set<Method>> computeValue(Class<?> type) {
+        protected Map<String, Set<Method>> computeValue(final Class<?> type) {
             return new ConcurrentHashMap<>(4);
         }
     };
 
-    private Object doInvokeMethodFallback(Class sender, Object object, String methodName, Object[] originalArguments, boolean isCallToSuper, MissingMethodException mme) {
-        MethodHandles.Lookup lookup = null;
-        if (object instanceof GroovyObject) {
-            Optional<MethodHandles.Lookup> lookupOptional = GroovyObjectHelper.lookup((GroovyObject) object);
-            if (!lookupOptional.isPresent()) throw mme;
-            lookup = lookupOptional.get();
-        }
-
-        final Class<?> receiverClass = object.getClass();
-        if (isCallToSuper) {
-            if (null == lookup) throw mme;
-            MethodHandles.Lookup tmpLookup = lookup;
-            MethodHandle superMethodHandle = findMethod(sender, methodName, castArgumentsToClassArray(originalArguments), superMethod -> {
-                try {
-                    return tmpLookup.unreflectSpecial(superMethod, receiverClass);
-                } catch (IllegalAccessException e) {
-                    return null;
-                }
-            });
-            if (null == superMethodHandle) throw mme;
-            try {
-                return superMethodHandle.bindTo(object).invokeWithArguments(originalArguments);
-            } catch (Throwable t) {
-                throw new GroovyRuntimeException(t);
-            }
-        } else {
-            if (receiverClass.isArray()) {
-                if ("clone".equals(methodName) && 0 == originalArguments.length) {
-                    try {
-                        Object[] array = (Object[]) object;
-                        Object[] result = (Object[]) MethodHandleHolder.CLONE_ARRAY_METHOD_HANDLE.invokeExact(array);
-                        return result;
-                    } catch (Throwable t) {
-                        throw new GroovyRuntimeException(t);
-                    }
-                }
-                throw mme;
-            }
-
-            final boolean spyFound = null != lookup;
-            if (!spyFound) {
-                try {
-                    lookup = MethodHandles.lookup().in(receiverClass);
-                } catch (IllegalArgumentException e) {
-                    throw mme;
-                }
-            }
-            MethodHandles.Lookup tmpLookup = lookup;
-            MethodHandle thisMethodHandle = findMethod(receiverClass, methodName, castArgumentsToClassArray(originalArguments), thisMethod -> {
-                try {
-                    if (spyFound) return tmpLookup.unreflectSpecial(thisMethod, receiverClass);
-
-                    return tmpLookup.unreflect(thisMethod);
-                } catch (IllegalAccessException e) {
-                    return null;
-                }
-            });
-            if (null == thisMethodHandle) throw mme;
-            try {
-                return thisMethodHandle.bindTo(object).invokeWithArguments(originalArguments);
-            } catch (Throwable t) {
-                throw new GroovyRuntimeException(t);
-            }
-        }
-    }
-
-    private static MethodHandle findMethod(Class<?> clazz, String methodName, Class[] argTypes, Function<Method, MethodHandle> mhFunc) {
-        final Map<String, Set<Method>> methodMap = SPECIAL_METHODS_MAP.get(clazz);
-        final Set<Method> methods = methodMap.get(methodName);
-
+    private static MethodHandle findMethod(final Class<?> clazz, final String methodName, final Class[] argTypes, final Function<Method, MethodHandle> mhFunc) {
+        Map<String, Set<Method>> map = SPECIAL_METHODS_MAP.get(clazz);
+        Set<Method> methods = map.get(methodName);
         Method foundMethod = null;
-        if (null != methods) {
+        if (methods != null) {
             for (Method method : methods) {
                 if (parameterTypeMatches(method.getParameterTypes(), argTypes)) {
                     foundMethod = method;
@@ -1221,30 +1197,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
 
-        if (null == foundMethod) {
-            foundMethod = doFindMethod(clazz, methodName, argTypes);
-            if (null == foundMethod) return null;
-            methodMap.computeIfAbsent(
-                            methodName,
-                            k -> Collections.newSetFromMap(new ConcurrentHashMap<>(2))
-                        ).add(foundMethod);
+        if (foundMethod == null) {
+            for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
+                List<Method> declaredMethods = ReflectionUtils.getDeclaredMethods(c, methodName, argTypes);
+                if (!declaredMethods.isEmpty()) {
+                    Method method = declaredMethods.get(0);
+                    if (!Modifier.isAbstract(method.getModifiers())) {
+                        foundMethod = method;
+                        break;
+                    }
+                }
+            }
+            if (foundMethod == null) return null;
+            map.computeIfAbsent(methodName, k -> Collections.newSetFromMap(new ConcurrentHashMap<>(2))).add(foundMethod);
         }
 
         return mhFunc.apply(foundMethod);
-    }
-
-    private static Method doFindMethod(Class clazz, String messageName, Class[] argTypes) {
-        for (Class<?> c = clazz; null != c; c = c.getSuperclass()) {
-            List<Method> declaredMethodList = ReflectionUtils.getDeclaredMethods(c, messageName, argTypes);
-            if (!declaredMethodList.isEmpty()) {
-                Method superMethod = declaredMethodList.get(0);
-                if (Modifier.isAbstract(superMethod.getModifiers())) {
-                    continue;
-                }
-                return superMethod;
-            }
-        }
-        return null;
     }
 
     private Object doInvokeMethod(Class sender, Object object, String methodName, Object[] originalArguments, boolean isCallToSuper, boolean fromInsideClass) {
@@ -1494,16 +1462,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     public MetaMethod getMethodWithCaching(Class sender, String methodName, Object[] arguments, boolean isCallToSuper) {
-        // let's try use the cache to find the method
         if (!isCallToSuper && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             return getMethodWithoutCaching(sender, methodName, MetaClassHelper.convertToTypeArray(arguments), isCallToSuper);
         }
-        final MetaMethodIndex.Entry e = metaMethodIndex.getMethods(sender, methodName);
+        MetaMethodIndex.Entry e = metaMethodIndex.getMethods(sender, methodName);
+        if (isCallToSuper && e != null && e.methodsForSuper == null) {
+            // allow "super.name()" to find DGM if class declares method "name"
+            e = metaMethodIndex.getMethods(sender.getSuperclass(), methodName);
+        }
         if (e == null) {
             return null;
         }
-
-        return isCallToSuper ? getSuperMethodWithCaching(arguments, e) : getNormalMethodWithCaching(arguments, e);
+        if (isCallToSuper) {
+            return getSuperMethodWithCaching(arguments, e);
+        } else {
+            return getNormalMethodWithCaching(arguments, e);
+        }
     }
 
     private static boolean sameClasses(final Class[] params, final Class[] arguments) {
@@ -2983,7 +2957,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private MetaProperty getMetaProperty(final Class clazz, final String name, final boolean useSuper, final boolean useStatic) {
-        if (clazz == theClass)
+        if (clazz == theClass && !useSuper)
             return getMetaProperty(name, useStatic);
 
         CachedClass cachedClass = ReflectionCache.getCachedClass(clazz);

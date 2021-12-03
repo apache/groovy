@@ -3743,6 +3743,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 addTraitType(receiver, owners);
                 if (receiver.redirect().isInterface()) {
                     owners.add(Receiver.make(OBJECT_TYPE));
+                } else if (isSuperExpression(objectExpression)) { //GROOVY-9909: super.defaultMethod()
+                    for (ClassNode in : typeCheckingContext.getEnclosingClassNode().getInterfaces()) {
+                        if (!receiver.implementsInterface(in)) owners.add(Receiver.make(in));
+                    }
                 }
             }
         }
