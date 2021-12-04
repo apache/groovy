@@ -94,22 +94,22 @@ class NumberMathTest extends GroovyTestCase {
     }
 
     void testOperations() {
-        def I1 = new Integer(1)
-        def I2 = new Integer(2)
-        def I3 = new Integer(3)
-        def L1 = new Long(1)
-        def L2 = new Long(2)
-        def L3 = new Long(3)
-        def F1 = new Float("1.0")
-        def F2 = new Float("2.0")
-        def D1 = new Double("1.0")
-        def D2 = new Double("2.0")
+        def I1 = Integer.valueOf(1)
+        def I2 = Integer.valueOf(2)
+        def I3 = Integer.valueOf(3)
+        def L1 = Long.valueOf(1)
+        def L2 = Long.valueOf(2)
+        def L3 = Long.valueOf(3)
+        def F1 = Float.valueOf("1.0")
+        def F2 = Float.valueOf("2.0")
+        def D1 = Double.valueOf("1.0")
+        def D2 = Double.valueOf("2.0")
         def BI1 = new BigInteger("1")
         def BI2 = new BigInteger("2")
         def BD1 = new BigDecimal("1.0")
         def BD2 = new BigDecimal("2.0")
-        def BD20 = new BigDecimal("2.00")
-        def BD100 = new BigDecimal(new BigInteger(1), -2) // 100
+        def BD2_0 = new BigDecimal("2.00")
+        def BD100 = new BigDecimal(BigInteger.valueOf(1), -2, java.math.MathContext.DECIMAL32) // 1e2 aka 100
 
         assert I1 / I2 instanceof BigDecimal
         assert I1 / I2 == new BigDecimal("0.5")
@@ -142,24 +142,24 @@ class NumberMathTest extends GroovyTestCase {
         assert I1 / BD2 instanceof BigDecimal
         assert I1 / BD2 == new BigDecimal("0.5")
 
-        assert I1 / BD20 instanceof BigDecimal
-        assert I1 / BD20 == new BigDecimal("0.5")
+        assert I1 / BD2_0 instanceof BigDecimal
+        assert I1 / BD2_0 == 0.5g
 
         assert BI1 / BD2 instanceof BigDecimal
-        assert BI1 / BD2 == new BigDecimal("0.5")
+        assert BI1 / BD2 == 0.5g
 
         assert I1 / BD100 instanceof BigDecimal
-        assert I1 / BD100 == new BigDecimal("0.01")
+        assert I1 / BD100 == 0.01g
 
         assert BI1 / BD100 instanceof BigDecimal
-        assert BI1 / BD100 == new BigDecimal("0.01")
+        assert BI1 / BD100 == 0.01g
 
         //Test keeping max scale of (L, R or 10)
         def BBD1 = new BigDecimal("0.12345678901234567")
-        assert BD1 + BBD1 == new BigDecimal("1.12345678901234567")
+        assert BD1 + BBD1 == 1.12345678901234567g
 
         def BBD2 = new BigDecimal(".000000000000000008")
-        assert BBD1 + BBD2 == new BigDecimal("0.123456789012345678")
+        assert BBD1 + BBD2 == 0.123456789012345678g
     }
 
     void testUnsupportedIntDivision() {

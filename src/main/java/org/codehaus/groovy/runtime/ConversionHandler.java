@@ -30,7 +30,6 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -91,19 +90,22 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
      * @see #invokeCustom(Object, Method, Object[])
      * @see InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])
      */
-    public Object invoke(final Object proxy, Method method, Object[] args) throws Throwable {
+    public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
         if (isDefaultMethod(method) && !defaultOverridden(method)) {
             final VMPlugin plugin = VMPluginFactory.getPlugin();
-            Object handle = handleCache.computeIfAbsent(method, m -> plugin.getInvokeSpecialHandle(m, proxy));
+            Object handle = handleCache.computeIfAbsent(method, m ->
+                plugin.getInvokeSpecialHandle(m, proxy)
+            );
             return plugin.invokeHandle(handle, args);
         }
 
         if (!checkMethod(method)) {
             try {
                 if (method.getDeclaringClass() == GroovyObject.class) {
-                    if ("getMetaClass".equals(method.getName())) {
+                    switch (method.getName()) {
+                    case "getMetaClass":
                         return getMetaClass(proxy);
-                    } else if ("setMetaClass".equals(method.getName())) {
+                    case "setMetaClass":
                         return setMetaClass((MetaClass) args[0]);
                     }
                 }
@@ -120,16 +122,15 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
         }
     }
 
-    private boolean defaultOverridden(Method method) {
+    private boolean defaultOverridden(final Method method) {
         return delegate instanceof Map && ((Map) delegate).containsKey(method.getName());
     }
 
-    protected boolean isDefaultMethod(Method method) {
-        return ((method.getModifiers() & (Modifier.ABSTRACT | Modifier.PUBLIC | Modifier.STATIC)) ==
-                Modifier.PUBLIC) && method.getDeclaringClass().isInterface();
+    protected boolean isDefaultMethod(final Method method) {
+        return method.isDefault();
     }
 
-    protected boolean checkMethod(Method method) {
+    protected boolean checkMethod(final Method method) {
         return isCoreObjectMethod(method);
     }
 

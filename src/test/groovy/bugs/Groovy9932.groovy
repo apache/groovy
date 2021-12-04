@@ -19,17 +19,21 @@
 package groovy.bugs
 
 import groovy.mock.interceptor.MockFor
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.Test
 
+import static org.junit.Assume.assumeFalse
+
 final class Groovy9932 {
+
     @Test
     void testCallCurrentOnMock() {
-        def mockForHelper = new MockFor(Helper)
+        assumeFalse(CompilerConfiguration.DEFAULT.isIndyEnabled())
 
-        mockForHelper.demand.helperMethod { -> 'intercepted' }
-        mockForHelper.ignore('getMyString')
-
-        mockForHelper.use {
+        new MockFor(Helper).tap {
+            demand.publicMethod { -> 'intercepted' }
+            ignore 'getMyString'
+        }.use {
             def helper = new Helper()
             assert helper.myString == 'intercepted'
         }
@@ -39,16 +43,14 @@ final class Groovy9932 {
         String myString
 
         Helper() {
-            myString = internalMethod()
+            myString = privateMethod()
         }
 
-        // separate method to ensure callCurrent is used.
-        // in the constructor it uses a direct call without checking stMC
-        private String internalMethod() {
-            return helperMethod()
+        private String privateMethod() {
+            return publicMethod()
         }
 
-        String helperMethod() {
+        String publicMethod() {
             return 'not intercepted'
         }
     }

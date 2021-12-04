@@ -30,7 +30,6 @@ final class Groovy8815 {
             targetDirectory: File.createTempDir(),
             jointCompilationOptions: [memStub: true]
         )
-
         def parentDir = File.createTempDir()
         try {
             def a = new File(parentDir, 'Event.groovy')
@@ -68,7 +67,7 @@ final class Groovy8815 {
             def method = loader.loadClass('Service').getMethod('on', Class, Closure)
 
             // should not contain unresolved type parameter 'T'
-            assert method.genericSignature == '<E:LEvent<*>;>(Ljava/lang/Class;Lgroovy/lang/Closure;)LRegistration<Ljava/lang/Object;Ljava/util/function/Consumer<TE;>;>;'
+            assert method.genericReturnType.typeName == 'Registration<java.lang.Object, java.util.function.Consumer<E>>'
         } finally {
             parentDir.deleteDir()
             config.targetDirectory.deleteDir()

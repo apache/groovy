@@ -21,6 +21,7 @@ package org.codehaus.groovy.runtime
 import groovy.test.GroovyTestCase
 
 import static groovy.test.GroovyAssert.isAtLeastJdk
+import static org.junit.Assume.assumeTrue
 
 class InterfaceConversionTest extends GroovyTestCase {
 
@@ -43,19 +44,29 @@ class InterfaceConversionTest extends GroovyTestCase {
         assert m2.b(null) == 2
     }
 
-    //GROOVY-7104
+    // GROOVY-7104
     void testDefaultInterfaceMethodCallOnProxy() {
-        // reversed is a default method within the Comparator interface for 1.8+
-        if (!isAtLeastJdk("1.8")) return
-        Comparator c1 = { a, b -> a <=> b }
-        assert c1.compare("a", "b") == -1
-        def c2 = c1.reversed()
-        assert c2.compare("a", "b") == 1
+        assumeTrue(isAtLeastJdk("1.8"))
+        assertScript '''
+            Comparator<?> c = { a,b -> a <=> b }
+            assert c.compare("x","y") < 0
+            c = c.reversed() // default method
+            assert c.compare("x","y") > 0
+        '''
+    }
+
+    // GROOVY-10391
+    void testDefaultInterfaceMethodCallOnProxy2() {
+        assumeTrue(isAtLeastJdk("1.8"))
+        assertScript '''
+            java.util.function.Predicate<?> p = { q -> false }
+            def not = p.negate() // default method
+            assert not.test("x")
+        '''
     }
 }
 
 interface InterfaceConversionTestFoo {
     def a()
-
     def b(Integer i)
 }

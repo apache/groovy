@@ -18,17 +18,30 @@
  */
 package groovy.util
 
-import groovy.test.GroovyTestCase
+import groovy.transform.AutoFinal
+import org.junit.Before
+import org.junit.BeforeClass
+import org.junit.Test
 
-import java.util.concurrent.ConcurrentHashMap
-import org.codehaus.groovy.control.CompilerConfiguration
+import static groovy.test.GroovyAssert.shouldFail
 
-class GroovyScriptEngineReloadingTest extends GroovyTestCase {
-    GroovyScriptEngine gse
+@AutoFinal
+final class GroovyScriptEngineReloadingTest {
 
-    void setUp() {
-        MapFileSystem.instance.registerMapFileSystem()
-        makeGSE(null)
+    private GroovyScriptEngine gse
+
+    @BeforeClass
+    static void setUpTestSuite() {
+        URL.setURLStreamHandlerFactory(protocol -> {
+            if (protocol == MapUrlConnection.PROTOCOL) {
+                return new MapUrlHandler()
+            }
+        })
+    }
+
+    @Before
+    void setUpTestCase() {
+        makeGSE()
     }
 
     private void makeGSE(ClassLoader parent) {
@@ -36,16 +49,18 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
             gse = new GroovyScriptEngine([MapUrlConnection.URL_SCHEME] as String[]) {
                 long time = 1000
 
+                @Override
                 protected long getCurrentTime() {
-                    return time
+                    time
                 }
             }
         } else {
             gse = new GroovyScriptEngine([MapUrlConnection.URL_SCHEME] as String[], parent) {
                 long time = 1000
 
+                @Override
                 protected long getCurrentTime() {
-                    return time
+                    time
                 }
             }
         }
@@ -73,22 +88,76 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
         gse.run("s_1", binding)
 
         assert binding.getVariable("val") == expected
-
     }
 
-    // test to ensure new source is no picked up
+    /**
+     * The script passes the className of the class it's supposed to
+     * instantiate to this method, expecting a newly instantiated object
+     * in return.  The reason this is not done in the script is that
+     * we want to ensure that no unforeseen problems occur if
+     * the instantiation is not actually done inside the script,
+     * since real-world usages will likely require delegating that
+     * job.
+     */
+    private Object instantiate(String className, ClassLoader classLoader) {
+        Class clazz = null;
+        try {
+            clazz = Class.forName(className, true, classLoader);
+        } catch (ClassNotFoundException ex) {
+            throw new RuntimeException("Class.forName failed for  " + className, ex);
+        }
+        try {
+            return clazz.newInstance();
+        } catch (Exception ex) {
+            throw new RuntimeException("Could not instantiate object of class " + className, ex);
+        }
+    }
+
+    private void writeScript(int name) throws IOException {
+        def s = '''
+            def b = new Bean()
+            return b.getVal()
+        '''
+        MapFileSystem.instance.modFile("script${name}.groovy", s, gse.@time)
+    }
+
+    private void writeBean(int d) throws IOException {
+        def s = """
+            class Bean {
+                String prop0
+                String prop${d}
+                def getVal(){'$d'}
+            }
+        """
+        MapFileSystem.instance.modFile('Bean.groovy', s, gse.@time)
+    }
+
+    private void writeClassBean() {
+        def s = '''
+            class Bean {
+                def getVal(){this.class.hashCode()}
+            }
+        '''
+        MapFileSystem.instance.modFile('Bean.groovy', s, gse.@time)
+    }
+
+    //--------------------------------------------------------------------------
+
+    @Test // ensures new source is no picked up
     void testIsSourceNewer() {
         execute(1000, 2000, 2)
         execute(1000, 5000, 2)
         execute(1000, 10000, 2)
     }
-    // test to ensure new source is ignored till minimumRecompilationIntervall is passed
+
+    @Test // ensures new source is ignored till minimumRecompilationIntervall is passed
     void testRecompilationIntervall() {
         execute(100000, 10000, 1)
         execute(100000, 10000, 1)
         execute(100000, 200000, 2)
     }
 
+    @Test
     void testRecompilingWithGenerics() {
         MapFileSystem.instance.modFile('BaseClass.groovy', 'abstract class BaseClass<T> extends Script {}', gse.@time)
 
@@ -106,11 +175,12 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
         sleep 1000
 
         // make a change to the sub-class so that it gets recompiled
-        MapFileSystem.instance.modFile('SubClass.groovy', subClassText + "\n", gse.@time)
+        MapFileSystem.instance.modFile('SubClass.groovy', subClassText + '\n', gse.@time)
         gse.loadScriptByName('SubClass.groovy')
 
     }
 
+    @Test
     void testDeleteDependent() {
         sleep 10000
         MapFileSystem.instance.modFile('ClassA.groovy', 'DependentClass ic = new DependentClass()', gse.@time as long)
@@ -124,66 +194,60 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
         assert clazz != null //classA is valid with dep removed
     }
 
+    @Test
     void testReloadWith2ScriptsDependentOnSameBeanAndReloadForSecond() {
         gse.config.minimumRecompilationInterval = 1000
         writeBean(1)
         writeScript(1)
 
-        def val1 = gse.run("script1.groovy", "")
-        assert val1 == '1', "script1 should have returned 1"
+        def val1 = gse.run('script1.groovy', '')
+        assert val1 == '1', 'script1 should have returned 1'
 
         sleep 1
         writeBean(2)
         writeScript(2)
-        val1 = gse.run("script1.groovy", "")
-        assert val1 == '1', "script1 should have returned 1"
+        val1 = gse.run('script1.groovy', '')
+        assert val1 == '1', 'script1 should have returned 1'
 
         sleep 10000
 
-        def val2 = gse.run("script2.groovy", "")
-        assert val2 == '2', "script2 should have returned 2"
+        def val2 = gse.run('script2.groovy', '')
+        assert val2 == '2', 'script2 should have returned 2'
     }
 
+    @Test
     void testReloadWith2ScriptsDependentOnSameBean() {
         gse.config.minimumRecompilationInterval = 1
         writeBean(1)
         writeScript(1)
         writeScript(2)
 
-        def val1 = gse.run("script2.groovy", "")
-        assert val1 == '1', "script2 should have returned 1"
+        def val1 = gse.run('script2.groovy', '')
+        assert val1 == '1', 'script2 should have returned 1'
 
-        def val2 = gse.run("script1.groovy", "")
-        assert val2 == '1', "script1 should have returned 1"
+        def val2 = gse.run('script1.groovy', '')
+        assert val2 == '1', 'script1 should have returned 1'
 
         sleep 10000
         writeBean(2)
 
-        def val3 = gse.run("script1.groovy", "")
+        def val3 = gse.run('script1.groovy', '')
         assert val3 == '2', "script1 should have returned 2 after bean was modified but returned $val3"
 
-        def val4 = gse.run("script2.groovy", "")
+        def val4 = gse.run('script2.groovy', '')
         assert val4 == '2', "script2 should have returned 2 after bean was modified but returned $val4"
     }
 
-    private void writeClassBean() {
-        def s = """
-            class Bean {
-                def getVal(){this.class.hashCode()}
-            }
-        """
-        MapFileSystem.instance.modFile("Bean.groovy", s, gse.@time)
-    }
-
+    @Test
     void testDependencyReloadNotTooOften() {
         gse.config.minimumRecompilationInterval = 1
         writeClassBean()
         writeScript(1)
         writeScript(2)
 
-        def beanClass1 = gse.run("script2.groovy", "")
-        def beanClass2 = gse.run("script1.groovy", "")
-        assert beanClass1 == beanClass2, "bean class should have been compiled only once"
+        def beanClass1 = gse.run('script2.groovy', '')
+        def beanClass2 = gse.run('script1.groovy', '')
+        assert beanClass1 == beanClass2, 'bean class should have been compiled only once'
         def oldBeanClass = beanClass1
 
         sleep 10000
@@ -191,204 +255,160 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
         writeScript(1)
         writeScript(2)
 
-        beanClass1 = gse.run("script2.groovy", "")
-        beanClass2 = gse.run("script1.groovy", "")
-        assert beanClass1 == beanClass2, "bean class should have been compiled only once"
-        assert beanClass1 != oldBeanClass, "bean class was not recompiled"
+        beanClass1 = gse.run('script2.groovy', '')
+        beanClass2 = gse.run('script1.groovy', '')
+        assert beanClass1 == beanClass2, 'bean class should have been compiled only once'
+        assert beanClass1 != oldBeanClass, 'bean class was not recompiled'
     }
 
+    @Test
     void testReloadWhenModifyingAllScripts() {
         gse.config.minimumRecompilationInterval = 1
         writeBean(1)
         writeScript(1)
         writeScript(2)
 
-        def val1 = gse.run("script2.groovy", "")
-        assert val1 == '1', "script2 should have returned 1"
+        def val1 = gse.run('script2.groovy', '')
+        assert val1 == '1', 'script2 should have returned 1'
 
-        def val2 = gse.run("script1.groovy", "")
-        assert val2 == '1', "script1 should have returned 1"
+        def val2 = gse.run('script1.groovy', '')
+        assert val2 == '1', 'script1 should have returned 1'
 
         // write Scripts stay the same, timestamps updated
         writeScript(1)
         writeScript(2)
         sleep 10000
 
-        val1 = gse.run("script2.groovy", "")
-        assert val1 == '1', "script2 should have returned 1"
-        val2 = gse.run("script1.groovy", "")
-        assert val2 == '1', "script1 should have returned 1"
+        val1 = gse.run('script2.groovy', '')
+        assert val1 == '1', 'script2 should have returned 1'
+        val2 = gse.run('script1.groovy', '')
+        assert val2 == '1', 'script1 should have returned 1'
 
         // Modify Bean to return new value
         sleep 10000
         writeBean(2)
 
-        def val3 = gse.run("script1.groovy", "")
+        def val3 = gse.run('script1.groovy', '')
         assert val3 == '2', "script1 should have returned 2 after bean was modified but returned $val3"
-        def val4 = gse.run("script2.groovy", "")
+        def val4 = gse.run('script2.groovy', '')
         assert val4 == '2', "script2 should have returned 2 after bean was modified but returned $val4"
     }
 
-    void writeScript(int name) throws IOException {
-        def s = """
-            def b = new Bean()
-            return b.getVal()
-        """
-        MapFileSystem.instance.modFile("script${name}.groovy", s, gse.@time)
-    }
+    @Test
+    void testDynamicInstantiation() {
+        MapFileSystem.instance.modFile('script.groovy', '''
+           def obj = dynaInstantiate.instantiate(className, getClass().getClassLoader())
+           obj.modifyWidth(dim, addThis)
+           returnedMessage = obj.message
+       ''', 0)
 
-    void writeBean(int d) throws IOException {
-        def s = """
-            class Bean {
-                String prop0
-                String prop${d}
-                def getVal(){"$d"}
+        MapFileSystem.instance.modFile('com/company/MakeMeSuper.groovy', '''
+            package com.company
+            import com.company.util.*
+            class MakeMeSuper{
+               private HelperIntf helper = new Helper()
+               def getMessage() {
+                   helper.getMessage()
+               }
             }
-        """
-        MapFileSystem.instance.modFile("Bean.groovy", s, gse.@time)
-    }
+          ''', 0)
 
-    void testDynamicInstantiation() throws Exception {
-        MapFileSystem.instance.modFile("script.groovy",
-                """
-               def obj = dynaInstantiate.instantiate(className, getClass().getClassLoader())
-               obj.modifyWidth(dim, addThis)
-               returnedMessage = obj.message
-           """, 0)
-
-        MapFileSystem.instance.modFile("com/company/MakeMeSuper.groovy",
-                """
-              package com.company
-              import com.company.util.*
-              class MakeMeSuper{
-                 private HelperIntf helper = new Helper()
-                 def getMessage(){
-                         helper.getMessage()
-                 }
-              }
-          """, 0)
-
-        MapFileSystem.instance.modFile("com/company/MakeMe.groovy",
-                """
+        MapFileSystem.instance.modFile('com/company/MakeMe.groovy',
+                '''
               package com.company
               class MakeMe extends MakeMeSuper{
                  def modifyWidth(dim, addThis){
                     dim.width += addThis
                  }
               }
-          """, 0)
+          ''', 0)
 
-        MapFileSystem.instance.modFile("com/company/util/HelperIntf.groovy",
-                """
+        MapFileSystem.instance.modFile('com/company/util/HelperIntf.groovy',
+                '''
               package com.company.util
               interface HelperIntf{
                  public String getMessage();
               }
-          """, 0)
+          ''', 0)
 
-        MapFileSystem.instance.modFile("com/company/util/Helper.groovy",
-                """
+        MapFileSystem.instance.modFile('com/company/util/Helper.groovy',
+                '''
               package com.company.util
               class Helper implements HelperIntf{
                  public String getMessage(){
                        'worked'
                  }
               }
-           """, 0)
+           ''', 0)
 
         //Code run in the script will modify this dimension object.
         MyDimension dim = new MyDimension();
 
         Binding binding = new Binding();
-        binding.setVariable("dim", dim);
-        binding.setVariable("dynaInstantiate", this);
+        binding.setVariable('dim', dim);
+        binding.setVariable('dynaInstantiate', this);
 
-        binding.setVariable("className", "com.company.MakeMe");
+        binding.setVariable('className', 'com.company.MakeMe');
 
         int addThis = 3;
-        binding.setVariable("addThis", addThis);
+        binding.setVariable('addThis', addThis);
 
-        gse.run("script.groovy", binding);
+        gse.run('script.groovy', binding);
 
         //The script instantiated com.company.MakeMe via our own
         //instantiate method.  The instantiated object modified the
         //width of our Dimension object, adding the value of our
         //'addThis' variable to it.
-        assertEquals(new MyDimension(addThis, 0), dim);
+        assert dim == new MyDimension(addThis, 0)
 
-        assertEquals('worked', binding.getVariable("returnedMessage"))
-    }
-
-    /**
-     * The script passes the className of the class it's supposed to
-     * instantiate to this method, expecting a newly instantiated object
-     * in return.  The reason this is not done in the script is that
-     * we want to ensure that no unforeseen problems occur if
-     * the instantiation is not actually done inside the script,
-     * since real-world usages will likely require delegating that
-     * job.
-     */
-    Object instantiate(String className, ClassLoader classLoader) {
-        Class clazz = null;
-        try {
-            clazz = Class.forName(className, true, classLoader);
-        } catch (ClassNotFoundException ex) {
-            throw new RuntimeException("Class.forName failed for  " + className, ex);
-        }
-        try {
-            return clazz.newInstance();
-        } catch (Exception ex) {
-            throw new RuntimeException("Could not instantiate object of class " + className, ex);
-        }
+        assert binding.getVariable('returnedMessage') == 'worked'
     }
 
     /**
      * Test for GROOVY-3281, to ensure details passed through CompilerConfiguration are inherited by GSE.
      */
+    @Test
     void testCompilerConfigurationInheritance() {
-        CompilerConfiguration cc = new CompilerConfiguration();
-        cc.scriptBaseClass = CustomBaseClass.name
-
-        GroovyClassLoader cl = new GroovyClassLoader(this.class.getClassLoader(), cc)
-        makeGSE(cl);
+        def cc = new org.codehaus.groovy.control.CompilerConfiguration(scriptBaseClass: CustomBaseClass.name)
+        def cl = new GroovyClassLoader(this.class.classLoader, cc)
+        makeGSE(cl)
 
         MapFileSystem.instance.modFile(
-                "groovyScriptEngineSampleScript.groovy",
+                'groovyScriptEngineSampleScript.groovy',
                 'println "Hello Guillaume, is it a Groovy day?"', 0)
-        def aScript = gse.createScript("groovyScriptEngineSampleScript.groovy", new Binding())
+        def aScript = gse.createScript('groovyScriptEngineSampleScript.groovy', new Binding())
 
         assert aScript instanceof CustomBaseClass
     }
 
     /** GROOVY-3893 */
+    @Test
     void testGSEWithNoScriptRoots() {
         shouldFail ResourceException, {
             String[] emptyScriptRoots = []
             GroovyScriptEngine gse = new GroovyScriptEngine(emptyScriptRoots)
-            gse.run("unknownScriptName", "")
+            gse.run('unknownScriptName', '')
         }
     }
 
     /** GROOVY-6203 */
+    @Test
     void testGSEBaseClass() {
-        CompilerConfiguration cc = new CompilerConfiguration()
-        cc.setScriptBaseClass(CustomBaseClass.name)
-
-        makeGSE(null)
-        gse.setConfig(cc)
+        gse.config = new org.codehaus.groovy.control.CompilerConfiguration(scriptBaseClass: CustomBaseClass.name)
 
         MapFileSystem.instance.modFile(
-                "Groovy6203Helper.groovy",
+                'Groovy6203Helper.groovy',
                 'println "Hello Guillaume, is it a Groovy day?"', 0)
 
-        def script = gse.createScript("Groovy6203Helper.groovy", new Binding())
+        def script = gse.createScript('Groovy6203Helper.groovy', new Binding())
         assert script instanceof CustomBaseClass
     }
 
     /** GROOVY-4013 */
+    @Test
     void testGSENoCachingOfInnerClasses() {
-        MapFileSystem.instance.modFile("Groovy4013Helper.groovy",
-                """
+        MapFileSystem.instance.modFile('Groovy4013Helper.groovy',
+                '''
                import java.awt.event.*
                import java.awt.*
                class Groovy4013Helper
@@ -401,7 +421,7 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
                        })
                   }
                }
-           """, 0)
+           ''', 0)
 
         def klazz = gse.loadScriptByName('Groovy4013Helper.groovy')
         assert klazz.name == 'Groovy4013Helper'
@@ -411,41 +431,43 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
     }
 
     /** GROOVY-4234 */
+    @Test
     void testGSERunningAScriptThatHasMultipleClasses() {
-        MapFileSystem.instance.modFile("Groovy4234Helper.groovy",
-                """
+        MapFileSystem.instance.modFile('Groovy4234Helper.groovy',
+                '''
               class Foo4234 {
                   static main(args){
-                      //println "Running Foo4234 -> main()"
+                      //println 'Running Foo4234 -> main()'
                   }
               }
               class Bar4234 { }
-          """, 0)
+          ''', 0)
 
-        //println "testGSELoadingAScriptThatHasMultipleClasses - Run 1"
-        gse.run("Groovy4234Helper.groovy", new Binding())
+        //println 'testGSELoadingAScriptThatHasMultipleClasses - Run 1'
+        gse.run('Groovy4234Helper.groovy', new Binding())
 
-        //println "testGSELoadingAScriptThatHasMultipleClasses - Run 2"
-        gse.run("Groovy4234Helper.groovy", new Binding())
+        //println 'testGSELoadingAScriptThatHasMultipleClasses - Run 2'
+        gse.run('Groovy4234Helper.groovy', new Binding())
     }
 
-    /** GROOVY-2811 and GROOVY-4286  */
+    /** GROOVY-2811 and GROOVY-4286 */
+    @Test
     void testReloadingInterval() {
         gse.config.minimumRecompilationInterval = 1500
         def binding = new Binding([:])
-        def scriptName = "gse.groovy"
+        def scriptName = 'gse.groovy'
 
-        MapFileSystem.instance.modFile(scriptName, "1", 0)
+        MapFileSystem.instance.modFile(scriptName, '1', 0)
         sleep 1000
         // first time, the script is compiled and cached
         assert gse.run(scriptName, binding) == 1
 
-        MapFileSystem.instance.modFile(scriptName, "12", gse.@time)
+        MapFileSystem.instance.modFile(scriptName, '12', gse.@time)
         sleep 3000
         // the file was updated, and we waited for more than the minRecompilationInterval
         assert gse.run(scriptName, binding) == 12
 
-        MapFileSystem.instance.modFile(scriptName, "123", gse.@time)
+        MapFileSystem.instance.modFile(scriptName, '123', gse.@time)
         sleep 1000
         // still the old result, as we didn't wait more than the minRecompilationInterval
         assert gse.run(scriptName, binding) == 12
@@ -455,8 +477,9 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
         assert gse.run(scriptName, binding) == 123
     }
 
+    //--------------------------------------------------------------------------
 
-    class MapFileEntry {
+    static class MapFileEntry {
         String content
         long lutime
 
@@ -467,17 +490,8 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
     }
 
     @Singleton
-    class MapFileSystem {
-
-        public final ConcurrentHashMap<String, MapFileEntry> fileCache = new ConcurrentHashMap<String, MapFileEntry>()
-        private boolean registered = false
-
-        void registerMapFileSystem() {
-            if (!registered) {
-                URL.setURLStreamHandlerFactory(new MapUrlFactory())
-                registered = true
-            }
-        }
+    static class MapFileSystem {
+        public final Map<String, MapFileEntry> fileCache = new java.util.concurrent.ConcurrentHashMap<>()
 
         void modFile(String name, String content, long lutime) {
             if (fileCache.containsKey(name)) {
@@ -502,84 +516,73 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
         }
     }
 
-    class MapUrlHandler extends URLStreamHandler {
-
-        MapUrlHandler() {
-            super()
-        }
-
+    static class MapUrlHandler extends URLStreamHandler {
+        @Override
         protected URLConnection openConnection(URL u) throws IOException {
             return new MapUrlConnection(u)
         }
 
+        @Override
         protected void parseURL(URL u, String spec, int start, int limit) {
             super.parseURL(u, spec, start, limit)
         }
     }
 
-    class MapUrlConnection extends URLConnection {
+    static class MapUrlConnection extends URLConnection {
+
+        MapUrlConnection(URL url) {
+            super(url)
+            name = url.getFile()
+            if (name.startsWith('/')) {
+                name = name.substring(1)
+            }
+        }
+
+        @Override
         String getContentEncoding() {
             return CHARSET
         }
 
+        @Override
         Object getContent() throws IOException {
             return super.content
         }
 
-        public static final String CHARSET = "UTF-8"
-        public static final String URL_HOST = "local"
-        public static final String PROTOCOL = "map"
-        public static final String URL_SCHEME = PROTOCOL + "://" + URL_HOST + "/"
+        public static final String CHARSET = 'UTF-8'
+        public static final String URL_HOST = 'local'
+        public static final String PROTOCOL = 'map'
+        public static final String URL_SCHEME = PROTOCOL + '://' + URL_HOST + '/'
 
         private String name
 
+        @Override
         InputStream getInputStream() throws IOException {
-            // System.out.println(name+"\t"+MapFileSystem.fileCache.get(name).content);
+            // System.out.println(name+'\t'+MapFileSystem.fileCache.get(name).content);
             if (MapFileSystem.instance.fileCache.containsKey(name)) {
                 String content = MapFileSystem.instance.fileCache.get(name).content
                 return new ByteArrayInputStream(content.getBytes(CHARSET))
             } else {
-                throw new IOException("file not found" + name)
+                throw new IOException('file not found' + name)
             }
         }
 
+        @Override
         long getLastModified() {
             long lastmodified = 0
             if (MapFileSystem.instance.fileCache.containsKey(name)) {
                 lastmodified = MapFileSystem.instance.fileCache.get(name).lutime
             }
-            // System.out.println(name+"\t"+lastmodified);
+            // System.out.println(name+'\t'+lastmodified);
             return lastmodified
         }
 
+        @Override
         URL getURL() {
             return super.getURL()
         }
 
-        MapUrlConnection(URL url) {
-            super(url)
-            name = url.getFile()
-            if (name.startsWith("/")) {
-                name = name.substring(1)
-            }
-        }
-
+        @Override
         void connect() throws IOException {}
-    }
-
-    class MapUrlFactory implements URLStreamHandlerFactory {
-
-        MapUrlFactory() {
-            super()
-        }
-
-        URLStreamHandler createURLStreamHandler(String protocol) {
-            if (MapUrlConnection.PROTOCOL.equals(protocol)) {
-                return new MapUrlHandler()
-            } else {
-                return null
-            }
-        }
     }
 
     static class MyDimension {
@@ -596,10 +599,17 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
             height = 0
         }
 
-        boolean equals(o) { o.width == width && o.height == height }
+        @Override
+        boolean equals(o) {
+            o.width == width && o.height == height
+        }
 
-        int hashCode() { width + 13 * height }
+        @Override
+        int hashCode() {
+            width + 13 * height
+        }
     }
 
-    static abstract class CustomBaseClass extends Script {}
+    static abstract class CustomBaseClass extends Script {
+    }
 }

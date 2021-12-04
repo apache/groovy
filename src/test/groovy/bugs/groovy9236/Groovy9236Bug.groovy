@@ -18,106 +18,115 @@
  */
 package groovy.bugs.groovy9236
 
-import groovy.test.GroovyTestCase
-import org.apache.groovy.util.ScriptRunner
+import org.junit.Test
 
-class Groovy9236Bug extends GroovyTestCase {
-    /* groovy-3.0.0-beta-3 will try to guess and load the following classes:
-Script1$_p_lambda1BeanInfo
-Script1$_p_lambda1Customizer
-Script1BeanInfo
-Script1Customizer
-groovy$transform$CompileStatic
-groovy.lang.GroovyObject$Collectors
-groovy.lang.GroovyObject$CompileStatic
-groovy.lang.GroovyObject$groovy$transform$CompileStatic
-groovy.lang.GroovyObject$java$util$stream$Collectors
-groovy.lang.GroovyObject$java$util$stream$Stream
-groovy.lang.groovy$transform$CompileStatic
-groovy.lang.java$util$stream$Collectors
-groovy.lang.java$util$stream$Stream
-groovy.transform$CompileStatic
-groovy.util.groovy$transform$CompileStatic
-groovy.util.java$util$stream$Collectors
-groovy.util.java$util$stream$Stream
-java$util$stream$Collectors
-java$util$stream$Stream
-java.io.groovy$transform$CompileStatic
-java.io.java$util$stream$Collectors
-java.io.java$util$stream$Stream
-java.lang.groovy$transform$CompileStatic
-java.lang.java$util$stream$Collectors
-java.lang.java$util$stream$Stream
-java.net.groovy$transform$CompileStatic
-java.net.java$util$stream$Collectors
-java.net.java$util$stream$Stream
-java.util$stream$Collectors
-java.util$stream$Stream
-java.util.groovy$transform$CompileStatic
-java.util.java$util$stream$Collectors
-java.util.java$util$stream$Stream
-java.util.stream$Collectors
-java.util.stream$Stream
+import static org.apache.groovy.util.ScriptRunner.runScript
+
+final class Groovy9236Bug {
+
+    /**
+     * groovy-3.0.0-beta-3 will try to guess and load the following classes:
+     * <pre>
+     * Script1$_p_lambda1BeanInfo
+     * Script1$_p_lambda1Customizer
+     * Script1BeanInfo
+     * Script1Customizer
+     * groovy$transform$CompileStatic
+     * groovy.lang.GroovyObject$Collectors
+     * groovy.lang.GroovyObject$CompileStatic
+     * groovy.lang.GroovyObject$groovy$transform$CompileStatic
+     * groovy.lang.GroovyObject$java$util$stream$Collectors
+     * groovy.lang.GroovyObject$java$util$stream$Stream
+     * groovy.lang.groovy$transform$CompileStatic
+     * groovy.lang.java$util$stream$Collectors
+     * groovy.lang.java$util$stream$Stream
+     * groovy.transform$CompileStatic
+     * groovy.util.groovy$transform$CompileStatic
+     * groovy.util.java$util$stream$Collectors
+     * groovy.util.java$util$stream$Stream
+     * java$util$stream$Collectors
+     * java$util$stream$Stream
+     * java.io.groovy$transform$CompileStatic
+     * java.io.java$util$stream$Collectors
+     * java.io.java$util$stream$Stream
+     * java.lang.groovy$transform$CompileStatic
+     * java.lang.java$util$stream$Collectors
+     * java.lang.java$util$stream$Stream
+     * java.net.groovy$transform$CompileStatic
+     * java.net.java$util$stream$Collectors
+     * java.net.java$util$stream$Stream
+     * java.util$stream$Collectors
+     * java.util$stream$Stream
+     * java.util.groovy$transform$CompileStatic
+     * java.util.java$util$stream$Collectors
+     * java.util.java$util$stream$Stream
+     * java.util.stream$Collectors
+     * java.util.stream$Stream
+     * </pre>
      */
+    @Test @groovy.transform.CompileStatic
     void testAvoidUnnecessaryResolving() {
-        def cl = new Groovy9236ClassLoader()
-        def gs = new GroovyShell(cl)
-        gs.evaluate('''
-                import groovy.transform.CompileStatic
-                import java.util.stream.Collectors
-                import java.util.stream.Stream
-                
-                @CompileStatic
-                void p() {
-                    assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus 1).collect(Collectors.toList())
-                }
-                
-                p()
-        ''')
-
-        final classNamesShouldAvoidToGuess = ['java.lang.java$util$stream$Collectors',
-                                              'java.util.java$util$stream$Collectors',
-                                              'java.io.java$util$stream$Collectors',
-                                              'java.net.java$util$stream$Collectors',
-                                              'groovy.lang.java$util$stream$Collectors',
-                                              'groovy.util.java$util$stream$Collectors',
-                                              'java$util$stream$Collectors',
-                                              'java.util$stream$Collectors',
-                                              'java.util.stream$Collectors',
-                                              'java.lang.groovy$transform$CompileStatic',
-                                              'java.util.groovy$transform$CompileStatic',
-                                              'java.io.groovy$transform$CompileStatic',
-                                              'java.net.groovy$transform$CompileStatic',
-                                              'groovy.lang.groovy$transform$CompileStatic',
-                                              'groovy.util.groovy$transform$CompileStatic',
-                                              'groovy$transform$CompileStatic',
-                                              'groovy.transform$CompileStatic',
-                                              'java.lang.java$util$stream$Stream',
-                                              'java.util.java$util$stream$Stream',
-                                              'java.io.java$util$stream$Stream',
-                                              'java.net.java$util$stream$Stream',
-                                              'groovy.lang.java$util$stream$Stream',
-                                              'groovy.util.java$util$stream$Stream',
-                                              'java$util$stream$Stream',
-                                              'java.util$stream$Stream',
-                                              'java.util.stream$Stream',
-                                              'groovy.lang.GroovyObject$java$util$stream$Collectors',
-                                              'groovy.lang.GroovyObject$groovy$transform$CompileStatic',
-                                              'groovy.lang.GroovyObject$java$util$stream$Stream']
-
-        assert cl.guessedClassNameList.every(n -> !classNamesShouldAvoidToGuess.contains(n))
-    }
-
-    void testResolvingPrecedence() {
-        ScriptRunner.runScript('/groovy/bugs/groovy9236/Main.groovy')
-    }
-
-    private static class Groovy9236ClassLoader extends GroovyClassLoader {
         def guessedClassNameList = []
 
-        protected Class<?> findClass(final String name) throws ClassNotFoundException {
-            guessedClassNameList << name
-            super.findClass(name)
+        def loader = new GroovyClassLoader() {
+            @Override
+            protected Class<?> findClass(String name) throws ClassNotFoundException {
+                guessedClassNameList.add(name)
+                return super.findClass(name)
+            }
         }
+
+        new GroovyShell(loader).evaluate('''
+            import groovy.transform.CompileStatic
+            import java.util.stream.Collectors
+            import java.util.stream.Stream
+
+            @CompileStatic
+            void p() {
+                assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e.plus(1)).collect(Collectors.toList())
+            }
+
+            p()
+        ''')
+
+        List<String> classNamesShouldAvoidToGuess = [
+            'java.lang.java$util$stream$Collectors',
+            'java.util.java$util$stream$Collectors',
+            'java.io.java$util$stream$Collectors',
+            'java.net.java$util$stream$Collectors',
+            'groovy.lang.java$util$stream$Collectors',
+            'groovy.util.java$util$stream$Collectors',
+            'java$util$stream$Collectors',
+            'java.util$stream$Collectors',
+            'java.util.stream$Collectors',
+            'java.lang.groovy$transform$CompileStatic',
+            'java.util.groovy$transform$CompileStatic',
+            'java.io.groovy$transform$CompileStatic',
+            'java.net.groovy$transform$CompileStatic',
+            'groovy.lang.groovy$transform$CompileStatic',
+            'groovy.util.groovy$transform$CompileStatic',
+            'groovy$transform$CompileStatic',
+            'groovy.transform$CompileStatic',
+            'java.lang.java$util$stream$Stream',
+            'java.util.java$util$stream$Stream',
+            'java.io.java$util$stream$Stream',
+            'java.net.java$util$stream$Stream',
+            'groovy.lang.java$util$stream$Stream',
+            'groovy.util.java$util$stream$Stream',
+            'java$util$stream$Stream',
+            'java.util$stream$Stream',
+            'java.util.stream$Stream',
+            'groovy.lang.GroovyObject$java$util$stream$Collectors',
+            'groovy.lang.GroovyObject$groovy$transform$CompileStatic',
+            'groovy.lang.GroovyObject$java$util$stream$Stream'
+        ]
+
+        assert !guessedClassNameList.isEmpty()
+        assert guessedClassNameList.every(n -> !classNamesShouldAvoidToGuess.contains(n))
+    }
+
+    @Test
+    void testResolvingPrecedence() {
+        runScript('/groovy/bugs/groovy9236/Main.groovy')
     }
 }
