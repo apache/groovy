@@ -27,11 +27,12 @@ import static org.junit.Assume.assumeFalse
 final class Groovy9932 {
 
     @Test
-    void testCallCurrentOnMock() {
+    void testMockCallChain() {
         assumeFalse(CompilerConfiguration.DEFAULT.isIndyEnabled())
 
         new MockFor(Helper).tap {
             demand.publicMethod { -> 'intercepted' }
+            ignore 'privateMethod'
             ignore 'getMyString'
         }.use {
             def helper = new Helper()
