@@ -31,18 +31,18 @@ class MacroLibTest extends GroovyTestCase {
     def string = 'foo'
     '''
 
-    void testNV() {
+    void testSV() {
         assertScript """
         $BASE
-        assert NV(num, list, range, string).toString() == 'num=42, list=[1, 2, 3], range=[0, 1, 2, 3, 4, 5], string=foo'
+        assert SV(num, list, range, string).toString() == 'num=42, list=[1, 2, 3], range=[0, 1, 2, 3, 4, 5], string=foo'
         """
     }
 
-    void testNVInClosure() {
+    void testSVInClosure() {
         assertScript """
         $BASE
         def cl = {
-            NV(num, list, range, string).toString()
+            SV(num, list, range, string).toString()
         }
 
         assert cl().toString() == 'num=42, list=[1, 2, 3], range=[0, 1, 2, 3, 4, 5], string=foo'
@@ -52,40 +52,55 @@ class MacroLibTest extends GroovyTestCase {
     void testList() {
         assertScript """
         $BASE
-        assert [NV(num, list), NV(range, string)].toString() == '[num=42, list=[1, 2, 3], range=[0, 1, 2, 3, 4, 5], string=foo]'
+        assert [SV(num, list), SV(range, string)].toString() == '[num=42, list=[1, 2, 3], range=[0, 1, 2, 3, 4, 5], string=foo]'
         """
     }
 
-    void testNVInclude() {
+    void testSVInclude() {
         assertScript """
         $BASE
-        def numNV = NV(num)
-        assert NV(numNV, list, range, string).toString() == 'numNV=num=42, list=[1, 2, 3], range=[0, 1, 2, 3, 4, 5], string=foo'
+        def numSV = SV(num)
+        assert SV(numSV, list, range, string).toString() == 'numSV=num=42, list=[1, 2, 3], range=[0, 1, 2, 3, 4, 5], string=foo'
         """
     }
 
     void testNested() {
         assertScript """
         $BASE
-        def result = NV(NV(num), string)
+        def result = SV(SV(num), string)
         def strip = 'org.codehaus.groovy.macro.runtime.MacroStub.INSTANCE.'
         assert result - strip == 'macroMethod()=num=42, string=foo'
         """
     }
 
-    void testNVI() {
+    void testSVI() {
         assertScript """
         $BASE
-        assert NVI(num, list, range, string).toString() == /num=42, list=[1, 2, 3], range=0..5, string='foo'/
+        assert SVI(num, list, range, string).toString() == /num=42, list=[1, 2, 3], range=0..5, string='foo'/
         """
     }
 
-    void testNVD() {
+    void testSVD() {
         assertScript """
         $BASE
-        def result = NVD(num, list, range, string)
+        def result = SVD(num, list, range, string)
         def trimmed = result.replaceAll(/@[^>]+/, '@...')
         assert trimmed == /num=<java.lang.Integer@...>, list=<java.util.ArrayList@...>, range=<groovy.lang.IntRange@...>, string=<java.lang.String@...>/
         """
     }
+
+    void testNV() {
+        assertScript """
+        $BASE
+        assert NV(num).toString() == 'num=42'
+        """
+    }
+
+    void testNVL() {
+        assertScript """
+        $BASE
+        assert NVL(num, list, range, string).toString() == "[num=42, list=[1, 2, 3], range=0..5, string='foo']"
+        """
+    }
+
 }
