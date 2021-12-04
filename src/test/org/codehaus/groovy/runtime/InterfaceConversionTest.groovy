@@ -18,44 +18,60 @@
  */
 package org.codehaus.groovy.runtime
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-import static groovy.test.GroovyAssert.isAtLeastJdk
+import static groovy.test.GroovyAssert.assertScript
 
-class InterfaceConversionTest extends GroovyTestCase {
+final class InterfaceConversionTest {
 
+    @Test
     void testClosureConversion() {
-        def c1 = { Object[] args -> args?.length }
-        def c2 = c1 as InterfaceConversionTestFoo
-        assert !(c1 instanceof InterfaceConversionTestFoo)
-        assert c2 instanceof InterfaceConversionTestFoo
-        assert c2.a() == 0
-        assert c2.b(null) == null
+        assertScript '''
+            interface I {
+                def a()
+                def b(Integer i)
+            }
+            def c = { Object[] args -> args?.length }
+            def i = c as I
+            assert c !instanceof I
+            assert i  instanceof I
+            assert i.a() == 0
+            assert i.b(null) == null
+        '''
     }
 
+    @Test
     void testMapConversion() {
-        def m1 = [a: { 1 }, b: { 2 }]
-        def m2 = m1 as InterfaceConversionTestFoo
-
-        assert !(m1 instanceof InterfaceConversionTestFoo)
-        assert m2 instanceof InterfaceConversionTestFoo
-        assert m2.a() == 1
-        assert m2.b(null) == 2
+        assertScript '''
+            interface I {
+                def a()
+                def b(Integer i)
+            }
+            def m = [a: { 1 }, b: { 2 }]
+            def i = m as I
+            assert m !instanceof I
+            assert i  instanceof I
+            assert i.a() == 1
+            assert i.b(null) == 2
+        '''
     }
 
-    //GROOVY-7104
+    @Test // GROOVY-7104
     void testDefaultInterfaceMethodCallOnProxy() {
-        // reversed is a default method within the Comparator interface for 1.8+
-        if (!isAtLeastJdk("1.8")) return
-        Comparator c1 = { a, b -> a <=> b }
-        assert c1.compare("a", "b") == -1
-        def c2 = c1.reversed()
-        assert c2.compare("a", "b") == 1
+        assertScript '''
+            Comparator<?> c = { a,b -> a <=> b }
+            assert c.compare("x","y") < 0
+            c = c.reversed() // default method
+            assert c.compare("x","y") > 0
+        '''
     }
-}
 
-interface InterfaceConversionTestFoo {
-    def a()
-
-    def b(Integer i)
+    @Test // GROOVY-10391
+    void testDefaultInterfaceMethodCallOnProxy2() {
+        assertScript '''
+            java.util.function.Predicate<?> p = { q -> false }
+            def not = p.negate() // default method
+            assert not.test("x")
+        '''
+    }
 }
