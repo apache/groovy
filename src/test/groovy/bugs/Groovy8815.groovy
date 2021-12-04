@@ -22,17 +22,10 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
-import static groovy.test.GroovyAssert.isAtLeastJdk
-import static org.junit.Assume.assumeTrue
-
 final class Groovy8815 {
 
     @Test
     void testGenerics() {
-        // illegal access to `java.lang.reflect.Method.getGenericSignature`, i.e. `method.genericSignature` in the test
-        // but illegal access is not allowed by default since JDK 16
-        assumeTrue(!isAtLeastJdk('16.0'))
-
         def config = new CompilerConfiguration(
             targetDirectory: File.createTempDir(),
             jointCompilationOptions: [memStub: true]
@@ -75,7 +68,7 @@ final class Groovy8815 {
             def method = loader.loadClass('Service').getMethod('on', Class, Closure)
 
             // should not contain unresolved type parameter 'T'
-            assert method.genericSignature == '<E:LEvent<*>;>(Ljava/lang/Class;Lgroovy/lang/Closure;)LRegistration<Ljava/lang/Object;Ljava/util/function/Consumer<TE;>;>;'
+            assert method.genericReturnType.typeName == 'Registration<java.lang.Object, java.util.function.Consumer<E>>'
         } finally {
             parentDir.deleteDir()
             config.targetDirectory.deleteDir()
