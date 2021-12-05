@@ -140,7 +140,7 @@ dependencies {
     testImplementation "org.slf4j:jcl-over-slf4j:${versions.slf4j}"
     testImplementation "com.thoughtworks.qdox:qdox:${versions.qdox}"
 
-    tools "org.pantsbuild:jarjar:${versions.jarjar}"
+    tools "com.eed3si9n.jarjar:jarjar:${versions.jarjar}"
     tools "org.jboss.bridger:bridger:${versions.bridger}"
 
     tools("net.sourceforge.cobertura:cobertura:${versions.cobertura}") {
