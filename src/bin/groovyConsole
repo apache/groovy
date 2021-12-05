@@ -43,4 +43,5 @@ DIRNAME="$(dirname "$PRG")"
 
 . "$DIRNAME/startGroovy"
 
+export JAVA_OPTS="-Dsun.awt.keepWorkingSetOnMinimize=true $JAVA_OPTS"
 startGroovy groovy.console.ui.Console "$@"

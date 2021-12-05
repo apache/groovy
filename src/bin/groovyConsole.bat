@@ -27,6 +27,7 @@ if "%OS%"=="Windows_NT" setlocal
 set DIRNAME=%~dp0
 if "%DIRNAME%" == "" set DIRNAME=.\
 
+set "JAVA_OPTS=-Dsun.awt.keepWorkingSetOnMinimize=true %JAVA_OPTS%"
 "%DIRNAME%\startGroovy.bat" "%DIRNAME%" groovy.console.ui.Console %*
 
 @rem End local scope for the variables with windows NT shell
