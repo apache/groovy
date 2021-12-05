@@ -24,17 +24,17 @@ import static groovy.test.GroovyAssert.assertScript
 
 final class Groovy9608 {
 
-    @Test
-    void testGetFieldOnSuper() {
-        assertScript '''
-            import org.codehaus.groovy.runtime.ScriptBytecodeAdapter
+    static class A {
+        public x = 'A'
+    }
+    static class B extends A {
+        public x = 'B'
+    }
 
-            class A {
-              public x = 'A'
-            }
-            class B extends A {
-              public x = 'B'
-            }
+    @Test
+    void testGetFieldOnSelf() {
+        assertScript '''
+            import groovy.bugs.Groovy9608.*
 
             def a = new A()
             def ax = a.metaClass.getAttribute(A, a, 'x', false)
@@ -43,15 +43,21 @@ final class Groovy9608 {
             def b = new B()
             def bx = b.metaClass.getAttribute(B, b, 'x', false)
             assert bx == 'B'
+        '''
+    }
 
-            try {
-                def bSuperX = b.metaClass.getAttribute(A, b, 'x', true)
-                assert bSuperX == 'A'
-                bSuperX = ScriptBytecodeAdapter.getFieldOnSuper(A, b, 'x')
-                assert bSuperX == 'A'
-            } catch (MissingFieldException e) {
-                // TODO: Why can't these read public/protected field from super?
-            }
+    @Test
+    void testGetFieldOnSuper() {
+        assertScript '''
+            import groovy.bugs.Groovy9608.*
+            import org.codehaus.groovy.runtime.ScriptBytecodeAdapter
+
+            def b = new B()
+            def bSuperX = b.metaClass.getAttribute(B, b, 'x', true)
+            assert bSuperX == 'A'
+
+            bSuperX = ScriptBytecodeAdapter.getFieldOnSuper(B, b, 'x')
+            assert bSuperX == 'A'
         '''
     }
 }

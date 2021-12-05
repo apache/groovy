@@ -423,8 +423,7 @@ public class MetaMethodIndex {
     }
 
     private static boolean isNonRealMethod(final MetaMethod method) {
-        return method instanceof NewInstanceMetaMethod
-            || method instanceof NewStaticMetaMethod
+        return method instanceof NewMetaMethod
             || method instanceof ClosureMetaMethod
             || method instanceof GeneratedMetaMethod
             || method instanceof ClosureStaticMetaMethod

@@ -2455,7 +2455,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      *
      * @param propertyDescriptors the property descriptors
      */
-    private void setupProperties(PropertyDescriptor[] propertyDescriptors) {
+    private void setupProperties(final PropertyDescriptor[] propertyDescriptors) {
         if (theCachedClass.isInterface) {
             LinkedList<CachedClass> superClasses = new LinkedList<>();
             superClasses.add(ReflectionCache.OBJECT_CLASS);
@@ -2504,7 +2504,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             applyStrayPropertyMethods(superClasses, classPropertyIndex, true);
             applyStrayPropertyMethods(superClasses, classPropertyIndexForSuper, false);
 
-            copyClassPropertyIndexForSuper(classPropertyIndexForSuper);
             makeStaticPropertyIndex();
         }
     }
@@ -2567,13 +2566,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return staticProperty;
     }
 
-    private void copyClassPropertyIndexForSuper(Map<CachedClass, LinkedHashMap<String, MetaProperty>> dest) {
-        for (Map.Entry<CachedClass, LinkedHashMap<String, MetaProperty>> entry : classPropertyIndex.entrySet()) {
-            LinkedHashMap<String, MetaProperty> newVal = new LinkedHashMap<>();
-            dest.put(entry.getKey(), newVal);
-        }
-    }
-
     private void inheritStaticInterfaceFields(List<CachedClass> superClasses, Set<CachedClass> interfaces) {
         for (CachedClass iclass : interfaces) {
             LinkedHashMap<String, MetaProperty> iPropertyIndex = classPropertyIndex.computeIfAbsent(iclass, k -> new LinkedHashMap<>());
@@ -2586,15 +2578,17 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private void inheritFields(LinkedList<CachedClass> superClasses) {
-        LinkedHashMap<String, MetaProperty> last = null;
-        for (CachedClass klass : superClasses) {
-            LinkedHashMap<String, MetaProperty> propertyIndex = classPropertyIndex.computeIfAbsent(klass, k -> new LinkedHashMap<>());
-            if (last != null) {
-                copyNonPrivateFields(last, propertyIndex, klass);
+    private void inheritFields(final Iterable<CachedClass> superClasses) {
+        Map<String, MetaProperty> sci = null;
+        for (CachedClass cc : superClasses) {
+            Map<String, MetaProperty> cci = classPropertyIndex.computeIfAbsent(cc, x -> new LinkedHashMap<>());
+            if (sci != null && !sci.isEmpty()) {
+                copyNonPrivateFields(sci, cci, cc);
+                // GROOVY-9608, GROOVY-9609: add public, protected, and package-private fields to index for super
+                copyNonPrivateFields(sci, classPropertyIndexForSuper.computeIfAbsent(cc, x -> new LinkedHashMap<>()), cc);
             }
-            last = propertyIndex;
-            addFields(klass, propertyIndex);
+            sci = cci;
+            addFields(cc, cci);
         }
     }
 
