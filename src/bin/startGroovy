@@ -259,7 +259,7 @@ if "$cygwin"; then
     # Now convert the arguments - kludge to limit ourselves to /bin/sh
     argsstr=''
     for arg in "$@" ; do
-        CHECK="$(echo "$arg"|egrep -c "$OURCYGPATTERN" -)"
+        CHECK="$(echo "$arg"|grep -E -c "$OURCYGPATTERN" -)"
         if [ "$CHECK" -ne 0 ] ; then
             patched="$(cygpath --path --ignore --mixed "$arg")"
         else
