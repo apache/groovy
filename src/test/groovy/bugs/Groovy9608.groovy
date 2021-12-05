@@ -60,4 +60,34 @@ final class Groovy9608 {
             assert bSuperX == 'A'
         '''
     }
+
+    @Test
+    void testGetPropertyOnSelf() {
+        assertScript '''
+            import groovy.bugs.Groovy9608.*
+
+            def a = new A()
+            def ax = a.metaClass.getProperty(A, a, 'x', false, false)
+            assert ax == 'A'
+
+            def b = new B()
+            def bx = b.metaClass.getProperty(B, b, 'x', false, false)
+            assert bx == 'B'
+        '''
+    }
+
+    @Test // GROOVY-9609
+    void testGetPropertyOnSuper() {
+        assertScript '''
+            import groovy.bugs.Groovy9608.*
+            import org.codehaus.groovy.runtime.ScriptBytecodeAdapter
+
+            def b = new B()
+            def bSuperX = b.metaClass.getProperty(B, b, 'x', true, false)
+            assert bSuperX == 'A'
+
+            bSuperX = ScriptBytecodeAdapter.getPropertyOnSuper(B, b, 'x')
+            assert bSuperX == 'A'
+        '''
+    }
 }

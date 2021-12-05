@@ -178,7 +178,7 @@ public class ScriptBytecodeAdapter {
     //              normal method invocation
     //  --------------------------------------------------------
     public static Object invokeMethodN(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable {
-        try {    
+        try {
             return InvokerHelper.invokeMethod(receiver, messageName, messageArguments);
         } catch (GroovyRuntimeException gre) {
             throw unwrap(gre);
@@ -320,7 +320,7 @@ public class ScriptBytecodeAdapter {
             return InvokerHelper.getAttribute(receiver, messageName);
         } catch (GroovyRuntimeException gre) {
             throw unwrap(gre);
-        }    
+        }
     }
 
     public static Object getFieldSafe(Class senderClass, Object receiver, String messageName) throws Throwable {
@@ -424,7 +424,11 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
 
     public static Object getPropertyOnSuper(Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
-        return invokeMethodOnSuperN(senderClass, receiver, "getProperty", new Object[]{messageName});
+        try {
+            return receiver.getMetaClass().getProperty(senderClass, receiver, messageName, true, false);
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
+        }
     }
 
     public static Object getPropertyOnSuperSafe(Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
@@ -432,8 +436,8 @@ public class ScriptBytecodeAdapter {
     }
 
     public static Object getPropertyOnSuperSpreadSafe(Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
-        List answer = new ArrayList();
-        for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
+        List<Object> answer = new ArrayList<>();
+        for (Iterator<?> it = InvokerHelper.asIterator(receiver); it.hasNext();) {
             answer.add(getPropertySafe(senderClass, it.next(), messageName));
         }
         return answer;
@@ -445,7 +449,7 @@ public class ScriptBytecodeAdapter {
 
     public static void setPropertyOnSuper(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
         try {
-            InvokerHelper.setAttribute(receiver, messageName, messageArgument);
+            receiver.getMetaClass().setProperty(senderClass, receiver, messageName, messageArgument, true, false);
         } catch (GroovyRuntimeException gre) {
             throw unwrap(gre);
         }
@@ -456,7 +460,7 @@ public class ScriptBytecodeAdapter {
     }
 
     public static void setPropertyOnSuperSpreadSafe(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
-        for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
+        for (Iterator<?> it = InvokerHelper.asIterator(receiver); it.hasNext();) {
             setPropertySafe(messageArgument, senderClass, it.next(), messageName);
         }
     }
