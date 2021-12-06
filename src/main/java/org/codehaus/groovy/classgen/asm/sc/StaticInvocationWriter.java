@@ -75,6 +75,10 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
+import static org.codehaus.groovy.ast.ClassHelper.isGStringType;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
+import static org.codehaus.groovy.ast.ClassHelper.isStringType;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
@@ -84,10 +88,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
-import static org.codehaus.groovy.ast.ClassHelper.isGStringType;
-import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
-import static org.codehaus.groovy.ast.ClassHelper.isStringType;
 import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
@@ -127,12 +127,12 @@ public class StaticInvocationWriter extends InvocationWriter {
     @Override
     protected boolean makeDirectCall(final Expression origin, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, final boolean implicitThis, final boolean containsSpreadExpression) {
         if (origin instanceof MethodCallExpression && isSuperExpression(receiver)) {
-            ClassNode superClass = receiver.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
-            if (superClass != null && !controller.getCompileStack().isLHS()) {
-                // GROOVY-7300
-                MethodCallExpression mce = (MethodCallExpression) origin;
-                MethodNode node = superClass.getDeclaredMethod(mce.getMethodAsString(), Parameter.EMPTY_ARRAY);
-                mce.setMethodTarget(node);
+            MethodCallExpression mce = (MethodCallExpression) origin;
+            if (mce.getMethodTarget() == null && !controller.getCompileStack().isLHS()) { // GROOVY-7300
+                ClassNode owner = receiver.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
+                if (owner != null) {
+                    mce.setMethodTarget(owner.getDeclaredMethod(mce.getMethodAsString(), Parameter.EMPTY_ARRAY));
+                }
             }
         }
         return super.makeDirectCall(origin, receiver, message, arguments, adapter, implicitThis, containsSpreadExpression);

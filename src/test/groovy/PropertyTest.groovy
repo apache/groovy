@@ -172,6 +172,43 @@ class PropertyTest extends GroovyTestCase {
         assert c.xpropViaMethod == 'bar4foo x prop'
     }
 
+    // GROOVY-1736, GROOVY-9609
+    void testGetSuperProperties2() {
+        for (vis in ['', 'public', 'protected', '@groovy.transform.PackageScope']) {
+            assertScript """
+                abstract class A {
+                    $vis def getX() { 'A' }
+                }
+                class C extends A {
+                    def getX() { super.x + 'C' } // no stack overflow
+                    def m() {
+                        '' + x + this.x + super.x // TODO: test safe and spread
+                    }
+                }
+                String result = new C().m()
+                assert result == 'ACACA'
+            """
+        }
+    }
+
+    // GROOVY-6097
+    void testGetSuperProperties3() {
+        for (vis in ['', 'public', 'protected', '@groovy.transform.PackageScope']) {
+            assertScript """
+                abstract class A {
+                    $vis boolean isX() { true }
+                }
+                class C extends A {
+                    def m() {
+                        '' + x + this.x + super.x // hardwired to "super.getX()"
+                    }
+                }
+                String result = new C().m()
+                assert result == 'truetruetrue'
+            """
+        }
+    }
+
     void testSetSuperProperties() {
         def c = new Child()
         assert c.superField == 'bar'

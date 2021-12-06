@@ -18,16 +18,16 @@
  */
 package groovy.bugs
 
-import groovy.test.NotYetImplemented
 import groovy.transform.CompileStatic
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 @CompileStatic
 final class Groovy6097 {
 
-    @NotYetImplemented @Test
+    @Test
     void testSuperIsser1() {
         assertScript '''
             class A {
@@ -46,9 +46,9 @@ final class Groovy6097 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test // GROOVY-9382, GROOVY-10133
     void testSuperIsser2() {
-        assertScript '''
+        def err = shouldFail '''
             class A {
                 Boolean isBool() { Boolean.TRUE }
             }
@@ -63,9 +63,10 @@ final class Groovy6097 {
 
             new B()
         '''
+        assert err =~ /MissingPropertyException: No such property: bool for class: B/
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testSuperIsser3() {
         assertScript '''
             class A {
@@ -86,7 +87,7 @@ final class Groovy6097 {
         '''
     }
 
-    @NotYetImplemented @Test
+    @Test
     void testSuperIsser4() {
         assertScript '''
             class A {

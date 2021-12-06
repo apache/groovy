@@ -151,8 +151,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
@@ -239,8 +237,8 @@ public class AsmClassGenerator extends ClassGenerator {
     // properties
     public  static final MethodCallerMultiAdapter setProperty = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setProperty", false, false);
     private static final MethodCallerMultiAdapter getProperty = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getProperty", false, false);
-  //private static final MethodCallerMultiAdapter setPropertyOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setPropertyOnSuper", false, false);
-  //private static final MethodCallerMultiAdapter getPropertyOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getPropertyOnSuper", false, false);
+    private static final MethodCallerMultiAdapter setPropertyOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setPropertyOnSuper", false, false);
+    private static final MethodCallerMultiAdapter getPropertyOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getPropertyOnSuper", false, false);
     private static final MethodCallerMultiAdapter setGroovyObjectProperty = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setGroovyObjectProperty", false, false);
     private static final MethodCallerMultiAdapter getGroovyObjectProperty = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getGroovyObjectProperty", false, false);
 
@@ -1128,50 +1126,6 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private boolean tryPropertyOfSuperClass(final PropertyExpression pexp, final String propertyName) {
-        ClassNode classNode = controller.getClassNode();
-
-        if (!controller.getCompileStack().isLHS()) {
-            String methodName = getGetterName(propertyName); // TODO: "is"
-            callX(pexp.getObjectExpression(), methodName).visit(this);
-            return true;
-        }
-
-        FieldNode fieldNode = classNode.getSuperClass().getField(propertyName);
-
-        if (fieldNode == null) {
-            throw new RuntimeParserException("Failed to find field[" + propertyName + "] of " + classNode.getName() + "'s super class", pexp);
-        }
-        if (fieldNode.isFinal()) {
-            throw new RuntimeParserException("Cannot modify final field[" + propertyName + "] of " + classNode.getName() + "'s super class", pexp);
-        }
-
-        MethodNode setter = classNode.getSuperClass().getSetterMethod(getSetterName(propertyName));
-        MethodNode getter = classNode.getSuperClass().getGetterMethod(getGetterName(propertyName));
-
-        if (fieldNode.isPrivate() && (setter == null || getter == null || !setter.getDeclaringClass().equals(getter.getDeclaringClass()))) {
-            throw new RuntimeParserException("Cannot access private field[" + propertyName + "] of " + classNode.getName() + "'s super class", pexp);
-        }
-
-        OperandStack operandStack = controller.getOperandStack();
-        operandStack.doAsType(fieldNode.getType());
-
-        MethodVisitor mv = controller.getMethodVisitor();
-        mv.visitVarInsn(ALOAD, 0);
-        operandStack.push(classNode);
-
-        operandStack.swap();
-
-        String owner = BytecodeHelper.getClassInternalName(classNode.getSuperClass().getName());
-        String desc = BytecodeHelper.getTypeDescription(fieldNode.getType());
-        if (fieldNode.isPublic() || fieldNode.isProtected()) {
-            mv.visitFieldInsn(PUTFIELD, owner, propertyName, desc);
-        } else {
-            mv.visitMethodInsn(INVOKESPECIAL, owner, setter.getName(), BytecodeHelper.getMethodDescriptor(setter), false);
-        }
-        return true;
-    }
-
     private boolean checkStaticOuterField(final PropertyExpression pexp, final String propertyName) {
         for (final ClassNode outer : controller.getClassNode().getOuterClasses()) {
             FieldNode field = outer.getDeclaredField(propertyName);
@@ -1207,7 +1161,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private boolean isGroovyObject(final Expression objectExpression) {
-        if (ExpressionUtils.isThisExpression(objectExpression)) return true;
+        if (isThisOrSuper(objectExpression)) return true; //GROOVY-8693
         if (objectExpression instanceof ClassExpression) return false;
 
         ClassNode objectExpressionType = controller.getTypeChooser().resolveType(objectExpression, controller.getClassNode());
@@ -1243,10 +1197,6 @@ public class AsmClassGenerator extends ClassGenerator {
                     fieldNode = classNode.getSuperClass().getDeclaredField(name);
                     // GROOVY-4497: do not visit super class field if it is private
                     if (fieldNode != null && fieldNode.isPrivate()) fieldNode = null;
-
-                    if (fieldNode == null) {
-                        visited = tryPropertyOfSuperClass(expression, name);
-                    }
                 }
 
                 if (fieldNode != null) {
@@ -1262,9 +1212,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
             MethodCallerMultiAdapter adapter;
             if (controller.getCompileStack().isLHS()) {
-                adapter = useMetaObjectProtocol ? setGroovyObjectProperty : setProperty;
+                adapter = ExpressionUtils.isSuperExpression(objectExpression) ? setPropertyOnSuper : useMetaObjectProtocol ? setGroovyObjectProperty : setProperty;
             } else {
-                adapter = useMetaObjectProtocol ? getGroovyObjectProperty : getProperty;
+                adapter = ExpressionUtils.isSuperExpression(objectExpression) ? getPropertyOnSuper : useMetaObjectProtocol ? getGroovyObjectProperty : getProperty;
             }
             visitAttributeOrProperty(expression, adapter);
         }

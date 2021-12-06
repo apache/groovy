@@ -33,7 +33,7 @@ final class Groovy7300 extends StaticTypeCheckingTestCase implements StaticCompi
                 @Override
                 def getX() { super.x }
             }
-            assert new B().getX() == 1 // TODO: Why use A#x and not A#getX?
+            assert new B().getX() == 2
         '''
     }
 

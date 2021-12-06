@@ -45,7 +45,7 @@ final class Groovy10133 {
                 void test2() {
                     assert x
                     assert this.x
-                    assert !super.x // GROOVY-6097
+                    assert super.x // GROOVY-6097
                 }
             }
 
@@ -109,11 +109,7 @@ final class Groovy10133 {
                 void test2() {
                     assert x
                     assert this.x
-                    try {
-                        assert super.x // GROOVY-6097
-                        assert false : 'remove catch'
-                    } catch (MissingMethodException mme) {
-                    }
+                    assert super.x // GROOVY-6097
                 }
             }
 
@@ -188,7 +184,7 @@ final class Groovy10133 {
                 void test2() {
                     assert x
                     assert this.x
-                    assert !super.x // GROOVY-6097
+                    assert super.x // GROOVY-6097
                 }
             }
 
