@@ -92,6 +92,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.runtime.StringGroovyMethods.isAtLeast;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -157,7 +158,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         if (sourceUnit != null) {
             CompilerConfiguration config = sourceUnit.getConfiguration();
             String targetBytecode = config.getTargetBytecode();
-            isPostJDK16 = CompilerConfiguration.isPostJDK16(targetBytecode);
+            isPostJDK16 = isAtLeast(targetBytecode, CompilerConfiguration.JDK16);
             message = "Expecting JDK16+ but found " + targetBytecode;
         }
         boolean isNative = isPostJDK16 && mode != RecordTypeMode.EMULATE;

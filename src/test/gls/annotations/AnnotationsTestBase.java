@@ -30,7 +30,7 @@ import org.objectweb.asm.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.codehaus.groovy.control.CompilerConfiguration.ASM_API_VERSION;
+import static org.codehaus.groovy.classgen.AsmClassGenerator.ASM_API_VERSION;
 
 public abstract class AnnotationsTestBase extends GroovyTestCase {
     MyLoader loader;

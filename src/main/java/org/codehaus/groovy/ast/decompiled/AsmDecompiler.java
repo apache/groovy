@@ -42,7 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.codehaus.groovy.control.CompilerConfiguration.ASM_API_VERSION;
+import static org.codehaus.groovy.classgen.AsmClassGenerator.ASM_API_VERSION;
 import static org.codehaus.groovy.control.ResolveVisitor.EMPTY_STRING_ARRAY;
 
 /**

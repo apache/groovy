@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.PrivilegedAction;
 
-import static org.codehaus.groovy.control.CompilerConfiguration.ASM_API_VERSION;
+import static org.codehaus.groovy.classgen.AsmClassGenerator.ASM_API_VERSION;
 
 public class GroovySunClassLoader extends SunClassLoader {
 

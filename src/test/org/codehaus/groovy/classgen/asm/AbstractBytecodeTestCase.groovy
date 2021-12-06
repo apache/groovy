@@ -31,6 +31,8 @@ import org.objectweb.asm.util.TraceClassVisitor
 
 import java.security.CodeSource
 
+import static org.codehaus.groovy.classgen.AsmClassGenerator.ASM_API_VERSION
+
 /**
  * Abstract test case to extend to check the instructions we generate in the bytecode of groovy programs.
  */
@@ -112,7 +114,7 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
     InstructionSequence extractSequence(final byte[] bytes, final Map options = [method: 'run']) {
         def out = new StringBuilderWriter()
         def tcv
-        tcv = new TraceClassVisitor(new ClassVisitor(CompilerConfiguration.ASM_API_VERSION) {
+        tcv = new TraceClassVisitor(new ClassVisitor(ASM_API_VERSION) {
             @Override
             MethodVisitor visitMethod(final int access, final String name, final String desc, final String signature, final String... exceptions) {
                 if (options.method == name) {

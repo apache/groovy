@@ -26,7 +26,7 @@ import org.objectweb.asm.signature.SignatureVisitor;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.codehaus.groovy.control.CompilerConfiguration.ASM_API_VERSION;
+import static org.codehaus.groovy.classgen.AsmClassGenerator.ASM_API_VERSION;
 
 abstract class FormalParameterParser extends SignatureVisitor {
     private final AsmReferenceResolver resolver;

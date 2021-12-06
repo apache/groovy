@@ -170,6 +170,7 @@ import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ANEWARRAY;
 import static org.objectweb.asm.Opcodes.ARETURN;
+import static org.objectweb.asm.Opcodes.ASM9;
 import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.ATHROW;
 import static org.objectweb.asm.Opcodes.BASTORE;
@@ -255,21 +256,31 @@ public class AsmClassGenerator extends ClassGenerator {
     private static final MethodCaller createPojoWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createPojoWrapper");
     private static final MethodCaller createGroovyObjectWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createGroovyObjectWrapper");
 
-    private final Map<String,ClassNode> referencedClasses = new HashMap<>();
-    private boolean passingParams;
+    /**
+     * The ASM API version used when loading/parsing classes and generating proxy adapter classes.
+     */
+    public static final int ASM_API_VERSION = ASM9;
+
+    /**
+     * Add marker in the bytecode to show source-bytecode relationship?
+     */
+    public static final boolean ASM_DEBUG = false;
 
     public static final boolean CREATE_DEBUG_INFO = true;
     public static final boolean CREATE_LINE_NUMBER_INFO = true;
-    public static final boolean ASM_DEBUG = false; // add marker in the bytecode to show source-bytecode relationship
     public static final String MINIMUM_BYTECODE_VERSION = "_MINIMUM_BYTECODE_VERSION";
 
-    private WriterController controller;
-    private ASTNode currentASTNode;
+    //--------------------------------------------------------------------------
+
+    private final Map<String,ClassNode> referencedClasses = new HashMap<>();
+    private boolean passingParams;
 
     private final SourceUnit source;
     private final GeneratorContext context;
+    private WriterController controller;
     private ClassVisitor classVisitor;
     private final String sourceFile;
+    private ASTNode currentASTNode;
 
     public AsmClassGenerator(final SourceUnit source, final GeneratorContext context, final ClassVisitor classVisitor, final String sourceFile) {
         this.source = source;

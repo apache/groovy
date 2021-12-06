@@ -60,7 +60,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.codehaus.groovy.control.CompilerConfiguration.ASM_API_VERSION;
+import static org.codehaus.groovy.classgen.AsmClassGenerator.ASM_API_VERSION;
 import static org.codehaus.groovy.reflection.ReflectionUtils.isSealed;
 import static org.objectweb.asm.Opcodes.AASTORE;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;

@@ -35,6 +35,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
+import static org.codehaus.groovy.runtime.StringGroovyMethods.isAtLeast;
 
 /**
  * Handles generation of code for the @Sealed annotation.
@@ -70,7 +71,7 @@ public class SealedASTTransformation extends AbstractASTTransformation {
             if (sourceUnit != null) {
                 CompilerConfiguration config = sourceUnit.getConfiguration();
                 String targetBytecode = config.getTargetBytecode();
-                isPostJDK17 = CompilerConfiguration.isPostJDK17(targetBytecode);
+                isPostJDK17 = isAtLeast(targetBytecode, CompilerConfiguration.JDK17);
                 message = "Expecting JDK17+ but found " + targetBytecode;
             }
             List<AnnotationNode> annotations = cNode.getAnnotations(SEALED_OPTIONS_TYPE);

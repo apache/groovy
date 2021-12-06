@@ -28,7 +28,6 @@ import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.asm.indy.IndyBinHelper;
 import org.codehaus.groovy.classgen.asm.indy.IndyCallSiteWriter;
 import org.codehaus.groovy.classgen.asm.indy.InvokeDynamicWriter;
-import org.codehaus.groovy.classgen.asm.util.LoggableClassVisitor;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.ClassVisitor;
@@ -133,11 +132,10 @@ public class WriterController {
         this.typeChooser = new StatementMetaTypeChooser();
     }
 
-    private static ClassVisitor createClassVisitor(final ClassVisitor cv, final CompilerConfiguration config) {
-        if (!config.isLogClassgen() || cv instanceof LoggableClassVisitor) {
-            return cv;
-        }
-        return new LoggableClassVisitor(cv, config);
+    private static ClassVisitor createClassVisitor(final ClassVisitor visitor, final CompilerConfiguration config) {
+        return visitor;
+//        if (visitor instanceof org.objectweb.asm.util.TraceClassVisitor || !SystemUtil.getBooleanSafe("groovy.log.classgen")) return visitor;
+//        return new org.objectweb.asm.util.TraceClassVisitor(visitor, Optional.ofNullable(config.getOutput()).orElseGet(() -> new PrintWriter(System.out, true)));
     }
 
     //--------------------------------------------------------------------------

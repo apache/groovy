@@ -25,9 +25,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Properties;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -63,7 +65,6 @@ public final class CompilerConfigurationTest {
         assertEquals(10, config.getTolerance());
         assertEquals(100, config.getMinimumRecompilationInterval());
         assertEquals(System.getProperty("file.encoding", CompilerConfiguration.DEFAULT_SOURCE_ENCODING), config.getSourceEncoding());
-        assertEquals(CompilerConfiguration.DEFAULT_TARGET_BYTECODE, config.getTargetBytecode());
         assertFalse(config.getRecompileGroovySource());
         assertEquals(Collections.emptyList(), config.getClasspath());
         assertEquals(".groovy", config.getDefaultScriptExtension());
@@ -123,8 +124,6 @@ public final class CompilerConfigurationTest {
         init.addCompilationCustomizers(new ImportCustomizer().addStarImports("groovy.transform"));
         ParserPluginFactory pluginFactory = ParserPluginFactory.antlr4();
         init.setPluginFactory(pluginFactory);
-        init.setLogClassgen(true);
-        init.setLogClassgenStackTraceMaxDepth(100);
 
         assertEquals(WarningMessage.POSSIBLE_ERRORS, init.getWarningLevel());
         assertTrue(init.getDebug());
@@ -144,8 +143,6 @@ public final class CompilerConfigurationTest {
         assertNull(init.getJointCompilationOptions().get(CompilerConfiguration.MEM_STUB));
         assertEquals(pluginFactory, init.getPluginFactory());
         assertEquals(1, init.getCompilationCustomizers().size());
-        assertTrue(init.isLogClassgen());
-        assertEquals(100, init.getLogClassgenStackTraceMaxDepth());
 
         //
 
@@ -166,8 +163,6 @@ public final class CompilerConfigurationTest {
         assertEquals(".jpp", config.getDefaultScriptExtension());
         assertEquals("somevalue", config.getJointCompilationOptions().get("somekey"));
         assertEquals(pluginFactory, config.getPluginFactory());
-        assertTrue(config.isLogClassgen());
-        assertEquals(100, config.getLogClassgenStackTraceMaxDepth());
         // TODO GROOVY-9585: re-enable below assertion once prod code is fixed
 //        assertEquals(1, config.getCompilationCustomizers().size());
     }
@@ -189,8 +184,6 @@ public final class CompilerConfigurationTest {
         init.setClasspath("");
         File targetDirectory = new File("A wandering path");
         init.setTargetDirectory(targetDirectory);
-        init.setLogClassgen(true);
-        init.setLogClassgenStackTraceMaxDepth(100);
         ParserPluginFactory pluginFactory = ParserPluginFactory.antlr4();
         init.setPluginFactory(pluginFactory);
         init.setDefaultScriptExtension(".jpp");
@@ -207,8 +200,6 @@ public final class CompilerConfigurationTest {
         assertFalse(init.getRecompileGroovySource());
         assertEquals(Collections.emptyList(), init.getClasspath());
         assertEquals(targetDirectory, init.getTargetDirectory());
-        assertTrue(init.isLogClassgen());
-        assertEquals(100, init.getLogClassgenStackTraceMaxDepth());
         assertEquals(pluginFactory, init.getPluginFactory());
         assertEquals(".jpp", init.getDefaultScriptExtension());
         assertNull(init.getJointCompilationOptions());
@@ -228,8 +219,6 @@ public final class CompilerConfigurationTest {
         assertFalse(config.getRecompileGroovySource());
         assertEquals(Collections.emptyList(), config.getClasspath());
         assertEquals(targetDirectory, config.getTargetDirectory());
-        assertTrue(config.isLogClassgen());
-        assertEquals(100, config.getLogClassgenStackTraceMaxDepth());
         assertEquals(pluginFactory, config.getPluginFactory());
         assertEquals(".jpp", config.getDefaultScriptExtension());
         assertNull(config.getJointCompilationOptions());
@@ -250,12 +239,6 @@ public final class CompilerConfigurationTest {
         });
         assertThrows(UnsupportedOperationException.class, () -> {
             config.setDefaultScriptExtension(".jpp");
-        });
-        assertThrows(UnsupportedOperationException.class, () -> {
-            config.setLogClassgen(true);
-        });
-        assertThrows(UnsupportedOperationException.class, () -> {
-            config.setLogClassgenStackTraceMaxDepth(100);
         });
         assertThrows(UnsupportedOperationException.class, () -> {
             config.setMinimumRecompilationInterval(975);
@@ -290,5 +273,13 @@ public final class CompilerConfigurationTest {
         assertThrows(UnsupportedOperationException.class, () -> {
             config.setWarningLevel(WarningMessage.POSSIBLE_ERRORS);
         });
+    }
+
+    @Test // GROOVY-10278
+    public void testTargetVersion() {
+        CompilerConfiguration config = new CompilerConfiguration();
+        String[] inputs = {"1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", "5",   "6",   "7",   "8",   "9",   "9.0", "10", "11", "12", "13", "14", "15", "16", "17", "18"};
+        String[] expect = {"1.4", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", "1.5", "1.6", "1.7", "1.8", "1.9", "1.9", "10", "11", "12", "13", "14", "15", "16", "17", "18"};
+        assertArrayEquals(expect, Arrays.stream(inputs).map(v -> { config.setTargetBytecode(v); return config.getTargetBytecode(); }).toArray(String[]::new));
     }
 }

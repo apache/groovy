@@ -307,13 +307,8 @@ public class Groovyc extends MatchingTask {
      *
      * @param version the bytecode compatibility level
      */
-    public void setTargetBytecode(String version) {
-        for (String allowedJdk : CompilerConfiguration.ALLOWED_JDKS) {
-            if (allowedJdk.equals(version)) {
-                this.targetBytecode = version;
-                break;
-            }
-        }
+    public void setTargetBytecode(final String version) {
+        targetBytecode = version;
     }
 
     /**
@@ -322,7 +317,7 @@ public class Groovyc extends MatchingTask {
      * @return bytecode compatibility level. Can be one of the values in {@link CompilerConfiguration#ALLOWED_JDKS}.
      */
     public String getTargetBytecode() {
-        return this.targetBytecode;
+        return targetBytecode;
     }
 
     /**
@@ -1127,7 +1122,9 @@ public class Groovyc extends MatchingTask {
             commandLineList.add("-Xmx" + memoryMaximumSize);
         }
         if (targetBytecode != null) {
-            commandLineList.add("-Dgroovy.target.bytecode=" + targetBytecode);
+            CompilerConfiguration cc = new CompilerConfiguration();
+            cc.setTargetBytecode(targetBytecode); // nearest valid value
+            commandLineList.add("-Dgroovy.target.bytecode=" + cc.getTargetBytecode());
         }
         if (!"*.groovy".equals(getScriptExtension())) {
             String tmpExtension = getScriptExtension();

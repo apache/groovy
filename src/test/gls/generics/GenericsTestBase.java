@@ -30,7 +30,7 @@ import org.objectweb.asm.*;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.codehaus.groovy.control.CompilerConfiguration.ASM_API_VERSION;
+import static org.codehaus.groovy.classgen.AsmClassGenerator.ASM_API_VERSION;
 
 public abstract class GenericsTestBase extends GroovyTestCase {
     MyLoader loader;
