@@ -323,7 +323,7 @@ public class CompilerConfiguration {
     private int warningLevel;
 
     /**
-     * Encoding for source files
+     * Encoding for source files.
      */
     private String sourceEncoding;
 
@@ -333,69 +333,69 @@ public class CompilerConfiguration {
     private PrintWriter output;
 
     /**
-     * Directory into which to write classes
+     * Directory into which to write classes.
      */
     private File targetDirectory;
 
     /**
-     * Classpath for use during compilation
+     * Classpath for use during compilation.
      */
     private List<String> classpath;
 
     /**
-     * If true, the compiler should produce action information
+     * If true, the compiler should produce action information.
      */
     private boolean verbose;
 
     /**
-     * If true, debugging code should be activated
+     * If true, debugging code should be activated.
      */
     private boolean debug;
 
     /**
-     * If true, generates metadata for reflection on method parameters
+     * If true, generates metadata for reflection on method parameters.
      */
     private boolean parameters;
 
     /**
-     * The number of non-fatal errors to allow before bailing
+     * The number of non-fatal errors to allow before bailing.
      */
     private int tolerance;
 
     /**
-     * Base class name for scripts (must derive from Script)
+     * Base class name for scripts (must derive from Script).
      */
     private String scriptBaseClass;
 
     private ParserPluginFactory pluginFactory;
 
     /**
-     * extension used to find a groovy file
+     * Extension used to find a groovy file.
      */
     private String defaultScriptExtension;
 
     /**
-     * extensions used to find a groovy files
+     * Extensions used to find a groovy files.
      */
     private Set<String> scriptExtensions = new LinkedHashSet<>();
 
     /**
-     * if set to true recompilation is enabled
+     * If set to true recompilation is enabled.
      */
     private boolean recompileGroovySource;
 
     /**
-     * sets the minimum of time after a script can be recompiled.
+     * The minimum of time after a script can be recompiled.
      */
     private int minimumRecompilationInterval;
 
     /**
-     * sets the bytecode version target
+     * The bytecode version target.
      */
     private String targetBytecode;
 
     /**
-     * Whether the bytecode version has preview features enabled (JEP 12)
+     * Whether the bytecode version has preview features enabled (JEP 12).
      */
     private boolean previewFeatures;
 
@@ -410,32 +410,30 @@ public class CompilerConfiguration {
     private int logClassgenStackTraceMaxDepth;
 
     /**
-     * options for joint compilation (null by default == no joint compilation)
+     * Options for joint compilation (null by default == no joint compilation).
      */
     private Map<String, Object> jointCompilationOptions;
 
     /**
-     * options for optimizations (empty map by default)
+     * Options for optimizations (empty map by default).
      */
     private Map<String, Boolean> optimizationOptions;
 
     private final List<CompilationCustomizer> compilationCustomizers = new LinkedList<>();
 
     /**
-     * Global AST transformations which should not be loaded even if they are
-     * defined in META-INF/services/org.codehaus.groovy.transform.ASTTransformation files.
-     * By default, none are disabled.
+     * Global AST transformations which should not be loaded even if defined in
+     * <tt>META-INF/services/org.codehaus.groovy.transform.ASTTransformation</tt>
+     * files. By default, none are disabled.
      */
     private Set<String> disabledGlobalASTTransformations;
 
     private BytecodeProcessor bytecodePostprocessor;
 
-
     /**
      * Sets the compiler flags/settings to default values.
      *
      * The following system properties are referenced when setting the configuration:
-     *
      * <blockquote>
      * <table summary="Groovy Compiler Configuration Properties">
      *   <tr><th>Property Key</th><th>Related Property Getter</th></tr>
@@ -449,11 +447,11 @@ public class CompilerConfiguration {
      * </blockquote>
      *
      * The following system properties are referenced when setting the configuration optimization options:
-     *
      * <blockquote>
-     * <table summary="Groovy Compiler Optimization Options Configuration Properties">
+     * <table summary="Groovy Compiler Optimization Properties">
      *   <tr><th>Property Key</th><th>Related Property Getter</th></tr>
      *   <tr><td><code>groovy.target.indy</code></td><td>{@link #getOptimizationOptions}</td></tr>
+     *   <tr><td><code>groovy.parallel.parse</code></td><td>{@link #getOptimizationOptions}</td></tr>
      *   <tr><td><code>groovy.attach.groovydoc</code></td><td>{@link #getOptimizationOptions}</td></tr>
      *   <tr><td><code>groovy.attach.runtime.groovydoc</code></td><td>{@link #getOptimizationOptions}</td></tr>
      * </table>
