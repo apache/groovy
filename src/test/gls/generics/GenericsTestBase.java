@@ -24,12 +24,13 @@ import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.*;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.codehaus.groovy.control.CompilerConfiguration.ASM_API_VERSION;
 
 public abstract class GenericsTestBase extends GroovyTestCase {
     MyLoader loader;
@@ -60,7 +61,7 @@ public abstract class GenericsTestBase extends GroovyTestCase {
 
     private class GenericsTester extends ClassVisitor {
         GenericsTester(ClassVisitor cv) {
-            super(CompilerConfiguration.ASM_API_VERSION, cv);
+            super(ASM_API_VERSION, cv);
         }
 
         public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {

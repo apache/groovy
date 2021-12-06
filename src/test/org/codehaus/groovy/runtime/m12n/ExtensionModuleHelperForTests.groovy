@@ -19,41 +19,35 @@
 package org.codehaus.groovy.runtime.m12n
 
 import groovy.ant.AntBuilder
-import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods
 
 import static groovy.test.GroovyAssert.isAtLeastJdk
 
 class ExtensionModuleHelperForTests {
-    static void doInFork(String code) {
-        doInFork("groovy.test.GroovyTestCase", code)
-    }
 
-    static void doInFork(String baseTestClass, String code) {
-        File baseDir = DefaultGroovyStaticMethods.createTempDir(null)
-        File source = new File(baseDir, 'Temp.groovy')
-        source << """import org.codehaus.groovy.runtime.m12n.*
-    class TempTest extends $baseTestClass {
-        void testCode() {
-            $code
-        }
-    }
-    org.junit.runner.JUnitCore.main('TempTest')
-"""
+    static void doInFork(String baseTestClass = 'groovy.test.GroovyTestCase', String code) {
+        File baseDir = File.createTempDir()
+        File sourceFile = new File(baseDir, 'Temp.groovy')
+        sourceFile << """import org.codehaus.groovy.runtime.m12n.*
+            class TempTest extends $baseTestClass {
+                void testCode() {
+                    $code
+                }
+            }
+            org.junit.runner.JUnitCore.main('TempTest')
+        """
 
-        Set<String> cp = System.getProperty("java.class.path").split(File.pathSeparator) as Set
+        Set<String> cp = System.getProperty('java.class.path').split(File.pathSeparator) as Set
         cp << baseDir.absolutePath
-
-        boolean jdk9 = isAtLeastJdk('9.0')
 
         def ant = new AntBuilder()
         def allowed = [
-                'Picked up JAVA_TOOL_OPTIONS: .*',
-                'Picked up _JAVA_OPTIONS: .*'
+            'Picked up JAVA_TOOL_OPTIONS: .*',
+            'Picked up _JAVA_OPTIONS: .*'
         ]
         try {
             ant.with {
-                taskdef(name:'groovyc', classname:"org.codehaus.groovy.ant.Groovyc")
-                groovyc(srcdir: baseDir.absolutePath, destdir:baseDir.absolutePath, includes:'Temp.groovy', fork:true)
+                taskdef(name: 'groovyc', classname: 'org.codehaus.groovy.ant.Groovyc')
+                groovyc(srcdir: baseDir.absolutePath, destdir: baseDir.absolutePath, includes: 'Temp.groovy', fork: true)
                 java(classname: 'Temp', fork: 'true', outputproperty: 'out', errorproperty: 'err') {
                     classpath {
                         cp.each {
@@ -67,13 +61,13 @@ class ExtensionModuleHelperForTests {
             String err = ant.project.properties.err
             baseDir.deleteDir()
             // FIX_JDK9: remove once we have no warnings when running Groovy
-            if (jdk9) {
-                err = err?.replaceAll(/WARNING: .*/, "")?.trim()
+            if (isAtLeastJdk('9.0')) {
+                err = err?.replaceAll(/WARNING: .*/, '')?.trim()
             }
             if (err && !allowed.any{ err.trim().matches(it) }) {
                 throw new RuntimeException("$err\nClasspath: ${cp.join('\n')}")
             }
-            if (out && (out.contains('FAILURES') || !out.contains("OK"))) {
+            if (out && (out.contains('FAILURES') || !out.contains('OK'))) {
                 throw new RuntimeException("$out\nClasspath: ${cp.join('\n')}")
             }
         }

@@ -45,9 +45,9 @@ import static org.objectweb.asm.Opcodes.NEW;
  */
 public class DummyClassGenerator extends ClassGenerator {
 
+    private final GeneratorContext context;
     private final ClassVisitor cv;
     private MethodVisitor mv;
-    private final GeneratorContext context;
 
     // current class details
     private ClassNode classNode;
@@ -55,25 +55,19 @@ public class DummyClassGenerator extends ClassGenerator {
     private String internalBaseClassName;
 
 
-    public DummyClassGenerator(
-            GeneratorContext context,
-            ClassVisitor classVisitor,
-            ClassLoader classLoader,
-            String sourceFile) {
+    public DummyClassGenerator(final GeneratorContext context, final ClassVisitor classVisitor, final ClassLoader classLoader, final String sourceFile) {
         this.context = context;
         this.cv = classVisitor;
     }
 
+    //--------------------------------------------------------------------------
     // GroovyClassVisitor interface
-    //-------------------------------------------------------------------------
+
     @Override
-    public void visitClass(ClassNode classNode) {
+    public void visitClass(final ClassNode classNode) {
         try {
             this.classNode = classNode;
             this.internalClassName = BytecodeHelper.getClassInternalName(classNode);
-
-            //System.out.println("Generating class: " + classNode.getName());
-
             this.internalBaseClassName = BytecodeHelper.getClassInternalName(classNode.getSuperClass());
 
             cv.visit(
@@ -87,9 +81,8 @@ public class DummyClassGenerator extends ClassGenerator {
 
             classNode.visitContents(this);
 
-            for (ClassNode innerClass : innerClasses) {
-                ClassNode innerClassType = innerClass;
-                String innerClassInternalName = BytecodeHelper.getClassInternalName(innerClassType);
+            for (final ClassNode innerClass : innerClasses) {
+                String innerClassInternalName = BytecodeHelper.getClassInternalName(innerClass);
                 String outerClassName = internalClassName; // default for inner classes
                 MethodNode enclosingMethod = innerClass.getEnclosingMethod();
                 if (enclosingMethod != null) {
@@ -99,7 +92,7 @@ public class DummyClassGenerator extends ClassGenerator {
                 cv.visitInnerClass(
                         innerClassInternalName,
                         outerClassName,
-                        innerClassType.getName(),
+                        innerClass.getName(),
                         innerClass.getModifiers());
             }
             cv.visitEnd();
@@ -111,8 +104,7 @@ public class DummyClassGenerator extends ClassGenerator {
     }
 
     @Override
-    public void visitConstructor(ConstructorNode node) {
-
+    public void visitConstructor(final ConstructorNode node) {
         visitParameters(node, node.getParameters());
 
         String methodType = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, node.getParameters());
@@ -126,8 +118,7 @@ public class DummyClassGenerator extends ClassGenerator {
     }
 
     @Override
-    public void visitMethod(MethodNode node) {
-
+    public void visitMethod(final MethodNode node) {
         visitParameters(node, node.getParameters());
 
         String methodType = BytecodeHelper.getMethodDescriptor(node.getReturnType(), node.getParameters());
@@ -143,8 +134,7 @@ public class DummyClassGenerator extends ClassGenerator {
     }
 
     @Override
-    public void visitField(FieldNode fieldNode) {
-
+    public void visitField(final FieldNode fieldNode) {
         cv.visitField(
                 fieldNode.getModifiers(),
                 fieldNode.getName(),
@@ -153,11 +143,21 @@ public class DummyClassGenerator extends ClassGenerator {
                 null);
     }
 
-    /**
-     * Creates a getter, setter and field
-     */
     @Override
-    public void visitProperty(PropertyNode statement) {
+    public void visitProperty(final PropertyNode statement) {
+    }
+
+    @Override
+    public void visitAnnotations(final AnnotatedNode node) {
+    }
+
+    protected void visitParameters(final ASTNode node, final Parameter[] parameters) {
+        for (Parameter parameter : parameters) {
+            visitParameter(node, parameter);
+        }
+    }
+
+    protected void visitParameter(final ASTNode node, final Parameter parameter) {
     }
 
     protected CompileUnit getCompileUnit() {
@@ -166,19 +166,5 @@ public class DummyClassGenerator extends ClassGenerator {
             answer = context.getCompileUnit();
         }
         return answer;
-    }
-
-    protected void visitParameters(ASTNode node, Parameter[] parameters) {
-        for (Parameter parameter : parameters) {
-            visitParameter(node, parameter);
-        }
-    }
-
-    protected void visitParameter(ASTNode node, Parameter parameter) {
-    }
-
-
-    @Override
-    public void visitAnnotations(AnnotatedNode node) {
     }
 }

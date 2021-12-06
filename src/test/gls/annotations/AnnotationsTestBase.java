@@ -24,12 +24,13 @@ import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.*;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.codehaus.groovy.control.CompilerConfiguration.ASM_API_VERSION;
 
 public abstract class AnnotationsTestBase extends GroovyTestCase {
     MyLoader loader;
@@ -63,7 +64,7 @@ public abstract class AnnotationsTestBase extends GroovyTestCase {
         private final String field;
 
         FieldAnnotationScanner(String field) {
-            super(CompilerConfiguration.ASM_API_VERSION);
+            super(ASM_API_VERSION);
             this.field = field;
         }
 
@@ -78,7 +79,7 @@ public abstract class AnnotationsTestBase extends GroovyTestCase {
         private final String method;
 
         MethodAnnotationScanner(String method) {
-            super(CompilerConfiguration.ASM_API_VERSION);
+            super(ASM_API_VERSION);
             this.method = method;
         }
 
@@ -91,7 +92,7 @@ public abstract class AnnotationsTestBase extends GroovyTestCase {
 
     private class AnnotationsTester extends ClassVisitor {
         AnnotationsTester(ClassVisitor cv) {
-            super(CompilerConfiguration.ASM_API_VERSION, cv);
+            super(ASM_API_VERSION, cv);
         }
 
         public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {

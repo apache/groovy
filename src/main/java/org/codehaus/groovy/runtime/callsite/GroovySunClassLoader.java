@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
-import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.reflection.SunClassLoader;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.ClassReader;
@@ -28,6 +27,8 @@ import org.objectweb.asm.ClassWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.PrivilegedAction;
+
+import static org.codehaus.groovy.control.CompilerConfiguration.ASM_API_VERSION;
 
 public class GroovySunClassLoader extends SunClassLoader {
 
@@ -63,7 +64,7 @@ public class GroovySunClassLoader extends SunClassLoader {
         try (final InputStream asStream = GroovySunClassLoader.class.getClassLoader().getResourceAsStream(resName("org.codehaus.groovy.runtime.callsite.AbstractCallSite"))) {
             ClassReader reader = new ClassReader(asStream);
             final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-            final ClassVisitor cv = new ClassVisitor(CompilerConfiguration.ASM_API_VERSION, cw) {
+            final ClassVisitor cv = new ClassVisitor(ASM_API_VERSION, cw) {
                 @Override
                 public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
                     super.visit(version, access, name, signature, "sun/reflect/GroovyMagic", interfaces);

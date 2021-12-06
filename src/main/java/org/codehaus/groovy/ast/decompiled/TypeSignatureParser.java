@@ -21,7 +21,6 @@ package org.codehaus.groovy.ast.decompiled;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
-import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.vmplugin.v8.Java8;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.signature.SignatureVisitor;
@@ -29,12 +28,14 @@ import org.objectweb.asm.signature.SignatureVisitor;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.codehaus.groovy.control.CompilerConfiguration.ASM_API_VERSION;
+
 abstract class TypeSignatureParser extends SignatureVisitor {
 
     private final AsmReferenceResolver resolver;
 
     public TypeSignatureParser(final AsmReferenceResolver resolver) {
-        super(CompilerConfiguration.ASM_API_VERSION);
+        super(ASM_API_VERSION);
         this.resolver = resolver;
     }
 
