@@ -83,8 +83,7 @@ public class CachedClass {
             PrivilegedAction<CachedMethod[]> action = () -> {
                 try {
                     return Arrays.stream(getTheClass().getDeclaredMethods())
-                        // skip synthetic methods inserted by JDK 1.5+ compilers
-                        .filter(m -> !m.isBridge() && m.getName().indexOf('+') < 0)
+                        .filter(m -> m.getName().indexOf('+') < 0) // no synthetic JDK 5+ methods
                         .filter(m -> ReflectionUtils.checkCanSetAccessible(m, CachedClass.class))
                         .map(m -> new CachedMethod(CachedClass.this, m))
                         .toArray(CachedMethod[]::new);
