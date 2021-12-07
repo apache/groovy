@@ -18,11 +18,12 @@
  */
 package org.apache.groovy.parser.antlr4
 
-import groovy.test.GroovyTestCase
 import groovy.test.NotYetImplemented
 import groovy.transform.AutoFinal
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
+import org.junit.Assert
+import org.junit.Test
 
 import static org.apache.groovy.parser.antlr4.util.ASTComparatorCategory.LOCATION_IGNORE_LIST
 
@@ -30,12 +31,14 @@ import static org.apache.groovy.parser.antlr4.util.ASTComparatorCategory.LOCATIO
  * Some syntax error test cases for the new parser.
  */
 @AutoFinal
-final class SyntaxErrorTest extends GroovyTestCase {
+final class SyntaxErrorTest {
 
+    @Test
     void 'test groovy core - List'() {
         TestUtils.shouldFail('fail/List_01.groovy')
     }
 
+    @Test
     void 'test groovy core - Expression'() {
         TestUtils.shouldFail('fail/Expression_01.groovy')
         TestUtils.shouldFail('fail/Expression_02.groovy')
@@ -48,74 +51,64 @@ final class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.shouldFail('fail/Expression_09.groovy')
     }
 
+    @Test
     void 'test groovy core - CommandExpression'() {
         TestUtils.doRunAndShouldFail('fail/CommandExpression_01x.groovy')
     }
 
+    @Test
     void 'test groovy core - Switch'() {
         TestUtils.shouldFail('fail/Switch_01.groovy')
     }
 
-    @NotYetImplemented
+    @NotYetImplemented @Test
     void 'test groovy core - LocalVariableDeclaration'() {
         TestUtils.shouldFail('fail/LocalVariableDeclaration_01.groovy')
     }
 
+    @Test
     void 'test groovy core - Continue'() {
         TestUtils.doRunAndShouldFail('fail/Continue_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/Continue_02x.groovy')
     }
 
+    @Test
     void 'test groovy core - Break'() {
         TestUtils.doRunAndShouldFail('fail/Break_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/Break_02x.groovy')
     }
 
+    @Test
     void 'test groovy core - UnexpectedCharacter 1'() {
         TestUtils.doRunAndShouldFail('fail/UnexpectedCharacter_01x.groovy')
     }
 
+    @Test // TODO: Could the character be escaped in the error message?
     void 'test groovy core - UnexpectedCharacter 2'() {
-        def err = expectParseError '''\
+        expectParseError '''\
             |def \u200Bname = null
-            |'''.stripMargin()
-
-        // TODO: Could the character be escaped in the error message?
-        assert err == '''\
-            |startup failed:
-            |test.groovy: 1: Unexpected character: '\u200B' @ line 1, column 5.
+            |'''.stripMargin(), '''\
+            |Unexpected character: '\u200B' @ line 1, column 5.
             |   def \u200Bname = null
             |       ^
             |
             |1 error
             |'''.stripMargin()
 
-        //
-
-        err = expectParseError '''\
+        expectParseError '''\
             |def na\u200Bme = null
-            |'''.stripMargin()
-
-        // TODO: Could the character be escaped in the error message?
-        assert err == '''\
-            |startup failed:
-            |test.groovy: 1: Unexpected character: '\u200B' @ line 1, column 7.
+            |'''.stripMargin(), '''\
+            |Unexpected character: '\u200B' @ line 1, column 7.
             |   def na\u200Bme = null
             |         ^
             |
             |1 error
             |'''.stripMargin()
 
-        //
-
-        err = expectParseError '''\
+        expectParseError '''\
             |def na\u000Cme = null
-            |'''.stripMargin()
-
-        // TODO: Could the character be escaped in the error message?
-        assert err == '''\
-            |startup failed:
-            |test.groovy: 1: Unexpected character: '\u000C' @ line 1, column 7.
+            |'''.stripMargin(), '''\
+            |Unexpected character: '\u000C' @ line 1, column 7.
             |   def na\u000Cme = null
             |         ^
             |
@@ -123,16 +116,14 @@ final class SyntaxErrorTest extends GroovyTestCase {
             |'''.stripMargin()
     }
 
+    @Test
     void 'test groovy core - UnexpectedCharacter 3'() {
-        def err = expectParseError '''\
+        expectParseError '''\
             |foo.bar {
             |  println 'Hello
             |}
-            |'''.stripMargin()
-
-        assert err == '''\
-            |startup failed:
-            |test.groovy: 2: Unexpected character: '\\'' @ line 2, column 11.
+            |'''.stripMargin(), '''\
+            |Unexpected character: '\\'' @ line 2, column 11.
             |     println 'Hello
             |             ^
             |
@@ -140,24 +131,48 @@ final class SyntaxErrorTest extends GroovyTestCase {
             |'''.stripMargin()
     }
 
+    @Test
     void 'test groovy core - ParExpression'() {
         TestUtils.doRunAndShouldFail('fail/ParExpression_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/ParExpression_02x.groovy')
         TestUtils.doRunAndShouldFail('fail/ParExpression_03x.groovy')
     }
 
+    @Test
     void 'test groovy core - Parentheses'() {
         TestUtils.shouldFail('fail/Parentheses_01.groovy')
     }
 
+    @Test
     void 'test groovy core - This'() {
         TestUtils.doRunAndShouldFail('fail/This_01x.groovy')
     }
 
+    @Test
     void 'test groovy core - Super'() {
         TestUtils.doRunAndShouldFail('fail/Super_01x.groovy')
     }
 
+    @Test // GROOVY-9391
+    void 'test groovy core - Typecast super'() {
+        expectParseError '''\
+            |class A { def m() {} }
+            |class B extends A {  }
+            |class C extends B {
+            |    def m() {
+            |        ((A) super).m()
+            |    }
+            |}
+            |'''.stripMargin(), '''\
+            |Cannot cast or coerce `super` @ line 5, column 10.
+            |           ((A) super).m()
+            |            ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
     void 'test groovy core - AbstractMethod'() {
         TestUtils.doRunAndShouldFail('fail/AbstractMethod_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/AbstractMethod_02x.groovy')
@@ -167,21 +182,25 @@ final class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/AbstractMethod_06x.groovy')
     }
 
+    @Test
     void 'test groovy core - BUGs'() {
         TestUtils.doRunAndShouldFail('bugs/BUG-GROOVY-5318.groovy')
         TestUtils.doRunAndShouldFail('bugs/BUG-GROOVY-8150.groovy')
         TestUtils.doRunAndShouldFail('bugs/BUG-GROOVY-8216.groovy')
     }
 
+    @Test
     void 'test groovy core - DoWhile'() {
         TestUtils.doRunAndShouldFail('fail/DoWhile_01x.groovy')
     }
 
+    @Test
     void 'test groovy core - For'() {
         TestUtils.shouldFail('fail/For_01.groovy')
         TestUtils.shouldFail('fail/For_02.groovy')
     }
 
+    @Test
     void 'test groovy core - Modifier'() {
         TestUtils.doRunAndShouldFail('fail/Modifier_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/Modifier_02x.groovy')
@@ -191,23 +210,22 @@ final class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.shouldFail('fail/Modifier_07.groovy')
     }
 
+    @Test
     void 'test groovy core - ClassDeclaration 1'() {
         TestUtils.doRunAndShouldFail('fail/ClassDeclaration_01x.groovy')
     }
 
+    @Test
     void 'test groovy core - ClassDeclaration 2'() {
         TestUtils.doRunAndShouldFail('fail/ClassDeclaration_02x.groovy')
     }
 
-
+    @Test
     void 'test groovy core - ClassDeclaration 3'() {
-        def err = expectParseError '''\
+        expectParseError '''\
             |class C extends Object, Number {}
-            |'''.stripMargin()
-
-        assert err == '''\
-            |startup failed:
-            |test.groovy: 1: Cannot extend multiple classes @ line 1, column 9.
+            |'''.stripMargin(), '''\
+            |Cannot extend multiple classes @ line 1, column 9.
             |   class C extends Object, Number {}
             |           ^
             |
@@ -215,14 +233,12 @@ final class SyntaxErrorTest extends GroovyTestCase {
             |'''.stripMargin()
     }
 
+    @Test
     void 'test groovy core - EnumDeclaration 1'() {
-        def err = expectParseError '''\
+        expectParseError '''\
             |enum E<T> {}
-            |'''.stripMargin()
-
-        assert err == '''\
-            |startup failed:
-            |test.groovy: 1: enum declaration cannot have type parameters @ line 1, column 7.
+            |'''.stripMargin(), '''\
+            |enum declaration cannot have type parameters @ line 1, column 7.
             |   enum E<T> {}
             |         ^
             |
@@ -230,14 +246,12 @@ final class SyntaxErrorTest extends GroovyTestCase {
             |'''.stripMargin()
     }
 
+    @Test
     void 'test groovy core - EnumDeclaration 2'() {
-        def err = expectParseError '''\
+        expectParseError '''\
             |enum E extends Object {}
-            |'''.stripMargin()
-
-        assert err == '''\
-            |startup failed:
-            |test.groovy: 1: No extends clause allowed for enum declaration @ line 1, column 8.
+            |'''.stripMargin(), '''\
+            |No extends clause allowed for enum declaration @ line 1, column 8.
             |   enum E extends Object {}
             |          ^
             |
@@ -245,18 +259,17 @@ final class SyntaxErrorTest extends GroovyTestCase {
             |'''.stripMargin()
     }
 
+    @Test
     void 'test groovy core - AnnotationDeclaration 1'() {
         TestUtils.doRunAndShouldFail('fail/AnnotationDeclaration_01x.groovy')
     }
 
+    @Test
     void 'test groovy core - AnnotationDeclaration 2'() {
-        def err = expectParseError '''\
+        expectParseError '''\
             |@interface A<T> {}
-            |'''.stripMargin()
-
-        assert err == '''\
-            |startup failed:
-            |test.groovy: 1: annotation declaration cannot have type parameters @ line 1, column 13.
+            |'''.stripMargin(), '''\
+            |annotation declaration cannot have type parameters @ line 1, column 13.
             |   @interface A<T> {}
             |               ^
             |
@@ -264,14 +277,12 @@ final class SyntaxErrorTest extends GroovyTestCase {
             |'''.stripMargin()
     }
 
+    @Test
     void 'test groovy core - AnnotationDeclaration 3'() {
-        def err = expectParseError '''\
+        expectParseError '''\
             |@interface A extends Object {}
-            |'''.stripMargin()
-
-        assert err == '''\
-            |startup failed:
-            |test.groovy: 1: No extends clause allowed for annotation declaration @ line 1, column 14.
+            |'''.stripMargin(), '''\
+            |No extends clause allowed for annotation declaration @ line 1, column 14.
             |   @interface A extends Object {}
             |                ^
             |
@@ -279,14 +290,12 @@ final class SyntaxErrorTest extends GroovyTestCase {
             |'''.stripMargin()
     }
 
+    @Test
     void 'test groovy core - AnnotationDeclaration 4'() {
-        def err = expectParseError '''\
+        expectParseError '''\
             |@interface A implements Serializable {}
-            |'''.stripMargin()
-
-        assert err == '''\
-            |startup failed:
-            |test.groovy: 1: No implements clause allowed for annotation declaration @ line 1, column 14.
+            |'''.stripMargin(), '''\
+            |No implements clause allowed for annotation declaration @ line 1, column 14.
             |   @interface A implements Serializable {}
             |                ^
             |
@@ -294,16 +303,14 @@ final class SyntaxErrorTest extends GroovyTestCase {
             |'''.stripMargin()
     }
 
+    @Test
     void 'test groovy core - AnnotationDeclaration 5'() {
-        def err = expectParseError '''\
+        expectParseError '''\
             |@interface A {
             |    String a() {
             |    }
-            |}'''.stripMargin()
-        println err
-        assert err == '''\
-            |startup failed:
-            |test.groovy: 2: Annotation type element should not have body @ line 2, column 5.
+            |}'''.stripMargin(), '''\
+            |Annotation type element should not have body @ line 2, column 5.
             |       String a() {
             |       ^
             |
@@ -311,6 +318,7 @@ final class SyntaxErrorTest extends GroovyTestCase {
             |'''.stripMargin()
     }
 
+    @Test
     void 'test groovy core - SealedTypeDeclaration'() {
         TestUtils.doRunAndShouldFail('fail/SealedTypeDeclaration_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/SealedTypeDeclaration_02x.groovy')
@@ -323,6 +331,7 @@ final class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/SealedTypeDeclaration_09x.groovy')
     }
 
+    @Test
     void 'test groovy core - MethodDeclaration'() {
         TestUtils.shouldFail('fail/MethodDeclaration_01.groovy')
         TestUtils.doRunAndShouldFail('fail/MethodDeclaration_02x.groovy')
@@ -331,10 +340,12 @@ final class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/MethodDeclaration_05x.groovy')
     }
 
+    @Test
     void 'test groovy core - ConstructorDeclaration'() {
         TestUtils.shouldFail('fail/ConstructorDeclaration_01.groovy')
     }
 
+    @Test
     void 'test groovy core - ClosureListExpression'() {
         TestUtils.shouldFail('fail/ClosureListExpression_01.groovy')
         TestUtils.shouldFail('fail/ClosureListExpression_02.groovy')
@@ -342,18 +353,17 @@ final class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.shouldFail('fail/ClosureListExpression_04.groovy')
     }
 
+    @Test
     void 'test groovy core - InterfaceDeclaration 1'() {
         TestUtils.shouldFail('fail/InterfaceDeclaration_01.groovy')
     }
 
+    @Test
     void 'test groovy core - InterfaceDeclaration 2'() {
-        def err = expectParseError '''\
+        expectParseError '''\
             |interface I implements Serializable {}
-            |'''.stripMargin()
-
-        assert err == '''\
-            |startup failed:
-            |test.groovy: 1: No implements clause allowed for interface declaration @ line 1, column 13.
+            |'''.stripMargin(), '''\
+            |No implements clause allowed for interface declaration @ line 1, column 13.
             |   interface I implements Serializable {}
             |               ^
             |
@@ -361,11 +371,13 @@ final class SyntaxErrorTest extends GroovyTestCase {
             |'''.stripMargin()
     }
 
+    @Test
     void 'test groovy core - void'() {
         TestUtils.doRunAndShouldFail('fail/Void_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/Void_02x.groovy')
     }
 
+    @Test
     void 'test groovy core - FieldDeclaration'() {
         TestUtils.doRunAndShouldFail('fail/FieldDeclaration_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/FieldDeclaration_02x.groovy')
@@ -373,23 +385,28 @@ final class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/FieldDeclaration_04x.groovy')
     }
 
+    @Test
     void 'test groovy core - Assert'() {
         TestUtils.doRunAndShouldFail('fail/Assert_01x.groovy')
     }
 
+    @Test
     void 'test groovy core - DuplicatedNamedParameter'() {
         TestUtils.doRunAndShouldFail('fail/DuplicatedNamedParameter_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/DuplicatedNamedParameter_02x.groovy')
     }
 
+    @Test
     void 'test groovy core - threadsafe'() {
         TestUtils.doRunAndShouldFail('fail/ThreadSafe_01x.groovy')
     }
 
+    @Test
     void 'test groovy core - VarArgParameter'() {
         TestUtils.doRunAndShouldFail('fail/VarArgParameter_01x.groovy')
     }
 
+    @Test
     void 'test groovy core - Number'() {
         TestUtils.doRunAndShouldFail('fail/Number_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/Number_02x.groovy')
@@ -398,15 +415,18 @@ final class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/Number_05x.groovy')
     }
 
+    @Test
     void 'test groovy core - MethodCall'() {
         TestUtils.doRunAndShouldFail('fail/MethodCall_01x.groovy')
     }
 
+    @Test
     void 'test groovy core - var'() {
         TestUtils.doRunAndShouldFail('fail/Var_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/Var_02x.groovy')
     }
 
+    @Test
     void 'test groovy core - String'() {
         TestUtils.doRunAndShouldFail('fail/String_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/String_02x.groovy')
@@ -414,24 +434,29 @@ final class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.shouldFail('fail/String_04.groovy')
     }
 
+    @Test
     void 'test groovy core - NonStaticClass'() {
         TestUtils.doRunAndShouldFail('fail/NonStaticClass_01x.groovy')
     }
 
+    @Test
     void 'test groovy core - Import'() {
         TestUtils.doRunAndShouldFail('fail/Import_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/Import_02x.groovy')
     }
 
+    @Test
     void 'test groovy core - UnaryOperator'() {
         TestUtils.doRunAndShouldFail('fail/UnaryOperator_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/UnaryOperator_02x.groovy')
     }
 
+    @Test
     void 'test groovy core - Trait'() {
         TestUtils.shouldFail('fail/Trait_01.groovy')
     }
 
+    @Test
     void 'test groovy core - Record'() {
         TestUtils.doRunAndShouldFail('fail/RecordDeclaration_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/RecordDeclaration_02x.groovy')
@@ -448,33 +473,32 @@ final class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/RecordDeclaration_13x.groovy')
     }
 
+    @Test
     void 'test groovy core - Array'() {
         TestUtils.doRunAndShouldFail('fail/Array_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/Array_02x.groovy')
     }
 
-    void "test groovy core - SwitchExpression"() {
+    @Test
+    void 'test groovy core - SwitchExpression'() {
         TestUtils.doRunAndShouldFail('fail/SwitchExpression_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/SwitchExpression_02x.groovy')
         TestUtils.doRunAndShouldFail('fail/SwitchExpression_03x.groovy')
         TestUtils.doRunAndShouldFail('fail/SwitchExpression_04x.groovy')
         TestUtils.doRunAndShouldFail('fail/SwitchExpression_05x.groovy')
         TestUtils.doRunAndShouldFail('fail/SwitchExpression_06x.groovy')
-		TestUtils.doRunAndShouldFail('fail/SwitchExpression_07x.groovy')
-		TestUtils.doRunAndShouldFail('fail/SwitchExpression_08x.groovy')
+        TestUtils.doRunAndShouldFail('fail/SwitchExpression_07x.groovy')
+        TestUtils.doRunAndShouldFail('fail/SwitchExpression_08x.groovy')
         TestUtils.doRunAndShouldFail('fail/SwitchExpression_09x.groovy')
         TestUtils.doRunAndShouldFail('fail/SwitchExpression_10x.groovy')
     }
 
-    @NotYetImplemented
+    @NotYetImplemented @Test
     void 'test error alternative - Missing ")" 1'() {
-        def err = expectParseError '''\
+        expectParseError '''\
             |println ((int 123)
-            |'''.stripMargin()
-
-        assert err == '''\
-            |startup failed:
-            |test.groovy: 1: Missing ')' @ line 1, column 15.
+            |'''.stripMargin(), '''\
+            |Missing ')' @ line 1, column 15.
             |   println ((int 123)
             |                 ^
             |
@@ -482,17 +506,14 @@ final class SyntaxErrorTest extends GroovyTestCase {
             |'''.stripMargin()
     }
 
-    @NotYetImplemented
+    @NotYetImplemented @Test
     void 'test error alternative - Missing ")" 2'() {
-        def err = expectParseError '''\
+        expectParseError '''\
             |def x() {
             |    println((int) 123
             |}
-            |'''.stripMargin()
-
-        assert err == '''\
-            |startup failed:
-            |test.groovy: 2: Missing ')' @ line 2, column 22.
+            |'''.stripMargin(), '''\
+            |Missing ')' @ line 2, column 22.
             |       println((int) 123
             |                        ^
             |
@@ -500,16 +521,13 @@ final class SyntaxErrorTest extends GroovyTestCase {
             |'''.stripMargin()
     }
 
-    @NotYetImplemented
+    @NotYetImplemented @Test
     void 'test error alternative - Missing ")" 3'() {
-        def err = expectParseError '''\
+        expectParseError '''\
             |def m( {
             |}
-            |'''.stripMargin()
-
-        assert err == '''\
-            |startup failed:
-            |test.groovy: 1: Missing ')' @ line 1, column 8.
+            |'''.stripMargin(), '''\
+            |Missing ')' @ line 1, column 8.
             |   def m( {
             |          ^
             |
@@ -517,44 +535,44 @@ final class SyntaxErrorTest extends GroovyTestCase {
             |'''.stripMargin()
     }
 
-    @NotYetImplemented
+    @NotYetImplemented @Test
     void 'test CompilerErrorTest_001'() {
         unzipScriptAndShouldFail('scripts/CompilerErrorTest_001.groovy', [])
     }
 
-    @NotYetImplemented
+    @NotYetImplemented @Test
     void 'test CompilerErrorTest_002'() {
         unzipScriptAndShouldFail('scripts/CompilerErrorTest_002.groovy', [])
     }
 
-    @NotYetImplemented
+    @NotYetImplemented @Test
     void 'test DifferencesFromJavaTest_002'() {
         unzipScriptAndShouldFail('scripts/DifferencesFromJavaTest_002.groovy', [])
     }
 
-    @NotYetImplemented
+    @NotYetImplemented @Test
     void 'test Groovy5212Bug_001'() {
         unzipScriptAndShouldFail('scripts/Groovy5212Bug_001.groovy', [])
     }
 
-    @NotYetImplemented
+    @NotYetImplemented @Test
     void 'test GStringEndTest_001'() {
         unzipScriptAndShouldFail('scripts/GStringEndTest_001.groovy', [])
     }
 
     //--------------------------------------------------------------------------
 
-    private static String expectParseError(String source) {
+    private static void expectParseError(String source, String expect) {
         try {
             new CompilationUnit().with {
                 addSource('test.groovy', source)
                 compile(Phases.CONVERSION)
                 getAST()
             }
-
-            fail('expected parse to fail')
+            Assert.fail('expected parse to fail')
         } catch (e) {
-            return e.message.replace('\r\n', '\n')
+            def line = (expect =~ /@ line (\d+),/)[0][1]
+            Assert.assertEquals("startup failed:\ntest.groovy: $line: $expect".toString(), e.message.replace('\r\n', '\n'))
         }
     }
 
