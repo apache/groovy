@@ -148,9 +148,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class StreamingTemplateEngine extends TemplateEngine {
     private static final String TEMPLATE_SCRIPT_PREFIX = "StreamingTemplateScript";
-
+    private static final AtomicInteger COUNTER = new AtomicInteger(0);
     private final ClassLoader parentLoader;
-    private static AtomicInteger counter = new AtomicInteger(0);
 
     /**
      * Create a streaming template engine instance using the default class loader
@@ -600,7 +599,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
             final GroovyClassLoader loader = VMPluginFactory.getPlugin().doPrivileged((PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader));
             final Class groovyClass;
             try {
-                groovyClass = loader.parseClass(new GroovyCodeSource(target.toString(), TEMPLATE_SCRIPT_PREFIX + counter.incrementAndGet() + ".groovy", "x"));
+                groovyClass = loader.parseClass(new GroovyCodeSource(target.toString(), TEMPLATE_SCRIPT_PREFIX + COUNTER.incrementAndGet() + ".groovy", "x"));
             } catch (MultipleCompilationErrorsException e) {
                 throw mangleMultipleCompilationErrorsException(e, sections);
 
