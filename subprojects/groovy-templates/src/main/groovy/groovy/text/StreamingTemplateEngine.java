@@ -377,7 +377,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
 
         @SuppressFBWarnings(value = "SR_NOT_CHECKED", justification = "safe to ignore return value of skip from reader backed by StringReader")
         private int getLinesInSource() throws IOException {
-            int result = 0;
+            int result;
 
             try (LineNumberReader reader = new LineNumberReader(new StringReader(templateSource.toString()))) {
                 reader.skip(Long.MAX_VALUE); // SR_NOT_CHECKED
