@@ -447,6 +447,11 @@
             <pgp value="31fae244a81d64507b47182e1b2718089ce964b8"/>
          </artifact>
       </component>
+      <component group="com.thoughtworks.qdox" name="qdox" version="2.0.1">
+         <artifact name="qdox-2.0.1.jar">
+            <pgp value="b02137d875d833d9b23392ecae5a7fb608a0221c"/>
+         </artifact>
+      </component>
       <component group="com.thoughtworks.xstream" name="xstream" version="1.4.11.1">
          <artifact name="xstream-1.4.11.1.jar">
             <pgp value="050a37a2e0577f4baa095b52602ec18d20c4661c"/>
