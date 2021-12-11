@@ -296,20 +296,19 @@ public class GroovyAssert {
      * @throws RuntimeException if no method could be found.
      */
     private static Method findRunningJUnitTestMethod(Class caller) {
-        final Class[] args = new Class[]{};
+        final Class<?>[] args = new Class<?>[]{};
 
         // search the initial junit test
-        final Throwable t = new Exception();
-        for (int i = t.getStackTrace().length - 1; i >= 0; --i) {
-            final StackTraceElement element = t.getStackTrace()[i];
+        final StackTraceElement[] stackTrace = new Exception().getStackTrace();
+        for (int i = stackTrace.length - 1; i >= 0; --i) {
+            final StackTraceElement element = stackTrace[i];
             if (element.getClassName().equals(caller.getName())) {
                 try {
                     final Method m = caller.getMethod(element.getMethodName(), args);
                     if (isPublicTestMethod(m)) {
                         return m;
                     }
-                }
-                catch (final Exception ignore) {
+                } catch (Exception ignore) {
                     // can't access, ignore it
                 }
             }
