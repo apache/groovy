@@ -207,7 +207,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     private Object thisObject;
     private int resolveStrategy = OWNER_FIRST;
     private int directive;
-    protected Class[] parameterTypes;
+    protected Class<?>[] parameterTypes;
     protected int maximumNumberOfParameters;
     private static final long serialVersionUID = 4368710879820278874L;
     private BooleanClosureWrapper bcw;
@@ -409,18 +409,17 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      */
     @Override
     public V call() {
-        final Object[] NOARGS = EMPTY_OBJECT_ARRAY;
-        return call(NOARGS);
+        return call(EMPTY_OBJECT_ARRAY);
     }
 
     @SuppressWarnings("unchecked")
     public V call(Object... args) {
         try {
-            return (V) getMetaClass().invokeMethod(this,"doCall",args);
+            return (V) getMetaClass().invokeMethod(this, "doCall", args);
         } catch (InvokerInvocationException e) {
             UncheckedThrow.rethrow(e.getCause());
             return null; // unreachable statement
-        }  catch (Exception e) {
+        } catch (Exception e) {
             return (V) throwRuntimeException(e);
         }
     }
@@ -472,7 +471,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * @return the parameter types of the longest doCall method
      * of this closure
      */
-    public Class[] getParameterTypes() {
+    public Class<?>[] getParameterTypes() {
         return parameterTypes;
     }
 
