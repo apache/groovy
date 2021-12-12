@@ -38,7 +38,7 @@ class NamedTuple<E> extends Tuple<E> {
         super(elementList as E[])
 
         int nameListSize = nameList.size()
-        if (nameListSize != new ArrayList<>(nameList).unique().size()) {
+        if (nameListSize != new HashSet<>(nameList).size()) {
             throw new IllegalArgumentException("names should be unique: $nameList")
         }
 
