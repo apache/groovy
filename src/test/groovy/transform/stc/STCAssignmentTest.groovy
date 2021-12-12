@@ -550,13 +550,13 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testIfWithCommonInterface() {
         assertScript '''
             interface I {
-                def foo()
+                def m()
             }
             class A implements I {
-                def foo() { 'A' }
+                def m() { 'A' }
             }
             class B implements I {
-                def foo() { 'B' }
+                def m() { 'B' }
             }
 
             def x = new A()
@@ -564,13 +564,36 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             if (y) {
                 x = new B()
             }
-            assert x.foo() == 'B'
+            assert x.m() == 'B'
         '''
+    }
+
+    // GROOVY-5502
+    void testIfElseWithCommonSuperclass() {
+        for (val in ['null', 'new A()', 'new B()', 'new C()'/*TODO:, 'new Object()'*/]) {
+            assertScript """
+                class A {
+                    def m() { 'A' }
+                }
+                class B extends A {
+                }
+                class C extends A {
+                }
+
+                def var = $val
+                if (true) {
+                    var = new B()
+                } else {
+                    var = new C()
+                }
+                assert var.m() == 'A' // Cannot find matching method Object#m()
+            """
+        }
     }
 
     // GROOVY-9786
     void testIfElseIfWithCommonInterface() {
-        ['I', 'def', 'var', 'Object'].each {
+        for (it in ['I', 'def', 'var', 'Object']) {
             assertScript """
                 interface I {
                     def m()
