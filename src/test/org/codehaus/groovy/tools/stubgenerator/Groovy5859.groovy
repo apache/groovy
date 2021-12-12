@@ -18,24 +18,30 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-class Groovy5859Bug extends StringSourcesStubTestCase {
+final class Groovy5859 extends StringSourcesStubTestCase {
+
     @Override
     Map<String, String> provideSources() {
-        ['TaggedsMap.groovy': '''import org.codehaus.groovy.tools.stubgenerator.Groovy5859Support
+        [
+            'Pogo.groovy': """
+                import ${this.class.name}Support
 
-class TaggedsMap extends Groovy5859Support {
-
-    TaggedsMap(SortedMap m) {
-        super()
-        putAll (m)
-    }
-}''',
-        'Blah.java': '''public class Blah { TaggedsMap map; }''']
+                class Pogo extends ${this.class.simpleName}Support/*no type args*/ {
+                    Pogo(SortedMap map) {
+                        super(/*null*/)
+                        putAll(map)
+                    }
+                }
+            """,
+            'Main.java': '''
+                public class Main { Pogo pogo; }
+            '''
+        ]
     }
 
     @Override
     void verifyStubs() {
-        def stubSource = stubJavaSourceFor('TaggedsMap')
-        assert stubSource.contains('super ((java.util.SortedMap)null);')
+        String stub = stubJavaSourceFor('Pogo')
+        assert stub.contains('super ((java.util.SortedMap)null);')
     }
 }

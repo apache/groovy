@@ -532,11 +532,14 @@ public class JavaStubGenerator {
             Parameter[] normalized = new Parameter[parameters.length];
             for (int i = 0, n = parameters.length; i < n; i += 1) {
                 ClassNode normalizedType = parameters[i].getOriginType();
-                // GROOVY-7306: apply type arguments from declaring type to parameter type
-                normalizedType = correctToGenericsSpec(superTypeGenerics, normalizedType);
-                // workaround for GROOVY-5859: remove generic type info
-                normalizedType = normalizedType.getPlainNodeReference();
-
+                if (superType.getGenericsTypes() == null // GROOVY-10407
+                        && superType.redirect().getGenericsTypes() != null) {
+                    // GROOVY-5859: remove generic type info for raw type
+                    normalizedType = normalizedType.getPlainNodeReference();
+                } else {
+                    // GROOVY-7306: apply type arguments from declaring type to parameter type
+                    normalizedType = correctToGenericsSpec(superTypeGenerics, normalizedType);
+                }
                 normalized[i] = new Parameter(normalizedType, parameters[i].getName());
             }
 
