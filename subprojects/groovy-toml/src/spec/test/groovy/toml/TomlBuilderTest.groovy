@@ -39,8 +39,6 @@ class TomlBuilderTest extends GroovyTestCase {
             }
         }
 
-        println builder.toString()
-
         assert builder.toString() == '''\
 records.car.name = 'HSV Maloo'
 records.car.make = 'Holden'
