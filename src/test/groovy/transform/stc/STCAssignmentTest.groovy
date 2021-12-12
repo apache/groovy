@@ -568,6 +568,29 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5502
+    void testIfElseWithCommonSuperclass() {
+        for (val in ['null', 'new A()', 'new B()', 'new C()'/*TODO:, 'new Object()'*/]) {
+            assertScript """
+                class A {
+                    def m() { 'A' }
+                }
+                class B extends A {
+                }
+                class C extends A {
+                }
+
+                def var = $val
+                if (true) {
+                    var = new B()
+                } else {
+                    var = new C()
+                }
+                assert var.m() == 'A' // Cannot find matching method Object#m()
+            """
+        }
+    }
+
     // GROOVY-9786
     void testIfElseIfWithCommonInterface() {
         ['I', 'def', 'Object'].each {
