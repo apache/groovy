@@ -110,7 +110,7 @@ public class InvocationWriter {
 
     public void makeCall(final Expression origin, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, boolean safe, final boolean spreadSafe, boolean implicitThis) {
         ClassNode sender;
-        if (isSuperExpression(receiver) || isThisExpression(receiver) && !implicitThis) {
+        if (isSuperExpression(receiver) || (isThisExpression(receiver) && !implicitThis)) {
             // GROOVY-6045, GROOVY-8693, et al.
             sender = controller.getThisType();
             implicitThis = false;

@@ -125,20 +125,6 @@ public class StaticInvocationWriter extends InvocationWriter {
     }
 
     @Override
-    protected boolean makeDirectCall(final Expression origin, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, final boolean implicitThis, final boolean containsSpreadExpression) {
-        if (origin instanceof MethodCallExpression && isSuperExpression(receiver)) {
-            MethodCallExpression mce = (MethodCallExpression) origin;
-            if (mce.getMethodTarget() == null && !controller.getCompileStack().isLHS()) { // GROOVY-7300
-                ClassNode owner = receiver.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
-                if (owner != null) {
-                    mce.setMethodTarget(owner.getDeclaredMethod(mce.getMethodAsString(), Parameter.EMPTY_ARRAY));
-                }
-            }
-        }
-        return super.makeDirectCall(origin, receiver, message, arguments, adapter, implicitThis, containsSpreadExpression);
-    }
-
-    @Override
     public void writeInvokeMethod(final MethodCallExpression call) {
         MethodCallExpression old = currentCall;
         currentCall = call;
