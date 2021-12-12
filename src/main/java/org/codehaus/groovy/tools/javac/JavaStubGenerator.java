@@ -57,6 +57,7 @@ import org.objectweb.asm.Opcodes;
 
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -587,11 +588,14 @@ public class JavaStubGenerator {
             Parameter[] parameters = target.getParameters();
             Parameter[] normalized = Arrays.stream(parameters).map(parameter -> {
                 ClassNode normalizedType = parameter.getOriginType();
-                // GROOVY-7306: apply type arguments from declaring type to parameter type
-                normalizedType = correctToGenericsSpec(superTypeGenerics, normalizedType);
-                // workaround for GROOVY-5859: remove generic type info
-                normalizedType = normalizedType.getPlainNodeReference();
-
+                if (superType.getGenericsTypes() == null // GROOVY-10407
+                        && superType.redirect().getGenericsTypes() != null) {
+                    // GROOVY-5859: remove generic type info for raw type
+                    normalizedType = normalizedType.getPlainNodeReference();
+                } else {
+                    // GROOVY-7306: apply type arguments from declaring type to parameter type
+                    normalizedType = correctToGenericsSpec(superTypeGenerics, normalizedType);
+                }
                 return new Parameter(normalizedType, parameter.getName());
             }).toArray(Parameter[]::new);
 
