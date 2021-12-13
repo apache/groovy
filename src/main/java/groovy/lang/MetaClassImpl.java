@@ -142,6 +142,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static final Class[] SETTER_MISSING_ARGS = METHOD_MISSING_ARGS;
     private static final MetaMethod AMBIGUOUS_LISTENER_METHOD = new DummyMetaMethod();
     private static final Comparator<CachedClass> CACHED_CLASS_NAME_COMPARATOR = Comparator.comparing(CachedClass::getName);
+    private static final boolean INTERFACE_METHODS_OF_SUPER = SystemUtil.getBooleanSafe("groovy.interface.methods.of_super");
     private static final boolean PERMISSIVE_PROPERTY_ACCESS = SystemUtil.getBooleanSafe("groovy.permissive.property.access");
     private static final VMPlugin VM_PLUGIN = VMPluginFactory.getPlugin();
 
@@ -347,26 +348,29 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return isGroovyObject;
     }
 
-    /**
-     * Fills the method index
-     */
     private void fillMethodIndex() {
         mainClassMethodHeader = metaMethodIndex.getHeader(theClass);
-        LinkedList<CachedClass> superClasses = getSuperClasses();
-        CachedClass firstGroovySuper = calcFirstGroovySuperClass(superClasses);
 
-        Set<CachedClass> interfaces = theCachedClass.getInterfaces();
-        addInterfaceMethods(interfaces);
+        Set<CachedClass> interfaces    = theCachedClass.getInterfaces();
+        List<CachedClass> superClasses = getSuperClasses(); // in reverse order
+        CachedClass firstGroovySuper   = calcFirstGroovySuperClass(superClasses);
+
+        for (CachedClass c : interfaces) {
+            for (CachedMethod m : c.getMethods()) {
+                if (c == theCachedClass || (m.isPublic() && !m.isStatic()) || INTERFACE_METHODS_OF_SUPER) { // GROOVY-8164, GROOVY-11107
+                    addMetaMethodToIndex(m, mainClassMethodHeader);
+                }
+            }
+        }
 
         populateMethods(superClasses, firstGroovySuper);
 
         inheritInterfaceNewMetaMethods(interfaces);
-        if (isGroovyObject) {
-            metaMethodIndex.copyMethodsToSuper();
 
+        if (isGroovyObject) {
+            metaMethodIndex.copyMethodsToSuper(); // methods --> methodsForSuper
             connectMultimethods(superClasses, firstGroovySuper);
             removeMultimethodsOverloadedWithPrivateMethods();
-
             replaceWithMOPCalls(theCachedClass.mopMethods);
         }
     }
@@ -427,15 +431,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return c.getNewMetaMethods();
 
         return myNewMetaMethods;
-    }
-
-    private void addInterfaceMethods(final Set<CachedClass> interfaces) {
-        MetaMethodIndex.Header header = metaMethodIndex.getHeader(theClass);
-        for (CachedClass c : interfaces) {
-            for (CachedMethod m : c.getMethods()) {
-                addMetaMethodToIndex(m, header);
-            }
-        }
     }
 
     protected LinkedList<CachedClass> getSuperClasses() {
@@ -2203,13 +2198,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     setter = false;
                 }
                 if (!setter && !getter) continue;
-//  TODO: I (ait) don't know why these strange tricks needed and comment following as it effects some Grails tests
-//                if (!setter && mp.getSetter() != null) {
-//                    element = new MetaBeanProperty(mp.getName(), mp.getType(), mp.getGetter(), null);
-//                }
-//                if (!getter && mp.getGetter() != null) {
-//                    element = new MetaBeanProperty(mp.getName(), mp.getType(), null, mp.getSetter());
-//                }
             }
 
             if (!permissivePropertyAccess) {
@@ -2995,7 +2983,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
             groovyFile = groovyFile.replace('.', '/') + ".groovy";
 
-            //System.out.println("Attempting to load: " + groovyFile);
             URL url = theClass.getClassLoader().getResource(groovyFile);
             if (url == null) {
                 url = Thread.currentThread().getContextClassLoader().getResource(groovyFile);
