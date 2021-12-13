@@ -412,8 +412,9 @@ public class MetaMethodIndex {
         }
 
         // interface vs instance method; be careful...
-        if (!inIndex.isStatic() && !toIndex.isStatic()
-                && inIndexDC.isInterface() != toIndexDC.isInterface()) {
+        if (!inIndex.isStatic() && !toIndex.isStatic() // GROOVY-9815
+                && inIndexDC.isInterface() != toIndexDC.isInterface()
+                && !(toIndex instanceof ClosureMetaMethod || toIndex instanceof ClosureStaticMetaMethod)) { // GROOVY-3493
             // this is the old logic created for GROOVY-2391 and GROOVY-7879, which was labeled as "do not overwrite interface methods with instance methods"
             return (isNonRealMethod(inIndex) || !inIndexDC.isInterface() || toIndexDC.isInterface()) && !toIndexDC.isAssignableFrom(inIndexDC.getTheClass());
         }
