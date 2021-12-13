@@ -364,7 +364,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         for (CachedClass c : interfaces) {
             for (CachedMethod m : c.getMethods()) {
-                addMetaMethodToIndex(m, mainClassMethodHeader);
+                if (c == theCachedClass || (m.isPublic() && !m.isStatic())) { // GROOVY-8164
+                    addMetaMethodToIndex(m, mainClassMethodHeader);
+                }
             }
         }
 
@@ -3535,8 +3537,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return false;
     }
 
-    private void addToAllMethodsIfPublic(MetaMethod metaMethod) {
-        if (Modifier.isPublic(metaMethod.getModifiers()))
+    private void addToAllMethodsIfPublic(final MetaMethod metaMethod) {
+        if (metaMethod.isPublic())
             allMethods.add(metaMethod);
     }
 
