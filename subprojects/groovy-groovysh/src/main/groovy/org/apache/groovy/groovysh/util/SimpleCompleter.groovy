@@ -19,7 +19,7 @@
 package org.apache.groovy.groovysh.util
 
 import jline.console.completer.Completer
-import org.codehaus.groovy.runtime.InvokerHelper
+import org.codehaus.groovy.runtime.FormatHelper
 
 /**
  * Support for simple completers.
@@ -68,7 +68,7 @@ class SimpleCompleter implements Completer {
         Iterator iter = list.iterator()
 
         while (iter.hasNext()) {
-            add(InvokerHelper.toString(iter.next()))
+            add(FormatHelper.toString(iter.next()))
         }
     }
 

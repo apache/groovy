@@ -23,7 +23,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Writable;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.syntax.Types;
 
@@ -232,7 +232,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
 
                     if (configSize == 1 || DefaultGroovyMethods.asBoolean(dotsInKeys)) {
                         if (firstSize == 1 && firstValue instanceof ConfigObject) {
-                            key = KEYWORDS.contains(key) ? InvokerHelper.inspect(key) : key;
+                            key = KEYWORDS.contains(key) ? FormatHelper.inspect(key) : key;
                             String writePrefix = prefix + key + "." + firstKey + ".";
                             writeConfig(writePrefix, (ConfigObject) firstValue, out, tab, true);
                         } else if (!DefaultGroovyMethods.asBoolean(dotsInKeys) && firstValue instanceof ConfigObject) {
@@ -240,9 +240,9 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
                         } else {
                             for (Object j : value.keySet()) {
                                 Object v2 = value.get(j);
-                                Object k2 = ((String) j).indexOf('.') > -1 ? InvokerHelper.inspect(j) : j;
+                                Object k2 = ((String) j).indexOf('.') > -1 ? FormatHelper.inspect(j) : j;
                                 if (v2 instanceof ConfigObject) {
-                                    key = KEYWORDS.contains(key) ? InvokerHelper.inspect(key) : key;
+                                    key = KEYWORDS.contains(key) ? FormatHelper.inspect(key) : key;
                                     writeConfig(prefix + key, (ConfigObject) v2, out, tab, false);
                                 } else {
                                     writeValue(key + "." + k2, space, prefix, v2, out);
@@ -262,15 +262,15 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
     private static void writeValue(String key, String space, String prefix, Object value, BufferedWriter out) throws IOException {
 //        key = key.indexOf('.') > -1 ? InvokerHelper.inspect(key) : key;
         boolean isKeyword = KEYWORDS.contains(key);
-        key = isKeyword ? InvokerHelper.inspect(key) : key;
+        key = isKeyword ? FormatHelper.inspect(key) : key;
 
         if (!StringGroovyMethods.asBoolean(prefix) && isKeyword) prefix = "this.";
-        out.append(space).append(prefix).append(key).append('=').append(InvokerHelper.inspect(value));
+        out.append(space).append(prefix).append(key).append('=').append(FormatHelper.inspect(value));
         out.newLine();
     }
 
     private void writeNode(String key, String space, int tab, ConfigObject value, BufferedWriter out) throws IOException {
-        key = KEYWORDS.contains(key) ? InvokerHelper.inspect(key) : key;
+        key = KEYWORDS.contains(key) ? FormatHelper.inspect(key) : key;
         out.append(space).append(key).append(" {");
         out.newLine();
         writeConfig("", value, out, tab + 1, true);
@@ -427,7 +427,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
     public String toString() {
         Writer sw = new StringBuilderWriter();
         try {
-            InvokerHelper.write(sw, this);
+            FormatHelper.write(sw, this);
         } catch (IOException e) {
             throw new GroovyRuntimeException(e);
         }

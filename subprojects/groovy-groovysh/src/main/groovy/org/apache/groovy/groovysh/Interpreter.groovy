@@ -19,7 +19,7 @@
 package org.apache.groovy.groovysh
 
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.runtime.InvokerHelper
+import org.codehaus.groovy.runtime.FormatHelper
 import org.codehaus.groovy.runtime.MethodClosure
 import org.codehaus.groovy.tools.shell.util.Logger
 
@@ -79,7 +79,7 @@ class Interpreter implements Evaluator
             }
 
             // Need to use String.valueOf() here to avoid icky exceptions causes by GString coercion
-            log.debug("Evaluation result: ${InvokerHelper.toString(result)} (${result?.getClass()})")
+            log.debug("Evaluation result: ${FormatHelper.toString(result)} (${result?.getClass()})")
 
             // Keep only the methods that have been defined in the script
             type.declaredMethods.each { Method m ->

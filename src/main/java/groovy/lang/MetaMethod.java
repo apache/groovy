@@ -21,7 +21,7 @@ package groovy.lang;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ParameterTypes;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 
 import java.lang.reflect.Modifier;
@@ -100,9 +100,9 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
                     "Parameters to method: "
                     + getName()
                     + " do not match types: "
-                    + InvokerHelper.toString(getParameterTypes())
+                    + FormatHelper.toString(getParameterTypes())
                     + " for arguments: "
-                    + InvokerHelper.toString(arguments));
+                    + FormatHelper.toString(arguments));
         }
     }
 
@@ -152,7 +152,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
             + "[name: "
             + getName()
             + " params: "
-            + InvokerHelper.toString(getParameterTypes())
+            + FormatHelper.toString(getParameterTypes())
             + " returns: "
             + getReturnType()
             + " owner: "

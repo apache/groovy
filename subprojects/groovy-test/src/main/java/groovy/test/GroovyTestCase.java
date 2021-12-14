@@ -20,6 +20,7 @@ package groovy.test;
 
 import groovy.lang.Closure;
 import junit.framework.TestCase;
+import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
@@ -68,7 +69,7 @@ public class GroovyTestCase extends TestCase {
      */
     protected void assertArrayEquals(Object[] expected, Object[] value) {
         String message =
-                "expected array: " + InvokerHelper.toString(expected) + " value array: " + InvokerHelper.toString(value);
+                "expected array: " + FormatHelper.toString(expected) + " value array: " + FormatHelper.toString(value);
         assertNotNull(message + ": expected should not be null", expected);
         assertNotNull(message + ": value should not be null", value);
         assertEquals(message, expected.length, value.length);

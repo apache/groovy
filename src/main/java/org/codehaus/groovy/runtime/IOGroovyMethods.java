@@ -89,7 +89,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Writer leftShift(Writer self, Object value) throws IOException {
-        InvokerHelper.write(self, value);
+        FormatHelper.write(self, value);
         return self;
     }
 
@@ -104,7 +104,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.1.0
      */
     public static Appendable leftShift(Appendable self, Object value) throws IOException {
-        InvokerHelper.append(self, value);
+        FormatHelper.append(self, value);
         return self;
     }
 

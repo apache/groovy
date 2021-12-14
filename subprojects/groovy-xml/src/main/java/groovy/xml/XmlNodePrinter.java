@@ -21,7 +21,7 @@ package groovy.xml;
 import groovy.namespace.QName;
 import groovy.util.IndentPrinter;
 import groovy.util.Node;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.FormatHelper;
 
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -259,7 +259,7 @@ public class XmlNodePrinter {
 
     protected void printSimpleItem(Object value) {
         if (!preserveWhitespace) printLineBegin();
-        printEscaped(InvokerHelper.toString(value), false);
+        printEscaped(FormatHelper.toString(value), false);
         if (!preserveWhitespace) printLineEnd();
     }
 
@@ -331,7 +331,7 @@ public class XmlNodePrinter {
             if (value instanceof String) {
                 printEscaped((String) value, true);
             } else {
-                printEscaped(InvokerHelper.toString(value), true);
+                printEscaped(FormatHelper.toString(value), true);
             }
             out.print(quote);
             printNamespace(entry.getKey(), ctx);

@@ -53,7 +53,7 @@ public class InvokeConstructorTest extends GroovyTestCase {
     protected void assertConstructor(Object expected, Object arguments) throws Throwable {
         Object value = invoke(expected.getClass(), arguments);
 
-        assertEquals("Invoking overloaded method for arguments: " + InvokerHelper.toString(arguments), expected, value);
+        assertEquals("Invoking overloaded method for arguments: " + FormatHelper.toString(arguments), expected, value);
     }
 
     protected Object invoke(Class type, Object args) throws Throwable {

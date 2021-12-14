@@ -19,7 +19,7 @@
 package org.codehaus.groovy.reflection;
 
 import groovy.lang.GroovyRuntimeException;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 
 import java.lang.reflect.Constructor;
@@ -90,7 +90,7 @@ public class CachedConstructor extends ParameterTypes {
                 init
                         + constructor
                         + " with arguments: "
-                        + InvokerHelper.toString(argumentArray)
+                        + FormatHelper.toString(argumentArray)
                         + " reason: "
                         + e,
                 setReason ? e : null);

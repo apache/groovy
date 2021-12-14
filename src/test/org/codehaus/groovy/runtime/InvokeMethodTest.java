@@ -416,7 +416,7 @@ public class InvokeMethodTest extends GroovyTestCase {
     protected void assertMethodChooser(Object expected, Object arguments) throws Throwable {
         Object value = invoke(this, "mockOverloadedMethod", arguments);
 
-        assertEquals("Invoking overloaded method for arguments: " + InvokerHelper.toString(arguments), expected, value);
+        assertEquals("Invoking overloaded method for arguments: " + FormatHelper.toString(arguments), expected, value);
     }
 
     protected Object invoke(Object object, String method, Object args) throws Throwable {

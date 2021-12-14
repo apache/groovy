@@ -30,6 +30,7 @@ import groovy.xml.XmlParser;
 import groovy.namespace.QName;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.xml.sax.SAXException;
 
@@ -138,7 +139,7 @@ public class XmlTemplateEngine extends TemplateEngine {
         @Override
         protected void printSimpleItem(Object value) {
             this.printLineBegin();
-            out.print(escapeSpecialChars(InvokerHelper.toString(value)));
+            out.print(escapeSpecialChars(FormatHelper.toString(value)));
             printLineEnd();
         }
 

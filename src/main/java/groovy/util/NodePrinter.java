@@ -18,7 +18,7 @@
  */
 package groovy.util;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.FormatHelper;
 
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -93,7 +93,7 @@ public class NodePrinter {
                     print((Node) value);
                 } else {
                     out.printIndent();
-                    out.println(InvokerHelper.toString(value));
+                    out.println(FormatHelper.toString(value));
                 }
             }
             out.decrementIndent();
@@ -118,7 +118,7 @@ public class NodePrinter {
             if (entry.getValue() instanceof String) {
                 out.print("'" + entry.getValue() + "'");
             } else {
-                out.print(InvokerHelper.toString(entry.getValue()));
+                out.print(FormatHelper.toString(entry.getValue()));
             }
         }
         out.print(")");

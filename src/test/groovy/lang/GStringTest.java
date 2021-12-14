@@ -19,7 +19,7 @@
 package groovy.lang;
 
 import groovy.test.GroovyTestCase;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.FormatHelper;
 
 /**
  * Tests the use of the structured Attribute type
@@ -44,8 +44,8 @@ public class GStringTest extends GroovyTestCase {
     public void testAppendString2() {
         DummyGString a = new DummyGString(new Object[]{"James"}, new String[]{"Hello "});
         GString result = a.plus(" how are you?");
-        System.out.println("Strings: " + InvokerHelper.toString(result.getStrings()));
-        System.out.println("Values: " + InvokerHelper.toString(result.getValues()));
+        System.out.println("Strings: " + FormatHelper.toString(result.getStrings()));
+        System.out.println("Values: " + FormatHelper.toString(result.getValues()));
         assertEquals("Hello James how are you?", result.toString());
     }
 

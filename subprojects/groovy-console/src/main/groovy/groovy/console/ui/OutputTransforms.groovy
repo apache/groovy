@@ -19,7 +19,7 @@
 package groovy.console.ui
 
 import groovy.transform.CompileStatic
-import org.codehaus.groovy.runtime.InvokerHelper
+import org.codehaus.groovy.runtime.FormatHelper
 
 import javax.swing.Icon
 import javax.swing.ImageIcon
@@ -92,7 +92,7 @@ class OutputTransforms {
         transforms << { it -> if (it instanceof Image) new ImageIcon(it)}
 
         // final case, non-nulls just get inspected as strings
-        transforms << { it -> if (it != null) "${InvokerHelper.inspect(it)}" }
+        transforms << { it -> if (it != null) "${FormatHelper.inspect(it)}" }
 
         return (List<Closure>) transforms
     }

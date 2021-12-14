@@ -982,7 +982,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
             if (shouldWriteBom) {
                 writeUTF16BomIfRequired(writer, Charset.defaultCharset().name());
             }
-            InvokerHelper.write(writer, text);
+            FormatHelper.write(writer, text);
             writer.flush();
 
             Writer temp = writer;
@@ -1072,7 +1072,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
                 writeUTF16BomIfRequired(out, charset);
             }
             writer = new OutputStreamWriter(out, charset);
-            InvokerHelper.write(writer, text);
+            FormatHelper.write(writer, text);
             writer.flush();
 
             Writer temp = writer;
@@ -1172,7 +1172,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
             if (shouldWriteBom) {
                 writeUTF16BomIfRequired(writer, charset);
             }
-            InvokerHelper.write(writer, text);
+            FormatHelper.write(writer, text);
             writer.flush();
 
             Writer temp = writer;

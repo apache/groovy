@@ -35,7 +35,7 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ErrorCollector
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.messages.Message
-import org.codehaus.groovy.runtime.InvokerHelper
+import org.codehaus.groovy.runtime.FormatHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
 import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.MessageSource
@@ -472,7 +472,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         if (showLastResult) {
             // avoid String.valueOf here because it bypasses pretty-printing of Collections,
             // e.g. String.valueOf( ['a': 42] ) != ['a': 42].toString()
-            io.out.println("@|bold ===>|@ ${InvokerHelper.toString(result)}")
+            io.out.println("@|bold ===>|@ ${FormatHelper.toString(result)}")
         }
     }
 

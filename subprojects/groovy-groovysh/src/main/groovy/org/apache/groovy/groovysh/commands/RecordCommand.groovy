@@ -18,7 +18,7 @@
  */
 package org.apache.groovy.groovysh.commands
 
-import org.codehaus.groovy.runtime.InvokerHelper
+import org.codehaus.groovy.runtime.FormatHelper
 import org.apache.groovy.groovysh.ComplexCommandSupport
 import org.apache.groovy.groovysh.Groovysh
 
@@ -59,7 +59,7 @@ class RecordCommand extends ComplexCommandSupport {
         // result maybe null
 
         if (isRecording()) {
-            writer.println("// RESULT: ${InvokerHelper.toString(result)}")
+            writer.println("// RESULT: ${FormatHelper.toString(result)}")
             writer.flush()
         }
     }

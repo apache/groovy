@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.runtime.powerassert;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.FormatHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -144,7 +144,7 @@ public final class AssertionRenderer {
         String toString;
 
         try {
-            toString = InvokerHelper.format(value, true, -1, false);
+            toString = FormatHelper.format(value, true, -1, false);
         } catch (Exception e) {
             return String.format("%s (toString() threw %s)",
                     javaLangObjectToString(value), e.getClass().getName());

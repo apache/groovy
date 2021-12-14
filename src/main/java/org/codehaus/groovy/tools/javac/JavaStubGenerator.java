@@ -50,7 +50,7 @@ import org.codehaus.groovy.classgen.FinalVariableAnalyzer;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.classgen.VerifierCodeVisitor;
 import org.codehaus.groovy.control.ResolveVisitor;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.tools.Utilities;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
@@ -1066,7 +1066,7 @@ public class JavaStubGenerator {
     }
 
     private static String escapeSpecialChars(String value) {
-        return InvokerHelper.escapeBackslashes(value).replace("\"", "\\\"");
+        return FormatHelper.escapeBackslashes(value).replace("\"", "\\\"");
     }
 
     private static boolean isInterfaceOrTrait(ClassNode cn) {

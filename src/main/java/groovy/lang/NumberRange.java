@@ -18,7 +18,7 @@
  */
 package groovy.lang;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.runtime.IteratorClosureAdapter;
 import org.codehaus.groovy.runtime.RangeInfo;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
@@ -548,7 +548,7 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
 
     @Override
     public String inspect() {
-        return getToString(InvokerHelper.inspect(to), InvokerHelper.inspect(from));
+        return getToString(FormatHelper.inspect(to), FormatHelper.inspect(from));
     }
 
     private String getToString(String toText, String fromText) {

@@ -43,6 +43,7 @@ import org.codehaus.groovy.runtime.ArrayUtil;
 import org.codehaus.groovy.runtime.ConvertedClosure;
 import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.GroovyCategorySupport.CategoryMethod;
@@ -1757,7 +1758,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             throw new GroovyRuntimeException(
                     "Could not find matching constructor for: "
                             + theClass.getName()
-                            + "(" + InvokerHelper.toTypeString(arguments) + ")");
+                            + "(" + FormatHelper.toTypeString(arguments) + ")");
         }
         return constructor;
     }
@@ -1896,14 +1897,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // chooseMethod allows fuzzy matching implicit null case but we don't want that here
         // code here handles inner class case but we currently don't do fuzzy matching for inner classes
         if (res instanceof ParameterTypes && ((ParameterTypes) res).getParameterTypes().length == origArgTypes.length) {
-            String prettyOrigArgs = InvokerHelper.toTypeString(origArgs);
+            String prettyOrigArgs = FormatHelper.toTypeString(origArgs);
             if (prettyOrigArgs.endsWith("LinkedHashMap")) {
                 prettyOrigArgs = prettyOrigArgs.replaceFirst("LinkedHashMap$", "Map");
             }
             throw new GroovyRuntimeException(
                     "Could not find named-arg compatible constructor. Expecting one of:\n"
                             + theClass.getName() + "(" + prettyOrigArgs + ")\n"
-                            + theClass.getName() + "(" + InvokerHelper.toTypeString(args) + ")"
+                            + theClass.getName() + "(" + FormatHelper.toTypeString(args) + ")"
             );
         }
         return res;
@@ -1935,7 +1936,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         throw new GroovyRuntimeException(
                 "Could not find matching constructor for: "
                         + theClass.getName()
-                        + "(" + InvokerHelper.toTypeString(arguments) + ")");
+                        + "(" + FormatHelper.toTypeString(arguments) + ")");
     }
 
     /**
@@ -3429,11 +3430,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         StringBuilder msg = new StringBuilder("Ambiguous method overloading for method ");
         msg.append(theClassName).append("#").append(name)
                 .append(".\nCannot resolve which method to invoke for ")
-                .append(InvokerHelper.toString(arguments))
+                .append(FormatHelper.toString(arguments))
                 .append(" due to overlapping prototypes between:");
         for (final Object match : matches) {
             CachedClass[] types = ((ParameterTypes) match).getParameterTypes();
-            msg.append("\n\t").append(InvokerHelper.toString(types));
+            msg.append("\n\t").append(FormatHelper.toString(types));
         }
         return msg.toString();
     }

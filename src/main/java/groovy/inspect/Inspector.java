@@ -23,6 +23,7 @@ import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import groovy.lang.PropertyValue;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.io.PrintStream;
@@ -187,7 +188,7 @@ public class Inspector {
         result[MEMBER_TYPE_IDX] = shortName(field.getType());
         result[MEMBER_NAME_IDX] = field.getName();
         try {
-            result[MEMBER_VALUE_IDX] = InvokerHelper.inspect(field.get(objectUnderInspection));
+            result[MEMBER_VALUE_IDX] = FormatHelper.inspect(field.get(objectUnderInspection));
         } catch (IllegalAccessException e) {
             result[MEMBER_VALUE_IDX] = NOT_APPLICABLE;
         }
@@ -202,7 +203,7 @@ public class Inspector {
         result[MEMBER_TYPE_IDX] = shortName(pv.getType());
         result[MEMBER_NAME_IDX] = pv.getName();
         try {
-            result[MEMBER_VALUE_IDX] = InvokerHelper.inspect(pv.getValue());
+            result[MEMBER_VALUE_IDX] = FormatHelper.inspect(pv.getValue());
         } catch (Exception e) {
             result[MEMBER_VALUE_IDX] = NOT_APPLICABLE;
         }

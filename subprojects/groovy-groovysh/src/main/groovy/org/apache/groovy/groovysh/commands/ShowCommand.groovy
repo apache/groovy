@@ -20,7 +20,7 @@ package org.apache.groovy.groovysh.commands
 
 import org.apache.groovy.groovysh.ComplexCommandSupport
 import org.apache.groovy.groovysh.Groovysh
-import org.codehaus.groovy.runtime.InvokerHelper
+import org.codehaus.groovy.runtime.FormatHelper
 import org.codehaus.groovy.runtime.MethodClosure
 import org.codehaus.groovy.tools.shell.util.Preferences
 
@@ -49,7 +49,7 @@ class ShowCommand extends ComplexCommandSupport {
                     value = "method ${value.method}()"
                 }
 
-                io.out.println("  $key = ${InvokerHelper.toString(value)}")
+                io.out.println("  $key = ${FormatHelper.toString(value)}")
             }
         }
     }

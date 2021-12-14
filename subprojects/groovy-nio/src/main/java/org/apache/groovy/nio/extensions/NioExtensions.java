@@ -32,6 +32,7 @@ import groovy.transform.stc.SimpleType;
 import org.apache.groovy.nio.runtime.WritablePath;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
+import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
@@ -706,7 +707,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
                 writeUTF16BomIfRequired(out, resolvedCharset);
             }
             writer = new OutputStreamWriter(out, resolvedCharset);
-            InvokerHelper.write(writer, text);
+            FormatHelper.write(writer, text);
             writer.flush();
 
             Writer temp = writer;
@@ -823,7 +824,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
             if (shouldWriteBom) {
                 writeUTF16BomIfRequired(writer, charset);
             }
-            InvokerHelper.write(writer, text);
+            FormatHelper.write(writer, text);
             writer.flush();
 
             Writer temp = writer;

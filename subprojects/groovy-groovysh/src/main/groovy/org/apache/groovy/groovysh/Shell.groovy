@@ -18,7 +18,7 @@
  */
 package org.apache.groovy.groovysh
 
-import org.codehaus.groovy.runtime.InvokerHelper
+import org.codehaus.groovy.runtime.FormatHelper
 import org.apache.groovy.groovysh.util.CommandArgumentParser
 import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.Logger
@@ -104,7 +104,7 @@ class Shell
             } catch (CommandException e) {
                 io.err.println(ansi().a(Ansi.Attribute.INTENSITY_BOLD).fg(Ansi.Color.RED).a(e.message).reset())
             }
-            log.debug("Result: ${InvokerHelper.toString(result)}")
+            log.debug("Result: ${FormatHelper.toString(result)}")
         }
 
         return result

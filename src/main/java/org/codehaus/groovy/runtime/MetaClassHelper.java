@@ -709,7 +709,7 @@ public class MetaClassHelper {
                         + " on: "
                         + object
                         + " with arguments: "
-                        + InvokerHelper.toString(args)
+                        + FormatHelper.toString(args)
                         + " reason: "
                         + reason,
                 setReason ? reason : null);

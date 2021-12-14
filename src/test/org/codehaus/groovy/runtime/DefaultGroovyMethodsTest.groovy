@@ -28,7 +28,7 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
     void testPrint() throws Exception {
         Map<String, String> map = ['bob': 'drools', 'james': 'geronimo']
         List<Map<String, String>> list = [map]
-        assertEquals("[[bob:drools, james:geronimo]]", InvokerHelper.toString(list))
+        assertEquals("[[bob:drools, james:geronimo]]", FormatHelper.toString(list))
     }
 
     void testFloatRounding() throws Exception {

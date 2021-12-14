@@ -18,7 +18,7 @@
  */
 package groovy.lang;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.FormatHelper;
 
 /**
  * An exception occurred when invoking a Closure with the wrong number and/or
@@ -36,9 +36,9 @@ public class IncorrectClosureArgumentsException extends GroovyRuntimeException {
             "Incorrect arguments to closure: "
                 + closure
                 + ". Expected: "
-                + InvokerHelper.toString(expected)
+                + FormatHelper.toString(expected)
                 + ", actual: "
-                + InvokerHelper.toString(arguments));
+                + FormatHelper.toString(arguments));
         this.closure = closure;
         this.arguments = arguments;
         this.expected = expected;

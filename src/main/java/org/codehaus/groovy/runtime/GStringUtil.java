@@ -86,7 +86,7 @@ public final class GStringUtil {
                     int maximumNumberOfParameters = c.getMaximumNumberOfParameters();
 
                     if (maximumNumberOfParameters == 0) {
-                        InvokerHelper.write(out, c.call());
+                        FormatHelper.write(out, c.call());
                     } else if (maximumNumberOfParameters == 1) {
                         c.call(out);
                     } else {
@@ -94,7 +94,7 @@ public final class GStringUtil {
                                 + maximumNumberOfParameters + " parameters");
                     }
                 } else {
-                    InvokerHelper.write(out, value);
+                    FormatHelper.write(out, value);
                 }
             }
         }

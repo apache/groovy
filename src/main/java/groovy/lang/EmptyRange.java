@@ -18,7 +18,7 @@
  */
 package groovy.lang;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.FormatHelper;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -85,7 +85,7 @@ public class EmptyRange<T extends Comparable> extends AbstractList<T> implements
      */
     @Override
     public String inspect() {
-        return InvokerHelper.inspect(at) + "..<" + InvokerHelper.inspect(at);
+        return FormatHelper.inspect(at) + "..<" + FormatHelper.inspect(at);
     }
 
     /**

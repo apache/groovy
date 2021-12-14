@@ -18,7 +18,7 @@
  */
 package groovy.io;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.FormatHelper;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -111,7 +111,7 @@ public class GroovyPrintStream extends PrintStream {
      */
     @Override
     public void print(Object obj) {
-        print(InvokerHelper.toString(obj));
+        print(FormatHelper.toString(obj));
     }
 
     /**
@@ -121,7 +121,7 @@ public class GroovyPrintStream extends PrintStream {
      */
     @Override
     public void println(Object obj) {
-        println(InvokerHelper.toString(obj));
+        println(FormatHelper.toString(obj));
     }
 
 }

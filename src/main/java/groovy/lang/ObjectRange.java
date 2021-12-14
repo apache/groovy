@@ -19,6 +19,7 @@
 package groovy.lang;
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.IteratorClosureAdapter;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
@@ -372,8 +373,8 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
 
     @Override
     public String inspect() {
-        final String toText = InvokerHelper.inspect(to);
-        final String fromText = InvokerHelper.inspect(from);
+        final String toText = FormatHelper.inspect(to);
+        final String fromText = FormatHelper.inspect(from);
         return reverse ? "" + toText + ".." + fromText : "" + fromText + ".." + toText;
     }
 

@@ -1035,9 +1035,9 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
                 for (int i = 0; i <= count; i += 1) {
                     groups.add(matcher.group(i));
                 }
-                return InvokerHelper.toString(closure.call(groups));
+                return FormatHelper.toString(closure.call(groups));
             } else {
-                return InvokerHelper.toString(closure.call(matcher.group(0)));
+                return FormatHelper.toString(closure.call(matcher.group(0)));
             }
         }
         return null;
@@ -1520,7 +1520,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     private static String getReplacement(final Matcher matcher, final Closure closure) {
         if (!hasGroup(matcher)) {
-            return InvokerHelper.toString(closure.call(matcher.group()));
+            return FormatHelper.toString(closure.call(matcher.group()));
         }
 
         int count = matcher.groupCount();
@@ -1531,9 +1531,9 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
         if (closure.getParameterTypes().length == 1
                 && closure.getParameterTypes()[0] == Object[].class) {
-            return InvokerHelper.toString(closure.call(groups.toArray()));
+            return FormatHelper.toString(closure.call(groups.toArray()));
         }
-        return InvokerHelper.toString(closure.call(groups));
+        return FormatHelper.toString(closure.call(groups));
     }
 
     /**

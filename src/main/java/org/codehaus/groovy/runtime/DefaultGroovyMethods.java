@@ -469,7 +469,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     buffer.append(field.getName());
                     buffer.append("=");
                     try {
-                        buffer.append(InvokerHelper.toString(field.get(self)));
+                        buffer.append(FormatHelper.toString(field.get(self)));
                     } catch (Exception e) {
                         buffer.append(e);
                     }
@@ -696,7 +696,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String inspect(Object self) {
-        return InvokerHelper.inspect(self);
+        return FormatHelper.inspect(self);
     }
 
     /**
@@ -728,12 +728,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         // we won't get here if we are a PrintWriter
         if (self instanceof Writer) {
             try {
-                ((Writer) self).write(InvokerHelper.toString(value));
+                ((Writer) self).write(FormatHelper.toString(value));
             } catch (IOException e) {
                 // TODO: Should we have some unified function like PrintWriter.checkError()?
             }
         } else {
-            System.out.print(InvokerHelper.toString(value));
+            System.out.print(FormatHelper.toString(value));
         }
     }
 
@@ -745,7 +745,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void print(PrintWriter self, Object value) {
-        self.print(InvokerHelper.toString(value));
+        self.print(FormatHelper.toString(value));
     }
 
     /**
@@ -756,7 +756,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     public static void print(PrintStream self, Object value) {
-        self.print(InvokerHelper.toString(value));
+        self.print(FormatHelper.toString(value));
     }
 
     /**
@@ -783,7 +783,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (out == null) {
             out = new PrintWriter(System.out);
         }
-        out.print(InvokerHelper.toString(self));
+        out.print(FormatHelper.toString(self));
     }
 
     /**
@@ -828,7 +828,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             final PrintWriter pw = new GroovyPrintWriter((Writer) self);
             pw.println(value);
         } else {
-            System.out.println(InvokerHelper.toString(value));
+            System.out.println(FormatHelper.toString(value));
         }
     }
 
@@ -840,7 +840,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void println(PrintWriter self, Object value) {
-        self.println(InvokerHelper.toString(value));
+        self.println(FormatHelper.toString(value));
     }
 
     /**
@@ -851,7 +851,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     public static void println(PrintStream self, Object value) {
-        self.println(InvokerHelper.toString(value));
+        self.println(FormatHelper.toString(value));
     }
 
     /**
@@ -878,7 +878,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (out == null) {
             out = new PrintWriter(System.out);
         }
-        out.println(InvokerHelper.toString(self));
+        out.println(FormatHelper.toString(self));
     }
 
     /**
@@ -6735,7 +6735,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             } else {
                 buffer.append(separator);
             }
-            buffer.append(InvokerHelper.toString(value));
+            buffer.append(FormatHelper.toString(value));
         }
         return buffer.toString();
     }
@@ -15097,7 +15097,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     public static String toString(boolean[] self) {
-        return InvokerHelper.toString(self);
+        return FormatHelper.toString(self);
     }
 
     /**
@@ -15108,7 +15108,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     public static String toString(byte[] self) {
-        return InvokerHelper.toString(self);
+        return FormatHelper.toString(self);
     }
 
     /**
@@ -15119,7 +15119,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     public static String toString(char[] self) {
-        return InvokerHelper.toString(self);
+        return FormatHelper.toString(self);
     }
 
     /**
@@ -15130,7 +15130,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     public static String toString(short[] self) {
-        return InvokerHelper.toString(self);
+        return FormatHelper.toString(self);
     }
 
     /**
@@ -15141,7 +15141,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     public static String toString(int[] self) {
-        return InvokerHelper.toString(self);
+        return FormatHelper.toString(self);
     }
 
     /**
@@ -15152,7 +15152,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     public static String toString(long[] self) {
-        return InvokerHelper.toString(self);
+        return FormatHelper.toString(self);
     }
 
     /**
@@ -15163,7 +15163,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     public static String toString(float[] self) {
-        return InvokerHelper.toString(self);
+        return FormatHelper.toString(self);
     }
 
     /**
@@ -15174,7 +15174,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     public static String toString(double[] self) {
-        return InvokerHelper.toString(self);
+        return FormatHelper.toString(self);
     }
 
     /**
@@ -15211,7 +15211,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String toMapString(Map self, int maxSize) {
-        return (self == null) ? "null" : InvokerHelper.toMapString(self, maxSize);
+        return (self == null) ? "null" : FormatHelper.toMapString(self, maxSize);
     }
 
     /**
@@ -15252,7 +15252,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.3
      */
     public static String toListString(Collection self, int maxSize) {
-        return (self == null) ? "null" : InvokerHelper.toListString(self, maxSize);
+        return (self == null) ? "null" : FormatHelper.toListString(self, maxSize);
     }
 
     /**
@@ -15277,7 +15277,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String toArrayString(Object[] self) {
-        return (self == null) ? "null" : InvokerHelper.toArrayString(self);
+        return (self == null) ? "null" : FormatHelper.toArrayString(self);
     }
 
     /**
@@ -15287,7 +15287,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String toString(Object value) {
-        return InvokerHelper.toString(value);
+        return FormatHelper.toString(value);
     }
 
     //-------------------------------------------------------------------------
@@ -17496,7 +17496,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @SuppressWarnings("unchecked")
     public static <T> T asType(Object obj, Class<T> type) {
         if (String.class == type) {
-            return (T) InvokerHelper.toString(obj);
+            return (T) FormatHelper.toString(obj);
         }
 
         // fall back to cast

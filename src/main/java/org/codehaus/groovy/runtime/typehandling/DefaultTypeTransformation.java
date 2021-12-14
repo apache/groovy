@@ -24,6 +24,7 @@ import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.IteratorClosureAdapter;
@@ -237,7 +238,7 @@ public class DefaultTypeTransformation {
         } else if (Collection.class.isAssignableFrom(type)) {
             return continueCastOnCollection(object, type);
         } else if (type == String.class) {
-            return InvokerHelper.toString(object);
+            return FormatHelper.toString(object);
         } else if (type == Character.class) {
             return ShortTypeHandling.castToChar(object);
         } else if (type == Boolean.class) {

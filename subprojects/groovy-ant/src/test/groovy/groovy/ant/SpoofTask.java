@@ -20,7 +20,7 @@ package groovy.ant;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.FormatHelper;
 
 public class SpoofTask extends Task {
     private int foo;
@@ -40,7 +40,7 @@ public class SpoofTask extends Task {
         SpoofTaskContainer.spoof("tag name from wrapper: " + getWrapper().getElementTag());
         // don't rely on Map.toString(), behaviour is not documented
         SpoofTaskContainer.spoof("attributes map from wrapper: "
-                + InvokerHelper.toMapString(getWrapper().getAttributeMap()));
+                + FormatHelper.toMapString(getWrapper().getAttributeMap()));
         SpoofTaskContainer.spoof("param foo: " + foo);
 
         SpoofTaskContainer.spoof("end SpoofTask execute");

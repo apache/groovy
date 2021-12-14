@@ -18,7 +18,7 @@
  */
 package groovy.io;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.FormatHelper;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -71,7 +71,7 @@ public class GroovyPrintWriter extends PrintWriter {
 
     @Override
     public void print(Object x) {
-        write(InvokerHelper.toString(x));
+        write(FormatHelper.toString(x));
     }
 
     @Override
@@ -80,6 +80,6 @@ public class GroovyPrintWriter extends PrintWriter {
         // String.valueOf(x) rather than call print(x).
         // Probably to improve performance by doing the conversion outside the lock.
         // This will do the same thing for us, and we don't have to have access to the lock.
-        println(InvokerHelper.toString(x));
+        println(FormatHelper.toString(x));
     }
 }
