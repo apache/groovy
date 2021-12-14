@@ -670,6 +670,19 @@ final class InnerClassTest {
         assert err =~ /Apparent variable 'count' was found in a static scope but doesn't refer to a local variable, static field or class./
     }
 
+    @Test // GROOVY-8050
+    void testUsageOfOuterField13() {
+        assertScript '''
+            class Outer {
+                class Inner {
+                }
+                def p = 1
+            }
+            def i = new Outer.Inner(new Outer())
+            assert i.p == 1
+        '''
+    }
+
     @Test
     void testUsageOfOuterSuperField() {
         assertScript '''
