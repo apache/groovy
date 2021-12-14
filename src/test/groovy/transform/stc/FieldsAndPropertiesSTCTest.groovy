@@ -646,8 +646,52 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-9598
     void testOuterPropertyAccess2() {
+        assertScript '''
+            class Outer {
+                class Inner {
+                    def m() {
+                        getP()
+                    }
+                }
+                def p = 1
+            }
+            def i = new Outer.Inner(new Outer())
+            def x = i.m()
+            assert x == 1
+        '''
+    }
+
+    // GROOVY-8050
+    void testOuterPropertyAccess3() {
+        shouldFailWithMessages '''
+            class Outer {
+                class Inner {
+                }
+                def p = 1
+            }
+            def i = new Outer.Inner(new Outer())
+            def x = i.p
+        ''',
+        'No such property: p for class: Outer$Inner'
+    }
+
+    // GROOVY-8050
+    void testOuterPropertyAccess4() {
+        shouldFailWithMessages '''
+            class Outer {
+                class Inner {
+                }
+                def p = 1
+            }
+            def i = new Outer.Inner(new Outer())
+            def x = i.getP()
+        ''',
+        'Cannot find matching method Outer$Inner#getP()'
+    }
+
+    // GROOVY-9598
+    void testOuterPropertyAccess5() {
         shouldFailWithMessages '''
             class Outer {
                 static class Inner {
@@ -663,7 +707,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'The variable [p] is undeclared.'
     }
 
-    void testOuterPropertyAccess3() {
+    void testOuterPropertyAccess6() {
         shouldFailWithMessages '''
             class Outer {
                 static class Inner {
@@ -680,7 +724,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7024
-    void testOuterPropertyAccess4() {
+    void testOuterPropertyAccess7() {
         assertScript '''
             class Outer {
                 static Map props = [bar: 10, baz: 20]
