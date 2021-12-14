@@ -418,6 +418,7 @@ public class Java5 implements VMPlugin {
         }
     }
 
+    @Deprecated
     protected Parameter[] processParameters(CompileUnit compileUnit, Method m) {
         Type[] types = m.getGenericParameterTypes();
         Parameter[] params = Parameter.EMPTY_ARRAY;
@@ -518,6 +519,7 @@ public class Java5 implements VMPlugin {
         return back.getPlainNodeReference();
     }
 
+    @Deprecated
     protected Parameter makeParameter(CompileUnit cu, Type type, Class cl, Annotation[] annotations, String name) {
         ClassNode cn = makeClassNode(cu, type, cl);
         Parameter parameter = new Parameter(cn, name);
