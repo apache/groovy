@@ -4749,13 +4749,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected List<MethodNode> findMethod(ClassNode receiver, final String name, final ClassNode... args) {
         if (isPrimitiveType(receiver)) receiver = getWrapper(receiver);
+
         List<MethodNode> methods;
-        if (!receiver.isInterface() && "<init>".equals(name)) {
+        if ("<init>".equals(name) && !receiver.isInterface()) {
             methods = addGeneratedMethods(receiver, new ArrayList<>(receiver.getDeclaredConstructors()));
             if (methods.isEmpty()) {
                 MethodNode node = new ConstructorNode(Opcodes.ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
                 node.setDeclaringClass(receiver);
-                methods = Collections.singletonList(node);
+                methods.add(node);
                 if (receiver.isArray()) {
                     // No need to check the arguments against an array constructor: it just needs to exist. The array is
                     // created through coercion or by specifying its dimension(s), anyway, and would not match an
@@ -4765,25 +4766,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         } else {
             methods = findMethodsWithGenerated(receiver, name);
-            if (receiver.isInterface()) {
-                if ("call".equals(name) && isFunctionalInterface(receiver)) {
-                    MethodNode sam = findSAM(receiver);
+            if ("call".equals(name) && receiver.isInterface()) {
+                MethodNode sam = findSAM(receiver);
+                if (sam != null) {
                     MethodNode callMethod = new MethodNode("call", sam.getModifiers(), sam.getReturnType(), sam.getParameters(), sam.getExceptions(), sam.getCode());
                     callMethod.setDeclaringClass(sam.getDeclaringClass());
                     callMethod.setSourcePosition(sam);
                     methods.add(callMethod);
                 }
             }
-            // TODO: investigate the trait exclusion a bit further, needed otherwise
-            // CallMethodOfTraitInsideClosureAndClosureParamTypeInference fails saying
-            // not static method can't be called from a static context
-            if (typeCheckingContext.getEnclosingClosure() == null || (receiver.getOuterClass() != null && !receiver.getName().endsWith("$Trait$Helper"))) {
-                // not in a closure or within an inner class
-                ClassNode parent = receiver;
-                while (parent.getOuterClass() != null && !parent.isStaticClass()) {
-                    parent = parent.getOuterClass();
-                    methods.addAll(findMethodsWithGenerated(parent, name));
-                }
+            if (!receiver.isStaticClass() && receiver.getOuterClass() != null
+                    && !receiver.getName().endsWith("$Trait$Helper") // GROOVY-7242
+                    && typeCheckingContext.getEnclosingClassNodes().contains(receiver)) {
+                ClassNode outer = receiver.getOuterClass();
+                do { methods.addAll(findMethodsWithGenerated(outer, name));
+                } while (!outer.isStaticClass() && (outer = outer.getOuterClass()) != null);
             }
             if (methods.isEmpty()) {
                 addArrayMethods(methods, receiver, name, args);
@@ -4795,22 +4792,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     pname = extractPropertyNameFromMethodName("is", name);
                 }
                 if (pname != null) {
-                    // we don't use property exists there because findMethod is called on super clases recursively
-                    PropertyNode property = null;
-                    ClassNode curNode = receiver;
-                    while (property == null && curNode != null) {
-                        property = curNode.getProperty(pname);
-                        ClassNode svCur = curNode;
-                        while (property == null && svCur.getOuterClass() != null && !svCur.isStaticClass()) {
-                            svCur = svCur.getOuterClass();
-                            property = svCur.getProperty(pname);
-                            if (property != null) {
-                                receiver = svCur;
-                                break;
-                            }
-                        }
-                        curNode = curNode.getSuperClass();
-                    }
+                    PropertyNode property = findProperty(receiver, pname);
                     if (property != null) {
                         int mods = Opcodes.ACC_PUBLIC | (property.isStatic() ? Opcodes.ACC_STATIC : 0);
                         MethodNode node = new MethodNode(name, mods, property.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
@@ -4822,13 +4804,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // maybe we are looking for a setter ?
                 String pname = extractPropertyNameFromMethodName("set", name);
                 if (pname != null) {
-                    ClassNode curNode = receiver;
-                    PropertyNode property = null;
-                    while (property == null && curNode != null) {
-                        property = curNode.getProperty(pname);
-                        curNode = curNode.getSuperClass();
-                    }
-                    if (property != null) {
+                    PropertyNode property = findProperty(receiver, pname);
+                    if (property != null && !Modifier.isFinal(property.getModifiers())) {
                         ClassNode type = property.getOriginType();
                         if (implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(args[0]), wrapTypeIfNecessary(type))) {
                             int mods = Opcodes.ACC_PUBLIC | (property.isStatic() ? Opcodes.ACC_STATIC : 0);
@@ -4870,6 +4847,23 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         return EMPTY_METHODNODE_LIST;
+    }
+
+    private PropertyNode findProperty(final ClassNode receiver, final String name) {
+        for (ClassNode cn = receiver; cn != null; cn = cn.getSuperClass()) {
+            PropertyNode property = cn.getProperty(name);
+            if (property != null) return property;
+
+            if (!cn.isStaticClass() && cn.getOuterClass() != null
+                    && typeCheckingContext.getEnclosingClassNodes().contains(cn)) {
+                ClassNode outer = cn.getOuterClass();
+                do {
+                    property = outer.getProperty(name);
+                    if (property != null) return property;
+                } while (!outer.isStaticClass() && (outer = outer.getOuterClass()) != null);
+            }
+        }
+        return null;
     }
 
     /**
