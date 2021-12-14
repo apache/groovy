@@ -4792,21 +4792,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 PropertyNode property = null;
                 if (pname != null) {
-                    outer_upper: // can't use existsProperty because it calls findMethod
-                    for (ClassNode cn = receiver; cn != null; cn = cn.getSuperClass()) {
-                        property = cn.getProperty(pname);
-                        if (property != null) break outer_upper;
-                        if (!cn.isStaticClass() && cn.getOuterClass() != null
-                                && typeCheckingContext.getEnclosingClassNodes().contains(cn)) {
-                            ClassNode outer = cn.getOuterClass();
-                            do {
-                                property = outer.getProperty(pname);
-                                if (property != null) break outer_upper;
-                            } while (!outer.isStaticClass() && (outer = outer.getOuterClass()) != null);
-                        }
-                    }
-                } else { // look for property via getGetterName() for non-canonical case
-                    out:
+                    property = findProperty(receiver, pname);
+                } else {
+                    out: // look for property via getGetterName() for non-canonical case
                     for (ClassNode cn = receiver; cn != null; cn = cn.getSuperClass()) {
                         for (PropertyNode pn : cn.getProperties()) {
                             if (name.equals(pn.getGetterName())) {
@@ -4826,12 +4814,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // maybe we are looking for a setter ?
                 String pname = extractPropertyNameFromMethodName("set", name);
                 if (pname != null) {
-                    ClassNode curNode = receiver;
-                    PropertyNode property = null;
-                    while (property == null && curNode != null) {
-                        property = curNode.getProperty(pname);
-                        curNode = curNode.getSuperClass();
-                    }
+                    PropertyNode property = findProperty(receiver, pname);
                     if (property != null && !Modifier.isFinal(property.getModifiers())) {
                         ClassNode type = property.getOriginType();
                         if (implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(args[0]), wrapTypeIfNecessary(type))) {
@@ -4874,6 +4857,23 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         return EMPTY_METHODNODE_LIST;
+    }
+
+    private PropertyNode findProperty(final ClassNode receiver, final String name) {
+        for (ClassNode cn = receiver; cn != null; cn = cn.getSuperClass()) {
+            PropertyNode property = cn.getProperty(name);
+            if (property != null) return property;
+
+            if (!cn.isStaticClass() && cn.getOuterClass() != null
+                    && typeCheckingContext.getEnclosingClassNodes().contains(cn)) {
+                ClassNode outer = cn.getOuterClass();
+                do {
+                    property = outer.getProperty(name);
+                    if (property != null) return property;
+                } while (!outer.isStaticClass() && (outer = outer.getOuterClass()) != null);
+            }
+        }
+        return null;
     }
 
     /**

@@ -662,8 +662,26 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-8050
+    // GROOVY-10414
     void testOuterPropertyAccess3() {
+        assertScript '''
+            class Outer {
+                class Inner {
+                    def m() {
+                        setP(2)
+                        getP()
+                    }
+                }
+                def p = 1
+            }
+            def i = new Outer.Inner(new Outer())
+            def x = i.m()
+            assert x == 2
+        '''
+    }
+
+    // GROOVY-8050
+    void testOuterPropertyAccess4() {
         shouldFailWithMessages '''
             class Outer {
                 class Inner {
@@ -677,7 +695,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8050
-    void testOuterPropertyAccess4() {
+    void testOuterPropertyAccess5() {
         shouldFailWithMessages '''
             class Outer {
                 class Inner {
@@ -691,7 +709,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9598
-    void testOuterPropertyAccess5() {
+    void testOuterPropertyAccess6() {
         shouldFailWithMessages '''
             class Outer {
                 static class Inner {
@@ -707,7 +725,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'The variable [p] is undeclared.'
     }
 
-    void testOuterPropertyAccess6() {
+    void testOuterPropertyAccess7() {
         shouldFailWithMessages '''
             class Outer {
                 static class Inner {
@@ -724,7 +742,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7024
-    void testOuterPropertyAccess7() {
+    void testOuterPropertyAccess8() {
         assertScript '''
             class Outer {
                 static Map props = [bar: 10, baz: 20]

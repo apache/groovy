@@ -709,13 +709,13 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         for (it in ['I', 'def', 'var', 'Object']) {
             assertScript """
                 interface I {
-                    def foo()
+                    def m()
                 }
                 class A implements I {
-                    def foo() { 'A' }
+                    def m() { 'A' }
                 }
                 class B implements I {
-                    def foo() { 'B' }
+                    def m() { 'B' }
                 }
 
                 $it x
@@ -726,34 +726,40 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
                 } else if (z) {
                     x = new B()
                 }
-                assert x.foo() == 'B'
+                assert x.m() == 'B'
             """
         }
     }
 
-    void testForLoopWithNewAssignment() {
+    void testForLoopWithAssignment() {
         shouldFailWithMessages '''
             def x = '123'
-            for (int i=0; i<5;i++) { x = new HashSet() }
+            for (int i = 0; i < -1; i += 1) {
+                x = new HashSet()
+            }
             x.toInteger()
-        ''', 'Cannot find matching method java.io.Serializable#toInteger()'
+        ''',
+        'Cannot find matching method java.io.Serializable#toInteger()'
     }
 
-    void testWhileLoopWithNewAssignment() {
+    void testWhileLoopWithAssignment() {
         shouldFailWithMessages '''
             def x = '123'
-            while (false) { x = new HashSet() }
+            while (false) {
+                x = new HashSet()
+            }
             x.toInteger()
-        ''', 'Cannot find matching method java.io.Serializable#toInteger()'
+        ''',
+        'Cannot find matching method java.io.Serializable#toInteger()'
     }
 
-    void testTernaryWithNewAssignment() {
+    void testTernaryInitWithAssignment() {
         shouldFailWithMessages '''
             def x = '123'
-            def cond = false
-            cond?(x = new HashSet()):3
+            def y = (false ? (x = new HashSet()) : 42)
             x.toInteger()
-        ''', 'Cannot find matching method java.io.Serializable#toInteger()'
+        ''',
+        'Cannot find matching method java.io.Serializable#toInteger()'
     }
 
     void testFloatSub() {
