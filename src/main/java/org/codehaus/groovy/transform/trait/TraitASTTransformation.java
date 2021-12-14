@@ -167,6 +167,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 ClassNode.EMPTY_ARRAY,
                 null
         );
+        helper.setStaticClass(true); // GROOVY-7242, GROOVY-7456, etc.
         cNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT | ACC_INTERFACE);
 
         checkInnerClasses(cNode);
@@ -199,6 +200,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                     ACC_PUBLIC | ACC_STATIC | ACC_ABSTRACT | ACC_INTERFACE | ACC_SYNTHETIC,
                     OBJECT_TYPE
             );
+            fieldHelper.setStaticClass(true);
             if (hasStatic) {
                 staticFieldHelper = new InnerClassNode(
                         cNode,
@@ -206,6 +208,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                         ACC_PUBLIC | ACC_STATIC | ACC_ABSTRACT | ACC_INTERFACE | ACC_SYNTHETIC,
                         OBJECT_TYPE
                 );
+                staticFieldHelper.setStaticClass(true);
             }
         }
 

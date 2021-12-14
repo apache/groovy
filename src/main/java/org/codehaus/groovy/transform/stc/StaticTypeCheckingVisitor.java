@@ -4775,7 +4775,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
             if (!receiver.isStaticClass() && receiver.getOuterClass() != null
-                    && !receiver.getName().endsWith("$Trait$Helper") // GROOVY-7242
                     && typeCheckingContext.getEnclosingClassNodes().contains(receiver)) {
                 ClassNode outer = receiver.getOuterClass();
                 do { methods.addAll(findMethodsWithGenerated(outer, name));
