@@ -98,7 +98,7 @@ public class ClassNodeResolver {
      * path can be avoided.
      * WARNING: This class is not to be used outside of ClassNodeResolver.
      */
-    protected static final ClassNode NO_CLASS = new ClassNode("NO_CLASS", Opcodes.ACC_PUBLIC,ClassHelper.OBJECT_TYPE){
+    protected static final ClassNode NO_CLASS = new ClassNode("NO_CLASS", Opcodes.ACC_PUBLIC,ClassHelper.OBJECT_TYPE) {
         @Override
         public void setRedirect(ClassNode cn) {
             throw new GroovyBugError("This is a dummy class node only! Never use it for real classes.");
@@ -119,14 +119,19 @@ public class ClassNodeResolver {
      * @param compilationUnit - the current CompilationUnit
      * @return the LookupResult
      */
-    public LookupResult resolveName(String name, CompilationUnit compilationUnit) {
-        ClassNode res = getFromClassCache(name);
-        if (res==NO_CLASS) return null;
-        if (res!=null) return new LookupResult(null,res);
-        LookupResult lr = findClassNode(name, compilationUnit);
-        if (lr != null) {
-            if (lr.isClassNode()) cacheClass(name, lr.getClassNode());
-            return lr;
+    public LookupResult resolveName(final String name, final CompilationUnit compilationUnit) {
+        ClassNode type = getFromClassCache(name);
+        if (type != null) {
+            if (type == NO_CLASS) return null;
+            return new LookupResult(null, type);
+        }
+
+        LookupResult result = findClassNode(name, compilationUnit);
+        if (result != null) {
+            if (result.isClassNode()) {
+                cacheClass(name, result.getClassNode());
+            }
+            return result;
         } else {
             cacheClass(name, NO_CLASS);
             return null;
@@ -138,7 +143,7 @@ public class ClassNodeResolver {
      * @param name - the name of the class
      * @param res - the ClassNode for that name
      */
-    public void cacheClass(String name, ClassNode res) {
+    public void cacheClass(final String name, final ClassNode res) {
         cachedClasses.put(name, res);
     }
 
@@ -147,7 +152,7 @@ public class ClassNodeResolver {
      * @param name - the name of the class
      * @return the result of the lookup, which may be null
      */
-    public ClassNode getFromClassCache(String name) {
+    public ClassNode getFromClassCache(final String name) {
         // We use here the class cache cachedClasses to prevent
         // calls to ClassLoader#loadClass. Disabling this cache will
         // cause a major performance hit.
@@ -166,8 +171,8 @@ public class ClassNodeResolver {
      * @param compilationUnit - the current compilation unit
      * @return the lookup result
      */
-    public LookupResult findClassNode(String name, CompilationUnit compilationUnit) {
-        return tryAsLoaderClassOrScript(name, compilationUnit);
+    public LookupResult findClassNode(final String name, final CompilationUnit compilationUnit) {
+        return compilationUnit == null ? null : tryAsLoaderClassOrScript(name, compilationUnit);
     }
 
     /**
@@ -180,41 +185,39 @@ public class ClassNodeResolver {
      * The latter is slower but is unavoidable for scripts executed in dynamic environments where
      * the referenced classes might only be available in the classloader, not on disk.
      */
-    private LookupResult tryAsLoaderClassOrScript(String name, CompilationUnit compilationUnit) {
+    private LookupResult tryAsLoaderClassOrScript(final String name, final CompilationUnit compilationUnit) {
         GroovyClassLoader loader = compilationUnit.getClassLoader();
-
         Map<String, Boolean> options = compilationUnit.configuration.getOptimizationOptions();
-        boolean useAsm = !Boolean.FALSE.equals(options.get("asmResolving"));
-        boolean useClassLoader = !Boolean.FALSE.equals(options.get("classLoaderResolving"));
 
-        LookupResult result = useAsm ? findDecompiled(name, compilationUnit, loader) : null;
-        if (result != null) {
-            return result;
+        if (!Boolean.FALSE.equals(options.get("asmResolving"))) {
+            LookupResult result = findDecompiled(name, compilationUnit, loader);
+            if (result != null) {
+                return result;
+            }
         }
 
-        if (!useClassLoader) {
-            return tryAsScript(name, compilationUnit, null);
+        if (!Boolean.FALSE.equals(options.get("classLoaderResolving"))) {
+            return findByClassLoading(name, compilationUnit, loader);
         }
 
-        return findByClassLoading(name, compilationUnit, loader);
+        return tryAsScript(name, compilationUnit, null);
     }
 
     /**
      * Search for classes using class loading
      */
-    private static LookupResult findByClassLoading(String name, CompilationUnit compilationUnit, GroovyClassLoader loader) {
-        Class cls;
+    private static LookupResult findByClassLoading(final String name, final CompilationUnit compilationUnit, final GroovyClassLoader loader) {
+        Class<?> cls;
         try {
             // NOTE: it's important to do no lookup against script files
             // here since the GroovyClassLoader would create a new CompilationUnit
             cls = loader.loadClass(name, false, true);
         } catch (ClassNotFoundException cnfe) {
-            LookupResult lr = tryAsScript(name, compilationUnit, null);
-            return lr;
+            return tryAsScript(name, compilationUnit, null);
         } catch (CompilationFailedException cfe) {
             throw new GroovyBugError("The lookup for " + name + " caused a failed compilation. There should not have been any compilation from this call.", cfe);
         }
-        //TODO: the case of a NoClassDefFoundError needs a bit more research
+        //TODO: The case of a NoClassDefFoundError needs a bit more research;
         // a simple recompilation is not possible it seems. The current class
         // we are searching for is there, so we should mark that somehow.
         // Basically the missing class needs to be completely compiled before
@@ -238,7 +241,7 @@ public class ClassNodeResolver {
     /**
      * Search for classes using ASM decompiler
      */
-    private LookupResult findDecompiled(String name, CompilationUnit compilationUnit, GroovyClassLoader loader) {
+    private LookupResult findDecompiled(final String name, final CompilationUnit compilationUnit, final GroovyClassLoader loader) {
         ClassNode node = ClassHelper.make(name);
         if (node.isResolved()) {
             return new LookupResult(null, node);
@@ -269,25 +272,28 @@ public class ClassNodeResolver {
         return null;
     }
 
-    private static boolean isFromAnotherClassLoader(GroovyClassLoader loader, String fileName) {
+    private static boolean isFromAnotherClassLoader(final GroovyClassLoader loader, final String fileName) {
         ClassLoader parent = loader.getParent();
         return parent != null && parent.getResource(fileName) != null;
     }
 
     /**
-     * try to find a script using the compilation unit class loader.
+     * Tries to find a script using the compilation unit class loader.
      */
-    private static LookupResult tryAsScript(String name, CompilationUnit compilationUnit, ClassNode oldClass) {
+    private static LookupResult tryAsScript(final String name, final CompilationUnit compilationUnit, final ClassNode oldClass) {
         LookupResult lr = null;
-        if (oldClass!=null) {
+        if (oldClass != null) {
             lr = new LookupResult(null, oldClass);
         }
+        if (name.startsWith("java.")) {
+            return lr;
+        }
+        int i = name.indexOf('$');
+        if (i != -1) {
+            return lr;
+        }
 
-        if (name.startsWith("java.")) return lr;
-        //TODO: don't ignore inner static classes completely
-        if (name.indexOf('$') != -1) return lr;
-
-        // try to find a script from classpath*/
+        // try to find a script from classpath
         GroovyClassLoader gcl = compilationUnit.getClassLoader();
         URL url = null;
         try {
@@ -295,33 +301,33 @@ public class ClassNodeResolver {
         } catch (MalformedURLException e) {
             // fall through and let the URL be null
         }
-        if (url != null && ( oldClass==null || isSourceNewer(url, oldClass))) {
-            SourceUnit su = compilationUnit.addSource(url);
-            return new LookupResult(su,null);
+        if (url != null && (oldClass == null || isSourceNewer(url, oldClass))) {
+            SourceUnit sourceUnit = compilationUnit.addSource(url);
+            lr = new LookupResult(sourceUnit, null);
         }
         return lr;
     }
 
     /**
-     * get the time stamp of a class
+     * Gets the time stamp of a class.
+     * <p>
      * NOTE: copied from GroovyClassLoader
      */
-    private static long getTimeStamp(ClassNode cls) {
+    private static long getTimeStamp(final ClassNode cls) {
         if (!(cls instanceof DecompiledClassNode)) {
             return Verifier.getTimestamp(cls.getTypeClass());
         }
-
         return ((DecompiledClassNode) cls).getCompilationTimeStamp();
     }
 
     /**
-     * returns true if the source in URL is newer than the class
+     * Returns true if the source in URL is newer than the class.
+     * <p>
      * NOTE: copied from GroovyClassLoader
      */
-    private static boolean isSourceNewer(URL source, ClassNode cls) {
+    private static boolean isSourceNewer(final URL source, final ClassNode cls) {
         try {
             long lastMod;
-
             // Special handling for file:// protocol, as getLastModified() often reports
             // incorrect results (-1)
             if (source.getProtocol().equals("file")) {
