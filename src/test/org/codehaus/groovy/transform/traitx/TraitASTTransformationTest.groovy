@@ -420,65 +420,63 @@ final class TraitASTTransformationTest {
 
     @Test
     void testClassImplementingTraitWithSameMethod() {
-        10.times {
-            assertScript '''
-                trait A {
-                    int foo() { 1 }
-                }
-                trait B {
-                    int foo() { 2 }
-                }
-                class AB implements A,B {
-                }
-                def x = new AB()
-                assert x.foo() == 2 // default order, B is first
-            '''
+        assertScript '''
+            trait A {
+                int foo() { 1 }
+            }
+            trait B {
+                int foo() { 2 }
+            }
+            class AB implements A,B {
+            }
+            def x = new AB()
+            assert x.foo() == 2 // default order, B is first
+        '''
 
-            assertScript '''
-                trait A {
-                    int foo() { 1 }
-                }
-                trait B {
-                    int foo() { 2 }
-                }
-                class AB implements B,A {
-                }
-                def x = new AB()
-                assert x.foo() == 1 // default order, A is first
-            '''
+        assertScript '''
+            trait A {
+                int foo() { 1 }
+            }
+            trait B {
+                int foo() { 2 }
+            }
+            class AB implements B,A {
+            }
+            def x = new AB()
+            assert x.foo() == 1 // default order, A is first
+        '''
 
-            assertScript '''
-                trait A {
-                    int foo() { 1 }
+        assertScript '''
+            trait A {
+                int foo() { 1 }
+            }
+            trait B {
+                int foo() { 2 }
+            }
+            class AB implements A,B {
+                int foo() {
+                    A.super.foo() // explicit use of A
                 }
-                trait B {
-                    int foo() { 2 }
-                }
-                class AB implements A,B {
-                    int foo() {
-                        A.super.foo() // explicit use of A
-                    }
-                }
-                def x = new AB()
-                assert x.foo() == 1
-            '''
+            }
+            def x = new AB()
+            assert x.foo() == 1
+        '''
 
-            assertScript '''
-                trait A {
-                    int foo() { 1 }
+        assertScript '''
+            trait A {
+                int foo() { 1 }
+            }
+            trait B {
+                int foo() { 2 }
+            }
+            class AB implements A,B {
+                int foo() {
+                    A.super.foo()  // explicit take of A
                 }
-                trait B {
-                    int foo() { 2 }
-                }
-                class AB implements A,B {
-                    int foo() {
-                        A.super.foo()  // explicit take of A
-                    }
-                }
-                def x = new AB()
-                assert x.foo() == 1
-            '''
-        }
+            }
+            def x = new AB()
+            assert x.foo() == 1
+        '''
 
         // make sure it is compatible with @CompileStatic
         assertScript '''
@@ -496,6 +494,21 @@ final class TraitASTTransformationTest {
             }
             def x = new AB()
             assert x.foo() == 2
+        '''
+
+        // GROOVY-10144
+        assertScript '''
+            trait T {
+                def m() { 'T' }
+            }
+            class C implements T {
+                @Override
+                def m() {
+                    'C' + T.super.m()
+                }
+            }
+            String result = new C().m()
+            assert result == 'CT'
         '''
     }
 
@@ -1845,7 +1858,7 @@ final class TraitASTTransformationTest {
     }
 
     @Test
-    void testStaticMethodInTrait() {
+    void testTraitStaticMethod() {
         assertScript '''
             trait StaticProvider {
                 static String foo() { 'static method' }
@@ -1865,7 +1878,7 @@ final class TraitASTTransformationTest {
     }
 
     @Test
-    void testStaticFieldInTrait() {
+    void testTraitStaticField() {
         assertScript '''
             trait StaticFieldProvider {
                 public static int VAL = 123
@@ -1873,10 +1886,7 @@ final class TraitASTTransformationTest {
             class Foo implements StaticFieldProvider {}
             assert Foo.StaticFieldProvider__VAL == 123
         '''
-    }
 
-    @Test
-    void testStaticFieldModifiedInTrait() {
         assertScript '''
             trait StaticFieldProvider {
                 public static int VAL = 123
@@ -1890,16 +1900,46 @@ final class TraitASTTransformationTest {
     }
 
     @Test
-    void testStaticPropertyModifiedInTrait() {
+    void testTraitStaticProperty() {
         assertScript '''
-            trait StaticFieldProvider {
+            trait StaticPropertyProvider {
                 static int VAL = 123
                 public static void update(int x) { VAL = x }
             }
-            class Foo implements StaticFieldProvider {}
+            class Foo implements StaticPropertyProvider {
+            }
             assert Foo.VAL == 123
             Foo.update(456)
             assert Foo.VAL == 456
+        '''
+
+        assertScript '''
+            trait T {
+                static p = 1
+            }
+            class C implements T {
+                static m() {
+                    setP(2)
+                    setP(getP() + 1)
+                    return getP()
+                }
+            }
+            assert C.m() == 3
+        '''
+
+        // GROOVY-9678
+        assertScript '''
+            trait T {
+                static p = 1
+            }
+            class C implements T {
+                static m() {
+                    p = 2
+                    p += 1
+                    return p
+                }
+            }
+            assert C.m() == 3
         '''
     }
 

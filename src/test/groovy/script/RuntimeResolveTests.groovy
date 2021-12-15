@@ -57,7 +57,7 @@ final class RuntimeResolveTests {
     }
 
     @Test @Ignore('exception in script causes problem for build')
-    void testUnexistingInnerClass() {
+    void testUnresolvableInnerClass() {
         try {
             runScript('/groovy/bugs/groovy7812/MainWithErrors.groovy')
         } catch (Throwable t) {
@@ -73,5 +73,10 @@ final class RuntimeResolveTests {
     @Test
     void testResolveNestedClassFromBaseType() {
         runScript('/groovy/bugs/groovy9243/Main.groovy')
+    }
+
+    @Test
+    void testTraitSuperFromOverriddenMethod() {
+        runScript('/groovy/bugs/groovyA144/Main.groovy')
     }
 }
