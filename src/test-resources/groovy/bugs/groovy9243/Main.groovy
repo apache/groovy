@@ -18,32 +18,43 @@
  */
 package groovy.bugs.groovy9243
 
-class Groovy9243 extends Base {
-    def accessX() {
-        assert 'staticClassX' == new X().name
+final class Groovy9243 extends Base {
+    def accessX1() {
+        String name = new X().name
+        assert name =='staticClassX'
     }
-    def accessBaseX() {
-        assert 'staticClassX' == new Base.X().name
+    def accessX2() {
+        String name = new Base.X().name
+        assert name == 'staticClassX'
     }
-    def accessBaseX2() {
-        assert 'staticClassX' == new groovy.bugs.groovy9243.Base.X().name
+    def accessX3() {
+        String name = new groovy.bugs.groovy9243.Base.X().name
+        assert name == 'staticClassX'
     }
-    def accessY() {
-        assert 'classY' == this.new Y().name
+    def accessY1() {
+        String name = new Y().name
+        assert name == 'classY'
     }
     def accessY2() {
-        def g = new Groovy9243()
-        assert 'classY' == g.new Y().name
+        String name = this.new Y().name
+        assert name == 'classY'
     }
     def accessY3() {
-        assert 'classY' == new Groovy9243().new Y().name
+        def that = new Groovy9243()
+        String name = that.new Y().name
+        assert name == 'classY'
     }
+    /*def accessY4() {
+        String name = new Groovy9243().new Y().name
+        assert name == 'classY'
+    }*/
 }
 
-def g = new Groovy9243()
-g.accessX()
-g.accessBaseX()
-g.accessBaseX2()
-g.accessY()
-g.accessY2()
-g.accessY3()
+new Groovy9243().with {
+    accessX1()
+    accessX2()
+    accessX3()
+    accessY1()
+    accessY2()
+    accessY3()
+}

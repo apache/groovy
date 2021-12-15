@@ -239,6 +239,15 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
     }
 
+    @SuppressWarnings("serial")
+    static class Interrupt extends CompilationFailedException {
+        private Interrupt(final ProcessingUnit unit) {
+            super(Phases.SEMANTIC_ANALYSIS, unit);
+        }
+    }
+
+    //--------------------------------------------------------------------------
+
     public ResolveVisitor(final CompilationUnit compilationUnit) {
         this.compilationUnit = compilationUnit;
         // TODO: CompilationUnit.ClassNodeResolver?
@@ -762,6 +771,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if (lr != null) {
                 if (lr.isSourceUnit()) {
                     currentClass.getCompileUnit().addClassNodeToCompile(type, lr.getSourceUnit());
+                    throw new Interrupt(compilationUnit); // GROOVY-10300, et al.: restart resolve
                 } else {
                     type.setRedirect(lr.getClassNode());
                 }
