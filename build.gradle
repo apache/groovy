@@ -141,7 +141,7 @@ ext {
     javaParserVersion = '3.23.0'
     jlineVersion = '2.14.6'
     jmockVersion = '1.2.0'
-    logbackVersion = '1.2.3'
+    logbackVersion = '1.2.8'
     log4jVersion = '1.2.17'
     log4j2Version = '2.16.0'
     openbeansVersion = '1.0.2'
