@@ -1015,16 +1015,16 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
 
     void testMultiAssign() {
         assertScript '''
-        def m() {
-            def row = ['', '', '']
-            def (left, right) = [row[0], row[1]]
-            left.toUpperCase()
-        }
+            def m() {
+                def row = ['', '', '']
+                def (left, right) = [row[0], row[1]]
+                left.toUpperCase()
+            }
         '''
     }
 
     // GROOVY-8220
-    void testFlowTypingParameterTempTypeAssignmentTracking() {
+    void testFlowTypingParameterTempTypeAssignmentTracking1() {
         assertScript '''
             class Foo {
                 CharSequence makeEnv( env, StringBuilder result = new StringBuilder() ) {
@@ -1039,7 +1039,10 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             }
             assert new Foo().makeEnv('X=1') == 'export X=1;'
         '''
-        // GROOVY-8237
+    }
+
+    // GROOVY-8237
+    void testFlowTypingParameterTempTypeAssignmentTracking2() {
         assertScript '''
             class Foo {
                 String parse(Reader reader) {
@@ -1053,7 +1056,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testFlowTypingParameterTempTypeAssignmentTrackingWithGenerics() {
+    void testFlowTypingParameterTempTypeAssignmentTracking3() {
         assertScript '''
             class M {
                 Map<String, List<Object>> mvm = new HashMap<String, List<Object>>()
@@ -1083,27 +1086,49 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
 
     void testNarrowingConversion() {
         assertScript '''
-        interface A1{}
-        interface A2 extends A1{}
-
-        class C1 implements A1{}
-
-        def m(A2 a2) {
-            C1 c1 = (C1) a2
-        }
+            interface A {
+            }
+            interface B extends A {
+            }
+            class C implements B {
+            }
+            def m(B b) {
+                C c = (C) b
+            }
         '''
     }
 
     void testFinalNarrowingConversion() {
         shouldFailWithMessages '''
-        interface A1{}
-        interface A2 extends A1{}
+            interface I {
+            }
+            interface B extends I {
+            }
+            final class C implements I {
+            }
+            def m(B b) {
+                C c = (C) b
+            }
+        ''',
+        'Inconvertible types: cannot cast B to C'
+    }
 
-        final class C1 implements A1{}
-
-        def m(A2 a2) {
-            C1 c1 = (C1) a2
-        }
-        ''', 'Inconvertible types: cannot cast A2 to C1'
+    // GROOVY-10419
+    void testElvisAssignmentAndSetter() {
+        assertScript '''
+            class C {
+                def p
+                void setP(p) {
+                    this.p = p
+                }
+            }
+            @groovy.transform.TypeChecked
+            void test(C c) {
+                c.p ?= 'x'
+            }
+            def c = new C()
+            test(c)
+            assert c.p == 'x'
+        '''
     }
 }
