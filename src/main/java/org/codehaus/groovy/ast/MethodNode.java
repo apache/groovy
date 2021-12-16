@@ -50,7 +50,6 @@ public class MethodNode extends AnnotatedNode {
     private boolean dynamicReturnType;
     private VariableScope variableScope;
     private final ClassNode[] exceptions;
-    private final boolean staticConstructor;
 
     // type spec for generics
     private GenericsType[] genericsTypes;
@@ -61,7 +60,6 @@ public class MethodNode extends AnnotatedNode {
     protected MethodNode() {
         this.name = null;
         this.exceptions = null;
-        this.staticConstructor = false;
     }
 
     public MethodNode(final String name, final int modifiers, final ClassNode returnType, final Parameter[] parameters, final ClassNode[] exceptions, final Statement code) {
@@ -71,7 +69,6 @@ public class MethodNode extends AnnotatedNode {
         this.code = code;
         setReturnType(returnType);
         setParameters(parameters);
-        this.staticConstructor = "<clinit>".equals(name);
     }
 
     /**
@@ -258,7 +255,11 @@ public class MethodNode extends AnnotatedNode {
     }
 
     public boolean isStaticConstructor() {
-        return staticConstructor;
+        return "<clinit>".equals(name);
+    }
+
+    public boolean isConstructor() {
+        return "<init>".equals(name);
     }
 
     /**

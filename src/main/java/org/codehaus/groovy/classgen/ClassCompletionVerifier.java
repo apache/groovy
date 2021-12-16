@@ -148,7 +148,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
                 ClassNode cn = declaringClass.getOuterClass();
                 if (cn == null && declaringClass.isResolved()) {
                     // in case of a precompiled class, the outerclass is unknown
-                    Class typeClass = declaringClass.getTypeClass();
+                    Class<?> typeClass = declaringClass.getTypeClass();
                     typeClass = typeClass.getEnclosingClass();
                     if (typeClass != null) {
                         cn = ClassHelper.make(typeClass);
@@ -395,8 +395,8 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         if (!strictNames) return;
         List<MethodNode> methods = cn.getAllDeclaredMethods();
         for (MethodNode mNode : methods) {
+            if (mNode.isConstructor() || mNode.isStaticConstructor()) continue;
             String name = mNode.getName();
-            if (name.equals("<init>") || name.equals("<clinit>")) continue;
             // Groovy allows more characters than Character.isValidJavaIdentifier() would allow
             // if we find a good way to encode special chars we could remove (some of) these checks
             for (String ch : INVALID_NAME_CHARS) {
@@ -414,7 +414,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
                 addError("The " + getDescription(method) + " from " + getDescription(cn) +
                         " must not be final. It is by definition abstract.", method);
             }
-            if (method.isStatic() && !isConstructor(method)) {
+            if (method.isStatic() && !method.isStaticConstructor()) {
                 addError("The " + getDescription(method) + " from " + getDescription(cn) +
                         " must not be static. Only fields may be static in an interface.", method);
             }
@@ -425,10 +425,6 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         for (MethodNode method : cn.getMethods()) {
             checkMethodForWeakerAccessPrivileges(method, cn);
         }
-    }
-
-    private static boolean isConstructor(MethodNode method) {
-        return method.getName().equals("<clinit>");
     }
 
     private void checkMethodsForOverridingFinal(ClassNode cn) {
@@ -547,7 +543,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private void checkOverloadingPrivateAndPublic(MethodNode node) {
-        if (isConstructor(node)) return;
+        if (node.isStaticConstructor()) return;
         boolean hasPrivate = node.isPrivate();
         boolean hasPublic = node.isPublic();
         for (MethodNode method : currentClass.getMethods(node.getName())) {
@@ -566,7 +562,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private void checkRepetitiveMethod(MethodNode node) {
-        if (isConstructor(node)) return;
+        if (node.isStaticConstructor()) return;
         for (MethodNode method : currentClass.getMethods(node.getName())) {
             if (method == node) continue;
             if (!method.getDeclaringClass().equals(node.getDeclaringClass())) continue;

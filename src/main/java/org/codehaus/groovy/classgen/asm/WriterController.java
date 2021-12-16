@@ -329,11 +329,11 @@ public class WriterController {
     }
 
     public boolean isNotClinit() {
-        return methodNode == null || !methodNode.getName().equals("<clinit>");
+        return methodNode == null || !methodNode.isStaticConstructor();
     }
 
     public boolean isStaticConstructor() {
-        return methodNode != null && methodNode.getName().equals("<clinit>");
+        return methodNode != null && methodNode.isStaticConstructor();
     }
 
     public boolean isConstructor() {

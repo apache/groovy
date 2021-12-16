@@ -231,7 +231,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 }
                 if (!methodNode.isAbstract()) {
                     MethodNode newMethod = processMethod(cNode, helper, methodNode, fieldHelper, fieldNames);
-                    if (methodNode.getName().equals("<clinit>")) {
+                    if (methodNode.isStaticConstructor()) {
                         staticInitStatements = getCodeAsBlock(newMethod).getStatements();
                     } else {
                         // add non-abstract methods; abstract methods covered from trait interface

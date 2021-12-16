@@ -694,7 +694,7 @@ public class JavaStubGenerator {
     }
 
     private void printMethod(PrintWriter out, ClassNode clazz, MethodNode methodNode) {
-        if (methodNode.getName().equals("<clinit>")) return;
+        if (methodNode.isStaticConstructor()) return;
         if (methodNode.isPrivate() || !Utilities.isJavaIdentifier(methodNode.getName())) return;
         if (methodNode.isSynthetic() && methodNode.getName().equals("$getStaticMetaClass")) return;
 
