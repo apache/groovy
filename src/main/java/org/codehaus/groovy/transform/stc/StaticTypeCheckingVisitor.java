@@ -214,6 +214,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.elvisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
@@ -999,9 +1000,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // because we need to check if a setter uses @DelegatesTo
         VariableExpression receiver = varX("%", setterInfo.receiverType);
         // for "x op= y" expression, find type as if it was "x = x op y"
-        Expression newRightExpression = isCompoundAssignment(expression)
-                ? binX(leftExpression, getOpWithoutEqual(expression), rightExpression)
-                : rightExpression;
+        Expression valueExpression = rightExpression;
+        if (isCompoundAssignment(expression)) {
+            Token op = ((BinaryExpression) expression).getOperation();
+            if (op.getType() == ELVIS_EQUAL) { // GROOVY-10419: "x ?= y"
+                valueExpression = elvisX(leftExpression, rightExpression);
+            } else {
+                op = Token.newSymbol(TokenUtil.removeAssignment(op.getType()), op.getStartLine(), op.getStartColumn());
+                valueExpression = binX(leftExpression, op, rightExpression);
+            }
+        }
 
         Function<Expression, MethodNode> setterCall = right -> {
             MethodCallExpression call = callX(receiver, setterInfo.name, right);
@@ -1018,14 +1026,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return type;
         };
 
-        MethodNode methodTarget = setterCall.apply(newRightExpression);
+        MethodNode methodTarget = setterCall.apply(valueExpression);
         if (methodTarget == null && !isCompoundAssignment(expression)) {
             // if no direct match, try implicit conversion
             for (MethodNode setter : setterInfo.setters) {
                 ClassNode lType = setterType.apply(setter);
-                ClassNode rType = getDeclaredOrInferredType(newRightExpression);
-                if (checkCompatibleAssignmentTypes(lType, rType, newRightExpression, false)) {
-                    methodTarget = setterCall.apply(castX(lType, newRightExpression));
+                ClassNode rType = getDeclaredOrInferredType(valueExpression);
+                if (checkCompatibleAssignmentTypes(lType, rType, valueExpression, false)) {
+                    methodTarget = setterCall.apply(castX(lType, valueExpression));
                     if (methodTarget != null) {
                         break;
                     }
@@ -1045,7 +1053,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return false;
         } else {
             ClassNode firstSetterType = setterType.apply(setterInfo.setters.get(0));
-            addAssignmentError(firstSetterType, getType(newRightExpression), expression);
+            addAssignmentError(firstSetterType, getType(valueExpression), expression);
             return true;
         }
     }
@@ -1055,16 +1063,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private static boolean isCompoundAssignment(final Expression exp) {
-        if (!(exp instanceof BinaryExpression)) return false;
-        int type = ((BinaryExpression) exp).getOperation().getType();
-        return isAssignment(type) && type != ASSIGN;
-    }
-
-    private static Token getOpWithoutEqual(final Expression exp) {
-        if (!(exp instanceof BinaryExpression)) return null; // should never happen
-        Token op = ((BinaryExpression) exp).getOperation();
-        int typeWithoutEqual = TokenUtil.removeAssignment(op.getType());
-        return new Token(typeWithoutEqual, op.getText() /* will do */, op.getStartLine(), op.getStartColumn());
+        if (exp instanceof BinaryExpression) {
+            Token op = ((BinaryExpression) exp).getOperation();
+            return isAssignment(op.getType()) && op.getType() != EQUAL;
+        }
+        return false;
     }
 
     protected ClassNode getOriginalDeclarationType(final Expression lhs) {
