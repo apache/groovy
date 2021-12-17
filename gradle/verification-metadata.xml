@@ -144,6 +144,7 @@
          <trusted-key id="9857c388d7d1d9d031274cd0a5def5a76f94a471" group="com.github.spotbugs"/>
          <trusted-key id="998af0e2b935996f5cebd56b9b1fda9f3c062231" group="^org[.]apache($|([.].*))" regex="true"/>
          <trusted-key id="9c60c6b3a5a9df8fedd299d65be0ba8cb80602ae" group="org.apache.ivy" name="ivy" version="2.2.0"/>
+         <trusted-key id="9d0a56aaa0d60e0c0c7dccc0b4c70893b62babe8" group="org.apache.logging.log4j"/>
          <trusted-key id="9d23533896a9784703585b6286e02c5a42196ca8" group="log4j" name="log4j" version="1.2.17"/>
          <trusted-key id="9ffed7a118d45a44e4a1e47130e6f80434a72a7f" group="^org[.]apache[.]maven($|([.].*))" regex="true"/>
          <trusted-key id="a1fe765b15233ead18fa6abb93e55cb567b5c626" group="org.pantsbuild" name="jarjar" version="1.7.2"/>
