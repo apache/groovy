@@ -76,14 +76,12 @@ public class BooleanExpressionTransformer {
         }
         return transformer.superTransform(booleanExpression);
     }
-    
+
     private static boolean isExtended(ClassNode owner, Iterator<InnerClassNode> classes) {
         while (classes.hasNext()) {
-            InnerClassNode next =  classes.next();
+            InnerClassNode next = classes.next();
             if (next!=owner && next.isDerivedFrom(owner)) return true;
-        }
-        if (owner.getInnerClasses().hasNext()) {
-            return isExtended(owner, owner.getInnerClasses());
+            if (isExtended(owner,next.getInnerClasses())) return true;
         }
         return false;
     }
