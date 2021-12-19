@@ -32,6 +32,7 @@ import groovy.transform.stc.POJO
 @POJO
 @CompileStatic
 class NamedTuple<E> extends Tuple<E> {
+    private static final long serialVersionUID = -5067092453136522209L
     private final Map<String, E> data = new LinkedHashMap<>()
 
     NamedTuple(List<E> elementList, List<String> nameList) {

@@ -31,6 +31,7 @@ import groovy.transform.stc.POJO
 @POJO
 @CompileStatic
 class SourceRecord<T> implements Serializable {
+    private static final long serialVersionUID = -6321206176010272639L
     private static final String ALL = '*'
     private final T sourceRecord
     private final List<String> aliasList
