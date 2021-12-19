@@ -695,7 +695,7 @@ Also, GINQ provides some built-in window functions:
 |agg(_expression_)
 |any
 |any
-|customizes the aggregation logic in _expression_ and returns single value
+|*INCUBATING*: customizes the aggregation logic in _expression_ and returns single value
 
 |===
 
