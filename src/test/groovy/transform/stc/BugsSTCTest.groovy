@@ -1101,4 +1101,40 @@ Printer
             assert n == 2
         '''
     }
+
+    // GROOVY-10424
+    void testPrivateInnerClassOptimizedBooleanExpr1() {
+        assertScript '''
+            class Outer {
+                private static class Inner {
+                    private Inner() {} // triggers creation of Inner$1 in StaticCompilationVisitor$addPrivateBridgeMethods
+                }
+                void test() {
+                    def inner = new Inner()
+                    if (inner) { // optimized boolean expression; StackOverflowError
+                        assert true
+                    }
+                }
+            }
+            new Outer().test()
+        '''
+    }
+
+    // GROOVY-10424
+    void testPrivateInnerClassOptimizedBooleanExpr2() {
+        assertScript '''
+            class Outer {
+                private static class Inner {
+                    static class Three {}
+                }
+                void test() {
+                    def inner = new Inner()
+                    if (inner) { // optimized boolean expression; StackOverflowError
+                        assert true
+                    }
+                }
+            }
+            new Outer().test()
+        '''
+    }
 }
