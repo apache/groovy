@@ -20,4 +20,4 @@ package core
 
 record R2(int[] x) { }
 int[] nums = [1, 2]
-assert new R2(nums).toString() == 'R2[x=[1, 2]]'
+assert new R2(nums).x[0] == 1
