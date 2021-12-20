@@ -18,65 +18,59 @@
  */
 package groovy.script
 
-import org.junit.Ignore
 import org.junit.Test
 
 import static org.apache.groovy.util.ScriptRunner.runScript
 
-@Ignore('disabled pending rework')
 final class RuntimeResolveTests {
 
     @Test
-    void testResolveOuterStaticNestedClass() {
+    void testResolveStaticImportOfOuterMember1() {
         runScript('/groovy/bugs/groovy4287/Main.groovy')
     }
 
     @Test
-    void testResolveOuterStaticNestedClassAlias() {
+    void testResolveStaticImportOfOuterMember2() {
         runScript('/groovy/bugs/groovy4287/Main2.groovy')
     }
 
     @Test
-    void testResolvePublicStaticField() {
+    void testResolveStaticImportOfOuterMember3() {
         runScript('/groovy/bugs/groovy4386/StaticField.groovy')
     }
 
     @Test
-    void testResolveStaticProperty() {
+    void testResolveStaticImportOfOuterMember4() {
         runScript('/groovy/bugs/groovy4386/StaticProperty.groovy')
     }
 
     @Test
-    void testResolveStaticMembers() {
+    void testResolveStaticImportOfOuterMember5() {
         runScript('/groovy/bugs/groovy4386/StaticStarImport.groovy')
     }
 
     @Test
-    void testResolveOuterNestedClass() {
+    void testResolveOuterMemberWithoutAnImport() {
         runScript('/groovy/bugs/groovy7812/Main.groovy')
     }
 
-    @Test @Ignore('exception in script causes problem for build')
-    void testUnresolvableInnerClass() {
-        try {
-            runScript('/groovy/bugs/groovy7812/MainWithErrors.groovy')
-        } catch (Throwable t) {
-            assert t.getMessage().contains('unable to resolve class Outer.Inner123')
-        }
-    }
-
     @Test
-    void testResolvePrecedence() {
+    void testResolvePackagePeerWithoutAnImport() {
         runScript('/groovy/bugs/groovy9236/Main.groovy')
     }
 
     @Test
-    void testResolveNestedClassFromBaseType() {
+    void testResolveOuterMemberWithoutAnImport2() {
         runScript('/groovy/bugs/groovy9243/Main.groovy')
     }
 
     @Test
-    void testTraitSuperFromOverriddenMethod() {
+    void testResolvePackagePeersAndCompileTrait() {
         runScript('/groovy/bugs/groovyA144/Main.groovy')
+    }
+
+    @Test
+    void testResolvePackagePeersAndTypeArgument() {
+        runScript('/groovy/bugs/groovy7799/Main.groovy')
     }
 }

@@ -624,8 +624,13 @@ public class CompilationUnit extends ProcessingUnit {
                         ? sources.values().parallelStream() : sources.values().stream()
                 ).forEach(SourceUnit::buildAST);
             }
+            try {
+                processPhaseOperations(phase);
+            } catch (ResolveVisitor.Interrupt x) {
+                assert !queuedSources.isEmpty();
+            }
+            if (dequeued()) continue; // bring new sources into phase
 
-            processPhaseOperations(phase);
             // Grab processing may have brought in new AST transforms into various phases, process them as well
             processNewPhaseOperations(phase);
 
@@ -633,8 +638,6 @@ public class CompilationUnit extends ProcessingUnit {
                 .ifPresent(callback -> callback.call(this, phase));
             completePhase();
             mark();
-
-            if (dequeued()) continue; // bring new sources into phase
 
             gotoPhase(phase + 1);
 

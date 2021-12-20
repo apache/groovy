@@ -16,7 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs.groovy7812
+package groovy.bugs.groovy7799
 
-assert new Outer()
-assert new Outer.Inner123()
+class ABC<T extends EE> extends AB<T> {
+}
+
+class X implements EE {
+}
+
+def abc = new ABC<X>()
+def xyz = abc.method(new X(), new X())
+
+assert abc === xyz
