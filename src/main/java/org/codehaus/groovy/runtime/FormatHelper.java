@@ -48,11 +48,15 @@ import static java.lang.Math.max;
  * Formatting methods
  */
 public class FormatHelper {
+
+    private static final String SQ = "'";
+    private static final String DQ = "\"";
+
     private FormatHelper() {}
 
     private static final Object[] EMPTY_ARGS = {};
 
-    // heuristic size to pre-alocate stringbuffers for collections of items
+    // heuristic size to pre-allocate stringbuffers for collections of items
     private static final int ITEM_ALLOCATE_SIZE = 5;
 
     public static final MetaClassRegistry metaRegistry = GroovySystem.getMetaClassRegistry();
@@ -82,43 +86,83 @@ public class FormatHelper {
         return format(arguments, verbose, -1);
     }
 
+    public static String format(Object arguments, boolean inspect, boolean escapeBackslashes) {
+        return format(arguments, inspect, -1);
+    }
+
     public static String format(Object arguments, boolean verbose, int maxSize) {
         return format(arguments, verbose, maxSize, false);
     }
 
+    public static String format(Object arguments, boolean inspect, boolean escapeBackslashes, int maxSize) {
+        return format(arguments, inspect, escapeBackslashes, maxSize, false);
+    }
+
+    /**
+     * Output the {@code toString} for the argument(s) with various options to configure.
+     * Configuration options:
+     * <pre>
+     * <dl>
+     *     <dt>safe</dt><dd>provides protection if the {@code toString} throws an exception, in which case the exception is swallowed and a dumber default {@code toString} is used</dd>
+     *     <dt>maxSize</dt><dd>will attempt to truncate the output to fit approx the maxSize number of characters, -1 means don't truncate</dd>
+     *     <dt>inspect</dt><dd>if false, render a value by its {@code toString}, otherwise use its {@code inspect} value</dd>
+     *     <dt>escapeBackSlashes</dt><dd>whether characters like tab, newline, etc. are converted to their escaped rendering ('\t', '\n', etc.)</dd>
+     *     <dt>verbose</dt><dd>shorthand to turn on both {@code inspect} and {@code escapeBackslashes}</dd>
+     * </dl>
+     * </pre>
+     *
+     * @param options a map of configuration options
+     * @param arguments the argument(s) to calulate the {@code toString} for
+     * @return the string rendering of the argument(s)
+     * @see DefaultGroovyMethods#inspect(Object)
+     */
     public static String toString(@NamedParams({
             @NamedParam(value = "safe", type = Boolean.class),
             @NamedParam(value = "maxSize", type = Integer.class),
-            @NamedParam(value = "verbose", type = Boolean.class)
+            @NamedParam(value = "verbose", type = Boolean.class),
+            @NamedParam(value = "escapeBackslashes", type = Boolean.class),
+            @NamedParam(value = "inspect", type = Boolean.class)
     }) Map<String, Object> options, Object arguments) {
         Object safe = options.get("safe");
         if (!(safe instanceof Boolean)) safe = false;
         Object maxSize = options.get("maxSize");
         if (!(maxSize instanceof Integer)) maxSize = -1;
         Object verbose = options.get("verbose");
+        Object inspect = options.get("inspect");
+        Object escapeBackslashes = options.get("escapeBackslashes");
+        if (!(inspect instanceof Boolean)) inspect = false;
+        if (!(escapeBackslashes instanceof Boolean)) escapeBackslashes = false;
         if (!(verbose instanceof Boolean)) verbose = false;
-        return format(arguments, (boolean) verbose, (int) maxSize, (boolean) safe);
+        if (Boolean.TRUE.equals(verbose)) {
+            inspect = true;
+            escapeBackslashes = true;
+        }
+        return format(arguments, (boolean) inspect, (boolean) escapeBackslashes, (int) maxSize, (boolean) safe);
     }
 
     public static String format(Object arguments, boolean verbose, int maxSize, boolean safe) {
+        return format(arguments, verbose, verbose, maxSize, safe);
+    }
+
+    public static String format(Object arguments, boolean inspect, boolean escapeBackslashes, int maxSize, boolean safe) {
         if (arguments == null) {
             final NullObject nullObject = NullObject.getNullObject();
             return (String) nullObject.getMetaClass().invokeMethod(nullObject, "toString", EMPTY_ARGS);
         }
         if (arguments.getClass().isArray()) {
             if (arguments instanceof Object[]) {
-                return toArrayString((Object[]) arguments, verbose, maxSize, safe);
+                return toArrayString((Object[]) arguments, inspect, escapeBackslashes, maxSize, safe);
             }
             if (arguments instanceof char[]) {
                 return new String((char[]) arguments);
             }
             // other primitives
-            return formatCollection(DefaultTypeTransformation.arrayAsCollection(arguments), verbose, maxSize, safe);
+            return formatCollection(DefaultTypeTransformation.arrayAsCollection(arguments), inspect, escapeBackslashes, maxSize, safe);
         }
         if (arguments instanceof Range) {
             Range range = (Range) arguments;
             try {
-                if (verbose) {
+                if (inspect) {
                     return range.inspect();
                 } else {
                     return range.toString();
@@ -132,10 +176,10 @@ public class FormatHelper {
             }
         }
         if (arguments instanceof Collection) {
-            return formatCollection((Collection) arguments, verbose, maxSize, safe);
+            return formatCollection((Collection) arguments, inspect, escapeBackslashes, maxSize, safe);
         }
         if (arguments instanceof Map) {
-            return formatMap((Map) arguments, verbose, maxSize, safe);
+            return formatMap((Map) arguments, inspect, escapeBackslashes, maxSize, safe);
         }
         if (arguments instanceof Element) {
             try {
@@ -145,14 +189,14 @@ public class FormatHelper {
                 throw new RuntimeException(e);
             }
         }
-        if (arguments instanceof String) {
-            if (verbose) {
-                String arg = escapeBackslashes((String) arguments)
-                        .replace("'", "\\'");    // single quotation mark
-                return "'" + arg + "'";
-            } else {
-                return (String) arguments;
+        if (arguments instanceof CharSequence) {
+            String arg = escapeBackslashes ? escapeBackslashes(arguments.toString()) : arguments.toString();
+            if (arguments instanceof String) {
+                if (!inspect) return arg;
+                return !escapeBackslashes && multiline(arg) ? "'''" + arg + "'''" : SQ + arg.replace(SQ, "\\'") + SQ;
             }
+            if (!inspect) return arg;
+            return !escapeBackslashes && multiline(arg) ? "\"\"\"" + arg + "\"\"\"" : DQ + arg.replace(DQ, "\\\"") + DQ;
         }
         try {
             // TODO: For GROOVY-2599 do we need something like below but it breaks other things
@@ -165,6 +209,10 @@ public class FormatHelper {
             if (!safe) throw new GroovyRuntimeException(ex);
             return handleFormattingException(arguments, ex);
         }
+    }
+
+    private static boolean multiline(String s) {
+        return s.contains("\n") || s.contains("\r");
     }
 
     public static String escapeBackslashes(String orig) {
@@ -188,7 +236,7 @@ public class FormatHelper {
         return "<" + typeName(item) + "@" + hash + ">";
     }
 
-    private static String formatMap(Map map, boolean verbose, int maxSize, boolean safe) {
+    private static String formatMap(Map map, boolean inspect, boolean escapeBackslashes, int maxSize, boolean safe) {
         if (map.isEmpty()) {
             return "[:]";
         }
@@ -209,13 +257,13 @@ public class FormatHelper {
             if (entry.getKey() == map) {
                 buffer.append("(this Map)");
             } else {
-                buffer.append(format(entry.getKey(), verbose, sizeLeft(maxSize, buffer), safe));
+                buffer.append(format(entry.getKey(), inspect, escapeBackslashes, sizeLeft(maxSize, buffer), safe));
             }
             buffer.append(":");
             if (entry.getValue() == map) {
                 buffer.append("(this Map)");
             } else {
-                buffer.append(format(entry.getValue(), verbose, sizeLeft(maxSize, buffer), safe));
+                buffer.append(format(entry.getValue(), inspect, escapeBackslashes, sizeLeft(maxSize, buffer), safe));
             }
         }
         buffer.append(']');
@@ -226,7 +274,7 @@ public class FormatHelper {
         return maxSize == -1 ? maxSize : max(0, maxSize - buffer.length());
     }
 
-    private static String formatCollection(Collection collection, boolean verbose, int maxSize, boolean safe) {
+    private static String formatCollection(Collection collection, boolean inspect, boolean escapeBackslashes, int maxSize, boolean safe) {
         StringBuilder buffer = new StringBuilder(ITEM_ALLOCATE_SIZE * collection.size());
         buffer.append('[');
         boolean first = true;
@@ -243,7 +291,7 @@ public class FormatHelper {
             if (item == collection) {
                 buffer.append("(this Collection)");
             } else {
-                buffer.append(format(item, verbose, sizeLeft(maxSize, buffer), safe));
+                buffer.append(format(item, inspect, escapeBackslashes, sizeLeft(maxSize, buffer), safe));
             }
         }
         buffer.append(']');
@@ -317,7 +365,7 @@ public class FormatHelper {
      * @return the string representation of the map
      */
     public static String toMapString(Map arg, int maxSize) {
-        return formatMap(arg, false, maxSize, false);
+        return formatMap(arg, false, false, maxSize, false);
     }
 
     /**
@@ -350,7 +398,7 @@ public class FormatHelper {
      * @return the string representation of the collection
      */
     public static String toListString(Collection arg, int maxSize, boolean safe) {
-        return formatCollection(arg, false, maxSize, safe);
+        return formatCollection(arg, false, false, maxSize, safe);
     }
 
     /**
@@ -361,10 +409,10 @@ public class FormatHelper {
      * @return the string representation of the array
      */
     public static String toArrayString(Object[] arguments) {
-        return toArrayString(arguments, false, -1, false);
+        return toArrayString(arguments, false, false, -1, false);
     }
 
-    private static String toArrayString(Object[] array, boolean verbose, int maxSize, boolean safe) {
+    private static String toArrayString(Object[] array, boolean inspect, boolean escapeBackslashes, int maxSize, boolean safe) {
         if (array == null) {
             return "null";
         }
@@ -385,7 +433,7 @@ public class FormatHelper {
             if (item == array) {
                 argBuf.append("(this array)");
             } else {
-                argBuf.append(format(item, verbose, sizeLeft(maxSize, argBuf), safe));
+                argBuf.append(format(item, inspect, escapeBackslashes, sizeLeft(maxSize, argBuf), safe));
             }
         }
         argBuf.append(']');
@@ -402,7 +450,7 @@ public class FormatHelper {
      * @return the string representation of the array
      */
     public static String toArrayString(Object[] arguments, int maxSize, boolean safe) {
-        return toArrayString(arguments, false, maxSize, safe);
+        return toArrayString(arguments, false, false, maxSize, safe);
     }
 
     /**
