@@ -18,5 +18,5 @@
  */
 package core
 
-// can't explicitly extend a class
-record Fruit(String name, double price) extends Object {}
+// C-style array declarations not allowed in record components as per JLS
+record R1(int x[]) { }

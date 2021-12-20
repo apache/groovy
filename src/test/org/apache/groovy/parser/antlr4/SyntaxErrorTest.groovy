@@ -471,6 +471,7 @@ final class SyntaxErrorTest {
         TestUtils.doRunAndShouldFail('fail/RecordDeclaration_11x.groovy')
         TestUtils.doRunAndShouldFail('fail/RecordDeclaration_12x.groovy')
         TestUtils.doRunAndShouldFail('fail/RecordDeclaration_13x.groovy')
+        TestUtils.doRunAndShouldFail('fail/RecordDeclaration_14x.groovy')
     }
 
     @Test

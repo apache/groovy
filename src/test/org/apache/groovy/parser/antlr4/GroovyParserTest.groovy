@@ -371,6 +371,7 @@ final class GroovyParserTest extends GroovyTestCase {
         doRunAndTestAntlr4('core/RecordDeclaration_11x.groovy')
         doRunAndTestAntlr4('core/RecordDeclaration_12x.groovy')
         doRunAndTestAntlr4('core/RecordDeclaration_13x.groovy')
+        doRunAndTestAntlr4('core/RecordDeclaration_14x.groovy')
     }
 
     void "test groovy core - AnnotationDeclaration"() {
