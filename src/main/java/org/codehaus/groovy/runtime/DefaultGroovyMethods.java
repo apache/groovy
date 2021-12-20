@@ -692,7 +692,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self any Object
      * @return a String that matches what would be typed into a terminal to
-     *         create this object. e.g. [1, 'hello'].inspect() {@code ->} [1, "hello"]
+     *         create this object. e.g. [1, 'hello'].inspect() {@code ->} [1, 'hello']
      * @since 1.0
      */
     public static String inspect(Object self) {
