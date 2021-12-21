@@ -78,9 +78,18 @@ public class MethodNode extends AnnotatedNode {
      */
     public String getTypeDescriptor() {
         if (typeDescriptor == null) {
-            typeDescriptor = methodDescriptor(this);
+            typeDescriptor = methodDescriptor(this, false);
         }
         return typeDescriptor;
+    }
+
+    /**
+     * The type descriptor for a method node is a string containing the name of the method, its return type,
+     * and its parameter types in a canonical form. For simplicity, we use the format of a Java declaration
+     * without parameter names or generics.
+     */
+    public String getTypeDescriptor(final boolean pretty) {
+        return methodDescriptor(this, pretty);
     }
 
     private void invalidateCachedData() {
@@ -282,12 +291,13 @@ public class MethodNode extends AnnotatedNode {
     @Override
     public String getText() {
         int mask = this instanceof ConstructorNode ? Modifier.constructorModifiers() : Modifier.methodModifiers();
+        String prettyName = getName().contains(" ") ? "\"" + getName() + "\"" : getName();
         return new StringBuilder(AstToTextHelper.getModifiersText(getModifiers() & mask))
             .append(' ')
             .append(toGenericTypesString(getGenericsTypes()))
             .append(AstToTextHelper.getClassText(getReturnType()))
             .append(' ')
-            .append(getName())
+            .append(prettyName)
             .append('(')
             .append(AstToTextHelper.getParametersText(getParameters()))
             .append(')')
@@ -299,6 +309,6 @@ public class MethodNode extends AnnotatedNode {
     @Override
     public String toString() {
         ClassNode declaringClass = getDeclaringClass();
-        return super.toString() + "[" + getTypeDescriptor() + (declaringClass == null ? "" : " from " + formatTypeName(declaringClass)) + "]";
+        return super.toString() + "[" + getTypeDescriptor(true) + (declaringClass == null ? "" : " from " + formatTypeName(declaringClass)) + "]";
     }
 }

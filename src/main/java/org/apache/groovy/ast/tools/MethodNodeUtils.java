@@ -59,12 +59,26 @@ public class MethodNodeUtils {
      * @return the method node's descriptor
      */
     public static String methodDescriptor(final MethodNode mNode) {
+        return methodDescriptor(mNode, false);
+    }
+
+    /**
+     * Return the method node's descriptor which includes its return type,
+     * name and parameter types without generics.
+     *
+     * @param mNode the method node
+     * @param pretty whether to quote a name with spaces
+     * @return the method node's descriptor
+     */
+    public static String methodDescriptor(final MethodNode mNode, final boolean pretty) {
         Parameter[] parameters = mNode.getParameters();
         int nParameters = parameters == null ? 0 : parameters.length;
+        String name = mNode.getName();
+        String prettyName = name.contains(" ") && pretty ? "\"" + name + "\"" : name;
         StringBuilder sb = new StringBuilder(mNode.getName().length() * 2 + nParameters * 10);
         sb.append(mNode.getReturnType().getName());
         sb.append(' ');
-        sb.append(mNode.getName());
+        sb.append(prettyName);
         sb.append('(');
         for (int i = 0; i < nParameters; i += 1) {
             if (i > 0) {
