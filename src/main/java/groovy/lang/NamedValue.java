@@ -21,11 +21,19 @@ package groovy.lang;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.runtime.FormatHelper;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Represents a value with name
+ *
+ * @param <T> the value type
+ * @since 4.0.0
+ */
 @Incubating
-public class NamedValue<T> {
+public class NamedValue<T> implements Serializable {
+    private static final long serialVersionUID = 8853713635573845253L;
     private final String name;
     private final T val;
 
