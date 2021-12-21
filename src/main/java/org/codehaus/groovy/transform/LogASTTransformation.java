@@ -209,7 +209,7 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
         return DEFAULT_CATEGORY_NAME;
     }
 
-    private int lookupLogFieldModifiers(final AnnotatedNode targetClass, final AnnotationNode logAnnotation) {
+    private static int lookupLogFieldModifiers(final AnnotatedNode targetClass, final AnnotationNode logAnnotation) {
         int modifiers = getVisibility(logAnnotation, targetClass, ClassNode.class, ACC_PRIVATE);
         return ACC_FINAL | ACC_STATIC | ACC_TRANSIENT | modifiers;
     }
@@ -238,8 +238,7 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
             throw new RuntimeException("Could not find default value of method named loggingStrategy on class named " + annotationName);
         }
 
-        if (!LoggingStrategy.class.isAssignableFrom((Class<?>) defaultValue)
-                && !LoggingStrategyV2.class.isAssignableFrom((Class<?>) defaultValue)) {
+        if (!LoggingStrategy.class.isAssignableFrom((Class<?>) defaultValue)) {
             throw new RuntimeException("Default loggingStrategy value on class named " + annotationName + " is not a LoggingStrategy");
         }
 
@@ -289,7 +288,9 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
 
         boolean isLoggingMethod(String methodName);
 
-        String getCategoryName(ClassNode classNode, String categoryName);
+        default String getCategoryName(final ClassNode classNode, final String categoryName) {
+            return categoryName.equals(DEFAULT_CATEGORY_NAME) ? classNode.getName() : categoryName;
+        }
 
         Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression);
     }
@@ -339,14 +340,6 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
 
         protected AbstractLoggingStrategy() {
             this(null);
-        }
-
-        @Override
-        public String getCategoryName(final ClassNode classNode, final String categoryName) {
-            if (categoryName.equals(DEFAULT_CATEGORY_NAME)) {
-                return classNode.getName();
-            }
-            return categoryName;
         }
 
         protected ClassNode classNode(final String name) {
