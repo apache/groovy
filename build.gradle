@@ -98,7 +98,7 @@ groovyCore {
             'org.codehaus.groovy.classgen.Verifier',
             'org.codehaus.groovy.ast.tools.GeneralUtils'
 
-    excludeFromJavadoc '**/GroovyRecognizer.java' // generated file
+    excludeFromJavadoc '**/GroovyRecognizer.java', '*.g4' // generated file
 }
 
 dependencies {
