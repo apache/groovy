@@ -72,6 +72,7 @@ tasks.named('rat') {
                 '.classpath',
                 '.project',
                 '.settings/**',
-                'bin/**'
+                'bin/**',
+                '.jqwik-database'
     ]
 }
