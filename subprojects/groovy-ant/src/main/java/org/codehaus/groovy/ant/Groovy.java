@@ -93,7 +93,7 @@ public class Groovy extends Java {
     /**
      * files to load
      */
-    private final Vector<FileSet> filesets = new Vector<FileSet>();
+    private final Vector<FileSet> filesets = new Vector<>();
 
     /**
      * The input resource
@@ -129,7 +129,6 @@ public class Groovy extends Java {
      * Compiler configuration.
      * <p>
      * Used to specify the debug output to print stacktraces in case something fails.
-     * TODO: Could probably be reused to specify the encoding of the files to load or other properties.
      */
     private final CompilerConfiguration configuration = new CompilerConfiguration();
 
@@ -400,24 +399,7 @@ public class Groovy extends Java {
                             reader = new InputStreamReader(new BufferedInputStream(src.getInputStream()), Charset.defaultCharset());
                         }
                     }
-                    try {
-                        final long len = src.getSize();
-                        log.debug("resource size = " + (len != Resource.UNKNOWN_SIZE ? String.valueOf(len) : "unknown"));
-                        if (len == 0) {
-                            log.info("Ignoring empty resource");
-                            command = null;
-                        } else {
-                            try (ChainReaderHelper.ChainReader chainReader = new ChainReaderHelper(getProject(), reader, filterChains).with(crh -> {
-                                if (len != Resource.UNKNOWN_SIZE && len <= Integer.MAX_VALUE) {
-                                    crh.setBufferSize((int) len);
-                                }
-                            }).getAssembledReader()) {
-                                command = chainReader.readFully();
-                            }
-                        }
-                    } catch (final IOException ioe) {
-                        throw new BuildException("Unable to load resource: ", ioe, getLocation());
-                    }
+                    readCommandFromReader(reader);
                 } else {
                     if (src != null) {
                         log.info("Ignoring supplied resource as direct script text found");
@@ -438,6 +420,27 @@ public class Groovy extends Java {
         }
 
         log.verbose("Statements executed successfully");
+    }
+
+    private void readCommandFromReader(Reader reader) {
+        try {
+            final long len = src.getSize();
+            log.debug("resource size = " + (len != Resource.UNKNOWN_SIZE ? String.valueOf(len) : "unknown"));
+            if (len == 0) {
+                log.info("Ignoring empty resource");
+                command = null;
+            } else {
+                try (ChainReaderHelper.ChainReader chainReader = new ChainReaderHelper(getProject(), reader, filterChains).with(crh -> {
+                    if (len != Resource.UNKNOWN_SIZE && len <= Integer.MAX_VALUE) {
+                        crh.setBufferSize((int) len);
+                    }
+                }).getAssembledReader()) {
+                    command = chainReader.readFully();
+                }
+            }
+        } catch (final IOException ioe) {
+            throw new BuildException("Unable to load resource: ", ioe, getLocation());
+        }
     }
 
     @Override
@@ -701,7 +704,7 @@ public class Groovy extends Java {
     private void createNewArgs(String txt) throws IOException {
         final String[] args = cmdline.getCommandline();
         // Temporary file - delete on exit, create (assured unique name).
-        final File tempFile = FileUtils.getFileUtils().createTempFile(PREFIX, SUFFIX, null, true, true);
+        final File tempFile = FileUtils.getFileUtils().createTempFile(null, PREFIX, SUFFIX, null, true, true);
         final String[] commandline = new String[args.length + 1];
         ResourceGroovyMethods.write(tempFile, txt);
         commandline[0] = tempFile.getCanonicalPath();
@@ -753,8 +756,6 @@ public class Groovy extends Java {
      */
     protected void printResults(PrintStream out) {
         log.debug("printResults()");
-//        StringBuilder line = new StringBuilder();
-//        out.println(line);
         out.println();
     }
 

@@ -55,7 +55,6 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
 
     protected static boolean DUMP_CLASS = false;
 
-    // ClassLoader parentLoader = Thread.currentThread().getContextClassLoader();
     final ClassLoader parentLoader = getClass().getClassLoader();
     protected final GroovyClassLoader loader =
             VMPluginFactory.getPlugin().doPrivileged(
@@ -66,8 +65,7 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
 
     protected Class loadClass(ClassNode classNode) {
         classNode.setModule(module);
-        Class fooClass = loader.defineClass(classNode, classNode.getName() + ".groovy", "groovy.testSupport");
-        return fooClass;
+        return loader.defineClass(classNode, classNode.getName() + ".groovy", "groovy.testSupport");
     }
 
     protected void assertSetProperty(Object bean, String property, Object newValue) throws Exception {
@@ -87,14 +85,6 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
 
         Object[] args = { };
         Object value = invokeMethod(bean, method, args);
-
-        /*
-        System.out.println("Expected: " + expected);
-        System.out.println("Value: " + value);
-
-        if (expected == null) { System.out.println("Expected is null"); }
-        if (value == null) { System.out.println("value is null"); }
-        */
 
         assertEquals("property value", expected, value);
     }
@@ -150,20 +140,20 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
         GroovyCodeSource gcs = VMPluginFactory.getPlugin().doPrivileged(
                 (PrivilegedAction<GroovyCodeSource>) () -> new GroovyCodeSource(text, scriptName, "/groovy/testSupport")
         );
-        Class groovyClass = loader.parseClass(gcs);
+        Class<?> groovyClass = loader.parseClass(gcs);
         Script script = InvokerHelper.createScript(groovyClass, new Binding());
         script.run();
     }
 
     protected void assertScriptFile(String fileName) throws Exception {
         log.info("About to execute script: " + fileName);
-        Class groovyClass = loader.parseClass(new GroovyCodeSource(new File(fileName)));
+        Class<?> groovyClass = loader.parseClass(new GroovyCodeSource(new File(fileName)));
         Script script = InvokerHelper.createScript(groovyClass, new Binding());
         script.run();
     }
 
     protected GroovyObject compile(String fileName) throws Exception {
-        Class groovyClass = loader.parseClass(new GroovyCodeSource(new File(fileName)));
+        Class<?> groovyClass = loader.parseClass(new GroovyCodeSource(new File(fileName)));
         GroovyObject object = (GroovyObject) groovyClass.getDeclaredConstructor().newInstance();
         assertTrue(object != null);
         return object;
