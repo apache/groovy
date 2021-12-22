@@ -23,7 +23,6 @@ import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.tools.GroovyStarter
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
@@ -1584,8 +1583,20 @@ final class InnerClassTest {
         }
     }
 
-    @org.junit.Ignore @Test // GROOVY-9866
+    @Test // GROOVY-7762
     void testResolveInnerOfSuperType12() {
+        assertScript '''
+            class C extends gls.innerClass.Parent8914 {
+                C() {
+                    def innerOfSuper = new Nested()
+                }
+            }
+            new C()
+        '''
+    }
+
+    @Test // GROOVY-9866
+    void testResolveInnerOfSuperType13() {
         assertScript '''
             class X {                   // System
                 interface Y {           // Logger
@@ -1603,46 +1614,6 @@ final class InnerClassTest {
 
             assert new C().m(X.Y.Z.ONE) == 'ONE'
         '''
-
-        //
-
-        def tmpDir = File.createTempDir()
-        try {
-            new File(tmpDir, 'p').mkdir()
-
-            new File(tmpDir, 'p/I.groovy').write '''
-                package p
-                interface I extends System.Logger {
-                }
-            '''
-
-            new File(tmpDir, 'p/C.groovy').write '''
-                package p
-                class C implements I {
-                    @Override
-                    String getName() {
-                    }
-                    @Override
-                    boolean isLoggable(Level level) {
-                    }
-                    @Override
-                    void log(Level level, ResourceBundle bundle, String msg, Throwable throwable) {
-                    }
-                    @Override
-                    void log(Level level, ResourceBundle bundle, String format, Object... params) {
-                    }
-                }
-            '''
-
-            new File(tmpDir, 'script.groovy').write '''
-                new p.C()
-            '''
-
-            GroovyStarter.main('--classpath', tmpDir.absolutePath,
-                '--main', 'groovy.ui.GroovyMain', new File(tmpDir, 'script.groovy').absolutePath)
-        } finally {
-            tmpDir.deleteDir()
-        }
     }
 
     @Test // GROOVY-5679, GROOVY-5681
