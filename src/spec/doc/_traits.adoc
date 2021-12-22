@@ -301,11 +301,11 @@ include::../test/TraitsSpecificationTest.groovy[tags=dynamicobject,indent=0]
 <2> the `Dynamic` class defines a property
 <3> the `Dynamic` class defines a method
 <4> calling an existing property will call the method from `Dynamic`
-<5> calling an non-existing property will call the method from the trait
+<5> calling a non-existing property will call the method from the trait
 <6> will call `setProperty` defined on the trait
 <7> will call `getProperty` defined on the trait
 <8> calling an existing method on `Dynamic`
-<9> but calling a non existing method thanks to the trait `methodMissing`
+<9> but calling a non-existing method thanks to the trait `methodMissing`
 
 == Multiple inheritance conflicts
 === Default conflict resolution
@@ -576,7 +576,7 @@ an implementation for a default method, then the implementation from the interfa
 with a major difference: the implementation from the trait is *always* used if the class declares the trait in its interface
 list *and* that it doesn't provide an implementation *even* if a super class does.
 
-This feature can be used to compose behaviors in an very precise way, in case you want to override the behavior of an
+This feature can be used to compose behaviors in a very precise way, in case you want to override the behavior of an
 already implemented method.
 
 To illustrate the concept, let's start with this simple example:

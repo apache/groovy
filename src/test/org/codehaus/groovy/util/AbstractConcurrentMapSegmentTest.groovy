@@ -111,9 +111,9 @@ class AbstractConcurrentMapSegmentTest {
     }
 
     private void whenISetElementsAsInvalid(int count) {
-        List<TestEntry> validEntires = entries.findAll { it.isValid() }
+        List<TestEntry> validEntries = entries.findAll { it.isValid() }
         count.times {
-            validEntires.get(it).setValid(false)
+            validEntries.get(it).setValid(false)
         }
     }
 

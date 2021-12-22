@@ -32,7 +32,7 @@ Suppose we have the following `Logger` class.
 include::../test/DesignPatternsTest.groovy[tags=decorator_logger_class,indent=0]
 ----
 
-There might be times when it is useful to timestamp a log message, or times when we might want to change the case of the message. We could try to build all of this functionality into our `Logger` class. If we did that, the `Logger` class would start to be very complex. Also, everyone would obtain all of features even when they might not want a small subset of the features. Finally, feature interaction would become quite difficult to control.
+There might be times when it is useful to timestamp a log message, or times when we might want to change the case of the message. We could try to build all of this functionality into our `Logger` class. If we did that, the `Logger` class would start to be very complex. Also, everyone would obtain all of the features even when they might want only a small subset of the features. Finally, feature interaction would become quite difficult to control.
 
 To overcome these drawbacks, we instead define two decorator classes. Uses of the `Logger` class are free to embellish their base logger with zero or more decorator classes in whatever order they desire. The classes look like this:
 

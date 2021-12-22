@@ -26,6 +26,7 @@ import org.apache.tools.ant.BuildLogger;
 import org.apache.tools.ant.DemuxInputStream;
 import org.apache.tools.ant.DemuxOutputStream;
 import org.apache.tools.ant.Location;
+import org.apache.tools.ant.MagicNames;
 import org.apache.tools.ant.NoBannerLogger;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.ProjectHelper;
@@ -187,7 +188,7 @@ public class AntBuilder extends BuilderSupport {
         final Project project = new Project();
 
         final ProjectHelper helper = ProjectHelper.getProjectHelper();
-        project.addReference(ProjectHelper.PROJECTHELPER_REFERENCE, helper);
+        project.addReference(MagicNames.REFID_PROJECT_HELPER, helper);
         helper.getImportStack().addElement("AntBuilder"); // import checks that stack is not empty
 
         final BuildLogger logger = new NoBannerLogger();

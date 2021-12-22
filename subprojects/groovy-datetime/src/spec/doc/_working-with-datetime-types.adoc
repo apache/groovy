@@ -305,7 +305,7 @@ include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=rightshift_operato
 == Converting between legacy and JSR 310 types
 
 Despite the shortcomings of `Date`, `Calendar`, and `TimeZone` types in the `java.util` package
-they are farily common in Java APIs (at least in those prior to Java 8).
+they are fairly common in Java APIs (at least in those prior to Java 8).
 To accommodate use of such APIs, Groovy provides methods for converting between the
 JSR 310 types and legacy types.
 

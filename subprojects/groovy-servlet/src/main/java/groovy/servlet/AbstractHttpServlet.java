@@ -194,7 +194,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
         if (namePrefix == null) {
             generateNamePrefixOnce();
         }
-        if (name.startsWith(namePrefix)) {//usualy name has text
+        if (name.startsWith(namePrefix)) { // usually name has text
             return name.substring(namePrefix.length());
         }
         return name;

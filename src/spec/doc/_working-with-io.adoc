@@ -190,7 +190,7 @@ serialize data into a file and deserialize it using this code:
 include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=data_in_out,indent=0]
 ----
 
-And similarily, if the data you want to serialize implements the `Serializable` interface, you can proceed with
+And similarly, if the data you want to serialize implements the `Serializable` interface, you can proceed with
 an object output stream, as illustrated here:
 
 [source,groovy]
@@ -206,7 +206,7 @@ like system administration or devops it is often required to communicate with ex
 
 Groovy provides a simple way to execute command line processes. Simply
 write the command line as a string and call the `execute()` method.
-E.g., on a *nix machine (or a windows machine with appropriate *nix
+E.g., on a *nix machine (or a Windows machine with appropriate *nix
 commands installed), you can execute this:
 
 [source,groovy]

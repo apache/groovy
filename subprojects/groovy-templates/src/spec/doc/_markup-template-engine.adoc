@@ -640,7 +640,7 @@ generates a string which is streamed to the output, then the `a` link is generat
 call is streamed, leading in an execution *in order*. But with the string version above, the order of execution is different:
 
 * the `yield` call requires an argument, a _string_
-* that arguments needs to be evaluated _before_ the _yield_ call is generated
+* that arguments need to be evaluated _before_ the _yield_ call is generated
 
 so evaluating the string leads to an execution of the `a(href:...)` call *before* `yield` is itself called. This is not
 what you want to do. Instead, you want to generate a _string_ which contains markup, which is then passed to the `yield`
@@ -715,7 +715,7 @@ However, changing the default locale of the template engine to `Locale.FRANCE` w
 with the `fr_FR` locale:
 
 [source,html]
-.Don't fallback to the default template because a locale specific template was found
+.Don't fall back to the default template because a locale specific template was found
 ----
 include::../test/MarkupTemplateEngineSpecTest.groovy[tags=locale_implicit_import_expected2,indent=0]
 ----

@@ -90,7 +90,7 @@ public final class ListWithDefault<T> implements List<T> {
     }
 
     @Override
-    public <T> T[] toArray(T[] ts) {
+    public <U> U[] toArray(U[] ts) {
         return delegate.toArray(ts);
     }
 

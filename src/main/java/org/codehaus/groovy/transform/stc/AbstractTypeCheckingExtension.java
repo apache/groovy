@@ -196,12 +196,12 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
         if (argTypes.length != classes.length) return false;
         boolean match = true;
         for (int i = 0; i < argTypes.length && match; i++) {
-            match = matchWithOrWithourBoxing(argTypes[i], classes[i]);
+            match = matchWithOrWithoutBoxing(argTypes[i], classes[i]);
         }
         return match;
     }
 
-    private static boolean matchWithOrWithourBoxing(final ClassNode argType, final Class aClass) {
+    private static boolean matchWithOrWithoutBoxing(final ClassNode argType, final Class aClass) {
         final boolean match;
         ClassNode type = ClassHelper.make(aClass);
         if (ClassHelper.isPrimitiveType(type) && !ClassHelper.isPrimitiveType(argType)) {
@@ -224,7 +224,7 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
         if (argTypes.length<classes.length) return false;
         boolean match = true;
         for (int i = 0; i < classes.length && match; i++) {
-            match = matchWithOrWithourBoxing(argTypes[i], classes[i]);
+            match = matchWithOrWithoutBoxing(argTypes[i], classes[i]);
         }
         return match;
     }
@@ -237,7 +237,7 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
 
     public boolean argTypeMatches(ClassNode[] argTypes, int index, Class clazz) {
         if (index >= argTypes.length) return false;
-        return matchWithOrWithourBoxing(argTypes[index], clazz);
+        return matchWithOrWithoutBoxing(argTypes[index], clazz);
     }
 
     public boolean argTypeMatches(MethodCall call, int index, Class clazz) {

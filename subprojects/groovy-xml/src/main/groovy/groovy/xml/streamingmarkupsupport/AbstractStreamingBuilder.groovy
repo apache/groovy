@@ -62,10 +62,10 @@ class AbstractStreamingBuilder {
     }
     def getNamespaceClosure = { doc, pendingNamespaces, namespaces, Object[] rest -> [namespaces, pendingNamespaces] }
 
-    def toMapStringClosure = { Map instruction, checkDoubleQutationMarks={ value -> !value.toString().contains('"') } ->
+    def toMapStringClosure = { Map instruction, checkDoubleQuotationMarks={ value -> !value.toString().contains('"') } ->
         def buf = new StringBuilder()
         instruction.each { name, value ->
-            if (checkDoubleQutationMarks(value)) {
+            if (checkDoubleQuotationMarks(value)) {
                 buf.append(" $name=\"$value\"")
             } else {
                 buf.append(" $name='$value'")

@@ -83,7 +83,7 @@ include::../test/SealedSpecificationTest.groovy[tags=general_sealed_class_annota
 In this example, our permitted subclasses for `Shape` are `Circle`, `Polygon`, and `Rectangle`.
 `Circle` is `final` and hence that part of the hierarchy cannot be extended.
 `Polygon` is implicitly non-sealed and `RegularPolygon` is explicitly marked as `non-sealed`.
-That means our heiarchy is open to any further extension by subclassing,
+That means our hierarchy is open to any further extension by subclassing,
 as seen with `Polygon -> RegularPolygon` and `RegularPolygon -> Hexagon`.
 `Rectangle` is itself sealed which means that part of the hierarchy can be extended
 but only in a controlled way (only `Square` is permitted).

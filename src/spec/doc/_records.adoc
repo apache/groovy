@@ -88,7 +88,7 @@ include::../test/RecordSpecificationTest.groovy[tags=record_generics_usage,inden
 === Compact constructor
 
 Records have an implicit constructor. This can be overridden in the normal way
-by providing your own constructor - you need to make sure you set all of the fields
+by providing your own constructor - you need to make sure you set all the fields
 if you do this.
 However, for succinctness, a compact constructor syntax can be used where
 the parameter declaration part of a normal constructor is elided.
@@ -258,7 +258,7 @@ You can use `@RecordOptions(getAt=false)` to disable this feature.
 It can be useful to make a copy of a record with some components changed.
 This can be done using an optional `copyWith` method which takes named arguments.
 Record components are set from the supplied arguments.
-For components not mentioned, a (shallow) copy of the original record commponent is used.
+For components not mentioned, a (shallow) copy of the original record component is used.
 Here is how you might use `copyWith` for the `Fruit` record:
 
 [source,groovy]
@@ -280,7 +280,7 @@ data types. Records can make use of this defensive copying to gain deep immutabi
 include::../test/RecordSpecificationTest.groovy[tags=record_immutable,indent=0]
 ----
 
-These examples illustrates the principal behind
+These examples illustrate the principal behind
 Groovy's record feature offering three levels of convenience:
 
 * Using the `record` keyword for maximum succinctness

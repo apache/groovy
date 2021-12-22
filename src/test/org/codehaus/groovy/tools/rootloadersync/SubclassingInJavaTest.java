@@ -20,7 +20,8 @@ package org.codehaus.groovy.tools.rootloadersync;
 
 import org.junit.Test;
 import java.util.HashSet;
-import static junit.framework.Assert.assertEquals;
+
+import static org.junit.Assert.assertEquals;
 
 
 public class SubclassingInJavaTest {

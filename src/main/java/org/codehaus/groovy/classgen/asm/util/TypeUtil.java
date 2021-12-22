@@ -110,7 +110,7 @@ public abstract class TypeUtil {
             StringBuilder arrayDescription = new StringBuilder(32);
             Tuple2<ClassNode, Integer> arrayInfo = extractArrayInfo(type);
 
-            for (int i = 0, dimension = arrayInfo.getSecond(); i < dimension; i++) {
+            for (int i = 0, dimension = arrayInfo.getV2(); i < dimension; i++) {
                 arrayDescription.append("[");
             }
 
