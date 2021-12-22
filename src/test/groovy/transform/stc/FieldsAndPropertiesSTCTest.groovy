@@ -875,6 +875,34 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-7890
+    void testNonStaticPropertyAndStaticMethodClosure() {
+        shouldFailWithMessages '''
+            class C {
+                List<String> replace
+                static String m(String s) {
+                    s.collectReplacements {
+                        (it in replace) ? 'o' : null
+                    }
+                }
+            }
+        ''',
+        'The variable [replace] is undeclared'
+
+        assertScript '''
+            class C {
+              List<String> replace
+              String m(String s) {
+                s.collectReplacements {
+                  (it in replace) ? 'o' : null
+                }
+              }
+            }
+            String result = new C(replace:['a','b','c']).m('foobar')
+            assert result == 'foooor'
+        '''
+    }
+
     // GROOVY-5872
     void testAssignNullToFieldWithGenericsShouldNotThrowError() {
         assertScript '''

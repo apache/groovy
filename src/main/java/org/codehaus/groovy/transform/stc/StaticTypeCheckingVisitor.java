@@ -1540,15 +1540,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     Collections.addAll(queue, current.getInterfaces());
                 }
 
-                // in case of a lookup on Class we look for instance methods on Class
-                // as well, since in case of a static property access we have the class
-                // itself in the list of receivers already;
-                boolean staticOnly;
-                if (isClassClassNodeWrappingConcreteType(current)) {
-                    staticOnly = false;
-                } else {
-                    staticOnly = staticOnlyAccess;
-                }
+                boolean staticOnly = (receiver.getData() == null ? staticOnlyAccess : false);
+                // in case of a lookup on java.lang.Class, look for instance methods on Class
+                // as well; in case of static property access Class<Type> and Type are listed
+                if (isClassClassNodeWrappingConcreteType(current)) staticOnly = false;
 
                 field = allowStaticAccessToMember(field, staticOnly);
 
@@ -2375,9 +2370,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitClosureExpression(final ClosureExpression expression) {
-        boolean oldStaticContext = typeCheckingContext.isInStaticContext;
-        typeCheckingContext.isInStaticContext = false;
-
         // collect every variable expression used in the closure body
         Map<VariableExpression, ClassNode> varTypes = new HashMap<>();
         expression.getCode().visit(new VariableExpressionTypeMemoizer(varTypes, true));
@@ -2425,7 +2417,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         // restore original metadata
         restoreVariableExpressionMetadata(variableMetadata);
-        typeCheckingContext.isInStaticContext = oldStaticContext;
         for (Parameter parameter : getParametersSafe(expression)) {
             typeCheckingContext.controlStructureVariables.remove(parameter);
             // GROOVY-10072: visit param default argument expression if present
@@ -2571,25 +2562,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // we must not visit a method which used dynamic dispatch.
         // We do not check for an annotation because some other AST transformations
         // may use this visitor without the annotation being explicitly set
-        if (!typeCheckingContext.methodsToBeVisited.isEmpty() && !typeCheckingContext.methodsToBeVisited.contains(node))
-            return;
+        if ((typeCheckingContext.methodsToBeVisited.isEmpty() || typeCheckingContext.methodsToBeVisited.contains(node))
+                && typeCheckingContext.alreadyVisitedMethods.add(node)) { // prevent re-visiting method (infinite loop)
+            typeCheckingContext.pushErrorCollector(collector);
+            boolean osc = typeCheckingContext.isInStaticContext;
+            try {
+                // GROOVY-7890: non-static trait method is static in helper type
+                typeCheckingContext.isInStaticContext = isNonStaticHelperMethod(node) ? false : node.isStatic();
 
-        // alreadyVisitedMethods prevents from visiting the same method multiple times
-        // and prevents from infinite loops
-        if (typeCheckingContext.alreadyVisitedMethods.contains(node)) return;
-        typeCheckingContext.alreadyVisitedMethods.add(node);
-
-        typeCheckingContext.pushErrorCollector(collector);
-        boolean osc = typeCheckingContext.isInStaticContext;
-        try {
-            typeCheckingContext.isInStaticContext = node.isStatic();
-
-            super.visitMethod(node);
-        } finally {
-            typeCheckingContext.isInStaticContext = osc;
+                super.visitMethod(node);
+            } finally {
+                typeCheckingContext.isInStaticContext = osc;
+            }
+            typeCheckingContext.popErrorCollector();
+            node.putNodeMetaData(ERROR_COLLECTOR, collector);
         }
-        typeCheckingContext.popErrorCollector();
-        node.putNodeMetaData(ERROR_COLLECTOR, collector);
     }
 
     @Override
@@ -3415,12 +3402,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     ClassNode receiverType = currentReceiver.getType();
                     mn = findMethod(receiverType, name, args);
 
-                    // if the receiver is "this" or "implicit this", then we must make sure that the compatible
-                    // methods are only static if we are in a static context
-                    // if we are not in a static context but the current receiver is a static class, we must
-                    // ensure that all methods are either static or declared by the current receiver or a superclass
-                    if (!mn.isEmpty()
-                            && (isThisObjectExpression || call.isImplicitThis())
+                    // if receiver is "this" in a static context then only static methods are compatible
+                    // if not in a static context but the current receiver is a static class ensure that
+                    // all methods are either static or declared by the current receiver or a superclass
+                    if (!mn.isEmpty() && currentReceiver.getData() == null && (isThisObjectExpression || call.isImplicitThis())
                             && (typeCheckingContext.isInStaticContext || (receiverType.getModifiers() & Opcodes.ACC_STATIC) != 0)) {
                         // we create separate method lists just to be able to print out
                         // a nice error message to the user
@@ -5820,6 +5805,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode outer = start.getOuterClass();
         if (outer != null) {
             return isClassInnerClassOrEqualTo(toBeChecked, outer);
+        }
+        return false;
+    }
+
+    private static boolean isNonStaticHelperMethod(final MethodNode method) {
+        Parameter[] parameters = method.getParameters(); // check first param is "$self"
+        if (parameters.length > 0 && parameters[0].getName().equals(Traits.THIS_OBJECT)) {
+            return !method.getName().contains("$init$") && Traits.isTrait(method.getDeclaringClass().getOuterClass());
         }
         return false;
     }
