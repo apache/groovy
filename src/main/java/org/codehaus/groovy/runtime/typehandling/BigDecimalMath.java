@@ -22,6 +22,7 @@ import org.apache.groovy.util.SystemUtil;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.math.RoundingMode;
 
 /**
  * BigDecimal NumberMath operations
@@ -71,7 +72,7 @@ public final class BigDecimalMath extends NumberMath {
             int precision = Math.max(bigLeft.precision(), bigRight.precision()) + DIVISION_EXTRA_PRECISION;
             BigDecimal result = bigLeft.divide(bigRight, new MathContext(precision));
             int scale = Math.max(Math.max(bigLeft.scale(), bigRight.scale()), DIVISION_MIN_SCALE);
-            if (result.scale() > scale) result = result.setScale(scale, BigDecimal.ROUND_HALF_UP);
+            if (result.scale() > scale) result = result.setScale(scale, RoundingMode.HALF_UP);
             return result;
         }
     }
