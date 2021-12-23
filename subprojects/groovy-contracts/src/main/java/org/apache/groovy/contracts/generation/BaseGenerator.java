@@ -76,7 +76,7 @@ public abstract class BaseGenerator {
 
     protected final ReaderSource source;
 
-    public BaseGenerator(final ReaderSource source) {
+    protected BaseGenerator(final ReaderSource source) {
         this.source = source;
     }
 
@@ -167,7 +167,7 @@ public abstract class BaseGenerator {
             ArgumentListExpression newInstanceArguments = args(
                     classExpression,
                     new ArrayExpression(
-                            ClassHelper.DYNAMIC_TYPE,
+                            ClassHelper.OBJECT_TYPE,
                             Arrays.<Expression>asList(VariableExpression.THIS_EXPRESSION, VariableExpression.THIS_EXPRESSION)
                     )
             );

@@ -218,7 +218,7 @@ public final class AssertStatementCreationUtility {
                 if (statement == returnStatement) {
                     block.getStatements().remove(statement);
 
-                    final VariableExpression $_gc_result = localVarX("$_gc_result", ClassHelper.DYNAMIC_TYPE);
+                    final VariableExpression $_gc_result = localVarX("$_gc_result", ClassHelper.OBJECT_TYPE);
                     block.addStatement(declS($_gc_result, returnStatement.getExpression()));
                     block.addStatement(assertionCallStatement);
 

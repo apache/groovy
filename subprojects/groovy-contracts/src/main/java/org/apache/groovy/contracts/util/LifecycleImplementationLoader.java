@@ -162,7 +162,7 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
             String cn = nextName;
             nextName = null;
             try {
-                S p = service.cast(Class.forName(cn, true, loader).newInstance());
+                S p = service.cast(Class.forName(cn, true, loader).getConstructor().newInstance());
                 providers.put(cn, p);
                 return p;
             } catch (ClassNotFoundException x) {

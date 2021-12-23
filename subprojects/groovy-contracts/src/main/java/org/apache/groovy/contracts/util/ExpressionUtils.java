@@ -44,6 +44,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
  * @see BooleanExpression
  */
 public class ExpressionUtils {
+    private ExpressionUtils() { }
 
     /**
      * Returns all {@link BooleanExpression} instances found in the given {@link ClosureExpression}.
@@ -61,25 +62,30 @@ public class ExpressionUtils {
     private static List<BooleanExpression> getBooleanExpressions(BlockStatement closureBlockStatement) {
         final List<Statement> statementList = closureBlockStatement.getStatements();
 
-        List<BooleanExpression> booleanExpressions = new ArrayList<BooleanExpression>();
+        List<BooleanExpression> booleanExpressions = new ArrayList<>();
 
         for (Statement stmt : statementList) {
             BooleanExpression tmp = null;
 
             if (stmt instanceof ExpressionStatement && ((ExpressionStatement) stmt).getExpression() instanceof BooleanExpression) {
                 tmp = (BooleanExpression) ((ExpressionStatement) stmt).getExpression();
-                tmp.setNodeMetaData("statementLabel", stmt.getStatementLabel());
+                saveLabel(tmp, stmt);
             } else if (stmt instanceof ExpressionStatement) {
                 Expression expression = ((ExpressionStatement) stmt).getExpression();
                 tmp = boolX(expression);
                 tmp.setSourcePosition(expression);
-                tmp.setNodeMetaData("statementLabel", stmt.getStatementLabel());
+                saveLabel(tmp, stmt);
             }
 
             booleanExpressions.add(tmp);
         }
 
         return booleanExpressions;
+    }
+
+    private static void saveLabel(BooleanExpression tmp, Statement stmt) {
+        List<String> labels = stmt.getStatementLabels();
+        tmp.setNodeMetaData("statementLabel", labels != null && !labels.isEmpty() ? labels.get(0) : null);
     }
 
     /**
@@ -92,7 +98,7 @@ public class ExpressionUtils {
         List<AssertStatement> assertStatements = collector.assertStatements;
         if (assertStatements.isEmpty()) return Collections.emptyList();
 
-        List<BooleanExpression> booleanExpressions = new ArrayList<BooleanExpression>();
+        List<BooleanExpression> booleanExpressions = new ArrayList<>();
         for (AssertStatement assertStatement : assertStatements) {
             booleanExpressions.add(assertStatement.getBooleanExpression());
         }
@@ -118,7 +124,7 @@ public class ExpressionUtils {
 
     static class AssertStatementCollector extends ClassCodeVisitorSupport {
 
-        public List<AssertStatement> assertStatements = new ArrayList<AssertStatement>();
+        public List<AssertStatement> assertStatements = new ArrayList<>();
 
         @Override
         public void visitAssertStatement(AssertStatement statement) {
