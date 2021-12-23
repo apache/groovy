@@ -382,7 +382,9 @@ fragment SlashyStringCharacter
 
 // character in the dollar slashy string. e.g. $/a/$
 fragment DollarSlashyStringCharacter
-    :   DollarSlashEscape | DollarDollarEscape
+    :   DollarDollarEscape
+    |   DollarSlashDollarEscape { _input.LA(-4) != '$' }?
+    |   DollarSlashEscape { _input.LA(1) != '$' }?
     |   Slash { _input.LA(1) != '$' }?
     |   Dollar { !isFollowedByJavaLetterInGString(_input) }?
     |   ~[/$\u0000]
@@ -810,14 +812,22 @@ DollarSlashyGStringQuotationMarkEnd
     :   '/$'
     ;
 
+// escaped forward slash
 fragment
 DollarSlashEscape
     :   '$/'
     ;
 
+// escaped dollar sign
 fragment
 DollarDollarEscape
     :   '$$'
+    ;
+
+// escaped dollar slashy string delimiter
+fragment
+DollarSlashDollarEscape
+    :   '$/$'
     ;
 
 // §3.10.7 The Null Literal
