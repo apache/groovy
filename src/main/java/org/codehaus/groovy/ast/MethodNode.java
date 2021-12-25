@@ -84,10 +84,9 @@ public class MethodNode extends AnnotatedNode {
     }
 
     /**
-     * The type descriptor for a method node is a string containing the name of the method, its return type,
-     * and its parameter types in a canonical form. For simplicity, we use the format of a Java declaration
-     * without parameter names or generics.
+     * @deprecated use {@link org.apache.groovy.ast.tools.MethodNodeUtils#methodDescriptor(MethodNode, boolean)}
      */
+    @Deprecated
     public String getTypeDescriptor(final boolean pretty) {
         return methodDescriptor(this, pretty);
     }
@@ -309,6 +308,6 @@ public class MethodNode extends AnnotatedNode {
     @Override
     public String toString() {
         ClassNode declaringClass = getDeclaringClass();
-        return super.toString() + "[" + getTypeDescriptor(true) + (declaringClass == null ? "" : " from " + formatTypeName(declaringClass)) + "]";
+        return super.toString() + "[" + methodDescriptor(this, true) + (declaringClass == null ? "" : " from " + formatTypeName(declaringClass)) + "]";
     }
 }
