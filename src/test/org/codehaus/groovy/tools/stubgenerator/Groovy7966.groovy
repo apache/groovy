@@ -21,31 +21,31 @@ package org.codehaus.groovy.tools.stubgenerator
 /**
  * Test that fileorder doesn't impact whether GroovyObject appears in implements list.
  */
-class Groovy7966Bug extends StringSourcesStubTestCase {
+final class Groovy7966 extends StringSourcesStubTestCase {
 
     @Override
     Map<String, String> provideSources() {
         [
-                'Before.groovy' : '''
-                  class Before extends AbstractThing {}
-                ''',
-                'AbstractThing.groovy' : '''
-                  abstract class AbstractThing {}
-                ''',
-                'JavaThing.java' : '''
-                  public class JavaThing {
-                  }
-                ''',
-                'After.groovy' : '''
-                  class After extends AbstractThing {}
-                ''',
+            'Before.groovy': '''
+              class Before extends AbstractThing {}
+            ''',
+            'AbstractThing.groovy': '''
+              abstract class AbstractThing {}
+            ''',
+            'JavaThing.java': '''
+              public class JavaThing {
+              }
+            ''',
+            'After.groovy': '''
+              class After extends AbstractThing {}
+            ''',
         ]
     }
 
     @Override
     protected List<File> collectSources(File path) {
         // parent method uses order returned by the file system - we want to maintain supplied order
-        return provideSources().collect{ name, _ -> new File(path, name) }
+        provideSources().collect { name, x -> new File(path, name) }
     }
 
     @Override

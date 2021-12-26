@@ -18,29 +18,28 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-class Groovy8774Bug extends StringSourcesStubTestCase {
+final class Groovy7052 extends StringSourcesStubTestCase {
 
+    @Override
     Map<String, String> provideSources() {
         [
-                'Dummy.java': '''
-                    public interface Dummy { }
-                ''',
-                'test/package-info.groovy': '''
-                    @java.lang.Deprecated
-                    package test
-                '''
+            'Foo.groovy': '''
+                trait Foo {}
+            ''',
+
+            'Bar.java': '''
+                class Bar implements Foo {}
+            ''',
+
+            'Baz.groovy': '''
+                class Baz implements Foo {}
+            '''
         ]
     }
 
-//    protected void init() {
-//        debug = true
-//        delete = false
-//    }
-
+    @Override
     void verifyStubs() {
-        assert stubJavaSourceFor('test/package-info').contains('@java.lang.Deprecated')
-        assert stubJavaSourceFor('test/package-info').contains('package test;')
-        def piClass = loader.loadClass('test.package-info')
-        assert piClass.isInterface()
+        String stub = stubJavaSourceFor('Foo')
+        assert stub.contains('interface Foo')
     }
 }

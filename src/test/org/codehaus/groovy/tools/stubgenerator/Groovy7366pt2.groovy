@@ -16,38 +16,46 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 package org.codehaus.groovy.tools.stubgenerator
 
-final class Groovy9462 extends StringSourcesStubTestCase {
+final class Groovy7366pt2 extends StringSourcesStubTestCase {
 
     @Override
     Map<String, String> provideSources() {
         [
-            'Main.java': '''
-                public class Main {
-                    public static void main(String[] args) {
-                        new Neo4jRelationship<Byte, Character>(null, null, "Type");
-                    }
+            'Constants.java': '''
+                package test;
+                public interface Constants {
+                    String C1 = "c1";
                 }
             ''',
-            'Neo4jRelationship.groovy': '''
-                @groovy.transform.CompileStatic
-                class Neo4jRelationship<F, T> implements Relationship<F, T> {
-                    String type
 
-                    Neo4jRelationship(F from, T to, String type) {
-                        this.from = from
-                        this.to = to
-                        this.type = type
+            'MyAnnotation.java': '''
+                package test;
+                public @interface MyAnnotation {
+                    String value();
+                }
+            ''',
+
+            'Test.groovy': '''
+                package test
+                import static test.Constants.*
+                @MyAnnotation(C1)
+                class Test {
+                    def test
+                    Test(test) {
+                        this.test = test
                     }
                 }
             ''',
-            'Relationship.groovy': '''
-                @groovy.transform.CompileStatic
-                trait Relationship<F, T> {
-                    Long id
-                    F from
-                    T to
+
+            'Hello.java': '''
+                package test;
+                public class Hello {
+                    public static void main(String[] args) {
+                        System.out.println(new Test("hello").getTest());
+                    }
                 }
             '''
         ]
@@ -55,7 +63,5 @@ final class Groovy9462 extends StringSourcesStubTestCase {
 
     @Override
     void verifyStubs() {
-        String stub = stubJavaSourceFor('Neo4jRelationship')
-        assert stub.contains("public Neo4jRelationship${System.lineSeparator()}(F from, T to,")
     }
 }

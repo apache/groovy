@@ -18,31 +18,28 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-class Groovy9405 extends StringSourcesStubTestCase {
+final class Groovy9405 extends StringSourcesStubTestCase {
 
+    @Override
     Map<String, String> provideSources() {
         [
-                'test/Requires.java': '''
-                    package test;
-                    import java.lang.annotation.*;
-                    @Retention(RetentionPolicy.RUNTIME)
-                    @Target({ElementType.PACKAGE})
-                    public @interface Requires {
-                        Class<? extends groovy.lang.Closure> condition();
-                    }
-                ''',
-                'test/package-info.groovy': '''
-                    @test.Requires(condition = { -> true })
-                    package test
-                '''
+            'test/Requires.java': '''
+                package test;
+                import java.lang.annotation.*;
+                @Retention(RetentionPolicy.RUNTIME)
+                @Target({ElementType.PACKAGE})
+                public @interface Requires {
+                    Class<? extends groovy.lang.Closure> condition();
+                }
+            ''',
+            'test/package-info.groovy': '''
+                @test.Requires(condition = { -> true })
+                package test
+            '''
         ]
     }
 
-//    protected void init() {
-//        debug = true
-//        delete = false
-//    }
-
+    @Override
     void verifyStubs() {
         def piClass = loader.loadClass('test.package-info')
         def inners = piClass.classes

@@ -16,41 +16,39 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
 package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * Test that Parameter annotations are kept in the Java stub.
  */
-class Groovy4248Bug extends StringSourcesStubTestCase {
+final class Groovy4248 extends StringSourcesStubTestCase {
 
+    @Override
     Map<String, String> provideSources() {
         [
-                'foo/Main.java'    : '''
-                    package foo;
-
-                    import bar.GroovyClass;
-
-                    public class Main {
-                        public static void main(String[] args) throws Exception {
-                            new GroovyClass().getClass().getMethod("getView").getAnnotations();
-                        }
+            'foo/Main.java': '''
+                package foo;
+                import bar.GroovyClass;
+                public class Main {
+                    public static void main(String[] args) throws Exception {
+                        new GroovyClass().getClass().getMethod("getView").getAnnotations();
                     }
-                ''',
-                'bar/GroovyClass.groovy': '''
-                    package bar
+                }
+            ''',
 
-                    class GroovyClass {
-                        @Deprecated
-                        String getView(@Deprecated String pathVariable) {
-                            null
-                        }
+            'bar/GroovyClass.groovy': '''
+                package bar
+                class GroovyClass {
+                    @Deprecated
+                    String getView(@Deprecated String pathVariable) {
+                        null
                     }
-                '''
+                }
+            '''
         ]
     }
 
+    @Override
     void verifyStubs() {
         def stubSource = stubJavaSourceFor('bar.GroovyClass')
         assert stubSource.contains('@java.lang.Deprecated() public  java.lang.String getView')

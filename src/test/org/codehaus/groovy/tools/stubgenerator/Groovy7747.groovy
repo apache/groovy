@@ -21,43 +21,45 @@ package org.codehaus.groovy.tools.stubgenerator
 /**
  * Test that enums with an abstract method are compiled successfully.
  */
-class Groovy7747Bug extends StringSourcesStubTestCase {
+final class Groovy7747 extends StringSourcesStubTestCase {
 
+    @Override
     Map<String, String> provideSources() {
         [
-                'Main.java' : '''
-                  import enums.EnumWithAbstractMethod;
-                  public class Main {
+            'Main.java': '''
+                import enums.EnumWithAbstractMethod;
+                public class Main {
                     public static void main(String[] args) {
-                      System.out.println(EnumWithAbstractMethod.values());
-                      System.out.println(EnumWithAbstractMethod.ONE.getInt());
+                        System.out.println(EnumWithAbstractMethod.values());
+                        System.out.println(EnumWithAbstractMethod.ONE.getInt());
                     }
-                  }
-                ''',
-                'enums/EnumWithAbstractMethod.groovy' : '''
-                  package enums
-                  enum EnumWithAbstractMethod {
+                }
+            ''',
+            'enums/EnumWithAbstractMethod.groovy': '''
+                package enums
+                enum EnumWithAbstractMethod {
                     ONE {
-                      @Override
-                      int getInt() {
-                        return 1
-                      }
+                        @Override
+                        int getInt() {
+                            return 1
+                        }
                     },
                     TWO {
-                      @Override
-                      int getInt() {
-                        return 2
-                      }
+                        @Override
+                        int getInt() {
+                            return 2
+                        }
                     }
                     abstract int getInt()
-                  }
-                '''
+                }
+            '''
         ]
     }
 
+    @Override
     void verifyStubs() {
-        def stubSource = stubJavaSourceFor('enums.EnumWithAbstractMethod')
-        assert stubSource.contains('enum EnumWithAbstractMethod')
-        assert !stubSource.matches('abstract.*enum')
+        String stub = stubJavaSourceFor('enums.EnumWithAbstractMethod')
+        assert stub.contains('enum EnumWithAbstractMethod')
+        assert !stub.matches('abstract.*enum')
     }
 }

@@ -19,32 +19,32 @@
 package org.codehaus.groovy.tools.stubgenerator
 
 /**
- * Test that multi-dimensional arrays are compiled successfully.
+ * Test that empty enums are compiled successfully.
  */
-class Groovy6302Bug extends StringSourcesStubTestCase {
+final class Groovy6404 extends StringSourcesStubTestCase {
 
+    @Override
     Map<String, String> provideSources() {
         [
-                'foo/Main.java'    : '''
-                    package foo;
-
-                    import bar.GroovyClass;
-
-                    public class Main {
-                        public static void main(String[] args) {
-                            new GroovyClass().foo();
-                        }
+            'foo/Main.java': '''
+                package foo;
+                import bar.MyEnum;
+                public class Main {
+                    public static void main(String[] args) {
+                        System.out.println(MyEnum.values());
                     }
-                ''',
-                'bar/GroovyClass.groovy': '''
-                    package bar
+                }
+            ''',
 
-                    class GroovyClass {
-                        Map<String, String[][]> foo() { null }
-                    }
-                '''
+            'bar/MyEnum.groovy': '''
+                package bar
+                enum MyEnum {
+                }
+            '''
         ]
     }
 
-    void verifyStubs() {}
+    @Override
+    void verifyStubs() {
+    }
 }

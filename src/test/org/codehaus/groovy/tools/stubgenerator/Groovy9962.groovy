@@ -16,28 +16,26 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package org.codehaus.groovy.tools.stubgenerator
 
-/**
- * Test that annotations with string values containing dollar signs don't change string value in stub.
- */
-class Groovy9962 extends StringSourcesStubTestCase {
+final class Groovy9962 extends StringSourcesStubTestCase {
 
+    @Override
     Map<String, String> provideSources() {
         [
             'Foo.java': '''
                 public class Foo {}
             ''',
             'Groovy9962.groovy': '''
-                @Deprecated(since = '${name} paid $7')
+                @Deprecated(since = '${name} paid $7') // value with $
                 class Groovy9962 {}
             '''
         ]
     }
 
+    @Override
     void verifyStubs() {
-        def stubSource = stubJavaSourceFor('Groovy9962')
-        assert stubSource.contains('${name} paid $7')
+        String stub = stubJavaSourceFor('Groovy9962')
+        assert stub.contains('${name} paid $7')
     }
 }

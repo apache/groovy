@@ -18,30 +18,31 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-class Groovy8343StubTest extends StringSourcesStubTestCase {
+final class Groovy8343 extends StringSourcesStubTestCase {
 
     @Override
     Map<String, String> provideSources() {
         [
-                'groovy/Groovy8343.java': '''
-                    package groovy;
-                    /**
-                     * Precompiled Java class in same package as Groovy8343Test
-                     */
-                    public interface Groovy8343 {
-                        Groovy8343 createRelative(String relativePath);
+            'groovy/Groovy8343.java': '''
+                package groovy;
+                /**
+                 * Precompiled Java class in same package as Groovy8343Test
+                 */
+                public interface Groovy8343 {
+                    Groovy8343 createRelative(String relativePath);
+                }
+            ''',
+
+            'groovy/Groovy8343Test.groovy': '''
+                package groovy
+                @groovy.transform.CompileStatic
+                class Groovy8343Impl implements Groovy8343 {
+                    Groovy8343 createRelative(String relativePath) {
+                        throw new UnsupportedOperationException("Method createRelative not supported")
                     }
-                ''',
-                'groovy/Groovy8343Test.groovy': '''
-                    package groovy
-                    @groovy.transform.CompileStatic
-                    class Groovy8343Impl implements Groovy8343 {
-                        Groovy8343 createRelative(String relativePath) {
-                            throw new UnsupportedOperationException("Method createRelative not supported")
-                        }
-                    }
-                    assert new Groovy8343Impl()
-                '''
+                }
+                assert new Groovy8343Impl()
+            '''
         ]
     }
 

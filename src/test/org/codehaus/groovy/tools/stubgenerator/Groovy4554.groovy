@@ -18,31 +18,26 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-/**
- * Test that empty enums are compiled successfully.
- */
-class Groovy6404Bug extends StringSourcesStubTestCase {
+final class Groovy4554 extends StringSourcesStubTestCase {
 
+    @Override
     Map<String, String> provideSources() {
         [
-                'foo/Main.java'    : '''
-                    package foo;
+            'Dummy.groovy': '''
+                interface Dummy {
+                }
+            ''',
 
-                    import bar.MyEnum;
-
-                    public class Main {
-                        public static void main(String[] args) {
-                            System.out.println(MyEnum.values());
-                        }
-                    }
-                ''',
-                'bar/MyEnum.groovy': '''
-                    package bar
-
-                    enum MyEnum { }
-                '''
+            'test/package-info.java': '''
+                @java.lang.Deprecated
+                package test;
+            '''
         ]
     }
 
-    void verifyStubs() {}
+    @Override
+    void verifyStubs() {
+        def piClass = loader.loadClass('test.package-info')
+        assert piClass.isInterface()
+    }
 }

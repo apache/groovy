@@ -16,49 +16,39 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package org.codehaus.groovy.tools.stubgenerator
 
-class Groovy7366BugVariant extends StringSourcesStubTestCase {
+final class Groovy7482 extends StringSourcesStubTestCase {
 
+    @Override
     Map<String, String> provideSources() {
         [
-                'Constants.java': '''
-                    package test;
-                    public interface Constants {
-                        String C1 = "c1";
-                    }
-                ''',
-                'MyAnnotation.java': '''
-                    package test;
-                    public @interface MyAnnotation {
-                        String value();
-                    }
-                ''',
-
-                'Test.groovy': '''
-                    package test
-                    import static test.Constants.*
-                    @MyAnnotation(C1)
-                    class Test {
-                        def test
-                        Test(test) {
-                            this.test = test
-                        }
-                    }
-                ''',
-                'Hello.java': '''
-                package test;
-                public class Hello {
-                    public static void main(String[] args) {
-                        System.out.println(new Test("hello").getTest());
+            'A.java': '''
+                abstract class A {
+                    private Object getProperty(String name) {
+                        return null;
                     }
                 }
-                '''
+            ''',
+
+            'C.groovy': '''
+                class C extends A {
+                }
+            ''',
+
+            'Main.java': '''
+                public class Main {
+                    public static void main(String[] args) {
+                        new C();
+                    }
+                }
+            '''
         ]
     }
 
+    @Override
     void verifyStubs() {
-
+        String stub = stubJavaSourceFor('C')
+        assert !stub.contains('getProperty')
     }
 }

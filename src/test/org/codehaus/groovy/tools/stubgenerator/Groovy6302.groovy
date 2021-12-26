@@ -18,27 +18,34 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-class Groovy4554Bug extends StringSourcesStubTestCase {
+/**
+ * Test that multi-dimensional arrays are compiled successfully.
+ */
+final class Groovy6302 extends StringSourcesStubTestCase {
 
+    @Override
     Map<String, String> provideSources() {
         [
-                'Dummy.groovy': '''
-                    interface Dummy { }
-                ''',
-                'test/package-info.java': '''
-                    @java.lang.Deprecated
-                    package test;
-                '''
+            'foo/Main.java': '''
+                package foo;
+                import bar.GroovyClass;
+                public class Main {
+                    public static void main(String[] args) {
+                        new GroovyClass().foo();
+                    }
+                }
+            ''',
+
+            'bar/GroovyClass.groovy': '''
+                package bar
+                class GroovyClass {
+                    Map<String, String[][]> foo() { null }
+                }
+            '''
         ]
     }
 
-//    protected void init() {
-//        debug = true
-//        delete = false
-//    }
-
+    @Override
     void verifyStubs() {
-        def piClass = loader.loadClass('test.package-info')
-        assert piClass.isInterface()
     }
 }

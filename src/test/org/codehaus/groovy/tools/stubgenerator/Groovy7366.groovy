@@ -18,46 +18,49 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-class Groovy7366Bug extends StringSourcesStubTestCase {
+final class Groovy7366 extends StringSourcesStubTestCase {
 
+    @Override
     Map<String, String> provideSources() {
         [
-                'Constants.java': '''
-                    package test;
-                    public interface Constants {
-                        String C1 = "c1";
-                    }
-                ''',
-                'MyAnnotation.java': '''
-                    package test;
-                    public @interface MyAnnotation {
-                        String value();
-                    }
-                ''',
+            'Constants.java': '''
+                package test;
+                public interface Constants {
+                    String C1 = "c1";
+                }
+            ''',
 
-                'Test.groovy': '''
-                    package test
-                    import static test.Constants.C1
-                    @MyAnnotation(C1)
-                    class Test {
-                        def test
-                        Test(test) {
-                            this.test = test
-                        }
+            'MyAnnotation.java': '''
+                package test;
+                public @interface MyAnnotation {
+                    String value();
+                }
+            ''',
+
+            'Test.groovy': '''
+                package test
+                import static test.Constants.C1
+                @MyAnnotation(C1)
+                class Test {
+                    def test
+                    Test(test) {
+                        this.test = test
                     }
-                ''',
-                'Hello.java': '''
+                }
+            ''',
+
+            'Hello.java': '''
                 package test;
                 public class Hello {
                     public static void main(String[] args) {
                         System.out.println(new Test("hello").getTest());
                     }
                 }
-                '''
+            '''
         ]
     }
 
+    @Override
     void verifyStubs() {
-
     }
 }

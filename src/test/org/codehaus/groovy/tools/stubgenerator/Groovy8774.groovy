@@ -16,31 +16,28 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
 package org.codehaus.groovy.tools.stubgenerator
 
-/**
- * Test that traits do not mess up with stub generation.
- */
-class Groovy7052Bug extends StringSourcesStubTestCase {
+final class Groovy8774 extends StringSourcesStubTestCase {
 
+    @Override
     Map<String, String> provideSources() {
         [
-                'Foo.groovy': '''
-                    trait Foo {}
-                ''',
-                'Bar.java': '''
-                    class Bar implements Foo {}
-                ''',
-                'Baz.groovy': '''
-                    class Baz implements Foo {}
-                '''
+            'Dummy.java': '''
+                public interface Dummy { }
+            ''',
+            'test/package-info.groovy': '''
+                @java.lang.Deprecated
+                package test
+            '''
         ]
     }
 
+    @Override
     void verifyStubs() {
-        def stubSource = stubJavaSourceFor('Foo')
-        assert stubSource.contains('interface Foo')
+        assert stubJavaSourceFor('test/package-info').contains('@java.lang.Deprecated')
+        assert stubJavaSourceFor('test/package-info').contains('package test;')
+        def piClass = loader.loadClass('test.package-info')
+        assert piClass.isInterface()
     }
 }
