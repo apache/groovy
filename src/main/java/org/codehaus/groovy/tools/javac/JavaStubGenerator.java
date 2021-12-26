@@ -108,13 +108,10 @@ public class JavaStubGenerator {
     private static final int DEFAULT_BUFFER_SIZE = 8 * 1024; // 8K
     public void generateClass(ClassNode classNode) throws FileNotFoundException {
         // Only attempt to render our self if our super-class is resolved, else wait for it
-        if (requireSuperResolved && !classNode.getSuperClass().isResolved()) {
-            return;
-        }
+        if (requireSuperResolved && !classNode.getSuperClass().isResolved()) return;
 
         // owner should take care for us
-        if (classNode instanceof InnerClassNode)
-            return;
+        if (classNode instanceof InnerClassNode) return;
 
         // don't generate stubs for private classes, as they are only visible in the same file
         if ((classNode.getModifiers() & Opcodes.ACC_PRIVATE) != 0) return;
@@ -142,7 +139,6 @@ public class JavaStubGenerator {
 
             printImports(out, classNode);
             printClassContents(out, classNode);
-
         }
     }
 
@@ -278,7 +274,7 @@ public class JavaStubGenerator {
 
             String className = classNode.getNameWithoutPackage();
             if (classNode instanceof InnerClassNode)
-                className = className.substring(className.lastIndexOf("$") + 1);
+                className = className.substring(className.lastIndexOf('$') + 1);
             out.println(className);
             printGenericsBounds(out, classNode, true);
 
@@ -589,7 +585,7 @@ public class JavaStubGenerator {
             for (ClassNode stub:stubExceptions) {
                 if (stub.isDerivedFrom(superExc)) continue outer;
             }
-            // not found 
+            // not found
             return false;
         }
 
