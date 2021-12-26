@@ -25,12 +25,14 @@ buildscript {
             maven { url 'https://maven.aliyun.com/nexus/content/groups/public' }
         }
         jcenter()
-        maven{
-            name 'Bintray Javadoc Hotfix repo'
-            url 'https://dl.bintray.com/melix/gradle-javadoc-hotfix-plugin'
+        maven {
+            url 'https://oss.sonatype.org/content/repositories/snapshots'
         }
         maven {
-            url "https://plugins.gradle.org/m2/"
+            url 'https://plugins.gradle.org/m2/'
+        }
+        maven {
+            url 'https://jitpack.io'
         }
     }
 
