@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.messages.WarningMessage;
 
 import java.util.List;
 
@@ -58,7 +59,7 @@ public abstract class ClosureSignatureHint {
      * @param gtIndex the index of the generic type to extract
      * @return the n-th generic type, or {@link org.codehaus.groovy.ast.ClassHelper#OBJECT_TYPE} if it doesn't exist.
      */
-    public static ClassNode pickGenericType(ClassNode type, int gtIndex) {
+    public static ClassNode pickGenericType(final ClassNode type, final int gtIndex) {
         final GenericsType[] genericsTypes = type.getGenericsTypes();
         if (genericsTypes==null || genericsTypes.length<gtIndex) {
             return ClassHelper.OBJECT_TYPE;
@@ -73,7 +74,7 @@ public abstract class ClosureSignatureHint {
      * @param gtIndex the index of the generic type to extract
      * @return the generic type, or {@link org.codehaus.groovy.ast.ClassHelper#OBJECT_TYPE} if it doesn't exist.
      */
-    public static ClassNode pickGenericType(MethodNode node, int parameterIndex, int gtIndex) {
+    public static ClassNode pickGenericType(final MethodNode node, final int parameterIndex, final int gtIndex) {
         final Parameter[] parameters = node.getParameters();
         final ClassNode type = parameters[parameterIndex].getOriginType();
         return pickGenericType(type, gtIndex);
@@ -120,24 +121,46 @@ public abstract class ClosureSignatureHint {
     public abstract List<ClassNode[]> getClosureSignatures(MethodNode node, SourceUnit sourceUnit, CompilationUnit compilationUnit, String[] options, ASTNode usage);
 
     /**
-     * Finds a class node given a string representing the type. Performs a lookup in the compilation unit to check if it is done in the same source unit.
+     * Produces a {@link ClassNode} given a string representing the type. Checks
+     * the supplied compilation unit in case it is also being compiled.
+     *
      * @param sourceUnit source unit
      * @param compilationUnit compilation unit
-     * @param className the name of the class we want to get a {@link org.codehaus.groovy.ast.ClassNode} for
-     * @return a ClassNode representing the type
+     * @param className the type name to resolve
      */
-    protected ClassNode findClassNode(final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final String className) {
+    protected ClassNode findClassNode(final SourceUnit sourceUnit, final CompilationUnit compilationUnit, String className) {
         if (className.endsWith("[]")) {
             return findClassNode(sourceUnit, compilationUnit, className.substring(0, className.length() - 2)).makeArray();
         }
+        int i = className.indexOf('<');
+        if (i > 0) {
+            className = className.substring(0, i);
+            String message = getClass().getSimpleName() + " doesn't support generics";
+            sourceUnit.getErrorCollector().addWarning(WarningMessage.LIKELY_ERRORS, message,
+                    null, null); // TODO: include reference to the source method & parameter
+        }
+
         ClassNode cn = compilationUnit.getClassNode(className);
         if (cn == null) {
-            try {
-                cn = ClassHelper.make(Class.forName(className, false, sourceUnit.getClassLoader()));
-            } catch (ClassNotFoundException e) {
-                cn = ClassHelper.make(className);
+            cn = ClassHelper.make(className);
+            if (!ClassHelper.isCachedType(cn)) {
+                Class<?> c = tryLoadClass(className, sourceUnit.getClassLoader());
+                if (c != null) {
+                    cn = ClassHelper.make(c);
+                }
+            }
+            if (cn.getGenericsTypes() != null) {
+                cn = cn.getPlainNodeReference();
             }
         }
         return cn;
+    }
+
+    private static Class<?> tryLoadClass(final String className, final ClassLoader classLoader) {
+        try {
+            return Class.forName(className, false, classLoader);
+        } catch (ClassNotFoundException ignore) {
+            return null;
+        }
     }
 }

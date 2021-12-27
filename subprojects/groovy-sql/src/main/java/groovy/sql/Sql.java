@@ -24,6 +24,7 @@ import groovy.lang.MissingPropertyException;
 import groovy.lang.Tuple;
 import groovy.transform.NamedParam;
 import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.FromString;
 import groovy.transform.stc.SimpleType;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
@@ -2398,7 +2399,7 @@ public class Sql implements AutoCloseable {
      * @throws SQLException if a database access error occurs
      * @since 2.3.2
      */
-    public void execute(String sql, @ClosureParams(value=SimpleType.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure processResults) throws SQLException {
+    public void execute(String sql, @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure processResults) throws SQLException {
         Connection connection = createConnection();
         Statement statement = null;
         try {
@@ -2485,7 +2486,7 @@ public class Sql implements AutoCloseable {
      * @see #execute(String, Closure)
      * @since 2.3.2
      */
-    public void execute(String sql, List<Object> params, @ClosureParams(value=SimpleType.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure processResults) throws SQLException {
+    public void execute(String sql, List<Object> params, @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure processResults) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
@@ -2542,7 +2543,7 @@ public class Sql implements AutoCloseable {
      * @throws SQLException if a database access error occurs
      * @since 2.3.2
      */
-    public void execute(Map params, String sql, @ClosureParams(value=SimpleType.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure processResults) throws SQLException {
+    public void execute(Map params, String sql, @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure processResults) throws SQLException {
         execute(sql, singletonList(params), processResults);
     }
 
@@ -2582,7 +2583,7 @@ public class Sql implements AutoCloseable {
      * @see #execute(String, List, Closure)
      * @since 2.3.2
      */
-    public void execute(String sql, Object[] params, @ClosureParams(value=SimpleType.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure processResults) throws SQLException {
+    public void execute(String sql, Object[] params, @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure processResults) throws SQLException {
         execute(sql, Arrays.asList(params), processResults);
     }
 
@@ -2628,7 +2629,7 @@ public class Sql implements AutoCloseable {
      * @see #execute(String, List, Closure)
      * @since 2.3.2
      */
-    public void execute(GString gstring, @ClosureParams(value=SimpleType.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure processResults) throws SQLException {
+    public void execute(GString gstring, @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure processResults) throws SQLException {
         List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         execute(sql, params, processResults);
