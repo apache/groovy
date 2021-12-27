@@ -1223,25 +1223,34 @@ assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
     }
 
     void testGroovy6602() {
-        shouldFailWithMessages '''import groovy.transform.stc.FromString
-            void foo(@ClosureParams(value=FromString, options="java.lang.Number") Closure cl) {
-                cl.call(4.5)
+        shouldFailWithMessages '''import groovy.transform.stc.SimpleType
+            void foo(@ClosureParams(value=SimpleType, options="java.lang.Number") Closure c) {
+                c.call(4.5)
             }
             foo { Integer i -> println i }
         ''',
         'Expected type java.lang.Number for closure parameter: i'
     }
 
+    void testGroovy6603() {
+        shouldFailWithMessages '''import groovy.transform.stc.SimpleType
+            void foo(@ClosureParams(value=SimpleType, options="java.lang.Number") Closure c) {
+                c.call("x")
+            }
+        ''',
+        'Cannot call closure that accepts [java.lang.Number] with [java.lang.String]'
+    }
+
     void testGroovy6729() {
         assertScript '''import groovy.transform.stc.FirstParam
-            static <T> List<T> callee01(List<T>self, @ClosureParams(FirstParam.FirstGenericType) Closure c) {
-                self.each {
+            static <T> List<T> foo(List<T> list, @ClosureParams(FirstParam.FirstGenericType) Closure c) {
+                list.each {
                     c.call(it)
                 }
-                return self
+                return list
             }
-            callee01(["a","b","c"]) { a ->
-                println(a.toUpperCase()) // [Static type checking] - Cannot find matching method java.lang.Object#toUpperCase(). Please check if the declared type is correct and if the method exists.
+            foo(["a","b","c"]) { s ->
+                s.toUpperCase() // Cannot find matching method java.lang.Object#toUpperCase()
             }
         '''
     }
@@ -1304,11 +1313,9 @@ assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
     }
 
     void testGroovy9518b() {
-        assertScript '''
-            import groovy.transform.stc.SimpleType
-
+        assertScript '''import groovy.transform.stc.FromString
             class C {
-                C(String s, @ClosureParams(value=SimpleType, options='java.util.List') Closure<Integer> c) {
+                C(String s, @ClosureParams(value=FromString,options="java.util.List<java.lang.Integer>") Closure<Integer> c) {
                 }
             }
 

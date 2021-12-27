@@ -20,7 +20,7 @@ package org.codehaus.groovy.ast.builder
 
 import groovy.transform.CompileStatic
 import groovy.transform.stc.ClosureParams
-import groovy.transform.stc.SimpleType
+import groovy.transform.stc.FromString
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
@@ -167,7 +167,7 @@ class AstSpecificationCompiler implements GroovyInterceptable {
      */
     @CompileStatic
     private void captureAndCreateNode(String name, @DelegatesTo(AstSpecificationCompiler) Closure argBlock,
-            @ClosureParams(value=SimpleType, options="java.util.List<org.codehaus.groovy.ast.ASTNode>") Closure ctorBlock) {
+            @ClosureParams(value=FromString, options="java.util.List<org.codehaus.groovy.ast.ASTNode>") Closure ctorBlock) {
         if (!argBlock) throw new IllegalArgumentException("nodes of type $name require arguments to be specified")
 
         def oldProps = new ArrayList<>(expression)

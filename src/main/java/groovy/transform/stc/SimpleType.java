@@ -24,13 +24,12 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 
+import static java.util.Arrays.stream;
+
 public class SimpleType extends SingleSignatureClosureHint {
+
     @Override
-    public ClassNode[] getParameterTypes(final MethodNode node, final String[] options, final SourceUnit sourceUnit, final CompilationUnit unit, final ASTNode usage) {
-        ClassNode[] result = new ClassNode[options.length];
-        for (int i = 0; i < result.length; i++) {
-            result[i] = findClassNode(sourceUnit, unit, options[i]);
-        }
-        return result;
+    public ClassNode[] getParameterTypes(final MethodNode node, final String[] options, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final ASTNode usage) {
+        return stream(options).map(option -> findClassNode(sourceUnit, compilationUnit, option)).toArray(ClassNode[]::new);
     }
- }
+}
