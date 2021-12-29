@@ -143,7 +143,7 @@ ext {
     jmockVersion = '1.2.0'
     logbackVersion = '1.2.8'
     log4jVersion = '1.2.17'
-    log4j2Version = '2.17.0'
+    log4j2Version = '2.17.1'
     openbeansVersion = '1.0.2'
     picocliVersion = '4.6.1'
     qdoxVersion = '1.12.1'
