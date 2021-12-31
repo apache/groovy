@@ -1220,6 +1220,7 @@ identifier
     |   AS
     |   YIELD
     |   PERMITS
+    |   SEALED
     |   RECORD
     ;
 

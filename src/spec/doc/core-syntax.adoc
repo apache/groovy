@@ -116,60 +116,74 @@ NOTE: The `#` character must be the first character of the file. Any indentation
 
 == Keywords
 
-The following list represents all the keywords of the Groovy language:
+Groovy has the following reserved keywords:
 
 [cols="1,1,1,1"]
-.Keywords
+.Reserved Keywords
 |===
-|as
-|assert
-|break
-|case
-
-|catch
-|class
-|const
-|continue
-
-|def
-|default
-|do
-|else
-
-|enum
-|extends
-|false
-|finally
-
-|for
-|goto
-|if
-|implements
-
-|import
-|in
-|instanceof
-|interface
-
-|new
-|null
-|package
-|return
-
-|super
-|switch
-|this
-|throw
-
-|throws
-|trait
-|true
-|try
-
-|var
-|while | |
-
+include::../test/SyntaxTest.groovy[tags=reserved_keywords,indent=0]
 |===
+
+Of these, `const`, `goto`, `strictfp`, and `threadsafe` are not currently in use.
+
+The reserved keywords can't in general be used for variable, field and method names.
+
+****
+A trick allows methods to be defined having the same name as a keyword
+by surrounding the name in quotes as shown in the following example:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=reserved_keywords_example,indent=0]
+----
+
+Using such names might be confusing and is often best to avoid.
+The trick is primarily intended to enable certain Java integration scenarios
+and certain link:core-domain-specific-languages.html[DSL] scenarios where
+having "verbs" and "nouns" with the same name as keywords may be desirable.
+****
+
+In addition, Groovy has the following contextual keywords:
+
+[cols="1,1,1,1"]
+.Contextual Keywords
+|===
+include::../test/SyntaxTest.groovy[tags=contextual_keywords,indent=0]
+|===
+
+These words are only keywords in certain contexts and can be more freely used in some places,
+in particular for variables, fields and method names.
+
+****
+This extra lenience allows using method or variable names that were not keywords in earlier
+versions of Groovy or are not keywords in Java. Examples are shown here:
+
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=contextual_keywords_examples,indent=0]
+----
+Groovy programmers familiar with these contextual keywords may still wish to avoid
+using those names unless there is a good reason to use such a name.
+****
+
+The restrictions on reserved keywords also apply for the
+primitive types, the boolean literals and the null literal (all of which are discussed later):
+
+[cols="1,1,1,1"]
+.Other reserved words
+|===
+include::../test/SyntaxTest.groovy[tags=reserved_words,indent=0]
+|===
+
+****
+While not recommended, the same trick as for reserved keywords can be used:
+[source,groovy]
+----
+include::../test/SyntaxTest.groovy[tags=reserved_words_example,indent=0]
+----
+Using such words as method names is potentially confusing and is often best to avoid, however,
+it might be useful for certain kinds of link:core-domain-specific-languages.html[DSLs].
+****
 
 == Identifiers
 
