@@ -22,6 +22,9 @@
 ifndef::core-semantics[]
 :core-semantics: core-semantics.adoc
 endif::[]
+ifndef::core-syntax[]
+:core-syntax: core-syntax.adoc
+endif::[]
 
 = Differences with Java
 
@@ -500,7 +503,7 @@ Other conversions have their behavior defined by `java.lang.Number`.
 
 == Extra keywords
 
-Groovy has many of the same keywords as Java and Groovy 3 also has the same `var` reserved type as Java.
+Groovy has many of the same keywords as Java and Groovy 3 and above also has the same `var` reserved type as Java.
 In addition, Groovy has the following keywords:
 
 * `as`
@@ -514,3 +517,5 @@ e.g. the following is valid: `var var = [def: 1, as: 2, in: 3, trait: 4]`.
 Never-the-less, you are discouraged from using the above keywords in places that might cause confusion even when
 the compiler might be happy. In particular, avoid using them for variable, method and class names,
 so our previous `var var` example would be considered poor style.
+
+Additional documentation is available for <<{core-syntax}#_keywords,keywords>>.

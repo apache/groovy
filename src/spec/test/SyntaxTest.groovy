@@ -17,6 +17,7 @@
  *  under the License.
  */
 import gls.CompilableTestSupport
+import org.codehaus.groovy.control.CompilationFailedException
 
 class SyntaxTest extends CompilableTestSupport {
 
@@ -793,7 +794,179 @@ class SyntaxTest extends CompilableTestSupport {
         assert person.containsKey('name')    // <2>
         assert !person.containsKey('key')    // <3>
         // end::variable_key_2[]
+    }
 
+    void testReservedKeywords() {
+        def rk = '''
+        // tag::reserved_keywords[]
+        |abstract
+        |assert
+        |break
+        |case
 
+        |catch
+        |class
+        |const
+        |continue
+
+        |def
+        |default
+        |do
+        |else
+
+        |enum
+        |extends
+        |final
+        |finally
+
+        |for
+        |goto
+        |if
+        |implements
+
+        |import
+        |instanceof
+        |interface
+        |native
+
+        |new
+        |null
+        |non-sealed
+        |package
+
+        |public
+        |protected
+        |private
+        |return
+
+        |static
+        |strictfp
+        |super
+        |switch
+
+        |synchronized
+        |this
+        |threadsafe
+        |throw
+
+        |throws
+        |transient
+        |try
+        |while
+        // end::reserved_keywords[]
+        '''.readLines()[2..-3].join()
+        def reservedKeywords = rk.split(/(?m)[|]/)*.trim().grep()
+        def shell = new GroovyShell()
+        reservedKeywords.each {
+            /*
+            // tag::reserved_keywords_example[]
+            // reserved keywords can be used for method names if quoted
+            def "abstract"() { true }
+            // when calling such methods, the name must be qualified using "this."
+            this.abstract()
+            // end::reserved_keywords_example[]
+            */
+            assertScript """
+            def "$it"() { true }
+            assert this.$it()
+            """
+            shouldFail(CompilationFailedException) {
+                shell.parse """
+                    def $it() { true }
+                """
+            }
+            shouldFail(CompilationFailedException) {
+                shell.parse """
+                    def $it = true
+                """
+            }
+        }
+    }
+
+    void testContextualKeywords() {
+        def ck = '''
+        // tag::contextual_keywords[]
+        | as
+        | in
+        | permits
+        | record
+        | sealed
+        | trait
+        | var
+        | yields
+        // end::contextual_keywords[]
+        '''.readLines()[2..-3].join()
+        def contextualKeywords = ck.split(/(?m)[|]/)*.trim().grep()
+        def shell = new GroovyShell()
+        /*
+        // tag::contextual_keywords_examples[]
+        // contextual keywords can be used for field and variable names
+        def as = true
+        assert as
+
+        // contextual keywords can be used for method names
+        def in() { true }
+        // when calling such methods, the name only needs to be qualified using "this." in scenarios which would be ambiguous
+        this.in()
+        // end::contextual_keywords_examples[]
+        */
+        contextualKeywords.each {
+            assertScript """
+            def $it = true
+            assert $it
+            def $it() { true }
+            this.$it()
+            """
+            shouldFail(CompilationFailedException) {
+                shell.parse """
+                    def $it() { true }
+                    $it()
+                """
+            }
+        }
+    }
+
+    void testOtherReservedWords() {
+        def rw = '''
+        // tag::reserved_words[]
+        | null
+        | true
+        | false
+        | boolean
+        | char
+        | byte
+        | short
+        | int
+        | long
+        | float
+        | double
+        |
+        // end::reserved_words[]
+        '''.readLines()[2..-3].join()
+        def reservedWords = rw.split(/(?m)[|]/)*.trim().grep()
+        def shell = new GroovyShell()
+        /*
+        // tag::reserved_words_example[]
+        def "null"() { true }  // not recommended; potentially confusing
+        assert this.null()     // must be qualified
+        // end::reserved_words_example[]
+        */
+        reservedWords.each {
+            assertScript """
+            def "$it"() { true }
+            assert this.$it()
+            """
+            shouldFail(CompilationFailedException) {
+                shell.parse """
+                    def $it() { true }
+                """
+            }
+            shouldFail(CompilationFailedException) {
+                shell.parse """
+                    def $it = true
+                """
+            }
+
+        }
     }
 }
