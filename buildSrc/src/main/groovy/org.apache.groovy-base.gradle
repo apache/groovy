@@ -29,7 +29,6 @@ import org.apache.groovy.gradle.CheckstyleHtmlReport
 plugins {
     id 'java-library'
     id 'groovy'
-    id 'antlr'
     id 'checkstyle'
     id 'codenarc'
     id 'com.github.spotbugs'
@@ -52,14 +51,6 @@ def groovyLibrary = project.extensions.create("groovyLibrary", GroovyLibraryExte
 java {
     withSourcesJar()
     withJavadocJar()
-}
-
-sourceSets {
-    main {
-        antlr {
-            srcDirs = ['src/antlr']
-        }
-    }
 }
 
 def generateReleaseInfo = tasks.register("generateReleaseInfo", ReleaseInfoGenerator)
@@ -100,9 +91,6 @@ configurations {
                 artifact(it)
             }
             sourceSets.main.groovy.srcDirs.each {
-                artifact(it)
-            }
-            sourceSets.main.antlr.srcDirs.each {
                 artifact(it)
             }
         }
