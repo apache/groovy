@@ -217,3 +217,28 @@ tasks.named("generateGrammarSource") {
         }
     }
 }
+
+configurations {
+    sourcesForAggregation {
+        canBeConsumed = true
+        canBeResolved = false
+        extendsFrom implementation, runtimeOnly
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
+            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
+            attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, DocsType.SOURCES))
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, "aggregation"))
+        }
+        outgoing {
+            sourceSets.main.java.srcDirs.each {
+                artifact(it)
+            }
+            sourceSets.main.groovy.srcDirs.each {
+                artifact(it)
+            }
+            sourceSets.main.antlr.srcDirs.each {
+                artifact(it)
+            }
+        }
+    }
+}
