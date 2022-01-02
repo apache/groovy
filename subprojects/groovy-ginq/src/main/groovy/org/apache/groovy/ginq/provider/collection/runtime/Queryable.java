@@ -49,6 +49,7 @@ public interface Queryable<T> {
      * Represents the empty Queryable instance
      * @since 4.0.0
      */
+    @SuppressWarnings("rawtypes")
     Queryable EMPTY_QUERYABLE = from(new Object[0]);
 
     /**

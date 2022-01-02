@@ -34,6 +34,7 @@ public interface Partition<T> extends Queryable<T> {
      * Represents the empty Partition instance
      * @since 4.0.0
      */
+    @SuppressWarnings("rawtypes")
     Partition EMPTY_PARTITION = new PartitionImpl(Collections.emptyList());
 
     /**
