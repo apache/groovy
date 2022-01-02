@@ -40,6 +40,12 @@ class NamedValueTest {
         set.add(nv1)
         set.add(nv2)
         assert 1 == set.size()
+
+        def nv3 = new NamedValue('foo2', 'bar')
+        def nv4 = new NamedValue('foo', 'bar2')
+        set.add(nv3)
+        set.add(nv4)
+        assert 3 == set.size()
     }
 
     @Test
