@@ -25,17 +25,17 @@ package org.codehaus.groovy.tools.stubgenerator
  *
  * The test below looks at the characteristics of the stub generated in Java for the Rectangle class.
  */
-class CircularLanguageReferenceTest extends StubTestCase {
+final class CircularLanguageReferenceTest extends StubTestCase {
 
+    @Override
     void verifyStubs() {
         classes['stubgenerator.circularLanguageReference.Rectangle'].with {
+            assert !imports
+            assert !annotations
+            assert baseClass == 'java.lang.Object'
+            assert interfaces.toSet() == ['groovy.lang.GroovyObject', 'stubgenerator.circularLanguageReference.Shape'] as Set
             assert methods['area'     ].signature == "public double area()"
             assert methods['Rectangle'].signature == "public Rectangle(double x, double y)"
-            assert !annotations
-            assert interfaces.toSet() == ['groovy.lang.GroovyObject', 'stubgenerator.circularLanguageReference.Shape'] as Set
-            assert baseClass == 'java.lang.Object'
-            assert imports == ['java.lang.*', 'java.util.*', 'java.io.*', 'java.net.*', 'groovy.lang.*', 'groovy.util.*']
         }
     }
 }
-
