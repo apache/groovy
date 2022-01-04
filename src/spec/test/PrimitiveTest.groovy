@@ -24,11 +24,11 @@ class PrimitiveTest extends GroovyTestCase {
         assertScript '''
             // tag::primitive_references[]
             class Foo {
-              static int i
+                static int i
             }
 
-            assert Foo.class.getDeclaredField('i').type == int.class
-            assert Foo.i.class != int.class && Foo.i.class == Integer.class
+            assert Foo.class.getDeclaredField('i').type == int.class           //<1>
+            assert Foo.i.class != int.class && Foo.i.class == Integer.class    //<2>
             // end::primitive_references[]
         '''
     }
@@ -40,11 +40,11 @@ class PrimitiveTest extends GroovyTestCase {
             m(i)
 
             void m(long l) {           //<1>
-              println "in m(long)"
+                println "in m(long)"
             }
 
             void m(Integer i) {        //<2>
-              println "in m(Integer)"
+                println "in m(Integer)"
             }
             // end::widening_vs_boxing[]
         '''
