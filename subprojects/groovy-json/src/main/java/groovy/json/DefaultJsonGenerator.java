@@ -55,6 +55,7 @@ import static groovy.json.JsonOutput.EMPTY_STRING_CHARS;
 import static groovy.json.JsonOutput.OPEN_BRACE;
 import static groovy.json.JsonOutput.OPEN_BRACKET;
 import static java.lang.reflect.Modifier.isPublic;
+import static java.lang.reflect.Modifier.isStatic;
 
 /**
  * A JsonGenerator that can be configured with various {@link JsonGenerator.Options}.
@@ -242,6 +243,7 @@ public class DefaultJsonGenerator implements JsonGenerator {
 
         for (MetaProperty mp : metaProperties) {
             if (!isPublic(mp.getModifiers())) continue; // GROOVY-5169
+            if ( isStatic(mp.getModifiers())) continue; // GROOVY-7682
 
             // skip write-only property: see File
             if (mp instanceof MetaBeanProperty) {

@@ -325,7 +325,7 @@ final class JsonOutputTest {
                 ] as JsonStreet[])
         ])
 
-        assert JsonOutput.prettyPrint(JsonOutput.toJson(city)) == '''\
+        assert JsonOutput.prettyPrint(toJson(city)) == '''\
             {
                 "name": "Paris",
                 "districts": [
@@ -448,7 +448,7 @@ final class JsonOutputTest {
         assert toJson({'\u0002' 0}) == '{"\\u0002":0}'
     }
 
-    @Test
+    @Test // GROOVY-7519
     void testFile() {
         def file  = File.createTempFile('test', 'file-json')
         file.deleteOnExit()
@@ -471,6 +471,74 @@ final class JsonOutputTest {
 
             String json = groovy.json.JsonOutput.toJson(new Pogo())
             assert json == '{"bar":"bar"}'
+        '''
+    }
+
+    @Test // GROOVY-7682
+    void testStackOverflowError1() {
+        assertScript '''
+            @Grab('joda-time:joda-time:2.10.10')
+            import org.joda.time.DateTime
+            import org.joda.time.format.DateTimeFormat
+            import org.joda.time.format.DateTimeFormatter
+
+            DateTimeFormatter formatter = DateTimeFormat.forPattern('yyyy-MM-dd HH:mm:ss.SSS z')
+            DateTime dt = formatter.parseDateTime('2015-11-20 13:37:21.123 EST')
+            String json = groovy.json.JsonOutput.toJson(dt)
+            net.javacrumbs.jsonunit.JsonAssert.assertJsonEquals("""{
+                "afterNow":false,
+                "beforeNow":true,
+                "centuryOfEra":20,
+                "dayOfMonth":20,
+                "dayOfWeek":5,
+                "dayOfYear":324,
+                "equalNow":false,
+                "era":1,
+                "hourOfDay":13,
+                "millisOfDay":49041123,
+                "millisOfSecond":123,
+                "minuteOfDay":817,
+                "minuteOfHour":37,
+                "monthOfYear":11,
+                "secondOfDay":49041,
+                "secondOfMinute":21,
+                "weekOfWeekyear":47,
+                "weekyear":2015,
+                "year":2015,
+                "yearOfCentury":15,
+                "yearOfEra":2015,
+                "zone":{
+                    "ID":"America/New_York",
+                    "fixed":false,
+                    "uncachedZone":{
+                        "ID":"America/New_York",
+                        "cachable":true,
+                        "fixed":false
+                    }
+                }
+            }""", json)
+        '''
+    }
+
+    @Test // GROOVY-8371
+    void testStackOverflowError2() {
+        assertScript '''
+            final  date = java.time.LocalDate.of(1970, 1, 1)
+            String json = groovy.json.JsonOutput.toJson(date)
+            net.javacrumbs.jsonunit.JsonAssert.assertJsonEquals("""{
+                "chronology":{
+                    "calendarType":"iso8601",
+                    "id":"ISO"
+                },
+                "dayOfMonth":1,
+                "dayOfWeek":"THURSDAY",
+                "dayOfYear":1,
+                "era":"CE",
+                "leapYear":false,
+                "month":"JANUARY",
+                "monthValue":1,
+                "year":1970
+            }""", json)
         '''
     }
 }
