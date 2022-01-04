@@ -2305,51 +2305,46 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     @Override
     public List<MetaProperty> getProperties() {
         checkInitalised();
-        LinkedHashMap<String, MetaProperty> propertyMap = classPropertyIndex.get(theCachedClass);
+        Map<String, MetaProperty> propertyMap = classPropertyIndex.get(theCachedClass);
         if (propertyMap == null) {
-            // GROOVY-6903: May happen in some special environment, like under Android, due
-            // to classloading issues
-            propertyMap = new LinkedHashMap<>();
+            // GROOVY-6903: May happen in some special environment, like Android, due to class-loading issues
+            propertyMap = Collections.emptyMap();
         }
         // simply return the values of the metaproperty map as a List
         List<MetaProperty> ret = new ArrayList<>(propertyMap.size());
-        for (Map.Entry<String, MetaProperty> stringMetaPropertyEntry : propertyMap.entrySet()) {
-            MetaProperty element = stringMetaPropertyEntry.getValue();
-            if (element instanceof CachedField) continue;
-            // filter out DGM beans
-            if (element instanceof MetaBeanProperty) {
-                MetaBeanProperty mp = (MetaBeanProperty) element;
-                boolean setter = true;
-                boolean getter = true;
-                MetaMethod getterMetaMethod = mp.getGetter();
+        for (MetaProperty mp : propertyMap.values()) {
+            if (mp instanceof CachedField) continue;
+
+            if (mp instanceof MetaBeanProperty) {
+                MetaBeanProperty mbp = (MetaBeanProperty) mp;
+                // filter out DGM beans
+                boolean getter = true, setter = true;
+                MetaMethod getterMetaMethod = mbp.getGetter();
                 if (getterMetaMethod == null || getterMetaMethod instanceof GeneratedMetaMethod || getterMetaMethod instanceof NewInstanceMetaMethod) {
                     getter = false;
                 }
-                MetaMethod setterMetaMethod = mp.getSetter();
+                MetaMethod setterMetaMethod = mbp.getSetter();
                 if (setterMetaMethod == null || setterMetaMethod instanceof GeneratedMetaMethod || setterMetaMethod instanceof NewInstanceMetaMethod) {
                     setter = false;
                 }
                 if (!setter && !getter) continue;
+
 //  TODO: I (ait) don't know why these strange tricks needed and comment following as it effects some Grails tests
-//                if (!setter && mp.getSetter() != null) {
-//                    element = new MetaBeanProperty(mp.getName(), mp.getType(), mp.getGetter(), null);
+//                if (!setter && mbp.getSetter() != null) {
+//                    mp = new MetaBeanProperty(mbp.getName(), mbp.getType(), mbp.getGetter(), null);
 //                }
-//                if (!getter && mp.getGetter() != null) {
-//                    element = new MetaBeanProperty(mp.getName(), mp.getType(), null, mp.getSetter());
+//                if (!getter && mbp.getGetter() != null) {
+//                    mp = new MetaBeanProperty(mbp.getName(), mbp.getType(), null, mbp.getSetter());
 //                }
-            }
 
-            if (!permissivePropertyAccess) {
-                if (element instanceof MetaBeanProperty) {
-                    MetaBeanProperty mbp = (MetaBeanProperty) element;
-                    boolean getterAccessible = canAccessLegally(mbp.getGetter());
-                    boolean setterAccessible = canAccessLegally(mbp.getSetter());
-
+                if (!permissivePropertyAccess) {
+                    boolean getterAccessible = canAccessLegally(getterMetaMethod);
+                    boolean setterAccessible = canAccessLegally(setterMetaMethod);
                     if (!(getterAccessible && setterAccessible)) continue;
                 }
             }
 
-            ret.add(element);
+            ret.add(mp);
         }
         return ret;
     }
