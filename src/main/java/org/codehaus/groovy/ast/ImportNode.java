@@ -31,6 +31,7 @@ public class ImportNode extends AnnotatedNode {
     private final String packageName;
     private final boolean isStar;
     private final boolean isStatic;
+    private int hashCode;
 
     /**
      * An import of a single type, i.e.&#160;{@code import pack.Type} or {@code import pack.Type as Alias}
@@ -145,6 +146,53 @@ public class ImportNode extends AnnotatedNode {
 
     public void setType(final ClassNode type) {
         this.type = type;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof ImportNode))
+            return false;
+        ImportNode imp = (ImportNode) o;
+        if ((type == null) != (imp.type == null))
+            return false;
+        if (type != null && !type.equals(imp.type))
+            return false;
+        if ((alias == null) != (imp.alias == null))
+            return false;
+        if (alias != null && !alias.equals(imp.alias))
+            return false;
+        if ((fieldName == null) != (imp.fieldName == null))
+            return false;
+        if (fieldName != null && !fieldName.equals(imp.fieldName))
+            return false;
+        if ((packageName == null) != (imp.packageName == null))
+            return false;
+        if (packageName != null && !packageName.equals(imp.packageName))
+            return false;
+        if (isStar != imp.isStar)
+            return false;
+        if (isStatic != imp.isStatic)
+            return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = hashCode;
+        if (result == 0) {
+            if (type != null)
+                result = 31 * result + type.hashCode();
+            if (alias != null)
+                result = 31 * result + alias.hashCode();
+            if (fieldName != null)
+                result = 31 * result + fieldName.hashCode();
+            if (packageName != null)
+                result = 31 * result + packageName.hashCode();
+            result = 31 * result +Boolean.hashCode(isStar);
+            result = 31 * result +Boolean.hashCode(isStatic);
+            hashCode = result;
+        }
+        return result;
     }
 
     @Override
