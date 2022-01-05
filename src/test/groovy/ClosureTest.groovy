@@ -22,6 +22,8 @@ import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
 import static groovy.lang.Closure.IDENTITY
+import static java.lang.reflect.Modifier.isPublic
+import static java.lang.reflect.Modifier.isStatic
 
 final class ClosureTest extends GroovyTestCase {
 
@@ -204,8 +206,11 @@ final class ClosureTest extends GroovyTestCase {
         Closure.metaClass = null
 
         Closure.metaClass.properties.each { property ->
-            def closure = { println it }
-            closure."$property.name" == closure."${MetaProperty.getGetterName(property.name, property.type)}"()
+            int modifiers = property.modifiers
+            if (isPublic(modifiers) && !isStatic(modifiers)) {
+                Closure closure = { -> }
+                closure."$property.name" == closure."${MetaProperty.getGetterName(property.name, property.type)}"()
+            }
         }
     }
 

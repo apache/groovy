@@ -2313,11 +2313,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // simply return the values of the metaproperty map as a List
         List<MetaProperty> ret = new ArrayList<>(propertyMap.size());
         for (MetaProperty mp : propertyMap.values()) {
-            if (mp instanceof CachedField) continue;
-
             if (mp instanceof MetaBeanProperty) {
                 MetaBeanProperty mbp = (MetaBeanProperty) mp;
-                // filter out DGM beans
+                // filter out extrinsic properties (DGM, ...)
                 boolean getter = true, setter = true;
                 MetaMethod getterMetaMethod = mbp.getGetter();
                 if (getterMetaMethod == null || getterMetaMethod instanceof GeneratedMetaMethod || getterMetaMethod instanceof NewInstanceMetaMethod) {

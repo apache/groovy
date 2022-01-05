@@ -23,7 +23,7 @@ import groovy.test.GroovyTestCase
 /**
  * Tests the use of getMetaPropertyValues() and getProperties() for Beans and Expandos.
  */
-class Property2Test extends GroovyTestCase {
+final class Property2Test extends GroovyTestCase {
 
     void testGetPropertiesBeanCheckingValues() {
         def foo = new Foo()
@@ -31,19 +31,16 @@ class Property2Test extends GroovyTestCase {
         // these are the properties and their values that should be there
         def props = ['name': 'James', 'count': 1, 'location': 'London', 'blah': 9]
         foo.properties.each { name, value ->
-            // GROOVY-996 - We should see protected properties, but not  private ones.
-            assert name != "invisible"
+            // GROOVY-996, GROOVY-10438: should see protected properties, but not private ones
+            if (name == 'invisible') return
 
-            def pvalue = props[name]
+            def pvalue = props.remove(name)
             if (pvalue != null)
                 assert pvalue == value
-
-            // remove this one from the map
-            props.remove(name)
         }
 
         // make sure there are none left over
-        assert props.size() == 0
+        assert props.isEmpty()
     }
 
     void testMetaPropertyValuesFromObject() {
@@ -71,4 +68,3 @@ class Property2Test extends GroovyTestCase {
         assert props.size() == 0
     }
 }
-
