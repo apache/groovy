@@ -20,20 +20,40 @@ package groovy
 
 import gls.CompilableTestSupport
 
-class InterfaceTest extends CompilableTestSupport {
+final class InterfaceTest extends CompilableTestSupport {
 
     void testGenericsInInterfaceMembers() {
         // control
-        shouldCompile """
-        interface I1 {
-            public <T> T copy1(T arg)
-            public <U extends CharSequence> U copy2(U arg)
-            public <V, W> V copy3(W arg)
-            public <N extends Number> void foo()
-        }
-        """
+        shouldCompile '''
+            interface I {
+                def <T>                      T m1(T x)
+                def <U extends CharSequence> U m2(U x)
+                def <V, W>                   V m3(W x)
+                def <N extends Number>    void m4(   )
+            }
+        '''
         // erroneous
-        shouldNotCompile "interface I2 { public <?> copy1(arg) }"
-        shouldNotCompile "interface I3 { public <? extends CharSequence> copy1(arg) }"
+        shouldNotCompile 'interface I { def <?> m(x) }'
+        shouldNotCompile 'interface I { def <? extends CharSequence> m(x) }'
+    }
+
+    // GROOVY-5106
+    void testReImplementsInterface1() {
+        def err = shouldFail '''
+            interface I<T> {}
+            interface J<T> extends I<T> {}
+            class X implements I<String>, J<Number> {}
+        '''
+        assert err.contains('The interface I cannot be implemented more than once with different arguments: I<java.lang.String> and I<java.lang.Number>')
+    }
+
+    // GROOVY-5106
+    void testReImplementsInterface2() {
+        def err = shouldFail '''
+            interface I<T> {}
+            class X implements I<Number> {}
+            class Y extends X implements I<String> {}
+        '''
+        assert err.contains('The interface I cannot be implemented more than once with different arguments: I<java.lang.String> and I<java.lang.Number>')
     }
 }
