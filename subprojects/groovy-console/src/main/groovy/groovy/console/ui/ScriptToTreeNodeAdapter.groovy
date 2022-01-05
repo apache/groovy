@@ -215,30 +215,26 @@ class ScriptToTreeNodeAdapter {
      * Creates the property table for the node so that the properties view can display nicely.
      */
     private List<List<String>> getPropertyTable(node) {
-        node.metaClass.properties?.
-                findAll { it.getter }?.
-                collect {
-                    def name = it.name.toString()
-                    def value
-                    try {
-                        // multiple assignment statements cannot be cast to VariableExpression so
-                        // instead reference the value through the leftExpression property, which is the same
-                        if (node instanceof DeclarationExpression &&
-                                (name == 'variableExpression' || name == 'tupleExpression')) {
-                            value = toString(node.leftExpression)
-                        } else {
-                            value = toString(it.getProperty(node))
-                        }
-                    } catch (GroovyBugError reflectionArtefact) {
-                        // compiler throws error if it thinks a field is being accessed
-                        // before it is set under certain conditions. It wasn't designed
-                        // to be walked reflectively like this.
-                        value = null
+        node.metaClass.properties.findResults { mp ->
+            if (mp instanceof MetaBeanProperty && mp.getter) {
+                String name = mp.name, type = mp.type.simpleName
+                Object value = null
+                try {
+                    // multiple assignment statements cannot be cast to VariableExpression so
+                    // instead reference the value through the leftExpression property, which is the same
+                    if (node instanceof DeclarationExpression && (name == 'variableExpression' || name == 'tupleExpression')) {
+                        value = toString(node.leftExpression)
+                    } else {
+                        value = toString(mp.getProperty(node))
                     }
-                    def type = it.type.simpleName.toString()
-                    [name, value, type]
-                }?.
-                sort { it[0] }
+                } catch (GroovyBugError ignore) {
+                    // compiler throws error if it thinks a field is being accessed
+                    // before it is set under certain conditions. It wasn't designed
+                    // to be walked reflectively like this.
+                }
+                [name, value, type]
+            }
+        }.sort { list -> list[0] } // sort by name
     }
 
     // GROOVY-8339: to avoid illegal access to a non-visible implementation class - can be removed if a more general solution is found

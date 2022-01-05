@@ -463,14 +463,14 @@ final class JsonOutputTest {
     void testPropertyModifiers1() {
         assertScript '''
             class Pogo {
-                public    String foo = 'foo' //TODO
+                public    String foo = 'foo'
                 public    String getBar() { 'bar' }
                 protected String getBaz() { 'baz' }
                 private   String getBoo() { 'boo' }
             }
 
             String json = groovy.json.JsonOutput.toJson(new Pogo())
-            assert json == '{"bar":"bar"}'
+            assert json == '{"foo":"foo","bar":"bar"}'
         '''
     }
 

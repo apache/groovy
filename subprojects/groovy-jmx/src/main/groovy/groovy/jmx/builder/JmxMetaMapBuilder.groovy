@@ -19,7 +19,9 @@
 package groovy.jmx.builder
 
 import javax.management.ObjectName
+
 import java.lang.reflect.Constructor
+import java.lang.reflect.Modifier
 
 /**
  * The JmxMetaMapBuilder class is used to collect meta data passed in JmxBuilder nodes.  Once collected,
@@ -27,8 +29,8 @@ import java.lang.reflect.Constructor
  */
 class JmxMetaMapBuilder {
 
-    private static final ATTRIB_EXCEPTION_LIST = ["class", "descriptor", "jmx", "metaClass"]
-    private static final OPS_EXCEPTION_LIST = [
+    private static final Set<String> ATTRIB_EXCEPTION_LIST = ["class", "descriptor", "jmx", "metaClass"]
+    private static final Set<String> OPS_EXCEPTION_LIST = [
             "clone",
             "equals",
             "finalize",
@@ -186,22 +188,20 @@ class JmxMetaMapBuilder {
      * @return the meta map for the attribute
      */
     static Map buildAttributeMapFrom(def object) {
-        def properties = object.metaClass.getProperties()
-
         def attribs = [:]
-        properties.each { MetaProperty prop ->
-            if (!ATTRIB_EXCEPTION_LIST.contains(prop.name)) {
-                def attrib = [:]
-                def getterPrefix = (prop.type.name == "java.lang.Boolean" || prop.type.name == "boolean") ? "is" : "get"
-                def name = JmxBuilderTools.capitalize(prop.name)
-                attrib.name = name
-                attrib.displayName = "Property ${prop.name}".toString()
-                attrib.readable = true
-                attrib.getMethod = getterPrefix + name
-                attrib.writable = false
-                attrib.type = prop.type.name
-                attrib.property = prop
-                attribs.put(name, attrib)
+        object.metaClass.properties.each { MetaProperty prop ->
+            if (!ATTRIB_EXCEPTION_LIST.contains(prop.name)
+                    && !Modifier.isPrivate(prop.modifiers)) { // GROOVY-10438
+                String name = JmxBuilderTools.capitalize(prop.name)
+                attribs.put(name, [
+                   name: name,
+                   type: prop.type.name,
+                   displayName: "Property ${prop.name}".toString(),
+                   getMethod: (prop.type.name == 'boolean' ? 'is' : 'get') + name,
+                   property: prop,
+                   readable: true,
+                   writable: false
+                ])
             }
         }
         return attribs
@@ -393,10 +393,10 @@ class JmxMetaMapBuilder {
      * @return The meta map generated.
      */
     static Map buildOperationMapFrom(def object) {
-        def methods = object.metaClass.getMethods()
+        def methods = object.metaClass.methods
         def ops = [:]
 
-        def declaredMethods = object.getClass().getDeclaredMethods()*.name
+        def declaredMethods = object.class.declaredMethods*.name
 
         methods.each { method ->
             // avoid picking up extra methods from parents
