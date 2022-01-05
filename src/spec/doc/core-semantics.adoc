@@ -458,17 +458,53 @@ does to make testing easier.
 
 == Expressions
 
-(TBD)
+Expressions are the building blocks of Groovy programs that are used to reference
+existing values and execute code to create new ones.
 
+Groovy supports many of the same kinds of expressions as Java, including:
+
+[cols="a,a"]
+.Expressions like Java
+|===
+| Example expression(s) |Description
+| `foo` | the name of a variable, field, parameter, ...
+| `this`, `super`, `it` | special names
+| `true`, `10`, `"bar"` | literals
+| `String.class` | Class literal
+| `(` _expression_ `)`| parenthesised expressions
+| `foo++`, `~bar` | Unary link:core-operators.html[operator] expressions
+| `foo + bar`, `bar * baz` | Binary link:core-operators.html[operator] expressions
+| `foo ? bar : baz` | Ternary link:core-operators.html[operator] expressions
+| `(Integer x, Integer y) -> x + y` | Lambda expressions
+|
+[source,groovy]
+----
+assert 'bar' == switch('foo') {
+  case 'foo' -> 'bar'
+}
+----
+| switch expressions
+|===
+
+Groovy also has some of its own special expressions:
+
+[cols="a,a"]
+.Special expressions
+|===
+| Example expression(s) |Description
+| `String` | Abbreviated class literal (when not ambiguous)
+| `{ x, y -> x + y }` | Closure expressions
+| `[1, 3, 5]` | literal list expressions
+| `[a:2, b:4, c:6]` | literal map expressions
+|===
+
+Groovy also expands on the normal dot-notation used in Java for member access.
+Groovy provides special support for accessing hierarchical data structures by specifying the
+path in the hierarchy of some data of interest.
+These _Groovy path_ expressions are known as GPath expressions.
 
 [[gpath_expressions]]
 === GPath expressions
-////
-This is covered in ../../../subprojects/groovy-xml/src/spec/doc/xml-userguide.adoc, where the legacy codehaus GPath wiki page
-have been converted.
-Current section should explain what is an GPath expression (not just example, but more like a formal language specification, but kept simple).
-
-////
 
 `GPath` is a path expression language integrated into Groovy which allows parts of nested structured data to be identified. In this
 sense, it has similar aims and scope as XPath does for XML.  GPath is often used in the context of processing XML, but it really applies
@@ -571,6 +607,9 @@ include::../test/semantics/GPathTest.groovy[tags=gpath_on_xml_1,indent=0]
 <2> There are two `sublevel` nodes under `root/level`
 <3> There is one element `sublevel` having an attribute `id` with value `1`
 <4> Text value of `key` element of first `keyVal` element of second `sublevel` element under `root/level` is 'anotherKey'
+
+Further details about GPath expressions for XML are in the
+link:../../../subprojects/groovy-xml/src/spec/doc/xml-userguide.adoc[XML User Guide].
 
 == Promotion and coercion
 
