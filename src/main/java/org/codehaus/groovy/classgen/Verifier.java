@@ -124,6 +124,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.addMethodGenerics;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.parameterizeType;
 import static org.codehaus.groovy.ast.tools.PropertyNodeUtils.adjustPropertyModifiersForMethod;
 
 /**
@@ -221,8 +222,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     @Override
     public void visitClass(final ClassNode node) {
-        boolean skipGroovify = !node.getAnnotations(ClassHelper.make(CompileStatic.class)).isEmpty() &&
-                !node.getAnnotations(ClassHelper.make(POJO.class)).isEmpty();
         this.classNode = node;
 
         if (node.isRecord()) {
@@ -231,8 +230,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 throw new RuntimeParserException("Record '" + classNode.getNameWithoutPackage() + "' must not be abstract", classNode);
             }
         }
-        if (Traits.isTrait(node) // maybe possible to have this true in joint compilation mode
-                || classNode.isInterface()) {
+
+        checkForDuplicateInterfaces(node);
+
+        if (classNode.isInterface()
+                || Traits.isTrait(node)) { // maybe possible to have this true in joint compilation mode
             //interfaces have no constructors, but this code expects one,
             //so create a dummy and don't add it to the class node
             ConstructorNode dummy = new ConstructorNode(0, null);
@@ -245,21 +247,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             return;
         }
 
-        ClassNode[] classNodes = classNode.getInterfaces();
-        List<String> interfaces = new ArrayList<>();
-        for (ClassNode classNode : classNodes) {
-            interfaces.add(classNode.getName());
-        }
-        Set<String> interfaceSet = new HashSet<>(interfaces);
-        if (interfaceSet.size() != interfaces.size()) {
-            throw new RuntimeParserException("Duplicate interfaces in implements list: " + interfaces, classNode);
-        }
-
         addDefaultParameterMethods(node);
         addDefaultParameterConstructors(node);
 
         final String classInternalName = BytecodeHelper.getClassInternalName(node);
-
+        boolean skipGroovify = !node.getAnnotations(ClassHelper.make(POJO.class)).isEmpty()
+                    && !node.getAnnotations(ClassHelper.make(CompileStatic.class)).isEmpty();
         if (!skipGroovify) {
             addStaticMetaClassField(node, classInternalName);
 
@@ -287,11 +280,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         checkFinalVariables(node);
     }
 
-    private static final List<String> invalidNames = Arrays.asList("clone", "finalize", "getClass", "hashCode", "notify", "notifyAll", "toString", "wait");
+    private static final String[] INVALID_COMPONENTS = {"clone", "finalize", "getClass", "hashCode", "notify", "notifyAll", "toString", "wait"};
 
     private void detectInvalidRecordComponentNames(ClassNode node) {
         for (FieldNode fn : node.getFields()) {
-            if (invalidNames.contains(fn.getName())) {
+            if (Arrays.binarySearch(INVALID_COMPONENTS, fn.getName()) >= 0) {
                 throw new RuntimeParserException("Illegal record component name '" + fn.getName() + "'", fn);
             }
         }
@@ -363,6 +356,67 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     throw new RuntimeParserException("The variable [" + var.getName() + "] may be uninitialized", var);
             }
         };
+    }
+
+    private static void addAllInterfaces(final Set<ClassNode> result, final ClassNode source) {
+        for (ClassNode in : source.getInterfaces()) {
+            in = parameterizeType(source, in);
+            if (result.add(in))
+                addAllInterfaces(result, in);
+        }
+        ClassNode sc = source.redirect().getUnresolvedSuperClass(false);
+        if (sc != null && !isObjectType(sc)) {
+            addAllInterfaces(result, parameterizeType(source, sc));
+        }
+    }
+
+    private static Set<ClassNode> getAllInterfaces(final ClassNode cn) {
+        Set<ClassNode> result = new HashSet<>();
+        if (cn.isInterface()) result.add(cn);
+        addAllInterfaces(result, cn);
+        return result;
+    }
+
+    private static void checkForDuplicateInterfaces(final ClassNode cn) {
+        ClassNode[] interfaces = cn.getInterfaces();
+        int nInterfaces = interfaces.length;
+        if (nInterfaces == 0) return;
+
+        if (nInterfaces > 1) {
+            List<String> interfaceNames = new ArrayList<>(nInterfaces);
+            for (ClassNode in : interfaces) interfaceNames.add(in.getName());
+            if (interfaceNames.size() != new HashSet<>(interfaceNames).size()) {
+                throw new RuntimeParserException("Duplicate interfaces in implements list: " + interfaceNames, cn);
+            }
+        }
+
+        // GROOVY-5106: check for same interface with different type argument(s)
+        List< Set<ClassNode> > allInterfaces = new ArrayList<>(nInterfaces + 1);
+        for (ClassNode in : interfaces) allInterfaces.add(getAllInterfaces(in));
+        allInterfaces.add(getAllInterfaces(cn.getUnresolvedSuperClass()));
+        if (nInterfaces == 1 && allInterfaces.get(1).isEmpty())
+            return; // no peer interface(s) to verify
+
+        for (int i = 0; i < nInterfaces; i += 1) {
+            for (ClassNode in : allInterfaces.get(i)) {
+                if (in.redirect().getGenericsTypes() != null) {
+                    for (int j = i + 1; j < nInterfaces + 1; j += 1) {
+                        Set<ClassNode> set = allInterfaces.get(j);
+                        if (set.contains(in)) {
+                            for (ClassNode t : set) { // find match and check generics
+                                if (t.equals(in)) {
+                                    String one = in.toString(false), two = t.toString(false);
+                                    if (!one.equals(two))
+                                        throw new RuntimeParserException("The interface " + in.getNameWithoutPackage() +
+                                            " cannot be implemented more than once with different arguments: " + one + " and " + two, cn);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private static void checkForDuplicateMethods(final ClassNode cn) {
