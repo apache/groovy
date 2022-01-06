@@ -81,6 +81,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import static org.apache.groovy.util.BeanUtils.capitalize;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.parameterizeType;
 
 /**
  * Handy methods when working with the Groovy AST
@@ -419,18 +420,23 @@ public class GeneralUtils {
         return result;
     }
 
-    public static Set<ClassNode> getInterfacesAndSuperInterfaces(final ClassNode type) {
-        Set<ClassNode> res = new LinkedHashSet<>();
-        if (type.isInterface()) {
-            res.add(type);
-            return res;
+    private static void addAllInterfaces(final Set<ClassNode> result, final ClassNode source) {
+        for (ClassNode in : source.getInterfaces()) {
+            in = parameterizeType(source, in);
+            if (result.add(in))
+                addAllInterfaces(result, in);
         }
-        ClassNode next = type;
-        while (next != null) {
-            res.addAll(next.getAllInterfaces());
-            next = next.getSuperClass();
+        ClassNode sc = source.redirect().getUnresolvedSuperClass(false);
+        if (sc != null && ClassHelper.OBJECT_TYPE != sc) {
+            addAllInterfaces(result, parameterizeType(source, sc));
         }
-        return res;
+    }
+
+    public static Set<ClassNode> getInterfacesAndSuperInterfaces(final ClassNode cNode) {
+        Set<ClassNode> result = new LinkedHashSet<>();
+        if (cNode.isInterface()) result.add(cNode);
+        addAllInterfaces(result, cNode);
+        return result;
     }
 
     public static List<FieldNode> getSuperNonPropertyFields(final ClassNode cNode) {
