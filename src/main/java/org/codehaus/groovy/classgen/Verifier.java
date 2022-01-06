@@ -117,6 +117,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getInterfacesAndSuperInterfaces;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
@@ -124,7 +125,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.addMethodGenerics;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.parameterizeType;
 import static org.codehaus.groovy.ast.tools.PropertyNodeUtils.adjustPropertyModifiersForMethod;
 
 /**
@@ -358,23 +358,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         };
     }
 
-    private static void addAllInterfaces(final Set<ClassNode> result, final ClassNode source) {
-        for (ClassNode in : source.getInterfaces()) {
-            in = parameterizeType(source, in);
-            if (result.add(in))
-                addAllInterfaces(result, in);
-        }
-        ClassNode sc = source.redirect().getUnresolvedSuperClass(false);
-        if (sc != null && !isObjectType(sc)) {
-            addAllInterfaces(result, parameterizeType(source, sc));
-        }
-    }
-
     private static Set<ClassNode> getAllInterfaces(final ClassNode cn) {
-        Set<ClassNode> result = new HashSet<>();
-        if (cn.isInterface()) result.add(cn);
-        addAllInterfaces(result, cn);
-        return result;
+        return getInterfacesAndSuperInterfaces(cn);
     }
 
     private static void checkForDuplicateInterfaces(final ClassNode cn) {

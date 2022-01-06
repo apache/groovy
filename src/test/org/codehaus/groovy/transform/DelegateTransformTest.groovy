@@ -37,7 +37,7 @@ import static org.junit.Assert.assertTrue
 final class DelegateTransformTest {
 
     @Test // GROOVY-3380
-    void testDelegateImplementingANonPublicInterface() {
+    void testDelegateImplementingNonPublicInterface() {
         assertScript '''
             import org.codehaus.groovy.transform.ClassImplementingANonPublicInterface
 
@@ -51,16 +51,33 @@ final class DelegateTransformTest {
     }
 
     @Test // GROOVY-3380
-    void testDelegateImplementingANonPublicInterfaceWithZipFileConcreteCase() {
+    void testDelegateImplementingNonPublicInterfaceWithZipFileConcreteCase() {
         assertScript '''
             import java.util.zip.*
 
-            class ZipWrapper{
+            class ZipWrapper {
                @Delegate ZipFile zipFile
             }
 
             new ZipWrapper()
         '''
+    }
+
+    @Test // GROOVY-10439
+    void testDelegateImplementingInterfaceWithDifferentTypeArgumentThanOwner() {
+        assertScript '''
+            class C extends ArrayList<String> {
+                @Delegate List<Number> numbers // List<String> takes precedence
+            }
+            new C(numbers:[1,2,3])
+        '''
+
+        def err = shouldFail '''
+            class C extends ArrayList<String> {
+                @Delegate HashSet<Number> numbers // Set<Number> added; Verifier checks
+            }
+        '''
+        assert err =~ /The interface Collection cannot be implemented more than once with different arguments: java.util.Collection<java.lang.Number> and java.util.Collection<java.lang.String>/
     }
 
     @Test // GROOVY-5974

@@ -88,6 +88,7 @@ import java.util.function.Consumer;
 
 import static org.codehaus.groovy.antlr.PrimitiveHelper.getDefaultValueForPrimitive;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.parameterizeType;
 
 /**
  * Handy methods when working with the Groovy AST
@@ -462,11 +463,22 @@ public class GeneralUtils {
         return result;
     }
 
-    public static Set<ClassNode> getInterfacesAndSuperInterfaces(final ClassNode type) {
-        Set<ClassNode> result = new LinkedHashSet<>();
-        for (ClassNode next = type; next != null; next = next.getSuperClass()) {
-            result.addAll(next.getAllInterfaces());
+    private static void addAllInterfaces(final Set<ClassNode> result, final ClassNode source) {
+        for (ClassNode in : source.getInterfaces()) {
+            in = parameterizeType(source, in);
+            if (result.add(in))
+                addAllInterfaces(result, in);
         }
+        ClassNode sc = source.redirect().getUnresolvedSuperClass(false);
+        if (sc != null && !isObjectType(sc)) {
+            addAllInterfaces(result, parameterizeType(source, sc));
+        }
+    }
+
+    public static Set<ClassNode> getInterfacesAndSuperInterfaces(final ClassNode cNode) {
+        Set<ClassNode> result = new LinkedHashSet<>();
+        if (cNode.isInterface()) result.add(cNode);
+        addAllInterfaces(result, cNode);
         return result;
     }
 
