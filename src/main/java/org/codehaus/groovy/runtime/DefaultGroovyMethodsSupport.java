@@ -265,9 +265,10 @@ public class DefaultGroovyMethodsSupport {
     }
 
     @SuppressWarnings("unchecked")
-    protected static <T> T[] createSimilarArray(T[] orig, int newCapacity) {
-        Class<T> componentType = (Class<T>) orig.getClass().getComponentType();
-        return (T[]) Array.newInstance(componentType, newCapacity);
+    protected static <T> T[] createSimilarArray(final T[] orig, final int newCapacity) {
+        Class<?> type = orig.getClass();
+        if (type == Object[].class) return (T[]) new Object[newCapacity];
+        return (T[]) Array.newInstance(type.getComponentType(), newCapacity);
     }
 
     @SuppressWarnings("unchecked")
