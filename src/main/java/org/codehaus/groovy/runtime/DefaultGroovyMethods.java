@@ -2119,8 +2119,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> T[] toUnique(T[] self, Comparator<T> comparator) {
         Collection<T> items = toUnique(new ArrayIterable<>(self), comparator);
-        T[] result = createSimilarArray(self, items.size());
-        return items.toArray(result);
+        return items.toArray(createSimilarArray(self, items.size()));
     }
 
     /**
@@ -2138,9 +2137,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self an array
      * @return the unique items from the array
      */
-    @SuppressWarnings("unchecked")
     public static <T> T[] toUnique(T[] self) {
-        return (T[]) toUnique(self, (Comparator) null);
+        return toUnique(self, (Comparator<T>) null);
     }
 
     /**
@@ -9412,13 +9410,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the sorted array
      * @since 1.8.1
      */
-    @SuppressWarnings("unchecked")
     public static <T> T[] sort(T[] self, boolean mutate, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
-        T[] answer = (T[]) sort((Iterable<T>) toList(self), closure).toArray();
-        if (mutate) {
-            System.arraycopy(answer, 0, self, 0, answer.length);
-        }
-        return mutate ? self : answer;
+        if (!mutate) self = self.clone();
+        Comparator<T> c = closure.getMaximumNumberOfParameters() == 1 ? new OrderBy<>(closure) : new ClosureComparator<>(closure);
+        Arrays.sort(self, c);
+        return self;
     }
 
     /**
@@ -9676,15 +9672,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * which is then used for further comparison.
      *
      * @param self the array containing the elements to be sorted
-     * @param condition a Closure used to determine the correct ordering
+     * @param closure a Closure used to determine the correct ordering
      * @return a sorted array
      * @see #toSorted(Object[], Comparator)
      * @since 2.4.0
      */
-    public static <T> T[] toSorted(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure condition) {
-        Comparator<T> comparator = (condition.getMaximumNumberOfParameters() == 1) ? new OrderBy<>(condition) : new ClosureComparator<>(
-            condition);
-        return toSorted(self, comparator);
+    public static <T> T[] toSorted(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
+        return sort(self, false, closure);
     }
 
     /**
@@ -10182,9 +10176,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (self.length == 0) {
             throw new NoSuchElementException("Cannot access tail() for an empty array");
         }
-        T[] result = createSimilarArray(self, self.length - 1);
-        System.arraycopy(self, 1, result, 0, self.length - 1);
-        return result;
+        return Arrays.copyOfRange(self, 1, self.length);
     }
 
     /**
@@ -10352,9 +10344,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (self.length == 0) {
             throw new NoSuchElementException("Cannot access init() for an empty Object array");
         }
-        T[] result = createSimilarArray(self, self.length - 1);
-        System.arraycopy(self, 0, result, 0, self.length - 1);
-        return result;
+        return Arrays.copyOfRange(self, 0, self.length - 1);
     }
 
     /**
@@ -12248,14 +12238,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.1
      */
     public static <T> T[] reverse(T[] self, boolean mutate) {
-        List<T> list = Arrays.asList(self);
-        if (mutate) {
-            Collections.reverse(list);
-            return self;
-        }
-        @SuppressWarnings("unchecked")
-        T[] result = (T[]) toList(new ReverseListIterator<>(list)).toArray();
-        return result;
+        if (!mutate) self = self.clone();
+        Collections.reverse(Arrays.asList(self));
+        return self;
     }
 
     /**
@@ -13359,31 +13344,64 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create an array composed of the elements of the first array minus the
+     * Create a new array composed of the elements of the first array minus the
      * elements of the given Iterable.
+     * <pre class="groovyTestCase">
+     * Integer[] ints = [1, 2, 3, 1]
+     * List&lt;Integer> nope = [1, 3]
+     * def result = ints - nope
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{2}
+     *
+     * Integer[] none = []
+     * result = none - 123
+     * assert result !== none
+     * assert result.length == 0
+     * assert result.class == Integer[]
+     * </pre>
      *
      * @param self     an array
-     * @param removeMe a Collection of elements to remove
+     * @param removeMe an Iterable of elements to remove
      * @return an array with the supplied elements removed
      * @since 1.5.5
      */
-    @SuppressWarnings("unchecked")
-    public static <T> T[] minus(T[] self, Iterable removeMe) {
-        return (T[]) minus(toList(self), removeMe).toArray();
+    public static <T> T[] minus(final T[] self, final Iterable removeMe) {
+        Collection<T> temp = minus((Iterable<T>) toList(self), removeMe);
+        return temp.toArray(createSimilarArray(self, temp.size()));
     }
 
     /**
-     * Create an array composed of the elements of the first array minus the
+     * Create a new array composed of the elements of the first array minus the
      * elements of the given array.
+     * <pre class="groovyTestCase">
+     * Integer[] ints = [1, 2, 3, 1]
+     * Integer[] nope = [1, 3]
+     * def result = ints - nope
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{2}
+     *
+     * Integer[] none = []
+     * result = none - 123
+     * assert result !== none
+     * assert result.length == 0
+     * assert result.class == Integer[]
+     * </pre>
      *
      * @param self     an array
      * @param removeMe an array of elements to remove
      * @return an array with the supplied elements removed
      * @since 1.5.5
      */
-    @SuppressWarnings("unchecked")
-    public static <T> T[] minus(T[] self, Object[] removeMe) {
-        return (T[]) minus(toList(self), toList(removeMe)).toArray();
+    public static <T> T[] minus(final T[] self, final Object[] removeMe) {
+        switch (removeMe.length) {
+          case 0:
+            return self.clone();
+          case 1:
+            return minus(self, removeMe[0]);
+          default:
+            Collection<T> temp = minus((Collection<T>) toList(self), Arrays.asList(removeMe));
+            return (T[]) temp.toArray(createSimilarArray(self, temp.size()));
+        }
     }
 
     /**
@@ -13575,17 +13593,40 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a new object array composed of the elements of the first array
-     * minus the element to remove.
+     * Create a new array composed of the elements of the given array minus every occurrence the given object.
+     * <pre class="groovyTestCase">
+     * Integer[] ints = [1, 2, 3, 1]
+     * def result = ints - 1
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{2, 3}
      *
-     * @param self    an array
+     * Integer[] none = []
+     * result = none - '1'
+     * assert result !== none
+     * assert result.length == 0
+     * assert result.class == Integer[]
+     * </pre>
+     *
+     * @param self     an array
      * @param removeMe an element to remove from the array
      * @return a new array with the operand removed
      * @since 1.5.5
      */
-    @SuppressWarnings("unchecked")
-    public static <T> T[] minus(T[] self, Object removeMe) {
-        return (T[]) minus((Iterable<T>) toList(self), removeMe).toArray();
+    public static <T> T[] minus(final T[] self, final Object removeMe) {
+        int i = 0, n = self.length;
+        T[] result = createSimilarArray(self, n);
+
+        for (T t : self) {
+            if (!coercedEquals(t, removeMe)) {
+                result[i] = t;
+                i += 1;
+            }
+        }
+        if (i != n) {
+            result = Arrays.copyOfRange(result, 0, i);
+        }
+
+        return result;
     }
 
     /**
