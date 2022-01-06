@@ -19,6 +19,7 @@
 
 //////////////////////////////////////////
 
+[[processing-sql]]
 = Interacting with a SQL database
 
 Groovy's `groovy-sql` module provides a higher-level abstraction over Java's JDBC technology. JDBC itself provides

@@ -55,6 +55,7 @@ include::../../../../../src/spec/doc/core-introduction.adoc[]
 :jmx:
 :tools-groovyc:
 :xml-userguide:
+:sql-userguide:
 
 include::../../../../../src/spec/doc/core-syntax.adoc[leveloffset=+2]
 
@@ -136,7 +137,41 @@ Creating Swing UIs is made easy thanks to the use of <<swingbuilder,SwingBuilder
 
 === Security
 
-(TBD)
+Security is a complex and multi-faceted issue and needs to be addressed in a holistic way.
+Groovy offers some features to improve security, but organisations
+concerned about security should already be addressing other necessary aspects
+such as network security, file-system security, operating sytem security, database security,
+passwords and potentially encryption.
+
+Also, since Groovy runs on the JDK and optionally uses other library dependencies,
+users should ensure their JDK and all depdendencies are up to date with respect to
+the latest security fixes.
+
+With regard to security issues that may affect the Groovy project itself,
+the project follows the Apache http://www.apache.org/security/committers.html[general guidelines for handling security vulnerabilities]. See also the project's
+https://github.com/apache/groovy/security/policy[security policy] and list of
+https://groovy-lang.org/security.html[past vulnerabilities].
+
+By virtue of running on the JVM and following various Java conventions, Groovy programs
+offer some of the same security features as Java programs, including:
+
+* programs cannot access arbitrary memory locations
+* final variables cannot be changed
+* array bounds are checked
+* class loaders perform bytecode verification when loading classes
+* casting cannot be done to an incompatible class
+* access is available to APIs for encryption and authentication
+
+Special security support is provided through:
+
+* gapi:groovy.lang.GroovyShell[], gapi:groovy.lang.GroovyClassLoader[] and other parts of the Groovy runtime fully support the Java security manager which allows you to sandbox script execution with a security policy. (Note: this funtionality might be scaled back in future Groovy versions or when running
+on particular JDK versions in line with https://openjdk.java.net/jeps/411[JEP 411])
+* gapi:org.codehaus.groovy.control.customizers.SecureASTCustomizer[]
+secures source code by controlling what code constructs are permitted or prohibited in a code base
+(or part of a code base)
+* Default <<{xml-userguide}#processing-xml,XML processing>> has secure processing enabled and doctype definitions disabled
+* Groovy's <<{sql-userguide}#processing-sql,SQL processing>> features provide support to guard against SQL injection
+* Temporary directory creation protects against known security vulnerabilities such as privilege escalation if scripts are stored in operating system temp directories
 
 include::../../../../../src/spec/doc/design-patterns-in-groovy.adoc[leveloffset=+2]
 
