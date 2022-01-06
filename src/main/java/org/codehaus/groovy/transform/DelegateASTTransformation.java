@@ -35,7 +35,6 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.tools.BeanUtils;
-import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -47,8 +46,8 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
+import static java.util.Arrays.copyOf;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.apache.groovy.util.BeanUtils.capitalize;
@@ -75,6 +74,7 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.nonGeneric;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersEqual;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -198,24 +198,18 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
 
             if (skipInterfaces) return;
 
-            final Set<ClassNode> allInterfaces =
-                    getInterfacesAndSuperInterfaces(delegate.type).stream()
-                            .filter(c -> !c.isSealed())
-                            .collect(Collectors.toSet());
-            final Set<ClassNode> ownerIfaces = delegate.owner.getAllInterfaces();
-            Map<String,ClassNode> genericsSpec = createGenericsSpec(delegate.owner);
-            genericsSpec = createGenericsSpec(delegate.type, genericsSpec);
-            for (ClassNode iface : allInterfaces) {
-                if (Modifier.isPublic(iface.getModifiers()) && !ownerIfaces.contains(iface)) {
-                    final ClassNode[] ifaces = delegate.owner.getInterfaces();
-                    final int nFaces = ifaces.length;
+            Set<ClassNode> addedInterfaces = getInterfacesAndSuperInterfaces(delegate.type);
+            addedInterfaces.removeIf(i -> !Modifier.isPublic(i.getModifiers()) || i.isSealed());
+            if (!addedInterfaces.isEmpty()) {
+                Set<ClassNode> ownerInterfaces = getInterfacesAndSuperInterfaces(delegate.owner);
+                for (ClassNode i : addedInterfaces) {
+                    if (!ownerInterfaces.contains(i)) {
+                        ClassNode[] faces = delegate.owner.getInterfaces();
+                        faces = copyOf(faces, faces.length + 1);
+                        faces[faces.length - 1] = i;
 
-                    final ClassNode[] newIfaces = new ClassNode[nFaces + 1];
-                    for (int i = 0; i < nFaces; i += 1) {
-                        newIfaces[i] = correctToGenericsSpecRecurse(genericsSpec, ifaces[i]);
+                        delegate.owner.setInterfaces(faces);
                     }
-                    newIfaces[nFaces] = correctToGenericsSpecRecurse(genericsSpec, iface);
-                    delegate.owner.setInterfaces(newIfaces);
                 }
             }
         }
@@ -325,7 +319,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                     setterName,
                     ACC_PUBLIC,
                     ClassHelper.VOID_TYPE,
-                    params(new Parameter(GenericsUtils.nonGeneric(prop.getType()), "value")),
+                    params(new Parameter(nonGeneric(prop.getType()), "value")),
                     null,
                     assignS(propX(delegate.getOp, name), varX("value"))
             );
@@ -356,7 +350,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                     delegate.owner,
                     getterName,
                     ACC_PUBLIC,
-                    GenericsUtils.nonGeneric(prop.getType()),
+                    nonGeneric(prop.getType()),
                     Parameter.EMPTY_ARRAY,
                     null,
                     returnS(propX(delegate.getOp, name))
@@ -369,7 +363,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                     delegate.owner,
                     isserName,
                     ACC_PUBLIC,
-                    GenericsUtils.nonGeneric(prop.getType()),
+                    nonGeneric(prop.getType()),
                     Parameter.EMPTY_ARRAY,
                     null,
                     returnS(propX(delegate.getOp, name))
