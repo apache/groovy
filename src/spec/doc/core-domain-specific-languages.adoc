@@ -1038,23 +1038,16 @@ link:type-checking-extensions.html[type checking extensions].
 
 == Builders
 
-(TBD)
-
-=== Creating a builder
-
-(TBD)
-
-==== BuilderSupport
-
-(TBD)
-
-==== FactoryBuilderSupport
-
-(TBD)
+Many tasks require building things and the builder pattern is one technique
+used by developers to make building things easier, especially building
+of structures which are hierarchical in nature.
+This pattern is so ubiquitous that Groovy has special built-in support.
+Firstly, there are many built-in builders. Secondly, there are
+classes which make it easier to write your own builders.
 
 === Existing builders
 
-(TBD)
+Groovy comes with many built-in builders. Let's look at some of them.
 
 ==== MarkupBuilder
 
@@ -1801,3 +1794,26 @@ This produces the same directory structure as above, as shown by these `assert`s
 ----
 include::../test/builder/FileTreeBuilderTest.groovy[tags=shorthand_syntax_assert,indent=0]
 ----
+
+=== Creating a builder
+
+While Groovy has many builders built-in, this pattern is so common,
+you will no doubt eventually come across a building requirement that
+hasn't been catered for by those built-in builders.
+The good news is that you can build your own.
+You can do everything from scratch by relying on Groovy's
+metaprogramming capabilities. Alternatively, the `BuilderSupport`
+and `FactoryBuilderSupport` classes are specially designed to make building
+builders easy.
+
+==== BuilderSupport
+
+One approach to building a builder is to subclass `BuilderSupport`.
+
+(TBD)
+
+==== FactoryBuilderSupport
+
+A second approach to building a builder is to subclass `FactoryBuilderSupport`.
+
+(TBD)

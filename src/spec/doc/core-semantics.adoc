@@ -609,7 +609,7 @@ include::../test/semantics/GPathTest.groovy[tags=gpath_on_xml_1,indent=0]
 <4> Text value of `key` element of first `keyVal` element of second `sublevel` element under `root/level` is 'anotherKey'
 
 Further details about GPath expressions for XML are in the
-link:../../../subprojects/groovy-xml/src/spec/doc/xml-userguide.adoc[XML User Guide].
+<<{xml-userguide}#processing-xml,XML User Guide>>.
 
 == Promotion and coercion
 
