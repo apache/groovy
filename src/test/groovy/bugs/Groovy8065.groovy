@@ -18,9 +18,13 @@
  */
 package groovy.bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class Groovy8065Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy8065 {
+
+    @Test
     void testMapWithCustomSetDuringAsTypeCast() {
         assertScript '''
             class MapWithSet extends LinkedHashMap {
@@ -33,18 +37,19 @@ class Groovy8065Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testMapWithPublicField() {
         assertScript '''
-            class A extends HashMap {
+            class C extends HashMap {
                 public foo
             }
-            def a = new A()
-            a.x = 1
-            assert a.x == 1
-            a.foo = 2
-            assert a.@foo == 2
-            assert a.foo == null
-            assert a == [x:1]
+            def c = new C()
+            c.x = 1
+            assert c.x == 1
+            c.foo = 2
+            assert c.@foo == 2
+            assert c.foo == 2
+            assert c == [x:1]
         '''
     }
 }

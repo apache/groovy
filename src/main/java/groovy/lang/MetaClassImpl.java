@@ -1959,100 +1959,105 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @return the given property's value on the object
      */
     @Override
-    public Object getProperty(Class sender, Object object, String name, boolean useSuper, boolean fromInsideClass) {
+    public Object getProperty(final Class sender, final Object object, final String name, final boolean useSuper, final boolean fromInsideClass) {
 
         //----------------------------------------------------------------------
         // handling of static
         //----------------------------------------------------------------------
-        boolean isStatic = theClass != Class.class && object instanceof Class;
+        boolean isStatic = (theClass != Class.class && object instanceof Class);
         if (isStatic && object != theClass) {
-            MetaClass mc = registry.getMetaClass((Class) object);
+            MetaClass mc = registry.getMetaClass((Class<?>) object);
             return mc.getProperty(sender, object, name, useSuper, false);
         }
 
         checkInitalised();
 
         //----------------------------------------------------------------------
-        // turn getProperty on a Map to get on the Map itself
+        // getter
         //----------------------------------------------------------------------
-        if (!isStatic && this.isMap) {
-            return ((Map) object).get(name);
-        }
-
         Tuple2<MetaMethod, MetaProperty> methodAndProperty = createMetaMethodAndMetaProperty(sender, sender, name, useSuper, isStatic);
         MetaMethod method = methodAndProperty.getV1();
 
-        //----------------------------------------------------------------------
-        // getter
-        //----------------------------------------------------------------------
-        MetaProperty mp = methodAndProperty.getV2();
+        if (method == null || isSpecialProperty(name)) {
+            //------------------------------------------------------------------
+            // public field
+            //------------------------------------------------------------------
+            MetaProperty mp = methodAndProperty.getV2();
+            if (mp != null && Modifier.isPublic(mp.getModifiers())) {
+                try {
+                    return mp.getProperty(object);
+                } catch (IllegalArgumentException | CacheAccessControlException e) {
+                    // can't access the field directly but there may be a getter
+                    mp = null;
+                }
+            }
 
-        //----------------------------------------------------------------------
-        // field
-        //----------------------------------------------------------------------
-        if (method == null && mp != null) {
-            try {
-                return mp.getProperty(object);
-            } catch (IllegalArgumentException | CacheAccessControlException e) {
-                // can't access the field directly but there may be a getter
-                mp = null;
+            //------------------------------------------------------------------
+            // java.util.Map get method
+            //------------------------------------------------------------------
+            if (isMap && !isStatic) {
+                return ((Map<?,?>) object).get(name);
+            }
+
+            //------------------------------------------------------------------
+            // non-public field
+            //------------------------------------------------------------------
+            if (mp != null) {
+                try {
+                    return mp.getProperty(object);
+                } catch (IllegalArgumentException | CacheAccessControlException e) {
+                }
             }
         }
 
-        // check for propertyMissing provided through a category
+        //----------------------------------------------------------------------
+        // propertyMissing (via category) or generic get method
+        //----------------------------------------------------------------------
         Object[] arguments = EMPTY_ARGUMENTS;
         if (method == null && !useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
+            // check for propertyMissing provided through a category; TODO:should this have lower precedence?
             method = getCategoryMethodGetter(sender, PROPERTY_MISSING, true);
+            if (method == null) {
+                // check for a generic get method provided through a category
+                method = getCategoryMethodGetter(sender, "get", true);
+            }
             if (method != null) arguments = new Object[]{name};
         }
-
-
-        //----------------------------------------------------------------------
-        // generic get method
-        //----------------------------------------------------------------------
-        // check for a generic get method provided through a category
-        if (method == null && !useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
-            method = getCategoryMethodGetter(sender, "get", true);
-            if (method != null) arguments = new Object[]{name};
-        }
-
-        // the generic method is valid, if available (!=null), if static or
-        // if it is not static and we do no static access
-        if (method == null && genericGetMethod != null && !(!genericGetMethod.isStatic() && isStatic)) {
+        if (method == null && genericGetMethod != null && (genericGetMethod.isStatic() || !isStatic)) {
             arguments = new Object[]{name};
             method = genericGetMethod;
         }
 
-        //----------------------------------------------------------------------
-        // special cases
-        //----------------------------------------------------------------------
         if (method == null) {
-            /* todo these special cases should be special MetaClasses maybe */
+            //------------------------------------------------------------------
+            // special cases
+            //------------------------------------------------------------------
+            // TODO: maybe these special cases should be special MetaClasses
             if (theClass != Class.class && object instanceof Class) {
                 MetaClass mc = registry.getMetaClass(Class.class);
                 return mc.getProperty(Class.class, object, name, useSuper, false);
             }
             if (object instanceof Collection) {
-                return DefaultGroovyMethods.getAt((Collection) object, name);
+                return DefaultGroovyMethods.getAt((Collection<?>) object, name);
             }
             if (object instanceof Object[]) {
                 return DefaultGroovyMethods.getAt(Arrays.asList((Object[]) object), name);
             }
             MetaMethod addListenerMethod = listeners.get(name);
             if (addListenerMethod != null) {
-                //TODO: one day we could try return the previously registered Closure listener for easy removal
+                // TODO: one day we could try return the previously registered Closure listener for easy removal
                 return null;
             }
         } else {
-            //----------------------------------------------------------------------
-            // executing the getter method
-            //----------------------------------------------------------------------
+            //------------------------------------------------------------------
+            // executing the method
+            //------------------------------------------------------------------
             MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method);
             return transformedMetaMethod.doMethodInvoke(object, arguments);
         }
 
         //----------------------------------------------------------------------
-        // error due to missing method/field
+        // missing property protocol
         //----------------------------------------------------------------------
         if (isStatic || object instanceof Class) {
             return invokeStaticMissingProperty(object, name, null, true);
@@ -2065,13 +2070,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         // handling of static
         //----------------------------------------------------------------------
-        boolean isStatic = theClass != Class.class && object instanceof Class;
+        boolean isStatic = (theClass != Class.class && object instanceof Class);
         if (isStatic && object != theClass) {
             return new MetaProperty(name, Object.class) {
-                final MetaClass mc = registry.getMetaClass((Class) object);
-
                 @Override
                 public Object getProperty(Object object) {
+                    MetaClass mc = registry.getMetaClass((Class<?>) object);
                     return mc.getProperty(sender, object, name, useSuper, false);
                 }
 
@@ -2085,73 +2089,65 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         checkInitalised();
 
         //----------------------------------------------------------------------
-        // turn getProperty on a Map to get on the Map itself
+        // getter
         //----------------------------------------------------------------------
-        if (!isStatic && this.isMap) {
-            return new MetaProperty(name, Object.class) {
-                @Override
-                public Object getProperty(Object object) {
-                    return ((Map) object).get(name);
-                }
-
-                @Override
-                public void setProperty(Object object, Object newValue) {
-                    throw new UnsupportedOperationException();
-                }
-            };
-        }
-
         Tuple2<MetaMethod, MetaProperty> methodAndProperty = createMetaMethodAndMetaProperty(sender, theClass, name, useSuper, isStatic);
         MetaMethod method = methodAndProperty.getV1();
 
-        //----------------------------------------------------------------------
-        // getter
-        //----------------------------------------------------------------------
-        MetaProperty mp = methodAndProperty.getV2();
+        if (method == null || isSpecialProperty(name)) {
+            //------------------------------------------------------------------
+            // public field
+            //------------------------------------------------------------------
+            MetaProperty mp = methodAndProperty.getV2();
+            if (mp != null && Modifier.isPublic(mp.getModifiers())) {
+                return mp;
+            }
 
-        //----------------------------------------------------------------------
-        // field
-        //----------------------------------------------------------------------
-        if (method != null) {
-            MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method);
-            return new GetBeanMethodMetaProperty(name, transformedMetaMethod);
+            //----------------------------------------------------------------------
+            // java.util.Map get method
+            //----------------------------------------------------------------------
+            if (isMap && !isStatic) {
+                return new MetaProperty(name, Object.class) {
+                    @Override
+                    public Object getProperty(Object object) {
+                        return ((Map<?,?>) object).get(name);
+                    }
+
+                    @Override
+                    public void setProperty(Object object, Object newValue) {
+                        throw new UnsupportedOperationException();
+                    }
+                };
+            }
+
+            //------------------------------------------------------------------
+            // non-public field
+            //------------------------------------------------------------------
+            if (mp != null) {
+                return mp;
+            }
         }
 
-        if (mp != null) {
-            return mp;
-//            try {
-//                return mp.getProperty(object);
-//            } catch (IllegalArgumentException e) {
-//                // can't access the field directly but there may be a getter
-//                mp = null;
-//            }
+        if (method != null) {
+            return new GetBeanMethodMetaProperty(name, VM_PLUGIN.transformMetaMethod(this, method));
         }
 
         //----------------------------------------------------------------------
         // generic get method
         //----------------------------------------------------------------------
-        // check for a generic get method provided through a category
         if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             method = getCategoryMethodGetter(sender, "get", true);
             if (method != null) {
-                MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method);
-                return new GetMethodMetaProperty(name, transformedMetaMethod);
+                return new GetMethodMetaProperty(name, VM_PLUGIN.transformMetaMethod(this, method));
             }
-
         }
-
-        // the generic method is valid, if available (!=null), if static or
-        // if it is not static and we do no static access
-        if (genericGetMethod != null && !(!genericGetMethod.isStatic() && isStatic)) {
-            method = genericGetMethod;
-            MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method);
-            return new GetMethodMetaProperty(name, transformedMetaMethod);
+        if (genericGetMethod != null && (genericGetMethod.isStatic() || !isStatic)) {
+            return new GetMethodMetaProperty(name, VM_PLUGIN.transformMetaMethod(this, genericGetMethod));
         }
 
         //----------------------------------------------------------------------
         // special cases
         //----------------------------------------------------------------------
-        /* todo these special cases should be special MetaClasses maybe */
         if (theClass != Class.class && object instanceof Class) {
             return new MetaProperty(name, Object.class) {
                 @Override
@@ -2170,7 +2166,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return new MetaProperty(name, Object.class) {
                 @Override
                 public Object getProperty(Object object) {
-                    return DefaultGroovyMethods.getAt((Collection) object, name);
+                    return DefaultGroovyMethods.getAt((Collection<?>) object, name);
                 }
 
                 @Override
@@ -2194,7 +2190,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
         MetaMethod addListenerMethod = listeners.get(name);
         if (addListenerMethod != null) {
-            //TODO: one day we could try return the previously registered Closure listener for easy removal
             return new MetaProperty(name, Object.class) {
                 @Override
                 public Object getProperty(Object object) {
@@ -2237,10 +2232,17 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         };
     }
 
+    /**
+     * Object#getClass, Map#isEmpty, GroovyObject#getMetaClass
+     */
+    private boolean isSpecialProperty(final String name) {
+        return "class".equals(name) || (isMap && ("empty".equals(name) || "metaClass".equals(name)));
+    }
+
     private Tuple2<MetaMethod, MetaProperty> createMetaMethodAndMetaProperty(final Class senderForMP, final Class senderForCMG, final String name, final boolean useSuper, final boolean isStatic) {
         MetaMethod method = null;
         MetaProperty mp = getMetaProperty(senderForMP, name, useSuper, isStatic);
-        if ((mp == null || mp instanceof CachedField) && isUpperCase(name.charAt(0)) && (name.length() < 2 || !isUpperCase(name.charAt(1))) && !"Class".equals(name)) {
+        if ((mp == null || mp instanceof CachedField) && !name.isEmpty() && isUpperCase(name.charAt(0)) && (name.length() < 2 || !isUpperCase(name.charAt(1))) && !"Class".equals(name) && !"MetaClass".equals(name)) {
             // GROOVY-9618 adjust because capitalised properties aren't stored as meta bean props
             MetaProperty saved = mp;
             mp = getMetaProperty(senderForMP, BeanUtils.decapitalize(name), useSuper, isStatic);
@@ -2797,8 +2799,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param fromInsideClass Whether the call was invoked from the inside or the outside of the class.
      */
     @Override
-    public void setProperty(Class sender, Object object, String name, Object newValue, boolean useSuper, boolean fromInsideClass) {
-        checkInitalised();
+    public void setProperty(final Class sender, final Object object, final String name, Object newValue, final boolean useSuper, final boolean fromInsideClass) {
 
         //----------------------------------------------------------------------
         // handling of static
@@ -2809,6 +2810,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             mc.getProperty(sender, object, name, useSuper, fromInsideClass);
             return;
         }
+
+        checkInitalised();
 
         //----------------------------------------------------------------------
         // Unwrap wrapped values fo now - the new MOP will handle them properly
@@ -2876,16 +2879,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // field
         //----------------------------------------------------------------------
         if (method == null && field != null) {
+            boolean mapInstance = (isMap && !isStatic);
             int modifiers = field.getModifiers();
             if (Modifier.isFinal(modifiers)) {
-                // GROOVY-5985
-                if (!isStatic && this.isMap) {
+                if (mapInstance) { // GROOVY-8065
                     ((Map) object).put(name, newValue);
                     return;
                 }
-                throw new ReadOnlyPropertyException(name, theClass);
+                throw new ReadOnlyPropertyException(name, theClass); // GROOVY-5985
             }
-            if (!this.isMap || Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
+            if (!mapInstance || Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
                 field.setProperty(object, newValue);
                 return;
             }
@@ -2899,16 +2902,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             method = getCategoryMethodSetter(sender, "set", true);
             if (method != null) arguments = new Object[]{name, newValue};
         }
-
-        // the generic method is valid, if available (!=null), if static or
-        // if it is not static and we do no static access
-        if (method == null && genericSetMethod != null && !(!genericSetMethod.isStatic() && isStatic)) {
+        if (method == null && genericSetMethod != null && (genericSetMethod.isStatic() || !isStatic)) {
             arguments = new Object[]{name, newValue};
             method = genericSetMethod;
         }
 
         //----------------------------------------------------------------------
-        // executing the setter method
+        // executing the method
         //----------------------------------------------------------------------
         if (method != null) {
             if (arguments.length == 1) {
@@ -2923,21 +2923,20 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 arguments[1] = newValue;
             }
 
-            MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method);
-            transformedMetaMethod.doMethodInvoke(object, arguments);
+            VM_PLUGIN.transformMetaMethod(this, method).doMethodInvoke(object, arguments);
             return;
         }
 
-        //----------------------------------------------------------------------
-        // turn setProperty on a Map to put on the Map itself
-        //----------------------------------------------------------------------
-        if (method == null && !isStatic && this.isMap) {
+        //------------------------------------------------------------------
+        // java.util.Map put method
+        //------------------------------------------------------------------
+        if (isMap && !isStatic) {
             ((Map) object).put(name, newValue);
             return;
         }
 
         //----------------------------------------------------------------------
-        // error due to missing method/field
+        // missing property protocol
         //----------------------------------------------------------------------
         if (ambiguousListener) {
             throw new GroovyRuntimeException("There are multiple listeners for the property " + name + ". Please do not use the bean short form to access this listener.");
@@ -2945,7 +2944,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (mp != null) {
             throw new ReadOnlyPropertyException(name, theClass);
         }
-
         if ((isStatic || object instanceof Class) && !"metaClass".equals(name)) {
             invokeStaticMissingProperty(object, name, newValue, false);
         } else {

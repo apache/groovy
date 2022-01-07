@@ -20,10 +20,9 @@ package groovy
 
 import groovy.test.GroovyTestCase
 
-class MapTest extends GroovyTestCase {
+final class MapTest extends GroovyTestCase {
 
     void testMap() {
-
         def m = [1:'one', '2':'two', 3:'three']
 
         assert m.size() == 3
@@ -55,22 +54,22 @@ class MapTest extends GroovyTestCase {
 
         assert m.size() == 2
 
-        assert m.containsKey("cheese")
-        assert m.containsValue("cheddar")
+        assert m.containsKey('cheese')
+        assert m.containsValue('cheddar')
 
 
-        if ( m.containsKey("cheese") ) {
+        if ( m.containsKey('cheese') ) {
             // ignore
         }
         else {
-            assert false , "should contain cheese!"
+            assert false , 'should contain cheese!'
         }
 
         if ( m.containsKey(3) ) {
             // ignore
         }
         else {
-            assert false , "should contain 3!"
+            assert false , 'should contain 3!'
         }
     }
 
@@ -78,12 +77,62 @@ class MapTest extends GroovyTestCase {
         def m = [:]
 
         assert m.size() == 0
-        assert !m.containsKey("cheese")
+        assert !m.containsKey('cheese')
 
-        m.put("cheese", "cheddar")
+        m.put('cheese', 'cheddar')
 
         assert m.size() == 1
-        assert m.containsKey("cheese")
+        assert m.containsKey('cheese')
+    }
+
+    /**
+     * Map "empty" property isn't Map#isEmpty.
+     */
+    void testMapEmpty() {
+        def m = [empty: 'no']
+
+        assert m.get('empty') == 'no'
+        assert m['empty'] == 'no'
+        assert m.empty == 'no'
+    }
+
+    /**
+     * Map "class" and "metaClass" properties aren't Object#getClass or GroovyObject#getMetaClass.
+     */
+    void testMapClass() {
+        def m = [class: 'xx', metaClass: 'yy']
+
+        assert m.get('class') == 'xx'
+        assert m['class'] == 'xx'
+        assert m.class == 'xx'
+        assert m.Class == null
+
+        assert m.get('metaClass') == 'yy'
+        assert m['metaClass'] == 'yy'
+        assert m.metaClass == 'yy'
+        assert m.MetaClass == null
+    }
+
+    // GROOVY-5001
+    void testMapDelegate() {
+        for (tag : ['','@TypeChecked','@CompileStatic']) {
+            assertScript """import groovy.transform.*
+                $tag class C {
+                    @Delegate Map m = [:]
+                    private def x = 'x'
+                    public  def y = 'y'
+                    def getZ() { 'z' }
+                }
+                def c = new C()
+
+                assert c.class == null
+                assert c.empty == null
+                assert c.m === c.@m
+                assert c.x == null
+                assert c.y == 'y'
+                assert c.z == 'z'
+            """
+        }
     }
 
     void testMapMutation() {
@@ -109,7 +158,34 @@ class MapTest extends GroovyTestCase {
         assert foo == 5
     }
 
-    void testMapLeftShift(){
+    // GROOVY-5001, GROOVY-5491
+    void testMapMutation2() {
+        for (tag : ['','@TypeChecked','@CompileStatic']) {
+            assertScript """import groovy.transform.*
+                    $tag class C extends HashMap { // just like GROOVY-662, GROOVY-8065, GROOVY-8074
+                    private boo
+                    def foo
+                }
+
+                def map = new C(foo:'bar')
+                assert map.@boo == null
+                assert map.boo  == null
+                assert map.foo == 'bar'
+
+                map.foo = 'baz' // set not put
+                assert map.foo == 'baz'
+                assert map.keySet().isEmpty()
+
+                map.boo = 'xx'
+                assert map.@boo == null
+                assert map.boo == 'xx'
+                assert map['boo'] == 'xx'
+                assert map.containsKey('boo')
+            """
+        }
+    }
+
+    void testMapLeftShift() {
         def map = [a:1, b:2]
         def other = [c:3]
         def entry = [d:4].iterator().toList()[0]
@@ -119,7 +195,7 @@ class MapTest extends GroovyTestCase {
         assert map == [a:1, b:2, c:3, d:4]
     }
 
-    void testFindAll(){
+    void testFindAll() {
         assert [a:1] == ['a':1, 'b':2].findAll {it.value == 1}
         assert [a:1] == ['a':1, 'b':2].findAll {it.key == 'a'}
         assert [a:1] == ['a':1, 'b':2].findAll {key,value -> key == 'a'}
@@ -208,7 +284,7 @@ class MapTest extends GroovyTestCase {
         assert map1 == [a:1, b:2]
     }
 
-    void testMapSort(){
+    void testMapSort() {
         def map = [a:100, c:20, b:3]
         def mapByValue = map.sort{ it.value }
         assert mapByValue.collect{ it.key } == ['b', 'c', 'a']
@@ -219,14 +295,14 @@ class MapTest extends GroovyTestCase {
     void testMapAdditionProducesCorrectValueAndPreservesOriginalMaps() {
         def left = [a:1, b:2]
         def right = [c:3]
-        assert left + right == [a:1, b:2, c:3], "should contain all entries from both maps"
-        assert left == [a:1, b:2] && right == [c:3], "LHS/RHS should not be modified"
+        assert left + right == [a:1, b:2, c:3], 'should contain all entries from both maps'
+        assert left == [a:1, b:2] && right == [c:3], 'LHS/RHS should not be modified'
     }
 
     void testMapAdditionGivesPrecedenceOfOverlappingValuesToRightMap() {
         def left = [a:1, b:1]
         def right = [a:2]
-        assert left + right == [a:2, b:1], "RHS should take precedence when entries have same key"
+        assert left + right == [a:2, b:1], 'RHS should take precedence when entries have same key'
     }
 
     void testMapAdditionPreservesOriginalTypeForCommonCases() {
@@ -246,11 +322,11 @@ class MapTest extends GroovyTestCase {
 
     void testTreeMapEach() {
         TreeMap map = [c:2, b:3, a:1]
-        String result1 = "", result2 = ""
+        String result1 = '', result2 = ''
         map.each{ k, v -> result1 += "$k$v " }
-        assert result1 == "a1 b3 c2 "
+        assert result1 == 'a1 b3 c2 '
         map.reverseEach{ e -> result2 += "$e.key$e.value " }
-        assert result2 == "c2 b3 a1 "
+        assert result2 == 'c2 b3 a1 '
     }
 
     void testMapWithDefault() {
@@ -264,8 +340,8 @@ class MapTest extends GroovyTestCase {
 
     void testMapIsCaseWithGrep() {
         def predicate = [apple:true, banana:true, lemon:false, orange:false, pear:true]
-        def fruitList = ["apple", "apple", "pear", "orange", "pear", "lemon", "banana"]
-        def expected = ["apple", "apple", "pear", "pear", "banana"]
+        def fruitList = ['apple', 'apple', 'pear', 'orange', 'pear', 'lemon', 'banana']
+        def expected = ['apple', 'apple', 'pear', 'pear', 'banana']
         assert fruitList.grep(predicate) == expected
     }
 
