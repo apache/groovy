@@ -36,8 +36,8 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -164,7 +164,7 @@ public class ClassNodeUtils {
     public static Map<String, MethodNode> getDeclaredMethodsFromSuper(final ClassNode cNode) {
         ClassNode parent = cNode.getSuperClass();
         if (parent == null) {
-            return new HashMap<>();
+            return new LinkedHashMap<>();
         }
         return parent.getDeclaredMethodsMap();
     }
@@ -196,7 +196,7 @@ public class ClassNodeUtils {
      * @return A map of methods
      */
     public static Map<String, MethodNode> getDeclaredMethodsFromInterfaces(final ClassNode cNode) {
-        Map<String, MethodNode> methodsMap = new HashMap<>();
+        Map<String, MethodNode> methodsMap = new LinkedHashMap<>();
         addDeclaredMethodsFromInterfaces(cNode, methodsMap);
         return methodsMap;
     }
