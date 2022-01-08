@@ -19,12 +19,13 @@
 package org.codehaus.groovy.vmplugin.v8;
 
 import org.apache.groovy.util.SystemUtil;
-import org.codehaus.groovy.runtime.memoize.LRUCache;
 import org.codehaus.groovy.runtime.memoize.MemoizeCache;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -33,19 +34,32 @@ import java.util.concurrent.atomic.AtomicLong;
  * @since 3.0.0
  */
 public class CacheableCallSite extends MutableCallSite {
-    private static final int CACHE_SIZE = SystemUtil.getIntegerSafe("groovy.indy.callsite.cache.size", 16);
-    private final MemoizeCache<String, MethodHandleWrapper> cache = new LRUCache<>(CACHE_SIZE);
+    private static final int CACHE_SIZE = SystemUtil.getIntegerSafe("groovy.indy.callsite.cache.size", 4);
+    private static final float LOAD_FACTOR = 0.75f;
+    private static final int INITIAL_CAPACITY = (int) Math.ceil(CACHE_SIZE / LOAD_FACTOR) + 1;
     private volatile MethodHandleWrapper latestHitMethodHandleWrapper = null;
-    private final AtomicLong fallbackCount = new AtomicLong(0);
+    private final AtomicLong fallbackCount = new AtomicLong();
     private MethodHandle defaultTarget;
     private MethodHandle fallbackTarget;
+    private final Map<String, MethodHandleWrapper> lruCache =
+            new LinkedHashMap<String, MethodHandleWrapper>(INITIAL_CAPACITY, LOAD_FACTOR, true) {
+                private static final long serialVersionUID = 7785958879964294463L;
+
+                @Override
+                protected boolean removeEldestEntry(Map.Entry eldest) {
+                    return size() > CACHE_SIZE;
+                }
+            };
 
     public CacheableCallSite(MethodType type) {
         super(type);
     }
 
     public MethodHandleWrapper getAndPut(String className, MemoizeCache.ValueProvider<? super String, ? extends MethodHandleWrapper> valueProvider) {
-        final MethodHandleWrapper result = cache.getAndPut(className, valueProvider);
+        final MethodHandleWrapper result;
+        synchronized (lruCache) {
+            result = lruCache.computeIfAbsent(className, valueProvider::provide);
+        }
         final MethodHandleWrapper lhmh = latestHitMethodHandleWrapper;
 
         if (lhmh == result) {
@@ -61,7 +75,9 @@ public class CacheableCallSite extends MutableCallSite {
     }
 
     public MethodHandleWrapper put(String name, MethodHandleWrapper mhw) {
-        return cache.put(name, mhw);
+        synchronized (lruCache) {
+            return lruCache.put(name, mhw);
+        }
     }
 
     public long incrementFallbackCount() {
