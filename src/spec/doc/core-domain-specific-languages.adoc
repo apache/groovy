@@ -1862,6 +1862,8 @@ include::../test/builder/BuilderSpecTest.groovy[tags=use_builder1,indent=0]
 ==== FactoryBuilderSupport
 
 A second approach to building a builder is to subclass `FactoryBuilderSupport`.
+This builder has similar goals to `BuilderSupport` but with extra features
+to simplify domain class construction.
 
 With this approach, the general idea is to override one or more of a number of
 _lifecycle_ methods including `resolveFactory`, `nodeCompleted` and `postInstantiate` methods from the `FactoryBuilderSupport` abstract class.
