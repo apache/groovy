@@ -436,11 +436,20 @@ assert f.metaClass =~ /MetaClassImpl/
 
 ==== Custom metaclasses
 
-You can change the metaclass of any object or class and replace with a custom implementation of the `MetaClass` gapi:groovy.lang.MetaClass[interface]. Usually you will want to subclass one of the existing metaclasses `MetaClassImpl`, `DelegatingMetaClass`, `ExpandoMetaClass`, `ProxyMetaClass`, etc. otherwise you will need to implement the complete method lookup logic. Before using a new metaclass instance you should call  gapid:groovy.lang.MetaClass#initialize()[] otherwise the metaclass may or may not behave as expected.
+You can change the metaclass of any object or class and replace it with a
+custom implementation of the `MetaClass` gapi:groovy.lang.MetaClass[interface].
+Usually you will want to extend one of the existing metaclasses such as
+`MetaClassImpl`, `DelegatingMetaClass`, `ExpandoMetaClass`, or `ProxyMetaClass`;
+otherwise you will need to implement the complete method lookup logic.
+Before using a new metaclass instance you should call
+gapid:groovy.lang.MetaClass#initialize()[],
+otherwise the metaclass may or may not behave as expected.
 
 ===== Delegating metaclass
 
-If you only need to decorate an existing metaclass the `DelegatingMetaClass` simplifies that use case. The old metaclass implementation is still accessible via `super` making easy to apply pretransformations to the inputs, routing to other methods and postprocess the outputs.
+If you only need to decorate an existing metaclass the `DelegatingMetaClass` simplifies that use case.
+The old metaclass implementation is still accessible via `super` making it easy to apply
+pretransformations to the inputs, routing to other methods and postprocessing the outputs.
 
 [source,groovy]
 ----
