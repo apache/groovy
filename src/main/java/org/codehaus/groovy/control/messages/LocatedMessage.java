@@ -57,7 +57,7 @@ public class LocatedMessage extends SimpleMessage {
             String sample = source.getSample(line, column, janitor);
 
             if (sample != null) {
-                writer.println(source.getSample(line, column, janitor));
+                writer.println(sample);
             }
 
             writer.println(name + ": " + line + ": " + this.message);
