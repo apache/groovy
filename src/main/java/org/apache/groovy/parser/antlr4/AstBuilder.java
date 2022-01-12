@@ -2192,11 +2192,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
 
         if (asBoolean(ctx.VOID())) {
-            if (3 == ctx.ct) { // annotation
+            if (ctx.ct == 3) { // annotation
                 throw createParsingFailedException("annotation method cannot have void return type", ctx);
             }
 
-            return ClassHelper.VOID_TYPE.getPlainNodeReference(false);
+            return configureAST(ClassHelper.VOID_TYPE.getPlainNodeReference(false), ctx.VOID());
         }
 
         throw createParsingFailedException("Unsupported return type: " + ctx.getText(), ctx);
