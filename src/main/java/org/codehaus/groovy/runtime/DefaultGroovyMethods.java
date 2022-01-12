@@ -13714,11 +13714,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create an array composed of the elements of the first array minus the
+     * Create a new array composed of the elements of the first array minus the
      * elements of the given Iterable.
+     * <pre class="groovyTestCase">
+     * Integer[] ints = [1, 2, 3, 1]
+     * List&lt;Integer> nope = [1, 3]
+     * def result = ints - nope
+     * assert result == new Integer[]{2}
+     *
+     * Integer[] none = []
+     * result = none - 123
+     * assert result !== none
+     * assert result.length == 0
+     * </pre>
      *
      * @param self     an array
-     * @param removeMe a Collection of elements to remove
+     * @param removeMe an Iterable of elements to remove
      * @return an array with the supplied elements removed
      * @since 1.5.5
      */
@@ -13728,8 +13739,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create an array composed of the elements of the first array minus the
+     * Create a new array composed of the elements of the first array minus the
      * elements of the given array.
+     * <pre class="groovyTestCase">
+     * Integer[] ints = [1, 2, 3, 1]
+     * Integer[] nope = [1, 3]
+     * def result = ints - nope
+     * assert result == new Integer[]{2}
+     *
+     * Integer[] none = []
+     * result = none - 123
+     * assert result !== none
+     * assert result.length == 0
+     * </pre>
      *
      * @param self     an array
      * @param removeMe an array of elements to remove
@@ -13893,8 +13915,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a new object array composed of the elements of the first array
+     * Create a new array composed of the elements of the first array
      * minus the element to remove.
+     * <pre class="groovyTestCase">
+     * Integer[] ints = [1, 2, 3, 1]
+     * def result = ints - 1
+     * assert result == new Integer[]{2, 3}
+     *
+     * Integer[] none = []
+     * result = none - '1'
+     * assert result !== none
+     * assert result.length == 0
+     * </pre>
      *
      * @param self    an array
      * @param removeMe an element to remove from the array
