@@ -84,6 +84,7 @@ import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.util.SingleKeyHashMap;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
+import org.objectweb.asm.Opcodes;
 
 import java.beans.BeanInfo;
 import java.beans.EventSetDescriptor;
@@ -2313,6 +2314,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // simply return the values of the metaproperty map as a List
         List<MetaProperty> ret = new ArrayList<>(propertyMap.size());
         for (MetaProperty mp : propertyMap.values()) {
+            if (mp instanceof CachedField && (mp.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0) {
+                continue;
+            }
             if (mp instanceof MetaBeanProperty) {
                 MetaBeanProperty mbp = (MetaBeanProperty) mp;
                 // filter out extrinsic properties (DGM, ...)
