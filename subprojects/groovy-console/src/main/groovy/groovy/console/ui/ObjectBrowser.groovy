@@ -106,10 +106,9 @@ class ObjectBrowser {
                             }
                         }
                     }
-                    scrollPane(name: ' Public Fields and Properties ') {
+                    scrollPane(name: ' Properties (includes public fields) ') {
                         fieldTable = table {
-                            def data = Inspector.sort(inspector.publicFields.toList())
-                            data.addAll(Inspector.sort(inspector.propertyInfo.toList()))
+                            def data = Inspector.sort(inspector.propertyInfo.toList())
                             tableModel(list: data) {
                                 closureColumn(header: 'Name', read: { it[MEMBER_NAME_IDX] })
                                 closureColumn(header: 'Value', read: { it[MEMBER_VALUE_IDX] })
