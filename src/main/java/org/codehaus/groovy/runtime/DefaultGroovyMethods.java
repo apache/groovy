@@ -12261,53 +12261,101 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * Integer[] a = [1, 2, 3]
      * Integer[] b = [4, 5, 6]
-     * assert a + b == [1, 2, 3, 4, 5, 6] as Integer[]
+     * def result = a + b
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{1, 2, 3, 4, 5, 6}
+     *
+     * Number[] c = [-1, 0.9, null]
+     * result = c + a
+     * assert result.class == Number[]
+     * assert result == new Number[]{-1, 0.9, null, 1, 2, 3}
+     *
+     * result = a + c
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{1, 2, 3, -1, 0, null}
+     *
+     * Date[] d = [new Date()]
+     * // improper type arguments; Date can't be coerced to Integer
+     * groovy.test.GroovyAssert.shouldFail(ClassCastException) { a + d }
      * </pre>
      *
      * @param left  the left Array
      * @param right the right Array
      * @return A new array containing right appended to left.
+     * @throws ClassCastException if any elements from right aren't compatible (according to {@link DefaultTypeTransformation#castToType(Object, Class)}) to the component type of left
      * @since 1.8.7
      */
-    @SuppressWarnings("unchecked")
-    public static <T> T[] plus(T[] left, T[] right) {
-        return (T[]) plus((List<T>) toList(left), toList(right)).toArray();
+    public static <T> T[] plus(final T[] left, final Object[] right) {
+        T[] result = Arrays.copyOf(left, left.length + right.length);
+        T[] temp = (T[]) DefaultTypeTransformation.castToType(right, left.getClass());
+        System.arraycopy(temp, 0, result, left.length, temp.length);
+        return result;
     }
 
     /**
      * Create an array containing elements from an original array plus an additional appended element.
      * <pre class="groovyTestCase">
      * Integer[] a = [1, 2, 3]
-     * Integer[] result = a + 4
-     * assert result == [1, 2, 3, 4] as Integer[]
+     * def result = a + 4
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{1, 2, 3, 4}
+     *
+     * result = a + 5.5d
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{1, 2, 3, 5}
+     *
+     * // improper type arguments; Date can't be coerced to Integer
+     * groovy.test.GroovyAssert.shouldFail(ClassCastException) { a + new Date() }
      * </pre>
      *
      * @param left  the array
      * @param right the value to append
      * @return A new array containing left with right appended to it.
+     * @throws ClassCastException if any elements from right aren't compatible (according to {@link DefaultTypeTransformation#castToType(Object, Class)}) to the component type of left
      * @since 1.8.7
      */
-    @SuppressWarnings("unchecked")
-    public static <T> T[] plus(T[] left, T right) {
-        return (T[]) plus(toList(left), right).toArray();
+    public static <T> T[] plus(final T[] left, final Object right) {
+        T[] result = Arrays.copyOf(left, left.length + 1);
+        result[left.length] = (T) DefaultTypeTransformation.castToType(right, left.getClass().getComponentType());
+        return result;
     }
 
     /**
      * Create an array containing elements from an original array plus those from a Collection.
      * <pre class="groovyTestCase">
      * Integer[] a = [1, 2, 3]
-     * def additions = [7, 8]
-     * assert a + additions == [1, 2, 3, 7, 8] as Integer[]
+     * def result = a + [4, 5, 6]
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{1, 2, 3, 4, 5, 6}
+     *
+     * Number[] c = [-1, 0.9, null]
+     * result = c + [1, 2, 3]
+     * assert result.class == Number[]
+     * assert result == new Number[]{-1, 0.9, null, 1, 2, 3}
+     *
+     * result = a + [-1, 0.9, null]
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{1, 2, 3, -1, 0, null}
+     *
+     * // improper type arguments; Date can't be coerced to Integer
+     * groovy.test.GroovyAssert.shouldFail(ClassCastException) { a + [new Date()] }
      * </pre>
      *
      * @param left  the array
      * @param right a Collection to be appended
      * @return A new array containing left with right appended to it.
+     * @throws ClassCastException if any elements from right aren't compatible (according to {@link DefaultTypeTransformation#castToType(Object, Class)}) to the component type of left
      * @since 1.8.7
      */
-    @SuppressWarnings("unchecked")
-    public static <T> T[] plus(T[] left, Collection<T> right) {
-        return (T[]) plus((List<T>) toList(left), right).toArray();
+    public static <T> T[] plus(final T[] left, final Collection<?> right) {
+        T[] result = Arrays.copyOf(left, left.length + right.size());
+        int i = left.length;
+        Class<?> leftType = left.getClass().getComponentType();
+        for (Object t : right) {
+            result[i] = (T) DefaultTypeTransformation.castToType(t, leftType);
+            i += 1;
+        }
+        return result;
     }
 
     /**
@@ -12316,20 +12364,118 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * class AbcIterable implements Iterable<String> {
      *     Iterator<String> iterator() { "abc".iterator() }
      * }
-     * String[] letters = ['x', 'y', 'z']
-     * def result = letters + new AbcIterable()
-     * assert result == ['x', 'y', 'z', 'a', 'b', 'c'] as String[]
-     * assert result.class.array
+     * String[] array = ['x', 'y', 'z']
+     * def result = array + new AbcIterable()
+     * assert result.class == String[]
+     * assert result == new String[]{'x', 'y', 'z', 'a', 'b', 'c'}
      * </pre>
      *
      * @param left  the array
      * @param right an Iterable to be appended
      * @return A new array containing elements from left with those from right appended.
+     * @throws ClassCastException if any elements from right aren't compatible (according to {@link DefaultTypeTransformation#castToType(Object, Class)}) to the component type of left
+     * @see #union(Object[], Iterable)
      * @since 1.8.7
      */
-    @SuppressWarnings("unchecked")
-    public static <T> T[] plus(T[] left, Iterable<T> right) {
-        return (T[]) plus((List<T>) toList(left), toList(right)).toArray();
+    public static <T> T[] plus(final T[] left, final Iterable<?> right) {
+        return plus(left, toList(right));
+    }
+
+    /**
+     * Create an Object array as a union of two arrays.
+     * This is similar to {@link #plus(Object[], Object[])} but always return an Object array
+     * and so might be more applicable when adding heterogeneous arrays.
+     * <pre class="groovyTestCase">
+     * Integer[] a = [1, 2, 3]
+     * String[] b = ['foo', 'bar']
+     * def result = a.union(b)
+     * assert result.class == Object[]
+     * assert result == new Object[]{1, 2, 3, 'foo', 'bar'}
+     * </pre>
+     *
+     * @param left  the left Array
+     * @param right the right Array
+     * @return A new Object array containing right appended to left.
+     * @since 4.0.0
+     */
+    public static Object[] union(final Object[] left, final Object[] right) {
+        Object[] result = new Object[left.length + right.length];
+        System.arraycopy(left, 0, result, 0, left.length);
+        System.arraycopy(right, 0, result, left.length, right.length);
+        return result;
+    }
+
+    /**
+     * Create an Object array containing elements from an original array plus an additional appended element.
+     * This is similar to {@link #plus(Object[], Object)} but always return an Object array
+     * and so might be more applicable when adding heterogeneous arrays.
+     * <pre class="groovyTestCase">
+     * Integer[] a = [1, 2, 3]
+     * def result = a.union('foo')
+     * assert result.class == Object[]
+     * assert result == new Object[]{1, 2, 3, 'foo'}
+     * </pre>
+     *
+     * @param left  the array
+     * @param right the value to append
+     * @return A new Object array containing left with right appended to it.
+     * @since 4.0.0
+     */
+    public static Object[] union(final Object[] left, final Object right) {
+        Object[] result = new Object[left.length + 1];
+        System.arraycopy(left, 0, result, 0, left.length);
+        result[left.length] = right;
+        return result;
+    }
+
+    /**
+     * Create an object array containing elements from an original array plus those from a Collection.
+     * This is similar to {@link #plus(Object[], Collection)} but always return an Object array
+     * and so might be more applicable when adding heterogeneous arrays.
+     * <pre class="groovyTestCase">
+     * Integer[] a = [1, 2, 3]
+     * def result = a.union(['foo', 'bar'])
+     * assert result.class == Object[]
+     * assert result == new Object[]{1, 2, 3, 'foo', 'bar'}
+     * </pre>
+     *
+     * @param left  the array
+     * @param right a Collection to be appended
+     * @return A new Object array containing left with right appended to it.
+     * @since 4.0.0
+     */
+    public static Object[] union(final Object[] left, final Collection<?> right) {
+        Object[] result = new Object[left.length + right.size()];
+        System.arraycopy(left, 0, result, 0, left.length);
+        int i = left.length;
+        for (Object t : right) {
+            result[i] = t;
+            i += 1;
+        }
+        return result;
+    }
+
+    /**
+     * Create an Object array containing elements from an original array plus those from an Iterable.
+     * This is similar to {@link #plus(Object[], Iterable)} but always return an Object array
+     * and so might be more applicable when adding heterogeneous arrays.
+     * <pre class="groovyTestCase">
+     * class AbcIterable implements Iterable<String> {
+     *     Iterator<String> iterator() { "abc".iterator() }
+     * }
+     * String[] array = ['x', 'y', 'z']
+     * def result = array.union(new AbcIterable())
+     * assert result.class == Object[]
+     * assert result == new Object[]{'x', 'y', 'z', 'a', 'b', 'c'}
+     * </pre>
+     *
+     * @param left  the array
+     * @param right an Iterable to be appended
+     * @return A new Object array containing elements from left with those from right appended.
+     * @since 4.0.0
+     */
+    public static Object[] union(final Object[] left, final Iterable<?> right) {
+        return union(left, toList(right));
     }
 
     /**
