@@ -1390,11 +1390,6 @@ public class ClassNode extends AnnotatedNode {
         return recordComponents;
     }
 
-    @Deprecated
-    public List<RecordComponentNode> getRecordComponentNodes() {
-        return getRecordComponents();
-    }
-
     /**
      * Sets the record components for record type.
      *
@@ -1406,11 +1401,6 @@ public class ClassNode extends AnnotatedNode {
         } else {
             this.recordComponents = recordComponents;
         }
-    }
-
-    @Deprecated
-    public void setRecordComponentNodes(List<RecordComponentNode> recordComponentNodes) {
-        setRecordComponents(recordComponentNodes);
     }
 
     public boolean isAbstract() {
