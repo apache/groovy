@@ -3180,7 +3180,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @see GroovyObject
      */
     protected final void checkIfGroovyObjectMethod(MetaMethod metaMethod) {
-        if (metaMethod instanceof ClosureMetaMethod || metaMethod instanceof MixinInstanceMetaMethod) {
+        if (metaMethod instanceof ClosureMetaMethod
+                || metaMethod instanceof NewInstanceMetaMethod
+                || metaMethod instanceof MixinInstanceMetaMethod) {
             if (isGetPropertyMethod(metaMethod)) {
                 getPropertyMethod = metaMethod;
             } else if (isInvokeMethod(metaMethod)) {
