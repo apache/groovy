@@ -222,4 +222,15 @@ class SealedTransformTest {
         ''')
         assert shapeClass.getAnnotation(Sealed) == null
     }
+
+    @Test
+    void testSealedSelfReference() {
+        def expected = "Illegal self-reference: a sealed class cannot have itself as a permitted subclass"
+        assert shouldFail(MultipleCompilationErrorsException, '''
+            @groovy.transform.Sealed(permittedSubclasses=Shape) class Shape { }
+        ''').message.contains(expected)
+        assert shouldFail(MultipleCompilationErrorsException, '''
+            sealed class Other permits Other { }
+        ''').message.contains(expected)
+    }
 }
