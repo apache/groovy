@@ -43,6 +43,7 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 public class SealedASTTransformation extends AbstractASTTransformation {
 
     private static final Class<?> SEALED_CLASS = Sealed.class;
+    private static final String SEALED_NAME = "@" + SEALED_CLASS.getSimpleName();
     private static final ClassNode SEALED_TYPE = make(SEALED_CLASS);
     private static final ClassNode SEALED_OPTIONS_TYPE = make(SealedOptions.class);
     public static final String SEALED_ALWAYS_ANNOTATE = "groovy.transform.SealedOptions.alwaysAnnotate";
@@ -57,11 +58,11 @@ public class SealedASTTransformation extends AbstractASTTransformation {
         if (parent instanceof ClassNode) {
             ClassNode cNode = (ClassNode) parent;
             if (cNode.isEnum()) {
-                addError("@" + SEALED_CLASS.getSimpleName() + " not allowed for enum", cNode);
+                addError(SEALED_NAME + " not allowed for enum", cNode);
                 return;
             }
             if (cNode.isAnnotationDefinition()) {
-                addError("@" + SEALED_CLASS.getSimpleName() + " not allowed for annotation definition", cNode);
+                addError(SEALED_NAME + " not allowed for annotation definition", cNode);
                 return;
             }
             cNode.putNodeMetaData(SEALED_CLASS, Boolean.TRUE);
@@ -89,6 +90,11 @@ public class SealedASTTransformation extends AbstractASTTransformation {
             }
             List<ClassNode> newSubclasses = getMemberClassList(anno, "permittedSubclasses");
             if (newSubclasses != null) {
+                newSubclasses.forEach(subnode -> {
+                    if (subnode.equals(cNode)) {
+                        addError("Illegal self-reference: a sealed class cannot have itself as a permitted subclass", anno);
+                    }
+                });
                 cNode.getPermittedSubclasses().addAll(newSubclasses);
             }
         }
