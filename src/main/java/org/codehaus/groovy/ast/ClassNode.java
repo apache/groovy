@@ -1417,6 +1417,9 @@ public class ClassNode extends AnnotatedNode {
         return (getModifiers() & ACC_ABSTRACT) != 0;
     }
 
+    /**
+     * @return true for native and emulated (annotation based) sealed classes
+     */
     public boolean isSealed() {
         return !getAnnotations(SEALED_TYPE).isEmpty() || !getPermittedSubclasses().isEmpty();
     }
