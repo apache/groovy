@@ -66,4 +66,47 @@ final class Groovy5358 {
             }
         '''
     }
+
+    @Test
+    void testSetPropertyOverrides() {
+        assertScript '''
+            class FooWorksAsMap {
+                def val
+                void setProperty(String name, value) {
+                    val = "OK:FooWorksAsMap.$value"
+                }
+            }
+            class BarWorksAsMap {
+                def val
+            }
+            @Category(BarWorksAsMap) class C {
+                void setProperty(String name, value) {
+                    setVal("OK:BarWorksAsMap.$value")
+                }
+            }
+            BarWorksAsMap.mixin C
+            class BazWorksAsMap {
+                def val
+            }
+            BazWorksAsMap.metaClass.setProperty = { String name, value ->
+                    setVal("OK:BazWorksAsMap.$value")
+            }
+
+            def objects = [
+                new FooWorksAsMap(),
+                new BarWorksAsMap(),
+                new BazWorksAsMap(),
+                [:]
+            ]
+            for (def obj in objects) {
+                def which = "${obj.getClass().getSimpleName()}.val"
+                try {
+                    obj.val = which.startsWith('LinkedHashMap') ? "OK:LinkedHashMap.bar" : 'bar'
+                    assert obj.val.startsWith('OK:') : "$which -> $obj.val"
+                } catch (any) {
+                    assert false : "$which -> FAIL:$any"
+                }
+            }
+        '''
+    }
 }
