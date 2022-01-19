@@ -206,6 +206,18 @@ class PropertyTest extends GroovyTestCase {
         }
     }
 
+    // GROOVY-10456
+    void testEmptyPropertyAccessForObject() {
+        assertScript '''
+            import static groovy.test.GroovyAssert.shouldFail
+
+            shouldFail(MissingPropertyException) {
+                o = new Object()
+                o[""]
+            }
+        '''
+    }
+
     void testPrivatePropertyThroughSubclass() {
         assertScript '''
             class A {
