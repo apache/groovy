@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ast;
 
 import org.apache.groovy.ast.tools.ClassNodeUtils;
+import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -388,8 +389,9 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * @return permitted subclasses of sealed type
+     * @return permitted subclasses of sealed type, may initially be empty in early compiler phases
      */
+    @Incubating
     public List<ClassNode> getPermittedSubclasses() {
         if (redirect != null)
             return redirect.getPermittedSubclasses();
@@ -397,6 +399,7 @@ public class ClassNode extends AnnotatedNode {
         return permittedSubclasses;
     }
 
+    @Incubating
     public void setPermittedSubclasses(List<ClassNode> permittedSubclasses) {
         if (redirect != null) {
             redirect.setPermittedSubclasses(permittedSubclasses);
@@ -1420,7 +1423,10 @@ public class ClassNode extends AnnotatedNode {
     /**
      * @return true for native and emulated (annotation based) sealed classes
      */
+    @Incubating
     public boolean isSealed() {
+        if (redirect != null) return redirect.isSealed();
+        lazyClassInit();
         return !getAnnotations(SEALED_TYPE).isEmpty() || !getPermittedSubclasses().isEmpty();
     }
 
