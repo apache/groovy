@@ -792,6 +792,23 @@ final class AnnotationTest extends CompilableTestSupport {
         assert err =~ /Cannot specify duplicate annotation/
     }
 
+    // GROOVY-7033
+    void testClassLiteralsRecognizedForAnonymousInnerClassAnnotationUsage() {
+        shouldCompile '''
+            @interface A {
+                Class value()
+            }
+
+            def obj = new Object() {
+                @A(String) def field
+                @A(String) @Override
+                boolean equals(@A(String) param) {
+                    def type = String
+                }
+            }
+        '''
+    }
+
     void testVariableExpressionsReferencingConstantsSeenForAnnotationAttributes() {
         shouldCompile '''
             class C {
