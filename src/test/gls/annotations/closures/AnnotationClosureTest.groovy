@@ -19,17 +19,16 @@
 package gls.annotations.closures
 
 import gls.CompilableTestSupport
-import groovy.transform.NotYetImplemented
 
-import java.lang.annotation.RetentionPolicy
 import java.lang.annotation.Retention
+import java.lang.annotation.RetentionPolicy
 import java.lang.reflect.Modifier
 
 class AnnotationClosureTest extends CompilableTestSupport {
     def answer = new Object() {
         def answer() { 42 }
     }
-    
+
     void testGep3InClosure() {
         shouldCompile """
             @interface Bar{Class value();}
@@ -146,10 +145,9 @@ import java.lang.annotation.*
 class Foo {}
         """
     }
-    
-    @NotYetImplemented
+
     void testAnnotationOnAnonymousMethod() {
-        shouldCompile """        
+        shouldCompile '''
             import java.lang.annotation.*
 
             @Retention(RetentionPolicy.RUNTIME)
@@ -157,10 +155,10 @@ class Foo {}
             @interface Bar{Class value();}
 
             return new Object() {
-              @Bar({})
-              String toString() {}
+                @Bar({})
+                String toString() {}
             }
-"""
+        '''
     }
 }
 
