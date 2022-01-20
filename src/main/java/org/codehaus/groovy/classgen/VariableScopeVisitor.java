@@ -494,17 +494,18 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         currentScope.setClassScope(innerClass);
         currentScope.setInStaticContext(false);
         for (MethodNode method : innerClass.getMethods()) {
+            visitAnnotations(method); // GROOVY-7033
             Parameter[] parameters = method.getParameters();
-            if (parameters.length == 0) {
-                parameters = null; // null means no implicit "it"
-            }
+            for (Parameter p : parameters) visitAnnotations(p); // GROOVY-7033
+            if (parameters.length == 0) parameters = null; // disable implicit "it"
             visitClosureExpression(new ClosureExpression(parameters, method.getCode()));
         }
 
         for (FieldNode field : innerClass.getFields()) {
+            visitAnnotations(field); // GROOVY-7033
             Expression initExpression = field.getInitialExpression();
-            pushState(field.isStatic());
             if (initExpression != null) {
+                pushState(field.isStatic());
                 if (initExpression.isSynthetic() && initExpression instanceof VariableExpression
                         && ((VariableExpression) initExpression).getAccessedVariable() instanceof Parameter) {
                     // GROOVY-6834: accessing a parameter which is not yet seen in scope
@@ -512,8 +513,8 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                     continue;
                 }
                 initExpression.visit(this);
+                popState();
             }
-            popState();
         }
 
         for (Statement initStatement : innerClass.getObjectInitializerStatements()) {
