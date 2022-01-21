@@ -289,6 +289,20 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
 
     }
 
+    void testDynamicClassWithStaticConstructorAndInitialization() {
+        shouldFailWithMessages '''
+            class A {
+            }
+            class B {
+                A a = new A() // may require dynamic support...
+                @groovy.transform.CompileStatic
+                B() {
+                }
+            }
+        ''',
+        'Cannot statically compile constructor implicitly including non-static elements from fields, properties or initializers'
+    }
+
     void testSCClosureCanAccessPrivateFieldsOfNonSCEnclosingClass() {
         assertScript '''
             class Test {
