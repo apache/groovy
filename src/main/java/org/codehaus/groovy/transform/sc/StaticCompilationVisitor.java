@@ -192,38 +192,44 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         return false;
     }
 
-    /**
-     * If we are in a constructor, that is static compiled, but in a class, that
-     * is not, it may happen that init code from object initializers, fields
-     * or properties is added into the constructor code. The backend assumes
-     * a purely static constructor, so it may fail if it encounters dynamic
-     * code here. Thus we make this kind of code fail
-     */
-    private void checkForConstructorWithCSButClassWithout(MethodNode node) {
-        if (!(node instanceof ConstructorNode)) return;
-        Object meta = node.getNodeMetaData(STATIC_COMPILE_NODE);
-        if (!Boolean.TRUE.equals(meta)) return;
-        ClassNode clz = typeCheckingContext.getEnclosingClassNode();
-        meta = clz.getNodeMetaData(STATIC_COMPILE_NODE);
-        if (Boolean.TRUE.equals(meta)) return;
-        if (    clz.getObjectInitializerStatements().isEmpty() &&
-                clz.getFields().isEmpty() &&
-                clz.getProperties().isEmpty())
-        {
-            return;
+    private void visitConstructorOrMethod(final MethodNode node) {
+        boolean isSkipped = isSkipMode(node); // @CompileDynamic
+        boolean isSC = !isSkipped && isStaticallyCompiled(node);
+        if (isSkipped) {
+            node.putNodeMetaData(STATIC_COMPILE_NODE, Boolean.FALSE);
         }
+        if (node instanceof ConstructorNode) {
+            super.visitConstructor((ConstructorNode) node);
+            ClassNode declaringClass = node.getDeclaringClass();
+            if (isSC && !isStaticallyCompiled(declaringClass)) {
+                // In a constructor that is statically compiled within a class that is
+                // not, it may happen that init code from object initializers, fields or
+                // properties is added into the constructor code. The backend assumes a
+                // purely static constructor, so it may fail if it encounters dynamic
+                // code here. Thus we make this kind of code fail.
+                if (!declaringClass.getFields().isEmpty()
+                        || !declaringClass.getProperties().isEmpty()
+                        || !declaringClass.getObjectInitializerStatements().isEmpty()) {
+                    addStaticTypeError("Cannot statically compile constructor implicitly including non-static elements from fields, properties or initializers", node);
+                }
+            }
+        } else {
+            super.visitMethod(node);
+        }
+        if (isSC) {
+            ClassNode declaringClass = node.getDeclaringClass();
+            addDynamicOuterClassAccessorsCallback(declaringClass);
+        }
+    }
 
-        addStaticTypeError("Cannot statically compile constructor implicitly including non static elements from object initializers, properties or fields.",node);
+    @Override
+    public void visitConstructor(final ConstructorNode node) {
+        visitConstructorOrMethod(node);
     }
 
     @Override
     public void visitMethod(final MethodNode node) {
-        if (isSkipMode(node)) {
-            node.putNodeMetaData(STATIC_COMPILE_NODE, false);
-        }
-        super.visitMethod(node);
-        checkForConstructorWithCSButClassWithout(node);
-        if (isStaticallyCompiled(node)) addDynamicOuterClassAccessorsCallback(node.getDeclaringClass());
+        visitConstructorOrMethod(node);
     }
 
     /**

@@ -19,21 +19,47 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 
 /**
  * Test case for {@link groovy.transform.CompileDynamic}.
  */
-class CompileDynamicTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class CompileDynamicTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
-    void testCompileDynamic() {
-        assertScript '''import groovy.transform.CompileDynamic
-            class Foo {
+    @Override
+    protected void setUp() {
+        super.setUp()
+        def customizers = config.compilationCustomizers
+        // ASTTransformationCustomizer(CompileStatic) only uses visitMethod
+        customizers.removeAll { it instanceof ASTTransformationCustomizer }
+        customizers[0].addImports('groovy.transform.CompileDynamic', 'groovy.transform.CompileStatic')
+    }
+
+    void testCompileDynamicMethod() {
+        assertScript '''
+            @CompileStatic
+            class C {
                 @CompileDynamic
-                void skipped() {
-                    int i = 'should not pass'
+                void skip() {
+                    int i = 'cannot assign string to int'
                 }
             }
-            new Foo()
+            new C()
+        '''
+    }
+
+    // GROOVY-10457
+    void testCompileDynamicConstructor() {
+        assertScript '''
+            @CompileStatic
+            class C {
+                @CompileDynamic
+                C() {
+                    String result = new StringReader('works').text
+                    assert result == 'works'
+                }
+            }
+            new C()
         '''
     }
 }
