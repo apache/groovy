@@ -161,15 +161,23 @@ final class AnnotationClosureTest extends CompilableTestSupport {
 
             @Target(ElementType.METHOD)
             @Retention(RetentionPolicy.RUNTIME)
-            @interface Tag { Class<?> value() }
+            @interface MethodAnno { Class<?> value() }
 
-            def obj = new Object() {
-                @Tag(value = { -> })
+            @Target(ElementType.TYPE_USE)
+            @Retention(RetentionPolicy.RUNTIME)
+            @interface TypeUseAnno { Class<?> value() }
+
+            def aic = new Object() {
+                @MethodAnno(value = { -> })
+                @TypeUseAnno(value = { -> })
                 String toString() {}
             }
 
-            Annotation ann = obj.class.getMethod('toString').annotations[0]
-            assert ann.annotationType().name == 'Tag'
+            def toString = aic.class.getMethod('toString')
+            Annotation ann = toString.annotations[0]
+            assert ann.annotationType().name == 'MethodAnno'
+            ann = toString.annotatedReturnType.annotations[0]
+            assert ann.annotationType().name == 'TypeUseAnno'
         '''
     }
 }
