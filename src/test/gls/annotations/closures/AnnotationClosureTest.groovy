@@ -156,17 +156,20 @@ final class AnnotationClosureTest extends CompilableTestSupport {
 
     // GROOVY-7033
     void testAnnotationOnAnonymousInnerClassMethod() {
-        shouldCompile '''
+        assertScript '''
             import java.lang.annotation.*
 
             @Target(ElementType.METHOD)
             @Retention(RetentionPolicy.RUNTIME)
             @interface Tag { Class<?> value() }
 
-            return new Object() {
+            def obj = new Object() {
                 @Tag(value = { -> })
                 String toString() {}
             }
+
+            Annotation ann = obj.class.getMethod('toString').annotations[0]
+            assert ann.annotationType().name == 'Tag'
         '''
     }
 }
