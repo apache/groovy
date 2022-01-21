@@ -26,95 +26,73 @@ import groovy.transform.stc.ConstructorsSTCTest
 class StaticCompileConstructorsTest extends ConstructorsSTCTest implements StaticCompilationTestSupport {
 
     void testMapConstructorError() {
-        assertScript '''import groovy.transform.Canonical
-
-        class WTF {
-            public static void main(String[] args) {
-                new Person(name:"First")
-                first(new Person(name:"First"))
+        assertScript '''
+            class C {
+                static void test() {
+                    new Person(name:"First")
+                    first(new Person(name:"First"))
+                }
+                static Person first(Person p) {
+                    p
+                }
+            }
+            @groovy.transform.Canonical
+            class Person {
+                String name
             }
 
-            static Person first(Person p) {
-                p
-            }
-
-        }
-
-        @Canonical
-        class Person {
-            String name
-        }
-        WTF.main()
+            C.test()
         '''
-    }
-    
-    void testMixedDynamicStaticConstructor() {
-        shouldFailWithMessages("""
-            class A{}
-            class B {
-                A a = new A();
-                @groovy.transform.CompileStatic
-                B(){}
-            }
-        """, "Cannot statically compile constructor implicitly including non static elements from object initializers, properties or fields")
     }
 
     void testPrivateConstructorFromClosure() {
-        try {
-            assertScript '''
-                class Foo {
-                    String s
-                    private Foo(String s) { this.s = s }
-                    static Foo makeFoo(String s) {
-                        def cl = { new Foo(s) }
-                        cl()
-                    }
+        assertScript '''
+            class C {
+                String s
+                private C(String s) {
+                    this.s = s
                 }
-                assert Foo.makeFoo('pls').s == 'pls'
-            '''
-        } finally {
-            //println astTrees
-        }
+                static C make(String s) {
+                    def cl = { new C(s) }
+                    cl()
+                }
+            }
+            assert C.make('pls').s == 'pls'
+        '''
     }
 
     void testPrivateConstructorFromNestedClass() {
-        try {
-            assertScript '''
-                class Foo {
-                    String s
-                    private Foo(String s) { this.s = s }
-                    static class Bar {
-                        static Foo makeFoo(String s) { new Foo(s) }
-                    }
-
+        assertScript '''
+            class Foo {
+                String s
+                private Foo(String s) {
+                    this.s = s
                 }
-                assert Foo.Bar.makeFoo('pls').s == 'pls'
-            '''
-        } finally {
-            //println astTrees
-        }
+                static class Bar {
+                    static Foo makeFoo(String s) { new Foo(s) }
+                }
+
+            }
+            assert Foo.Bar.makeFoo('pls').s == 'pls'
+        '''
     }
 
     void testPrivateConstructorFromAIC() {
-        try {
-            assertScript '''
-                class Foo {
-                    String s
-                    private Foo(String s) { this.s = s }
-                    static Foo makeFoo(String s) {
-                        return new Object() {
-                            Foo makeFoo(String x) {
-                                new Foo(x)
-                            }
-                        }.makeFoo(s)
-                    }
+        assertScript '''
+            class Foo {
+                String s
+                private Foo(String s) {
+                    this.s = s
                 }
-                assert Foo.makeFoo('pls').s == 'pls'
-            '''
-        } finally {
-            //println astTrees
-        }
+                static Foo makeFoo(String s) {
+                    new Object() {
+                        Foo makeFoo(String x) {
+                            new Foo(x)
+                        }
+                    }.makeFoo(s)
+                }
+            }
+            assert Foo.makeFoo('pls').s == 'pls'
+        '''
     }
-
 }
-
