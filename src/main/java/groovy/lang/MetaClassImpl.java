@@ -3266,7 +3266,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // replace if self type is the same or the category self type is more specific
         if (selfType1 == selfType2 || selfType1.isAssignableFrom(selfType2)) return Boolean.TRUE;
         // GROOVY-6363: replace if the private method self type is more specific
-        // if (aMethod.isPrivate() && selfType2.isAssignableFrom(selfType1)) return Boolean.TRUE;
+        if (aMethod.isPrivate() && selfType2.isAssignableFrom(selfType1)) return Boolean.TRUE;
 
         return null;
     }

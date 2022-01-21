@@ -18,7 +18,6 @@
  */
 package groovy.lang
 
-import groovy.test.NotYetImplemented
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -283,7 +282,7 @@ final class CategoryAnnotationTest {
         '''
     }
 
-    @NotYetImplemented @Test // GROOVY-6363
+    @Test // GROOVY-6363
     void testCategoryMethodOverridesPrivateMethod() {
         assertScript '''
             import groovy.transform.CompileStatic
