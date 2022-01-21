@@ -146,6 +146,7 @@ public class ImportNode extends AnnotatedNode {
 
     public void setType(final ClassNode type) {
         this.type = type;
+        hashCode = 0;
     }
 
     @Override
