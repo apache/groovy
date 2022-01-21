@@ -58,7 +58,7 @@ final class MixinAnnotationTest {
     }
 
     @Test
-    void testMultipleMixinAnnotation () {
+    void testMultipleMixinAnnotation() {
         assertScript '''
             @Category(Object)
             class CategoryToUse1 {
@@ -83,6 +83,28 @@ final class MixinAnnotationTest {
 
             def result = new ClassToExtend().asText()
             assert result == 'under category: under BIG category: object of ClassToExtend'
+        '''
+    }
+
+    @Test // GROOVY-4801
+    void testMixinWithTryCatchClause() {
+        assertScript '''
+            class ExceptionHandler {
+                static tryCatch(Object self, Closure block) {
+                    try {
+                        block.call()
+                    } catch (Throwable t) {
+                        return t.message
+                    }
+                }
+            }
+
+            @Mixin(ExceptionHandler)
+            class C {
+                def m() { tryCatch { 1/0 } }
+            }
+
+            assert new C().m() == 'Division by zero'
         '''
     }
 

@@ -3252,21 +3252,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      *         {@code null} : ignore method
      *         {@code true} : replace
      */
-    private static Boolean getMatchKindForCategory(MetaMethod aMethod, MetaMethod categoryMethod) {
-        CachedClass[] params1 = aMethod.getParameterTypes();
-        CachedClass[] params2 = categoryMethod.getParameterTypes();
-        if (params1.length != params2.length) return Boolean.FALSE;
-
-        for (int i = 0; i < params1.length; i++) {
-            if (params1[i] != params2[i]) return Boolean.FALSE;
+    private static Boolean getMatchKindForCategory(final MetaMethod aMethod, final MetaMethod categoryMethod) {
+        CachedClass[] paramTypes1 = aMethod.getParameterTypes();
+        CachedClass[] paramTypes2 = categoryMethod.getParameterTypes();
+        int n = paramTypes1.length;
+        if (n != paramTypes2.length) return Boolean.FALSE;
+        for (int i = 0; i < n; i += 1) {
+            if (paramTypes1[i] != paramTypes2[i]) return Boolean.FALSE;
         }
 
-        Class aMethodClass = aMethod.getDeclaringClass().getTheClass();
-        Class categoryMethodClass = categoryMethod.getDeclaringClass().getTheClass();
+        Class selfType1 = aMethod.getDeclaringClass().getTheClass();
+        Class selfType2 = categoryMethod.getDeclaringClass().getTheClass();
+        // replace if self type is the same or the category self type is more specific
+        if (selfType1 == selfType2 || selfType1.isAssignableFrom(selfType2)) return Boolean.TRUE;
+        // GROOVY-6363: replace if the private method self type is more specific
+        // if (aMethod.isPrivate() && selfType2.isAssignableFrom(selfType1)) return Boolean.TRUE;
 
-        if (aMethodClass == categoryMethodClass) return Boolean.TRUE;
-        boolean match = aMethodClass.isAssignableFrom(categoryMethodClass);
-        if (match) return Boolean.TRUE;
         return null;
     }
 
