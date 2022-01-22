@@ -1484,7 +1484,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode rawType = objectExpressionType.getPlainNodeReference();
             inferDiamondType((ConstructorCallExpression) objectExpression, rawType);
         }
-        List<ClassNode> enclosingTypes = typeCheckingContext.getEnclosingClassNodes();
+        // enclosing excludes classes that skip STC
+        Set<ClassNode> enclosingTypes = new LinkedHashSet<>();
+        enclosingTypes.add(typeCheckingContext.getEnclosingClassNode());
+        enclosingTypes.addAll(enclosingTypes.iterator().next().getOuterClasses());
 
         boolean staticOnlyAccess = isClassClassNodeWrappingConcreteType(objectExpressionType);
         if (staticOnlyAccess && "this".equals(propertyName)) {
@@ -1577,7 +1580,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // prefer explicit getter or setter over property if receiver is not 'this'
                 if (property == null || !enclosingTypes.contains(receiverType)) {
                     if (readMode) {
-                        if (getter != null) {
+                        if (getter != null && hasAccessToMember(enclosingTypes.iterator().next(), getter.getDeclaringClass(), getter.getModifiers())) {
                             ClassNode returnType = inferReturnTypeGenerics(current, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
                             storeInferredTypeForPropertyExpression(pexp, returnType);
                             storeTargetMethod(pexp, getter);
@@ -1696,14 +1699,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return foundGetterOrSetter;
     }
 
-    private static boolean hasAccessToField(final ClassNode accessor, final FieldNode field) {
-        if (field.isPublic() || accessor.equals(field.getDeclaringClass())) {
+    private static boolean hasAccessToMember(final ClassNode accessor, final ClassNode receiver, final int modifiers) {
+        if (Modifier.isPublic(modifiers)
+                || accessor.equals(receiver)
+                || accessor.getOuterClasses().contains(receiver)) {
             return true;
         }
-        if (field.isProtected()) {
-            return accessor.isDerivedFrom(field.getDeclaringClass());
+        if (Modifier.isProtected(modifiers)) {
+            return accessor.isDerivedFrom(receiver);
         } else {
-            return !field.isPrivate() && Objects.equals(accessor.getPackageName(), field.getDeclaringClass().getPackageName());
+            return !Modifier.isPrivate(modifiers) && Objects.equals(accessor.getPackageName(), receiver.getPackageName());
         }
     }
 
@@ -1815,7 +1820,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private boolean storeField(final FieldNode field, final PropertyExpression expressionToStoreOn, final ClassNode receiver, final ClassCodeVisitorSupport visitor, final String delegationData, final boolean lhsOfAssignment) {
         if (visitor != null) visitor.visitField(field);
         checkOrMarkPrivateAccess(expressionToStoreOn, field, lhsOfAssignment);
-        boolean accessible = hasAccessToField(isSuperExpression(expressionToStoreOn.getObjectExpression()) ? typeCheckingContext.getEnclosingClassNode() : receiver, field);
+        boolean accessible = hasAccessToMember(isSuperExpression(expressionToStoreOn.getObjectExpression()) ? typeCheckingContext.getEnclosingClassNode() : receiver, field.getDeclaringClass(), field.getModifiers());
 
         if (expressionToStoreOn instanceof AttributeExpression) { // TODO: expand to include PropertyExpression
             if (!accessible) {
@@ -3079,7 +3084,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else {
                 for (int i = 0, n = closureParams.length; i < n; i += 1) {
                     Parameter closureParam = closureParams[i];
-                    ClassNode declaredType = closureParam.getOriginType();
                     ClassNode inferredType = OBJECT_TYPE;
                     if (i < inferred.length - 1 || inferred.length == n) {
                         inferredType = inferred[i];
@@ -4097,9 +4101,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // char c = (char) ...
         } else if (sourceIsNull && isPrimitiveType(targetType) && !isPrimitiveBoolean(targetType)) {
             return false;
-        } else if ((expressionType.getModifiers() & Opcodes.ACC_FINAL) == 0 && targetType.isInterface()) {
+        } else if (!Modifier.isFinal(expressionType.getModifiers()) && targetType.isInterface()) {
             return true;
-        } else if ((targetType.getModifiers() & Opcodes.ACC_FINAL) == 0 && expressionType.isInterface()) {
+        } else if (!Modifier.isFinal(targetType.getModifiers()) && expressionType.isInterface()) {
             return true;
         } else if (!isAssignableTo(targetType, expressionType) && !implementsInterfaceOrIsSubclassOf(expressionType, targetType)) {
             return false;
