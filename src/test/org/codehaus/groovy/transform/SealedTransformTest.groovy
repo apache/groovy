@@ -233,4 +233,19 @@ class SealedTransformTest {
             sealed class Other permits Other { }
         ''').message.contains(expected)
     }
+
+    @Test
+    void testClassNodeIsSealed() {
+        assertScript '''
+            import groovy.transform.*
+            import org.codehaus.groovy.control.CompilePhase
+            @ASTTest(phase = CompilePhase.SEMANTIC_ANALYSIS, value = {
+                assert node.permittedSubclasses*.name == ['Bar']
+                assert node.isSealed()
+            })
+            sealed class Foo permits Bar {}
+            final class Bar {}
+            new Foo()
+        '''
+    }
 }
