@@ -235,7 +235,7 @@ class SealedTransformTest {
     }
 
     @Test
-    void testClassNodeIsSealed() {
+    void testClassNodeIsSealedExplicitSubclasses() {
         assertScript '''
             import groovy.transform.*
             import org.codehaus.groovy.control.CompilePhase
@@ -244,7 +244,22 @@ class SealedTransformTest {
                 assert node.isSealed()
             })
             sealed class Foo permits Bar {}
-            final class Bar {}
+            final class Bar extends Foo {}
+            new Foo()
+        '''
+    }
+
+    @Test
+    void testClassNodeIsSealedImplicitSubclasses() {
+        assertScript '''
+            import groovy.transform.*
+            import org.codehaus.groovy.control.CompilePhase
+            @ASTTest(phase = CompilePhase.CANONICALIZATION, value = {
+                assert node.permittedSubclasses*.name == ['Bar']
+                assert node.isSealed()
+            })
+            sealed class Foo {}
+            final class Bar extends Foo {}
             new Foo()
         '''
     }
