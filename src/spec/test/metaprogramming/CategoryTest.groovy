@@ -56,4 +56,24 @@ class CategoryTest extends GroovyTestCase {
             // end::time_category_anno[]
         '''
     }
+
+    // GROOVY-8433
+    void testCategoryAnnotationAndAIC() {
+        assertScript '''
+            @Category(Number)
+            class NumberCategory {
+                def m() {
+                    String variable = 'works'
+                    new Object() { // "Cannot cast object '1' with class 'java.lang.Integer' to class 'NumberCategory'" due to implicit "this"
+                        String toString() { variable }
+                    }
+                }
+            }
+
+            use (NumberCategory) {
+                String result = 1.m()
+                assert result == 'works'
+            }
+        '''
+    }
 }
