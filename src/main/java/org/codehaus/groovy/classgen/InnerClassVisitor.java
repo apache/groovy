@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen;
 
+import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
@@ -224,7 +225,7 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
         innerClass.addConstructor(ACC_SYNTHETIC, parameters.toArray(Parameter.EMPTY_ARRAY), ClassNode.EMPTY_ARRAY, block);
     }
 
-    private boolean isStatic(InnerClassNode innerClass, VariableScope scope, final ConstructorCallExpression call) {
+    private boolean isStatic(final ClassNode innerClass, final VariableScope scope, final ConstructorCallExpression call) {
         boolean isStatic = innerClass.isStaticClass();
         if (!isStatic) {
             if (currentMethod != null) {
@@ -257,6 +258,14 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
                 }
             } else if (currentField != null) {
                 isStatic = currentField.isStatic();
+            }
+        }
+        if (!isStatic) { // GROOVY-8433: Category transform implies static method
+            for (AnnotationNode an : innerClass.getOuterClass().getAnnotations()) {
+                if (an.getClassNode().getName().equals("groovy.lang.Category")) {
+                    isStatic = true;
+                    break;
+                }
             }
         }
         return isStatic;
