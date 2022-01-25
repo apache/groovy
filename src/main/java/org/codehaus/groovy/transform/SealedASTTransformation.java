@@ -115,9 +115,9 @@ public class SealedASTTransformation extends AbstractASTTransformation {
     }
 
     /**
-     * Reports true if the {@code Sealed} annotation should be included in the bytecode for
-     * a sealed or emulated-sealed class.
-     * Will only ever return true after the SealedASTTransformation visit method has completed.
+     * Reports true if the {@code Sealed} annotation should not be
+     * included in the bytecode for a sealed or emulated-sealed class.
+     * Will only ever return true after the {@code SealedASTTransformation} transform has been invoked.
      *
      * @return true if a {@code Sealed} annotation is not required for this node
      */

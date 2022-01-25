@@ -55,6 +55,7 @@ import static org.codehaus.groovy.ast.ClassHelper.SEALED_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
+import static org.codehaus.groovy.transform.RecordTypeASTTransformation.recordNative;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_ANNOTATION;
 import static org.objectweb.asm.Opcodes.ACC_ENUM;
@@ -1369,23 +1370,24 @@ public class ClassNode extends AnnotatedNode {
 
     /**
      * Checks if the {@link ClassNode} instance represents a native {@code record}.
-     * Check instead for the {@code RecordType} annotation if looking for records and record-like classes.
+     * Check instead for the {@code RecordBase} annotation if looking for records and
+     * record-like classes currently being compiled.
      *
      * @return {@code true} if the instance represents a native {@code record}
-     *
      * @since 4.0.0
      */
+    @Incubating
     public boolean isRecord() {
-        return getUnresolvedSuperClass() != null && "java.lang.Record".equals(getUnresolvedSuperClass().getName());
+        return recordNative(this);
     }
 
     /**
      * Gets the record components of record type.
      *
      * @return {@code RecordComponentNode} instances
-     *
      * @since 4.0.0
      */
+    @Incubating
     public List<RecordComponentNode> getRecordComponents() {
         if (redirect != null)
             return redirect.getRecordComponents();
@@ -1398,6 +1400,7 @@ public class ClassNode extends AnnotatedNode {
      *
      * @since 4.0.0
      */
+    @Incubating
     public void setRecordComponents(List<RecordComponentNode> recordComponents) {
         if (redirect != null) {
             redirect.setRecordComponents(recordComponents);
@@ -1411,7 +1414,8 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * @return true for native and emulated (annotation based) sealed classes
+     * @return {@code true} for native and emulated (annotation based) sealed classes
+     * @since 4.0.0
      */
     @Incubating
     public boolean isSealed() {

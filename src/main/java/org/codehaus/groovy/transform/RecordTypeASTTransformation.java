@@ -26,6 +26,7 @@ import groovy.transform.RecordOptions;
 import groovy.transform.RecordTypeMode;
 import groovy.transform.options.PropertyHandler;
 import org.apache.groovy.ast.tools.MethodNodeUtils;
+import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -252,6 +253,17 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         if ((options == null || !memberHasValue(options, SIZE, Boolean.FALSE)) && !hasDeclaredMethod(cNode, SIZE, 0)) {
             addGeneratedMethod(cNode, SIZE, PUBLIC_FINAL, int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(constX(pList.size())));
         }
+    }
+
+    /**
+     * Indicates that the given classnode is a native JVM record class.
+     * For classes being compiled, this will only be valid after the
+     * {@code RecordTypeASTTransformation} transform has been invoked.
+     */
+    @Incubating
+    public static boolean recordNative(ClassNode node) {
+        return node.getUnresolvedSuperClass() != null &&
+                "java.lang.Record".equals(node.getUnresolvedSuperClass().getName());
     }
 
     private void createComponents(ClassNode cNode, List<PropertyNode> pList) {
