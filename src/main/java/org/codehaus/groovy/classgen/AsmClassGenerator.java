@@ -20,7 +20,6 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyRuntimeException;
 import groovy.transform.Sealed;
-import groovy.transform.SealedMode;
 import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.GroovyBugError;
@@ -155,7 +154,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
-import static org.codehaus.groovy.transform.SealedASTTransformation.SEALED_ALWAYS_ANNOTATE;
+import static org.codehaus.groovy.transform.SealedASTTransformation.sealedNative;
+import static org.codehaus.groovy.transform.SealedASTTransformation.sealedSkipAnnotation;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PROPERTY_OWNER;
 import static org.objectweb.asm.Opcodes.AASTORE;
 import static org.objectweb.asm.Opcodes.ACC_ENUM;
@@ -378,7 +378,7 @@ public class AsmClassGenerator extends ClassGenerator {
             for (Iterator<InnerClassNode> it = classNode.getInnerClasses(); it.hasNext(); ) {
                 makeInnerClassEntry(it.next());
             }
-            if (classNode.getNodeMetaData(SealedMode.class) == SealedMode.NATIVE) {
+            if (sealedNative(classNode)) {
                 for (ClassNode sub: classNode.getPermittedSubclasses()) {
                     classVisitor.visitPermittedSubclass(sub.getName());
                 }
@@ -1985,7 +1985,7 @@ public class AsmClassGenerator extends ClassGenerator {
             // skip built-in properties
             if (an.isBuiltIn()) continue;
             if (an.hasSourceRetention()) continue;
-            if (an.getClassNode().getName().equals(Sealed.class.getName()) && sourceNode.getNodeMetaData(SealedMode.class) == SealedMode.NATIVE && Boolean.FALSE.equals(sourceNode.getNodeMetaData(SEALED_ALWAYS_ANNOTATE))) continue;
+            if (an.getClassNode().getName().equals(Sealed.class.getName()) && sealedNative(sourceNode) && sealedSkipAnnotation(sourceNode)) continue;
 
             AnnotationVisitor av = getAnnotationVisitor(targetNode, an, visitor);
             visitAnnotationAttributes(an, av);
