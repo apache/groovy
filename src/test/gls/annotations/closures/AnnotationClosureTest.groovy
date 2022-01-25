@@ -19,45 +19,45 @@
 package gls.annotations.closures
 
 import gls.CompilableTestSupport
-import groovy.test.NotYetImplemented
 
-import java.lang.annotation.RetentionPolicy
 import java.lang.annotation.Retention
+import java.lang.annotation.RetentionPolicy
 import java.lang.reflect.Modifier
 
-class AnnotationClosureTest extends CompilableTestSupport {
+final class AnnotationClosureTest extends CompilableTestSupport {
+
     def answer = new Object() {
         def answer() { 42 }
     }
 
     void testGep3InClosure() {
-        shouldCompile """
+        shouldCompile '''
             @interface Bar{Class value();}
             class Foo {
-              @Bar({ sleep 1 })
-              def baz() {}
+                @Bar({ sleep 1 })
+                def baz() {}
             }
-        """
+        '''
     }
 
     void testAllowedAsValueForAnnotationElementOfTypeClass() {
-        shouldCompile """
-import gls.annotations.closures.AnnWithClassElement
+        shouldCompile '''
+            import gls.annotations.closures.AnnWithClassElement
 
-@AnnWithClassElement(elem = { 1 + 2 })
-class Foo {}
-        """
+            @AnnWithClassElement(elem = { 1 + 2 })
+            class Foo {}
+        '''
     }
 
     // TODO: two compile errors instead of one, odd error message
 
     void testNotAllowedAsValueForAnnotationElementOfOtherType() {
-        shouldNotCompile """
-import gls.annotations.closures.AnnWithStringElement
+        shouldNotCompile '''
+            import gls.annotations.closures.AnnWithStringElement
 
-@AnnWithStringElement(elem = { 1 + 2 })
-class Foo {}
-        """
+            @AnnWithStringElement(elem = { 1 + 2 })
+            class Foo {}
+        '''
     }
 
     void testIsCompiledToPublicClass() {
@@ -127,47 +127,58 @@ class Foo {}
     }
 
     void testDoesNoHarmOnAnnotationWithSourceRetention() {
-        shouldCompile """
-import java.lang.annotation.*
+        shouldCompile '''
+            import java.lang.annotation.*
 
-@Retention(RetentionPolicy.SOURCE)
-@interface AnnWithSourceRetention {
-    Class elem()
-}
+            @Retention(RetentionPolicy.SOURCE)
+            @interface AnnWithSourceRetention {
+                Class elem()
+            }
 
-@AnnWithSourceRetention(elem = { 1 + 2 })
-class Foo {}
-        """
+            @AnnWithSourceRetention(elem = { 1 + 2 })
+            class Foo {}
+        '''
     }
 
     void testDoesNoHarmOnAnnotationWithClassRetention() {
-        shouldCompile """
-import java.lang.annotation.*
-
-@Retention(RetentionPolicy.CLASS)
-@interface AnnWithClassRetention {
-    Class elem()
-}
-
-@AnnWithClassRetention(elem = { 1 + 2 })
-class Foo {}
-        """
-    }
-
-    @NotYetImplemented
-    void testAnnotationOnAnonymousMethod() {
-        shouldCompile """        
+        shouldCompile '''
             import java.lang.annotation.*
 
-            @Retention(RetentionPolicy.RUNTIME)
-            @Target(ElementType.METHOD)
-            @interface Bar{Class value();}
-
-            return new Object() {
-              @Bar({})
-              String toString() {}
+            @Retention(RetentionPolicy.CLASS)
+            @interface AnnWithClassRetention {
+                Class elem()
             }
-"""
+
+            @AnnWithClassRetention(elem = { 1 + 2 })
+            class Foo {}
+        '''
+    }
+
+    // GROOVY-7033
+    void testAnnotationOnAnonymousInnerClassMethod() {
+        assertScript '''
+            import java.lang.annotation.*
+
+            @Target(ElementType.METHOD)
+            @Retention(RetentionPolicy.RUNTIME)
+            @interface MethodAnno { Class<?> value() }
+
+            @Target(ElementType.TYPE_USE)
+            @Retention(RetentionPolicy.RUNTIME)
+            @interface TypeUseAnno { Class<?> value() }
+
+            def aic = new Object() {
+                @MethodAnno(value = { -> })
+                @TypeUseAnno(value = { -> })
+                String toString() {}
+            }
+
+            def toString = aic.class.getMethod('toString')
+            Annotation ann = toString.annotations[0]
+            assert ann.annotationType().name == 'MethodAnno'
+            ann = toString.annotatedReturnType.annotations[0]
+            assert ann.annotationType().name == 'TypeUseAnno'
+        '''
     }
 }
 

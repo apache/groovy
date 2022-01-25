@@ -47,8 +47,8 @@ import java.util.stream.Stream;
  * methods and classes.
  */
 public class IndyInterface {
-    private static final long INDY_OPTIMIZE_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.optimize.threshold", 100_000L);
-    private static final long INDY_FALLBACK_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.fallback.threshold", 100_000L);
+    private static final long INDY_OPTIMIZE_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.optimize.threshold", 10_000L);
+    private static final long INDY_FALLBACK_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.fallback.threshold", 10_000L);
 
     /**
      * flags for method and property calls

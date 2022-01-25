@@ -35,7 +35,9 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 @Incubating
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.SealedASTTransformation")
+@GroovyASTTransformationClass({
+        "org.codehaus.groovy.transform.SealedASTTransformation",
+        "org.codehaus.groovy.transform.SealedCompletionASTTransformation"})
 public @interface Sealed {
     /**
      * List of the permitted subclasses.

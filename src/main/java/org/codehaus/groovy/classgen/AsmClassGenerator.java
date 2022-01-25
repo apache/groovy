@@ -20,7 +20,6 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyRuntimeException;
 import groovy.transform.Sealed;
-import groovy.transform.SealedMode;
 import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.GroovyBugError;
@@ -121,6 +120,7 @@ import org.objectweb.asm.util.TraceMethodVisitor;
 
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -154,7 +154,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
-import static org.codehaus.groovy.transform.SealedASTTransformation.SEALED_ALWAYS_ANNOTATE;
+import static org.codehaus.groovy.transform.SealedASTTransformation.sealedNative;
+import static org.codehaus.groovy.transform.SealedASTTransformation.sealedSkipAnnotation;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PROPERTY_OWNER;
 import static org.objectweb.asm.Opcodes.AASTORE;
 import static org.objectweb.asm.Opcodes.ACC_ENUM;
@@ -377,7 +378,7 @@ public class AsmClassGenerator extends ClassGenerator {
             for (Iterator<InnerClassNode> it = classNode.getInnerClasses(); it.hasNext(); ) {
                 makeInnerClassEntry(it.next());
             }
-            if (classNode.getNodeMetaData(SealedMode.class) == SealedMode.NATIVE) {
+            if (sealedNative(classNode)) {
                 for (ClassNode sub: classNode.getPermittedSubclasses()) {
                     classVisitor.visitPermittedSubclass(sub.getName());
                 }
@@ -1021,36 +1022,28 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     /**
-     * @deprecated use {@link #isFieldDirectlyAccessible(FieldNode, ClassNode)} instead.
-     */
-    @Deprecated
-    public static boolean isValidFieldNodeForByteCodeAccess(final FieldNode field, final ClassNode accessingClass) {
-        return isFieldDirectlyAccessible(field, accessingClass);
-    }
-
-    /**
      * Determines if the given class can directly access the given field (via
      * {@code GETFIELD}, {@code GETSTATIC}, etc. bytecode instructions).
      */
-    public static boolean isFieldDirectlyAccessible(final FieldNode field, final ClassNode clazz) {
-        if (field == null) return false;
+    public static boolean isFieldDirectlyAccessible(final FieldNode field, final ClassNode accessingClass) {
+        return field != null && isMemberDirectlyAccessible(field.getModifiers(), field.getDeclaringClass(), accessingClass);
+    }
 
-        // a public field is accessible from anywhere
-        if (field.isPublic()) return true;
+    public static boolean isMemberDirectlyAccessible(final int modifiers, final ClassNode declaringClass, final ClassNode accessingClass) {
+        // a public member is accessible from anywhere
+        if (Modifier.isPublic(modifiers)) return true;
 
-        ClassNode declaringClass = field.getDeclaringClass();
+        // any member is accessible from the declaring class
+        if (accessingClass.equals(declaringClass)) return true;
 
-        // any field is accessible from the declaring class
-        if (clazz.equals(declaringClass)) return true;
+        // a private member isn't accessible beyond the declaring class
+        if (Modifier.isPrivate(modifiers)) return false;
 
-        // a private field isn't accessible beyond the declaring class
-        if (field.isPrivate()) return false;
+        // a protected member is accessible from any subclass of the declaring class
+        if (Modifier.isProtected(modifiers) && accessingClass.isDerivedFrom(declaringClass)) return true;
 
-        // a protected field is accessible from any subclass of the declaring class
-        if (field.isProtected() && clazz.isDerivedFrom(declaringClass)) return true;
-
-        // a protected or package-private field is accessible from the declaring package
-        if (Objects.equals(clazz.getPackageName(), declaringClass.getPackageName())) return true;
+        // a protected or package-private member is accessible from the declaring package
+        if (Objects.equals(accessingClass.getPackageName(), declaringClass.getPackageName())) return true;
 
         return false;
     }
@@ -1992,7 +1985,7 @@ public class AsmClassGenerator extends ClassGenerator {
             // skip built-in properties
             if (an.isBuiltIn()) continue;
             if (an.hasSourceRetention()) continue;
-            if (an.getClassNode().getName().equals(Sealed.class.getName()) && sourceNode.getNodeMetaData(SealedMode.class) == SealedMode.NATIVE && Boolean.FALSE.equals(sourceNode.getNodeMetaData(SEALED_ALWAYS_ANNOTATE))) continue;
+            if (an.getClassNode().getName().equals(Sealed.class.getName()) && sealedNative(sourceNode) && sealedSkipAnnotation(sourceNode)) continue;
 
             AnnotationVisitor av = getAnnotationVisitor(targetNode, an, visitor);
             visitAnnotationAttributes(an, av);

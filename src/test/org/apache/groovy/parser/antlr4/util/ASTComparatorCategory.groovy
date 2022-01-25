@@ -219,14 +219,14 @@ class ASTComparatorCategory {
     static reflexiveEquals(a, b, ignore = []) {
         if (a.getClass() != b.getClass()) {
             log.warning(" !!!! DIFFERENCE WAS FOUND! ${a.getClass()} != ${b.getClass()}")
-            return false;
+            return false
         }
 
         def objects = [a, b]
         Boolean res = this.objects[objects]
         if (res != null) {
             log.info("Skipping [$a, $b] comparison as they are ${ res ? "" : "un" }equal.")
-            return res;
+            return res
         }
         else if (this.objects.containsKey(objects)) {
             log.info("Skipping as they are processed at higher levels.")
@@ -239,29 +239,21 @@ class ASTComparatorCategory {
             return true
 
         def difference = a.metaClass.properties.find { MetaProperty mp  ->
-            MetaBeanProperty p = (MetaBeanProperty) mp
-            if (!p.getter)
+            if (mp !instanceof MetaBeanProperty || !mp.getter)
                 return false
 
-            def name = p.name
+            def name = mp.name
             lastName = "$name :::: ${ a.getClass() } ${ a.hashCode() }"
 
-
             for (Map.Entry<Class, List<String>> me : COLLECTION_PROPERTY_CONFIGURATION) {
-                if (!(me.key.isCase(a) && me.key.isCase(b))) {
-                    continue;
+                if (name != me.value[0] || !(me.key.isCase(a) && me.key.isCase(b))) {
+                    continue
                 }
 
-                String propName = me.value[0];
+                def aValue = a."${name}" // FIXME when the name is "classes", a classNode will be added to moduleNode.classes
+                def bValue = b."${name}"
 
-                if (name != propName) {
-                    continue;
-                }
-
-                def aValue = a."${propName}"; // FIXME when the propName is "classes", a classNode will be added to moduleNode.classes
-                def bValue = b."${propName}";
-
-                String orderName = me.value[1];
+                String orderName = me.value[1]
 
                 return new LinkedList(aValue?.getClass()?.isArray() ? Arrays.asList(aValue) : (aValue ?: [])).sort {c1, c2 -> c1."${orderName}" <=> c2."${orderName}"} !=
                         new LinkedList(bValue?.getClass()?.isArray() ? Arrays.asList(bValue) : (bValue ?: [])).sort {c1, c2 -> c1."${orderName}" <=> c2."${orderName}"}

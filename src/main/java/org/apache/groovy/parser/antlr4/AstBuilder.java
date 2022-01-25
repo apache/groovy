@@ -1555,6 +1555,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                                 .map(ClassExpression::new)
                                 .collect(Collectors.toList()));
                 sealedAnnotationNode.setMember("permittedSubclasses", permittedSubclassesListExpression);
+                configureAST(sealedAnnotationNode, ctx.PERMITS());
+                sealedAnnotationNode.setNodeMetaData("permits", true);
             }
             classNode.addAnnotation(sealedAnnotationNode);
         } else if (isNonSealed) {
@@ -2192,11 +2194,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
 
         if (asBoolean(ctx.VOID())) {
-            if (3 == ctx.ct) { // annotation
+            if (ctx.ct == 3) { // annotation
                 throw createParsingFailedException("annotation method cannot have void return type", ctx);
             }
 
-            return ClassHelper.VOID_TYPE.getPlainNodeReference(false);
+            return configureAST(ClassHelper.VOID_TYPE.getPlainNodeReference(false), ctx.VOID());
         }
 
         throw createParsingFailedException("Unsupported return type: " + ctx.getText(), ctx);

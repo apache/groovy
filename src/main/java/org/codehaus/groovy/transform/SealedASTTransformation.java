@@ -21,6 +21,7 @@ package org.codehaus.groovy.transform;
 import groovy.transform.Sealed;
 import groovy.transform.SealedMode;
 import groovy.transform.SealedOptions;
+import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -43,9 +44,12 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 public class SealedASTTransformation extends AbstractASTTransformation {
 
     private static final Class<?> SEALED_CLASS = Sealed.class;
+    private static final String SEALED_NAME = "@" + SEALED_CLASS.getSimpleName();
     private static final ClassNode SEALED_TYPE = make(SEALED_CLASS);
     private static final ClassNode SEALED_OPTIONS_TYPE = make(SealedOptions.class);
-    public static final String SEALED_ALWAYS_ANNOTATE = "groovy.transform.SealedOptions.alwaysAnnotate";
+    private static final String SEALED_ALWAYS_ANNOTATE_KEY = "groovy.transform.SealedOptions.alwaysAnnotate";
+    @Deprecated
+    public static final String SEALED_ALWAYS_ANNOTATE = SEALED_ALWAYS_ANNOTATE_KEY;
 
     @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
@@ -57,11 +61,11 @@ public class SealedASTTransformation extends AbstractASTTransformation {
         if (parent instanceof ClassNode) {
             ClassNode cNode = (ClassNode) parent;
             if (cNode.isEnum()) {
-                addError("@" + SEALED_CLASS.getSimpleName() + " not allowed for enum", cNode);
+                addError(SEALED_NAME + " not allowed for enum", cNode);
                 return;
             }
             if (cNode.isAnnotationDefinition()) {
-                addError("@" + SEALED_CLASS.getSimpleName() + " not allowed for annotation definition", cNode);
+                addError(SEALED_NAME + " not allowed for annotation definition", cNode);
                 return;
             }
             cNode.putNodeMetaData(SEALED_CLASS, Boolean.TRUE);
@@ -80,7 +84,7 @@ public class SealedASTTransformation extends AbstractASTTransformation {
 
             boolean isNative = isPostJDK17 && mode != SealedMode.EMULATE;
             if (doNotAnnotate) {
-                cNode.putNodeMetaData(SEALED_ALWAYS_ANNOTATE, Boolean.FALSE);
+                cNode.putNodeMetaData(SEALED_ALWAYS_ANNOTATE_KEY, Boolean.FALSE);
             }
             if (isNative) {
                 cNode.putNodeMetaData(SealedMode.class, SealedMode.NATIVE);
@@ -89,9 +93,37 @@ public class SealedASTTransformation extends AbstractASTTransformation {
             }
             List<ClassNode> newSubclasses = getMemberClassList(anno, "permittedSubclasses");
             if (newSubclasses != null) {
+                newSubclasses.forEach(subnode -> {
+                    if (subnode.equals(cNode)) {
+                        addError("Illegal self-reference: a sealed class cannot have itself as a permitted subclass", anno);
+                    }
+                });
                 cNode.getPermittedSubclasses().addAll(newSubclasses);
             }
         }
+    }
+
+    /**
+     * Reports true if native sealed class information should be written into the bytecode.
+     * Will only ever return true after the SealedASTTransformation visit method has completed.
+     *
+     * @return true for a native sealed class
+     */
+    @Incubating
+    public static boolean sealedNative(AnnotatedNode node) {
+        return node.getNodeMetaData(SealedMode.class) == SealedMode.NATIVE;
+    }
+
+    /**
+     * Reports true if the {@code Sealed} annotation should not be
+     * included in the bytecode for a sealed or emulated-sealed class.
+     * Will only ever return true after the {@code SealedASTTransformation} transform has been invoked.
+     *
+     * @return true if a {@code Sealed} annotation is not required for this node
+     */
+    @Incubating
+    public static boolean sealedSkipAnnotation(AnnotatedNode node) {
+        return Boolean.FALSE.equals(node.getNodeMetaData(SEALED_ALWAYS_ANNOTATE_KEY));
     }
 
     private static SealedMode getMode(AnnotationNode node, String name) {

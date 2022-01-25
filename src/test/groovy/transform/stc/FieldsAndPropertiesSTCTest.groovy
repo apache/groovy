@@ -850,6 +850,20 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6277
+    void testPublicFieldVersusPrivateGetter() {
+        assertScript '''
+            class Foo {
+                private getWho() { 'Foo' }
+            }
+            class Bar extends Foo {
+                public who = 'Bar'
+            }
+            String result = new Bar().who
+            assert result == 'Bar'
+        '''
+    }
+
     // GROOVY-6610
     void testPrivateStaticFieldAccessBeforeThis() {
         assertScript '''

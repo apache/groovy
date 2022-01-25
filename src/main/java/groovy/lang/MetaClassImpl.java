@@ -84,6 +84,7 @@ import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.util.SingleKeyHashMap;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
+import org.objectweb.asm.Opcodes;
 
 import java.beans.BeanInfo;
 import java.beans.EventSetDescriptor;
@@ -2307,51 +2308,47 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     @Override
     public List<MetaProperty> getProperties() {
         checkInitalised();
-        LinkedHashMap<String, MetaProperty> propertyMap = classPropertyIndex.get(theCachedClass);
+        Map<String, MetaProperty> propertyMap = classPropertyIndex.get(theCachedClass);
         if (propertyMap == null) {
-            // GROOVY-6903: May happen in some special environment, like under Android, due
-            // to classloading issues
-            propertyMap = new LinkedHashMap<>();
+            // GROOVY-6903: May happen in some special environment, like Android, due to class-loading issues
+            propertyMap = Collections.emptyMap();
         }
         // simply return the values of the metaproperty map as a List
         List<MetaProperty> ret = new ArrayList<>(propertyMap.size());
-        for (Map.Entry<String, MetaProperty> stringMetaPropertyEntry : propertyMap.entrySet()) {
-            MetaProperty element = stringMetaPropertyEntry.getValue();
-            if (element instanceof CachedField) continue;
-            // filter out DGM beans
-            if (element instanceof MetaBeanProperty) {
-                MetaBeanProperty mp = (MetaBeanProperty) element;
-                boolean setter = true;
-                boolean getter = true;
-                MetaMethod getterMetaMethod = mp.getGetter();
+        for (MetaProperty mp : propertyMap.values()) {
+            if (mp instanceof CachedField && (mp.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0) {
+                continue;
+            }
+            if (mp instanceof MetaBeanProperty) {
+                MetaBeanProperty mbp = (MetaBeanProperty) mp;
+                // filter out extrinsic properties (DGM, ...)
+                boolean getter = true, setter = true;
+                MetaMethod getterMetaMethod = mbp.getGetter();
                 if (getterMetaMethod == null || getterMetaMethod instanceof GeneratedMetaMethod || getterMetaMethod instanceof NewInstanceMetaMethod) {
                     getter = false;
                 }
-                MetaMethod setterMetaMethod = mp.getSetter();
+                MetaMethod setterMetaMethod = mbp.getSetter();
                 if (setterMetaMethod == null || setterMetaMethod instanceof GeneratedMetaMethod || setterMetaMethod instanceof NewInstanceMetaMethod) {
                     setter = false;
                 }
                 if (!setter && !getter) continue;
+
 //  TODO: I (ait) don't know why these strange tricks needed and comment following as it effects some Grails tests
-//                if (!setter && mp.getSetter() != null) {
-//                    element = new MetaBeanProperty(mp.getName(), mp.getType(), mp.getGetter(), null);
+//                if (!setter && mbp.getSetter() != null) {
+//                    mp = new MetaBeanProperty(mbp.getName(), mbp.getType(), mbp.getGetter(), null);
 //                }
-//                if (!getter && mp.getGetter() != null) {
-//                    element = new MetaBeanProperty(mp.getName(), mp.getType(), null, mp.getSetter());
+//                if (!getter && mbp.getGetter() != null) {
+//                    mp = new MetaBeanProperty(mbp.getName(), mbp.getType(), null, mbp.getSetter());
 //                }
-            }
 
-            if (!permissivePropertyAccess) {
-                if (element instanceof MetaBeanProperty) {
-                    MetaBeanProperty mbp = (MetaBeanProperty) element;
-                    boolean getterAccessible = canAccessLegally(mbp.getGetter());
-                    boolean setterAccessible = canAccessLegally(mbp.getSetter());
-
+                if (!permissivePropertyAccess) {
+                    boolean getterAccessible = canAccessLegally(getterMetaMethod);
+                    boolean setterAccessible = canAccessLegally(setterMetaMethod);
                     if (!(getterAccessible && setterAccessible)) continue;
                 }
             }
 
-            ret.add(element);
+            ret.add(mp);
         }
         return ret;
     }
@@ -3181,7 +3178,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @see GroovyObject
      */
     protected final void checkIfGroovyObjectMethod(MetaMethod metaMethod) {
-        if (metaMethod instanceof ClosureMetaMethod || metaMethod instanceof MixinInstanceMetaMethod) {
+        if (metaMethod instanceof ClosureMetaMethod
+                || metaMethod instanceof NewInstanceMetaMethod
+                || metaMethod instanceof MixinInstanceMetaMethod) {
             if (isGetPropertyMethod(metaMethod)) {
                 getPropertyMethod = metaMethod;
             } else if (isInvokeMethod(metaMethod)) {
@@ -3251,21 +3250,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      *         {@code null} : ignore method
      *         {@code true} : replace
      */
-    private static Boolean getMatchKindForCategory(MetaMethod aMethod, MetaMethod categoryMethod) {
-        CachedClass[] params1 = aMethod.getParameterTypes();
-        CachedClass[] params2 = categoryMethod.getParameterTypes();
-        if (params1.length != params2.length) return Boolean.FALSE;
-
-        for (int i = 0; i < params1.length; i++) {
-            if (params1[i] != params2[i]) return Boolean.FALSE;
+    private static Boolean getMatchKindForCategory(final MetaMethod aMethod, final MetaMethod categoryMethod) {
+        CachedClass[] paramTypes1 = aMethod.getParameterTypes();
+        CachedClass[] paramTypes2 = categoryMethod.getParameterTypes();
+        int n = paramTypes1.length;
+        if (n != paramTypes2.length) return Boolean.FALSE;
+        for (int i = 0; i < n; i += 1) {
+            if (paramTypes1[i] != paramTypes2[i]) return Boolean.FALSE;
         }
 
-        Class aMethodClass = aMethod.getDeclaringClass().getTheClass();
-        Class categoryMethodClass = categoryMethod.getDeclaringClass().getTheClass();
+        Class selfType1 = aMethod.getDeclaringClass().getTheClass();
+        Class selfType2 = categoryMethod.getDeclaringClass().getTheClass();
+        // replace if self type is the same or the category self type is more specific
+        if (selfType1 == selfType2 || selfType1.isAssignableFrom(selfType2)) return Boolean.TRUE;
+        // GROOVY-6363: replace if the private method self type is more specific
+        if (aMethod.isPrivate() && selfType2.isAssignableFrom(selfType1)) return Boolean.TRUE;
 
-        if (aMethodClass == categoryMethodClass) return Boolean.TRUE;
-        boolean match = aMethodClass.isAssignableFrom(categoryMethodClass);
-        if (match) return Boolean.TRUE;
         return null;
     }
 

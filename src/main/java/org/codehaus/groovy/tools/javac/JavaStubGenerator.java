@@ -49,7 +49,6 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.FinalVariableAnalyzer;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.classgen.VerifierCodeVisitor;
-import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.tools.Utilities;
 import org.codehaus.groovy.transform.trait.Traits;
@@ -174,14 +173,13 @@ public class JavaStubGenerator {
         javaStubCompilationUnitSet.add(new RawJavaFileObject(createJavaStubFile(fileName).toPath().toUri()));
     }
 
-    private static final int DEFAULT_BUFFER_SIZE = 8 * 1024; // 8K
-
     private String generateStubContent(ClassNode classNode) {
-        Writer writer = new StringBuilderWriter(DEFAULT_BUFFER_SIZE);
-
+        Writer writer = new StringBuilderWriter(8192);
         try (PrintWriter out = new PrintWriter(writer)) {
             boolean packageInfo = "package-info".equals(classNode.getNameWithoutPackage());
             String packageName = classNode.getPackageName();
+            currentModule = classNode.getModule();
+
             if (packageName != null) {
                 if (packageInfo) {
                     printAnnotations(out, classNode.getPackage());
@@ -191,11 +189,12 @@ public class JavaStubGenerator {
 
             // should just output the package statement for `package-info` class node
             if (!packageInfo) {
-                printImports(out, classNode);
+                printImports(out);
                 printClassContents(out, classNode);
             }
+        } finally {
+            currentModule = null;
         }
-
         return writer.toString();
     }
 
@@ -323,7 +322,6 @@ public class JavaStubGenerator {
             if (origNumConstructors == 0 && classNode.getDeclaredConstructors().size() == 1) {
                 classNode.getDeclaredConstructors().clear();
             }
-            currentModule = classNode.getModule();
 
             boolean isInterface = isInterfaceOrTrait(classNode);
             boolean isEnum = classNode.isEnum();
@@ -390,7 +388,6 @@ public class JavaStubGenerator {
             propertyMethods.clear();
             propertyMethodsWithSigs.clear();
             constructors.clear();
-            currentModule = null;
         }
     }
 
@@ -983,7 +980,7 @@ public class JavaStubGenerator {
             val = ((Expression) memberValue).getText();
         } else if (memberValue instanceof VariableExpression) {
             val = ((Expression) memberValue).getText();
-            //check for an alias
+            // check for an alias
             ImportNode alias = currentModule.getStaticImports().get(val);
             if (alias != null)
                 val = alias.getClassName() + "." + alias.getFieldName();
@@ -1020,34 +1017,21 @@ public class JavaStubGenerator {
             out.print("abstract ");
     }
 
-    private static void printImports(PrintWriter out, ClassNode classNode) {
-        List<String> imports = new ArrayList<>();
-        ModuleNode module = classNode.getModule();
+    private void printImports(final PrintWriter out) {
+        Map<String, ImportNode> staticImports = currentModule.getStaticImports();
+        Map<String, ImportNode> staticStarImports = currentModule.getStaticStarImports();
 
-        for (ImportNode imp : module.getImports()) {
-            if (imp.getAlias() == null) imports.add(imp.getType().getName());
-        }
-
-        for (ImportNode imp : module.getStarImports()) {
-            imports.add(imp.getPackageName());
-        }
-
-        Collections.addAll(imports, ResolveVisitor.DEFAULT_IMPORTS);
-
-        for (Map.Entry<String, ImportNode> entry : module.getStaticImports().entrySet()) {
+        for (Map.Entry<String, ImportNode> entry : staticImports.entrySet()) {
             String memberName = entry.getKey();
             if (memberName.equals(entry.getValue().getFieldName())
                     && !Character.isLowerCase(memberName.charAt(0))) // GROOVY-7510
-                imports.add("static " + entry.getValue().getType().getName() + "." + memberName);
+                out.println("import static " + entry.getValue().getType().getName().replace('$', '.') + "." + memberName + ";");
         }
 
-        for (Map.Entry<String, ImportNode> entry : module.getStaticStarImports().entrySet()) {
-            imports.add("static " + entry.getValue().getType().getName() + ".");
+        for (ImportNode ssi : staticStarImports.values()) {
+            out.println("import static " + ssi.getType().getName().replace('$', '.') + ".*;");
         }
 
-        for (String imp : imports) {
-            out.println("import " + imp.replace('$', '.') + (imp.endsWith(".") ? "*;" : ";"));
-        }
         out.println();
     }
 

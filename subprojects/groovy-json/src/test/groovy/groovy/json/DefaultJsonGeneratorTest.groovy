@@ -291,6 +291,11 @@ class DefaultJsonGeneratorTest extends GroovyTestCase {
 
 }
 
+class JsonObject {
+    String name
+    Map properties
+}
+
 class JsonBar {
     String favoriteDrink
     Date lastVisit

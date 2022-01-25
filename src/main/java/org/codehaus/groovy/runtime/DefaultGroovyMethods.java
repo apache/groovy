@@ -2119,8 +2119,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> T[] toUnique(T[] self, Comparator<T> comparator) {
         Collection<T> items = toUnique(new ArrayIterable<>(self), comparator);
-        T[] result = createSimilarArray(self, items.size());
-        return items.toArray(result);
+        return items.toArray(createSimilarArray(self, items.size()));
     }
 
     /**
@@ -2138,9 +2137,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self an array
      * @return the unique items from the array
      */
-    @SuppressWarnings("unchecked")
     public static <T> T[] toUnique(T[] self) {
-        return (T[]) toUnique(self, (Comparator) null);
+        return toUnique(self, (Comparator<T>) null);
     }
 
     /**
@@ -9412,13 +9410,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the sorted array
      * @since 1.8.1
      */
-    @SuppressWarnings("unchecked")
     public static <T> T[] sort(T[] self, boolean mutate, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
-        T[] answer = (T[]) sort((Iterable<T>) toList(self), closure).toArray();
-        if (mutate) {
-            System.arraycopy(answer, 0, self, 0, answer.length);
-        }
-        return mutate ? self : answer;
+        if (!mutate) self = self.clone();
+        Comparator<T> c = closure.getMaximumNumberOfParameters() == 1 ? new OrderBy<>(closure) : new ClosureComparator<>(closure);
+        Arrays.sort(self, c);
+        return self;
     }
 
     /**
@@ -9676,15 +9672,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * which is then used for further comparison.
      *
      * @param self the array containing the elements to be sorted
-     * @param condition a Closure used to determine the correct ordering
+     * @param closure a Closure used to determine the correct ordering
      * @return a sorted array
      * @see #toSorted(Object[], Comparator)
      * @since 2.4.0
      */
-    public static <T> T[] toSorted(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure condition) {
-        Comparator<T> comparator = (condition.getMaximumNumberOfParameters() == 1) ? new OrderBy<>(condition) : new ClosureComparator<>(
-            condition);
-        return toSorted(self, comparator);
+    public static <T> T[] toSorted(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
+        return sort(self, false, closure);
     }
 
     /**
@@ -10182,9 +10176,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (self.length == 0) {
             throw new NoSuchElementException("Cannot access tail() for an empty array");
         }
-        T[] result = createSimilarArray(self, self.length - 1);
-        System.arraycopy(self, 1, result, 0, self.length - 1);
-        return result;
+        return Arrays.copyOfRange(self, 1, self.length);
     }
 
     /**
@@ -10352,9 +10344,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (self.length == 0) {
             throw new NoSuchElementException("Cannot access init() for an empty Object array");
         }
-        T[] result = createSimilarArray(self, self.length - 1);
-        System.arraycopy(self, 0, result, 0, self.length - 1);
-        return result;
+        return Arrays.copyOfRange(self, 0, self.length - 1);
     }
 
     /**
@@ -12248,14 +12238,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.1
      */
     public static <T> T[] reverse(T[] self, boolean mutate) {
-        List<T> list = Arrays.asList(self);
-        if (mutate) {
-            Collections.reverse(list);
-            return self;
-        }
-        @SuppressWarnings("unchecked")
-        T[] result = (T[]) toList(new ReverseListIterator<>(list)).toArray();
-        return result;
+        if (!mutate) self = self.clone();
+        Collections.reverse(Arrays.asList(self));
+        return self;
     }
 
     /**
@@ -12276,53 +12261,101 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * Integer[] a = [1, 2, 3]
      * Integer[] b = [4, 5, 6]
-     * assert a + b == [1, 2, 3, 4, 5, 6] as Integer[]
+     * def result = a + b
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{1, 2, 3, 4, 5, 6}
+     *
+     * Number[] c = [-1, 0.9, null]
+     * result = c + a
+     * assert result.class == Number[]
+     * assert result == new Number[]{-1, 0.9, null, 1, 2, 3}
+     *
+     * result = a + c
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{1, 2, 3, -1, 0, null}
+     *
+     * Date[] d = [new Date()]
+     * // improper type arguments; Date can't be coerced to Integer
+     * groovy.test.GroovyAssert.shouldFail(ClassCastException) { a + d }
      * </pre>
      *
      * @param left  the left Array
      * @param right the right Array
      * @return A new array containing right appended to left.
+     * @throws ClassCastException if any elements from right aren't compatible (according to {@link DefaultTypeTransformation#castToType(Object, Class)}) to the component type of left
      * @since 1.8.7
      */
-    @SuppressWarnings("unchecked")
-    public static <T> T[] plus(T[] left, T[] right) {
-        return (T[]) plus((List<T>) toList(left), toList(right)).toArray();
+    public static <T> T[] plus(final T[] left, final Object[] right) {
+        T[] result = Arrays.copyOf(left, left.length + right.length);
+        T[] temp = (T[]) DefaultTypeTransformation.castToType(right, left.getClass());
+        System.arraycopy(temp, 0, result, left.length, temp.length);
+        return result;
     }
 
     /**
      * Create an array containing elements from an original array plus an additional appended element.
      * <pre class="groovyTestCase">
      * Integer[] a = [1, 2, 3]
-     * Integer[] result = a + 4
-     * assert result == [1, 2, 3, 4] as Integer[]
+     * def result = a + 4
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{1, 2, 3, 4}
+     *
+     * result = a + 5.5d
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{1, 2, 3, 5}
+     *
+     * // improper type arguments; Date can't be coerced to Integer
+     * groovy.test.GroovyAssert.shouldFail(ClassCastException) { a + new Date() }
      * </pre>
      *
      * @param left  the array
      * @param right the value to append
      * @return A new array containing left with right appended to it.
+     * @throws ClassCastException if any elements from right aren't compatible (according to {@link DefaultTypeTransformation#castToType(Object, Class)}) to the component type of left
      * @since 1.8.7
      */
-    @SuppressWarnings("unchecked")
-    public static <T> T[] plus(T[] left, T right) {
-        return (T[]) plus(toList(left), right).toArray();
+    public static <T> T[] plus(final T[] left, final Object right) {
+        T[] result = Arrays.copyOf(left, left.length + 1);
+        result[left.length] = (T) DefaultTypeTransformation.castToType(right, left.getClass().getComponentType());
+        return result;
     }
 
     /**
      * Create an array containing elements from an original array plus those from a Collection.
      * <pre class="groovyTestCase">
      * Integer[] a = [1, 2, 3]
-     * def additions = [7, 8]
-     * assert a + additions == [1, 2, 3, 7, 8] as Integer[]
+     * def result = a + [4, 5, 6]
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{1, 2, 3, 4, 5, 6}
+     *
+     * Number[] c = [-1, 0.9, null]
+     * result = c + [1, 2, 3]
+     * assert result.class == Number[]
+     * assert result == new Number[]{-1, 0.9, null, 1, 2, 3}
+     *
+     * result = a + [-1, 0.9, null]
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{1, 2, 3, -1, 0, null}
+     *
+     * // improper type arguments; Date can't be coerced to Integer
+     * groovy.test.GroovyAssert.shouldFail(ClassCastException) { a + [new Date()] }
      * </pre>
      *
      * @param left  the array
      * @param right a Collection to be appended
      * @return A new array containing left with right appended to it.
+     * @throws ClassCastException if any elements from right aren't compatible (according to {@link DefaultTypeTransformation#castToType(Object, Class)}) to the component type of left
      * @since 1.8.7
      */
-    @SuppressWarnings("unchecked")
-    public static <T> T[] plus(T[] left, Collection<T> right) {
-        return (T[]) plus((List<T>) toList(left), right).toArray();
+    public static <T> T[] plus(final T[] left, final Collection<?> right) {
+        T[] result = Arrays.copyOf(left, left.length + right.size());
+        int i = left.length;
+        Class<?> leftType = left.getClass().getComponentType();
+        for (Object t : right) {
+            result[i] = (T) DefaultTypeTransformation.castToType(t, leftType);
+            i += 1;
+        }
+        return result;
     }
 
     /**
@@ -12331,20 +12364,118 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * class AbcIterable implements Iterable<String> {
      *     Iterator<String> iterator() { "abc".iterator() }
      * }
-     * String[] letters = ['x', 'y', 'z']
-     * def result = letters + new AbcIterable()
-     * assert result == ['x', 'y', 'z', 'a', 'b', 'c'] as String[]
-     * assert result.class.array
+     * String[] array = ['x', 'y', 'z']
+     * def result = array + new AbcIterable()
+     * assert result.class == String[]
+     * assert result == new String[]{'x', 'y', 'z', 'a', 'b', 'c'}
      * </pre>
      *
      * @param left  the array
      * @param right an Iterable to be appended
      * @return A new array containing elements from left with those from right appended.
+     * @throws ClassCastException if any elements from right aren't compatible (according to {@link DefaultTypeTransformation#castToType(Object, Class)}) to the component type of left
+     * @see #union(Object[], Iterable)
      * @since 1.8.7
      */
-    @SuppressWarnings("unchecked")
-    public static <T> T[] plus(T[] left, Iterable<T> right) {
-        return (T[]) plus((List<T>) toList(left), toList(right)).toArray();
+    public static <T> T[] plus(final T[] left, final Iterable<?> right) {
+        return plus(left, toList(right));
+    }
+
+    /**
+     * Create an Object array as a union of two arrays.
+     * This is similar to {@link #plus(Object[], Object[])} but always return an Object array
+     * and so might be more applicable when adding heterogeneous arrays.
+     * <pre class="groovyTestCase">
+     * Integer[] a = [1, 2, 3]
+     * String[] b = ['foo', 'bar']
+     * def result = a.union(b)
+     * assert result.class == Object[]
+     * assert result == new Object[]{1, 2, 3, 'foo', 'bar'}
+     * </pre>
+     *
+     * @param left  the left Array
+     * @param right the right Array
+     * @return A new Object array containing right appended to left.
+     * @since 4.0.0
+     */
+    public static Object[] union(final Object[] left, final Object[] right) {
+        Object[] result = new Object[left.length + right.length];
+        System.arraycopy(left, 0, result, 0, left.length);
+        System.arraycopy(right, 0, result, left.length, right.length);
+        return result;
+    }
+
+    /**
+     * Create an Object array containing elements from an original array plus an additional appended element.
+     * This is similar to {@link #plus(Object[], Object)} but always return an Object array
+     * and so might be more applicable when adding heterogeneous arrays.
+     * <pre class="groovyTestCase">
+     * Integer[] a = [1, 2, 3]
+     * def result = a.union('foo')
+     * assert result.class == Object[]
+     * assert result == new Object[]{1, 2, 3, 'foo'}
+     * </pre>
+     *
+     * @param left  the array
+     * @param right the value to append
+     * @return A new Object array containing left with right appended to it.
+     * @since 4.0.0
+     */
+    public static Object[] union(final Object[] left, final Object right) {
+        Object[] result = new Object[left.length + 1];
+        System.arraycopy(left, 0, result, 0, left.length);
+        result[left.length] = right;
+        return result;
+    }
+
+    /**
+     * Create an object array containing elements from an original array plus those from a Collection.
+     * This is similar to {@link #plus(Object[], Collection)} but always return an Object array
+     * and so might be more applicable when adding heterogeneous arrays.
+     * <pre class="groovyTestCase">
+     * Integer[] a = [1, 2, 3]
+     * def result = a.union(['foo', 'bar'])
+     * assert result.class == Object[]
+     * assert result == new Object[]{1, 2, 3, 'foo', 'bar'}
+     * </pre>
+     *
+     * @param left  the array
+     * @param right a Collection to be appended
+     * @return A new Object array containing left with right appended to it.
+     * @since 4.0.0
+     */
+    public static Object[] union(final Object[] left, final Collection<?> right) {
+        Object[] result = new Object[left.length + right.size()];
+        System.arraycopy(left, 0, result, 0, left.length);
+        int i = left.length;
+        for (Object t : right) {
+            result[i] = t;
+            i += 1;
+        }
+        return result;
+    }
+
+    /**
+     * Create an Object array containing elements from an original array plus those from an Iterable.
+     * This is similar to {@link #plus(Object[], Iterable)} but always return an Object array
+     * and so might be more applicable when adding heterogeneous arrays.
+     * <pre class="groovyTestCase">
+     * class AbcIterable implements Iterable<String> {
+     *     Iterator<String> iterator() { "abc".iterator() }
+     * }
+     * String[] array = ['x', 'y', 'z']
+     * def result = array.union(new AbcIterable())
+     * assert result.class == Object[]
+     * assert result == new Object[]{'x', 'y', 'z', 'a', 'b', 'c'}
+     * </pre>
+     *
+     * @param left  the array
+     * @param right an Iterable to be appended
+     * @return A new Object array containing elements from left with those from right appended.
+     * @since 4.0.0
+     */
+    public static Object[] union(final Object[] left, final Iterable<?> right) {
+        return union(left, toList(right));
     }
 
     /**
@@ -13359,31 +13490,64 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create an array composed of the elements of the first array minus the
+     * Create a new array composed of the elements of the first array minus the
      * elements of the given Iterable.
+     * <pre class="groovyTestCase">
+     * Integer[] ints = [1, 2, 3, 1]
+     * List&lt;Integer> nope = [1, 3]
+     * def result = ints - nope
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{2}
+     *
+     * Integer[] none = []
+     * result = none - 123
+     * assert result !== none
+     * assert result.length == 0
+     * assert result.class == Integer[]
+     * </pre>
      *
      * @param self     an array
-     * @param removeMe a Collection of elements to remove
+     * @param removeMe an Iterable of elements to remove
      * @return an array with the supplied elements removed
      * @since 1.5.5
      */
-    @SuppressWarnings("unchecked")
-    public static <T> T[] minus(T[] self, Iterable removeMe) {
-        return (T[]) minus(toList(self), removeMe).toArray();
+    public static <T> T[] minus(final T[] self, final Iterable removeMe) {
+        Collection<T> temp = minus((Iterable<T>) toList(self), removeMe);
+        return temp.toArray(createSimilarArray(self, temp.size()));
     }
 
     /**
-     * Create an array composed of the elements of the first array minus the
+     * Create a new array composed of the elements of the first array minus the
      * elements of the given array.
+     * <pre class="groovyTestCase">
+     * Integer[] ints = [1, 2, 3, 1]
+     * Integer[] nope = [1, 3]
+     * def result = ints - nope
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{2}
+     *
+     * Integer[] none = []
+     * result = none - 123
+     * assert result !== none
+     * assert result.length == 0
+     * assert result.class == Integer[]
+     * </pre>
      *
      * @param self     an array
      * @param removeMe an array of elements to remove
      * @return an array with the supplied elements removed
      * @since 1.5.5
      */
-    @SuppressWarnings("unchecked")
-    public static <T> T[] minus(T[] self, Object[] removeMe) {
-        return (T[]) minus(toList(self), toList(removeMe)).toArray();
+    public static <T> T[] minus(final T[] self, final Object[] removeMe) {
+        switch (removeMe.length) {
+          case 0:
+            return self.clone();
+          case 1:
+            return minus(self, removeMe[0]);
+          default:
+            Collection<T> temp = minus((Collection<T>) toList(self), Arrays.asList(removeMe));
+            return (T[]) temp.toArray(createSimilarArray(self, temp.size()));
+        }
     }
 
     /**
@@ -13575,17 +13739,40 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a new object array composed of the elements of the first array
-     * minus the element to remove.
+     * Create a new array composed of the elements of the given array minus every occurrence the given object.
+     * <pre class="groovyTestCase">
+     * Integer[] ints = [1, 2, 3, 1]
+     * def result = ints - 1
+     * assert result.class == Integer[]
+     * assert result == new Integer[]{2, 3}
      *
-     * @param self    an array
+     * Integer[] none = []
+     * result = none - '1'
+     * assert result !== none
+     * assert result.length == 0
+     * assert result.class == Integer[]
+     * </pre>
+     *
+     * @param self     an array
      * @param removeMe an element to remove from the array
      * @return a new array with the operand removed
      * @since 1.5.5
      */
-    @SuppressWarnings("unchecked")
-    public static <T> T[] minus(T[] self, Object removeMe) {
-        return (T[]) minus((Iterable<T>) toList(self), removeMe).toArray();
+    public static <T> T[] minus(final T[] self, final Object removeMe) {
+        int i = 0, n = self.length;
+        T[] result = createSimilarArray(self, n);
+
+        for (T t : self) {
+            if (!coercedEquals(t, removeMe)) {
+                result[i] = t;
+                i += 1;
+            }
+        }
+        if (i != n) {
+            result = Arrays.copyOfRange(result, 0, i);
+        }
+
+        return result;
     }
 
     /**

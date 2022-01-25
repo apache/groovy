@@ -18,19 +18,22 @@
  */
 package groovy.json
 
-import groovy.test.GroovyTestCase
 import groovy.transform.Canonical
+import org.junit.Test
 
 import static groovy.json.JsonOutput.toJson
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
-class JsonOutputTest extends GroovyTestCase {
+final class JsonOutputTest {
 
-    // Check for GROOVY-5918
+    @Test // GROOVY-5918
     void testExpando() {
         assert toJson(new Expando(a: 42)) == '{"a":42}'
         assert new JsonBuilder(new Expando(a: 42)).toString() == '{"a":42}'
     }
 
+    @Test
     void testBooleanValues() {
         assert toJson(Boolean.TRUE) == "true"
         assert toJson(Boolean.FALSE) == "false"
@@ -38,6 +41,7 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson(false) == "false"
     }
 
+    @Test
     void testNullValue() {
         assert toJson(null) == "null"
         // test every overloaded version
@@ -55,6 +59,7 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson((Map) null) == 'null'
     }
 
+    @Test
     void testNumbers() {
         assert toJson(-1) == "-1"
         assert toJson(1) == "1"
@@ -91,16 +96,19 @@ class JsonOutputTest extends GroovyTestCase {
         shouldFail { toJson(Float.NEGATIVE_INFINITY) }
     }
 
+    @Test
     void testEmptyListOrArray() {
         assert toJson([]) == "[]"
         assert toJson([] as Object[]) == "[]"
     }
 
+    @Test
     void testListOfPrimitives() {
         assert toJson([true, false, null, true, 4, 1.1234]) == "[true,false,null,true,4,1.1234]"
         assert toJson([true, [false, null], true, [4, [1.1234]]]) == "[true,[false,null],true,[4,[1.1234]]]"
     }
 
+    @Test
     void testPrimitiveArray() {
         assert toJson([1, 2, 3, 4] as byte[]) == "[1,2,3,4]"
         assert toJson([1, 2, 3, 4] as short[]) == "[1,2,3,4]"
@@ -108,16 +116,19 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson([1, 2, 3, 4] as long[]) == "[1,2,3,4]"
     }
 
+    @Test
     void testEmptyMap() {
         assert toJson([:]) == "{}"
     }
 
+    @Test
     void testMap() {
         assert toJson([a: 1]) == '{"a":1}'
         assert toJson([a: 1, b: 2]) == '{"a":1,"b":2}'
         assert toJson([a: 1, b: true, c: null, d: [], e: 'hello']) == '{"a":1,"b":true,"c":null,"d":[],"e":"hello"}'
     }
 
+    @Test
     void testString() {
         assert toJson("") == '""'
 
@@ -153,32 +164,38 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson("\u0019") == '"\\u0019"'
     }
 
+    @Test
     void testGString() {
         assert toJson("1 + 2 = ${1 + 2}") == '"1 + 2 = 3"'
     }
 
+    @Test
     void testStringBuilderBuffer() {
         assert toJson(new StringBuilder().append(14).append(' March ').append(2014)) == '"14 March 2014"'
         assert toJson(new StringBuffer().append(14).append(' March ').append(2014)) == '"14 March 2014"'
     }
 
+    @Test
     void testCharArray() {
         char[] charArray = ['a', 'b', 'c']
 
         assert toJson(charArray) == '["a","b","c"]'
     }
 
+    @Test
     void testDate() {
         def d = Date.parse("yyyy/MM/dd HH:mm:ss Z", "2008/03/04 13:50:00 +0100")
 
         assert toJson(d) == '"2008-03-04T12:50:00+0000"'
     }
 
+    @Test
     void testURL() {
         assert toJson(new URL("http://glaforge.appspot.com")) == '"http://glaforge.appspot.com"'
         assert toJson(new URL('file', '', 'C:\\this\\is\\windows\\path')) == '"file:C:\\\\this\\\\is\\\\windows\\\\path"' // GROOVY-6560
     }
 
+    @Test
     void testCalendar() {
         def c = GregorianCalendar.getInstance(TimeZone.getTimeZone('GMT+1'))
         c.clearTime()
@@ -187,6 +204,7 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson(c) == '"2008-03-04T12:50:00+0000"'
     }
 
+    @Test
     void testComplexObject() {
         assert toJson([name: 'Guillaume', age: 33, address: [line1: "1 main street", line2: "", zip: 1234], pets: ['dog', 'cat']]) ==
                 '{"name":"Guillaume","age":33,"address":{"line1":"1 main street","line2":"","zip":1234},"pets":["dog","cat"]}'
@@ -194,6 +212,7 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson([[:], [:]]) == '[{},{}]'
     }
 
+    @Test
     void testClosure() {
         assert toJson({
             a 1
@@ -208,11 +227,13 @@ class JsonOutputTest extends GroovyTestCase {
         }) == '{"a":1,"b":{"c":2,"d":{"e":[3,{"f":4}]}}}'
     }
 
+    @Test
     void testIteratorEnumeration() {
         assert toJson([1, 2, 3].iterator()) == '[1,2,3]'
         assert toJson(Collections.enumeration([1, 2, 3])) == '[1,2,3]'
     }
 
+    @Test
     void testPrettyPrint() {
         def json = new JsonBuilder()
 
@@ -271,6 +292,7 @@ class JsonOutputTest extends GroovyTestCase {
         return str.replaceAll(~/\s/, '')
     }
 
+    @Test
     void testPrettyPrintStringZeroLen() {
         def tree = [myStrings: [str3: 'abc', str0: '']]
         def result = stripWhiteSpace(new JsonBuilder(tree).toPrettyString())
@@ -278,6 +300,7 @@ class JsonOutputTest extends GroovyTestCase {
         assert result == expected
     }
 
+    @Test
     void testPrettyPrintDoubleQuoteEscape() {
         def json = new JsonBuilder()
         json.text { content 'abc"def' }
@@ -289,6 +312,7 @@ class JsonOutputTest extends GroovyTestCase {
             }""".stripIndent()
     }
 
+    @Test
     void testSerializePogos() {
         def city = new JsonCity("Paris", [
                 new JsonDistrict(1, [
@@ -301,7 +325,7 @@ class JsonOutputTest extends GroovyTestCase {
                 ] as JsonStreet[])
         ])
 
-        assert JsonOutput.prettyPrint(JsonOutput.toJson(city)) == '''\
+        assert JsonOutput.prettyPrint(toJson(city)) == '''\
             {
                 "name": "Paris",
                 "districts": [
@@ -335,29 +359,38 @@ class JsonOutputTest extends GroovyTestCase {
             }'''.stripIndent()
     }
 
+    @Test
     void testMapWithNullKey() {
         shouldFail IllegalArgumentException, {
             toJson([(null): 1])
         }
     }
 
-    void testGROOVY5247() {
+    @Test // GROOVY-5247
+    void testTreeMap() {
         def m = new TreeMap()
         m.a = 1
         assert toJson(m) == '{"a":1}'
     }
 
-    void testObjectWithDeclaredPropertiesField() {
-        def person = new JsonObject(name: "pillow", properties: [state: "fluffy", color: "white"])
-        def json = toJson(person)
+    @Test
+    void testDeclaredPropertiesField() {
+        String json = toJson(new JsonObject(name: "pillow", properties: [state: "fluffy", color: "white"]))
         assert json == '{"name":"pillow","properties":{"state":"fluffy","color":"white"}}'
     }
 
-    void testGROOVY5494() {
-        def json = toJson(new JsonFoo(name: "foo"))
+    @Test // GROOVY-5494
+    void testDeclaredPropertiesMethod() {
+        String json = toJson(new Pogo5494(name: "foo"))
         assert json == '{"name":"foo","properties":0}'
     }
 
+    static class Pogo5494 {
+        String name
+        int getProperties() { return 0 }
+    }
+
+    @Test
     void testCharacter() {
         assert toJson('a' as char) == '"a"'
         assert toJson('"' as char) == '"\\""'
@@ -371,6 +404,7 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson('\u0002' as char) == '"\\u0002"'
     }
 
+    @Test
     void testEmptyValue() {
         assert toJson('') == '""'
         assert toJson(['']) == '[""]'
@@ -378,6 +412,7 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson(new Expando('': '')) == '{"":""}'
     }
 
+    @Test
     void testSpecialCharEscape() {
         // Map
         assert toJson(['"': 0]) == '{"\\"":0}'
@@ -413,6 +448,7 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson({'\u0002' 0}) == '{"\\u0002":0}'
     }
 
+    @Test // GROOVY-7519
     void testFile() {
         def file  = File.createTempFile('test', 'file-json')
         file.deleteOnExit()
@@ -423,7 +459,91 @@ class JsonOutputTest extends GroovyTestCase {
         assert toJson(dir)
     }
 
+    @Test // GROOVY-5169
+    void testPropertyModifiers1() {
+        assertScript '''
+            class Pogo {
+                public    String foo = 'foo'
+                public    String getBar() { 'bar' }
+                protected String getBaz() { 'baz' }
+                private   String getBoo() { 'boo' }
+            }
+
+            String json = groovy.json.JsonOutput.toJson(new Pogo())
+            assert json == '{"foo":"foo","bar":"bar"}'
+        '''
+    }
+
+    @Test // GROOVY-7682
+    void testStackOverflowError1() {
+        assertScript '''
+            @Grab('joda-time:joda-time:2.10.10')
+            import org.joda.time.DateTime
+            import org.joda.time.format.DateTimeFormat
+            import org.joda.time.format.DateTimeFormatter
+
+            DateTimeFormatter formatter = DateTimeFormat.forPattern('yyyy-MM-dd HH:mm:ss.SSS z')
+            DateTime dt = formatter.parseDateTime('2015-11-20 13:37:21.123 EST')
+            String json = groovy.json.JsonOutput.toJson(dt)
+            net.javacrumbs.jsonunit.JsonAssert.assertJsonEquals("""{
+                "afterNow":false,
+                "beforeNow":true,
+                "centuryOfEra":20,
+                "dayOfMonth":20,
+                "dayOfWeek":5,
+                "dayOfYear":324,
+                "equalNow":false,
+                "era":1,
+                "hourOfDay":13,
+                "millisOfDay":49041123,
+                "millisOfSecond":123,
+                "minuteOfDay":817,
+                "minuteOfHour":37,
+                "monthOfYear":11,
+                "secondOfDay":49041,
+                "secondOfMinute":21,
+                "weekOfWeekyear":47,
+                "weekyear":2015,
+                "year":2015,
+                "yearOfCentury":15,
+                "yearOfEra":2015,
+                "zone":{
+                    "ID":"America/New_York",
+                    "fixed":false,
+                    "uncachedZone":{
+                        "ID":"America/New_York",
+                        "cachable":true,
+                        "fixed":false
+                    }
+                }
+            }""", json)
+        '''
+    }
+
+    @Test // GROOVY-8371
+    void testStackOverflowError2() {
+        assertScript '''
+            final  date = java.time.LocalDate.of(1970, 1, 1)
+            String json = groovy.json.JsonOutput.toJson(date)
+            net.javacrumbs.jsonunit.JsonAssert.assertJsonEquals("""{
+                "chronology":{
+                    "calendarType":"iso8601",
+                    "id":"ISO"
+                },
+                "dayOfMonth":1,
+                "dayOfWeek":"THURSDAY",
+                "dayOfYear":1,
+                "era":"CE",
+                "leapYear":false,
+                "month":"JANUARY",
+                "monthValue":1,
+                "year":1970
+            }""", json)
+        '''
+    }
 }
+
+//------------------------------------------------------------------------------
 
 @Canonical
 class JsonCity {
@@ -441,16 +561,6 @@ class JsonDistrict {
 class JsonStreet {
     String streetName
     JsonStreetKind kind
-}
-
-class JsonObject {
-    String name
-    Map properties
-}
-
-class JsonFoo {
-    String name
-    int getProperties() { return 0 }
 }
 
 enum JsonStreetKind {

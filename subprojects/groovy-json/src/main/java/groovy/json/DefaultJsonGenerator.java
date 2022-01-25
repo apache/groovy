@@ -21,8 +21,9 @@ package groovy.json;
 import org.apache.groovy.json.internal.CharBuf;
 import org.apache.groovy.json.internal.Chr;
 import groovy.lang.Closure;
+import groovy.lang.MetaBeanProperty;
+import groovy.lang.MetaProperty;
 import groovy.util.Expando;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -36,6 +37,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -52,6 +54,8 @@ import static groovy.json.JsonOutput.EMPTY_MAP_CHARS;
 import static groovy.json.JsonOutput.EMPTY_STRING_CHARS;
 import static groovy.json.JsonOutput.OPEN_BRACE;
 import static groovy.json.JsonOutput.OPEN_BRACKET;
+import static java.lang.reflect.Modifier.isPublic;
+import static java.lang.reflect.Modifier.isStatic;
 
 /**
  * A JsonGenerator that can be configured with various {@link JsonGenerator.Options}.
@@ -232,12 +236,28 @@ public class DefaultJsonGenerator implements JsonGenerator {
         }
     }
 
-    protected Map<?, ?> getObjectProperties(Object object) {
-        Map<?, ?> properties = DefaultGroovyMethods.getProperties(object);
-        properties.remove("class");
-        properties.remove("declaringClass");
-        properties.remove("metaClass");
-        return properties;
+    protected Map<?, ?> getObjectProperties(final Object object) {
+        List<MetaProperty> metaProperties = org.codehaus.groovy.runtime.InvokerHelper.getMetaClass(object).getProperties();
+
+        Map<String, Object> namesAndValues = new LinkedHashMap<>(metaProperties.size());
+
+        for (MetaProperty mp : metaProperties) {
+            if (!isPublic(mp.getModifiers())) continue; // GROOVY-5169
+            if ( isStatic(mp.getModifiers())) continue; // GROOVY-7682
+
+            // skip write-only property: see File
+            if (mp instanceof MetaBeanProperty) {
+                MetaBeanProperty mbp = (MetaBeanProperty) mp;
+                if (mbp.getField() == null && mbp.getGetter() == null) continue;
+            }
+
+            String name = mp.getName();
+            if (name.equals("class") || name.equals("metaClass") || name.equals("declaringClass")) continue;
+
+            namesAndValues.put(name, mp.getProperty(object));
+        }
+
+        return namesAndValues;
     }
 
     /**
@@ -530,5 +550,4 @@ public class DefaultJsonGenerator implements JsonGenerator {
             return super.toString() + "<" + this.type.toString() + ">";
         }
     }
-
 }

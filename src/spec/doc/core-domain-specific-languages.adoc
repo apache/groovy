@@ -1797,23 +1797,119 @@ include::../test/builder/FileTreeBuilderTest.groovy[tags=shorthand_syntax_assert
 
 === Creating a builder
 
-While Groovy has many builders built-in, this pattern is so common,
+While Groovy has many built-in builders, the builder pattern is so common,
 you will no doubt eventually come across a building requirement that
 hasn't been catered for by those built-in builders.
 The good news is that you can build your own.
 You can do everything from scratch by relying on Groovy's
 metaprogramming capabilities. Alternatively, the `BuilderSupport`
-and `FactoryBuilderSupport` classes are specially designed to make building
-builders easy.
+and `FactoryBuilderSupport` classes make designing your own
+builders much easier.
 
 ==== BuilderSupport
 
 One approach to building a builder is to subclass `BuilderSupport`.
+With this approach, the general idea is to override one or more of a number of
+_lifecycle_ methods including `setParent`, `nodeCompleted` and some or
+all of the `createNode` methods from the `BuilderSupport` abstract class.
 
-(TBD)
+As an example, suppose we want to create a builder of
+tracking athletic training programs. Each program is made
+up of a number of sets and each set has its own steps.
+A step might itself be a set of smaller steps.
+For each `set` or `step`, we might wish to record
+the `distance` required (or `time`), whether to `repeat`
+the steps a certain number of times, whether to take a `break`
+between each step and so forth.
+
+For the simplicity of this example, we'll capture the training
+programming using maps and lists. A set has a list of steps.
+Information like `repeat` count or `distance` will be tracked
+in a map of attributes for each step and set.
+
+The builder implementation is as follows:
+
+* Override a couple of the `createNode` methods.
+We'll create a map capturing the set name, an empty list of steps,
+and potentially some attributes.
+* Whenever we complete a node we'll add the node to the list of steps
+for the parent (if any).
+
+The code looks like this:
+
+[source,groovy]
+----
+include::../test/builder/BuilderSpecTest.groovy[tags=define_builder1,indent=0]
+----
+
+Next, we'll write a little helper method which recursively
+adds up the distances of all substeps, accounting for repeated steps
+as needed.
+
+[source,groovy]
+----
+include::../test/builder/BuilderSpecTest.groovy[tags=define_total_helper1,indent=0]
+----
+
+Finally, we can now use our builder and helper method to create a
+swimming training program and check its total distance:
+
+[source,groovy]
+----
+include::../test/builder/BuilderSpecTest.groovy[tags=use_builder1,indent=0]
+----
 
 ==== FactoryBuilderSupport
 
 A second approach to building a builder is to subclass `FactoryBuilderSupport`.
+This builder has similar goals to `BuilderSupport` but with extra features
+to simplify domain class construction.
 
-(TBD)
+With this approach, the general idea is to override one or more of a number of
+_lifecycle_ methods including `resolveFactory`, `nodeCompleted` and `postInstantiate` methods from the `FactoryBuilderSupport` abstract class.
+
+We'll use the same example as for the previous `BuilderSupport` example;
+a builder of tracking athletic training programs.
+
+For this example, rather than capturing the training
+programming using maps and lists, we'll use some simple domain classes.
+
+The builder implementation is as follows:
+
+* Override the `resolveFactory` method to return a special
+factory which returns classes by capitalizing the names used in our mini DSL.
+* Whenever we complete a node we'll add the node to the list of steps
+for the parent (if any).
+
+The code, including the code for the special factory class, looks like this:
+
+[source,groovy]
+----
+include::../test/builder/BuilderSpecTest.groovy[tags=define_builder2,indent=0]
+----
+
+Rather than using lists and maps, we'll have some simple domain classes
+and related traits:
+
+[source,groovy]
+----
+include::../test/builder/BuilderSpecTest.groovy[tags=define_domain_classes2,indent=0]
+----
+
+Just like for the `BuilderSupport` example, it is useful to have a helper method
+to calculate the total distance covered during the training session.
+The implementation is very similar to our earlier example, but is adjusted
+to work well with our newly defined traits.
+
+[source,groovy]
+----
+include::../test/builder/BuilderSpecTest.groovy[tags=define_total_helper2,indent=0]
+----
+
+Finally, we can now use our new builder and helper methods to create a
+cycling training program and check its total distance:
+
+[source,groovy]
+----
+include::../test/builder/BuilderSpecTest.groovy[tags=use_builder2,indent=0]
+----
