@@ -120,19 +120,6 @@ class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest 
         assert astTrees['Foo'][1].count('DefaultGroovyMethods.toList') == 1
     }
 
-    // GROOVY-8074
-    void testMapSubclassPropertyStyleAccess() {
-        assertScript '''
-            class MyMap extends LinkedHashMap {
-                def foo = 1
-            }
-
-            def map = new MyMap()
-            map.put('foo', 42)
-            assert map.foo == 42
-        '''
-    }
-
     // GROOVY-10029
     void testCollectionToArrayAssignmentSC() {
         assertScript '''

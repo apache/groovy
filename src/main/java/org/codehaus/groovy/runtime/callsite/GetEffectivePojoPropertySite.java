@@ -29,30 +29,18 @@ public class GetEffectivePojoPropertySite extends AbstractCallSite {
     private final MetaProperty effective;
     private final int version;
 
-    public GetEffectivePojoPropertySite(CallSite site, MetaClassImpl metaClass, MetaProperty effective) {
+    public GetEffectivePojoPropertySite(final CallSite site, final MetaClassImpl metaClass, final MetaProperty effective) {
         super(site);
         this.metaClass = metaClass;
         this.effective = effective;
         version = metaClass.getVersion();
     }
 
-//    public final Object callGetProperty (Object receiver) throws Throwable {
-//        if (GroovyCategorySupport.hasCategoryInCurrentThread() || receiver.getClass() != metaClass.getTheClass()) {
-//            return createGetPropertySite(receiver).getProperty(receiver);
-//        } else {
-//            try {
-//                return effective.getProperty(receiver);
-//            } catch (GroovyRuntimeException gre) {
-//                throw ScriptBytecodeAdapter.unwrap(gre);
-//            }
-//        }
-//    }
-
     @Override
-    public final CallSite acceptGetProperty(Object receiver) {
-//        if (GroovyCategorySupport.hasCategoryInCurrentThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
-        if (GroovyCategorySupport.hasCategoryInCurrentThread() || receiver==null || receiver.getClass() != metaClass.getTheClass()
-            || version != metaClass.getVersion()) { // metaClass is invalid
+    public final CallSite acceptGetProperty(final Object receiver) {
+        if (receiver == null || receiver.getClass() != metaClass.getTheClass()
+                || version != metaClass.getVersion() // metaClass is invalid
+                || GroovyCategorySupport.hasCategoryInCurrentThread()) {
             return createGetPropertySite(receiver);
         } else {
             return this;

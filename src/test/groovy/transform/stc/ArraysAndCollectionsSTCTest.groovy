@@ -733,11 +733,24 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-6266
     void testMapKeyGenerics() {
-        assertScript """
-            HashMap<String,List<List>> AR=new HashMap<String,List<List>>()
-            AR.get('key',[['val1'],['val2']])
-            assert AR.'key'[0] == ['val1']
-        """
+        assertScript '''
+            HashMap<String,List<List>> map = new HashMap<String,List<List>>()
+            map.get('key',[['val1'],['val2']])
+            assert map.'key'[0] == ['val1']
+        '''
+    }
+
+    // GROOVY-8074
+    void testMapSubclassPropertyStyleAccess() {
+        assertScript '''
+            class MyMap extends LinkedHashMap {
+                def foo = 1
+            }
+
+            def map = new MyMap()
+            map.put('foo', 42)
+            assert map.foo == 1
+        '''
     }
 
     // GROOVY-6311

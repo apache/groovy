@@ -177,15 +177,17 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             return;
         }
 
-        boolean isStaticProperty = receiver instanceof ClassExpression
-                && (receiverType.isDerivedFrom(receiver.getType()) || receiverType.implementsInterface(receiver.getType()));
+        if (makeGetPropertyWithGetter(receiver, receiverType, propertyName, safe, implicitThis)) return;
 
-        if (!isStaticProperty && isOrImplements(receiverType, MAP_TYPE)) {
-            // for maps, replace map.foo with map.get('foo')
+        boolean isStaticProperty = (receiver instanceof ClassExpression
+                && (receiverType.isDerivedFrom(receiver.getType()) || receiverType.implementsInterface(receiver.getType())));
+
+        // for maps, replace "map.foo" with "map.get('foo')" -- if no public field "foo" is declared (GROOVY-5001)
+        if (!isStaticProperty && isOrImplements(receiverType, MAP_TYPE)
+                && !java.util.Optional.ofNullable(getField(receiverType, propertyName)).filter(FieldNode::isPublic).isPresent()) {
             writeMapDotProperty(receiver, propertyName, safe);
             return;
         }
-        if (makeGetPropertyWithGetter(receiver, receiverType, propertyName, safe, implicitThis)) return;
         if (makeGetField(receiver, receiverType, propertyName, safe, implicitThis)) return;
         if (receiver instanceof ClassExpression) {
             if (makeGetField(receiver, receiver.getType(), propertyName, safe, implicitThis)) return;
