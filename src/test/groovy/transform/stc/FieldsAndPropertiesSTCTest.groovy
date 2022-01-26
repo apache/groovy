@@ -864,6 +864,22 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testProtectedAccessorFromSamePackage() {
+        assertScript '''
+            class Foo {
+                protected String getWho() { 'Foo' }
+            }
+            class Bar {
+                def m(Foo foo) {
+                    def x = foo.who
+                    x.toLowerCase()
+                }
+            }
+            String result = new Bar().m(new Foo())
+            assert result == 'foo'
+        '''
+    }
+
     // GROOVY-6610
     void testPrivateStaticFieldAccessBeforeThis() {
         assertScript '''

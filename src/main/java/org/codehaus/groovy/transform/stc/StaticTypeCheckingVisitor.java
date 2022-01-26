@@ -1705,11 +1705,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 || accessor.getOuterClasses().contains(receiver)) {
             return true;
         }
-        if (Modifier.isProtected(modifiers)) {
-            return accessor.isDerivedFrom(receiver);
-        } else {
-            return !Modifier.isPrivate(modifiers) && Objects.equals(accessor.getPackageName(), receiver.getPackageName());
+        if (!Modifier.isPrivate(modifiers) && Objects.equals(accessor.getPackageName(), receiver.getPackageName())) {
+            return true;
         }
+        return Modifier.isProtected(modifiers) && accessor.isDerivedFrom(receiver);
     }
 
     private MethodNode findGetter(final ClassNode current, String name, final boolean searchOuterClasses) {
