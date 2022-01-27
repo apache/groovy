@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.ImportNode;
@@ -32,6 +33,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -78,6 +80,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
+import static org.codehaus.groovy.ast.ClassHelper.CLASS_Type;
 import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
 import static org.codehaus.groovy.ast.ClassHelper.isCachedType;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
@@ -94,6 +97,7 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.codehaus.groovy.ast.ClassHelper.isStaticConstantInitializerType;
 import static org.codehaus.groovy.ast.ClassHelper.isStringType;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 
 public class JavaStubGenerator {
@@ -230,7 +234,7 @@ public class JavaStubGenerator {
                         Map<String, ClassNode> generics = trait.isUsingGenerics() ? createGenericsSpec(trait) : null;
                         for (PropertyNode traitProperty : trait.getProperties()) {
                             ClassNode traitPropertyType = traitProperty.getType();
-                            traitProperty.setType(correctToGenericsSpec(generics, traitPropertyType));
+                            traitProperty.setType(correctToGenericsSpecRecurse(generics, traitPropertyType));
                             super.visitProperty(traitProperty);
                             traitProperty.setType(traitPropertyType);
                         }
@@ -591,7 +595,7 @@ public class JavaStubGenerator {
                     normalizedType = normalizedType.getPlainNodeReference();
                 } else {
                     // GROOVY-7306: apply type arguments from declaring type to parameter type
-                    normalizedType = correctToGenericsSpec(superTypeGenerics, normalizedType);
+                    normalizedType = correctToGenericsSpecRecurse(superTypeGenerics, normalizedType);
                 }
                 return new Parameter(normalizedType, parameter.getName());
             }).toArray(Parameter[]::new);
@@ -677,7 +681,17 @@ public class JavaStubGenerator {
 
     private static ClassNode getConstructorArgumentType(final Expression arg, final ConstructorNode ctor) {
         if (arg instanceof VariableExpression) {
-            return ((VariableExpression) arg).getAccessedVariable().getType();
+            Variable variable = ((VariableExpression) arg).getAccessedVariable();
+            if (variable instanceof DynamicVariable) { // GROOVY-10464
+                return CLASS_Type.getPlainNodeReference();
+            }
+            return variable.getType(); // field, property, parameter
+        }
+        if (arg instanceof PropertyExpression) {
+            if ("class".equals(((PropertyExpression) arg).getPropertyAsString())) {
+                return CLASS_Type.getPlainNodeReference();
+            }
+            return null;
         }
         if (arg instanceof MethodCallExpression) { // GROOVY-10122
             MethodCallExpression mce = (MethodCallExpression) arg;
