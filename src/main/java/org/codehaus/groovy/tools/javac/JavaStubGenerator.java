@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.ImportNode;
@@ -33,6 +34,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -81,6 +83,7 @@ import java.util.stream.Stream;
 
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 
 public class JavaStubGenerator {
@@ -155,11 +158,8 @@ public class JavaStubGenerator {
         javaStubCompilationUnitSet.add(new RawJavaFileObject(createJavaStubFile(fileName).toPath().toUri()));
     }
 
-    private static final int DEFAULT_BUFFER_SIZE = 8 * 1024; // 8K
-
     private String generateStubContent(ClassNode classNode) {
-        Writer writer = new StringBuilderWriter(DEFAULT_BUFFER_SIZE);
-
+        Writer writer = new StringBuilderWriter(8192);
         try (PrintWriter out = new PrintWriter(writer)) {
             boolean packageInfo = "package-info".equals(classNode.getNameWithoutPackage());
             String packageName = classNode.getPackageName();
@@ -212,7 +212,7 @@ public class JavaStubGenerator {
                         Map<String, ClassNode> generics = trait.isUsingGenerics() ? createGenericsSpec(trait) : null;
                         for (PropertyNode traitProperty : trait.getProperties()) {
                             ClassNode traitPropertyType = traitProperty.getType();
-                            traitProperty.setType(correctToGenericsSpec(generics, traitPropertyType));
+                            traitProperty.setType(correctToGenericsSpecRecurse(generics, traitPropertyType));
                             super.visitProperty(traitProperty);
                             traitProperty.setType(traitPropertyType);
                         }
@@ -407,15 +407,14 @@ public class JavaStubGenerator {
                         }
                     }
                 }
-                if (existingMethod != null) continue;
-                boolean isCandidate = isCandidateTraitMethod(trait, traitMethod);
-                if (!isCandidate) continue;
-                printMethod(out, classNode, traitMethod);
+                if (existingMethod == null && isCandidateTraitMethod(trait, traitMethod)) {
+                    printMethod(out, classNode, traitMethod);
+                }
             }
         }
     }
 
-    private boolean isCandidateTraitMethod(ClassNode trait, MethodNode traitMethod) {
+    private boolean isCandidateTraitMethod(final ClassNode trait, final MethodNode traitMethod) {
         boolean precompiled = trait.redirect() instanceof DecompiledClassNode;
         if (!precompiled) return !traitMethod.isAbstract();
         List<MethodNode> helperMethods = Traits.findHelper(trait).getMethods();
@@ -569,7 +568,7 @@ public class JavaStubGenerator {
                     normalizedType = normalizedType.getPlainNodeReference();
                 } else {
                     // GROOVY-7306: apply type arguments from declaring type to parameter type
-                    normalizedType = correctToGenericsSpec(superTypeGenerics, normalizedType);
+                    normalizedType = correctToGenericsSpecRecurse(superTypeGenerics, normalizedType);
                 }
                 return new Parameter(normalizedType, parameter.getName());
             }).toArray(Parameter[]::new);
@@ -655,7 +654,17 @@ public class JavaStubGenerator {
 
     private static ClassNode getConstructorArgumentType(final Expression arg, final ConstructorNode ctor) {
         if (arg instanceof VariableExpression) {
-            return ((VariableExpression) arg).getAccessedVariable().getType();
+            Variable variable = ((VariableExpression) arg).getAccessedVariable();
+            if (variable instanceof DynamicVariable) { // GROOVY-10464
+                return ClassHelper.CLASS_Type.getPlainNodeReference();
+            }
+            return variable.getType(); // field, property, parameter
+        }
+        if (arg instanceof PropertyExpression) {
+            if ("class".equals(((PropertyExpression) arg).getPropertyAsString())) {
+                return ClassHelper.CLASS_Type.getPlainNodeReference();
+            }
+            return null;
         }
         if (arg instanceof MethodCallExpression) { // GROOVY-10122
             MethodCallExpression mce = (MethodCallExpression) arg;
@@ -669,7 +678,7 @@ public class JavaStubGenerator {
     }
 
     private void printMethod(PrintWriter out, ClassNode clazz, MethodNode methodNode) {
-        if (methodNode.getName().equals("<clinit>")) return;
+        if (methodNode.isStaticConstructor()) return;
         if (methodNode.isPrivate() || !Utilities.isJavaIdentifier(methodNode.getName())) return;
         if (methodNode.isSynthetic() && methodNode.getName().equals("$getStaticMetaClass")) return;
 
@@ -813,7 +822,6 @@ public class JavaStubGenerator {
             printType(out, type);
             out.print(")");
         }
-
         if (type != null && ClassHelper.isPrimitiveType(type)) {
             if (type.equals(ClassHelper.boolean_TYPE)) {
                 out.print("false");
@@ -960,7 +968,7 @@ public class JavaStubGenerator {
             val = ((Expression) memberValue).getText();
         } else if (memberValue instanceof VariableExpression) {
             val = ((Expression) memberValue).getText();
-            //check for an alias
+            // check for an alias
             ImportNode alias = currentModule.getStaticImports().get(val);
             if (alias != null)
                 val = alias.getClassName() + "." + alias.getFieldName();
