@@ -117,7 +117,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
         assertScript '''
             String s = [:]
-            assert s == '{}'
+            assert s == '{}' || s == '[:]'
         '''
         assertScript '''
             String s = []
