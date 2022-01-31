@@ -63,7 +63,6 @@ import java.util.stream.Collectors;
  * Additional Java 9 based functions will be added here as needed.
  */
 public class Java9 extends Java8 {
-    private static final Logger LOGGER = Logger.getLogger(Java9.class.getName());
 
     @Override
     public Map<String, Set<String>> getDefaultImportClasses(String[] packageNames) {
@@ -96,9 +95,10 @@ public class Java9 extends Java8 {
             } finally {
                 result.putAll(doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPns));
             }
-        } catch (Exception ignore) {
-            if (LOGGER.isLoggable(Level.FINEST)) {
-                LOGGER.finest("[WARNING] Failed to find default imported classes:\n" + DefaultGroovyMethods.asString(ignore));
+        } catch (Exception e) {
+            Logger logger = Logger.getLogger(getClass().getName());
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.finest("[WARNING] Failed to find default imported classes:\n" + DefaultGroovyMethods.asString(e));
             }
         }
 

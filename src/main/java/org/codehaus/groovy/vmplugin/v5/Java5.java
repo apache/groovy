@@ -53,6 +53,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.MalformedParameterizedTypeException;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.ReflectPermission;
@@ -68,7 +69,6 @@ import java.util.List;
 @Deprecated
 public class Java5 implements VMPlugin {
     private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
-    private static final Class[] PLUGIN_DGM = {PluginDefaultGroovyMethods.class};
     private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
     private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
 
@@ -204,7 +204,7 @@ public class Java5 implements VMPlugin {
     }
 
     public Class[] getPluginDefaultGroovyMethods() {
-        return PLUGIN_DGM;
+        return new Class[]{PluginDefaultGroovyMethods.class};
     }
 
     public Class[] getPluginStaticGroovyMethods() {
@@ -377,7 +377,7 @@ public class Java5 implements VMPlugin {
             Method[] methods = clazz.getDeclaredMethods();
             for (Method m : methods) {
                 ClassNode ret = makeClassNode(compileUnit, m.getGenericReturnType(), m.getReturnType());
-                Parameter[] params = processParameters(compileUnit, m);
+                Parameter[] params = makeParameters(compileUnit, m.getGenericParameterTypes(), m.getParameterTypes(), m.getParameterAnnotations(), m);
                 ClassNode[] exceptions = makeClassNodes(compileUnit, m.getGenericExceptionTypes(), m.getExceptionTypes());
                 MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), ret, params, exceptions, null);
                 mn.setSynthetic(m.isSynthetic());
@@ -388,15 +388,7 @@ public class Java5 implements VMPlugin {
             }
             Constructor[] constructors = clazz.getDeclaredConstructors();
             for (Constructor ctor : constructors) {
-                Type[] types = ctor.getGenericParameterTypes();
-                Parameter[] params1 = Parameter.EMPTY_ARRAY;
-                if (types.length > 0) {
-                    params1 = new Parameter[types.length];
-                    for (int i = 0; i < params1.length; i++) {
-                        params1[i] = makeParameter(compileUnit, types[i], ctor.getParameterTypes()[i], getConstructorParameterAnnotations(ctor)[i], "param" + i);
-                    }
-                }
-                Parameter[] params = params1;
+                Parameter[] params = makeParameters(compileUnit, ctor.getGenericParameterTypes(), ctor.getParameterTypes(), getConstructorParameterAnnotations(ctor), ctor);
                 ClassNode[] exceptions = makeClassNodes(compileUnit, ctor.getGenericExceptionTypes(), ctor.getExceptionTypes());
                 ConstructorNode cn = classNode.addConstructor(ctor.getModifiers(), params, exceptions, null);
                 setAnnotationMetaData(ctor.getAnnotations(), cn);
@@ -525,6 +517,27 @@ public class Java5 implements VMPlugin {
         Parameter parameter = new Parameter(cn, name);
         setAnnotationMetaData(annotations, parameter);
         return parameter;
+    }
+
+    private Parameter[] makeParameters(CompileUnit cu, Type[] types, Class[] cls, Annotation[][] parameterAnnotations, Member member) {
+        Parameter[] params = Parameter.EMPTY_ARRAY;
+        int n = types.length;
+        if (n > 0) {
+            params = new Parameter[n];
+            String[] names = new String[n];
+            fillParameterNames(names, member);
+            for (int i = 0; i < n; i += 1) {
+                setAnnotationMetaData(parameterAnnotations[i],
+                    params[i] = new Parameter(makeClassNode(cu, types[i], cls[i]), names[i]));
+            }
+        }
+        return params;
+    }
+
+    protected void fillParameterNames(String[] names, Member member) {
+        for (int i = 0, n = names.length; i < n; i += 1) {
+            names[i] = "param" + i;
+        }
     }
 
     public void invalidateCallSites() {}
