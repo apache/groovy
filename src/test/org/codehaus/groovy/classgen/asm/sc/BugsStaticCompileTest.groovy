@@ -721,6 +721,48 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    // GROOVY-10037
+    void testPrivateSetterWithDollarPrefix() {
+        assertScript '''
+            class C {
+              private int priv
+              public int pub
+
+              private void set$priv(int val) {
+                priv = val
+              }
+
+              private int get$priv() {
+                priv
+              }
+
+              public void set$pub(int val) {
+                pub = val
+              }
+
+              public int get$pub() {
+                pub
+              }
+
+              void test() { int lv
+                $priv = 20 // XXXX
+                lv = $priv // okay
+                $pub = 40  // okay
+                lv = $pub  // okay
+              }
+            }
+
+            class D extends C {
+            }
+
+            def c = new C()
+            c.test()
+
+            def d = new D()
+            d.test()
+        '''
+    }
+
     void testSuperMethodCallInSkippedSection() {
         assertScript '''
             class Top {
