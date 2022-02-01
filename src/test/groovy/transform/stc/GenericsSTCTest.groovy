@@ -172,9 +172,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8638
-    void testReturnTypeInferenceWithMethodGenerics17() {
+    void testReturnTypeInferenceWithMethodGenericsAndBridge() {
         assertScript '''
-            @Grab('com.google.guava:guava:30.1.1-jre')
+            @Grab('com.google.guava:guava:19.0')
             import com.google.common.collect.*
 
             ListMultimap<String, Integer> mmap = ArrayListMultimap.create()
