@@ -346,8 +346,11 @@ public abstract class TraitComposer {
         }
         int modifiers = helperMethod.getModifiers();
         if (!isHelperForStaticMethod) {
-            modifiers ^= Opcodes.ACC_STATIC;
+            modifiers &= ~Opcodes.ACC_STATIC;
         }
+        // GROOVY-10467: added by classgen
+        modifiers &= ~Opcodes.ACC_VARARGS;
+
         MethodNode forwarder = new MethodNode(
                 helperMethod.getName(),
                 modifiers,
