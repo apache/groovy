@@ -114,15 +114,15 @@ public class ListHashMap<K,V> implements Map<K,V> {
 
     @Override
     public V get(Object key) {
-        if(size==0) return null;
-        if (innerMap==null) {
-            for (int i=0; i<size; i++) {
-                if (listKeys[i].equals(key)) return (V) listValues[i];
-            }
+        if (size == 0)
             return null;
-        } else {
+        if (innerMap != null)
             return innerMap.get(key);
+        for (int i = 0; i < size; ++i) {
+            if (key.equals(listKeys[i]))
+                return (V) listValues[i];
         }
+        return null;
     }
 
     @Override
