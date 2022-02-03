@@ -138,12 +138,14 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testInvokesPublicMethodsWithoutChecks() throws Exception {
+        if (isAtLeastJdk("18.0")) return;
         cachedMethodUnderTest = createCachedMethod("publicMethod");
         System.setSecurityManager(restrictiveSecurityManager);
         assertTrue(invokesCachedMethod());
     }
 
     public void testReturnsAccesiblePublicMethodsWithoutChecks() throws Exception {
+        if (isAtLeastJdk("18.0")) return;
         cachedMethodUnderTest = createCachedMethod("publicMethod");
         System.setSecurityManager(restrictiveSecurityManager);
         assertEquals("publicMethod", cachedMethodUnderTest.setAccessible().getName());
@@ -151,6 +153,7 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testAccessesPublicFieldsWithoutChecks() throws Exception {
+        if (isAtLeastJdk("18.0")) return;
         cachedFieldUnderTest = createCachedField("publicField");
         System.setSecurityManager(restrictiveSecurityManager);
         TestClass object = new TestClass();
@@ -164,6 +167,7 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testAccessesPrivateFieldsWithoutSecurityManager() throws Exception {
+        if (isAtLeastJdk("18.0")) return;
         cachedFieldUnderTest = createCachedField("privateField");
         System.setSecurityManager(null);
         TestClass object = new TestClass();
@@ -172,6 +176,7 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testReturnsAccesiblePrivateMethodsWithoutSecurityManager() throws Exception {
+        if (isAtLeastJdk("18.0")) return;
         cachedMethodUnderTest = createCachedMethod("privateMethod");
         System.setSecurityManager(null);
         assertEquals("privateMethod", cachedMethodUnderTest.setAccessible().getName());
@@ -179,6 +184,7 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testChecksReflectPermissionForInvokeOnPrivateMethods() throws Exception {
+        if (isAtLeastJdk("18.0")) return;
         cachedMethodUnderTest = createCachedMethod("privateMethod");
         System.setSecurityManager(restrictiveSecurityManager);
         try {
@@ -191,6 +197,7 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testChecksReflectPermissionForFieldAccessOnPrivateFields() throws Exception {
+        if (isAtLeastJdk("18.0")) return;
         cachedFieldUnderTest = createCachedField("privateField");
         System.setSecurityManager(restrictiveSecurityManager);
         TestClass object = new TestClass();
@@ -210,6 +217,7 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testChecksReflectPermissionForMethodAccessOnPrivateMethods() throws Exception {
+        if (isAtLeastJdk("18.0")) return;
         cachedMethodUnderTest = createCachedMethod("privateMethod");
         System.setSecurityManager(restrictiveSecurityManager);
         try {
@@ -228,6 +236,7 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testInvokesPackagePrivateMethodsWithoutChecksInNonRestrictedPackages() throws Exception {
+        if (isAtLeastJdk("18.0")) return;
         cachedMethodUnderTest = createCachedMethod("packagePrivateMethod");
         System.setSecurityManager(restrictiveSecurityManager);
         assertTrue(invokesCachedMethod());
@@ -235,9 +244,7 @@ public class SecurityTest extends GroovyTestCase {
 
     public void testChecksReflectPermissionForInvokeOnPackagePrivateMethodsInRestrictedJavaPackages() throws Exception {
         // FIX_JDK9 remove this exemption for JDK9
-        if (isAtLeastJdk("9.0")) {
-            return;
-        }
+        if (isAtLeastJdk("9.0")) return;
         cachedMethodUnderTest = createCachedMethod(ClassLoader.class, "getBootstrapClassPath");
         System.setSecurityManager(restrictiveSecurityManager);
 
@@ -251,6 +258,7 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testInvokesProtectedMethodsWithoutChecks() throws Exception {
+        if (isAtLeastJdk("18.0")) return;
         cachedMethodUnderTest = createCachedMethod("protectedMethod");
         System.setSecurityManager(restrictiveSecurityManager);
         assertTrue(invokesCachedMethod());
@@ -278,6 +286,7 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testInvokesPrivateMethodsInGroovyObjectsWithoutChecks() throws Exception {
+        if (isAtLeastJdk("18.0")) return;
         cachedMethodUnderTest = createCachedMethod(TestGroovyClass.class, "privateMethod");
         TestGroovyClass object = new TestGroovyClass();
         System.setSecurityManager(restrictiveSecurityManager);
@@ -286,6 +295,7 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testAccessesPrivateFieldsInGroovyObjectsWithoutChecks() throws Exception {
+        if (isAtLeastJdk("18.0")) return;
         Field field = TestGroovyClass.class.getDeclaredField("privateField");
         field.setAccessible(true);
         cachedFieldUnderTest = new CachedField(field);
