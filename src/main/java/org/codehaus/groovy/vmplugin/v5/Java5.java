@@ -301,14 +301,16 @@ public class Java5 implements VMPlugin {
             return new ConstantExpression(value);
 
         if (value instanceof Class)
-            return new ClassExpression(ClassHelper.makeWithoutCaching((Class)value));
+            return new ClassExpression(ClassHelper.makeWithoutCaching((Class<?>)value));
+
+        if (value instanceof Enum )
+            return new PropertyExpression(new ClassExpression(ClassHelper.makeWithoutCaching(value.getClass())), value.toString());
 
         if (value.getClass().isArray()) {
-            ListExpression elementExprs = new ListExpression();
-            int len = Array.getLength(value);
-            for (int i = 0; i != len; ++i)
-                elementExprs.addExpression(annotationValueToExpression(Array.get(value, i)));
-            return elementExprs;
+            ListExpression values = new ListExpression();
+            for (int i = 0, n = Array.getLength(value); i < n; i += 1)
+                values.addExpression(annotationValueToExpression(Array.get(value, i)));
+            return values;
         }
 
         return null;
