@@ -413,7 +413,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method'
     }
 
-    //GROOVY-6189
+    // GROOVY-6189
     void testSAMsInMethodSelection(){
         // simple direct case
         assertScript """
@@ -595,6 +595,35 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         """, "Cannot assign"
     }
 
+    // GROOVY-9974
+    void testStreamsAPI() {
+        try {
+            Class.forName('java.util.function.Predicate')
+        } catch (ClassNotFoundException e) {
+            return
+        }
+        assertScript '''
+            import groovy.transform.*
+
+            @ToString
+            class Pogo {
+                String foo
+            }
+            @Newify(Pogo)
+            List<Pogo> m() {
+                [Pogo(foo:'bar'),Pogo(foo:'baz')]
+            }
+            String test() {
+                m().with { list ->
+                    def other = []
+                    list.stream().filter{ it.foo.startsWith('ba') }.toList()
+                }
+            }
+
+            assert test() == '[Pogo(bar), Pogo(baz)]'
+        '''
+    }
+
     // GROOVY-6238
     void testDirectMethodCallOnClosureExpression() {
         assertScript '''
@@ -686,4 +715,3 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 }
-

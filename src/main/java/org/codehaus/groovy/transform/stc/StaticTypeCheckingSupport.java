@@ -100,6 +100,7 @@ import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.findSAM;
 import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
@@ -112,7 +113,6 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.getSuperClass;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
@@ -1743,37 +1743,51 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     /**
-     * use supplied type to make a connection from usage to declaration
-     * The method operates in two modes.
-     * * For type !instanceof target a structural compare will be done
-     * (for example Dummy&lt;T&gt; and List&lt;R&gt; to get T=R)
-     * * If type equals target, a structural match is done as well
-     * (for example Collection&lt;U&gt; and Collection&lt;E&gt; to get U=E)
-     * * otherwise we climb the hierarchy to find a case of type equals target
-     * to then execute the structural match, while applying possibly existing
-     * generics contexts on the way (for example for IntRange and Collection&lt;E&gt;
-     * to get E=Integer, since IntRange is an AbstractList&lt;Integer&gt;)
+     * Uses supplied type to make a connection from usage to declaration.
+     * <p>
+     * The method operates in two modes:
+     * <ul>
+     * <li>For type !instanceof target a structural compare will be done
+     *     (for example Type&lt;T&gt; and List&lt;E&gt; to get E -> T)
+     * <li>If type equals target, a structural match is done as well
+     *     (for example Collection&lt;T&gt; and Collection&lt;E&gt; to get E -> T)
+     * <li>Otherwise we climb the hierarchy to find a case of type equals target
+     *     to then execute the structural match, while applying possibly existing
+     *     generics contexts on the way (for example for IntRange and Collection&lt;E&gt;
+     *     to get E -> Integer, since IntRange is an AbstractList&lt;Integer&gt;)
+     * </ul>
      * Should the target not have any generics this method does nothing.
      */
     static void extractGenericsConnections(Map<GenericsTypeName, GenericsType> connections, ClassNode type, ClassNode target) {
-        if (target == null || type == target || !isUsingGenericsOrIsArrayUsingGenerics(target)) return;
+        if (target == null || target == type || !isUsingGenericsOrIsArrayUsingGenerics(target)) return;
         if (type == null || type == UNKNOWN_PARAMETER_TYPE) return;
-        if (type.isArray() && target.isArray()) {
-            extractGenericsConnections(connections, type.getComponentType(), target.getComponentType());
-        } else if (target.isGenericsPlaceHolder() || type.equals(target) || !implementsInterfaceOrIsSubclassOf(type, target)) {
-            // structural match route
-            if (target.isGenericsPlaceHolder()) {
-                connections.put(new GenericsTypeName(target.getGenericsTypes()[0].getName()), new GenericsType(type));
-            } else {
-                extractGenericsConnections(connections, type.getGenericsTypes(), target.getGenericsTypes());
-            }
-        } else {
-            // have first to find matching super class or interface
-            ClassNode superClass = getSuperClass(type, target);
 
+        MethodNode sam;
+
+        if (target.isGenericsPlaceHolder()) {
+            connections.put(new GenericsTypeName(target.getUnresolvedName()), new GenericsType(type));
+
+        } else if (type.isArray() && target.isArray()) {
+            extractGenericsConnections(connections, type.getComponentType(), target.getComponentType());
+
+        } else if (type.equals(CLOSURE_TYPE) && (sam = findSAM(target)) != null) { // GROOVY-9974
+            ClassNode returnType = StaticTypeCheckingVisitor.wrapTypeIfNecessary(sam.getReturnType());
+            extractGenericsConnections(connections, type.getGenericsTypes(), new GenericsType[] {new GenericsType(returnType)});
+
+        } else if (type.equals(target) || !implementsInterfaceOrIsSubclassOf(type, target)) {
+            extractGenericsConnections(connections, type.getGenericsTypes(), target.getGenericsTypes());
+
+        } else {
+            // find matching super class or interface
+            ClassNode superClass = GenericsUtils.getSuperClass(type, target);
             if (superClass != null) {
-                ClassNode corrected = getCorrectedClassNode(type, superClass, true);
-                extractGenericsConnections(connections, corrected, target);
+                if (GenericsUtils.hasUnresolvedGenerics(superClass)) {
+                    Map<String, ClassNode> spec = GenericsUtils.createGenericsSpec(type);
+                    if (!spec.isEmpty()) {
+                        superClass = GenericsUtils.correctToGenericsSpecRecurse(spec, superClass);
+                    }
+                }
+                extractGenericsConnections(connections, superClass, target);
             } else {
                 // if we reach here, we have an unhandled case
                 throw new GroovyBugError("The type " + type + " seems not to normally extend " + target + ". Sorry, I cannot handle this.");
