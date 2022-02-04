@@ -75,6 +75,7 @@ import java.util.Set;
 import static java.util.stream.Collectors.toList;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.reverse;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.DYNAMIC_OUTER_NODE_CALLBACK;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.SWITCH_CONDITION_EXPRESSION_TYPE;
 
@@ -852,8 +853,10 @@ public class CompilationUnit extends ProcessingUnit {
          */
         @Override
         default void doPhaseOperation(final CompilationUnit unit) throws CompilationFailedException {
-            for (Map.Entry<String, SourceUnit> entry : unit.sources.entrySet()) {
-                SourceUnit source = entry.getValue();
+            String[] names = unit.sources.keySet().toArray(ResolveVisitor.EMPTY_STRING_ARRAY);
+            if (names.length > 1) reverse(names, true); // GROVY-9866: put dependencies first
+            for (String name : names) {
+                SourceUnit source = unit.sources.get(name);
                 if (source.phase < unit.phase || (source.phase == unit.phase && !source.phaseComplete)) {
                     try {
                         this.call(source);

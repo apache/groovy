@@ -427,7 +427,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // GROOVY-4043: for type "X", try "A$X" with each type in the class hierarchy (except for Object)
         for (; cn != null && cycleCheck.add(cn) && !isObjectType(cn); cn = cn.getSuperClass()) {
             if (setRedirect(type, cn)) return true;
-            // GROOVY-9866: unresolvable interfaces
         }
 
         // Another case we want to check here is if we are in a
