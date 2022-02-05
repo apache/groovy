@@ -167,6 +167,10 @@ public class DecompiledClassNode extends ClassNode {
         throw new UnsupportedOperationException();
     }
 
+    public boolean isParameterized() {
+        return (classData.signature != null && classData.signature.charAt(0) == '<');
+    }
+
     @Override
     public boolean isResolved() {
         return true;
@@ -273,5 +277,4 @@ public class DecompiledClassNode extends ClassNode {
         }
         return node;
     }
-
 }
