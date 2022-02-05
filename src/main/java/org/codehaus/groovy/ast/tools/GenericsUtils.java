@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
@@ -286,16 +287,22 @@ public class GenericsUtils {
         return correctToGenericsSpecRecurse(genericsSpec, targetRedirect);
     }
 
-    public static ClassNode nonGeneric(ClassNode type) {
-        if (type.isUsingGenerics()) {
-            final ClassNode nonGen = ClassHelper.makeWithoutCaching(type.getName());
-            nonGen.setRedirect(type);
-            nonGen.setGenericsTypes(null);
-            nonGen.setUsingGenerics(false);
-            return nonGen;
+    public static ClassNode nonGeneric(final ClassNode type) {
+        int dims = 0;
+        ClassNode temp = type;
+        while (temp.isArray()) { dims += 1;
+            temp = temp.getComponentType();
         }
-        if (type.isArray() && type.getComponentType().isUsingGenerics()) {
-            return type.getComponentType().getPlainNodeReference().makeArray();
+        if (temp instanceof DecompiledClassNode // GROOVY-10461: check without resolving supers
+                        ? ((DecompiledClassNode) temp).isParameterized() : temp.isUsingGenerics()) {
+            ClassNode result = ClassHelper.makeWithoutCaching(temp.getName());
+            result.setRedirect(temp);
+            result.setGenericsTypes(null);
+            result.setUsingGenerics(false);
+            while (dims > 0) { dims -= 1;
+                result = result.makeArray();
+            }
+            return result;
         }
         return type;
     }
