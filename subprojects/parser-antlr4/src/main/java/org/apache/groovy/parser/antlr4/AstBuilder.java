@@ -1866,7 +1866,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         boolean hasArgumentList = asBoolean(ctx.enhancedArgumentListInPar());
         boolean hasCommandArgument = asBoolean(ctx.commandArgument());
 
-        if (visitingArrayInitializerCount > 0 && (hasArgumentList || hasCommandArgument)) {
+        if ((hasArgumentList || hasCommandArgument) && visitingArrayInitializerCount > 0) {
             // To avoid ambiguities, command chain expression should not be used in array initializer
             // the old parser does not support either, so no breaking changes
             // SEE http://groovy.329449.n5.nabble.com/parrot-Command-expressions-in-array-initializer-tt5752273.html
@@ -1875,13 +1875,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         Expression baseExpr = (Expression) this.visit(ctx.expression());
 
-
-        if (hasArgumentList || hasCommandArgument) {
-            if (baseExpr instanceof BinaryExpression) {
-                if (!"[".equals(((BinaryExpression) baseExpr).getOperation().getText()) && !isInsideParentheses(baseExpr)) {
-                    throw createParsingFailedException("Unexpected input: '" + getOriginalText(ctx.expression()) + "'", ctx.expression());
-                }
-            }
+        if ((hasArgumentList || hasCommandArgument) && !isInsideParentheses(baseExpr)
+                && baseExpr instanceof BinaryExpression && !"[".equals(((BinaryExpression) baseExpr).getOperation().getText())) {
+            throw createParsingFailedException("Unexpected input: '" + getOriginalText(ctx.expression()) + "'", ctx.expression());
         }
 
         MethodCallExpression methodCallExpression = null;
@@ -1890,54 +1886,44 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             Expression arguments = this.visitEnhancedArgumentListInPar(ctx.enhancedArgumentListInPar());
 
             if (baseExpr instanceof PropertyExpression) { // e.g. obj.a 1, 2
-                methodCallExpression =
-                        configureAST(
-                                this.createMethodCallExpression(
-                                        (PropertyExpression) baseExpr, arguments),
-                                arguments);
+                methodCallExpression = configureAST(this.createMethodCallExpression((PropertyExpression) baseExpr, arguments), ctx.expression(), arguments);
 
             } else if (baseExpr instanceof MethodCallExpression && !isInsideParentheses(baseExpr)) { // e.g. m {} a, b  OR  m(...) a, b
                 if (asBoolean(arguments)) {
                     // The error should never be thrown.
                     throw new GroovyBugError("When baseExpr is a instance of MethodCallExpression, which should follow NO argumentList");
                 }
-
                 methodCallExpression = (MethodCallExpression) baseExpr;
-            } else if (
-                    !isInsideParentheses(baseExpr)
-                            && (baseExpr instanceof VariableExpression /* e.g. m 1, 2 */
-                            || baseExpr instanceof GStringExpression /* e.g. "$m" 1, 2 */
-                            || (baseExpr instanceof ConstantExpression && isTrue(baseExpr, IS_STRING)) /* e.g. "m" 1, 2 */)
-            ) {
+
+            } else if (!isInsideParentheses(baseExpr)
+                    && (baseExpr instanceof VariableExpression // e.g. m 1, 2
+                        || baseExpr instanceof GStringExpression // e.g. "$m" 1, 2
+                        || (baseExpr instanceof ConstantExpression && isTrue(baseExpr, IS_STRING)))) { // e.g. "m" 1, 2
                 validateInvalidMethodDefinition(baseExpr, arguments);
 
-                methodCallExpression =
-                        configureAST(
-                                this.createMethodCallExpression(baseExpr, arguments),
-                                arguments);
+                methodCallExpression = configureAST(this.createMethodCallExpression(baseExpr, arguments), ctx.expression(), arguments);
             } else { // e.g. a[x] b, new A() b, etc.
-                methodCallExpression = configureAST(this.createCallMethodCallExpression(baseExpr, arguments), arguments);
+                methodCallExpression = configureAST(this.createCallMethodCallExpression(baseExpr, arguments), ctx.expression(), arguments);
             }
 
-            methodCallExpression.putNodeMetaData(IS_COMMAND_EXPRESSION, true);
+            methodCallExpression.putNodeMetaData(IS_COMMAND_EXPRESSION, Boolean.TRUE);
 
             if (!hasCommandArgument) {
-                return configureAST(methodCallExpression, ctx);
+                return methodCallExpression;
             }
         }
 
         if (hasCommandArgument) {
-            baseExpr.putNodeMetaData(IS_COMMAND_EXPRESSION, true);
+            baseExpr.putNodeMetaData(IS_COMMAND_EXPRESSION, Boolean.TRUE);
         }
 
         return configureAST(
                 (Expression) ctx.commandArgument().stream()
                         .map(e -> (Object) e)
-                        .reduce(null == methodCallExpression ? baseExpr : methodCallExpression,
+                        .reduce(methodCallExpression != null ? methodCallExpression : baseExpr,
                                 (r, e) -> {
                                     CommandArgumentContext commandArgumentContext = (CommandArgumentContext) e;
                                     commandArgumentContext.putNodeMetaData(CMD_EXPRESSION_BASE_EXPR, r);
-
                                     return this.visitCommandArgument(commandArgumentContext);
                                 }
                         ),
@@ -2090,7 +2076,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         if (asBoolean(ctx.namePart())) {
             Expression namePartExpr = this.visitNamePart(ctx.namePart());
             GenericsType[] genericsTypes = this.visitNonWildcardTypeArguments(ctx.nonWildcardTypeArguments());
-
 
             if (asBoolean(ctx.DOT())) {
                 boolean isSafeChain = this.isTrue(baseExpr, PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN);
@@ -2489,7 +2474,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public Tuple2<Token, Expression> visitIndexPropertyArgs(final IndexPropertyArgsContext ctx) {
         List<Expression> expressionList = this.visitExpressionList(ctx.expressionList());
-
 
         if (expressionList.size() == 1) {
             Expression expr = expressionList.get(0);
