@@ -49,28 +49,30 @@ public class CompilerConfiguration {
     /** This (<code>"indy"</code>) is the Optimization Option value for enabling <code>invokedynamic</code> compilation. */
     public static final String INVOKEDYNAMIC = "indy";
 
-    /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. **/
+    /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. */
     public static final String JDK4 = "1.4";
-    /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5. **/
+    /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5. */
     public static final String JDK5 = "1.5";
-    /** This (<code>"1.6"</code>) is the value for targetBytecode to compile for a JDK 1.6. **/
+    /** This (<code>"1.6"</code>) is the value for targetBytecode to compile for a JDK 1.6. */
     public static final String JDK6 = "1.6";
-    /** This (<code>"1.7"</code>) is the value for targetBytecode to compile for a JDK 1.7. **/
+    /** This (<code>"1.7"</code>) is the value for targetBytecode to compile for a JDK 1.7. */
     public static final String JDK7 = "1.7";
-    /** This (<code>"1.8"</code>) is the value for targetBytecode to compile for a JDK 1.8. **/
+    /** This (<code>"1.8"</code>) is the value for targetBytecode to compile for a JDK 1.8. */
     public static final String JDK8 = "1.8";
-    /** This (<code>"9"</code>) is the value for targetBytecode to compile for a JDK 9. **/
+    /** This (<code>"9"</code>) is the value for targetBytecode to compile for a JDK 9. */
     public static final String JDK9 = "9";
-    /** This (<code>"10"</code>) is the value for targetBytecode to compile for a JDK 10. **/
+    /** This (<code>"10"</code>) is the value for targetBytecode to compile for a JDK 10. */
     public static final String JDK10 = "10";
-    /** This (<code>"11"</code>) is the value for targetBytecode to compile for a JDK 11. **/
+    /** This (<code>"11"</code>) is the value for targetBytecode to compile for a JDK 11. */
     public static final String JDK11 = "11";
-    /** This (<code>"12"</code>) is the value for targetBytecode to compile for a JDK 12. **/
+    /** This (<code>"12"</code>) is the value for targetBytecode to compile for a JDK 12. */
     public static final String JDK12 = "12";
-    /** This (<code>"13"</code>) is the value for targetBytecode to compile for a JDK 13. **/
+    /** This (<code>"13"</code>) is the value for targetBytecode to compile for a JDK 13. */
     public static final String JDK13 = "13";
-    /** This (<code>"14"</code>) is the value for targetBytecode to compile for a JDK 14. **/
+    /** This (<code>"14"</code>) is the value for targetBytecode to compile for a JDK 14. */
     public static final String JDK14 = "14";
+    /** This (<code>"15"</code>) is the value for targetBytecode to compile for a JDK 15. */
+    public static final String JDK15 = "15";
 
     /**
      * This constant is for comparing targetBytecode to ensure it is set to JDK 1.5 or later.
@@ -100,7 +102,8 @@ public class CompilerConfiguration {
             JDK11, Opcodes.V11,
             JDK12, Opcodes.V12,
             JDK13, Opcodes.V13,
-            JDK14, Opcodes.V14
+            JDK14, Opcodes.V14,
+            JDK15, Opcodes.V15
     );
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
@@ -219,6 +222,11 @@ public class CompilerConfiguration {
         }
 
         @Override
+        public void setPreviewFeatures(boolean previewFeatures) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void setRecompileGroovySource(boolean recompile) {
             throw new UnsupportedOperationException();
         }
@@ -264,16 +272,10 @@ public class CompilerConfiguration {
         }
 
         @Override
-        public void setPreviewFeatures(boolean previewFeatures) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public void setWarningLevel(int level) {
             throw new UnsupportedOperationException();
         }
     };
-
 
     /**
      * See {@link WarningMessage} for levels.
@@ -378,7 +380,7 @@ public class CompilerConfiguration {
 
     private BytecodeProcessor bytecodePostprocessor;
 
-    public static final int ASM_API_VERSION = Opcodes.ASM7;
+    public static final int ASM_API_VERSION = Opcodes.ASM8;
 
     /**
      * Sets the compiler flags/settings to default values.
