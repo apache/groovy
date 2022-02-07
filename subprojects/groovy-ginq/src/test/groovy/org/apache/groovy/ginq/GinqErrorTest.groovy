@@ -21,11 +21,11 @@ package org.apache.groovy.ginq
 import groovy.transform.CompileStatic
 import org.junit.Test
 
-import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 @CompileStatic
-class GinqErrorTest {
+final class GinqErrorTest {
+
     @Test
     void "testGinq - from - 1"() {
         def err = shouldFail '''\
@@ -65,9 +65,9 @@ class GinqErrorTest {
             GQ {
                 select n from n in [0, 1, 2]
             }
-        '''
+        ''' //  ^
 
-        assert err.toString().contains("One `from` is expected and must be the first clause @ line 2, column 24.")
+        assert err.toString().contains("One `from` is expected and must be the first clause @ line 2, column 17.")
     }
 
     @Test
@@ -462,9 +462,9 @@ class GinqErrorTest {
                 from n in [1, 1, 2, 2]
                 select n, (rowNumber() over(order by n))
             }.toList()
-        '''
+        ''' //                              ^
 
-        assert err.toString().contains('Unknown window clause: `order` @ line 3, column 51.')
+        assert err.toString().contains('Unknown window clause: `order` @ line 3, column 45.')
     }
 
     @Test
