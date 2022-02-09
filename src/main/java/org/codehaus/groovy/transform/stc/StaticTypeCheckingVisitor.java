@@ -163,6 +163,7 @@ import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.PATTERN_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.RANGE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.SET_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.STREAM_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
@@ -1985,32 +1986,34 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * Given a loop collection type, returns the inferred type of the loop element. Used, for
-     * example, to infer the element type of a (for e in list) loop.
+     * Returns the inferred loop element type given a loop collection type. Used,
+     * for example, to infer the element type of a {@code for (e in list)} loop.
      *
      * @param collectionType the type of the collection
      * @return the inferred component type
+     * @see #inferComponentType
      */
     public static ClassNode inferLoopElementType(final ClassNode collectionType) {
         ClassNode componentType = collectionType.getComponentType();
         if (componentType == null) {
-            if (implementsInterfaceOrIsSubclassOf(collectionType, ITERABLE_TYPE)) {
-                ClassNode intf = GenericsUtils.parameterizeType(collectionType, ITERABLE_TYPE);
-                GenericsType[] genericsTypes = intf.getGenericsTypes();
-                componentType = genericsTypes[0].getType();
-            } else if (implementsInterfaceOrIsSubclassOf(collectionType, MAP_TYPE)) {
-                // GROOVY-6240
-                ClassNode intf = GenericsUtils.parameterizeType(collectionType, MAP_TYPE);
-                GenericsType[] genericsTypes = intf.getGenericsTypes();
-                componentType = MAP_ENTRY_TYPE.getPlainNodeReference();
-                componentType.setGenericsTypes(genericsTypes);
+            if (isOrImplements(collectionType, ITERABLE_TYPE)) {
+                ClassNode col = GenericsUtils.parameterizeType(collectionType, ITERABLE_TYPE);
+                componentType = getCombinedBoundType(col.getGenericsTypes()[0]);
+
+            } else if (isOrImplements(collectionType, MAP_TYPE)) { // GROOVY-6240
+                ClassNode col = GenericsUtils.parameterizeType(collectionType, MAP_TYPE);
+                componentType = makeClassSafe0(MAP_ENTRY_TYPE, col.getGenericsTypes());
+
+            } else if (isOrImplements(collectionType, STREAM_TYPE)) { // GROOVY-10476
+                ClassNode col = GenericsUtils.parameterizeType(collectionType, STREAM_TYPE);
+                componentType = getCombinedBoundType(col.getGenericsTypes()[0]);
+
+            } else if (isOrImplements(collectionType, ENUMERATION_TYPE)) { // GROOVY-6123
+                ClassNode col = GenericsUtils.parameterizeType(collectionType, ENUMERATION_TYPE);
+                componentType = getCombinedBoundType(col.getGenericsTypes()[0]);
+
             } else if (isStringType(collectionType)) {
                 componentType = STRING_TYPE;
-            } else if (ENUMERATION_TYPE.equals(collectionType)) {
-                // GROOVY-6123
-                ClassNode intf = GenericsUtils.parameterizeType(collectionType, ENUMERATION_TYPE);
-                GenericsType[] genericsTypes = intf.getGenericsTypes();
-                componentType = genericsTypes[0].getType();
             } else {
                 componentType = OBJECT_TYPE;
             }
