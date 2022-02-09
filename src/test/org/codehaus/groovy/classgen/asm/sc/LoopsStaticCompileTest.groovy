@@ -23,6 +23,12 @@ import groovy.transform.stc.LoopsSTCTest
 /**
  * Unit tests for static type checking : miscellaneous tests.
  */
-class LoopsStaticCompileTest extends LoopsSTCTest implements StaticCompilationTestSupport {
-}
+final class LoopsStaticCompileTest extends LoopsSTCTest implements StaticCompilationTestSupport {
 
+    // GROOVY-10477
+    void testForInLoopOnArray() {
+        super.testForInLoopOnArray()
+        def bytecode = astTrees.values()[0][1]
+        assert !bytecode.contains('INVOKESTATIC org/codehaus/groovy/runtime/DefaultGroovyMethods.iterator')
+    }
+}
