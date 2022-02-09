@@ -96,7 +96,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
 
         int mark = operandStack.getStackLength();
         Parameter loopVariable = loop.getVariable();
-        if (collectionType.isArray() && loopVariable.getOriginType().equals(collectionType.getComponentType())) {
+        if (collectionType.isArray() && loopVariable.getType().equals(collectionType.getComponentType())) {
             writeOptimizedForEachLoop(loop, loopVariable, collectionExpression, collectionType);
         } else if (GeneralUtils.isOrImplements(collectionType, ENUMERATION_CLASSNODE)) {
             writeEnumerationBasedForEachLoop(loop, collectionExpression, collectionType);
