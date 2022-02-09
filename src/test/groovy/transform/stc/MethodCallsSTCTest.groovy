@@ -1161,7 +1161,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8133
-    void testSpreadDotOperator() {
+    void testSpreadDot() {
         assertScript '''
             def list = ['a','b','c'].stream()*.toUpperCase()
             assert list == ['A', 'B', 'C']
@@ -1182,6 +1182,17 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
               .annotationParameters = [extensions: PrecompiledExtensionNotExtendingDSL.name]
         assertScript '''
             def list = 'abc'*.toUpperCase()
+            assert list == ['A', 'B', 'C']
+        '''
+    }
+
+    // GROOVY-10476
+    void testForInLoop() {
+        assertScript '''
+            def list = []
+            for (item in ['a','b','c'].stream()) {
+                list.add(item.toUpperCase())
+            }
             assert list == ['A', 'B', 'C']
         '''
     }

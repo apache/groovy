@@ -71,6 +71,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * Helper for {@link ClassNode} and classes handling them.  Contains a set of
@@ -151,6 +152,7 @@ public class ClassHelper {
             Enum_Type = makeWithoutCaching(Enum.class),
             CLASS_Type = makeWithoutCaching(Class.class),
             TUPLE_TYPE = makeWithoutCaching(Tuple.class),
+            STREAM_TYPE = makeWithoutCaching(Stream.class),
             ITERABLE_TYPE = makeWithoutCaching(Iterable.class),
             REFERENCE_TYPE = makeWithoutCaching(Reference.class),
             COLLECTION_TYPE = makeWithoutCaching(Collection.class),
