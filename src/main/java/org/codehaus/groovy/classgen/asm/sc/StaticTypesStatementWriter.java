@@ -223,7 +223,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
                     .map(in -> in.getMethod("iterator", Parameter.EMPTY_ARRAY))
                     .filter(Objects::nonNull).findFirst().orElse(null);
         }
-        if (iterator != null) {
+        if (iterator != null && GeneralUtils.isOrImplements(iterator.getReturnType(), ClassHelper.Iterator_TYPE)) {
             MethodCallExpression call = GeneralUtils.callX(collectionExpression, "iterator");
             call.setImplicitThis(false);
             call.setMethodTarget(iterator);
