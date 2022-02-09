@@ -19,6 +19,7 @@
 package groovy.transform.stc
 
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 
 /**
@@ -1159,6 +1160,32 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot call closure that accepts [java.lang.String, java.lang.String, java.lang.String] with [java.lang.Object]'
     }
 
+    // GROOVY-8133
+    void testSpreadDotOperator() {
+        assertScript '''
+            def list = ['a','b','c'].stream()*.toUpperCase()
+            assert list == ['A', 'B', 'C']
+        '''
+        assertScript '''
+            def list = 'a,b,c'.split(',')*.toUpperCase()
+            assert list == ['A', 'B', 'C']
+        '''
+
+        shouldFailWithMessages '''
+            def list = 'abc'*.toUpperCase()
+            assert list == ['A', 'B', 'C']
+        ''',
+        'Spread-dot operator can only be used on iterable types'
+
+        config.compilationCustomizers
+              .find { it instanceof ASTTransformationCustomizer }
+              .annotationParameters = [extensions: PrecompiledExtensionNotExtendingDSL.name]
+        assertScript '''
+            def list = 'abc'*.toUpperCase()
+            assert list == ['A', 'B', 'C']
+        '''
+    }
+
     void testBoxingShouldCostMore() {
         assertScript '''
             int foo(int x) { 1 }
@@ -1411,7 +1438,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     void testStaticContextScoping() {
         assertScript '''
             class A {
-                static List foo = 'a,b,c'.split(/,/).toList()*.trim()
+                static List foo = 'a,b,c'.split(/,/)*.trim()
             }
             assert A.foo == ['a','b','c']
         '''
