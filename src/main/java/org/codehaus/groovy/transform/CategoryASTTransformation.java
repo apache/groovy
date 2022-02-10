@@ -33,22 +33,18 @@ import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
-import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
-import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.objectweb.asm.Opcodes;
 
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
@@ -65,99 +61,131 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
  * <li>references to 'this' changed to the additional 'self' parameter</li>
  * </ul>
  */
-@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
-public class CategoryASTTransformation implements ASTTransformation, Opcodes {
-    // should not use a static variable because of possible changes to node metadata
-    // which would be visible to other compilation units
-    private final VariableExpression thisExpression = createThisExpression();
+@GroovyASTTransformation
+public class CategoryASTTransformation implements ASTTransformation {
 
-    private static VariableExpression createThisExpression() {
-        VariableExpression expr = new VariableExpression("$this");
-        expr.setClosureSharedVariable(true);
-        return expr;
+    @Override
+    public void visit(final ASTNode[] nodes, final SourceUnit sourceUnit) {
+        if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof ClassNode)) {
+            sourceUnit.addError(new SyntaxException("@Category can only be added to a ClassNode but got: " + (nodes.length == 2 ? nodes[1] : "nothing"), nodes[0].getLineNumber(), nodes[0].getColumnNumber()));
+        }
+
+        ClassNode sourceClass = (ClassNode) nodes[1];
+        ClassNode targetClass; // the declared type of "self"
+        Expression value = ((AnnotationNode) nodes[0]).getMember("value");
+        if (value instanceof ClassExpression) {
+            targetClass = value.getType();
+        } else {
+            targetClass = ClassHelper.OBJECT_TYPE; // TODO: ClassHelper.make((Class<?>)groovy.lang.Category.class.getMethod("value").getDefaultValue());
+            sourceUnit.addErrorAndContinue(new SyntaxException("@Category must define 'value' which is the class to apply this category to", nodes[0]));
+        }
+
+        if (ensureNoInstanceFieldOrProperty(sourceClass, sourceUnit)) {
+            transformReferencesToThis(targetClass, sourceClass, sourceUnit);
+            new VariableScopeVisitor(sourceUnit, true).visitClass(sourceClass);
+        }
     }
 
-    /**
-     * Property invocations done on 'this' reference are transformed so that the invocations at runtime are
-     * done on the additional parameter 'self'
-     */
-    @Override
-    public void visit(ASTNode[] nodes, final SourceUnit source) {
-        if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof ClassNode)) {
-            source.getErrorCollector().addError(
-                    new SyntaxErrorMessage(new SyntaxException("@Category can only be added to a ClassNode but got: " + (nodes.length==2?nodes[1]:"nothing"),
-                        nodes[0].getLineNumber(), nodes[0].getColumnNumber()), source));
+    private static boolean ensureNoInstanceFieldOrProperty(final ClassNode sourceClass, final SourceUnit sourceUnit) {
+        boolean valid = true;
+        for (FieldNode fieldNode : sourceClass.getFields()) {
+            if (!fieldNode.isStatic() && fieldNode.getLineNumber() > 0) { // if < 1, probably an AST transform or internal code (like generated metaclass field, ...)
+                addUnsupportedInstanceMemberError(fieldNode.getName(), fieldNode,  sourceUnit);
+                valid = false;
+            }
         }
-
-        AnnotationNode annotation = (AnnotationNode) nodes[0];
-        ClassNode parent = (ClassNode) nodes[1];
-
-        ClassNode targetClass = getTargetClass(source, annotation);
-        thisExpression.setType(targetClass);
-
-        final LinkedList<Set<String>> varStack = new LinkedList<Set<String>>();
-        if (!ensureNoInstanceFieldOrProperty(source, parent)) return;
-
-        Set<String> names = new HashSet<String>();
-        for (FieldNode field : parent.getFields()) {
-            names.add(field.getName());
+        for (PropertyNode propertyNode : sourceClass.getProperties()) {
+            if (!propertyNode.isStatic() && propertyNode.getLineNumber() > 0) { // if < 1, probably an AST transform or internal code (like generated metaclass field, ...)
+                addUnsupportedInstanceMemberError(propertyNode.getName(), propertyNode, sourceUnit);
+                valid = false;
+            }
         }
-        for (PropertyNode field : parent.getProperties()) {
-            names.add(field.getName());
-        }
+        return valid;
+    }
+
+    private static void addUnsupportedInstanceMemberError(final String name, final ASTNode node, final SourceUnit unit) {
+        unit.addErrorAndContinue(new SyntaxException("The @Category transformation does not support instance " + (node instanceof FieldNode ? "fields" : "properties") + " but found [" + name + "]", node));
+    }
+
+    //--------------------------------------------------------------------------
+
+    private void transformReferencesToThis(final ClassNode targetClass, final ClassNode sourceClass, final SourceUnit sourceUnit) {
+        final Reference<Parameter> selfParameter = new Reference<>();
+        final LinkedList<Set<String>> varStack = new LinkedList<>();
+
+        Set<String> names = new HashSet<>();
+        for (FieldNode fn : sourceClass.getFields()) names.add(fn.getName());
+        for (PropertyNode pn : sourceClass.getProperties()) names.add(pn.getName());
         varStack.add(names);
 
-        final Reference parameter = new Reference();
-        final ClassCodeExpressionTransformer expressionTransformer = new ClassCodeExpressionTransformer() {
-            @Override
-            protected SourceUnit getSourceUnit() {
-                return source;
-            }
-
-            private void addVariablesToStack(Parameter[] params) {
-                Set<String> names = new HashSet<String>(varStack.getLast());
-                for (Parameter param : params) {
-                    names.add(param.getName());
-                }
+        ClassCodeExpressionTransformer transformer = new ClassCodeExpressionTransformer() {
+            private void addVariablesToStack(final Parameter[] parameter) {
+                Set<String> names = new HashSet<>(varStack.getLast());
+                for (Parameter p : parameter) names.add(p.getName());
                 varStack.add(names);
             }
 
+            private Expression createThisExpression() {
+                VariableExpression ve = new VariableExpression("$this", targetClass);
+                ve.setClosureSharedVariable(true);
+                return ve;
+            }
+
             @Override
-            public void visitCatchStatement(CatchStatement statement) {
+            protected SourceUnit getSourceUnit() {
+                return sourceUnit;
+            }
+
+            @Override
+            public Expression transform(final Expression expression) {
+                if (expression instanceof VariableExpression) {
+                    VariableExpression ve = (VariableExpression) expression;
+                    if (ve.isThisExpression()) {
+                        Expression thisExpression = createThisExpression();
+                        thisExpression.setSourcePosition(ve);
+                        return thisExpression;
+                    } else if (!ve.isSuperExpression() && !varStack.getLast().contains(ve.getName())) {
+                        PropertyExpression pe = new PropertyExpression(createThisExpression(), ve.getName());
+                        pe.setSourcePosition(ve);
+                        return pe;
+                    }
+                } else if (expression instanceof ClosureExpression) {
+                    ClosureExpression ce = (ClosureExpression) expression;
+                    addVariablesToStack(hasImplicitParameter(ce) ? params(param(ClassHelper.OBJECT_TYPE, "it")) : getParametersSafe(ce));
+                    ce.getVariableScope().putReferencedLocalVariable(selfParameter.get());
+                    ce.getCode().visit(this);
+                    varStack.removeLast();
+                }
+                return super.transform(expression);
+            }
+
+            @Override
+            public void visitBlockStatement(final BlockStatement statement) {
+                Set<String> names = new HashSet<>(varStack.getLast());
+                varStack.add(names);
+                super.visitBlockStatement(statement);
+                varStack.remove(names);
+            }
+
+            @Override
+            public void visitCatchStatement(final CatchStatement statement) {
                 varStack.getLast().add(statement.getVariable().getName());
                 super.visitCatchStatement(statement);
                 varStack.getLast().remove(statement.getVariable().getName());
             }
 
             @Override
-            public void visitMethod(MethodNode node) {
-                addVariablesToStack(node.getParameters());
-                super.visitMethod(node);
+            public void visitClosureExpression(final ClosureExpression expression) {
+                addVariablesToStack(getParametersSafe(expression));
+                super.visitClosureExpression(expression);
                 varStack.removeLast();
             }
 
             @Override
-            public void visitBlockStatement(BlockStatement block) {
-                Set<String> names = new HashSet<String>(varStack.getLast());
-                varStack.add(names);
-                super.visitBlockStatement(block);
-                varStack.remove(names);
-            }
-
-            @Override
-            public void visitClosureExpression(ClosureExpression ce) {
-                addVariablesToStack(getParametersSafe(ce));
-                super.visitClosureExpression(ce);
-                varStack.removeLast();
-            }
-
-            @Override
-            public void visitDeclarationExpression(DeclarationExpression expression) {
+            public void visitDeclarationExpression(final DeclarationExpression expression) {
                 if (expression.isMultipleAssignmentDeclaration()) {
-                    TupleExpression te = expression.getTupleExpression();
-                    List<Expression> list = te.getExpressions();
-                    for (Expression arg : list) {
-                        VariableExpression ve = (VariableExpression) arg;
+                    for (Expression e : expression.getTupleExpression().getExpressions()) {
+                        VariableExpression ve = (VariableExpression) e;
                         varStack.getLast().add(ve.getName());
                     }
                 } else {
@@ -168,120 +196,48 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
             }
 
             @Override
-            public void visitForLoop(ForStatement forLoop) {
-                Expression exp = forLoop.getCollectionExpression();
+            public void visitExpressionStatement(final ExpressionStatement statement) {
+                // GROOVY-3543: visit the declaration expressions so that declaration variables get added on the varStack
+                if (statement.getExpression() instanceof DeclarationExpression) {
+                    statement.getExpression().visit(this);
+                }
+                super.visitExpressionStatement(statement);
+            }
+
+            @Override
+            public void visitForLoop(final ForStatement statement) {
+                Expression exp = statement.getCollectionExpression();
                 exp.visit(this);
-                Parameter loopParam = forLoop.getVariable();
+                Parameter loopParam = statement.getVariable();
                 if (loopParam != null) {
                     varStack.getLast().add(loopParam.getName());
                 }
-                super.visitForLoop(forLoop);
+                super.visitForLoop(statement);
             }
 
             @Override
-            public void visitExpressionStatement(ExpressionStatement es) {
-                // GROOVY-3543: visit the declaration expressions so that declaration variables get added on the varStack
-                Expression exp = es.getExpression();
-                if (exp instanceof DeclarationExpression) {
-                    exp.visit(this);
-                }
-                super.visitExpressionStatement(es);
-            }
-
-            @Override
-            public Expression transform(Expression exp) {
-                if (exp instanceof VariableExpression) {
-                    VariableExpression ve = (VariableExpression) exp;
-                    if (ve.getName().equals("this"))
-                        return thisExpression;
-                    else {
-                        if (!varStack.getLast().contains(ve.getName())) {
-                            PropertyExpression transformed = new PropertyExpression(thisExpression, ve.getName());
-                            transformed.setSourcePosition(ve);
-                            return transformed;
-                        }
-                    }
-                } else if (exp instanceof PropertyExpression) {
-                    PropertyExpression pe = (PropertyExpression) exp;
-                    if (pe.getObjectExpression() instanceof VariableExpression) {
-                        VariableExpression vex = (VariableExpression) pe.getObjectExpression();
-                        if (vex.isThisExpression()) {
-                            pe.setObjectExpression(thisExpression);
-                            return pe;
-                        }
-                    }
-                } else if (exp instanceof ClosureExpression) {
-                    ClosureExpression ce = (ClosureExpression) exp;
-                    ce.getVariableScope().putReferencedLocalVariable((Parameter) parameter.get());
-                    addVariablesToStack(
-                            hasImplicitParameter(ce)
-                                    ? params(param(ClassHelper.OBJECT_TYPE, "it"))
-                                    : getParametersSafe(ce));
-                    ce.getCode().visit(this);
-                    varStack.removeLast();
-                }
-                return super.transform(exp);
+            public void visitMethod(final MethodNode node) {
+                addVariablesToStack(node.getParameters());
+                super.visitMethod(node);
+                varStack.removeLast();
             }
         };
 
-        for (MethodNode method : parent.getMethods()) {
+        for (MethodNode method : sourceClass.getMethods()) {
             if (!method.isStatic()) {
-                method.setModifiers(method.getModifiers() | Opcodes.ACC_STATIC);
-                final Parameter[] origParams = method.getParameters();
-                final Parameter[] newParams = new Parameter[origParams.length + 1];
                 Parameter p = new Parameter(targetClass, "$this");
                 p.setClosureSharedVariable(true);
+                selfParameter.set(p);
+
+                Parameter[] oldParams = method.getParameters();
+                Parameter[] newParams = new Parameter[oldParams.length + 1];
                 newParams[0] = p;
-                parameter.set(p);
-                System.arraycopy(origParams, 0, newParams, 1, origParams.length);
+                System.arraycopy(oldParams, 0, newParams, 1, oldParams.length);
+
+                method.setModifiers(method.getModifiers() | Opcodes.ACC_STATIC);
                 method.setParameters(newParams);
-
-                expressionTransformer.visitMethod(method);
+                transformer.visitMethod(method);
             }
-        }
-        new VariableScopeVisitor(source, true).visitClass(parent);
-    }
-
-    private static boolean ensureNoInstanceFieldOrProperty(final SourceUnit source, final ClassNode parent) {
-        boolean valid = true;
-        for (FieldNode fieldNode : parent.getFields()) {
-            if (!fieldNode.isStatic() && fieldNode.getLineNumber()>0) {
-                // if <0, probably an AST transform or internal code (like generated metaclass field, ...)
-                addUnsupportedError(fieldNode,  source);
-                valid = false;
-            }
-        }
-        for (PropertyNode propertyNode : parent.getProperties()) {
-            if (!propertyNode.isStatic() && propertyNode.getLineNumber()>0) {
-                // if <0, probably an AST transform or internal code (like generated metaclass field, ...)
-                addUnsupportedError(propertyNode, source);
-                valid = false;
-            }
-        }
-        return valid;
-    }
-
-    private static void addUnsupportedError(ASTNode node, SourceUnit unit) {
-        unit.getErrorCollector().addErrorAndContinue("The @Category transformation does not support instance "+
-                (node instanceof FieldNode?"fields":"properties")
-                + " but found ["+getName(node)+"]", node, unit);
-    }
-
-    private static String getName(ASTNode node) {
-        if (node instanceof FieldNode) return ((FieldNode) node).getName();
-        if (node instanceof PropertyNode) return ((PropertyNode) node).getName();
-        return node.getText();
-    }
-
-    private static ClassNode getTargetClass(SourceUnit source, AnnotationNode annotation) {
-        Expression value = annotation.getMember("value");
-        if (!(value instanceof ClassExpression)) {
-            //noinspection ThrowableInstanceNeverThrown
-            source.getErrorCollector().addErrorAndContinue("@groovy.lang.Category must define 'value' which is the class to apply this category to", annotation, source);
-            return null;
-        } else {
-            ClassExpression ce = (ClassExpression) value;
-            return ce.getType();
         }
     }
 }
