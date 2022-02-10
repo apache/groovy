@@ -32,6 +32,7 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -47,6 +48,8 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 
+import static java.util.Collections.addAll;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.hasImplicitParameter;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
@@ -119,6 +122,8 @@ public class CategoryASTTransformation implements ASTTransformation {
         varStack.add(names);
 
         ClassCodeExpressionTransformer transformer = new ClassCodeExpressionTransformer() {
+            private boolean inClosure; // GROOVY-6510: track closure containment
+
             private void addVariablesToStack(final Parameter[] parameter) {
                 Set<String> names = new HashSet<>(varStack.getLast());
                 for (Parameter p : parameter) names.add(p.getName());
@@ -144,17 +149,28 @@ public class CategoryASTTransformation implements ASTTransformation {
                         Expression thisExpression = createThisExpression();
                         thisExpression.setSourcePosition(ve);
                         return thisExpression;
-                    } else if (!ve.isSuperExpression() && !varStack.getLast().contains(ve.getName())) {
+                    } else if (!inClosure && !ve.isSuperExpression() && !varStack.getLast().contains(ve.getName())) {
                         PropertyExpression pe = new PropertyExpression(createThisExpression(), ve.getName());
                         pe.setSourcePosition(ve);
                         return pe;
+                    }
+                } else if (expression instanceof MethodCallExpression) {
+                    MethodCallExpression mce = (MethodCallExpression) expression;
+                    if (inClosure && mce.isImplicitThis() && isThisExpression(mce.getObjectExpression())) {
+                        // GROOVY-6510: preserve implicit-this semantics
+                        mce.setArguments(transform(mce.getArguments()));
+                        mce.setMethod(transform(mce.getMethod()));
+                        return mce;
                     }
                 } else if (expression instanceof ClosureExpression) {
                     ClosureExpression ce = (ClosureExpression) expression;
                     addVariablesToStack(hasImplicitParameter(ce) ? params(param(ClassHelper.OBJECT_TYPE, "it")) : getParametersSafe(ce));
                     ce.getVariableScope().putReferencedLocalVariable(selfParameter.get());
+                    addAll(varStack.getLast(), "owner", "delegate", "thisObject");
+                    boolean closure = inClosure; inClosure = true;
                     ce.getCode().visit(this);
                     varStack.removeLast();
+                    inClosure = closure;
                 }
                 return super.transform(expression);
             }
@@ -176,9 +192,6 @@ public class CategoryASTTransformation implements ASTTransformation {
 
             @Override
             public void visitClosureExpression(final ClosureExpression expression) {
-                addVariablesToStack(getParametersSafe(expression));
-                super.visitClosureExpression(expression);
-                varStack.removeLast();
             }
 
             @Override
