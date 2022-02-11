@@ -216,4 +216,96 @@ final class AutoImplementTransformTest {
             assert new Foo().compare('bar', 'baz') == 0
             '''
     }
+
+    @Test // GROOVY-10472
+    void testCovariantReturnTypes() {
+        assertScript '''
+            import groovy.transform.AutoImplement
+
+            interface Super { List findAll() }
+            interface Sub extends Super { Iterable findAll() }
+
+            @AutoImplement
+            class ThisClassFails implements Sub{}
+
+            assert !(new ThisClassFails().findAll())
+        '''
+        assertScript '''
+            import groovy.transform.AutoImplement
+
+            interface Super { ArrayList findAll() }
+            interface Sub extends Super { Iterable findAll() }
+
+            @AutoImplement
+            class ThisClassFails implements Sub{}
+
+            assert !(new ThisClassFails().findAll())
+        '''
+        assertScript '''
+            import groovy.transform.AutoImplement
+
+            interface Super { Iterable findAll() }
+            interface Sub extends Super { List findAll() }
+
+            @AutoImplement
+            class ThisClassFails implements Sub{}
+
+            assert !(new ThisClassFails().findAll())
+        '''
+        assertScript '''
+            import groovy.transform.AutoImplement
+
+            interface Super { Iterable findAll() }
+            interface Sub extends Super { ArrayList findAll() }
+
+            @AutoImplement
+            class ThisClassFails implements Sub{}
+
+            assert !(new ThisClassFails().findAll())
+        '''
+        assertScript '''
+            import groovy.transform.AutoImplement
+
+            interface Super { AbstractList findAll() }
+            interface Sub extends Super { List findAll() }
+
+            @AutoImplement
+            class ThisClassFails implements Sub{}
+
+            assert !(new ThisClassFails().findAll())
+        '''
+        assertScript '''
+            import groovy.transform.AutoImplement
+
+            interface Super { List findAll() }
+            interface Sub extends Super { AbstractList findAll() }
+
+            @AutoImplement
+            class ThisClassFails implements Sub{}
+
+            assert !(new ThisClassFails().findAll())
+        '''
+        assertScript '''
+            import groovy.transform.AutoImplement
+
+            interface Super { AbstractList findAll() }
+            interface Sub extends Super { ArrayList findAll() }
+
+            @AutoImplement
+            class ThisClassFails implements Sub{}
+
+            assert !(new ThisClassFails().findAll())
+        '''
+        assertScript '''
+            import groovy.transform.AutoImplement
+
+            interface Super { ArrayList findAll() }
+            interface Sub extends Super { AbstractList findAll() }
+
+            @AutoImplement
+            class ThisClassFails implements Sub{}
+
+            assert !(new ThisClassFails().findAll())
+        '''
+    }
 }

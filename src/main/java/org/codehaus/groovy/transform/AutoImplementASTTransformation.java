@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
 import static org.apache.groovy.util.BeanUtils.capitalize;
@@ -163,9 +164,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
                     MethodNode found = getDeclaredMethodCorrected(genericsSpec, correctedMethod, correctedClass);
                     if (found != null) {
                         String td = methodDescriptorWithoutReturnType(found);
-                        if (result.containsKey(td) && !result.get(td).isAbstract()) {
-                            continue;
-                        }
+                        if (result.containsKey(td) && isWeakerCandidate(result.get(td), found)) continue;
                         result.put(td, found);
                     }
                 }
@@ -184,9 +183,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
                         MethodNode found = getDeclaredMethodCorrected(updatedGenericsSpec, correctedMethod, correctedInterface);
                         if (found != null) {
                             String td = methodDescriptorWithoutReturnType(found);
-                            if (result.containsKey(td) && !result.get(td).isAbstract()) {
-                                continue;
-                            }
+                            if (result.containsKey(td) && isWeakerCandidate(result.get(td), found)) continue;
                             result.put(td, found);
                         }
                     }
@@ -221,8 +218,13 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
                 }
             }
         }
-
         return result;
+    }
+
+    private static boolean isWeakerCandidate(MethodNode existing, MethodNode found) {
+        return !(existing.isAbstract() && !found.isAbstract()) &&
+                // GROOVY-10472: prefer covariant method with more concrete type
+                isSubtype(found.getReturnType(), existing.getReturnType());
     }
 
     private static MethodNode getDeclaredMethodCorrected(final Map<String, ClassNode> genericsSpec, final MethodNode origMethod, final ClassNode correctedClass) {
