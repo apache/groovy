@@ -18,12 +18,15 @@
  */
 package groovy.ant
 
+import static groovy.test.GroovyAssert.isAtLeastJdk
+
 class Groovy8497Test extends AntTestCase {
     void testGetProperty() {
 //        def debugLogger = new org.apache.tools.ant.DefaultLogger()
 //        debugLogger.setMessageOutputLevel(4)
 //        debugLogger.setOutputPrintStream(System.out)
 //        debugLogger.setErrorPrintStream(System.err)
+        if (isAtLeastJdk("18.0")) return; // GROOVY-10479
 
         doInTmpDir { ant, baseDir ->
             baseDir.src {
