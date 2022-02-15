@@ -121,7 +121,6 @@ public class SourceUnit extends ProcessingUnit {
         return name;
     }
 
-
     /**
      * Returns the Concrete Syntax Tree produced during parse()ing.
      */
@@ -136,7 +135,6 @@ public class SourceUnit extends ProcessingUnit {
     public ModuleNode getAST() {
         return this.ast;
     }
-
 
     /**
      * Convenience routine, primarily for use by the InteractiveShell,
@@ -173,10 +171,8 @@ public class SourceUnit extends ProcessingUnit {
         return token.getType() == antlr.Token.EOF_TYPE;
     }
 
-
     //---------------------------------------------------------------------------
     // FACTORIES
-
 
     /**
      * A convenience routine to create a standalone SourceUnit on a String
@@ -188,7 +184,6 @@ public class SourceUnit extends ProcessingUnit {
 
         return new SourceUnit(name, source, configuration, null, new ErrorCollector(configuration));
     }
-
 
     /**
      * A convenience routine to create a standalone SourceUnit on a String
@@ -249,7 +244,7 @@ public class SourceUnit extends ProcessingUnit {
             this.ast.setDescription(this.name);
         } catch (SyntaxException e) {
             if (this.ast == null) {
-                // Create a dummy ModuleNode to represent a failed parse - in case a later phase attempts to use the ast
+                // create an empty ModuleNode to represent a failed parse, in case a later phase attempts to use the AST
                 this.ast = new ModuleNode(this);
             }
             getErrorCollector().addError(new SyntaxErrorMessage(e, this));
@@ -270,7 +265,8 @@ public class SourceUnit extends ProcessingUnit {
         XStreamUtils.serialize(name, ast);
     }
 
-    //---------------------------------------------------------------------------    // SOURCE SAMPLING
+    //---------------------------------------------------------------------------
+    // SOURCE SAMPLING
 
     /**
      * Returns a sampling of the source at the specified line and column,
@@ -329,5 +325,7 @@ public class SourceUnit extends ProcessingUnit {
         getErrorCollector().addErrorAndContinue(se, this);
     }
 
-    public ReaderSource getSource() { return source; }
+    public ReaderSource getSource() {
+        return source;
+    }
 }

@@ -21,11 +21,12 @@ package org.codehaus.groovy.ast.expr;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
- * This class is a place holder for an empty expression. 
- * Empty expression are used in closures lists like (;). During
- * class Generation this expression should be either ignored or
- * replace with a null value.
- *   
+ * This class is a place holder for an empty expression.
+ * <p>
+ * Empty expressions are used in closures lists like (;). During
+ * class generation this expression should be either ignored or
+ * replaced with a null value.
+ *
  * @see org.codehaus.groovy.ast.stmt.EmptyStatement
  */
 public class EmptyExpression extends Expression {

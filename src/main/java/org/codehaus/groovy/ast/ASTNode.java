@@ -100,10 +100,10 @@ public class ASTNode {
      * @param node - the node used to configure the position information
      */
     public void setSourcePosition(ASTNode node) {
+        this.lineNumber = node.getLineNumber();
         this.columnNumber = node.getColumnNumber();
         this.lastLineNumber = node.getLastLineNumber();
         this.lastColumnNumber = node.getLastColumnNumber();
-        this.lineNumber = node.getLineNumber();
     }
 
     /**

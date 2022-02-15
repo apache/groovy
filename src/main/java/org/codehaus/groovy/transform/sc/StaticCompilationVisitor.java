@@ -23,7 +23,6 @@ import groovy.transform.CompileStatic;
 import groovy.transform.TypeChecked;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
-import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -62,7 +61,6 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
-import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -127,7 +125,9 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     }
 
     public static boolean isStaticallyCompiled(AnnotatedNode node) {
-        if (node.getNodeMetaData(STATIC_COMPILE_NODE)!=null) return (Boolean)node.getNodeMetaData(STATIC_COMPILE_NODE);
+        if (node.getNodeMetaData(STATIC_COMPILE_NODE) != null) {
+            return Boolean.TRUE.equals(node.getNodeMetaData(STATIC_COMPILE_NODE));
+        }
         if (node instanceof MethodNode) {
             return isStaticallyCompiled(node.getDeclaringClass());
         }
@@ -235,7 +235,6 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     /**
      * Adds special accessors and mutators for private fields so that inner classes can get/set them
      */
-    @SuppressWarnings("unchecked")
     private static void addPrivateFieldsAccessors(ClassNode node) {
         Set<ASTNode> accessedFields = (Set<ASTNode>) node.getNodeMetaData(StaticTypesMarker.PV_FIELDS_ACCESS);
         Set<ASTNode> mutatedFields = (Set<ASTNode>) node.getNodeMetaData(StaticTypesMarker.PV_FIELDS_MUTATION);
@@ -249,7 +248,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         int acc = -1;
         privateFieldAccessors = accessedFields != null ? new HashMap<String, MethodNode>() : null;
         privateFieldMutators = mutatedFields != null ? new HashMap<String, MethodNode>() : null;
-        final int access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC;
+        final int access = ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC;
         for (FieldNode fieldNode : node.getFields()) {
             boolean generateAccessor = accessedFields != null && accessedFields.contains(fieldNode);
             boolean generateMutator = mutatedFields != null && mutatedFields.contains(fieldNode);
@@ -262,11 +261,12 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                         fieldNode.getName()
                 ));
                 MethodNode accessor = node.addMethod("pfaccess$" + acc, access, fieldNode.getOriginType(), new Parameter[]{param}, ClassNode.EMPTY_ARRAY, stmt);
+                accessor.setNodeMetaData(STATIC_COMPILE_NODE, Boolean.TRUE);
                 privateFieldAccessors.put(fieldNode.getName(), accessor);
             }
 
             if (generateMutator) {
-                //increment acc if it hasn't been incremented in the current iteration
+                // increment acc if it hasn't been incremented in the current iteration
                 if (!generateAccessor) acc++;
                 Parameter param = new Parameter(node.getPlainNodeReference(), "$that");
                 Expression receiver = fieldNode.isStatic() ? new ClassExpression(node) : new VariableExpression(param);
@@ -276,6 +276,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                         new VariableExpression(value)
                 );
                 MethodNode mutator = node.addMethod("pfaccess$0" + acc, access, fieldNode.getOriginType(), new Parameter[]{param, value}, ClassNode.EMPTY_ARRAY, stmt);
+                mutator.setNodeMetaData(STATIC_COMPILE_NODE, Boolean.TRUE);
                 privateFieldMutators.put(fieldNode.getName(), mutator);
             }
         }
@@ -290,7 +291,6 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
      *
      * @param node an inner/outer class node for which to generate bridge methods
      */
-    @SuppressWarnings("unchecked")
     private static void addPrivateBridgeMethods(final ClassNode node) {
         Set<ASTNode> accessedMethods = (Set<ASTNode>) node.getNodeMetaData(StaticTypesMarker.PV_METHODS_ACCESS);
         if (accessedMethods==null) return;
@@ -303,7 +303,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
         privateBridgeMethods = new HashMap<MethodNode, MethodNode>();
         int i=-1;
-        final int access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC;
+        final int access = ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC;
         for (MethodNode method : methods) {
             if (accessedMethods.contains(method)) {
                 List<String> methodSpecificGenerics = methodSpecificGenerics(method);
@@ -365,8 +365,8 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                 if (origGenericsTypes !=null) {
                     bridge.setGenericsTypes(applyGenericsContextToPlaceHolders(genericsSpec,origGenericsTypes));
                 }
+                bridge.setNodeMetaData(STATIC_COMPILE_NODE, Boolean.TRUE);
                 privateBridgeMethods.put(method, bridge);
-                bridge.addAnnotation(new AnnotationNode(COMPILESTATIC_CLASSNODE));
             }
         }
         if (!privateBridgeMethods.isEmpty()) {
@@ -533,8 +533,9 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         };
         boolean exists = super.existsProperty(pexp, checkForReadOnly, receiverMemoizer);
         if (exists) {
-            if (objectExpression.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER)==null) {
-                objectExpression.putNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER, rType.get());
+            objectExpressionType = rType.get();
+            if (objectExpression.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER) == null) {
+                objectExpression.putNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER, objectExpressionType);
             }
             if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(objectExpressionType, ClassHelper.LIST_TYPE)) {
                 objectExpression.putNodeMetaData(COMPONENT_TYPE, inferComponentType(objectExpressionType, ClassHelper.int_TYPE));
@@ -547,7 +548,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     public void visitPropertyExpression(final PropertyExpression pexp) {
         super.visitPropertyExpression(pexp);
         Object dynamic = pexp.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION);
-        if (dynamic !=null) {
+        if (dynamic != null) {
             pexp.getObjectExpression().putNodeMetaData(StaticCompilationMetadataKeys.RECEIVER_OF_DYNAMIC_PROPERTY, dynamic);
         }
     }

@@ -35,7 +35,6 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
@@ -85,7 +84,7 @@ public class AnnotationVisitor {
         if (!checkIfValidEnumConstsAreUsed(node)) {
             return node;
         }
-        
+
         Map<String, Expression> attributes = node.getMembers();
         for (Map.Entry<String, Expression> entry : attributes.entrySet()) {
             String attrName = entry.getKey();
@@ -97,7 +96,7 @@ public class AnnotationVisitor {
         VMPluginFactory.getPlugin().configureAnnotation(node);
         return this.annotation;
     }
-    
+
     private boolean checkIfValidEnumConstsAreUsed(AnnotationNode node) {
         Map<String, Expression> attributes = node.getMembers();
         for (Map.Entry<String, Expression> entry : attributes.entrySet()) {
@@ -106,7 +105,7 @@ public class AnnotationVisitor {
         }
         return true;
     }
-    
+
     private boolean validateEnumConstant(Expression exp) {
         if (exp instanceof PropertyExpression) {
             PropertyExpression pe = (PropertyExpression) exp;
@@ -154,7 +153,7 @@ public class AnnotationVisitor {
         // if it is an error, we have to test it at another place. But size==0 is
         // an error, because it means that no such attribute exists.
         if (methods.isEmpty()) {
-            addError("'" + attrName + "'is not part of the annotation " + classNode, node);
+            addError("'" + attrName + "'is not part of the annotation " + classNode.getNameWithoutPackage(), node);
             return ClassHelper.OBJECT_TYPE;
         }
         MethodNode method = (MethodNode) methods.get(0);
@@ -236,14 +235,11 @@ public class AnnotationVisitor {
         } else {
             addError(base, exp);
         }
-        return ConstantExpression.EMPTY_EXPRESSION;
+        ConstantExpression ret = new ConstantExpression(null);
+        ret.setSourcePosition(exp);
+        return ret;
     }
 
-    /**
-     * @param attrName   the name
-     * @param expression the expression
-     * @param attrType   the type
-     */
     protected void visitAnnotationExpression(String attrName, AnnotationConstantExpression expression, ClassNode attrType) {
         AnnotationNode annotationNode = (AnnotationNode) expression.getValue();
         AnnotationVisitor visitor = new AnnotationVisitor(this.source, this.errorCollector);
@@ -282,10 +278,8 @@ public class AnnotationVisitor {
         addError(msg, this.annotation);
     }
 
-    protected void addError(String msg, ASTNode expr) {
-        this.errorCollector.addErrorAndContinue(
-                new SyntaxErrorMessage(new SyntaxException(msg + " in @" + this.reportClass.getName() + '\n', expr.getLineNumber(), expr.getColumnNumber(), expr.getLastLineNumber(), expr.getLastColumnNumber()), this.source)
-        );
+    protected void addError(String msg, ASTNode node) {
+        this.errorCollector.addErrorAndContinue(new SyntaxException(msg + " in @" + this.reportClass.getName() + '\n', node), this.source);
     }
 
     public void checkCircularReference(ClassNode searchClass, ClassNode attrType, Expression startExp) {
@@ -310,5 +304,4 @@ public class AnnotationVisitor {
             checkCircularReference(searchClass, method.getReturnType(), code.getExpression());
         }
     }
-
 }

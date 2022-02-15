@@ -53,7 +53,6 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
@@ -62,6 +61,7 @@ import org.objectweb.asm.Opcodes;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 
 public class EnumVisitor extends ClassCodeVisitorSupport {
@@ -72,7 +72,6 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
     private static final int PRIVATE_FS = Opcodes.ACC_PRIVATE | FS;
 
     private final SourceUnit sourceUnit;
-
 
     public EnumVisitor(CompilationUnit cu, SourceUnit su) {
         sourceUnit = su;
@@ -89,13 +88,13 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
 
     private void completeEnum(ClassNode enumClass) {
         boolean isAic = isAnonymousInnerClass(enumClass);
-        // create MIN_VALUE and MAX_VALUE fields
+        // create MIN_VALUE, MAX_VALUE and $VALUES fields
         FieldNode minValue = null, maxValue = null, values = null;
 
         if (!isAic) {
             ClassNode enumRef = enumClass.getPlainNodeReference();
-
-            // create values field
+            minValue = new FieldNode("MIN_VALUE", PUBLIC_FS, enumRef, enumClass, null);
+            maxValue = new FieldNode("MAX_VALUE", PUBLIC_FS, enumRef, enumClass, null);
             values = new FieldNode("$VALUES", PRIVATE_FS | Opcodes.ACC_SYNTHETIC, enumRef.makeArray(), enumClass, null);
             values.setSynthetic(true);
 
@@ -110,10 +109,6 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
 
             addMethods(enumClass, values);
             checkForAbstractMethods(enumClass);
-
-            // create MIN_VALUE and MAX_VALUE fields
-            minValue = new FieldNode("MIN_VALUE", PUBLIC_FS, enumRef, enumClass, null);
-            maxValue = new FieldNode("MAX_VALUE", PUBLIC_FS, enumRef, enumClass, null);
         }
         addInit(enumClass, minValue, maxValue, values, isAic);
     }
@@ -151,7 +146,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             cloneCall.setMethodTarget(values.getType().getMethod("clone", Parameter.EMPTY_ARRAY));
             code.addStatement(new ReturnStatement(cloneCall));
             valuesMethod.setCode(code);
-            enumClass.addMethod(valuesMethod);
+            addGeneratedMethod(enumClass, valuesMethod);
         }
 
         if (!hasNext) {
@@ -163,7 +158,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             //     }
             Token assign = Token.newSymbol(Types.ASSIGN, -1, -1);
             Token ge = Token.newSymbol(Types.COMPARE_GREATER_THAN_EQUAL, -1, -1);
-            MethodNode nextMethod = new MethodNode("next", Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, enumRef, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+            MethodNode nextMethod = new MethodNode("next", Opcodes.ACC_PUBLIC, enumRef, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
             nextMethod.setSynthetic(true);
             BlockStatement code = new BlockStatement();
             BlockStatement ifStatement = new BlockStatement();
@@ -210,7 +205,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                     )
             );
             nextMethod.setCode(code);
-            enumClass.addMethod(nextMethod);
+            addGeneratedMethod(enumClass, nextMethod);
         }
 
         if (!hasPrevious) {
@@ -222,8 +217,8 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             //    }
             Token assign = Token.newSymbol(Types.ASSIGN, -1, -1);
             Token lt = Token.newSymbol(Types.COMPARE_LESS_THAN, -1, -1);
-            MethodNode nextMethod = new MethodNode("previous", Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, enumRef, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
-            nextMethod.setSynthetic(true);
+            MethodNode prevMethod = new MethodNode("previous", Opcodes.ACC_PUBLIC, enumRef, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+            prevMethod.setSynthetic(true);
             BlockStatement code = new BlockStatement();
             BlockStatement ifStatement = new BlockStatement();
             ifStatement.addStatement(
@@ -274,8 +269,8 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                             new MethodCallExpression(new FieldExpression(values), "getAt", new VariableExpression("ordinal"))
                     )
             );
-            nextMethod.setCode(code);
-            enumClass.addMethod(nextMethod);
+            prevMethod.setCode(code);
+            addGeneratedMethod(enumClass, prevMethod);
         }
 
         {
@@ -325,7 +320,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
         BlockStatement code = new BlockStatement();
         code.addStatement(new ReturnStatement(cce));
         initMethod.setCode(code);
-        enumClass.addMethod(initMethod);
+        addGeneratedMethod(enumClass, initMethod);
 
         // static init
         List<FieldNode> fields = enumClass.getFields();
@@ -440,11 +435,8 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
         enumClass.addStaticInitializerStatements(block, true);
     }
 
-    private void addError(AnnotatedNode exp, String msg) {
-        sourceUnit.getErrorCollector().addErrorAndContinue(
-                new SyntaxErrorMessage(
-                        new SyntaxException(msg + '\n', exp.getLineNumber(), exp.getColumnNumber(), exp.getLastLineNumber(), exp.getLastColumnNumber()), sourceUnit)
-        );
+    private void addError(AnnotatedNode node, String msg) {
+        sourceUnit.addErrorAndContinue(new SyntaxException(msg + '\n', node));
     }
 
     static boolean isAnonymousInnerClass(ClassNode enumClass) {

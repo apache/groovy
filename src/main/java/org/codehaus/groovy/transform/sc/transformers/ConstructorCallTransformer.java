@@ -129,6 +129,7 @@ public class ConstructorCallTransformer {
             } 
             super.visit(visitor);
         }
+
         @Override
         public ClassNode getType() {
             return declaringClass;
@@ -186,8 +187,6 @@ public class ConstructorCallTransformer {
 
             // cleanup stack
             compileStack.removeVar(tmpObj);
-
         }
     }
-
 }

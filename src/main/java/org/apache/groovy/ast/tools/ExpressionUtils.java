@@ -231,7 +231,7 @@ public final class ExpressionUtils {
                         Field field = type.redirect().getTypeClass().getField(pe.getPropertyAsString());
                         if (field != null && Modifier.isStatic(field.getModifiers()) && Modifier.isFinal(field.getModifiers())) {
                             ConstantExpression ce3 = new ConstantExpression(field.get(null), true);
-                            ce3.setSourcePosition(exp);
+                            configure(exp, ce3);
                             return ce3;
                         }
                     } catch (Exception | LinkageError e) {

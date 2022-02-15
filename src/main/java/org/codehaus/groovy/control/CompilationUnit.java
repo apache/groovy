@@ -22,7 +22,6 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
 import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
@@ -75,7 +74,6 @@ import java.util.Map;
  * You can also add PhaseOperations to this compilation using the addPhaseOperation method.
  * This is commonly used when you want to wire a new AST Transformation into the compilation.
  */
-
 public class CompilationUnit extends ProcessingUnit {
 
     //---------------------------------------------------------------------------
@@ -84,11 +82,11 @@ public class CompilationUnit extends ProcessingUnit {
     protected ASTTransformationsContext astTransformationsContext; // AST transformations state data
 
     @Deprecated
-    protected Map summariesBySourceName;      // Summary of each SourceUnit
+    protected Map summariesBySourceName = new HashMap();
     @Deprecated
-    protected Map summariesByPublicClassName;       // Summary of each SourceUnit
+    protected Map summariesByPublicClassName = new HashMap();
     @Deprecated
-    protected Map classSourcesByPublicClassName;    // Summary of each Class
+    protected Map classSourcesByPublicClassName = new HashMap();
 
     protected Map<String, SourceUnit> sources;    // The SourceUnits from which this unit is built
     protected List<String> names;      // Names for each SourceUnit in sources.
@@ -119,14 +117,12 @@ public class CompilationUnit extends ProcessingUnit {
         this(null, null, null);
     }
 
-
     /**
      * Initializes the CompilationUnit with defaults except for class loader.
      */
     public CompilationUnit(GroovyClassLoader loader) {
         this(null, null, loader);
     }
-
 
     /**
      * Initializes the CompilationUnit with no security considerations.
@@ -160,29 +156,24 @@ public class CompilationUnit extends ProcessingUnit {
                            GroovyClassLoader loader, GroovyClassLoader transformLoader) {
         super(configuration, loader, null);
 
-        this.astTransformationsContext = new ASTTransformationsContext(this, transformLoader);
-        this.names = new ArrayList<String>();
-        this.queuedSources = new LinkedList<SourceUnit>();
-        this.sources = new HashMap<String, SourceUnit>();
-        this.summariesBySourceName = new HashMap();
-        this.summariesByPublicClassName = new HashMap();
-        this.classSourcesByPublicClassName = new HashMap();
-
         this.ast = new CompileUnit(this.classLoader, security, this.configuration);
+        this.astTransformationsContext = new ASTTransformationsContext(this, transformLoader);
+
+        this.names = new ArrayList<String>();
+        this.sources = new HashMap<String, SourceUnit>();
+        this.queuedSources = new LinkedList<SourceUnit>();
         this.generatedClasses = new ArrayList<GroovyClass>();
 
         this.verifier = new Verifier();
+        this.optimizer = new OptimizerVisitor(this);
         this.resolveVisitor = new ResolveVisitor(this);
         this.staticImportVisitor = new StaticImportVisitor();
-        this.optimizer = new OptimizerVisitor(this);
 
         initPhaseOperations();
         addPhaseOperations();
 
         applyCompilationCustomizers(configuration);
-
-        this.classgenCallback = null;
-        this.classNodeResolver = new ClassNodeResolver();
+        setClassNodeResolver(new ClassNodeResolver());
     }
 
     private void initPhaseOperations() {
@@ -299,12 +290,12 @@ public class CompilationUnit extends ProcessingUnit {
 
     /**
      * Returns the class loader for loading AST transformations.
-     * @return - the transform class loader
      */
     public GroovyClassLoader getTransformLoader() {
-        return astTransformationsContext.getTransformLoader() == null ? getClassLoader() : astTransformationsContext.getTransformLoader();
+        GroovyClassLoader loader = astTransformationsContext.getTransformLoader();
+        if (loader == null) loader = this.getClassLoader();
+        return loader;
     }
-
 
     public void addPhaseOperation(SourceUnitOperation op, int phase) {
         validatePhase(phase);
@@ -390,7 +381,7 @@ public class CompilationUnit extends ProcessingUnit {
      * Convenience routine to get the named ClassNode.
      */
     public ClassNode getClassNode(final String name) {
-        final ClassNode[] result = new ClassNode[]{null};
+        final ClassNode[] result = new ClassNode[1];
         PrimaryClassNodeOperation handler = new PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
                 if (classNode.getName().equals(name)) {
@@ -417,7 +408,6 @@ public class CompilationUnit extends ProcessingUnit {
     //---------------------------------------------------------------------------
     // SOURCE CREATION
 
-
     /**
      * Adds a set of file paths to the unit.
      */
@@ -427,7 +417,6 @@ public class CompilationUnit extends ProcessingUnit {
         }
     }
 
-
     /**
      * Adds a set of source files to the unit.
      */
@@ -436,7 +425,6 @@ public class CompilationUnit extends ProcessingUnit {
             addSource(file);
         }
     }
-
 
     /**
      * Adds a source file to the unit.
@@ -451,7 +439,6 @@ public class CompilationUnit extends ProcessingUnit {
     public SourceUnit addSource(URL url) {
         return addSource(new SourceUnit(url, configuration, classLoader, getErrorCollector()));
     }
-
 
     /**
      * Adds a InputStream source to the unit.
@@ -478,7 +465,6 @@ public class CompilationUnit extends ProcessingUnit {
         return source;
     }
 
-
     /**
      * Returns an iterator on the unit's SourceUnits.
      */
@@ -501,7 +487,6 @@ public class CompilationUnit extends ProcessingUnit {
         };
     }
 
-
     /**
      * Adds a ClassNode directly to the unit (ie. without source).
      * WARNING: the source is needed for error reporting, using
@@ -516,7 +501,6 @@ public class CompilationUnit extends ProcessingUnit {
 
     //---------------------------------------------------------------------------
     // EXTERNAL CALLBACKS
-
 
     /**
      * A callback interface you can use to "accompany" the classgen()
@@ -536,6 +520,10 @@ public class CompilationUnit extends ProcessingUnit {
         this.classgenCallback = visitor;
     }
 
+    public ClassgenCallback getClassgenCallback() {
+        return classgenCallback;
+    }
+
     /**
      * A callback interface you can use to get a callback after every
      * unit of the compile process.  You will be called-back with a
@@ -543,7 +531,6 @@ public class CompilationUnit extends ProcessingUnit {
      * before running compile() to set your callback.
      */
     public abstract static class ProgressCallback {
-
         public abstract void call(ProcessingUnit context, int phase) throws CompilationFailedException;
     }
 
@@ -555,17 +542,12 @@ public class CompilationUnit extends ProcessingUnit {
         this.progressCallback = callback;
     }
 
-    public ClassgenCallback getClassgenCallback() {
-        return classgenCallback;
-    }
-
     public ProgressCallback getProgressCallback() {
         return progressCallback;
     }
 
     //---------------------------------------------------------------------------
     // ACTIONS
-
 
     /**
      * Synonym for compile(Phases.ALL).
@@ -632,7 +614,6 @@ public class CompilationUnit extends ProcessingUnit {
             recordPhaseOpsInAllOtherPhases(currPhase);
             currentPhaseNewOps = newPhaseOperations[currPhase];
         }
-
     }
 
     private void doPhaseOperation(Object operation) {
@@ -660,7 +641,6 @@ public class CompilationUnit extends ProcessingUnit {
             module.sortClasses();
         }
     }
-
 
     /**
      * Dequeues any source units add through addSource and resets the compiler phase
@@ -790,7 +770,6 @@ public class CompilationUnit extends ProcessingUnit {
         }
     };
 
-
     /**
      * Runs classgen() on a single ClassNode.
      */
@@ -799,8 +778,7 @@ public class CompilationUnit extends ProcessingUnit {
             return true;
         }
 
-        public void call(final SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
-
+        public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
             optimizer.visitClass(classNode, source); // GROOVY-4272: repositioned it here from staticImport
 
             //
@@ -838,14 +816,12 @@ public class CompilationUnit extends ProcessingUnit {
             // Prep the generator machinery
             //
             ClassVisitor classVisitor = createClassVisitor();
-            
+
             String sourceName = (source == null ? classNode.getModule().getDescription() : source.getName());
             // only show the file name and its extension like javac does in its stacktraces rather than the full path
             // also takes care of both \ and / depending on the host compiling environment
             if (sourceName != null)
                 sourceName = sourceName.substring(Math.max(sourceName.lastIndexOf('\\'), sourceName.lastIndexOf('/')) + 1);
-            //TraceClassVisitor tracer = new TraceClassVisitor(visitor, new PrintWriter(System.err,true));
-            //AsmClassGenerator generator = new AsmClassGenerator(source, context, tracer, sourceName);
             AsmClassGenerator generator = new AsmClassGenerator(source, context, classVisitor, sourceName);
 
             //
@@ -859,16 +835,16 @@ public class CompilationUnit extends ProcessingUnit {
             //
             // Handle any callback that's been set
             //
-            if (CompilationUnit.this.classgenCallback != null) {
+            if (classgenCallback != null) {
                 classgenCallback.call(classVisitor, classNode);
             }
 
             //
             // Recurse for inner classes
             //
-            LinkedList innerClasses = generator.getInnerClasses();
+            LinkedList<ClassNode> innerClasses = generator.getInnerClasses();
             while (!innerClasses.isEmpty()) {
-                classgen.call(source, context, (ClassNode) innerClasses.removeFirst());
+                classgen.call(source, context, innerClasses.removeFirst());
             }
         }
     };
@@ -876,8 +852,7 @@ public class CompilationUnit extends ProcessingUnit {
     protected ClassVisitor createClassVisitor() {
         CompilerConfiguration config = getConfiguration();
         int computeMaxStackAndFrames = ClassWriter.COMPUTE_MAXS;
-        if (CompilerConfiguration.isPostJDK7(config.getTargetBytecode())
-                || Boolean.TRUE.equals(config.getOptimizationOptions().get("indy"))) {
+        if (CompilerConfiguration.isPostJDK7(config.getTargetBytecode()) || config.isIndyEnabled()) {
             computeMaxStackAndFrames += ClassWriter.COMPUTE_FRAMES;
         }
         return new ClassWriter(computeMaxStackAndFrames) {
@@ -905,14 +880,13 @@ public class CompilationUnit extends ProcessingUnit {
             }
             @Override
             protected String getCommonSuperClass(String arg1, String arg2) {
-                ClassNode a = getClassNode(arg1.replace('/', '.')); 
+                ClassNode a = getClassNode(arg1.replace('/', '.'));
                 ClassNode b = getClassNode(arg2.replace('/', '.'));
                 return getCommonSuperClassNode(a,b).getName().replace('.','/');
             }
-
         };
     }
-    
+
     //---------------------------------------------------------------------------
     // PHASE HANDLING
 
@@ -922,7 +896,6 @@ public class CompilationUnit extends ProcessingUnit {
     protected void mark() throws CompilationFailedException {
         applyToSourceUnits(mark);
     }
-
 
     /**
      * Marks a single SourceUnit with the current phase,
@@ -943,14 +916,12 @@ public class CompilationUnit extends ProcessingUnit {
     //---------------------------------------------------------------------------
     // LOOP SIMPLIFICATION FOR SourceUnit OPERATIONS
 
-
     /**
      * An callback interface for use in the applyToSourceUnits loop driver.
      */
     public abstract static class SourceUnitOperation {
         public abstract void call(SourceUnit source) throws CompilationFailedException;
     }
-
 
     /**
      * A loop driver for applying operations to all SourceUnits.
@@ -976,13 +947,11 @@ public class CompilationUnit extends ProcessingUnit {
             }
         }
 
-
         getErrorCollector().failIfErrors();
     }
 
     //---------------------------------------------------------------------------
     // LOOP SIMPLIFICATION FOR PRIMARY ClassNode OPERATIONS
-
 
     /**
      * An callback interface for use in the applyToPrimaryClassNodes loop driver.
@@ -1086,7 +1055,7 @@ public class CompilationUnit extends ProcessingUnit {
             } catch (CompilationFailedException e) {
                 // fall through, getErrorReporter().failIfErrors() will trigger
             } catch (NullPointerException npe) {
-                GroovyBugError gbe = new GroovyBugError("unexpected NullpointerException", npe);
+                GroovyBugError gbe = new GroovyBugError("unexpected NullPointerException", npe);
                 changeBugText(gbe, context);
                 throw gbe;
             } catch (GroovyBugError e) {
@@ -1149,14 +1118,12 @@ public class CompilationUnit extends ProcessingUnit {
     private void changeBugText(GroovyBugError e, SourceUnit context) {
         e.setBugText("exception in phase '" + getPhaseDescription() + "' in source unit '" + ((context != null) ? context.getName() : "?") + "' " + e.getBugText());
     }
-    
+
     public ClassNodeResolver getClassNodeResolver() {
         return classNodeResolver;
     }
 
-
     public void setClassNodeResolver(ClassNodeResolver classNodeResolver) {
         this.classNodeResolver = classNodeResolver;
     }
-
 }

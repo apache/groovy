@@ -24,7 +24,6 @@ import org.codehaus.groovy.syntax.CSTNode;
 
 import java.io.PrintWriter;
 
-
 /**
  * A base class for compilation messages.
  */
@@ -35,7 +34,6 @@ public class LocatedMessage extends SimpleMessage {
         super(message, source);
         this.context = context;
     }
-
 
     public LocatedMessage(String message, Object data, CSTNode context, SourceUnit source) {
         super(message, data, source);
@@ -53,7 +51,7 @@ public class LocatedMessage extends SimpleMessage {
             String sample = source.getSample(line, column, janitor);
 
             if (sample != null) {
-                writer.println(source.getSample(line, column, janitor));
+                writer.println(sample);
             }
 
             writer.println(name + ": " + line + ": " + this.message);
@@ -63,9 +61,4 @@ public class LocatedMessage extends SimpleMessage {
             writer.println("");
         }
     }
-
 }
-
-
-
-

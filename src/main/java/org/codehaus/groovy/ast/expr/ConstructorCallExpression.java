@@ -34,6 +34,7 @@ public class ConstructorCallExpression extends Expression implements MethodCall 
         super.setType(type);
         if (!(arguments instanceof TupleExpression)) {
             this.arguments = new TupleExpression(arguments);
+            this.arguments.setSourcePosition(arguments);
         } else {
             this.arguments = arguments;
         }

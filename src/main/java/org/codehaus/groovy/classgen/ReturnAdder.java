@@ -198,27 +198,22 @@ public class ReturnAdder {
 
         if (statement instanceof BlockStatement) {
             BlockStatement block = (BlockStatement) statement;
-
-            final List list = block.getStatements();
-            if (!list.isEmpty()) {
-                int idx = list.size() - 1;
-                Statement last = addReturnsIfNeeded((Statement) list.get(idx), block.getVariableScope());
+            if (block.isEmpty()) {
+                ReturnStatement returnStatement = new ReturnStatement(ConstantExpression.NULL);
+                returnStatement.setSourcePosition(block);
+                listener.returnStatementAdded(returnStatement);
+                return returnStatement;
+            } else {
+                List<Statement> list = block.getStatements(); int idx = list.size() - 1;
+                Statement last = addReturnsIfNeeded(list.get(idx), block.getVariableScope());
                 if (doAdd) list.set(idx, last);
                 if (!statementReturns(last)) {
-                    final ReturnStatement returnStatement = new ReturnStatement(ConstantExpression.NULL);
+                    ReturnStatement returnStatement = new ReturnStatement(ConstantExpression.NULL);
                     listener.returnStatementAdded(returnStatement);
                     if (doAdd) list.add(returnStatement);
                 }
-            } else {
-                ReturnStatement ret = new ReturnStatement(ConstantExpression.NULL);
-                ret.setSourcePosition(block);
-                listener.returnStatementAdded(ret);
-                return ret;
+                return block;
             }
-
-            BlockStatement newBlock = new BlockStatement(list, block.getVariableScope());
-            newBlock.setSourcePosition(block);
-            return newBlock;
         }
 
         if (statement == null) {

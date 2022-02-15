@@ -119,8 +119,6 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-
-
             // invert the map, is now one to many
             transforms = new HashMap<ASTNode, List<ASTTransformation>>();
             for (Map.Entry<Class<? extends ASTTransformation>, Set<ASTNode>> entry : baseTransforms.entrySet()) {
@@ -208,11 +206,12 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
 
         compilationUnit.addPhaseOperation(new CompilationUnit.PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
-                ASTTransformationCollectorCodeVisitor collector = 
+                ASTTransformationCollectorCodeVisitor collector =
                     new ASTTransformationCollectorCodeVisitor(source, compilationUnit.getTransformLoader());
                 collector.visitClass(classNode);
             }
         }, Phases.SEMANTIC_ANALYSIS);
+
         for (CompilePhase phase : CompilePhase.values()) {
             final ASTTransformationVisitor visitor = new ASTTransformationVisitor(phase, context);
             switch (phase) {
@@ -234,11 +233,11 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
             }
         }
     }
-    
+
     public static void addGlobalTransformsAfterGrab(ASTTransformationsContext context) {
         doAddGlobalTransforms(context, false);
     }
-    
+
     public static void addGlobalTransforms(ASTTransformationsContext context) {
         doAddGlobalTransforms(context, true);
     }
@@ -251,8 +250,8 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
             Enumeration<URL> globalServices = transformLoader.getResources("META-INF/services/org.codehaus.groovy.transform.ASTTransformation");
             while (globalServices.hasMoreElements()) {
                 URL service = globalServices.nextElement();
-                String className;
                 try (BufferedReader svcIn = new BufferedReader(new InputStreamReader(URLStreams.openUncachedStream(service), "UTF-8"))) {
+                    String className;
                     try {
                         className = svcIn.readLine();
                     } catch (IOException ioe) {
@@ -297,7 +296,6 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                             compilationUnit.getErrorCollector().addError(new SimpleMessage(
                                     "IOException reading the service definition at "
                                             + service.toExternalForm() + " because of exception " + ioe.toString(), null));
-                            //noinspection UnnecessaryContinue
                             continue;
                         }
                     }
@@ -310,33 +308,32 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                 null));
         }
 
-        // record the transforms found in the first scan, so that in the 2nd scan, phase operations 
-        // can be added for only for new transforms that have come in 
-        if(isFirstScan) {
+        // record the transforms found in the first scan, so that in the 2nd scan, phase operations
+        // can be added for only for new transforms that have come in
+        if (isFirstScan) {
             for (Map.Entry<String, URL> entry : transformNames.entrySet()) {
                 context.getGlobalTransformNames().add(entry.getKey());
             }
             addPhaseOperationsForGlobalTransforms(context.getCompilationUnit(), transformNames, isFirstScan);
         } else {
             Iterator<Map.Entry<String, URL>> it = transformNames.entrySet().iterator();
-            while(it.hasNext()) {
+            while (it.hasNext()) {
                 Map.Entry<String, URL> entry = it.next();
-                if(!context.getGlobalTransformNames().add(entry.getKey())) {
+                if (!context.getGlobalTransformNames().add(entry.getKey())) {
                     // phase operations for this transform class have already been added before, so remove from current scan cycle
-                    it.remove(); 
+                    it.remove();
                 }
             }
             addPhaseOperationsForGlobalTransforms(context.getCompilationUnit(), transformNames, isFirstScan);
         }
     }
-    
+
     private static void addPhaseOperationsForGlobalTransforms(CompilationUnit compilationUnit,
             Map<String, URL> transformNames, boolean isFirstScan) {
         GroovyClassLoader transformLoader = compilationUnit.getTransformLoader();
         for (Map.Entry<String, URL> entry : transformNames.entrySet()) {
             try {
                 Class gTransClass = transformLoader.loadClass(entry.getKey(), false, true, false);
-                //no inspection unchecked
                 GroovyASTTransformation transformAnnotation = (GroovyASTTransformation) gTransClass.getAnnotation(GroovyASTTransformation.class);
                 if (transformAnnotation == null) {
                     compilationUnit.getErrorCollector().addWarning(new WarningMessage(
@@ -357,8 +354,8 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                         public void call(SourceUnit source) throws CompilationFailedException {
                             instance.visit(new ASTNode[] {source.getAST()}, source);
                         }
-                    }; 
-                    if(isFirstScan) {
+                    };
+                    if (isFirstScan) {
                         compilationUnit.addPhaseOperation(suOp, transformAnnotation.phase().getPhaseNumber());
                     } else {
                         compilationUnit.addNewPhaseOperation(suOp, transformAnnotation.phase().getPhaseNumber());
@@ -369,12 +366,11 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                         + entry.getValue().toExternalForm() + " is not an ASTTransformation.", null));
                 }
             } catch (Exception e) {
-                Throwable effectiveException = e instanceof InvocationTargetException ? e.getCause() : e;
+                Throwable t = e instanceof InvocationTargetException ? e.getCause() : e;
                 compilationUnit.getErrorCollector().addError(new SimpleMessage(
                     "Could not instantiate global transform class " + entry.getKey() + " specified at "
-                    + entry.getValue().toExternalForm() + "  because of exception " + effectiveException.toString(), null));
+                    + entry.getValue().toExternalForm() + "  because of exception " + t.toString(), null));
             }
         }
     }
 }
-

@@ -162,8 +162,7 @@ import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED_EQUAL;
  * Static support methods for {@link StaticTypeCheckingVisitor}.
  */
 public abstract class StaticTypeCheckingSupport {
-    protected static final ClassNode
-            Collection_TYPE = makeWithoutCaching(Collection.class);
+    protected static final ClassNode Collection_TYPE = makeWithoutCaching(Collection.class);
     protected static final ClassNode Deprecated_TYPE = makeWithoutCaching(Deprecated.class);
     protected static final ClassNode Matcher_TYPE = makeWithoutCaching(Matcher.class);
     protected static final ClassNode ArrayList_TYPE = makeWithoutCaching(ArrayList.class);
@@ -249,6 +248,10 @@ public abstract class StaticTypeCheckingSupport {
             return 1;
         }
     };
+
+    public static void clearExtensionMethodCache(ClassLoader loader) {
+        EXTENSION_METHOD_CACHE.cache.remove(loader);
+    }
 
     /**
      * Returns true for expressions of the form x[...]

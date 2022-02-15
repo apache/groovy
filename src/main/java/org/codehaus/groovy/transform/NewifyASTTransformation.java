@@ -345,7 +345,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
 
     private void checkDuplicateNameClashes(ListExpression list) {
         final Set<String> seen = new HashSet<String>();
-        @SuppressWarnings("unchecked") final List<ClassExpression> classes = (List) list.getExpressions();
+        final List<ClassExpression> classes = (List) list.getExpressions();
         for (ClassExpression ce : classes) {
             final String name = ce.getType().getNameWithoutPackage();
             if (seen.contains(name)) {
@@ -363,7 +363,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
     }
 
     private void checkClassLevelClashes(ListExpression list) {
-        @SuppressWarnings("unchecked") final List<ClassExpression> classes = (List) list.getExpressions();
+        final List<ClassExpression> classes = (List) list.getExpressions();
         for (ClassExpression ce : classes) {
             final String name = ce.getType().getNameWithoutPackage();
             if (findClassWithMatchingBasename(name)) {
@@ -373,10 +373,10 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
         }
     }
 
-
     private boolean isNewifyCandidate(MethodCallExpression mce) {
-        return mce.getObjectExpression() == VariableExpression.THIS_EXPRESSION
-                || (auto && isNewMethodStyle(mce));
+        return (auto && isNewMethodStyle(mce)) || (mce.isImplicitThis()
+                && mce.getObjectExpression() instanceof VariableExpression
+                && ((VariableExpression) mce.getObjectExpression()).isThisExpression());
     }
 
     private static boolean isNewMethodStyle(MethodCallExpression mce) {
@@ -428,7 +428,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
         }
 
         if (classesToNewify != null) {
-            @SuppressWarnings("unchecked") final List<ClassExpression> classes = (List) classesToNewify.getExpressions();
+            final List<ClassExpression> classes = (List) classesToNewify.getExpressions();
             for (ClassExpression ce : classes) {
                 if (ce.getType().getNameWithoutPackage().equals(nameWithoutPackage)) {
                     return true;
@@ -443,7 +443,6 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
         final String methodName = mce.getMethodAsString();
 
         if (classesToNewify != null) {
-            @SuppressWarnings("unchecked")
             List<ClassExpression> classes = (List) classesToNewify.getExpressions();
             for (ClassExpression ce : classes) {
                 final ClassNode type = ce.getType();
@@ -505,11 +504,10 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
         return source;
     }
 
-
     private static class NewifyClassData {
         final String name;
         final ClassNode type;
-        List<ClassNode> types = null;
+        List<ClassNode> types;
 
         public NewifyClassData(final String name, final ClassNode type) {
             this.name = name;
@@ -524,6 +522,4 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
             types.add(additionalType);
         }
     }
-
-
 }

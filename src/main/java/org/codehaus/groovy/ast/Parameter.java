@@ -20,25 +20,23 @@ package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.expr.Expression;
 
-
 /**
  * Represents a parameter on a constructor or method call. The type name is
  * optional - it defaults to java.lang.Object if unknown.
  */
 public class Parameter extends AnnotatedNode implements Variable {
 
-    public static final Parameter[] EMPTY_ARRAY = {
-    };
+    public static final Parameter[] EMPTY_ARRAY = {};
 
     private ClassNode type;
     private final String name;
+    private ClassNode originType;
     private boolean dynamicTyped;
+    private boolean closureShare;
     private Expression defaultValue;
     private boolean hasDefaultValue;
     private boolean inStaticContext;
-    private boolean closureShare=false;
     private int modifiers;
-    private ClassNode originType=ClassHelper.DYNAMIC_TYPE;
 
     public Parameter(ClassNode type, String name) {
         this.name = name;
@@ -46,7 +44,7 @@ public class Parameter extends AnnotatedNode implements Variable {
         this.originType = type;
         this.hasDefaultValue = false;
     }
-    
+
     public Parameter(ClassNode type, String name, Expression defaultValue) {
         this(type,name);
         this.defaultValue = defaultValue;
@@ -69,11 +67,11 @@ public class Parameter extends AnnotatedNode implements Variable {
         this.type = type;
         dynamicTyped |= type==ClassHelper.DYNAMIC_TYPE;
     }
-    
+
     public boolean hasInitialExpression() {
         return this.hasDefaultValue;
     }
-    
+
     /**
      * @return the default value expression for this parameter or null if
      * no default value is specified
@@ -81,16 +79,16 @@ public class Parameter extends AnnotatedNode implements Variable {
     public Expression getInitialExpression() {
         return defaultValue;
     }
-    
+
     public void setInitialExpression(Expression init) {
         defaultValue = init;
         hasDefaultValue = defaultValue != null;
     }
-    
+
     public boolean isInStaticContext() {
         return inStaticContext;
     }
-    
+
     public void setInStaticContext(boolean inStaticContext) {
         this.inStaticContext = inStaticContext;
     }
@@ -104,7 +102,7 @@ public class Parameter extends AnnotatedNode implements Variable {
     }
 
     public void setClosureSharedVariable(boolean inClosure) {
-        closureShare = inClosure;        
+        closureShare = inClosure;
     }
 
     public int getModifiers() {
@@ -114,7 +112,7 @@ public class Parameter extends AnnotatedNode implements Variable {
     public ClassNode getOriginType() {
         return originType;
     }
-    
+
     public void setOriginType(ClassNode cn) {
         originType = cn;
     }

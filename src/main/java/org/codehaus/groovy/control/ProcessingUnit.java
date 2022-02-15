@@ -65,7 +65,6 @@ public abstract class ProcessingUnit {
         configure(getConfiguration());
     }
 
-
     /**
      * Reconfigures the ProcessingUnit.
      */
@@ -73,16 +72,10 @@ public abstract class ProcessingUnit {
         setConfiguration(configuration);
     }
 
-    /**
-     * Get the CompilerConfiguration for this ProcessingUnit.
-     */
     public CompilerConfiguration getConfiguration() {
         return configuration;
     }
 
-    /**
-     * Sets the CompilerConfiguration for this ProcessingUnit.
-     */
     public final void setConfiguration(CompilerConfiguration configuration) {
         this.configuration = configuration;
     }
@@ -90,16 +83,13 @@ public abstract class ProcessingUnit {
     /**
      * Returns the class loader in use by this ProcessingUnit.
      */
-
     public GroovyClassLoader getClassLoader() {
         return classLoader;
     }
 
-
     /**
      * Sets the class loader for use by this ProcessingUnit.
      */
-
     public void setClassLoader(final GroovyClassLoader loader) {
         // ClassLoaders should only be created inside a doPrivileged block in case
         // this method is invoked by code that does not have security permissions.
@@ -112,7 +102,6 @@ public abstract class ProcessingUnit {
         });
     }
 
-
     /**
      * Errors found during the compilation should be reported through the ErrorCollector.
      */
@@ -123,16 +112,13 @@ public abstract class ProcessingUnit {
     /**
      * Returns the current phase.
      */
-
     public int getPhase() {
         return phase;
     }
 
-
     /**
      * Returns the description for the current phase.
      */
-
     public String getPhaseDescription() {
         return Phases.getDescription(phase);
     }
@@ -144,12 +130,10 @@ public abstract class ProcessingUnit {
     /**
      * Marks the current phase complete and processes any errors.
      */
-
     public void completePhase() throws CompilationFailedException {
         errorCollector.failIfErrors();
         phaseComplete = true;
     }
-
 
     /**
      * A synonym for <code>gotoPhase(getPhase() + 1)</code>.
@@ -157,7 +141,6 @@ public abstract class ProcessingUnit {
     public void nextPhase() throws CompilationFailedException {
         gotoPhase(phase + 1);
     }
-
 
     /**
      * Wraps up any pending operations for the current phase and switches to the given phase.

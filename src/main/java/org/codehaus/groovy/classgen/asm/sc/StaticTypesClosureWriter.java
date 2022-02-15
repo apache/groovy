@@ -92,15 +92,15 @@ public class StaticTypesClosureWriter extends ClosureWriter {
     }
 
     private static void addGeneratedCallMethod(ClassNode closureClass, MethodNode doCallMethod, Expression expression, Parameter[] params) {
-        MethodCallExpression doCallarg = callX(varX("this", closureClass), "doCall", args(expression));
-        doCallarg.setImplicitThis(true);
-        doCallarg.setMethodTarget(doCallMethod);
+        MethodCallExpression doCallCall = callX(varX("this", closureClass), "doCall", args(expression));
+        doCallCall.setImplicitThis(true);
+        doCallCall.setMethodTarget(doCallMethod);
         MethodNode call = new MethodNode("call",
                 Opcodes.ACC_PUBLIC,
                 ClassHelper.OBJECT_TYPE,
                 params,
                 ClassNode.EMPTY_ARRAY,
-                returnS(doCallarg));
+                returnS(doCallCall));
         addGeneratedMethod(closureClass, call, true);
     }
 

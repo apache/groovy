@@ -50,6 +50,6 @@ public class StatementMetaTypeChooser implements TypeChooser {
         } else {
             type = exp.getType();
         }
-        return type.redirect();
+        return type;
     }
 }

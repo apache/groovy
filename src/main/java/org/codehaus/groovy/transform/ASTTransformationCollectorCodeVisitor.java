@@ -86,6 +86,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
      * @param node the node to process
      */
     public void visitAnnotations(AnnotatedNode node) {
+        if (node.getAnnotations().isEmpty()) return;
         super.visitAnnotations(node);
 
         Map<Integer, List<AnnotationNode>> existing = new TreeMap<Integer, List<AnnotationNode>>();
@@ -313,7 +314,6 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void addTransform(AnnotationNode annotation, Class klass) {
         boolean apply = !Traits.isTrait(classNode) || klass == TraitASTTransformation.class;
         if (apply) {

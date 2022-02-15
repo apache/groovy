@@ -334,7 +334,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                     returnType,
                     newParams,
                     candidate.getExceptions(),
-                    stmt(mce));
+                    !candidate.isVoidMethod() ? returnS(mce) : stmt(mce));
             newMethod.setGenericsTypes(candidate.getGenericsTypes());
 
             if (memberHasValue(delegate.annotation, MEMBER_METHOD_ANNOTATIONS, true)) {

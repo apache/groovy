@@ -73,8 +73,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
@@ -121,12 +119,12 @@ public class StaticInvocationWriter extends InvocationWriter {
         if (origin instanceof MethodCallExpression &&
                 receiver instanceof VariableExpression &&
                 ((VariableExpression) receiver).isSuperExpression()) {
-            ClassNode superClass = receiver.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
-            if (superClass!=null && !controller.getCompileStack().isLHS()) {
-                // GROOVY-7300
-                MethodCallExpression mce = (MethodCallExpression) origin;
-                MethodNode node = superClass.getDeclaredMethod(mce.getMethodAsString(), Parameter.EMPTY_ARRAY);
-                mce.setMethodTarget(node);
+            MethodCallExpression mce = (MethodCallExpression) origin; // GROOVY-7300
+            if (mce.getMethodTarget() == null && !controller.getCompileStack().isLHS()) {
+                ClassNode owner = receiver.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
+                if (owner != null) {
+                    mce.setMethodTarget(owner.getDeclaredMethod(mce.getMethodAsString(), Parameter.EMPTY_ARRAY));
+                }
             }
         }
         return super.makeDirectCall(origin, receiver, message, arguments, adapter, implicitThis, containsSpreadExpression);
@@ -314,8 +312,9 @@ public class StaticInvocationWriter extends InvocationWriter {
             String owner = BytecodeHelper.getClassInternalName(node.getDeclaringClass());
             String desc = BytecodeHelper.getMethodDescriptor(target.getReturnType(), parameters);
             mv.visitMethodInsn(INVOKESTATIC, owner, methodName, desc, false);
-            ClassNode ret = target.getReturnType().redirect();
-            if (ret == ClassHelper.VOID_TYPE) {
+
+            ClassNode ret = target.getReturnType();
+            if (ClassHelper.VOID_TYPE.equals(ret)){
                 ret = ClassHelper.OBJECT_TYPE;
                 mv.visitInsn(ACONST_NULL);
             }
@@ -447,16 +446,15 @@ public class StaticInvocationWriter extends InvocationWriter {
         int argumentListSize = argumentList.size();
         ClassNode lastArgType = argumentListSize > 0 ?
                 typeChooser.resolveType(argumentList.get(argumentListSize -1), controller.getClassNode()):null;
-        if (lastParaType.isArray()
-                && ((argumentListSize > para.length)
-                || ((argumentListSize == (para.length - 1)) && !lastParaType.equals(lastArgType))
-                || ((argumentListSize == para.length && lastArgType!=null && !lastArgType.isArray())
-                    && (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(lastArgType,lastParaType.getComponentType())))
-                        || ClassHelper.GSTRING_TYPE.equals(lastArgType) && ClassHelper.STRING_TYPE.equals(lastParaType.getComponentType()))
-                ) {
+        if (lastParaType.isArray() && (
+                argumentListSize > para.length
+                || (argumentListSize == (para.length - 1) && !lastParaType.equals(lastArgType))
+                || (argumentListSize == para.length && lastArgType != null && !lastArgType.isArray()
+                    && (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(lastArgType, lastParaType.getComponentType())
+                        || ClassHelper.GSTRING_TYPE.equals(lastArgType) && ClassHelper.STRING_TYPE.equals(lastParaType.getComponentType())))
+                )) {
             int stackLen = operandStack.getStackLength() + argumentListSize;
             MethodVisitor mv = controller.getMethodVisitor();
-            //mv = new org.objectweb.asm.util.TraceMethodVisitor(mv);
             controller.setMethodVisitor(mv);
             // varg call
             // first parameters as usual

@@ -59,7 +59,6 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.control.ClassNodeResolver.LookupResult;
 import org.codehaus.groovy.runtime.memoize.ConcurrentCommonCache;
 import org.codehaus.groovy.runtime.memoize.EvictableCache;
 import org.codehaus.groovy.syntax.Types;
@@ -107,13 +106,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private VariableScope currentScope;
 
     private boolean isTopLevelProperty = true;
-    private boolean inPropertyExpression = false;
-    private boolean inClosure = false;
+    private boolean inPropertyExpression;
+    private boolean inClosure;
 
     private Map<GenericsTypeName, GenericsType> genericParameterNames = new HashMap<GenericsTypeName, GenericsType>();
     private final Set<FieldNode> fieldTypesChecked = new HashSet<FieldNode>();
-    private boolean checkingVariableTypeInDeclaration = false;
-    private ImportNode currImportNode = null;
+    private boolean checkingVariableTypeInDeclaration;
+    private ImportNode currImportNode;
     private MethodNode currentMethod;
     private ClassNodeResolver classNodeResolver;
 
@@ -145,8 +144,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
         }
     }
-
-
 
     private static String replacePoints(String name) {
         return name.replace('.','$');
@@ -186,7 +183,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
     }
 
-     /**
+    /**
      * we use LowerCaseClass to limit the resolving the compiler
      * does for vanilla names starting with a lower case letter. The idea
      * that if we use a vanilla name with a lower case letter, that this
@@ -470,7 +467,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean resolveNestedClass(ClassNode type) {
         if (type instanceof ConstructedNestedClass || type instanceof ConstructedClassWithPackage) return false;
         // we have for example a class name A, are in class X
-        // and there is a nested class A$X. we want to be able 
+        // and there is a nested class A$X. we want to be able
         // to access that class directly, so A becomes a valid
         // name in X.
         // GROOVY-4043: Do this check up the hierarchy, if needed
@@ -489,19 +486,19 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // nested class A$B$C and want to access B without
         // qualifying it by A.B. A alone will work, since that
         // is the qualified (minus package) name of that class
-        // anyway. 
-        
+        // anyway.
+
         // That means if the current class is not an InnerClassNode
         // there is nothing to be done.
         if (!(currentClass instanceof InnerClassNode)) return false;
-        
-        // since we have B and want to get A we start with the most 
+
+        // since we have B and want to get A we start with the most
         // outer class, put them together and then see if that does
-        // already exist. In case of B from within A$B we are done 
+        // already exist. In case of B from within A$B we are done
         // after the first step already. In case of for example
-        // A.B.C.D.E.F and accessing E from F we test A$E=failed, 
+        // A.B.C.D.E.F and accessing E from F we test A$E=failed,
         // A$B$E=failed, A$B$C$E=fail, A$B$C$D$E=success
-        
+
         LinkedList<ClassNode> outerClasses = new LinkedList<ClassNode>();
         ClassNode outer = currentClass.getOuterClass();
         while (outer!=null) {
@@ -563,10 +560,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     return true;
                 }
                 tmp.className = savedName;
-            }   else {
+            } else {
                 String savedName = type.getName();
-                String replacedPointType = replaceLastPointWithDollar(savedName);
-                type.setName(replacedPointType);
+                type.setName(replaceLastPointWithDollar(savedName));
                 if (resolve(type, false, true, true)) return true;
                 type.setName(savedName);
             }
@@ -574,7 +570,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return false;
     }
 
-    private boolean resolveFromDefaultImports(final ClassNode type, boolean testDefaultImports) {
+    private boolean resolveFromDefaultImports(ClassNode type, boolean testDefaultImports) {
         // test default imports
         testDefaultImports &= !type.hasPackageName();
         // we do not resolve a vanilla name starting with a lower case letter
@@ -850,7 +846,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         if (currentClass.getModule().hasPackageName() && name.indexOf('.') == -1) return false;
 
-        LookupResult lr = classNodeResolver.resolveName(name, compilationUnit);
+        ClassNodeResolver.LookupResult lr = classNodeResolver.resolveName(name, compilationUnit);
         if (lr != null) {
             if (lr.isSourceUnit()) {
                 SourceUnit su = lr.getSourceUnit();
@@ -1095,15 +1091,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     protected Expression transformVariableExpression(VariableExpression ve) {
         visitAnnotations(ve);
         Variable v = ve.getAccessedVariable();
-        
-        if(!(v instanceof DynamicVariable) && !checkingVariableTypeInDeclaration) {
-            /*
-             *  GROOVY-4009: when a normal variable is simply being used, there is no need to try to 
-             *  resolve its type. Variable type resolve should proceed only if the variable is being declared. 
-             */
+
+        if (!(v instanceof DynamicVariable) && !checkingVariableTypeInDeclaration) {
+            // GROOVY-4009: when a normal variable is simply being used, there is no need to try to
+            // resolve its type. Variable type resolve should proceed only if the variable is being declared.
             return ve;
         }
-        if (v instanceof DynamicVariable){
+        if (v instanceof DynamicVariable) {
             String name = ve.getName();
             ClassNode t = ClassHelper.make(name);
             // asking isResolved here allows to check if a primitive
@@ -1260,14 +1254,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private static String getDescription(ClassNode node) {
         return (node.isInterface() ? "interface" : "class") + " '" + node.getName() + "'";
     }
-    
+
     protected Expression transformMethodCallExpression(MethodCallExpression mce) {
         Expression args = transform(mce.getArguments());
         Expression method = transform(mce.getMethod());
         Expression object = transform(mce.getObjectExpression());
 
         resolveGenericsTypes(mce.getGenericsTypes());
-        
+
         MethodCallExpression result = new MethodCallExpression(object, method, args);
         result.setSafe(mce.isSafe());
         result.setImplicitThis(mce.isImplicitThis());
@@ -1277,7 +1271,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         result.setMethodTarget(mce.getMethodTarget());
         return result;
     }
-    
+
     protected Expression transformDeclarationExpression(DeclarationExpression de) {
         visitAnnotations(de);
         Expression oldLeft = de.getLeftExpression();
@@ -1298,6 +1292,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         newDeclExpr.setDeclaringClass(de.getDeclaringClass());
         fixDeclaringClass(newDeclExpr);
         newDeclExpr.setSourcePosition(de);
+        newDeclExpr.copyNodeMetaData(de);
         newDeclExpr.addAnnotations(de.getAnnotations());
         return newDeclExpr;
     }
@@ -1312,7 +1307,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     protected Expression transformAnnotationConstantExpression(AnnotationConstantExpression ace) {
         AnnotationNode an = (AnnotationNode) ace.getValue();
         ClassNode type = an.getClassNode();
-        resolveOrFail(type, ", unable to find class for annotation", an);
+        resolveOrFail(type, " for annotation", an);
         for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
             member.setValue(transform(member.getValue()));
         }
@@ -1328,7 +1323,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             // skip built-in properties
             if (an.isBuiltIn()) continue;
             annType = an.getClassNode();
-            resolveOrFail(annType, ",  unable to find class for annotation", an);
+            resolveOrFail(annType, " for annotation", an);
             for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
                 Expression newValue = transform(member.getValue());
                 Expression adjusted = transformInlineConstants(newValue);
@@ -1370,7 +1365,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
                     member.setValue(transformInlineConstants(member.getValue()));
                 }
-
             }
         } else {
             return ExpressionUtils.transformInlineConstants(exp);
@@ -1443,13 +1437,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
             for (ImportNode importNode : module.getStaticImports().values()) {
                 ClassNode type = importNode.getType();
-                if (resolve(type, true, true, true)) continue;
-                addError("unable to resolve class " + type.getName(), type);
+                if (!resolve(type, true, true, true))
+                    addError("unable to resolve class " + type.getName(), type);
             }
             for (ImportNode importNode : module.getStaticStarImports().values()) {
                 ClassNode type = importNode.getType();
-                if (resolve(type, true, true, true)) continue;
-                addError("unable to resolve class " + type.getName(), type);
+                if (!resolve(type, true, true, true))
+                    addError("unable to resolve class " + type.getName(), type);
             }
             module.setImportsResolved(true);
         }
@@ -1462,7 +1456,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
 
         checkCyclicInheritance(node, node.getUnresolvedSuperClass(), node.getInterfaces());
-        
+
         super.visitClass(node);
 
         resolveOuterNestedClassFurther(node);

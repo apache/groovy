@@ -57,8 +57,6 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.List;
 
-import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
-
 /**
  * java 5 based functions
  */
@@ -162,7 +160,6 @@ public class Java5 implements VMPlugin {
 
         ClassNode ref = ClassHelper.makeWithoutCaching(Object.class, false);
         ref.setGenericsTypes(new GenericsType[]{t});
-
         return ref;
     }
 
@@ -359,9 +356,7 @@ public class Java5 implements VMPlugin {
     }
 
     private static void setMethodDefaultValue(MethodNode mn, Method m) {
-        Object defaultValue = m.getDefaultValue();
-        ConstantExpression cExp = defaultValue != null ? new ConstantExpression(defaultValue) : nullX();
-        mn.setCode(new ReturnStatement(cExp));
+        mn.setCode(new ReturnStatement(new ConstantExpression(m.getDefaultValue())));
         mn.setAnnotationDefault(true);
     }
 

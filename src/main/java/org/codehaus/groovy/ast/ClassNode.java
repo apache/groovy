@@ -106,6 +106,7 @@ import java.util.Set;
 public class ClassNode extends AnnotatedNode implements Opcodes {
     private static class MapOfLists {
         private Map<Object, List<MethodNode>> map;
+
         public List<MethodNode> get(Object key) {
             return map == null ? null : map.get(key);
         }
@@ -170,18 +171,18 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     // clazz!=null when resolved
     protected Class clazz;
     // only false when this classNode is constructed from a class
-    private volatile boolean lazyInitDone=true;
+    private volatile boolean lazyInitDone = true;
     // not null if if the ClassNode is an array
-    private ClassNode componentType = null;
+    private ClassNode componentType;
     // if not null this instance is handled as proxy
     // for the redirect
-    private ClassNode redirect=null;
+    private ClassNode redirect;
     // flag if the classes or its members are annotated
     private boolean annotated;
 
     // type spec for generics
-    private GenericsType[] genericsTypes=null;
-    private boolean usesGenerics=false;
+    private GenericsType[] genericsTypes;
+    private boolean usesGenerics;
 
     // if set to true the name getGenericsTypes consists
     // of 1 element describing the name of the placeholder
@@ -190,8 +191,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     /**
      * Returns the ClassNode this ClassNode is redirecting to.
      */
-    public ClassNode redirect(){
-        if (redirect==null) return this;
+    public ClassNode redirect() {
+        if (redirect == null) return this;
         return redirect.redirect();
     }
 
@@ -201,8 +202,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      */
     public void setRedirect(ClassNode cn) {
         if (isPrimaryNode) throw new GroovyBugError("tried to set a redirect for a primary ClassNode ("+getName()+"->"+cn.getName()+").");
-        if (cn!=null) cn = cn.redirect();
-        if (cn==this) return;
+        if (cn != null) cn = cn.redirect();
+        if (cn == this) return;
         redirect = cn;
     }
 
@@ -211,16 +212,16 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * represented by this ClassNode
      */
     public ClassNode makeArray() {
-        if (redirect!=null) {
+        if (redirect != null) {
             ClassNode res = redirect().makeArray();
             res.componentType = this;
             return res;
         }
         ClassNode cn;
-        if (clazz!=null) {
-            Class ret = Array.newInstance(clazz,0).getClass();
+        if (clazz != null) {
+            Class ret = Array.newInstance(clazz, 0).getClass();
             // don't use the ClassHelper here!
-            cn = new ClassNode(ret,this);
+            cn = new ClassNode(ret, this);
         } else {
             cn = new ClassNode(this);
         }
@@ -238,9 +239,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * Constructor used by makeArray() if no real class is available
      */
     private ClassNode(ClassNode componentType) {
-        this(componentType.getName()+"[]", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+        this(componentType.getName() + "[]", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         this.componentType = componentType.redirect();
-        isPrimaryNode=false;
+        isPrimaryNode = false;
     }
 
     /*
@@ -249,7 +250,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private ClassNode(Class c, ClassNode componentType) {
         this(c);
         this.componentType = componentType;
-        isPrimaryNode=false;
+        isPrimaryNode = false;
     }
 
     /**
@@ -257,12 +258,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * ClassNode will not be a primary ClassNode.
      */
     public ClassNode(Class c) {
-        this(c.getName(), c.getModifiers(), null, null ,MixinNode.EMPTY_ARRAY);
-        clazz=c;
-        lazyInitDone=false;
-        CompileUnit cu = getCompileUnit();
-        if (cu!=null) cu.addClass(this);
-        isPrimaryNode=false;
+        this(c.getName(), c.getModifiers(), null, null, MixinNode.EMPTY_ARRAY);
+        clazz = c;
+        lazyInitDone = false;
+        isPrimaryNode = false;
     }
 
     /**
@@ -272,12 +271,12 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private void lazyClassInit() {
         if (lazyInitDone) return;
         synchronized (lazyInitLock) {
-            if (redirect!=null) {
+            if (redirect != null) {
                 throw new GroovyBugError("lazyClassInit called on a proxy ClassNode, that must not happen."+
                                          "A redirect() call is missing somewhere!");
             }   
             if (lazyInitDone) return;
-            VMPluginFactory.getPlugin().configureClassNode(compileUnit,this);
+            VMPluginFactory.getPlugin().configureClassNode(compileUnit, this);
             lazyInitDone = true;
         }
     }
@@ -337,10 +336,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         this.interfaces = interfaces;
         this.mixins = mixins;
         isPrimaryNode = true;
-        if (superClass!=null) {
+        if (superClass != null) {
             usesGenerics = superClass.isUsingGenerics();
         }
-        if (!usesGenerics && interfaces!=null) {
+        if (!usesGenerics && interfaces != null) {
             for (ClassNode anInterface : interfaces) {
                 usesGenerics = usesGenerics || anInterface.isUsingGenerics();
                 if (usesGenerics) break;
@@ -361,10 +360,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the list of FieldNode's associated with this ClassNode
      */
     public List<FieldNode> getFields() {
-        if (redirect!=null) return redirect().getFields();
+        if (redirect != null)
+            return redirect().getFields();
         lazyClassInit();
         if (fields == null)
-            fields = new LinkedList<FieldNode> ();
+            fields = new LinkedList<FieldNode>();
         return fields;
     }
 
@@ -372,13 +372,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the array of interfaces which this ClassNode implements
      */
     public ClassNode[] getInterfaces() {
-        if (redirect!=null) return redirect().getInterfaces();
+        if (redirect != null)
+            return redirect().getInterfaces();
         lazyClassInit();
         return interfaces;
     }
 
     public void setInterfaces(ClassNode[] interfaces) {
-        if (redirect!=null) {
+        if (redirect != null) {
             redirect().setInterfaces(interfaces);
         } else {
             this.interfaces = interfaces;
@@ -396,7 +397,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the list of methods associated with this ClassNode
      */
     public List<MethodNode> getMethods() {
-        if (redirect!=null) return redirect().getMethods();
+        if (redirect != null)
+            return redirect().getMethods();
         lazyClassInit();
         return methodsList;
     }
@@ -412,29 +414,26 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 result.add(method);
             }
         }
-        
-        if (result.isEmpty()) {
-            return null;
-        } else {
+        if (!result.isEmpty()) {
             return result;
         }
-
+        return null;
     }
 
     public List<MethodNode> getAllDeclaredMethods() {
         return new ArrayList<MethodNode>(getDeclaredMethodsMap().values());
     }
 
-    public Set<ClassNode> getAllInterfaces () {
+    public Set<ClassNode> getAllInterfaces() {
         Set<ClassNode> res = new LinkedHashSet<ClassNode>();
         getAllInterfaces(res);
         return res;
     }
 
     private void getAllInterfaces(Set<ClassNode> res) {
-        if (isInterface())
-          res.add(this);
-
+        if (isInterface()) {
+            res.add(this);
+        }
         for (ClassNode anInterface : getInterfaces()) {
             res.add(anInterface);
             anInterface.getAllInterfaces(res);
@@ -474,17 +473,18 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public List<PropertyNode> getProperties() {
-        final ClassNode r = redirect();
+        ClassNode r = redirect();
         if (r.properties == null)
-            r.properties = new ArrayList<PropertyNode> ();
+            r.properties = new ArrayList<PropertyNode>();
         return r.properties;
     }
 
     public List<ConstructorNode> getDeclaredConstructors() {
-        if (redirect != null) return redirect().getDeclaredConstructors();
+        if (redirect != null)
+            return redirect().getDeclaredConstructors();
         lazyClassInit();
         if (constructors == null)
-            constructors = new ArrayList<ConstructorNode> ();
+            constructors = new ArrayList<ConstructorNode>();
         return constructors;
     }
 
@@ -511,7 +511,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public PackageNode getPackage() {
-        return getModule() == null ? null : getModule().getPackage();
+        return getModule() != null ? getModule().getPackage() : null;
     }
 
     public void setModule(ModuleNode module) {
@@ -530,19 +530,19 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     private void addField(FieldNode node, boolean isFirst) {
-        final ClassNode r = redirect();
+        ClassNode r = redirect();
         node.setDeclaringClass(r);
         node.setOwner(r);
         if (r.fields == null)
-            r.fields = new LinkedList<>();
+            r.fields = new LinkedList<FieldNode>();
         if (r.fieldIndex == null)
-            r.fieldIndex = new LinkedHashMap<>();
+            r.fieldIndex = new LinkedHashMap<String, FieldNode>();
 
-        if (isFirst)
+        if (isFirst) {
             r.fields.addFirst(node);
-        else
+        } else {
             r.fields.add(node);
-
+        }
         r.fieldIndex.put(node.getName(), node);
     }
 
@@ -552,12 +552,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public void addProperty(PropertyNode node) {
         node.setDeclaringClass(redirect());
-        FieldNode field = node.getField();
-        addField(field);
-        final ClassNode r = redirect();
-        if (r.properties == null)
-            r.properties = new ArrayList<PropertyNode> ();
-        r.properties.add(node);
+        getProperties().add(node);
+        addField(node.getField());
     }
 
     public PropertyNode addProperty(String name,
@@ -580,8 +576,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 return pn;
             }
         }
-        PropertyNode node =
-                new PropertyNode(name, modifiers, type, redirect(), initialValueExpression, getterBlock, setterBlock);
+        PropertyNode node = new PropertyNode(name, modifiers, type, redirect(), initialValueExpression, getterBlock, setterBlock);
         addProperty(node);
         return node;
     }
@@ -599,9 +594,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public void addConstructor(ConstructorNode node) {
         node.setDeclaringClass(this);
-        final ClassNode r = redirect();
+        ClassNode r = redirect();
         if (r.constructors == null)
-            r.constructors = new ArrayList<ConstructorNode> ();
+            r.constructors = new ArrayList<ConstructorNode>();
         r.constructors.add(node);
     }
 
@@ -613,20 +608,20 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public void addMethod(MethodNode node) {
         node.setDeclaringClass(this);
-        ClassNode base = redirect();
-        if (base.methodsList.isEmpty()) {
-            base.methodsList = new ArrayList<MethodNode>();
+        ClassNode r = redirect();
+        if (r.methodsList.isEmpty()) {
+            r.methodsList = new ArrayList<MethodNode>();
         }
-        base.methodsList.add(node);
-        base.methods.put(node.getName(), node);
+        r.methodsList.add(node);
+        r.methods.put(node.getName(), node);
     }
 
     public void removeMethod(MethodNode node) {
-        ClassNode base = redirect();
-        if (!base.methodsList.isEmpty()) {
-            base.methodsList.remove(node);
+        ClassNode r = redirect();
+        if (!r.methodsList.isEmpty()) {
+            r.methodsList.remove(node);
         }
-        base.methods.remove(node.getName(), node);
+        r.methods.remove(node.getName(), node);
     }
 
     /**
@@ -677,9 +672,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                                          Parameter[] parameters,
                                          ClassNode[] exceptions,
                                          Statement code) {
-        MethodNode answer = addMethod(name, modifiers|ACC_SYNTHETIC, returnType, parameters, exceptions, code);
-        answer.setSynthetic(true);
-        return answer;
+        MethodNode node = addMethod(name, modifiers|ACC_SYNTHETIC, returnType, parameters, exceptions, code);
+        node.setSynthetic(true);
+        return node;
     }
 
     public FieldNode addField(String name, int modifiers, ClassNode type, Expression initialValue) {
@@ -712,15 +707,16 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
     }
 
-    public boolean equals(Object o) {
-        if (redirect!=null) return redirect().equals(o);
-        if (!(o instanceof ClassNode)) return false;
-        ClassNode cn = (ClassNode) o;
-        return (cn.getText().equals(getText()));
+    public boolean equals(Object that) {
+        if (that == this) return true;
+        if (!(that instanceof ClassNode)) return false;
+        if (redirect != null) return redirect.equals(that);
+        if (componentType != null) return componentType.equals(((ClassNode) that).componentType);
+        return ((ClassNode) that).getText().equals(getText()); // arrays could be "T[]" or "[LT;"
     }
 
     public int hashCode() {
-        if (redirect!=null) return redirect().hashCode();
+        if (redirect != null) return redirect().hashCode();
         return getName().hashCode();
     }
 
@@ -749,10 +745,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the method matching the given name and parameters or null
      */
     public FieldNode getDeclaredField(String name) {
-        if (redirect != null) return redirect().getDeclaredField(name);
-
+        if (redirect != null)
+            return redirect().getDeclaredField(name);
         lazyClassInit();
-        return fieldIndex == null ? null : fieldIndex.get(name);
+        return fieldIndex != null ? fieldIndex.get(name) : null;
     }
 
     /**
@@ -762,11 +758,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the method matching the given name and parameters or null
      */
     public FieldNode getField(String name) {
-        ClassNode node = this;
-        while (node != null) {
+        for (ClassNode node = this; node != null; node = node.getSuperClass()) {
             FieldNode fn = node.getDeclaredField(name);
             if (fn != null) return fn;
-            node = node.getSuperClass();
         }
         return null;
     }
@@ -793,7 +787,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if (outer == null) {
             return Collections.emptyList();
         }
-        List<ClassNode> result = new ArrayList<>();
+        List<ClassNode> result = new LinkedList<>();
         do {
             result.add(outer);
         } while ((outer = outer.getOuterClass()) != null);
@@ -812,20 +806,19 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public List<Statement> getObjectInitializerStatements() {
         if (objectInitializers == null)
-            objectInitializers = new LinkedList<Statement> ();
+            objectInitializers = new LinkedList<Statement>();
         return objectInitializers;
     }
 
     private MethodNode getOrAddStaticConstructorNode() {
         MethodNode method = null;
-        List declaredMethods = getDeclaredMethods("<clinit>");
+        List<MethodNode> declaredMethods = getDeclaredMethods("<clinit>");
         if (declaredMethods.isEmpty()) {
-            method =
-                    addMethod("<clinit>", ACC_STATIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
+            method = addMethod("<clinit>", ACC_STATIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
             method.setSynthetic(true);
         }
         else {
-            method = (MethodNode) declaredMethods.get(0);
+            method = declaredMethods.get(0);
         }
         return method;
     }
@@ -836,15 +829,12 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         Statement statement = method.getCode();
         if (statement == null) {
             block = new BlockStatement();
-        }
-        else if (statement instanceof BlockStatement) {
+        } else if (statement instanceof BlockStatement) {
             block = (BlockStatement) statement;
-        }
-        else {
+        } else {
             block = new BlockStatement();
             block.addStatement(statement);
         }
-
         // while anything inside a static initializer block is appended
         // we don't want to append in the case we have a initialization
         // expression of a static field. In that case we want to add
@@ -893,7 +883,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @see #getMethods(String)
      */
     public List<MethodNode> getDeclaredMethods(String name) {
-        if (redirect!=null) return redirect().getDeclaredMethods(name);
+        if (redirect != null)
+            return redirect().getDeclaredMethods(name);
         lazyClassInit();
         return methods.getNotNull(name);
     }
@@ -906,10 +897,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      */
     public List<MethodNode> getMethods(String name) {
         List<MethodNode> answer = new ArrayList<MethodNode>();
-        ClassNode node = this;
-        while (node != null) {
+        for (ClassNode node = this; node != null; node = node.getSuperClass()) {
             answer.addAll(node.getDeclaredMethods(name));
-            node = node.getSuperClass();
         }
         return answer;
     }
@@ -920,7 +909,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the method matching the given name and parameters or null
      */
     public MethodNode getDeclaredMethod(String name, Parameter[] parameters) {
-        for (MethodNode method :  getDeclaredMethods(name)) {
+        for (MethodNode method : getDeclaredMethods(name)) {
             if (parametersEqual(method.getParameters(), parameters)) {
                 return method;
             }
@@ -951,13 +940,13 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if (this.equals(ClassHelper.VOID_TYPE)) {
             return type.equals(ClassHelper.VOID_TYPE);
         }
-        if (type.equals(ClassHelper.OBJECT_TYPE)) return true;
-        ClassNode node = this;
-        while (node != null) {
+        if (type.equals(ClassHelper.OBJECT_TYPE)) {
+            return true;
+        }
+        for (ClassNode node = this; node != null; node = node.getSuperClass()) {
             if (type.equals(node)) {
                 return true;
             }
-            node = node.getSuperClass();
         }
         return false;
     }
@@ -975,14 +964,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return true if this class or any base class implements the given interface
      */
     public boolean implementsInterface(ClassNode classNode) {
-        ClassNode node = redirect();
-        do {
+        for (ClassNode node = redirect(); node != null; node = node.getSuperClass()) {
             if (node.declaresInterface(classNode)) {
                 return true;
             }
-            node = node.getSuperClass();
         }
-        while (node != null);
         return false;
     }
 
@@ -1012,10 +998,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      */
     public ClassNode getSuperClass() {
         if (!lazyInitDone && !isResolved()) {
-            throw new GroovyBugError("ClassNode#getSuperClass for "+getName()+" called before class resolving");
+            throw new GroovyBugError("ClassNode#getSuperClass for " + getName() + " called before class resolving");
         }
         ClassNode sn = redirect().getUnresolvedSuperClass();
-        if (sn!=null) sn=sn.redirect();
+        if (sn != null) sn = sn.redirect();
         return sn;
     }
 
@@ -1046,7 +1032,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public CompileUnit getCompileUnit() {
-        if (redirect!=null) return redirect().getCompileUnit();
+        if (redirect != null) return redirect().getCompileUnit();
         if (compileUnit == null && module != null) {
             compileUnit = module.getUnit();
         }
@@ -1054,13 +1040,15 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     protected void setCompileUnit(CompileUnit cu) {
-        if (redirect!=null) redirect().setCompileUnit(cu);
-        if (compileUnit!= null) compileUnit = cu;
+        if (redirect != null) redirect().setCompileUnit(cu);
+        if (compileUnit != null) compileUnit = cu;
     }
 
     /**
      * @return true if the two arrays are of the same size and have the same contents
+     * @deprecated
      */
+    @Deprecated
     protected boolean parametersEqual(Parameter[] a, Parameter[] b) {
         return ParameterUtils.parametersEqual(a, b);
     }
@@ -1112,8 +1100,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         boolean booleanReturnOnly = getterName.startsWith("is");
         for (MethodNode method : getDeclaredMethods(getterName)) {
             if (getterName.equals(method.getName())
-                    && ClassHelper.VOID_TYPE!=method.getReturnType()
-                    && method.getParameters().length == 0
+                    && method.getParameters().length == 0 && !method.isVoidMethod()
                     && (!booleanReturnOnly || ClassHelper.Boolean_TYPE.equals(ClassHelper.getWrapper(method.getReturnType())))) {
                 // GROOVY-7363: There can be multiple matches for a getter returning a generic parameter type, due to
                 // the generation of a bridge method. The real getter is really the non-bridge, non-synthetic one as it
@@ -1139,13 +1126,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public MethodNode getSetterMethod(String setterName, boolean voidOnly) {
         for (MethodNode method : getDeclaredMethods(setterName)) {
             if (setterName.equals(method.getName())
-                    && (!voidOnly || ClassHelper.VOID_TYPE==method.getReturnType())
-                    && method.getParameters().length == 1) {
+                    && method.getParameters().length == 1
+                    && (!voidOnly || method.isVoidMethod())) {
                 return method;
             }
         }
         ClassNode parent = getSuperClass();
-        if (parent!=null) return parent.getSetterMethod(setterName, voidOnly);
+        if (parent != null) return parent.getSetterMethod(setterName, voidOnly);
+
         return null;
     }
 
@@ -1292,7 +1280,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                                 return null;
 
                             match = true;
-                            for (int i = 0; i != count; ++i)
+                            for (int i = 0; i != count; i += 1)
                                 // prefer super method if it matches better
                                 if (!hasExactMatchingCompatibleType(res, mn, i)) {
                                     match = false;
@@ -1312,7 +1300,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private boolean hasExactMatchingCompatibleType(MethodNode current, MethodNode newCandidate, int i) {
         int lastParamIndex = newCandidate.getParameters().length - 1;
         return (i <= lastParamIndex && current.getParameters()[i].getType().equals(newCandidate.getParameters()[i].getType()))
-                || (i >= lastParamIndex && isPotentialVarArg(newCandidate, lastParamIndex) && current.getParameters()[i].getType().equals(newCandidate.getParameters()[lastParamIndex].getType().componentType));
+                || (i >= lastParamIndex && isPotentialVarArg(newCandidate, lastParamIndex) && current.getParameters()[i].getType().equals(newCandidate.getParameters()[lastParamIndex].getType().getComponentType()));
     }
 
     private boolean hasCompatibleType(TupleExpression args, MethodNode method, int i) {
@@ -1341,12 +1329,12 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return ClassNodeUtils.hasPossibleStaticMethod(this, name, arguments, false);
     }
 
-    public boolean isInterface(){
-        return (getModifiers() & Opcodes.ACC_INTERFACE) > 0;
+    public boolean isInterface() {
+        return (getModifiers() & ACC_INTERFACE) != 0;
     }
 
-    public boolean isAbstract(){
-        return (getModifiers() & Opcodes.ACC_ABSTRACT) > 0;
+    public boolean isAbstract() {
+        return (getModifiers() & ACC_ABSTRACT) != 0;
     }
 
     public boolean isResolved() {
@@ -1355,8 +1343,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return componentType != null && componentType.isResolved();
     }
 
-    public boolean isArray(){
-        return componentType!=null;
+    public boolean isArray() {
+        return componentType != null;
     }
 
     public ClassNode getComponentType() {
@@ -1370,19 +1358,19 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * a new class node using {@link #getPlainNodeReference()}.
      * @return the class this classnode relates to. May return null.
      */
-    public Class getTypeClass(){
+    public Class getTypeClass() {
         if (clazz != null) return clazz;
         if (redirect != null) return redirect.getTypeClass();
 
         ClassNode component = redirect().componentType;
-        if (component!=null && component.isResolved()){
+        if (component != null && component.isResolved()) {
             return Array.newInstance(component.getTypeClass(), 0).getClass();
         }
-        throw new GroovyBugError("ClassNode#getTypeClass for "+getName()+" is called before the type class is set ");
+        throw new GroovyBugError("ClassNode#getTypeClass for " + getName() + " called before the type class is set");
     }
 
-    public boolean hasPackageName(){
-        return redirect().name.indexOf('.')>0;
+    public boolean hasPackageName() {
+        return redirect().name.indexOf('.') > 0;
     }
 
     /**
@@ -1402,7 +1390,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public void setGenericsTypes(GenericsType[] genericsTypes) {
-        usesGenerics = usesGenerics || genericsTypes!=null;
+        usesGenerics = usesGenerics || genericsTypes != null;
         this.genericsTypes = genericsTypes;
     }
 
@@ -1425,28 +1413,29 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public ClassNode getPlainNodeReference() {
         if (ClassHelper.isPrimitiveType(this)) return this;
-        ClassNode n = new ClassNode(name, modifiers, superClass,null,null);
+        ClassNode n = new ClassNode(name, modifiers, superClass, null, null);
         n.isPrimaryNode = false;
         n.setRedirect(redirect());
         if (isArray()) {
             n.componentType = redirect().getComponentType();
-        } 
+        }
         return n;
     }
 
     public boolean isAnnotationDefinition() {
-        return /* redirect().isPrimaryNode && */
-                isInterface() && (getModifiers() & Opcodes.ACC_ANNOTATION) != 0;
+        return isInterface() && (getModifiers() & ACC_ANNOTATION) != 0;
     }
 
     public List<AnnotationNode> getAnnotations() {
-        if (redirect!=null) return redirect.getAnnotations();
+        if (redirect != null)
+            return redirect.getAnnotations();
         lazyClassInit();
         return super.getAnnotations();
     }
 
     public List<AnnotationNode> getAnnotations(ClassNode type) {
-        if (redirect!=null) return redirect.getAnnotations(type);
+        if (redirect != null)
+            return redirect.getAnnotations(type);
         lazyClassInit();
         return super.getAnnotations(type);
     }
@@ -1468,25 +1457,25 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public void renameField(String oldName, String newName) {
-        ClassNode r = redirect ();
+        ClassNode r = redirect();
         if (r.fieldIndex == null)
-            r.fieldIndex = new LinkedHashMap<String,FieldNode> ();
+            r.fieldIndex = new LinkedHashMap<String, FieldNode>();
         final Map<String,FieldNode> index = r.fieldIndex;
         index.put(newName, index.remove(oldName));
     }
 
     public void removeField(String oldName) {
-        ClassNode r = redirect ();
+        ClassNode r = redirect();
         if (r.fieldIndex == null)
-            r.fieldIndex = new LinkedHashMap<String,FieldNode> ();
+            r.fieldIndex = new LinkedHashMap<String, FieldNode>();
         final Map<String,FieldNode> index = r.fieldIndex;
         r.fields.remove(index.get(oldName));
         index.remove(oldName);
     }
 
     public boolean isEnum() {
-        return (getModifiers()&Opcodes.ACC_ENUM) != 0;
-     }
+        return (getModifiers() & ACC_ENUM) != 0;
+    }
 
     /**
      * @return iterator of inner classes defined inside this one
@@ -1496,7 +1485,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     private Map<CompilePhase, Map<Class<? extends ASTTransformation>, Set<ASTNode>>> getTransformInstances() {
-        if(transformInstances == null){
+        if (transformInstances == null) {
             transformInstances = new EnumMap<CompilePhase, Map<Class <? extends ASTTransformation>, Set<ASTNode>>>(CompilePhase.class);
             for (CompilePhase phase : CompilePhase.values()) {
                 transformInstances.put(phase, new LinkedHashMap<Class <? extends ASTTransformation>, Set<ASTNode>>());
@@ -1506,7 +1495,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public boolean isRedirectNode() {
-        return redirect!=null;
+        return redirect != null;
     }
 
     @Override

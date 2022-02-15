@@ -65,15 +65,14 @@ import static org.objectweb.asm.Opcodes.NOP;
 import static org.objectweb.asm.Opcodes.RETURN;
 
 public class StatementWriter {
-    // iterator
-    private static final MethodCaller iteratorNextMethod = MethodCaller.newInterface(Iterator.class, "next");
-    private static final MethodCaller iteratorHasNextMethod = MethodCaller.newInterface(Iterator.class, "hasNext");
 
-    private final WriterController controller;
+    private static final MethodCaller iteratorHasNextMethod = MethodCaller.newInterface(Iterator.class, "hasNext");
+    private static final MethodCaller iteratorNextMethod = MethodCaller.newInterface(Iterator.class, "next");
 
     public StatementWriter(WriterController controller) {
         this.controller = controller;
     }
+    private final WriterController controller;
 
     protected void writeStatementLabel(Statement statement) {
         String name = statement.getStatementLabel();
@@ -89,19 +88,15 @@ public class StatementWriter {
         int mark = controller.getOperandStack().getStackLength();
         CompileStack compileStack = controller.getCompileStack();
         compileStack.pushVariableScope(block.getVariableScope());
-        List<Statement> statementList = block.getStatements();
-        for (Statement statement : statementList) {
+        for (Statement statement : block.getStatements()) {
             statement.visit(controller.getAcg());
         }
         compileStack.pop();
 
-        // GROOVY-7647
-        if (block.getLastLineNumber() > 0
-                && !isMethodOrConstructorNonEmptyBlock(block) // GROOVY-9126
-        ) {
+        // GROOVY-7647, GROOVY-9126
+        if (block.getLastLineNumber() > 0 && !isMethodOrConstructorNonEmptyBlock(block)) {
             MethodVisitor mv = controller.getMethodVisitor();
-            Label blockEnd = new Label();
-            mv.visitLabel(blockEnd);
+            Label blockEnd = new Label(); mv.visitLabel(blockEnd);
             mv.visitLineNumber(block.getLastLineNumber(), blockEnd);
         }
 

@@ -29,53 +29,59 @@ public class FieldExpression extends Expression {
 
     private final FieldNode field;
     private boolean useRef;
-    
+
     public FieldExpression(FieldNode field) {
         this.field = field;
     }
-    
+
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitFieldExpression(this);
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         return this;
-    }
-    
-    public String getFieldName() {
-        return field.getName();
     }
 
     public FieldNode getField() {
         return field;
     }
 
+    public String getFieldName() {
+        return field.getName();
+    }
+
+    @Override
     public String getText() {
-        return "this." + field.getName();
+        return "this." + getFieldName();
+    }
+
+    @Override
+    public ClassNode getType() {
+        return field.getType();
+    }
+
+    @Override
+    public void setType(ClassNode type) {
+        super.setType(type);
+        field.setType(type);
     }
 
     public boolean isDynamicTyped() {
         return field.isDynamicTyped();
     }
 
-    public void setType(ClassNode type) {
-        super.setType(type);
-        field.setType(type);
-    }
-    
-    public ClassNode getType() {
-        return field.getType();
-    }
-    
-    public void setUseReferenceDirectly(boolean useRef) {
-        this.useRef = useRef;        
-    }
-    
     public boolean isUseReferenceDirectly() {
         return useRef;
     }
-    
+
+    public void setUseReferenceDirectly(boolean useRef) {
+        this.useRef = useRef;
+    }
+
+    @Override
     public String toString() {
-        return "field("+getType()+" "+getFieldName()+")";
+        return "field(" + getType() + " " + getFieldName() + ")";
     }
 }

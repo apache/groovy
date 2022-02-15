@@ -36,7 +36,7 @@ import static org.codehaus.groovy.ast.ClassHelper.GROOVY_OBJECT_TYPE;
  */
 public class GenericsType extends ASTNode {
     public static final GenericsType[] EMPTY_ARRAY = new GenericsType[0];
-    
+
     private final ClassNode[] upperBounds;
     private final ClassNode lowerBound;
     private ClassNode type;
@@ -62,13 +62,12 @@ public class GenericsType extends ASTNode {
         return type;
     }
 
-    public void setType(final ClassNode type) {
-            this.type = type;
+    public void setType(ClassNode type) {
+        this.type = type;
     }
 
     public String toString() {
-        Set<String> visited = new HashSet<String>();
-        return toString(visited);
+        return toString(new HashSet<String>());
     }
 
     private String toString(Set<String> visited) {
@@ -102,7 +101,6 @@ public class GenericsType extends ASTNode {
     }
 
     private String genericsBounds(ClassNode theType, Set<String> visited) {
-
         StringBuilder ret = new StringBuilder();
 
         if (theType.isArray()) {
@@ -344,7 +342,10 @@ public class GenericsType extends ASTNode {
                             // class node are not parameterized. This means that we must create a
                             // new class node with the parameterized types that the current class node
                             // has defined.
-                            ClassNode node = GenericsUtils.parameterizeType(classNode, anInterface);
+                            ClassNode node = anInterface;
+                            if (node.getGenericsTypes() != null) {
+                                node = GenericsUtils.parameterizeType(classNode, node);
+                            }
                             return compareGenericsWithBound(node, bound);
                         }
                     }

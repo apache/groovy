@@ -132,15 +132,13 @@ public class ClassHelper {
     public static final String OBJECT = "java.lang.Object";
 
     public static ClassNode makeCached(Class c) {
-        final SoftReference<ClassNode> classNodeSoftReference = ClassHelperCache.classCache.get(c);
         ClassNode classNode;
+        final SoftReference<ClassNode> classNodeSoftReference = ClassHelperCache.classCache.get(c);
         if (classNodeSoftReference == null || (classNode = classNodeSoftReference.get()) == null) {
             classNode = new ClassNode(c);
             ClassHelperCache.classCache.put(c, new SoftReference<ClassNode>(classNode));
-
             VMPluginFactory.getPlugin().setAdditionalClassInformation(classNode);
         }
-
         return classNode;
     }
 
@@ -204,7 +202,6 @@ public class ClassHelper {
             return t;
         }
     }
-
 
     /**
      * Creates a ClassNode using a given class.
@@ -300,7 +297,6 @@ public class ClassHelper {
 
         return cn;
     }
-
 
     /**
      * Test to determine if a ClassNode is a primitive type.

@@ -32,27 +32,27 @@ public class MethodCallExpression extends Expression implements MethodCall {
     private Expression objectExpression;
     private Expression method;
     private Expression arguments;
-    private boolean spreadSafe = false;
-    private boolean safe = false;
+    private boolean safe;
+    private boolean spreadSafe;
     private boolean implicitThis;
-
+    private boolean usesGenerics;
     // type spec for generics
-    private GenericsType[] genericsTypes = null;
-    private boolean usesGenerics = false;
+    private GenericsType[] genericsTypes;
 
     private MethodNode target;
 
     public static final Expression NO_ARGUMENTS = new TupleExpression();
 
     public MethodCallExpression(Expression objectExpression, String method, Expression arguments) {
-        this(objectExpression,new ConstantExpression(method),arguments);
+        this(objectExpression, new ConstantExpression(method), arguments);
     }
 
     public MethodCallExpression(Expression objectExpression, Expression method, Expression arguments) {
         this.objectExpression = objectExpression;
         this.method = method;
-        if (!(arguments instanceof TupleExpression)){
+        if (!(arguments instanceof TupleExpression)) {
             this.arguments = new TupleExpression(arguments);
+            this.arguments.setSourcePosition(arguments);
         } else {
             this.arguments = arguments;
         }

@@ -410,41 +410,38 @@ public class AsmClassGenerator extends ClassGenerator {
 
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         controller.resetLineNumber();
-    	Parameter[] parameters = node.getParameters();
-        String methodType = BytecodeHelper.getMethodDescriptor(node.getReturnType(), parameters);
-        String signature = BytecodeHelper.getGenericsMethodSignature(node);
-        int modifiers = node.getModifiers();
-        if (isVargs(node.getParameters())) modifiers |= Opcodes.ACC_VARARGS;
-        MethodVisitor mv = cv.visitMethod(modifiers, node.getName(), methodType, signature, buildExceptions(node.getExceptions()));
+        Parameter[] parameters = node.getParameters();
+        MethodVisitor mv = cv.visitMethod(
+                node.getModifiers() | (isVargs(parameters) ? Opcodes.ACC_VARARGS : 0), node.getName(),
+                BytecodeHelper.getMethodDescriptor(node.getReturnType(), parameters),
+                BytecodeHelper.getGenericsMethodSignature(node),
+                buildExceptions(node.getExceptions()));
         controller.setMethodVisitor(mv);
 
         visitAnnotations(node, mv);
-        for (int i = 0; i < parameters.length; i++) {
+        int nParameters = parameters.length;
+        for (int i = 0; i < nParameters; i += 1) {
             visitParameterAnnotations(parameters[i], i, mv);
         }
 
-        // Add parameter names to the MethodVisitor (jdk8+ only)
+        // add parameter names to the MethodVisitor (JDK8+)
         if (getCompileUnit().getConfig().getParameters()) {
-            for (int i = 0; i < parameters.length; i++) {
-                // TODO handle ACC_SYNTHETIC for enum method parameters?
-                mv.visitParameter(parameters[i].getName(), 0);
+            for (int i = 0; i < nParameters; i += 1) {
+                mv.visitParameter(parameters[i].getName(), parameters[i].getModifiers());
             }
         }
 
         if (controller.getClassNode().isAnnotationDefinition() && !node.isStaticConstructor()) {
             visitAnnotationDefault(node, mv);
         } else if (!node.isAbstract()) {
-            Statement code = node.getCode();
             mv.visitCode();
-
+            Statement code = node.getCode();
             // fast path for getter/setters etc.
             if (code instanceof BytecodeSequence && ((BytecodeSequence)code).getInstructions().size() == 1 && ((BytecodeSequence)code).getInstructions().get(0) instanceof BytecodeInstruction) {
                ((BytecodeInstruction)((BytecodeSequence)code).getInstructions().get(0)).visit(mv);
             } else {
                 visitStdMethod(node, isConstructor, parameters, code);
             }
-            // we use this NOP to have a valid jump target for the various labels
-            //mv.visitInsn(NOP);
             try {
                 mv.visitMaxs(0, 0);
             } catch (Exception e) {
@@ -476,30 +473,27 @@ public class AsmClassGenerator extends ClassGenerator {
         controller.getCallSiteWriter().makeSiteEntry();
 
         MethodVisitor mv = controller.getMethodVisitor();
-        final ClassNode superClass = controller.getClassNode().getSuperClass();
         if (isConstructor && (code == null || !((ConstructorNode) node).firstStatementIsSpecialConstructorCall())) {
             boolean hasCallToSuper = false;
-            if (code!=null && controller.getClassNode() instanceof InnerClassNode) {
-                // if the class not is an inner class node, there are chances that the call to super is already added
-                // so we must ensure not to add it twice (see GROOVY-4471)
-                if (code instanceof BlockStatement) {
-                    for (Statement statement : ((BlockStatement) code).getStatements()) {
-                        if (statement instanceof ExpressionStatement) {
-                            final Expression expression = ((ExpressionStatement) statement).getExpression();
-                            if (expression instanceof ConstructorCallExpression) {
-                                ConstructorCallExpression call = (ConstructorCallExpression) expression;
-                                if (call.isSuperCall()) {
-                                    hasCallToSuper = true;
-                                    break;
-                                }
+            // GROOVY-4471: do not add super ctor call twice for inner class
+            if (code instanceof BlockStatement && controller.getClassNode().getOuterClass() != null) {
+                for (Statement statement : ((BlockStatement) code).getStatements()) {
+                    if (statement instanceof ExpressionStatement) {
+                        Expression expression = ((ExpressionStatement) statement).getExpression();
+                        if (expression instanceof ConstructorCallExpression) {
+                            ConstructorCallExpression call = (ConstructorCallExpression) expression;
+                            if (call.isSuperCall()) {
+                                hasCallToSuper = true;
+                                break;
                             }
                         }
                     }
                 }
             }
             if (!hasCallToSuper) {
-                // invokes the super class constructor
+                // add call to "super()"
                 mv.visitVarInsn(ALOAD, 0);
+                ClassNode superClass = controller.getClassNode().getSuperClass();
                 mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superClass), "<init>", "()V", false);
             }
         }
@@ -849,11 +843,6 @@ public class AsmClassGenerator extends ClassGenerator {
         controller.getUnaryExpressionHelper().writeNotExpression(expression);
     }
 
-    /**
-     * return a primitive boolean value of the BooleanExpression.
-     *
-     * @param expression
-     */
     public void visitBooleanExpression(BooleanExpression expression) {
         controller.getCompileStack().pushBooleanExpression();
         int mark = controller.getOperandStack().getStackLength();
@@ -1030,11 +1019,6 @@ public class AsmClassGenerator extends ClassGenerator {
         MethodVisitor mv = controller.getMethodVisitor();
         Expression objectExpression = expression.getObjectExpression();
 
-        //TODO (blackdrag): this if branch needs a rework. There should be no direct method calls be produced, the
-        // handling of this/super could be much simplified (see visitAttributeExpression), the field accessibility check
-        // could be moved directly into the search, which would also no longer require the GroovyBugError then
-        // the outer class field access seems to be without any tests (if there are tests for that, then the code
-        // here is dead code)
         if (isThisOrSuper(objectExpression)) {
             // let's use the field expression if it's available
             String name = expression.getPropertyAsString();
@@ -1799,11 +1783,9 @@ public class AsmClassGenerator extends ClassGenerator {
         List<Expression> expressions = expression.getExpressions();
         final int size = expressions.size();
         // init declarations
-//        LinkedList<DeclarationExpression> declarations = new LinkedList<DeclarationExpression>();
         for (int i = 0; i < size; i++) {
             Expression expr = expressions.get(i);
             if (expr instanceof DeclarationExpression) {
-//                declarations.add((DeclarationExpression) expr);
                 DeclarationExpression de = (DeclarationExpression) expr;
                 BinaryExpression be = new BinaryExpression(
                         de.getLeftExpression(),

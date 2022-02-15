@@ -32,7 +32,6 @@ import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
@@ -54,6 +53,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
@@ -201,7 +201,7 @@ public class ClosureWriter {
             parameters = Parameter.EMPTY_ARRAY;
         } else if (parameters.length == 0) {
             // let's create a default 'it' parameter
-            Parameter it = param(ClassHelper.OBJECT_TYPE, "it", ConstantExpression.NULL);
+            Parameter it = param(ClassHelper.OBJECT_TYPE, "it", nullX());
             parameters = new Parameter[]{it};
             Variable ref = expression.getVariableScope().getDeclaredVariable("it");
             if (ref != null) it.setClosureSharedVariable(ref.isClosureSharedVariable());
@@ -215,7 +215,6 @@ public class ClosureWriter {
         answer.setSynthetic(true);
         answer.setUsingGenerics(outerClass.isUsingGenerics());
         answer.setSourcePosition(expression);
-
         if (staticMethodOrInStaticClass) {
             answer.setStaticClass(true);
         }
@@ -355,7 +354,7 @@ public class ClosureWriter {
         operandStack.box();
         arguments.getExpression(1).visit(acg);
         operandStack.box();
-        //TODO: replace with normal String, p not needed
+        // TODO: replace with normal String, p not needed
         Parameter p = param(ClassHelper.OBJECT_TYPE, "_p");
         String descriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, new Parameter[]{p, p});
         mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(callNode), "<init>", descriptor, false);

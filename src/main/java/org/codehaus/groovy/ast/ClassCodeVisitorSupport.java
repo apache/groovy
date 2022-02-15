@@ -38,15 +38,12 @@ import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.ErrorCollecting;
 
-import java.util.List;
-import java.util.Map;
-
 public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport implements ErrorCollecting, GroovyClassVisitor {
 
+    @Override
     public void visitClass(ClassNode node) {
         visitAnnotations(node);
         visitPackage(node.getPackage());
@@ -54,10 +51,10 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
         node.visitContents(this);
         visitObjectInitializerStatements(node);
     }
-    
+
     protected void visitObjectInitializerStatements(ClassNode node) {
-        for (Statement element : node.getObjectInitializerStatements()) {
-            element.visit(this);
+        for (Statement stmt : node.getObjectInitializerStatements()) {
+            stmt.visit(this);
         }
     }
 
@@ -90,24 +87,18 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     }
 
     public void visitAnnotations(AnnotatedNode node) {
-        List<AnnotationNode> annotations = node.getAnnotations();
-        if (annotations.isEmpty()) return;
-        for (AnnotationNode an : annotations) {
-            // skip built-in properties
+        for (AnnotationNode an : node.getAnnotations()) {
+            // skip built-in annotations
             if (an.isBuiltIn()) continue;
-            for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
-                member.getValue().visit(this);
+            for (Expression expr : an.getMembers().values()) {
+                expr.visit(this);
             }
         }
     }
 
-    public void visitBlockStatement(BlockStatement block) {
-        visitStatement(block);
-        super.visitBlockStatement(block);
-    }
-
     protected void visitClassCodeContainer(Statement code) {
-        if (code != null) code.visit(this);
+        if (code != null)
+            code.visit(this);
     }
 
     @Override
@@ -119,119 +110,142 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         visitAnnotations(node);
         visitClassCodeContainer(node.getCode());
-        for (Parameter param : node.getParameters()) {
-            visitAnnotations(param);
+        for (Parameter p : node.getParameters()) {
+            visitAnnotations(p);
         }
     }
 
+    @Override
     public void visitConstructor(ConstructorNode node) {
         visitConstructorOrMethod(node, true);
     }
 
+    @Override
     public void visitMethod(MethodNode node) {
         visitConstructorOrMethod(node, false);
     }
 
+    @Override
     public void visitField(FieldNode node) {
         visitAnnotations(node);
         Expression init = node.getInitialExpression();
-        if (init != null) init.visit(this);
+        if (init != null)
+            init.visit(this);
     }
 
+    @Override
     public void visitProperty(PropertyNode node) {
         visitAnnotations(node);
-        Statement statement = node.getGetterBlock();
-        visitClassCodeContainer(statement);
-
-        statement = node.getSetterBlock();
-        visitClassCodeContainer(statement);
-
+        visitClassCodeContainer(node.getGetterBlock());
+        visitClassCodeContainer(node.getSetterBlock());
         Expression init = node.getInitialExpression();
-        if (init != null) init.visit(this);
+        if (init != null)
+            init.visit(this);
     }
 
-    public void addError(String msg, ASTNode expr) {
-        SourceUnit source = getSourceUnit();
-        source.getErrorCollector().addErrorAndContinue(
-                new SyntaxErrorMessage(new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(), expr.getLastLineNumber(), expr.getLastColumnNumber()), source)
-        );
+    @Override
+    public void addError(String msg, ASTNode node) {
+        getSourceUnit().addErrorAndContinue(new SyntaxException(msg + '\n', node));
     }
 
     protected abstract SourceUnit getSourceUnit();
 
+    // statements:
+
     protected void visitStatement(Statement statement) {
     }
 
+    @Override
     public void visitAssertStatement(AssertStatement statement) {
         visitStatement(statement);
         super.visitAssertStatement(statement);
     }
 
+    @Override
+    public void visitBlockStatement(BlockStatement block) {
+        visitStatement(block);
+        super.visitBlockStatement(block);
+    }
+
+    @Override
     public void visitBreakStatement(BreakStatement statement) {
         visitStatement(statement);
         super.visitBreakStatement(statement);
     }
 
+    @Override
     public void visitCaseStatement(CaseStatement statement) {
         visitStatement(statement);
         super.visitCaseStatement(statement);
     }
 
+    @Override
     public void visitCatchStatement(CatchStatement statement) {
         visitStatement(statement);
         super.visitCatchStatement(statement);
     }
 
+    @Override
     public void visitContinueStatement(ContinueStatement statement) {
         visitStatement(statement);
         super.visitContinueStatement(statement);
     }
 
+    @Override
     public void visitDoWhileLoop(DoWhileStatement loop) {
         visitStatement(loop);
         super.visitDoWhileLoop(loop);
     }
 
+    @Override
     public void visitExpressionStatement(ExpressionStatement statement) {
         visitStatement(statement);
         super.visitExpressionStatement(statement);
     }
 
+    @Override
     public void visitForLoop(ForStatement forLoop) {
         visitStatement(forLoop);
         super.visitForLoop(forLoop);
     }
 
+    @Override
     public void visitIfElse(IfStatement ifElse) {
         visitStatement(ifElse);
         super.visitIfElse(ifElse);
     }
 
+    @Override
     public void visitReturnStatement(ReturnStatement statement) {
         visitStatement(statement);
         super.visitReturnStatement(statement);
     }
 
+    @Override
     public void visitSwitch(SwitchStatement statement) {
         visitStatement(statement);
         super.visitSwitch(statement);
     }
 
+    @Override
     public void visitSynchronizedStatement(SynchronizedStatement statement) {
         visitStatement(statement);
         super.visitSynchronizedStatement(statement);
     }
 
+    @Override
     public void visitThrowStatement(ThrowStatement statement) {
         visitStatement(statement);
         super.visitThrowStatement(statement);
     }
 
+    @Override
     public void visitTryCatchFinally(TryCatchStatement statement) {
         visitStatement(statement);
         super.visitTryCatchFinally(statement);
     }
 
+    @Override
     public void visitWhileLoop(WhileStatement loop) {
         visitStatement(loop);
         super.visitWhileLoop(loop);

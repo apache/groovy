@@ -68,7 +68,6 @@ import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ContinueStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
-import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
@@ -476,9 +475,6 @@ public class InvocationWriter {
             public void visitDoWhileLoop(DoWhileStatement statement) {
             }
 
-            public void visitEmptyStatement(EmptyStatement statement) {
-            }
-
             @Override
             public void visitExpressionStatement(ExpressionStatement statement) {
             }
@@ -534,7 +530,6 @@ public class InvocationWriter {
                 && (argumentList.size()>para.length || argumentList.size()==para.length-1 || !lastIsArray(argumentList, para.length-1))) {
             int stackLen = operandStack.getStackLength()+argumentList.size();
             MethodVisitor mv = controller.getMethodVisitor();
-            //mv = new org.objectweb.asm.util.TraceMethodVisitor(mv);
             controller.setMethodVisitor(mv);
             // varg call
             // first parameters as usual
@@ -954,16 +949,13 @@ public class InvocationWriter {
     private static List<ConstructorNode> sortConstructors(ConstructorCallExpression call, ClassNode callNode) {
         // sort in a new list to prevent side effects
         List<ConstructorNode> constructors = new ArrayList<ConstructorNode>(callNode.getDeclaredConstructors());
-        Comparator comp = new Comparator() {
-            public int compare(Object arg0, Object arg1) {
-                ConstructorNode c0 = (ConstructorNode) arg0;
-                ConstructorNode c1 = (ConstructorNode) arg1;
+        Collections.sort(constructors, new Comparator<ConstructorNode>() {
+            public int compare(ConstructorNode c0, ConstructorNode c1) {
                 String descriptor0 = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, c0.getParameters());
                 String descriptor1 = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, c1.getParameters());
                 return descriptor0.compareTo(descriptor1);
             }
-        };
-        Collections.sort(constructors, comp);
+        });
         return constructors;
     }
 

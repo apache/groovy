@@ -284,7 +284,7 @@ class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                         eq('Methods'),
                         eq('MethodNode - main'),
                         startsWith('ExpressionStatement'),  //notice, there is only one ExpressionStatement
-                        startsWith('MethodCall'),
+                        startsWith('StaticMethodCall'),
                 ]
         )
     }

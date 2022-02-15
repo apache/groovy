@@ -26,10 +26,11 @@ import java.util.List;
  * Base class for any AST node which is capable of being annotated
  */
 public class AnnotatedNode extends ASTNode {
+
     private List<AnnotationNode> annotations = Collections.emptyList();
+    private boolean hasNoRealSourcePositionFlag;
     private boolean synthetic;
     ClassNode declaringClass;
-    private boolean hasNoRealSourcePositionFlag;
 
     public AnnotatedNode() {
     }
@@ -63,10 +64,10 @@ public class AnnotatedNode extends ASTNode {
     }
 
     /**
-     * returns true if this node is added by the compiler.
-     * <b>NOTE</b>: 
+     * Returns true if this node is added by the compiler.
+     * <b>NOTE</b>:
      * This method has nothing to do with the synthetic flag
-     * for fields, methods or classes.              
+     * for fields, methods or classes.
      * @return true if this node is added by the compiler
      */
     public boolean isSynthetic() {
@@ -74,10 +75,10 @@ public class AnnotatedNode extends ASTNode {
     }
 
     /**
-     * sets this node as a node added by the compiler.
-     * <b>NOTE</b>: 
+     * Sets this node as a node added by the compiler.
+     * <b>NOTE</b>:
      * This method has nothing to do with the synthetic flag
-     * for fields, methods or classes.              
+     * for fields, methods or classes.
      * @param synthetic - if true this node is marked as
      *                    added by the compiler
      */
@@ -89,16 +90,14 @@ public class AnnotatedNode extends ASTNode {
         return declaringClass;
     }
 
-    /**
-     * @param declaringClass - The declaringClass to set.
-     */
     public void setDeclaringClass(ClassNode declaringClass) {
         this.declaringClass = declaringClass;
     }
 
     /**
-     * Currently only ever returns true for default constructors
-     * added by the compiler. See GROOVY-4161.
+     * Returns true for default constructors added by the compiler.
+     *
+     * @see https://issues.apache.org/jira/browse/GROOVY-4161
      */
     public boolean hasNoRealSourcePosition() {
         return hasNoRealSourcePositionFlag;

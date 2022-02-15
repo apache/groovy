@@ -66,7 +66,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
  * </ul>
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
-public class CategoryASTTransformation implements ASTTransformation, Opcodes {
+public class CategoryASTTransformation implements ASTTransformation {
     // should not use a static variable because of possible changes to node metadata
     // which would be visible to other compilation units
     private final VariableExpression thisExpression = createThisExpression();

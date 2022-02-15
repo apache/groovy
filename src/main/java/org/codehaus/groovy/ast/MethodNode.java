@@ -27,7 +27,7 @@ import java.lang.reflect.Modifier;
 import java.util.List;
 
 /**
- * Represents a method declaration
+ * Represents a method declaration.
  */
 public class MethodNode extends AnnotatedNode implements Opcodes {
 
@@ -37,7 +37,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     private boolean syntheticPublic;
     private ClassNode returnType;
     private Parameter[] parameters;
-    private boolean hasDefaultValue = false;
+    private boolean hasDefaultValue;
     private Statement code;
     private boolean dynamicReturnType;
     private VariableScope variableScope;
@@ -45,7 +45,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     private boolean staticConstructor;
 
     // type spec for generics
-    private GenericsType[] genericsTypes = null;
+    private GenericsType[] genericsTypes;
     private boolean hasDefault;
 
     // cached data
@@ -56,12 +56,11 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     public MethodNode(String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
         this.name = name;
         this.modifiers = modifiers;
+        this.exceptions = exceptions;
         this.code = code;
         setReturnType(returnType);
         setParameters(parameters);
-        this.hasDefault = false;
-        this.exceptions = exceptions;
-        this.staticConstructor = (name != null && name.equals("<clinit>"));
+        this.staticConstructor = "<clinit>".equals(name);
     }
 
     /**
@@ -83,7 +82,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     }
 
     public boolean isVoidMethod() {
-        return returnType == ClassHelper.VOID_TYPE;
+        return ClassHelper.VOID_TYPE.equals(getReturnType());
     }
 
     public Statement getCode() {
@@ -114,6 +113,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     public void setParameters(Parameter[] parameters) {
         invalidateCachedData();
         VariableScope scope = new VariableScope();
+        this.hasDefaultValue = false;
         this.parameters = parameters;
         if (parameters != null && parameters.length > 0) {
             for (Parameter para : parameters) {
@@ -174,7 +174,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     }
 
     public boolean isPackageScope() {
-        return !(this.isPrivate() || this.isProtected() || this.isPublic());
+        return (modifiers & (ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED)) == 0;
     }
 
     public boolean hasDefaultValue() {
@@ -193,7 +193,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
      * @see ModuleNode createStatementsClass().
      */
     public void setIsScriptBody() {
-        setNodeMetaData(SCRIPT_BODY_METHOD_KEY, true);
+        setNodeMetaData(SCRIPT_BODY_METHOD_KEY, Boolean.TRUE);
     }
 
     public String toString() {

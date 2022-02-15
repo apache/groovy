@@ -61,7 +61,7 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 
 /**
- * This class is the base for any annotation alias processor. 
+ * This class is the base for any annotation alias processor.
  * @see AnnotationCollector
  * @see AnnotationCollectorTransform#visit(AnnotationNode, AnnotationNode, AnnotatedNode, SourceUnit)
  */
@@ -86,12 +86,12 @@ public class AnnotationCollectorTransform {
      * modifiers, interfaces and superclasses, as well as adding a static
      * value method returning our serialized version of the data for processing
      * from a pre-compiled state. By doing this the old annotations will be
-     * removed as well 
+     * removed as well
      */
     public static class ClassChanger {
-        
+
         /**
-         * Method to transform the given ClassNode, if it is annotated with 
+         * Method to transform the given ClassNode, if it is annotated with
          * {@link AnnotationCollector}. See class description for what the
          * transformation includes.
          */
@@ -179,16 +179,17 @@ public class AnnotationCollectorTransform {
             for (String key : an.getMembers().keySet()) {
                 map.addMapEntryExpression(new ConstantExpression(key), serialize(an.getMember(key)));
             }
-            List<Expression> l = new ArrayList<Expression>(2);
-            l.add(new ClassExpression(an.getClassNode()));
-            l.add(map);
-            return new ArrayExpression(ClassHelper.OBJECT_TYPE, l);
+            List<Expression> list = new ArrayList<Expression>(2);
+            list.add(new ClassExpression(an.getClassNode()));
+            list.get(0).setSourcePosition(an.getClassNode());
+            list.add(map);
+            return new ArrayExpression(ClassHelper.OBJECT_TYPE, list);
         }
     }
-    
+
     /**
      * Adds a new syntax error to the source unit and then continues.
-     * 
+     *
      * @param message   the message
      * @param node      the node for the error report
      * @param source    the source unit for the error report
@@ -306,7 +307,6 @@ public class AnnotationCollectorTransform {
             AnnotationNode toAdd = new AnnotationNode(ClassHelper.make(anno));
             ret.add(toAdd);
 
-            @SuppressWarnings("unchecked")
             Map<String,Object> member = (Map<String, Object>) inner[1];
             if (member.isEmpty()) {
                 continue;
@@ -342,11 +342,11 @@ public class AnnotationCollectorTransform {
         }
         return new ConstantExpression(o,true);
     }
-    
+
     /**
-     * Returns a list of AnnotationNodes for the value attribute of the given 
-     * AnnotationNode. 
-     * 
+     * Returns a list of AnnotationNodes for the value attribute of the given
+     * AnnotationNode.
+     *
      * @param collector     the node containing the value member with the list
      * @param source        the source unit for error reporting
      * @return              a list of string constants
@@ -366,13 +366,13 @@ public class AnnotationCollectorTransform {
     }
 
     /**
-     * Implementation method of the alias annotation processor. This method will 
+     * Implementation method of the alias annotation processor. This method will
      * get the list of annotations we aliased from the collector and adds it to
-     * aliasAnnotationUsage. The method will also map all members from 
+     * aliasAnnotationUsage. The method will also map all members from
      * aliasAnnotationUsage to the aliased nodes. Should a member stay unmapped,
      * we will ad an error. Further processing of those members is done by the
      * annotations.
-     * 
+     *
      * @param collector                 reference to the annotation with {@link AnnotationCollector}
      * @param aliasAnnotationUsage      reference to the place of usage of the alias
      * @param aliasAnnotated            reference to the node that has been annotated by the alias

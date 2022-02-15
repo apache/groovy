@@ -41,6 +41,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression;
+import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
@@ -50,23 +51,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.codehaus.groovy.syntax.Types.COMPARE_EQUAL;
-import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_EQUAL;
-import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.BINARY_EXP_TARGET;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isCompareToBoolean;
-
 public class BinaryExpressionTransformer {
     private static final MethodNode COMPARE_TO_METHOD = ClassHelper.COMPARABLE_TYPE.getMethods("compareTo").get(0);
 
     private static final ConstantExpression CONSTANT_ZERO = new ConstantExpression(0, true);
     private static final ConstantExpression CONSTANT_MINUS_ONE = new ConstantExpression(-1, true);
     private static final ConstantExpression CONSTANT_ONE = new ConstantExpression(1, true);
-
-    static {
-        CONSTANT_ZERO.setType(ClassHelper.int_TYPE);
-        CONSTANT_ONE.setType(ClassHelper.int_TYPE);
-        CONSTANT_MINUS_ONE.setType(ClassHelper.int_TYPE);
-    }
 
     private int tmpVarCounter = 0;
 
@@ -83,7 +73,7 @@ public class BinaryExpressionTransformer {
                 return optimized;
             }
         }
-        Object[] list = bin.getNodeMetaData(BINARY_EXP_TARGET);
+        Object[] list = bin.getNodeMetaData(StaticCompilationMetadataKeys.BINARY_EXP_TARGET);
         Token operation = bin.getOperation();
         int operationType = operation.getType();
         Expression rightExpression = bin.getRightExpression();
@@ -197,7 +187,7 @@ public class BinaryExpressionTransformer {
             Expression right = staticCompilationTransformer.transform(rightExpression);
             BinaryExpression optimized = tryOptimizeCharComparison(left, right, bin);
             if (optimized != null) {
-                optimized.removeNodeMetaData(BINARY_EXP_TARGET);
+                optimized.removeNodeMetaData(StaticCompilationMetadataKeys.BINARY_EXP_TARGET);
                 optimized.removeNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
                 return optimized;
             }
@@ -277,7 +267,7 @@ public class BinaryExpressionTransformer {
 
     private static BinaryExpression tryOptimizeCharComparison(final Expression left, final Expression right, final BinaryExpression bin) {
         int op = bin.getOperation().getType();
-        if (isCompareToBoolean(op) || op == COMPARE_EQUAL || op == COMPARE_NOT_EQUAL) {
+        if (StaticTypeCheckingSupport.isCompareToBoolean(op) || op == Types.COMPARE_EQUAL || op == Types.COMPARE_NOT_EQUAL) {
             Character cLeft = tryCharConstant(left);
             Character cRight = tryCharConstant(right);
             if (cLeft != null || cRight != null) {
