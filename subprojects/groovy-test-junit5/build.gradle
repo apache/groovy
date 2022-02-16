@@ -33,7 +33,7 @@ dependencies {
         exclude(group: 'org.apiguardian', module: 'apiguardian-api')
     }
     testImplementation "org.junit.jupiter:junit-jupiter-params:${versions.junit5}"
-    testImplementation 'net.jqwik:jqwik:1.6.3'
+    testImplementation 'net.jqwik:jqwik:1.6.4'
     testRuntimeOnly "org.junit.platform:junit-platform-engine:${versions.junit5Platform}"
     testRuntimeOnly "org.junit.platform:junit-platform-runner:${versions.junit5Platform}"
     testImplementation project(':groovy-test')
