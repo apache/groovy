@@ -20,6 +20,7 @@ package org.codehaus.groovy.transform;
 
 import groovy.transform.NamedDelegate;
 import groovy.transform.NamedParam;
+import groovy.transform.NamedParams;
 import groovy.transform.NamedVariant;
 import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.codehaus.groovy.ast.ASTNode;
@@ -29,6 +30,7 @@ import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
@@ -46,6 +48,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static java.util.stream.Collectors.toList;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isInnerClass;
@@ -69,6 +72,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.elvisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.entryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.list2args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.plusX;
@@ -136,7 +140,17 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
                 }
             }
         }
+        collateNamedParamAnnotations(mapParam); // GROOVY-10484
         createMapVariant(this, mNode, anno, mapParam, genParams, cNode, inner, args, propNames);
+    }
+
+    private static void collateNamedParamAnnotations(final Parameter mapParam) {
+        AnnotationNode namedParams = new AnnotationNode(make(NamedParams.class));
+        List<AnnotationNode> mapParamAnnotations = mapParam.getAnnotations();
+        namedParams.addMember("value", listX(mapParamAnnotations.stream()
+            .map(AnnotationConstantExpression::new).collect(toList())));
+        mapParamAnnotations.clear();
+        mapParamAnnotations.add(namedParams);
     }
 
     static  boolean processImplicitNamedParam(final ErrorCollecting xform, final MethodNode mNode, final Parameter mapParam, final BlockStatement inner, final ArgumentListExpression args, final List<String> propNames, final Parameter fromParam, final boolean coerce) {
