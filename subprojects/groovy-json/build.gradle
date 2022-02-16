@@ -32,8 +32,8 @@ dependencies {
             requireCapability 'org.apache.groovy:groovy-grapes'
         }
     }
-    testRuntimeOnly project(':groovy-ant')
-    testRuntimeOnly 'com.google.code.gson:gson:2.8.9' // json-unit requires gson, jackson1 or jackson2
+    testRuntimeOnly project(':groovy-ant') // for JavadocAssertionTests
+    testRuntimeOnly 'com.google.code.gson:gson:2.9.0' // json-unit requires gson, jackson1 or jackson2
 }
 
 plugins.withId('eclipse') {
