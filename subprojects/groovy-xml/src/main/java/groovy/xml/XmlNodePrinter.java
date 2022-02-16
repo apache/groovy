@@ -244,12 +244,11 @@ public class XmlNodePrinter {
     protected void printList(List list, NamespaceContext ctx) {
         out.incrementIndent();
         for (Object value : list) {
-            NamespaceContext context = new NamespaceContext(ctx);
             /*
              * If the current value is a node, recurse into that node.
              */
             if (value instanceof Node) {
-                print((Node) value, context);
+                print((Node) value, new NamespaceContext(ctx));
                 continue;
             }
             printSimpleItem(value);
