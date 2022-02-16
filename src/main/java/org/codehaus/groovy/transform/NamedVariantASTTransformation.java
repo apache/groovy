@@ -56,7 +56,6 @@ import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -201,13 +200,13 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         List<MapEntryExpression> entries = new ArrayList<>();
         for (PropertyNode pNode : props) {
             String name = pNode.getName();
-            // create entry [name: __namedArgs.getOrDefault('name', initialValue)]
-            Expression defaultValue = pNode.hasInitialExpression() ? pNode.getInitialExpression() : defaultValueX(pNode.getType());
-            entries.add(entryX(constX(name), callX(varX(mapParam), "getOrDefault", args(constX(name), defaultValue))));
-            // create annotation @NamedParam(value='name', type=DelegateType)
+            ClassNode type = pNode.getType();
+            // create entry [name: __namedArgs.name ?: defaultValue)] -- GROOVY-9183
+            entries.add(entryX(constX(name), namedParamValue(mapParam, name, type, pNode.getInitialExpression())));
+            // create annotation @NamedParam(value='name', type=PropertyType)
             AnnotationNode namedParam = new AnnotationNode(NAMED_PARAM_TYPE);
             namedParam.addMember("value", constX(name));
-            namedParam.addMember("type", classX(pNode.getType()));
+            namedParam.addMember("type", classX(type));
             mapParam.addAnnotation(namedParam);
         }
         Expression delegateMap = mapX(entries);
