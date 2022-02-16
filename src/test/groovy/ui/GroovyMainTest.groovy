@@ -20,7 +20,8 @@ package groovy.ui
 
 import static groovy.test.GroovyAssert.isAtLeastJdk
 
-class GroovyMainTest extends GroovyTestCase {
+final class GroovyMainTest extends GroovyTestCase {
+
     private baos = new ByteArrayOutputStream()
     private ps = new PrintStream(baos)
 
@@ -136,6 +137,23 @@ assert new MyConcreteClass() != null"""
         } finally {
             interfaceFile.delete()
             concreteFile.delete()
+        }
+    }
+
+    // GROOVY-10483
+    void testSourceEncoding() {
+        def configScript = File.createTempFile('config', '.groovy')
+        def sourceCoding = System.setProperty('groovy.source.encoding', 'US-ASCII')
+        try {
+            configScript.text = 'assert configuration.sourceEncoding == "US-ASCII"'
+            GroovyMain.main('--configscript', configScript.path, '-e', '42')
+        } finally {
+            if (sourceCoding) {
+                System.setProperty('groovy.source.encoding', sourceCoding)
+            } else {
+                System.clearProperty('groovy.source.encoding')
+            }
+            configScript.delete()
         }
     }
 

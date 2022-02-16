@@ -239,7 +239,7 @@ public class GroovyMain {
             GroovyMain main = new GroovyMain();
 
             // add the ability to parse scripts with a specified encoding
-            main.conf.setSourceEncoding(encoding);
+            if (encoding != null) main.conf.setSourceEncoding(encoding);
 
             main.debug = debug;
             main.conf.setDebug(main.debug);
