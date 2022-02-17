@@ -19,15 +19,16 @@
 package groovy.lang
 
 import groovy.test.GroovyTestCase;
+import groovy.transform.CompileStatic
 
 /**
  * Provides unit tests for the <code>IntRange</code> class.
  */
-class IntRangeTest extends GroovyTestCase {
+final class IntRangeTest extends GroovyTestCase {
 
     void testCreateTooBigRange() {
+        assert new IntRange(1, Integer.MAX_VALUE).size() == Integer.MAX_VALUE // biggest allowed
         try {
-            assert new IntRange(1, Integer.MAX_VALUE).size() == Integer.MAX_VALUE // biggest allowed
             new IntRange(0, Integer.MAX_VALUE) // too big
             fail("too large range accepted")
         }
@@ -202,20 +203,20 @@ class IntRangeTest extends GroovyTestCase {
         assert bs[20<..<-8].toString() == '{1, 2}'
     }
 
-    void testHashCode(){
-        def maxRange = new IntRange(1,Integer.MAX_VALUE)
-        def rangeWithName = [:]
-        rangeWithName.put(maxRange, "maxRange")
-        def dupRange = new IntRange(1,Integer.MAX_VALUE)
-        assertEquals(rangeWithName.get(dupRange), "maxRange")
-    }
-
     // GROOVY-8704
     void testSerialization() {
         def baos = new ByteArrayOutputStream()
         baos.withObjectOutputStream { oos -> oos.writeObject([4..1, 2..<5]) }
         def bais = new ByteArrayInputStream(baos.toByteArray())
         bais.withObjectInputStream { ois -> assert ois.readObject() == [4..1, 2..<5] }
+    }
+
+    void testHashCode() {
+        def maxRange = new IntRange(1,Integer.MAX_VALUE)
+        def rangeWithName = [:]
+        rangeWithName.put(maxRange, "maxRange")
+        def dupRange = new IntRange(1,Integer.MAX_VALUE)
+        assertEquals(rangeWithName.get(dupRange), "maxRange")
     }
 
     void testEquals() {
@@ -254,5 +255,28 @@ class IntRangeTest extends GroovyTestCase {
         r2 = new IntRange(0, 10, false)
         assert !r1.equals(r2)
         assert !r2.equals(r1)
+    }
+
+    // GROOVY-10496
+    void testBy() {
+        IntRange ir = new IntRange(5, 10)
+        assert ir == [5, 6, 7, 8, 9, 10]
+        assert ir.step(2) == [5, 7, 9]
+
+        NumberRange nr = ir.by(2)
+        assert nr == [5, 7, 9]
+
+        ir = new IntRange(false, false, 5, 10)
+        assert ir == [6, 7, 8, 9]
+
+        nr = ir.by(2)
+        nr == [6, 8, 10]
+    }
+
+    // GROOVY-10496
+    @CompileStatic
+    void testSC() {
+        IntRange ir = 1<..<5
+        assert ir == [2, 3, 4]
     }
 }
