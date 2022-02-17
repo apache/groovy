@@ -227,7 +227,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
      * @since 2.5.0
      */
     public <T extends Number & Comparable> NumberRange by(T stepSize) {
-        return new NumberRange(NumberRange.comparableNumber((Number)from), NumberRange.comparableNumber((Number)to), stepSize, inclusiveRight);
+        return new NumberRange(getFrom(), getTo(), stepSize, true, true); // GROOVY-10496
     }
 
     private void checkSize() {

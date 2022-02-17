@@ -24,16 +24,15 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 import java.util.List;
 
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 
 /**
  * This transformer focuses on ranges to produce optimized bytecode.
@@ -47,7 +46,9 @@ public class RangeExpressionTransformer {
         ConstructorNode target = null;
         for (ConstructorNode constructor : declaredConstructors) {
             final Parameter[] parameters = constructor.getParameters();
-            if (parameters.length==3 && isPrimitiveBoolean(parameters[0].getOriginType())) {
+            if (parameters.length == 4
+                    && ClassHelper.isPrimitiveBoolean(parameters[0].getOriginType())
+                    && ClassHelper.isPrimitiveBoolean(parameters[1].getOriginType())) {
                 target = constructor;
                 break;
             }
@@ -61,14 +62,14 @@ public class RangeExpressionTransformer {
         this.transformer = transformer;
     }
 
-    public Expression transformRangeExpression(RangeExpression range) {
-        final ClassNode inferred = range.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-        if (INTRANGE_TYPE.equals(inferred)) {
-            ArgumentListExpression bounds = new ArgumentListExpression(new ConstantExpression(range.isInclusive(),true),range.getFrom(), range.getTo());
-            ConstructorCallExpression cce = new ConstructorCallExpression(INTRANGE_TYPE, bounds);
-            cce.setSourcePosition(range);
+    public Expression transformRangeExpression(final RangeExpression range) {
+        if (INTRANGE_TYPE.equals(range.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE))) {
+            Expression inclLeft = constX(!range.isExclusiveLeft(),true), inclRight = constX(!range.isExclusiveRight(),true);
+            Expression cce = ctorX(INTRANGE_TYPE, args(inclLeft, inclRight, range.getFrom(), range.getTo()));
             cce.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, INTRANGE_CTOR);
             cce.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, INTRANGE_TYPE);
+            cce.setSourcePosition(range);
+
             return transformer.transform(cce);
         }
         return transformer.superTransform(range);
