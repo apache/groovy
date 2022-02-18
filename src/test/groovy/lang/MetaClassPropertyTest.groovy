@@ -21,7 +21,7 @@ package groovy.lang
 class MetaClassPropertyTest extends GroovyTestCase {
 
     void testForJavaClass() {
-        checkMetaClassBehavior("hello world")
+        checkMetaClassBehavior(Short.valueOf('1'))
     }
 
     void testForGroovyClass() {
@@ -30,27 +30,27 @@ class MetaClassPropertyTest extends GroovyTestCase {
 
     private checkMetaClassBehavior(Object foo) {
         // check metaclass points to correct class
-        assertEquals foo.class, foo.metaClass.theClass
+        assert foo.metaClass.theClass.equals(foo.getClass())
 
         // check defaults
         assert foo.metaClass.adaptee instanceof MetaClassImpl
-        assert foo.class.metaClass.adaptee instanceof MetaClassImpl
+        assert foo.getClass().metaClass.adaptee instanceof MetaClassImpl
 
         // use metaclass builder on instance
         foo.metaClass.dummy = {}
         assert foo.metaClass.adaptee instanceof ExpandoMetaClass
-        assert foo.class.metaClass.adaptee instanceof MetaClassImpl
+        assert foo.getClass().metaClass.adaptee instanceof MetaClassImpl
 
         // use metaclass builder on class
         foo.class.metaClass.dummy = {}
         assert foo.metaClass.adaptee instanceof ExpandoMetaClass
         // a little fragile but ExpandoMetaProperty is not public
-        assert foo.class.metaClass.adaptee.getClass().name.contains('ExpandoMetaClass$ExpandoMetaProperty')
+        assert foo.getClass().metaClass.adaptee.getClass().name.contains('ExpandoMetaClass$ExpandoMetaProperty')
 
         // remove class-based metaclass
-        GroovySystem.metaClassRegistry.removeMetaClass(foo.class)
+        GroovySystem.metaClassRegistry.removeMetaClass(foo.getClass())
         assert foo.metaClass.adaptee instanceof ExpandoMetaClass
-        assert foo.class.metaClass.adaptee instanceof MetaClassImpl
+        assert foo.getClass().metaClass.adaptee instanceof MetaClassImpl
     }
 }
 
