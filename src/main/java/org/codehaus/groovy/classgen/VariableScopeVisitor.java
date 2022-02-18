@@ -57,6 +57,7 @@ import java.util.LinkedList;
 import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isStatic;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 
 /**
  * Initializes the variable scopes for an AST.
@@ -181,7 +182,12 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
             for (MethodNode mn : cn.getMethods()) {
                 if ((abstractType || !mn.isAbstract()) && name.equals(getPropertyName(mn))) {
-                    FieldNode fn = new FieldNode(name, mn.getModifiers() & 0xF, ClassHelper.OBJECT_TYPE, cn, null);
+                    // check for override of super class property
+                    for (PropertyNode pn : getAllProperties(cn.getSuperClass())) {
+                        if (name.equals(pn.getName())) return pn;
+                    }
+
+                    FieldNode fn = new FieldNode(name, mn.getModifiers() & 0xF, ClassHelper.DYNAMIC_TYPE, cn, null);
                     fn.setHasNoRealSourcePosition(true);
                     fn.setDeclaringClass(cn);
                     fn.setSynthetic(true);
@@ -192,9 +198,11 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            for (ClassNode face : cn.getAllInterfaces()) {
-                FieldNode fn = face.getDeclaredField(name);
+            for (ClassNode in : cn.getAllInterfaces()) {
+                FieldNode fn = in.getDeclaredField(name);
                 if (fn != null) return fn;
+                PropertyNode pn = in.getProperty(name);
+                if (pn != null) return pn;
             }
         }
 
