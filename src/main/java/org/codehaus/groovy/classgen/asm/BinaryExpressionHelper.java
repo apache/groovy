@@ -39,6 +39,7 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeExpression;
@@ -715,6 +716,9 @@ public class BinaryExpressionHelper {
                 Expression subscript = be.getRightExpression();
                 subscript.visit(controller.getAcg());
                 ClassNode subscriptType = operandStack.getTopOperand();
+                if (subscriptType.isGenericsPlaceHolder() || GenericsUtils.hasPlaceHolders(subscriptType)) {
+                    subscriptType = controller.getTypeChooser().resolveType(be, controller.getClassNode());
+                }
                 int id = controller.getCompileStack().defineTemporaryVariable("$subscript", subscriptType, true);
                 VariableSlotLoader subscriptExpression = new VariableSlotLoader(subscriptType, id, operandStack);
                 // do modified visit

@@ -922,7 +922,7 @@ public class GenericsUtils {
         return result;
     }
 
-    private static boolean hasPlaceHolders(ClassNode parameterizedType) {
+    public static boolean hasPlaceHolders(ClassNode parameterizedType) {
         return checkPlaceHolders(parameterizedType, new Predicate<GenericsType>() {
             @Override
             public boolean test(GenericsType genericsType) {
