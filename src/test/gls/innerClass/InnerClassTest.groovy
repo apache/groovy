@@ -49,6 +49,21 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-8448
+    void testAccessLocalVariableVsGetterInAIC() {
+        assertScript '''
+            def x = 'local' // shared variable written as field in AIC
+            def c = new java.util.concurrent.Callable<String>() {
+                def getX() { 'getter' }
+                @Override String call() {
+                    x + ' then ' + this.x
+                }
+            }
+            String result = c()
+            assert result == 'local then getter'
+        '''
+    }
+
     @Test
     void testAccessLocalVariableFromClosureInAIC() {
         assertScript '''
