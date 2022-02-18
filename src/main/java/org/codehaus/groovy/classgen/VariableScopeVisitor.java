@@ -168,10 +168,6 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         final boolean abstractType = node.isAbstract();
 
         for (ClassNode cn = node; cn != null && !cn.equals(ClassHelper.OBJECT_TYPE); cn = cn.getSuperClass()) {
-            if (cn.isScript()) {
-                return new DynamicVariable(name, false);
-            }
-
             for (FieldNode fn : cn.getFields()) {
                 if (name.equals(fn.getName())) return fn;
             }
