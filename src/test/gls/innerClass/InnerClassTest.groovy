@@ -18,9 +18,9 @@
  */
 package gls.innerClass
 
-import groovy.transform.CompileStatic
-import groovy.transform.NotYetImplemented
-import org.codehaus.groovy.control.CompilationFailedException
+import groovy.transform.*
+import org.codehaus.groovy.control.*
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -1065,19 +1065,6 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-5754
-    void testResolveInnerOfSuperType() {
-        assertScript '''
-            interface I { class C { } }
-
-            class Outer implements I {
-                static class Inner extends C {}
-            }
-
-            print I.C
-        '''
-    }
-
     @Test // GROOVY-5989
     void testReferenceToOuterClassNestedInterface() {
         assertScript '''
@@ -1091,8 +1078,21 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-5754
+    void testResolveInnerOfSuperType1() {
+        assertScript '''
+            interface I { class C { } }
+
+            class Outer implements I {
+                static class Inner extends C {}
+            }
+
+            print I.C
+        '''
+    }
+
     @Test // GROOVY-9642
-    void testResolveInnerOfSuperType9() {
+    void testResolveInnerOfSuperType2() {
         assertScript '''
             class C {
                 interface I {}
@@ -1109,6 +1109,75 @@ final class InnerClassTest {
             assert D.one() instanceof C.I
             assert D.two() instanceof C.T
         '''
+    }
+
+    @Test
+    void testResolveInnerOfSuperType3() {
+        assertScript '''
+            abstract class A {
+                static class B {}
+            }
+
+            def test(A.B[] bees) {
+                assert bees != null
+            }
+
+            test(new A.B[0])
+        '''
+    }
+
+    @Test
+    void testResolveInnerOfSuperType4() {
+        assertScript '''
+            abstract class A {
+                static class B {}
+            }
+
+            def test(A.B... bees) {
+                assert bees != null
+            }
+
+            test()
+        '''
+    }
+
+    @CompileDynamic @Test // GROOVY-8715
+    void testResolveInnerOfSuperType5() {
+        def config = new CompilerConfiguration(
+            targetDirectory: File.createTempDir(),
+            jointCompilationOptions: [stubDir: File.createTempDir()]
+        )
+        def parentDir = File.createTempDir()
+        try {
+            new File(parentDir, 'p').mkdir()
+
+            def a = new File(parentDir, 'p/A.Java')
+            a.write '''
+                package p;
+                public abstract class A {
+                    public interface I {}
+                }
+            '''
+            def b = new File(parentDir, 'p/B.groovy')
+            b.write '''
+                package p
+                def test(A.I... eyes) {
+                    assert eyes != null
+                }
+                test()
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b)
+            cu.compile()
+
+            loader.loadClass('p.B').main()
+        } finally {
+            config.jointCompilationOptions.stubDir.deleteDir()
+            config.targetDirectory.deleteDir()
+            parentDir.deleteDir()
+        }
     }
 
     @Test // GROOVY-5679, GROOVY-5681

@@ -286,6 +286,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // are resolving the name at a different place already
         if (type instanceof ConstructedClassWithPackage) return false;
         if (type instanceof ConstructedNestedClass) return false;
+        // GROOVY-8715
+        while (type.isArray()) {
+            type = type.getComponentType();
+        }
         String name = type.getName();
         String saved = name;
         while (-1 != name.lastIndexOf('.')) {
