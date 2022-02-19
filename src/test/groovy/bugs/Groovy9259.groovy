@@ -22,6 +22,8 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
+import static groovy.test.GroovyAssert.assertScript
+
 final class Groovy9259 {
 
     @Test
@@ -41,7 +43,7 @@ final class Groovy9259 {
             '''
             def b = new File(parentDir, 'G.groovy')
             b.write '''
-                trait G implements J { // TODO: "interface G extends J" and "interface G implements"
+                interface G extends J {
                     default String m() {
                         'G'
                     }
@@ -55,8 +57,13 @@ final class Groovy9259 {
                     }
                 }
 
-                String result = new C().m()
-                assert result == 'C'
+                @groovy.transform.CompileStatic
+                void test() {
+                    J obj = new C()
+                    def x = obj.m()
+                    assert x == 'C'
+                }
+                test()
             '''
 
             def loader = new GroovyClassLoader(this.class.classLoader)
@@ -69,5 +76,34 @@ final class Groovy9259 {
             parentDir.deleteDir()
             config.targetDirectory.deleteDir()
         }
+    }
+
+    @Test
+    void testInterfacesAndTrait() {
+        assertScript '''
+            interface A {
+                String m()
+            }
+            interface B {
+                String m()
+            }
+            interface C extends A, B {
+                default String m() {
+                    'C'
+                }
+            }
+
+            @groovy.transform.CompileStatic
+            void test() {
+                A one = new C() {}
+                def x = one.m()
+                assert x == 'C'
+
+                B two = new C() {}
+                def y = two.m()
+                assert y == 'C'
+            }
+            test()
+        '''
     }
 }
