@@ -1575,24 +1575,23 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
         classNode.putNodeMetaData(CLASS_NAME, className);
 
-        if (asBoolean(ctx.CLASS()) || asBoolean(ctx.TRAIT()) || isInterfaceWithDefaultMethods) {
-            ClassNode superClass;
+        if (asBoolean(ctx.CLASS()) || asBoolean(ctx.TRAIT())) {
             if (asBoolean(ctx.scs)) {
                 ClassNode[] scs = this.visitTypeList(ctx.scs);
                 if (scs.length > 1) {
                     throw createParsingFailedException("Cannot extend multiple classes", ctx.EXTENDS());
                 }
-                superClass = scs[0];
-            } else {
-                superClass = ClassHelper.OBJECT_TYPE.getPlainNodeReference();
+                classNode.setSuperClass(scs[0]);
             }
-            classNode.setSuperClass(superClass);
             classNode.setInterfaces(this.visitTypeList(ctx.is));
+            this.initUsingGenerics(classNode);
+
+        } else if (isInterfaceWithDefaultMethods) { // GROOVY-9259
+            classNode.setInterfaces(this.visitTypeList(ctx.scs));
             this.initUsingGenerics(classNode);
 
         } else if (isInterface) {
             classNode.setModifiers(classNode.getModifiers() | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT);
-            classNode.setSuperClass(ClassHelper.OBJECT_TYPE.getPlainNodeReference());
             classNode.setInterfaces(this.visitTypeList(ctx.scs));
             this.initUsingGenerics(classNode);
             this.hackMixins(classNode);
