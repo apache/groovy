@@ -19,60 +19,87 @@
 package groovy.bugs.groovy8531
 
 class Groovy8531Bug extends GroovyTestCase {
+
     void testPublicAndProtectedInnerType() {
         assertScript '''
             package groovy.bugs.groovy8531
+
             class Example extends Reducer {
-                public void reduce(PublicContext context) {}
+                public void reduce1(PublicContext context) {}
                 public void reduce2(ProtectedContext context) {}
-                public void reduce3(PublicStaticContext context) {}
-                public void reduce4(ProtectedStaticContext context) {}
-                
-                public void reduce5(PublicBaseContext context) {}
-                public void reduce6(ProtectedBaseContext context) {}
-                public void reduce7(PublicStaticBaseContext context) {}
-                public void reduce8(ProtectedStaticBaseContext context) {}
-                
-                public void reduce9(InterfaceContext context) {}
-                
+                public void reduce3(PackagePrivateContext context) {}
+
+                public void reduce4(PublicStaticContext context) {}
+                public void reduce5(ProtectedStaticContext context) {}
+                public void reduce6(PackagePrivateStaticContext context) {}
+
+                public void reduce7(PublicBaseContext context) {}
+                public void reduce8(ProtectedBaseContext context) {}
+                public void reduce9(PackagePrivateBaseContext context) {}
+
+                public void reduce10(PublicStaticBaseContext context) {}
+                public void reduce11(ProtectedStaticBaseContext context) {}
+                public void reduce12(PackagePrivateStaticBaseContext context) {}
+
+                public void reduce13(InterfaceContext context) {}
+
                 public boolean isDynamic(Type type) {
                     return Type.DYNAMIC == type
                 }
             }
-            
-            new Example().reduce(null)
+
+            new Example().reduce1(null)
+            new Example().reduce2(null)
             new Example().reduce2(null)
             new Example().reduce3(null)
             new Example().reduce4(null)
-            
             new Example().reduce5(null)
             new Example().reduce6(null)
             new Example().reduce7(null)
             new Example().reduce8(null)
-            
             new Example().reduce9(null)
-            
+            new Example().reduce10(null)
+            new Example().reduce11(null)
+            new Example().reduce12(null)
+            new Example().reduce13(null)
+
             assert new Example().isDynamic(Reducer.Type.DYNAMIC)
         '''
     }
 
-    void testPrivateInnerType() {
-        def errMsg = shouldFail '''
+    void testPrivateInnerType1() {
+        def err = shouldFail '''
             package groovy.bugs.groovy8531
+
             class Example extends Reducer {
-                public void reduce3(PrivateContext context) {}
+                void reduce(PrivateContext context) {}
             }
         '''
-        assert errMsg.contains('unable to resolve class PrivateContext')
+        assert err.contains('unable to resolve class PrivateContext')
     }
 
     void testPrivateInnerType2() {
-        def errMsg = shouldFail '''
+        def err = shouldFail '''
             package groovy.bugs.groovy8531
+
             class Example extends Reducer {
-                public void reduce3(PrivateBaseContext context) {}
+                void reduce(PrivateBaseContext context) {}
             }
         '''
-        assert errMsg.contains('unable to resolve class PrivateBaseContext')
+        assert err.contains('unable to resolve class PrivateBaseContext')
+    }
+
+    void testPackagePrivateInnerType() {
+        def err = shouldFail '''
+            package groovy.bugs.groovy9281
+
+            import groovy.bugs.groovy8531.Reducer
+
+            class Example extends Reducer {
+                void reduce(PackagePrivateContext context) {}
+            }
+        '''
+
+        assert err.contains('unable to resolve class PackagePrivateContext')
     }
 }

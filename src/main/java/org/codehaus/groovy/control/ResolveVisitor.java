@@ -20,6 +20,7 @@ package org.codehaus.groovy.control;
 
 import groovy.lang.Tuple2;
 import org.apache.groovy.ast.tools.ExpressionUtils;
+import org.apache.groovy.internal.util.Predicate;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -71,10 +72,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.codehaus.groovy.ast.CompileUnit.ConstructedOuterNestedClassNode;
@@ -470,31 +472,17 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     private boolean resolveNestedClass(ClassNode type) {
         if (type instanceof ConstructedNestedClass || type instanceof ConstructedClassWithPackage) return false;
+
         // we have for example a class name A, are in class X
         // and there is a nested class A$X. we want to be able
         // to access that class directly, so A becomes a valid
         // name in X.
-        // GROOVY-4043: Do this check up the hierarchy, if needed
-        Map<String, ClassNode> hierClasses = new LinkedHashMap<String, ClassNode>();
-        for(ClassNode classToCheck = currentClass; classToCheck != ClassHelper.OBJECT_TYPE;
-            classToCheck = classToCheck.getSuperClass()) {
-            if(classToCheck == null || hierClasses.containsKey(classToCheck.getName())) break;
-            hierClasses.put(classToCheck.getName(), classToCheck);
-        }
-
-        for (ClassNode classToCheck : hierClasses.values()) {
-            if (setRedirect(type, classToCheck)) return true;
-        }
 
         // another case we want to check here is if we are in a
         // nested class A$B$C and want to access B without
         // qualifying it by A.B. A alone will work, since that
         // is the qualified (minus package) name of that class
         // anyway.
-
-        // That means if the current class is not an InnerClassNode
-        // there is nothing to be done.
-        if (!(currentClass instanceof InnerClassNode)) return false;
 
         // since we have B and want to get A we start with the most
         // outer class, put them together and then see if that does
@@ -503,33 +491,48 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // A.B.C.D.E.F and accessing E from F we test A$E=failed,
         // A$B$E=failed, A$B$C$E=fail, A$B$C$D$E=success
 
-        LinkedList<ClassNode> outerClasses = new LinkedList<ClassNode>();
-        ClassNode outer = currentClass.getOuterClass();
-        while (outer!=null) {
-            outerClasses.addFirst(outer);
-            outer = outer.getOuterClass();
+        Set<ClassNode> cycleCheck = new HashSet<>(); cycleCheck.add(ClassHelper.OBJECT_TYPE);
+        for (ClassNode cn = currentClass; cn != null && cycleCheck.add(cn); cn = cn.getSuperClass()) {
+            if (setRedirect(type, cn)) return true;
         }
-        // most outer class is now element 0
-        for (ClassNode testNode : outerClasses) {
-            if (setRedirect(type, testNode)) return true;
+        List<ClassNode> outerClasses = currentClass.getOuterClasses();
+        if (!outerClasses.isEmpty()) {
+            for (ListIterator<ClassNode> it = outerClasses.listIterator(outerClasses.size()); it.hasPrevious(); ) {
+                if (setRedirect(type, it.previous())) return true;
+            }
         }
-
         return false;
     }
 
-    private boolean setRedirect(ClassNode type, ClassNode classToCheck) {
-        ClassNode val = new ConstructedNestedClass(classToCheck, type.getName());
-        if (resolveFromCompileUnit(val)) {
-            type.setRedirect(val);
-            return true;
-        }
-        // also check interfaces in case we have interfaces with nested classes
-        for (ClassNode next : classToCheck.getAllInterfaces()) {
-            if (type.getName().contains(next.getName())) continue;
-            val = new ConstructedNestedClass(next, type.getName());
-            if (resolve(val, false, false, false)) {
-                type.setRedirect(val);
+    private boolean setRedirect(final ClassNode type, ClassNode classToCheck) {
+        final String typeName = type.getName();
+
+        Predicate<ClassNode> resolver = new Predicate<ClassNode>() {
+            @Override
+            public boolean test(ClassNode maybeOuter) {
+                if (!typeName.equals(maybeOuter.getName())) {
+                    ClassNode maybeNested = new ConstructedNestedClass(maybeOuter, typeName);
+                    if (resolveFromCompileUnit(maybeNested) || resolveToOuter(maybeNested)) {
+                        type.setRedirect(maybeNested);
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
+
+        if (resolver.test(classToCheck)) {
+            if (currentClass != classToCheck && !currentClass.getOuterClasses().contains(classToCheck) && !isVisibleNestedClass(type.redirect(), currentClass)) {
+                type.setRedirect(null);
+            } else {
                 return true;
+            }
+        }
+        if (classToCheck.getInterfaces().length > 0) {
+            for (ClassNode face : classToCheck.getAllInterfaces()) {
+                if (resolver.test(face)) {
+                    return true;
+                }
             }
         }
         return false;
@@ -1040,12 +1043,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return ret;
     }
 
-    private boolean isVisibleNestedClass(ClassNode type, ClassNode ceType) {
-        if (!type.isRedirectNode()) return false;
-        ClassNode redirect = type.redirect();
-        if (Modifier.isPublic(redirect.getModifiers()) || Modifier.isProtected(redirect.getModifiers())) return true;
-        // package local
-        return isDefaultVisibility(redirect.getModifiers()) && inSamePackage(ceType, redirect);
+    private static boolean isVisibleNestedClass(ClassNode innerType, ClassNode outerType) {
+        int modifiers = innerType.getModifiers();
+        return Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)
+                || (!Modifier.isPrivate(modifiers) && Objects.equals(innerType.getPackageName(), outerType.getPackageName()));
     }
 
     private boolean directlyImplementsTrait(ClassNode trait) {
