@@ -763,7 +763,7 @@ class GrapeIvy implements GrapeEngine {
         def resolver = new IBiblioResolver(
             name: (String) args.name,
             root: (String) args.root,
-            m2compatible: (boolean) args.getOrDefault('m2Compatible', Boolean.TRUE),
+            m2compatible: !Boolean.FALSE.equals(args.get('m2Compatible')),
             settings: (ResolverSettings) settings
         )
 

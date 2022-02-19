@@ -77,6 +77,8 @@ class Groovy8964Bug extends GroovyTestCase {
 
     // GROOVY-10379
     void testInstanceMethodNotMaskedByStaticMethodWithSameNumberOfArgs3() {
+        if (!groovy.test.GroovyAssert.isAtLeastJdk('1.8')) return
+
         def config = new CompilerConfiguration(
             targetDirectory: File.createTempDir(),
             jointCompilationOptions: [stubDir: File.createTempDir()]
