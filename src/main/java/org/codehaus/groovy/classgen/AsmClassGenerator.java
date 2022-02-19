@@ -1036,6 +1036,12 @@ public class AsmClassGenerator extends ClassGenerator {
                             field = classNode.getDeclaredField(name); // params are stored as fields
                     } else {
                         field = classNode.getDeclaredField(name);
+                        // GROOVY-8448: "this.name" from anon. inner class
+                        if (field != null && !expression.isImplicitThis()
+                                && (field.getModifiers() & ACC_SYNTHETIC) != 0
+                                && field.getType().equals(ClassHelper.REFERENCE_TYPE)) {
+                            field = null;
+                        }
                         if (field == null && controller.isStaticContext()
                                 && expression instanceof AttributeExpression) {
                             field = classNode.getField(name); // GROOVY-6183: check supers
@@ -1044,14 +1050,8 @@ public class AsmClassGenerator extends ClassGenerator {
                             }
                         }
                     }
-                    // GROOVY-8448: "this.name" from anon. inner class
-                    if (field != null && !expression.isImplicitThis()
-                            && (field.getModifiers() & ACC_SYNTHETIC) != 0
-                            && field.getType().equals(ClassHelper.REFERENCE_TYPE)) {
-                        field = null;
-                    }
-                    // GROOVY-5259, GROOVY-9501, GROOVY-9569, GROOVY-9650, GROOVY-9655, GROOVY-9665, GROOVY-9683, GROOVY-9695
                     if (field == null && !isFieldDirectlyAccessible(classNode.getField(name), classNode)) {
+                        // GROOVY-5259, GROOVY-9501, GROOVY-9569
                         if (checkStaticOuterField(expression, name)) return;
                     }
                 }
