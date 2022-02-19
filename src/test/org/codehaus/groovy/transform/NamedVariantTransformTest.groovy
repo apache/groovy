@@ -192,7 +192,7 @@ final class NamedVariantTransformTest {
         '''
     }
 
-    @Test // GROOVY-9158
+    @Test // GROOVY-9158, GROOVY-10497
     void testNamedParamWithDefaultArgument() {
         assertScript '''
             import groovy.transform.*
@@ -225,6 +225,21 @@ final class NamedVariantTransformTest {
             shouldFail {
                 m()
             }
+        '''
+
+        assertScript '''
+            import groovy.transform.*
+
+            @NamedVariant
+            def m(int one, int two = 42) {
+                "$one $two"
+            }
+
+            String result = m(one:0, two:0)
+            assert result == '0 0'
+
+            result = m(one:0, two:null)
+            assert result == '0 0'
         '''
     }
 
