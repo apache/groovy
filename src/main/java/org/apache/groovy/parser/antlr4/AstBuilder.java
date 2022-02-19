@@ -1298,6 +1298,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             classNode.setInterfaces(this.visitTypeList(ctx.is));
             this.checkUsingGenerics(classNode);
 
+        } else if (isInterfaceWithDefaultMethods) { // GROOVY-9259
+            classNode.setInterfaces(this.visitTypeList(ctx.scs));
+            this.initUsingGenerics(classNode);
+
         } else if (isInterface) {
             classNode.setModifiers(classNode.getModifiers() | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT);
             classNode.setInterfaces(this.visitTypeList(ctx.scs));
