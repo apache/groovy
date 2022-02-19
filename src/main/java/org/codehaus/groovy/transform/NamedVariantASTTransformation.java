@@ -71,10 +71,12 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.list2args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.plusX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
@@ -281,7 +283,10 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
             defaultValue = defaultValueX(type);
         }
         if (defaultValue != null) {
-            value = elvisX(value, defaultValue);
+            if (isPrimitiveType(type)) { // handle null for primitive
+                value = ternaryX(notNullX(value), value, defaultValueX(type));
+            }
+            value = ternaryX(containsKey(mapParam, name), value, defaultValue);
         }
         return asType(value, type, coerce);
     }
@@ -292,6 +297,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
 
     private static Expression containsKey(final Parameter mapParam, final String name) {
         MethodCallExpression call = callX(varX(mapParam), "containsKey", constX(name));
+        call.setImplicitThis(false); // required for use before super ctor call
         call.setMethodTarget(MAP_TYPE.getMethods("containsKey").get(0));
         return call;
     }
