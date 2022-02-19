@@ -448,7 +448,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                 typeChooser.resolveType(argumentList.get(argumentListSize -1), controller.getClassNode()):null;
         if (lastParaType.isArray() && (
                 argumentListSize > para.length
-                || (argumentListSize == (para.length - 1) && !lastParaType.equals(lastArgType))
+                || argumentListSize == (para.length - 1)
                 || (argumentListSize == para.length && lastArgType != null && !lastArgType.isArray()
                     && (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(lastArgType, lastParaType.getComponentType())
                         || ClassHelper.GSTRING_TYPE.equals(lastArgType) && ClassHelper.STRING_TYPE.equals(lastParaType.getComponentType())))
