@@ -76,8 +76,11 @@ assert new ColoredPoint(5).toString() == 'ColoredPoint[x=5, y=0, color=white]'
 assert new ColoredPoint(x: 5).toString() == 'ColoredPoint[x=5, y=0, color=white]'
 assert new ColoredPoint(x: 0, y: 5).toString() == 'ColoredPoint[x=0, y=5, color=white]'
 // end::record_point_named_args[]
-assert new ColoredPoint(x: 0, y: null).toString() == 'ColoredPoint[x=0, y=0, color=white]'
-def ex = shouldFail { new ColoredPoint(x: 0, z: 5) }
+def ex = shouldFail(ClassCastException) { new ColoredPoint(x: 0, y: null) }
+assert ex.message.contains("Cannot cast object 'null' with class 'null' to class 'int'")
+ex = shouldFail(ClassCastException) { new ColoredPoint(x: null) }
+assert ex.message.contains("Cannot cast object 'null' with class 'null' to class 'int'")
+ex = shouldFail { new ColoredPoint(x: 0, z: 5) }
 assert ex.message.contains('Unrecognized namedArgKey: z')
 // tag::record_point_named_args_off[]
 @TupleConstructor(defaultsMode=DefaultsMode.OFF)
