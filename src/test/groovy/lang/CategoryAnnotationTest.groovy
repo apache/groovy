@@ -101,7 +101,7 @@ final class CategoryAnnotationTest {
             interface Guy {
                 Type getType()
             }
-            class MyGuyver implements Guy {
+            class McGuyver implements Guy {
                 Type type
             }
             @Category(Guy)
@@ -115,7 +115,7 @@ final class CategoryAnnotationTest {
             }
 
             def atype = new Type(name: 'String')
-            def onetest = new MyGuyver(type:atype)
+            def onetest = new McGuyver(type:atype)
 
             use(Naming) {
                 assert onetest.getTypeName() == onetest.getType().getName()
@@ -130,24 +130,77 @@ final class CategoryAnnotationTest {
                 String getName()
                 List getMessages()
             }
-            class MyGuyver implements Guy {
+            class McGuyver implements Guy {
                 List messages
                 String name
             }
             @Category(Guy)
             class Filtering {
                 List process() {
-                    this.messages.findAll{it.name != this.getName()}
+                    this.messages.findAll{ it.name != this.getName() }
                 }
             }
 
-            def onetest = new MyGuyver(name: 'coucou',
+            def onetest = new McGuyver(name: 'coucou',
                 messages: [['name':'coucou'], ['name':'test'], ['name':'salut']]
             )
 
-            Guy.mixin Filtering
+            Guy.mixin(Filtering)
 
-            assert onetest.process() == onetest.messages.findAll{it.name != onetest.getName()}
+            assert onetest.process() == onetest.messages.findAll{ it.name != onetest.getName() }
+        '''
+    }
+
+    @Test // GROOVY-6510
+    void testClosureUsingImplicitThis() {
+        assertScript '''
+            @Category(Number)
+            class NumberCategory {
+                def foo() {
+                    def bar = { ->
+                        baz() // do not want "$this.baz()"
+                    }
+                    bar.resolveStrategy = Closure.DELEGATE_FIRST
+                    bar.delegate = new NumberDelegate(this)
+                    bar.call()
+                }
+            }
+
+            class NumberDelegate {
+                private final Number n
+                NumberDelegate(Number n) { this.n = n }
+                String baz() { 'number ' + n.intValue() }
+            }
+
+            use(NumberCategory) {
+                String result = 1.foo()
+                assert result == 'number 1'
+            }
+        '''
+
+        assertScript '''
+            @Category(Number)
+            class NumberCategory {
+                def foo() {
+                    def bar = { ->
+                        baz // do not want "$this.baz"
+                    }
+                    bar.resolveStrategy = Closure.DELEGATE_FIRST
+                    bar.delegate = new NumberDelegate(this)
+                    bar.call()
+                }
+            }
+
+            class NumberDelegate {
+                private final Number n
+                NumberDelegate(Number n) { this.n = n }
+                String getBaz() { 'number ' + n.intValue() }
+            }
+
+            use(NumberCategory) {
+                String result = 1.foo()
+                assert result == 'number 1'
+            }
         '''
     }
 
