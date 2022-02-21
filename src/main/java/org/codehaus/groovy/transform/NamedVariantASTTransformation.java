@@ -66,14 +66,16 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.elvisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.list2args;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.plusX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
@@ -83,6 +85,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
     private static final String NAMED_VARIANT = "@" + NAMED_VARIANT_TYPE.getNameWithoutPackage();
     private static final ClassNode NAMED_PARAM_TYPE = makeWithoutCaching(NamedParam.class, false);
     private static final ClassNode NAMED_DELEGATE_TYPE = makeWithoutCaching(NamedDelegate.class, false);
+    private static final ClassNode ILLEGAL_ARGUMENT_TYPE = makeWithoutCaching(IllegalArgumentException.class);
 
     @Override
     public void visit(final ASTNode[] nodes, final SourceUnit source) {
@@ -99,7 +102,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
 
         boolean autoDelegate = memberHasValue(anno, "autoDelegate", true);
         boolean coerce = memberHasValue(anno, "coerce", true);
-        Parameter mapParam = param(GenericsUtils.nonGeneric(MAP_TYPE), "__namedArgs");
+        Parameter mapParam = param(GenericsUtils.nonGeneric(MAP_TYPE), "namedArgs");
         List<Parameter> genParams = new ArrayList<>();
         genParams.add(mapParam);
         ClassNode cNode = mNode.getDeclaringClass();
@@ -227,6 +230,10 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
 
     private void createMapVariant(final MethodNode mNode, final AnnotationNode anno, final Parameter mapParam, final List<Parameter> genParams, final ClassNode cNode, final BlockStatement inner, final ArgumentListExpression args, final List<String> propNames) {
         Parameter namedArgKey = param(STRING_TYPE, "namedArgKey");
+        if (!(mNode instanceof ConstructorNode)) {
+            inner.getStatements().add(0, ifS(isNullX(varX(mapParam)),
+                    throwS(ctorX(ILLEGAL_ARGUMENT_TYPE, constX("Named parameter map cannot be null")))));
+        }
         inner.addStatement(
                 new ForStatement(
                         namedArgKey,
@@ -276,9 +283,6 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
             defaultValue = defaultValueX(type);
         }
         if (defaultValue != null) {
-            if (isPrimitiveType(type)) { // handle null for primitive
-                value = ternaryX(notNullX(value), value, defaultValueX(type));
-            }
             value = ternaryX(containsKey(mapParam, name), value, defaultValue);
         }
         return asType(value, type, coerce);
