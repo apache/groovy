@@ -31,7 +31,6 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -62,12 +61,10 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.entryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.list2args;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.plusX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
@@ -195,22 +192,20 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
 
         Set<String> names = new HashSet<>();
         List<PropertyNode> props = getAllProperties(names, fromParam.getType(), true, false, false, true, false, true);
-        for (String next : names) {
-            if (hasDuplicates(mNode, propNames, next)) return false;
+        for (String name : names) {
+            if (hasDuplicates(mNode, propNames, name)) return false;
         }
-        List<MapEntryExpression> entries = new ArrayList<>();
-        for (PropertyNode pNode : props) {
-            String name = pNode.getName();
-            ClassNode type = pNode.getType();
-            // create entry [name: __namedArgs.name ?: defaultValue)] -- GROOVY-9183
-            entries.add(entryX(constX(name), namedParamValue(mapParam, name, type, pNode.getInitialExpression())));
+        for (PropertyNode prop : props) {
             // create annotation @NamedParam(value='name', type=PropertyType)
             AnnotationNode namedParam = new AnnotationNode(NAMED_PARAM_TYPE);
-            namedParam.addMember("value", constX(name));
-            namedParam.addMember("type", classX(type));
+            namedParam.addMember("value", constX(prop.getName()));
+            namedParam.addMember("type", classX(prop.getType()));
             mapParam.addAnnotation(namedParam);
         }
-        Expression delegateMap = mapX(entries);
+
+        ArgumentListExpression subMapArgs = new ArgumentListExpression();
+        for (String name : names) subMapArgs.addExpression(constX(name));
+        Expression delegateMap = callX(varX(mapParam), "subMap", subMapArgs);
         args.addExpression(castX(fromParam.getType(), delegateMap));
         return true;
     }
