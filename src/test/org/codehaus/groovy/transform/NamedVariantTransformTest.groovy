@@ -311,7 +311,7 @@ final class NamedVariantTransformTest {
     }
 
     @Test // GROOVY-10261
-    void testNamedDelegateWithDefaultArguments() {
+    void testNamedVariantWithDefaultArguments() {
         assertScript '''
             import groovy.transform.*
 
@@ -333,7 +333,7 @@ final class NamedVariantTransformTest {
         '''
     }
 
-    @Test // GROOVY-9183
+    @Test // GROOVY-9183, GROOVY-10500
     void testNamedDelegateWithPropertyDefaults() {
         assertScript '''
             import groovy.transform.*
@@ -362,7 +362,8 @@ final class NamedVariantTransformTest {
                     String separator = ','
                     Boolean headers = true
                     Integer headersRow = 0
-                    Integer firstDataRow = 1
+                    Integer firstDataRow = FIRST_DATA_ROW
+                    private static final int FIRST_DATA_ROW = 1
                 }
             }
 
