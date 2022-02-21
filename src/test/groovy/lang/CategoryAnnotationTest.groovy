@@ -18,96 +18,91 @@
  */
 package groovy.lang
 
-class CategoryAnnotationTest extends GroovyTestCase {
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
+
+final class CategoryAnnotationTest {
+
+    @Test // GROOVY-3367
     void testTransformationOfPropertyInvokedOnThis() {
-        //Test the fix for GROOVY-3367
-        assertScript """
-            @Category(Distance3367)
-            class DistanceCategory3367 {
-                Distance3367 plus(Distance3367 increment) {
-                    new Distance3367(number: this.number + increment.number)
-                }
-            }
-    
-            class Distance3367 {
+        assertScript '''
+            class Distance {
                 def number
             }
-    
-            use(DistanceCategory3367) {
-                def d1 = new Distance3367(number: 5)
-                def d2 = new Distance3367(number: 10)
+            @Category(Distance)
+            class DistanceCategory {
+                Distance plus(Distance increment) {
+                    new Distance(number: this.number + increment.number)
+                }
+            }
+
+            use(DistanceCategory) {
+                def d1 = new Distance(number: 5)
+                def d2 = new Distance(number: 10)
                 def d3 = d1 + d2
                 assert d3.number == 15
             }
-        """
+        '''
     }
 
-    void testTransformationWithCatchClause() {
-        //Test the fix for GROOVY-4801
-        assertScript """
-            class ExceptionHandler {
-                static def handled(Object self, Closure block) {
-                    try { block.call() }
-                    catch (Throwable t) { t.message }
-                }
-            }
-
-            @Mixin(ExceptionHandler)
-            class Caller {
-                def thrower() { handled { 1/0 } }
-            }
-
-            assert new Caller().thrower() == 'Division by zero'
-        """
-    }
-
+    @Test // GROOVY-3543
     void testCategoryMethodsHavingDeclarationStatements() {
-        // GROOVY-3543: Declaration statements in category class' methods were not being visited by 
-        // CategoryASTTransformation's expressionTransformer resulting in declaration variables not being 
-        // defined on varStack resulting in compilation errors later
-        assertScript """
-            @Category(Test)
-            class TestCategory {
-                String getSuperName1() { 
-                    String myname = "" 
-                    return myname + "hi from category" 
-                }
-                // 2nd test case of JIRA
-                String getSuperName2() { 
-                    String myname = this.getName() 
-                    for(int i = 0; i < 5; i++) myname += i 
-                    return myname + "-Post"
-                }
-                // 3rd test case of JIRA
-                String getSuperName3() { 
-                    String myname = this.getName() 
-                    for(i in 0..4) myname += i
-                    return myname + "-Post"
-                }
+        // Declaration statements in category class' methods were not being visited by
+        // CategoryASTTransformation's expressionTransformer resulting in declaration
+        // variables not being defined on varStack resulting in compilation errors later
+        assertScript '''
+            interface Test {
+                String getName()
             }
-    
-            interface Test { 
-                String getName() 
-            }
-    
             class MyTest implements Test {
                 String getName() {
                     return "Pre-"
                 }
             }
-    
-            def onetest = new MyTest()
-            use(TestCategory) { 
-                assert onetest.getSuperName1() == "hi from category"
-                assert onetest.getSuperName2() == "Pre-01234-Post"
-                assert onetest.getSuperName3() == "Pre-01234-Post"
+            @Category(Test)
+            class TestCategory {
+                String getSuperName1() {
+                    String myname = ""
+                    return myname + "hi from category"
+                }
+                // 2nd test case of JIRA
+                String getSuperName2() {
+                    String myname = this.getName()
+                    for(int i = 0; i < 5; i++) myname += i
+                    return myname + "-Post"
+                }
+                // 3rd test case of JIRA
+                String getSuperName3() {
+                    String myname = this.getName()
+                    for(i in 0..4) myname += i
+                    return myname + "-Post"
+                }
             }
-        """
+
+            def test = new MyTest()
+            use(TestCategory) {
+                assert test.getSuperName1() == "hi from category"
+                assert test.getSuperName2() == "Pre-01234-Post"
+                assert test.getSuperName3() == "Pre-01234-Post"
+            }
+        '''
     }
 
+    @Test // GROOVY-3543
     void testPropertyNameExpandingToGetterInsideCategoryMethod() {
-        //GROOVY-3543: Inside the category method, this.getType().name was failing but this.getType().getName() was not.
-        assertScript """
+        // Inside the category method, this.getType().name was failing but this.getType().getName() was not.
+        assertScript '''
+            class Type {
+                String name
+            }
+            interface Guy {
+                Type getType()
+            }
+            class McGuyver implements Guy {
+                Type type
+            }
             @Category(Guy)
             class Naming {
                 String getTypeName() {
@@ -117,60 +112,100 @@ class CategoryAnnotationTest extends GroovyTestCase {
                         ""
                 }
             }
-            
-            interface Guy {
-                Type getType()
-            }
-            
-            class Type {
-                String name
-            }
-            
-            class MyGuyver implements Guy {
-                Type type
-            }
-            
+
             def atype = new Type(name: 'String')
-            def onetest = new MyGuyver(type:atype)
-            
+            def onetest = new McGuyver(type:atype)
+
             use(Naming) {
                 assert onetest.getTypeName() == onetest.getType().getName()
             }
-        """
+        '''
     }
 
+    @Test
     void testClosureUsingThis() {
-        assertScript """
-            @Category(Guy)
-            class Filtering {
-                List process() {
-                    this.messages.findAll{it.name != this.getName()}
-                }
-            }
-            
+        assertScript '''
             interface Guy {
                 String getName()
                 List getMessages()
             }
-            
-            class MyGuyver implements Guy {
+            class McGuyver implements Guy {
                 List messages
                 String name
             }
-            
-            def onetest = new MyGuyver(
-                    name: 'coucou',
-                    messages : [['name':'coucou'], ['name':'test'], ['name':'salut']])
-            
-            Guy.mixin   Filtering
-            
-            assert onetest.process() == onetest.messages.findAll{it.name != onetest.getName()}        
-        """
+            @Category(Guy)
+            class Filtering {
+                List process() {
+                    this.messages.findAll{ it.name != this.getName() }
+                }
+            }
+
+            def onetest = new McGuyver(name: 'coucou',
+                messages: [['name':'coucou'], ['name':'test'], ['name':'salut']]
+            )
+
+            Guy.mixin(Filtering)
+
+            assert onetest.process() == onetest.messages.findAll{ it.name != onetest.getName() }
+        '''
     }
 
+    @Test // GROOVY-6510
+    void testClosureUsingImplicitThis() {
+        assertScript '''
+            @Category(Number)
+            class NumberCategory {
+                def foo() {
+                    def bar = { ->
+                        baz() // do not want "$this.baz()"
+                    }
+                    bar.resolveStrategy = Closure.DELEGATE_FIRST
+                    bar.delegate = new NumberDelegate(this)
+                    bar.call()
+                }
+            }
+
+            class NumberDelegate {
+                private final Number n
+                NumberDelegate(Number n) { this.n = n }
+                String baz() { 'number ' + n.intValue() }
+            }
+
+            use(NumberCategory) {
+                String result = 1.foo()
+                assert result == 'number 1'
+            }
+        '''
+
+        assertScript '''
+            @Category(Number)
+            class NumberCategory {
+                def foo() {
+                    def bar = { ->
+                        baz // do not want "$this.baz"
+                    }
+                    bar.resolveStrategy = Closure.DELEGATE_FIRST
+                    bar.delegate = new NumberDelegate(this)
+                    bar.call()
+                }
+            }
+
+            class NumberDelegate {
+                private final Number n
+                NumberDelegate(Number n) { this.n = n }
+                String getBaz() { 'number ' + n.intValue() }
+            }
+
+            use(NumberCategory) {
+                String result = 1.foo()
+                assert result == 'number 1'
+            }
+        '''
+    }
+
+    @Test // GROOVY-4546
     void testClosureWithinDeclarationExpressionAndMultipleAssignment() {
-        // GROOVY-4546
-        assertScript """
+        assertScript '''
             @Category(Integer)
             class MyOps {
                 def multiplesUpTo4() { [this * 2, this * 3, this * 4] }
@@ -193,16 +228,12 @@ class CategoryAnnotationTest extends GroovyTestCase {
                 assert 5.alsoMultiplesUpTo(6) == [10, 15, 20, 25, 30]
                 assert 5.twice() == 10
             }
-        """
+        '''
     }
 
-    // GROOVY-6120
+    @Test // GROOVY-6120
     void testFieldShouldNotBeAllowedInCategory() {
-        def message = shouldFail(RuntimeException) {
-            assertScript '''
-            @Mixin(Foo)
-            class Bar {  }
-
+        def err = shouldFail RuntimeException, '''
             @Category(Bar)
             class Foo {
                 public x = 5
@@ -210,20 +241,18 @@ class CategoryAnnotationTest extends GroovyTestCase {
                     x
                 }
             }
+            @Mixin(Foo)
+            class Bar {
+            }
 
             assert new Bar().foo() == 5
-            '''
-        }
-        assert message.contains('The @Category transformation does not support instance fields')
+        '''
+        assert err =~ /The @Category transformation does not support instance fields/
     }
 
-    // GROOVY-6120
+    @Test // GROOVY-6120
     void testPropertyShouldNotBeAllowedInCategory() {
-        def message = shouldFail(RuntimeException) {
-            assertScript '''
-            @Mixin(Foo)
-            class Bar {  }
-
+        def err = shouldFail RuntimeException, '''
             @Category(Bar)
             class Foo {
                 int x = 5
@@ -231,56 +260,67 @@ class CategoryAnnotationTest extends GroovyTestCase {
                     x
                 }
             }
+            @Mixin(Foo)
+            class Bar {
+            }
 
             assert new Bar().foo() == 5
-            '''
-        }
-        assert message.contains('The @Category transformation does not support instance properties')
+        '''
+        assert err =~ /The @Category transformation does not support instance properties/
     }
 
-    // GROOVY-6120
+    @Test // GROOVY-6120
     void testShouldNotThrowVerifyError() {
         assertScript '''
-            @Mixin(Foo)
-            class Bar { int x = 5 }
-
             @Category(Bar)
             class Foo {
                 def foo() {
                     x
                 }
             }
+            @Mixin(Foo)
+            class Bar {
+                int x = 5
+            }
 
             assert new Bar().foo() == 5
         '''
     }
 
-    // GROOVY-6120
+    @Test // GROOVY-6120
     void testCategoryShouldBeCompatibleWithCompileStatic() {
         assertScript '''
-            @Mixin(Foo)
-            class Bar { int x = 5 }
+            import groovy.transform.CompileStatic
 
+            @CompileStatic
             @Category(Bar)
-            @groovy.transform.CompileStatic
             class Foo {
                 def foo() {
                     x
                 }
+            }
+            @Mixin(Foo)
+            class Bar {
+                int x = 5
             }
 
             assert new Bar().foo() == 5
         '''
     }
 
-    void testCategoryShouldBeCompatibleWithCompileStatic_GROOVY6917() {
+    @Test // GROOVY-6917
+    void testCategoryShouldBeCompatibleWithCompileStatic2() {
         assertScript '''
-            @groovy.transform.CompileStatic
+            import groovy.transform.CompileStatic
+
+            @CompileStatic
             @Category(Integer)
             class IntegerCategory {
-                Integer twice() { this * 2 }
+                Integer twice() {
+                    this * 2
+                }
                 List<Integer> multiplesUpTo(Integer num) {
-                    (2..num).collect{ j -> this * j }
+                    (2..num).collect{ n -> this * n }
                 }
                 List<Integer> multiplyAll(List<Integer> nums) {
                     nums.collect{ it * this }
@@ -295,4 +335,3 @@ class CategoryAnnotationTest extends GroovyTestCase {
         '''
     }
 }
-
