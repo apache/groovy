@@ -164,7 +164,7 @@ ext {
     log4jVersion = '1.2.17'
     log4j2Version = '2.1'
     luceneVersion = '4.7.2'
-    openbeansVersion = '1.0'
+    openbeansVersion = '1.0.2'
     openejbVersion = '1.0'
     qdoxVersion = '1.12.1'
     slf4jVersion = '1.7.6'
@@ -188,7 +188,7 @@ dependencies {
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
     }
-    compile "com.googlecode:openbeans:$openbeansVersion"
+    compile "me.champeau.openbeans:openbeans:$openbeansVersion"
     compile "org.fusesource.jansi:jansi:$jansiVersion"
     compile("org.apache.ivy:ivy:$ivyVersion") {
         transitive = false
