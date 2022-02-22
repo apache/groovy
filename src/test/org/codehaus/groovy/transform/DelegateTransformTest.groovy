@@ -859,6 +859,26 @@ final class DelegateTransformTest {
         '''
     }
 
+    @Test // GROOVY-9289
+    void testExcludesWithInvalidPropertyNameResultsInError() {
+        def err = shouldFail '''
+            class WMap {
+                String name
+                @Delegate(excludes = "name")
+                Map<String, String> data
+
+                WMap(String name, Map<String, String> data) {
+                    this.name = name
+                    this.data = data
+                }
+            }
+
+            new WMap('example', [name: 'weird'])
+        '''
+
+        assert err.message.contains("Error during @Delegate processing: 'excludes' property or method 'name' does not exist.")
+    }
+
     @Test // GROOVY-8825
     void testDelegateToPrecompiledGroovyGeneratedMethod() {
         assertScript '''

@@ -34,6 +34,7 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.tools.BeanUtils;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
@@ -146,6 +147,9 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             delegate.includeTypes = getMemberClassList(node, MEMBER_INCLUDE_TYPES);
             checkIncludeExcludeUndefinedAware(node, delegate.excludes, delegate.includes,
                                               delegate.excludeTypes, delegate.includeTypes, MY_TYPE_NAME);
+            // GROOVY-9289: check excludes/includes names against the delegate's property and method names
+            if (!checkPropertyOrMethodList(delegate.type, delegate.excludes, "excludes", node, MY_TYPE_NAME)) return;
+            if (!checkPropertyOrMethodList(delegate.type, delegate.includes, "includes", node, MY_TYPE_NAME)) return;
 
             final List<MethodNode> ownerMethods = getAllMethods(delegate.owner);
             final List<MethodNode> delegateMethods = filterMethods(collectMethods(delegate.type), delegate, allNames, includeDeprecated);
@@ -268,6 +272,38 @@ next_signature: for (int i = 1; i <= n; i += 1) { // from Verifier#addDefaultPar
         }
 
         return methods;
+    }
+
+    private boolean checkPropertyOrMethodList(final ClassNode cNode, final List<String> propertyNameList, final String listName, final AnnotationNode anno, final String typeName) {
+        if (propertyNameList == null || propertyNameList.isEmpty()) {
+            return true;
+        }
+        final Set<String> pNames = new HashSet<>();
+        final Set<String> mNames = new HashSet<>();
+        for (PropertyNode pNode : BeanUtils.getAllProperties(cNode, false, false, false)) {
+            String name = pNode.getField().getName();
+            String suffix = capitalize(name);
+            pNames.add(name);
+            // add getter/setters since Groovy compiler hasn't added property accessors yet
+            if ((pNode.getModifiers() & ACC_FINAL) == 0) {
+                mNames.add("set" + suffix);
+            }
+            mNames.add("get" + suffix);
+            if (pNode.getOriginType().equals(ClassHelper.boolean_TYPE)) {
+                mNames.add("is" + suffix);
+            }
+        }
+        for (MethodNode mNode : cNode.getAllDeclaredMethods()) {
+            mNames.add(mNode.getName());
+        }
+        boolean result = true;
+        for (String name : propertyNameList) {
+            if (!pNames.contains(name) && !mNames.contains(name)) {
+                addError("Error during " + typeName + " processing: '" + listName + "' property or method '" + name + "' does not exist.", anno);
+                result = false;
+            }
+        }
+        return result;
     }
 
     private static void addSetterIfNeeded(final DelegateDescription delegate, final PropertyNode prop, final String name, final boolean allNames) {
