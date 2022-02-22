@@ -84,30 +84,9 @@ public class ReturnAdder {
 
     public void visitMethod(MethodNode node) {
         Statement statement = node.getCode();
-        if (!node.isVoidMethod()) {
-            if (statement != null) // it happens with @interface methods
-            {
-                final Statement code = addReturnsIfNeeded(statement, node.getVariableScope());
-                if (doAdd) node.setCode(code);
-            }
-        } else if (!node.isAbstract() && node.getReturnType().redirect()!=ClassHelper.VOID_TYPE) {
-            if (!(statement instanceof BytecodeSequence)) {
-                BlockStatement newBlock = new BlockStatement();
-                Statement code = node.getCode();
-                if (code instanceof BlockStatement) {
-                    newBlock.setVariableScope(((BlockStatement) code).getVariableScope());
-                }
-                if (statement instanceof BlockStatement) {
-                    newBlock.addStatements(((BlockStatement)statement).getStatements());
-                } else {
-                    newBlock.addStatement(statement);
-                }
-                final ReturnStatement returnStatement = ReturnStatement.RETURN_NULL_OR_VOID;
-                listener.returnStatementAdded(returnStatement);
-                newBlock.addStatement(returnStatement);
-                newBlock.setSourcePosition(statement);
-                if (doAdd) node.setCode(newBlock);
-            }
+        if (statement != null && !node.isVoidMethod()) {
+            statement = addReturnsIfNeeded(statement, node.getVariableScope());
+            if (doAdd) node.setCode(statement);
         }
     }
 
