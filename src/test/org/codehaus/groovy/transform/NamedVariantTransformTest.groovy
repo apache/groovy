@@ -229,6 +229,7 @@ final class NamedVariantTransformTest {
 
         assertScript '''
             import groovy.transform.*
+            import static groovy.test.GroovyAssert.shouldFail
 
             @NamedVariant
             def m(int one, int two = 42) {
@@ -238,8 +239,8 @@ final class NamedVariantTransformTest {
             String result = m(one:0, two:0)
             assert result == '0 0'
 
-            result = m(one:0, two:null)
-            assert result == '0 0'
+            shouldFail(MissingMethodException) { m(one:null) }
+            shouldFail(MissingMethodException) { m(one:0, two:null) }
         '''
     }
 
