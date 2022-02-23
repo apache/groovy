@@ -53,6 +53,7 @@ import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.ASTTransformationCollectorCodeVisitor;
 import org.codehaus.groovy.transform.sc.StaticCompileTransformation;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
@@ -519,6 +520,7 @@ public abstract class TraitComposer {
         );
 
         MethodCallExpression superCall = callX(varX("super"), forwarderMethod.getName(), paramTuple);
+        superCall.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, Boolean.TRUE); //GROOVY-10478
         superCall.setImplicitThis(false);
 
         // if (this instanceof GeneratedGroovyProxy)
