@@ -32,6 +32,7 @@ import java.util.List;
 public class MethodNode extends AnnotatedNode implements Opcodes {
 
     public static final String SCRIPT_BODY_METHOD_KEY = "org.codehaus.groovy.ast.MethodNode.isScriptBody";
+
     private String name;
     private int modifiers;
     private boolean syntheticPublic;
@@ -190,7 +191,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
 
     /**
      * Set the metadata flag for this method to indicate that it is a script body implementation.
-     * @see ModuleNode createStatementsClass().
+     * @see ModuleNode#createStatementsClass()
      */
     public void setIsScriptBody() {
         setNodeMetaData(SCRIPT_BODY_METHOD_KEY, Boolean.TRUE);

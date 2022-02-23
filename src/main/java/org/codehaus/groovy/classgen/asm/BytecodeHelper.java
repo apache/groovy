@@ -24,7 +24,6 @@ import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
@@ -49,14 +48,13 @@ import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
  */
 public class BytecodeHelper implements Opcodes {
     
-    private static String DTT_CLASSNAME = BytecodeHelper.getClassInternalName(DefaultTypeTransformation.class.getName());
+    private static String DTT_CLASSNAME = getClassInternalName(DefaultTypeTransformation.class.getName());
 
     public static String getClassInternalName(ClassNode t) {
-        if (t.isPrimaryClassNode() || t instanceof DecompiledClassNode) {
-            if (t.isArray()) return "[L"+getClassInternalName(t.getComponentType())+";";
-            return getClassInternalName(t.getName());
+        if (t.isArray()) {
+            return TypeUtil.getDescriptionByType(t);
         }
-        return getClassInternalName(t.getTypeClass());
+        return getClassInternalName(t.getName());
     }
 
     public static String getClassInternalName(Class t) {

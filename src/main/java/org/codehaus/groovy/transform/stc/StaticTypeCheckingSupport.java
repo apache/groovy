@@ -158,6 +158,7 @@ import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_EQUAL;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED_EQUAL;
+
 /**
  * Static support methods for {@link StaticTypeCheckingVisitor}.
  */
@@ -691,11 +692,11 @@ public abstract class StaticTypeCheckingSupport {
         }
 
         if (isNumberType(rightRedirect) || WideningCategories.isNumberCategory(rightRedirect)) {
-            if (BigDecimal_TYPE == leftRedirect || Number_TYPE == leftRedirect) {
+            if (leftRedirect.equals(BigDecimal_TYPE) || leftRedirect.equals(Number_TYPE)) {
                 // any number can be assigned to BigDecimal or Number
                 return true;
             }
-            if (BigInteger_TYPE == leftRedirect) {
+            if (leftRedirect.equals(BigInteger_TYPE)) {
                 return WideningCategories.isBigIntCategory(getUnwrapper(rightRedirect)) ||
                         rightRedirect.isDerivedFrom(BigInteger_TYPE);
             }
@@ -712,7 +713,7 @@ public abstract class StaticTypeCheckingSupport {
         // anything can be assigned to an Object, String, Boolean
         // or Class typed variable
         if (isWildcardLeftHandSide(leftRedirect)
-                && !(boolean_TYPE.equals(left) && rightExpressionIsNull)) return true;
+                && !(left.equals(boolean_TYPE) && rightExpressionIsNull)) return true;
 
         // char as left expression
         if (leftRedirect == char_TYPE && rightRedirect == STRING_TYPE) {
@@ -727,7 +728,7 @@ public abstract class StaticTypeCheckingSupport {
 
         // if left is Enum and right is String or GString we do valueOf
         if (leftRedirect.isDerivedFrom(Enum_Type) &&
-                (rightRedirect == GSTRING_TYPE || rightRedirect == STRING_TYPE)) {
+                (rightRedirect.equals(STRING_TYPE) || rightRedirect.equals(GSTRING_TYPE))) {
             return true;
         }
 
@@ -755,7 +756,7 @@ public abstract class StaticTypeCheckingSupport {
             return true;
         }
 
-        if (GROOVY_OBJECT_TYPE.equals(leftRedirect) && isBeingCompiled(right)) {
+        if (leftRedirect.equals(GROOVY_OBJECT_TYPE) && isBeingCompiled(right)) {
             return true;
         }
 
@@ -888,11 +889,23 @@ public abstract class StaticTypeCheckingSupport {
         return sb.toString();
     }
 
-    static String prettyPrintType(ClassNode type) {
-        if (type.isArray()) {
-            return prettyPrintType(type.getComponentType()) + "[]";
-        }
+    /**
+     * Returns string representation of type with generics. Arrays are indicated
+     * with trailing "[]".
+     */
+    static String prettyPrintType(final ClassNode type) {
         return type.toString(false);
+    }
+
+    /**
+     * Returns string representation of type *no* generics. Arrays are indicated
+     * with trailing "[]".
+     */
+    static String prettyPrintTypeName(final ClassNode type) {
+        if (type.isArray()) {
+            return prettyPrintTypeName(type.getComponentType()) + "[]";
+        }
+        return type.isGenericsPlaceHolder() ? type.getUnresolvedName() : type.getText();
     }
 
     public static boolean implementsInterfaceOrIsSubclassOf(ClassNode type, ClassNode superOrInterface) {
@@ -959,7 +972,7 @@ public abstract class StaticTypeCheckingSupport {
             return dist;
         }
 
-        ClassNode ref = isPrimitiveType(receiver) && !isPrimitiveType(compare) ? ClassHelper.getWrapper(receiver) : receiver;
+        ClassNode ref = isPrimitiveType(receiver) && !isPrimitiveType(compare) ? getWrapper(receiver) : receiver;
         while (ref != null) {
             if (compare.equals(ref)) {
                 break;
@@ -1564,9 +1577,8 @@ public abstract class StaticTypeCheckingSupport {
         // we use the provided information to transform the parameter
         // into something that can exist in the callsite context
         type = applyGenericsContext(resolvedMethodGenerics, type);
-        // there of course transformed parameter type and argument must fit
-        failure |= !typeCheckMethodArgumentWithGenerics(type, wrappedArgument, lastArg);
-        return failure;
+        // then of course transformed parameter type and argument must fit
+        return failure || !typeCheckMethodArgumentWithGenerics(type, wrappedArgument, lastArg);
     }
 
     private static GenericsType buildWildcardType(GenericsType origin) {
@@ -1872,12 +1884,10 @@ public abstract class StaticTypeCheckingSupport {
         return GenericsUtils.extractPlaceholders(newTarget);
     }
 
-    private static GenericsType[] applyGenericsContext(
-            Map<GenericsTypeName, GenericsType> spec, GenericsType[] gts
-    ) {
-        if (gts == null) return null;
+    static GenericsType[] applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final GenericsType[] gts) {
+        if (gts == null || spec == null || spec.isEmpty()) return gts;
         GenericsType[] newGTs = new GenericsType[gts.length];
-        for (int i = 0; i < gts.length; i++) {
+        for (int i = 0, n = gts.length; i < n; i += 1) {
             GenericsType gt = gts[i];
             newGTs[i] = applyGenericsContext(spec, gt);
         }

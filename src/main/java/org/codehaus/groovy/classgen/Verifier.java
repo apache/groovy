@@ -901,6 +901,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                     localVariable = localVarX(p.getName(), p.getType());
                                     localVariable.setModifiers(p.getModifiers());
                                     blockScope.putDeclaredVariable(localVariable);
+                                    localVariable.setInStaticContext(blockScope.isInStaticContext());
                                     code.addStatement(declS(localVariable, p.getInitialExpression()));
                                 }
                                 if (!localVariable.isClosureSharedVariable()) {
@@ -967,7 +968,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             public void call(ArgumentListExpression arguments, Parameter[] newParams, MethodNode method) {
                 // delegate to original constructor using arguments derived from defaults
                 Statement code = new ExpressionStatement(ctorThisX(arguments));
-                addConstructor(newParams, (ConstructorNode) method, code, node);
+                addConstructor(newParams, (ConstructorNode)method, code, node);
             }
         });
     }
@@ -1429,12 +1430,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if ((oldMethod.getModifiers() & ACC_BRIDGE) != 0) return null;
         if (oldMethod.isPrivate()) return null;
 
+        if (oldMethod.getGenericsTypes() != null) // GROOVY-9059
+            genericsSpec = addMethodGenerics(oldMethod, genericsSpec);
+
         // parameters
         boolean equalParameters = equalParametersNormal(overridingMethod, oldMethod);
         if (!equalParameters && !equalParametersWithGenerics(overridingMethod, oldMethod, genericsSpec)) return null;
-
-        // correct to method level generics for the overriding method
-        genericsSpec = addMethodGenerics(overridingMethod, genericsSpec);
 
         // return type
         ClassNode mr = overridingMethod.getReturnType();

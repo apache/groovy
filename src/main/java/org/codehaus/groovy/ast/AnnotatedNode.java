@@ -48,8 +48,10 @@ public class AnnotatedNode extends ASTNode {
     }
 
     public void addAnnotation(AnnotationNode value) {
-        checkInit();
-        annotations.add(value);
+        if (value != null) {
+            checkInit();
+            annotations.add(value);
+        }
     }
 
     private void checkInit() {
