@@ -74,11 +74,14 @@ public class CompilerConfiguration {
     public static final String JDK14 = "14";
     /** This (<code>"15"</code>) is the value for targetBytecode to compile for a JDK 15. */
     public static final String JDK15 = "15";
-    /** This (<code>"16"</code>) is the value for targetBytecode to compile for a JDK 16. */
+    /** This (<code>"16"</code>) is the value for targetBytecode to compile for a JDK 16.
+     * Use it at your own risk, because JDK 16 is not officially supported in this Groovy release yet. */
     public static final String JDK16 = "16";
-    /** This (<code>"17"</code>) is the value for targetBytecode to compile for a JDK 17. */
+    /** This (<code>"17"</code>) is the value for targetBytecode to compile for a JDK 17.
+     * Use it at your own risk, because JDK 17 is not officially supported in this Groovy release yet. */
     public static final String JDK17 = "17";
-    /** This (<code>"18"</code>) is the value for targetBytecode to compile for a JDK 18. */
+    /** This (<code>"18"</code>) is the value for targetBytecode to compile for a JDK 18.
+     * Use it at your own risk, because JDK 18 is not officially supported in this Groovy release yet.*/
     public static final String JDK18 = "18";
 
     /**
