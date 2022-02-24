@@ -305,7 +305,7 @@ public abstract class TraitComposer {
                     AnnotationNode an = new AnnotationNode(COMPILESTATIC_CLASSNODE);
                     impl.addAnnotation(an);
                     cNode.addTransform(StaticCompileTransformation.class, an);
-                    cNode.addMethod(impl);
+                    addGeneratedMethod(cNode, impl);
                 }
             }
         }
