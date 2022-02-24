@@ -482,7 +482,7 @@ project.afterEvaluate {
     }
 }
 
-def UNSTABLE = /^([\d.-]+(alpha|beta|rc|ea|b|m)[\d.-]+(groovy[\d.-]+)?|2.4.0-b[\d.]+|200\d{5}(\.\d{6})?)$/
+def UNSTABLE = /^([\d.-]+(alpha|beta|rc|ea|b|m)[\d.-]+(groovy[\d.-]+)?|2.4.0-b[\d.]+|200\d{5}(\.\d{6})?|2004-03-19)$/
 // ignore non-stable releases
 tasks.named("dependencyUpdates")?.configure {
     gradleReleaseChannel = 'current'
