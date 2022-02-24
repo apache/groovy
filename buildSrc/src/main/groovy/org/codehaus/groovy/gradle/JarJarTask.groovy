@@ -30,7 +30,7 @@ import org.gradle.api.tasks.TaskAction
 
 @CacheableTask
 class JarJarTask extends DefaultTask {
-    private final static String JARJAR_CLASS_NAME = 'org.pantsbuild.jarjar.JarJarTask'
+    private final static String JARJAR_CLASS_NAME = 'com.eed3si9n.jarjar.JarJarTask'
 
     String description = "Repackages dependencies into a shaded jar"
 

@@ -1094,6 +1094,12 @@ public class AsmClassGenerator extends ClassGenerator {
                         if (expression.isImplicitThis()) fieldNode = classNode.getDeclaredField(name);
                     } else {
                         fieldNode = classNode.getDeclaredField(name);
+                        // GROOVY-8448: "this.name" from anon. inner class
+                        if (fieldNode != null && !expression.isImplicitThis()
+                                && (fieldNode.getModifiers() & ACC_SYNTHETIC) != 0
+                                && fieldNode.getType().equals(ClassHelper.REFERENCE_TYPE)) {
+                            fieldNode = null;
+                        }
                     }
                     if (fieldNode == null && !isValidFieldNodeForByteCodeAccess(getField(classNode, name), classNode)) {
                         // GROOVY-9501, GROOVY-9569, GROOVY-9650, GROOVY-9655, GROOVY-9665, GROOVY-9683, GROOVY-9695

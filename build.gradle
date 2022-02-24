@@ -47,8 +47,8 @@ buildscript {
 plugins {
     id 'me.champeau.buildscan-recipes' version '0.2.3'
     id 'com.github.spotbugs' version '4.6.0'
-    id 'com.github.ben-manes.versions' version '0.38.0'
-    id 'com.github.blindpirate.osgi' version '0.0.4'
+    id 'com.github.ben-manes.versions' version '0.42.0'
+    id 'com.github.blindpirate.osgi' version '0.0.6'
     id 'org.sonarqube' version '3.0'
 }
 
@@ -127,30 +127,30 @@ configurations {
 }
 
 ext {
-    antVersion = '1.10.11'
+    antVersion = '1.10.12'
     asmVersion = '9.2'
     antlrVersion = '2.7.7'
     antlr4Version = '4.9.0'
-    bridgerVersion = '1.5.Final'
+    bridgerVersion = '1.6.Final'
     coberturaVersion = '1.9.4.1'
     commonsCliVersion = '1.4'
     gparsVersion = '1.2.1'
     ivyVersion = '2.5.0'
-    jansiVersion = '2.1.1'
-    jarjarVersion = '1.7.2'
-    javaParserVersion = '3.23.0'
+    jansiVersion = '2.4.0'
+    jarjarVersion = '1.8.1'
+    javaParserVersion = '3.24.0'
     jlineVersion = '2.14.6'
     jmockVersion = '1.2.0'
-    logbackVersion = '1.2.8'
+    logbackVersion = '1.2.10'
     log4jVersion = '1.2.17'
     log4j2Version = '2.17.1'
     openbeansVersion = '1.0.2'
     picocliVersion = '4.6.1'
     qdoxVersion = '1.12.1'
-    slf4jVersion = '1.7.31'
+    slf4jVersion = '1.7.36'
     xmlunitVersion = '1.6'
     xstreamVersion = '1.4.19'
-    spockVersion = '2.0-groovy-3.0'
+    spockVersion = '2.1-groovy-3.0'
     spotbugsVersion = '4.4.0'
     spotbugsAnnotationsVersion = '4.4.0'
     checkstyleVersion = '8.44'
@@ -197,7 +197,7 @@ dependencies {
     testImplementation "org.slf4j:jcl-over-slf4j:$slf4jVersion"
     testImplementation "com.thoughtworks.qdox:qdox:$qdoxVersion"
 
-    tools "org.pantsbuild:jarjar:$jarjarVersion"
+    tools "com.eed3si9n.jarjar:jarjar:$jarjarVersion"
     tools "org.jboss.bridger:bridger:$bridgerVersion"
 
     tools("net.sourceforge.cobertura:cobertura:$coberturaVersion") {
@@ -479,5 +479,14 @@ project.afterEvaluate {
     }
     buildscript.repositories.each { handler ->
         handler.each { checkRepo(it) }
+    }
+}
+
+def UNSTABLE = /^([\d.-]+(alpha|beta|rc|ea|b|m)[\d.-]+(groovy[\d.-]+)?|2.4.0-b[\d.]+|200\d{5}(\.\d{6})?|2004-03-19)$/
+// ignore non-stable releases
+tasks.named("dependencyUpdates")?.configure {
+    gradleReleaseChannel = 'current'
+    rejectVersionIf {
+        !(it.currentVersion.toLowerCase() ==~ UNSTABLE) && it.candidate.version.toLowerCase() ==~ UNSTABLE
     }
 }

@@ -955,32 +955,33 @@ withConfig(configuration) {
 }
 ---------------------------
 
-=== Config script flag
+=== The `configscript` commandline parameter
 
 So far, we have described how you can customize compilation using
 a `CompilationConfiguration` class, but this is only possible if you
 embed Groovy and that you create your own instances
 of `CompilerConfiguration` (then use it to create a
-`GroovyShell`, `GroovyScriptEngine`, …).
+`GroovyShell`, `GroovyScriptEngine`, …).
 
 If you want it to be applied on the classes you compile with the normal
-Groovy compiler (that is to say with  `groovyc`, `ant` or `gradle`,
-for example), it is possible to use a compilation flag named `configscript`
+Groovy compiler (that is to say with `groovyc`, `ant` or `gradle`,
+for example), it is possible to use a commandline parameter named `configscript`
 that takes a Groovy configuration script as argument.
 
-This script gives you access to the `CompilerConfiguration` instance *before*
+This script gives you access to the `CompilerConfiguration` instance *before*
 the files are compiled (exposed into the configuration script as a variable named `configuration`),
 so that you can tweak it.
 
 It also transparently integrates the compiler configuration builder above. As an example, let's see
 how you would activate static compilation by default on all classes.
 
-==== Static compilation by default
+==== Configscript example: Static compilation by default
 
 Normally, classes in Groovy are compiled with a dynamic runtime. You can activate static compilation
 by placing an annotation named `@CompileStatic` on any class. Some people would like to have this
-mode activated by default, that is to say not having to annotated classes. Using `configscript`,
-this is possible. First of all, you need to create a file named `config.groovy` into `src/conf` with
+mode activated by default, that is to say not having to annotate (potentially many) classes.
+Using `configscript`,  makes this possible.
+First of all, you need to create a file named `config.groovy` into say `src/conf` with
 the following contents:
 
 [source,groovy]
@@ -1000,6 +1001,20 @@ groovyc -configscript src/conf/config.groovy src/main/groovy/MyClass.groovy
 
 We strongly recommend you to separate configuration files from classes,
 hence why we suggest using the `src/main` and `src/conf` directories above.
+
+==== Configscript example: Setting system properties
+
+In a configuration script you can also set system properties, e.g.:
+
+[source,groovy]
+--------------------------------------
+System.setProperty('spock.iKnowWhatImDoing.disableGroovyVersionCheck', 'true')
+--------------------------------------
+
+If you have numerous system properties to set, then using a configuration file
+will reduce the need to set a bunch of system properties with a long command line
+or appropriately defined environment variable.
+You can also share all the settings by simply sharing the config file.
 
 === AST transformations
 

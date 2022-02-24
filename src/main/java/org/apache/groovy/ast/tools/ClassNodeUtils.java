@@ -45,6 +45,7 @@ import java.util.Set;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.isGenerated;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
 /**
@@ -83,11 +84,11 @@ public class ClassNodeUtils {
      * @see ClassNode#addMethod(String, int, ClassNode, Parameter[], ClassNode[], Statement)
      */
     public static MethodNode addGeneratedMethod(ClassNode cNode, String name,
-                                int modifiers,
-                                ClassNode returnType,
-                                Parameter[] parameters,
-                                ClassNode[] exceptions,
-                                Statement code) {
+                                                int modifiers,
+                                                ClassNode returnType,
+                                                Parameter[] parameters,
+                                                ClassNode[] exceptions,
+                                                Statement code) {
         MethodNode existing = cNode.getDeclaredMethod(name, parameters);
         if (existing != null) return existing;
         MethodNode result = new MethodNode(name, modifiers, returnType, parameters, exceptions, code);
@@ -165,7 +166,7 @@ public class ClassNodeUtils {
      * take precedence. Methods from interfaces visited early take precedence
      * over later ones.
      *
-     * @param cNode The ClassNode
+     * @param cNode      The ClassNode
      * @param methodsMap A map of existing methods to alter
      */
     public static void addDeclaredMethodsFromInterfaces(ClassNode cNode, Map<String, MethodNode> methodsMap) {
@@ -196,7 +197,7 @@ public class ClassNodeUtils {
      * Adds methods from interfaces and parent interfaces. Existing entries in the methods map take precedence.
      * Methods from interfaces visited early take precedence over later ones.
      *
-     * @param cNode The ClassNode
+     * @param cNode      The ClassNode
      * @param methodsMap A map of existing methods to alter
      */
     public static void addDeclaredMethodsFromAllInterfaces(ClassNode cNode, Map<String, MethodNode> methodsMap) {
@@ -324,7 +325,7 @@ public class ClassNodeUtils {
      * Detect whether a static property with the given name is within the class
      * or a super class.
      *
-     * @param cNode the ClassNode of interest
+     * @param cNode    the ClassNode of interest
      * @param propName the property name
      * @return the static property if found or else null
      */
@@ -350,7 +351,8 @@ public class ClassNodeUtils {
                 && !Modifier.isStatic(cNode.getModifiers());
     }
 
-    private ClassNodeUtils() { }
+    private ClassNodeUtils() {
+    }
 
     public static boolean hasNoArgConstructor(ClassNode cNode) {
         List<ConstructorNode> constructors = cNode.getDeclaredConstructors();
@@ -389,7 +391,7 @@ public class ClassNodeUtils {
     /**
      * Determine if the given ClassNode values have the same package name.
      *
-     * @param first a ClassNode
+     * @param first  a ClassNode
      * @param second a ClassNode
      * @return true if both given nodes have the same package name
      * @throws NullPointerException if either of the given nodes are null
@@ -421,5 +423,11 @@ public class ClassNodeUtils {
             node = node.getSuperClass();
         }
         return null;
+    }
+
+    public static boolean isSubtype(ClassNode maybeSuperclassOrInterface, ClassNode candidateChild) {
+        return maybeSuperclassOrInterface.isInterface() || candidateChild.isInterface()
+                ? isOrImplements(candidateChild, maybeSuperclassOrInterface)
+                : candidateChild.isDerivedFrom(maybeSuperclassOrInterface);
     }
 }

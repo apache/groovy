@@ -108,7 +108,7 @@ public class OperandStack {
     private ClassNode popWithMessage(int last) {
         try {
             return stack.remove(last);
-        } catch (ArrayIndexOutOfBoundsException ai) {
+        } catch (IndexOutOfBoundsException e) { // GROOVY-10458
             String method = controller.getMethodNode() == null ?
                     controller.getConstructorNode().getTypeDescriptor() :
                     controller.getMethodNode().getTypeDescriptor();
