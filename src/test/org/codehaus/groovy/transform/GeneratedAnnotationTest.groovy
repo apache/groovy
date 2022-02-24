@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.transform
 
-import groovy.transform.Generated
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -174,5 +173,60 @@ class GeneratedAnnotationTest extends GroovyShellTestCase {
         assert method.annotations*.annotationType().name.contains('groovy.transform.Generated')
         method = objectUnderTest.class.declaredMethods.find { it.name == 'TraitWithStaticVariableInitialized__variableC$set'}
         assert method.annotations*.annotationType().name.contains('groovy.transform.Generated')
+    }
+
+    @Test
+    void testTraitComposerMarksGeneratedMethodsForMethodsAsGenerated_GROOVY10505() {
+        def objectUnderTest = evaluate'''
+        trait TraitWithMethod {
+            String methodA() { "method without generated annotation" }
+        }
+
+        trait TraitWithMethodAsGenerated {
+            @groovy.transform.Generated
+            String methodB() { "method with generated annotation" }
+        }
+
+        trait TraitWithStaticMethod {
+            static String methodC() { "static method" }
+        }
+
+        trait TraitWithFinalMethod {
+            final String methodD() { "final method" }
+        }
+
+        trait TraitCompose implements TraitWithMethod, TraitWithMethodAsGenerated, TraitWithStaticMethod, TraitWithFinalMethod {
+            
+        }
+
+        class ClassUnderTest implements TraitCompose {
+            
+        }
+        new ClassUnderTest()
+        '''
+
+        def method = objectUnderTest.class.declaredMethods.find { it.name == 'TraitWithMethodAsGeneratedtrait$super$methodB'}
+        assert method.annotations*.annotationType().name.contains('groovy.transform.Generated')
+        
+        method = objectUnderTest.class.declaredMethods.find { it.name == 'TraitWithMethodtrait$super$methodA'}
+        assert method.annotations*.annotationType().name.contains('groovy.transform.Generated')
+
+        method = objectUnderTest.class.declaredMethods.find { it.name == 'TraitWithFinalMethodtrait$super$methodD'}
+        assert method.annotations*.annotationType().name.contains('groovy.transform.Generated')
+        
+        
+        // and original methods are marked as they were
+        
+        method = objectUnderTest.class.declaredMethods.find { it.name == 'methodA'}
+        assert method.annotations*.annotationType().name.contains('groovy.transform.Generated') == false
+
+        method = objectUnderTest.class.declaredMethods.find { it.name == 'methodB'}
+        assert method.annotations*.annotationType().name.contains('groovy.transform.Generated')
+        
+        method = objectUnderTest.class.declaredMethods.find { it.name == 'methodC'}
+        assert method.annotations*.annotationType().name.contains('groovy.transform.Generated') == false
+
+        method = objectUnderTest.class.declaredMethods.find { it.name == 'methodD'}
+        assert method.annotations*.annotationType().name.contains('groovy.transform.Generated') == false
     }
 }

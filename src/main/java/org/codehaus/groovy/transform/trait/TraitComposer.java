@@ -504,6 +504,7 @@ public abstract class TraitComposer {
                 ClassNode returnType = correctToGenericsSpecRecurse(genericsSpec, forwarderMethod.getReturnType());
                 Statement delegate = next == null ? createSuperFallback(forwarderMethod, returnType) : createDelegatingForwarder(forwarderMethod, next);
                 MethodNode methodNode = targetNode.addMethod(forwarderName, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, returnType, superForwarderParams, ClassNode.EMPTY_ARRAY, delegate);
+                AnnotatedNodeUtils.markAsGenerated(targetNode, methodNode);
                 methodNode.setGenericsTypes(forwarderMethod.getGenericsTypes());
             }
         }
