@@ -38,7 +38,7 @@ rootProject.allprojects {
     pluginManager.withPlugin('org.apache.groovy-base') {
         if (groovyLibrary.checkBinaryCompatibility.get()) {
             def taskName = "japicmp${project.name.split('-').collect{ it.capitalize() }.join()}"
-            def baselineCoords = "org.codehaus.groovy:${project.name}:${sharedConfiguration.binaryCompatibilityBaselineVersion.get()}@jar"
+            def baselineCoords = "org.apache.groovy:${project.name}:${sharedConfiguration.binaryCompatibilityBaselineVersion.get()}@jar"
             def baseline = thisProject.configurations.create("${taskName}Baseline") {
                 dependencies.add(thisProject.dependencies.create(baselineCoords))
             }
