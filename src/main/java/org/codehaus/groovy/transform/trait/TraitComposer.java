@@ -19,6 +19,8 @@
 package org.codehaus.groovy.transform.trait;
 
 import groovy.transform.CompileStatic;
+import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
+import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -302,7 +304,7 @@ public abstract class TraitComposer {
                     AnnotationNode an = new AnnotationNode(COMPILESTATIC_CLASSNODE);
                     impl.addAnnotation(an);
                     cNode.addTransform(StaticCompileTransformation.class, an);
-                    cNode.addMethod(impl);
+                    ClassNodeUtils.addGeneratedMethod(cNode, impl);
                 }
             }
         }

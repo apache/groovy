@@ -19,6 +19,8 @@
 package org.codehaus.groovy.transform.trait;
 
 import groovy.transform.CompilationUnitAware;
+import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
+import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -441,14 +443,14 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             MethodNode getter =
                     new MethodNode(getterName, propNodeModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
             getter.setSynthetic(true);
-            cNode.addMethod(getter);
+            ClassNodeUtils.addGeneratedMethod(cNode, getter);
 
             if (ClassHelper.boolean_TYPE == node.getType() || ClassHelper.Boolean_TYPE == node.getType()) {
                 String secondGetterName = "is" + Verifier.capitalize(name);
                 MethodNode secondGetter =
                         new MethodNode(secondGetterName, propNodeModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
                 secondGetter.setSynthetic(true);
-                cNode.addMethod(secondGetter);
+                ClassNodeUtils.addGeneratedMethod(cNode, secondGetter);
             }
         }
         if (setterBlock != null) {
@@ -458,7 +460,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             MethodNode setter =
                     new MethodNode(setterName, propNodeModifiers, ClassHelper.VOID_TYPE, setterParameterTypes, ClassNode.EMPTY_ARRAY, setterBlock);
             setter.setSynthetic(true);
-            cNode.addMethod(setter);
+            ClassNodeUtils.addGeneratedMethod(cNode, setter);
         }
     }
 
@@ -498,7 +500,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                         ClassNode.EMPTY_ARRAY,
                         returnS(initCode.getExpression())
                 );
-                helper.addMethod(fieldInitializer);
+                ClassNodeUtils.addGeneratedMethod(helper, fieldInitializer);
             } else {
                 BlockStatement code = (BlockStatement) selectedMethod.getCode();
                 MethodCallExpression mce;
@@ -527,8 +529,9 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 code.addStatement(new ExpressionStatement(mce));
             }
         }
+
         // define setter/getter helper methods (setter added even for final fields for legacy compatibility)
-        target.addMethod(
+        ClassNodeUtils.addGeneratedMethod(target,
                 Traits.helperSetterName(field),
                 ACC_PUBLIC | ACC_ABSTRACT,
                 field.getOriginType(),
@@ -536,7 +539,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 ClassNode.EMPTY_ARRAY,
                 null
         );
-        target.addMethod(
+        ClassNodeUtils.addGeneratedMethod(target,
                 Traits.helperGetterName(field),
                 ACC_PUBLIC | ACC_ABSTRACT,
                 field.getOriginType(),
