@@ -149,7 +149,7 @@ ext {
     qdoxVersion = '1.12.1'
     slf4jVersion = '1.7.31'
     xmlunitVersion = '1.6'
-    xstreamVersion = '1.4.18'
+    xstreamVersion = '1.4.19'
     spockVersion = '2.0-groovy-3.0'
     spotbugsVersion = '4.4.0'
     spotbugsAnnotationsVersion = '4.4.0'
