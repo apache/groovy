@@ -853,18 +853,4 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             assert new A(['foo1', 'foo2']).fooNames.size() == 2
         '''
     }
-
-    @Override // GROOVY-9955
-    void testStaticPropertyWithInheritanceFromAnotherSourceUnit() {
-        assertScript '''
-            import groovy.transform.stc.FieldsAndPropertiesSTCTest.Public
-          //assert Public.answer == 42
-            assert Public.CONST == 'XX'
-            assert Public.VALUE == null
-            Public.VALUE = 'YY'
-            assert Public.VALUE == 'YY'
-            Public.@VALUE = 'ZZ'
-            assert Public.@VALUE == 'ZZ'
-        '''
-    }
 }

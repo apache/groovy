@@ -803,12 +803,12 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         OperandStack operandStack = controller.getOperandStack();
 
         if (name != null && compileStack.isLHS()) {
-            ClassNode classNode = controller.getClassNode();
-            ClassNode receiverType = controller.getTypeChooser().resolveType(objectExpression, classNode);
+            ClassNode receiverType = getPropertyOwnerType(objectExpression); // GROOVY-9955
             if (adapter == AsmClassGenerator.setField || adapter == AsmClassGenerator.setGroovyObjectField) {
                 if (setField(expression, objectExpression, receiverType, name)) return;
             }
             if (ExpressionUtils.isThisExpression(objectExpression)) {
+                ClassNode classNode = controller.getClassNode();
                 FieldNode fieldNode = receiverType.getField(name);
                 if (fieldNode != null && fieldNode.isPrivate() && !receiverType.equals(classNode)
                         && StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode)) {
