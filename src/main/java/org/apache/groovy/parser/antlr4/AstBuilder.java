@@ -2566,16 +2566,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     throw new GroovyBugError("When baseExpr is a instance of MethodCallExpression, which should follow NO argumentList");
                 }
                 methodCallExpression = (MethodCallExpression) baseExpr;
-            } else {
-                if (!isInsideParentheses(baseExpr)
-                        && (baseExpr instanceof VariableExpression /* e.g. m 1, 2 */
-                            || baseExpr instanceof GStringExpression /* e.g. "$m" 1, 2 */
-                            || (baseExpr instanceof ConstantExpression && isTrue(baseExpr, IS_STRING)) /* e.g. "m" 1, 2 */)) {
-                    validateInvalidMethodDefinition(baseExpr, arguments);
-                } else {
-                    // e.g. a[x] b, new A() b, etc.
-                }
+
+            } else if (!isInsideParentheses(baseExpr)
+                    && (baseExpr instanceof VariableExpression // e.g. m 1, 2
+                        || baseExpr instanceof GStringExpression // e.g. "$m" 1, 2
+                        || (baseExpr instanceof ConstantExpression && isTrue(baseExpr, IS_STRING)))) { // e.g. "m" 1, 2
+                validateInvalidMethodDefinition(baseExpr, arguments);
+
                 methodCallExpression = configureAST(this.createMethodCallExpression(baseExpr, arguments), ctx.expression(), arguments);
+            } else { // e.g. a[x] b, new A() b, etc.
+                methodCallExpression = configureAST(this.createCallMethodCallExpression(baseExpr, arguments), ctx.expression(), arguments);
             }
 
             methodCallExpression.putNodeMetaData(IS_COMMAND_EXPRESSION, Boolean.TRUE);
