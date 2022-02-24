@@ -125,7 +125,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -2032,18 +2031,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         visitPrefixOrPostifExpression(expression, inner, type);
     }
 
-    private static Optional<Token> asAssignment(final int op) {
+    private static Token asAssignment(final int op) {
         switch (op) {
             case Types.PLUS_PLUS:
             case Types.PREFIX_PLUS_PLUS:
             case Types.POSTFIX_PLUS_PLUS:
-                return Optional.of(Token.newSymbol(Types.PLUS_EQUAL, -1, -1));
+                return Token.newSymbol(Types.PLUS_EQUAL, -1, -1);
             case Types.MINUS_MINUS:
             case Types.PREFIX_MINUS_MINUS:
             case Types.POSTFIX_MINUS_MINUS:
-                return Optional.of(Token.newSymbol(Types.MINUS_EQUAL, -1, -1));
+                return Token.newSymbol(Types.MINUS_EQUAL, -1, -1);
         }
-        return Optional.empty();
+        return null;
     }
 
     private static ClassNode getMathWideningClassNode(final ClassNode type) {
@@ -2059,9 +2058,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private void visitPrefixOrPostifExpression(final Expression origin, final Expression operand, final int operator) {
-        Optional<Token> token = asAssignment(operator);
-        if (token.isPresent()) { // push "operand += 1" or "operand -= 1" onto stack for LHS checks
-            typeCheckingContext.pushEnclosingBinaryExpression(binX(operand, token.get(), constX(1)));
+        Token token = asAssignment(operator);
+        if (token != null) { // push "operand += 1" or "operand -= 1" onto stack for LHS checks
+            typeCheckingContext.pushEnclosingBinaryExpression(binX(operand, token, constX(1)));
         }
         try {
             operand.visit(this);
@@ -2110,7 +2109,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 storeType(origin, isPostfix ? operandType : inferReturnTypeGenerics(operandType, node, ArgumentListExpression.EMPTY_ARGUMENTS));
             }
         } finally {
-            if (token.isPresent()) typeCheckingContext.popEnclosingBinaryExpression();
+            if (token != null) typeCheckingContext.popEnclosingBinaryExpression();
         }
     }
 
