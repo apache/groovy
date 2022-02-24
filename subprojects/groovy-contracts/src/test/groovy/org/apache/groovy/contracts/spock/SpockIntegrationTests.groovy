@@ -36,7 +36,7 @@ class ContractsSpec extends Specification {
     @Requires({ dir && file && path })
     private contractedMethod(String dir, String file, String path) { }
 
-    @spock.lang.Requires({ count < max })
+    @spock.lang.Requires({ data.count < data.max })
     def "spock Requires annotation still works with groovy-contracts"(Integer count, Integer max) {
         expect:
         count < max
