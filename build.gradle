@@ -481,3 +481,12 @@ project.afterEvaluate {
         handler.each { checkRepo(it) }
     }
 }
+
+def UNSTABLE = /^([\d.-]+(alpha|beta|rc|ea|b|m)[\d.-]+(groovy[\d.-]+)?|2.4.0-b[\d.]+|200\d{5}(\.\d{6})?)$/
+// ignore non-stable releases
+tasks.named("dependencyUpdates")?.configure {
+    gradleReleaseChannel = 'current'
+    rejectVersionIf {
+        !(it.currentVersion.toLowerCase() ==~ UNSTABLE) && it.candidate.version.toLowerCase() ==~ UNSTABLE
+    }
+}
