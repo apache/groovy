@@ -102,6 +102,7 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
+import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.trait.Traits;
@@ -124,6 +125,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -176,6 +178,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
@@ -2017,7 +2020,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitPostfixExpression(final PostfixExpression expression) {
-        super.visitPostfixExpression(expression);
         Expression inner = expression.getExpression();
         int op = expression.getOperation().getType();
         visitPrefixOrPostifExpression(expression, inner, op);
@@ -2025,10 +2027,23 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitPrefixExpression(final PrefixExpression expression) {
-        super.visitPrefixExpression(expression);
         Expression inner = expression.getExpression();
         int type = expression.getOperation().getType();
         visitPrefixOrPostifExpression(expression, inner, type);
+    }
+
+    private static Optional<Token> asAssignment(final int op) {
+        switch (op) {
+            case Types.PLUS_PLUS:
+            case Types.PREFIX_PLUS_PLUS:
+            case Types.POSTFIX_PLUS_PLUS:
+                return Optional.of(Token.newSymbol(Types.PLUS_EQUAL, -1, -1));
+            case Types.MINUS_MINUS:
+            case Types.PREFIX_MINUS_MINUS:
+            case Types.POSTFIX_MINUS_MINUS:
+                return Optional.of(Token.newSymbol(Types.MINUS_EQUAL, -1, -1));
+        }
+        return Optional.empty();
     }
 
     private static ClassNode getMathWideningClassNode(final ClassNode type) {
@@ -2043,44 +2058,59 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return type;
     }
 
-    private void visitPrefixOrPostifExpression(final Expression origin, final Expression innerExpression, final int operationType) {
-        boolean isPostfix = origin instanceof PostfixExpression;
-        ClassNode exprType = getType(innerExpression);
-        String name = operationType == PLUS_PLUS ? "next" : operationType == MINUS_MINUS ? "previous" : null;
-        if (isPrimitiveType(exprType) || isPrimitiveType(getUnwrapper(exprType))) {
-            if (operationType == PLUS_PLUS || operationType == MINUS_MINUS) {
-                if (!isPrimitiveType(exprType)) {
-                    MethodNode node = findMethodOrFail(varX("_dummy_", exprType), exprType, name);
+    private void visitPrefixOrPostifExpression(final Expression origin, final Expression operand, final int operator) {
+        Optional<Token> token = asAssignment(operator);
+        if (token.isPresent()) { // push "operand += 1" or "operand -= 1" onto stack for LHS checks
+            typeCheckingContext.pushEnclosingBinaryExpression(binX(operand, token.get(), constX(1)));
+        }
+        try {
+            operand.visit(this);
+            SetterInfo setterInfo = removeSetterInfo(operand);
+            if (setterInfo != null) {
+                BinaryExpression rewrite = typeCheckingContext.getEnclosingBinaryExpression();
+                rewrite.setSourcePosition(origin);
+                if (ensureValidSetter(rewrite, operand, rewrite.getRightExpression(), setterInfo)) {
+                    return;
+                }
+            }
+
+            ClassNode operandType = getType(operand);
+            boolean isPostfix = (origin instanceof PostfixExpression);
+            String name = (operator == PLUS_PLUS ? "next" : operator == MINUS_MINUS ? "previous" : null);
+
+            if (name != null && isNumberType(operandType)) {
+                if (!isPrimitiveType(operandType)) {
+                    MethodNode node = findMethodOrFail(varX("_dummy_", operandType), operandType, name);
                     if (node != null) {
                         storeTargetMethod(origin, node);
-                        storeType(origin,
-                                isPostfix ? exprType : getMathWideningClassNode(exprType));
+                        storeType(origin, isPostfix ? operandType : getMathWideningClassNode(operandType));
                         return;
                     }
                 }
-                storeType(origin, exprType);
+                storeType(origin, operandType);
                 return;
             }
-            addUnsupportedPreOrPostfixExpressionError(origin);
-            return;
-        } else if (implementsInterfaceOrIsSubclassOf(exprType, Number_TYPE) && (operationType == PLUS_PLUS || operationType == MINUS_MINUS)) {
-            // special case for numbers, improve type checking as we can expect ++ and -- to return the same type
-            MethodNode node = findMethodOrFail(innerExpression, exprType, name);
+            if (name != null && operandType.isDerivedFrom(Number_TYPE)) {
+                // special case for numbers, improve type checking as we can expect ++ and -- to return the same type
+                MethodNode node = findMethodOrFail(operand, operandType, name);
+                if (node != null) {
+                    storeTargetMethod(origin, node);
+                    storeType(origin, getMathWideningClassNode(operandType));
+                    return;
+                }
+            }
+            if (name == null) {
+                addUnsupportedPreOrPostfixExpressionError(origin);
+                return;
+            }
+
+            MethodNode node = findMethodOrFail(operand, operandType, name);
             if (node != null) {
                 storeTargetMethod(origin, node);
-                storeType(origin, getMathWideningClassNode(exprType));
-                return;
+                storeType(origin, isPostfix ? operandType : inferReturnTypeGenerics(operandType, node, ArgumentListExpression.EMPTY_ARGUMENTS));
             }
-        }
-        // not a primitive type. We must find a method which is called next
-        if (name == null) {
-            addUnsupportedPreOrPostfixExpressionError(origin);
-            return;
-        }
-        MethodNode node = findMethodOrFail(innerExpression, exprType, name);
-        if (node != null) {
-            storeTargetMethod(origin, node);
-            storeType(origin, isPostfix ? exprType : inferReturnTypeGenerics(exprType, node, ArgumentListExpression.EMPTY_ARGUMENTS));
+        } finally {
+            if (token.isPresent()) typeCheckingContext.popEnclosingBinaryExpression();
         }
     }
 

@@ -16,79 +16,124 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.NotYetImplemented
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
-class Groovy7276Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
-    void testShouldGoThroughPrivateBridgeAccessor() {
-            assertScript '''
+final class Groovy7276Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
+    void testShouldGoThroughPrivateBridgeMethod1() {
+        ['i', 'i++'].each {
+            assertScript """
                 class Foo {
-                    private i = 1
-                    def m() { new String().with {i}}
+                    private int i = 1
+                    int m() { new String().with { $it } }
                 }
                 assert new Foo().m() == 1
-                class Bar extends Foo {}
+            """
+        }
+    }
+
+    // GROOVY-7304
+    void testShouldGoThroughPrivateBridgeMethod2() {
+        ['i', 'i++'].each {
+            assertScript """
+                class Foo {
+                    private int i = 1
+                    int m() { new String().with { $it } }
+                }
+                class Bar extends Foo {
+                }
                 assert new Bar().m() == 1
+            """
+        }
+    }
+
+    void testShouldGoThroughPrivateBridgeMethod3() {
+        ['++i', 'i+=1', 'i=i+1'].each {
+            assertScript """
+                class Foo {
+                    private int i = 1
+                    int m() { new String().with { $it } }
+                }
+                assert new Foo().m() == 2
+            """
+        }
+    }
+
+    // GROOVY-7304
+    void testShouldGoThroughPrivateBridgeMethod4() {
+        ['++i', 'i+=1', 'i=i+1'].each {
+            assertScript """
+                class Foo {
+                    private int i = 1
+                    int m() { new String().with { $it } }
+                }
+                class Bar extends Foo {
+                }
+                assert new Bar().m() == 2
+            """
+        }
+    }
+
+    void testShouldGoThroughPrivateBridgeMethod5() {
+        assertScript '''
+            class Foo {
+                private int i = 1
+                private int pvI() { return i }
+                int m() { new String().with { pvI() } }
+            }
+            assert new Foo().m() == 1
         '''
     }
 
-    void testShouldGoThroughPrivateBridgeMethod() {
-            assertScript '''
-                class Foo {
-                    private i = 1
-                    private def pvI() { i }
-                    def m() { new String().with {pvI()}}
-                }
-                assert new Foo().m() == 1
-                class Bar extends Foo {}
-                assert new Bar().m() == 1
+    void testShouldGoThroughPrivateBridgeMethod6() {
+        assertScript '''
+            class Foo {
+                private int i = 1
+                private int pvI() { return i }
+                int m() { new String().with { pvI() } }
+            }
+            class Bar extends Foo {
+            }
+            assert new Bar().m() == 1
+        '''
+    }
+
+    @NotYetImplemented // GROOVY-7304: bridge methods should also be statically compiled
+    void testShouldGoThroughPrivateBridgeMethod7() {
+        assertScript '''
+            @groovy.transform.CompileDynamic
+            class Foo {
+                private int i = 1
+                @groovy.transform.CompileStatic
+                int m() { new String().with { i++ } }
+            }
+            class Bar extends Foo {
+            }
+            assert new Bar().m() == 1
         '''
     }
 
     void testPrivateAccessInInnerClass() {
-        assertScript '''import groovy.transform.CompileStatic
-
-class Outer {
-    private static class Inner {
-
-        private Set<String> variablesToCheck = []
-
-        private void checkAssertions(String name) {
-            Runnable r = {
-                def candidates = variablesToCheck.findAll { it == name }
-            }
-            r.run()
-        }
-    }
-
-    static void test() {
-        new Inner().checkAssertions('name')
-    }
-}
-
-Outer.test()'''
-    }
-
-    @NotYetImplemented
-    // GROOVY-7304
-    void testShouldGoThroughPrivateBridgeAccessorWithWriteAccess() {
-            assertScript '''
-                class Foo {
-                    private int i = 1
-                    def m() { new String().with {++i}}
+        assertScript '''
+            class Outer {
+                private static class Inner {
+                    private Set<String> variablesToCheck = []
+                    private void checkAssertions(String name) {
+                        Runnable r = {
+                            def candidates = variablesToCheck.findAll { it == name }
+                        }
+                        r.run()
+                    }
                 }
-                assert new Foo().m() == 2
-                class Bar extends Foo {}
-                assert new Bar().m() == 2
+                static void test() {
+                    new Inner().checkAssertions('name')
+                }
+            }
+            Outer.test()
         '''
     }
-
-
 }
