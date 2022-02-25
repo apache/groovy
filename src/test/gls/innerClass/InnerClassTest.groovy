@@ -1730,6 +1730,53 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-7609
+    void testReferenceToInitializedThis1() {
+        assertScript '''
+            class Upper<T> {
+                Upper(String s, int i) {
+                }
+            }
+
+            class Outer {
+                Inner inner
+                private Outer() {
+                    inner = new Inner()
+                }
+                class Inner extends Upper<Inner> {
+                    private Inner() {
+                        super('x', 0)
+                    }
+                }
+
+                static Outer make() { new Outer() }
+            }
+
+            assert Outer.make().inner != null
+        '''
+    }
+
+    @Test // GROOVY-7609
+    void testReferenceToInitializedThis2() {
+        assertScript '''
+            import java.util.concurrent.ThreadFactory
+
+            class C {
+                public C() {
+                    this(new ThreadFactory() {
+                        @Override
+                        Thread newThread(Runnable runnable) {
+                        }
+                    })
+                }
+                private C(ThreadFactory factory) {
+                }
+            }
+
+            def obj = new C()
+        '''
+    }
+
     @Test // GROOVY-6809
     void testReferenceToUninitializedThis() {
         def err = shouldFail '''
