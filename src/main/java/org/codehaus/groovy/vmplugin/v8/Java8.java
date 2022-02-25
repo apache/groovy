@@ -20,20 +20,17 @@ package org.codehaus.groovy.vmplugin.v8;
 
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.CompileUnit;
-import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.vmplugin.v7.Java7;
 
 import java.lang.annotation.ElementType;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.lang.reflect.Parameter;
 
 /**
  * Java 8 based functions.
@@ -42,24 +39,14 @@ import java.util.List;
  */
 public class Java8 extends Java7 {
 
-    private final Class<?>[] PLUGIN_DGM;
-
-    public Java8() {
-        super();
-        List<Class<?>> dgmClasses = new ArrayList<>();
-        Collections.addAll(dgmClasses, (Class<?>[]) super.getPluginDefaultGroovyMethods());
-        dgmClasses.add(PluginDefaultGroovyMethods.class);
-        PLUGIN_DGM = dgmClasses.toArray(new Class<?>[0]);
+    @Override
+    public int getVersion() {
+        return 8;
     }
 
     @Override
     public Class<?>[] getPluginDefaultGroovyMethods() {
-        return PLUGIN_DGM;
-    }
-
-    @Override
-    public int getVersion() {
-        return 8;
+        return new Class[]{org.codehaus.groovy.vmplugin.v5.PluginDefaultGroovyMethods.class, PluginDefaultGroovyMethods.class};
     }
 
     @Override
@@ -74,19 +61,15 @@ public class Java8 extends Java7 {
     }
 
     @Override
-    protected Parameter[] processParameters(CompileUnit compileUnit, Method m) {
-        java.lang.reflect.Parameter[] parameters = m.getParameters();
-        Type[] types = m.getGenericParameterTypes();
-        Parameter[] params = Parameter.EMPTY_ARRAY;
-        if (types.length > 0) {
-            params = new Parameter[types.length];
-            for (int i = 0; i < params.length; i++) {
-                java.lang.reflect.Parameter p = parameters[i];
-                String name = p.isNamePresent() ? p.getName() : "param" + i;
-                params[i] = makeParameter(compileUnit, types[i], m.getParameterTypes()[i], m.getParameterAnnotations()[i], name);
+    protected void fillParameterNames(String[] names, Member member) {
+        try {
+            Parameter[] parameters = ((Executable) member).getParameters();
+            for (int i = 0, n = names.length; i < n; i += 1) {
+                names[i] = parameters[i].getName();
             }
+        } catch (RuntimeException e) {
+            super.fillParameterNames(names, member);
         }
-        return params;
     }
 
     private static class LookupHolder {

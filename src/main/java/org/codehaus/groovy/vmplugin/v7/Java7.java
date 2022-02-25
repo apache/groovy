@@ -34,14 +34,15 @@ import java.security.PrivilegedAction;
  * ahead of this one.
  */
 public class Java7 extends Java6 {
-    @Override
-    public void invalidateCallSites() {
-    	IndyInterface.invalidateSwitchPoints();
-    }
 
     @Override
     public int getVersion() {
         return 7;
+    }
+
+    @Override
+    public void invalidateCallSites() {
+        IndyInterface.invalidateSwitchPoints();
     }
 
     @Override

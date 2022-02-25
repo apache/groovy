@@ -50,6 +50,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.MalformedParameterizedTypeException;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -61,10 +62,23 @@ import java.util.List;
  * java 5 based functions
  */
 public class Java5 implements VMPlugin {
+
     private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
-    private static final Class[] PLUGIN_DGM = {PluginDefaultGroovyMethods.class};
     private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
     private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
+
+    @Override
+    public int getVersion() {
+        return 5;
+    }
+
+    public Class[] getPluginDefaultGroovyMethods() {
+        return new Class[]{PluginDefaultGroovyMethods.class};
+    }
+
+    public Class[] getPluginStaticGroovyMethods() {
+        return EMPTY_CLASS_ARRAY;
+    }
 
     public void setAdditionalClassInformation(ClassNode cn) {
         setGenericsTypes(cn);
@@ -148,14 +162,15 @@ public class Java5 implements VMPlugin {
     private ClassNode configureWildcardType(WildcardType wildcardType) {
         ClassNode base = ClassHelper.makeWithoutCaching("?");
         base.setRedirect(ClassHelper.OBJECT_TYPE);
-        //TODO: more than one lower bound for wildcards?
-        ClassNode[] lowers = configureTypes(wildcardType.getLowerBounds());
-        ClassNode lower = null;
-        // TODO: is it safe to remove this? What was the original intention?
-        if (lowers != null) lower = lowers[0];
 
-        ClassNode[] upper = configureTypes(wildcardType.getUpperBounds());
-        GenericsType t = new GenericsType(base, upper, lower);
+        ClassNode[] lowers = configureTypes(wildcardType.getLowerBounds());
+        ClassNode[] uppers = configureTypes(wildcardType.getUpperBounds());
+        // beware of [Object] upper bounds; often it's <?> or <? super T>
+        if (lowers != null || wildcardType.toString().equals("?")) {
+            uppers = null;
+        }
+
+        GenericsType t = new GenericsType(base, uppers, lowers != null ? lowers[0] : null);
         t.setWildcard(true);
 
         ClassNode ref = ClassHelper.makeWithoutCaching(Object.class, false);
@@ -194,14 +209,6 @@ public class Java5 implements VMPlugin {
             }
         }
         return gts;
-    }
-
-    public Class[] getPluginDefaultGroovyMethods() {
-        return PLUGIN_DGM;
-    }
-
-    public Class[] getPluginStaticGroovyMethods() {
-        return EMPTY_CLASS_ARRAY;
     }
 
     private void setAnnotationMetaData(Annotation[] annotations, AnnotatedNode an) {
@@ -373,7 +380,7 @@ public class Java5 implements VMPlugin {
             Method[] methods = clazz.getDeclaredMethods();
             for (Method m : methods) {
                 ClassNode ret = makeClassNode(compileUnit, m.getGenericReturnType(), m.getReturnType());
-                Parameter[] params = processParameters(compileUnit, m);
+                Parameter[] params = makeParameters(compileUnit, m.getGenericParameterTypes(), m.getParameterTypes(), m.getParameterAnnotations(), m);
                 ClassNode[] exceptions = makeClassNodes(compileUnit, m.getGenericExceptionTypes(), m.getExceptionTypes());
                 MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), ret, params, exceptions, null);
                 mn.setSynthetic(m.isSynthetic());
@@ -384,15 +391,7 @@ public class Java5 implements VMPlugin {
             }
             Constructor[] constructors = clazz.getDeclaredConstructors();
             for (Constructor ctor : constructors) {
-                Type[] types = ctor.getGenericParameterTypes();
-                Parameter[] params1 = Parameter.EMPTY_ARRAY;
-                if (types.length > 0) {
-                    params1 = new Parameter[types.length];
-                    for (int i = 0; i < params1.length; i++) {
-                        params1[i] = makeParameter(compileUnit, types[i], ctor.getParameterTypes()[i], getConstructorParameterAnnotations(ctor)[i], "param" + i);
-                    }
-                }
-                Parameter[] params = params1;
+                Parameter[] params = makeParameters(compileUnit, ctor.getGenericParameterTypes(), ctor.getParameterTypes(), getConstructorParameterAnnotations(ctor), ctor);
                 ClassNode[] exceptions = makeClassNodes(compileUnit, ctor.getGenericExceptionTypes(), ctor.getExceptionTypes());
                 ConstructorNode cn = classNode.addConstructor(ctor.getModifiers(), params, exceptions, null);
                 setAnnotationMetaData(ctor.getAnnotations(), cn);
@@ -412,18 +411,6 @@ public class Java5 implements VMPlugin {
         } catch (MalformedParameterizedTypeException e) {
             throw new RuntimeException("Unable to configure class node for class "+classNode.toString(false)+" due to malformed parameterized types", e);
         }
-    }
-
-    protected Parameter[] processParameters(CompileUnit compileUnit, Method m) {
-        Type[] types = m.getGenericParameterTypes();
-        Parameter[] params = Parameter.EMPTY_ARRAY;
-        if (types.length > 0) {
-            params = new Parameter[types.length];
-            for (int i = 0; i < params.length; i++) {
-                params[i] = makeParameter(compileUnit, types[i], m.getParameterTypes()[i], m.getParameterAnnotations()[i], "param" + i);
-            }
-        }
-        return params;
     }
 
     /**
@@ -514,14 +501,32 @@ public class Java5 implements VMPlugin {
         return back.getPlainNodeReference();
     }
 
-    protected Parameter makeParameter(CompileUnit cu, Type type, Class cl, Annotation[] annotations, String name) {
-        ClassNode cn = makeClassNode(cu, type, cl);
-        Parameter parameter = new Parameter(cn, name);
-        setAnnotationMetaData(annotations, parameter);
-        return parameter;
+    private Parameter[] makeParameters(CompileUnit cu, Type[] types, Class[] cls, Annotation[][] parameterAnnotations, Member member) {
+        Parameter[] params = Parameter.EMPTY_ARRAY;
+        int n = types.length;
+        if (n > 0) {
+            params = new Parameter[n];
+            String[] names = new String[n];
+            fillParameterNames(names, member);
+            for (int i = 0; i < n; i += 1) {
+                setAnnotationMetaData(parameterAnnotations[i],
+                    params[i] = new Parameter(makeClassNode(cu, types[i], cls[i]), names[i]));
+            }
+        }
+        return params;
     }
 
-    public void invalidateCallSites() {}
+    protected void fillParameterNames(String[] names, Member member) {
+        for (int i = 0, n = names.length; i < n; i += 1) {
+            names[i] = (i < ARGS.length ? ARGS[i] : "arg" + i);
+        }
+    }
+
+    // arbitrary choice of first ten; maintaining this array prevents many thousands of "argN" string/char[] instances
+    private static final String[] ARGS = {"arg0", "arg1", "arg2", "arg3", "arg4", "arg5", "arg6", "arg7", "arg8", "arg9"};
+
+    public void invalidateCallSites() {
+    }
 
     @Override
     public Object getInvokeSpecialHandle(Method m, Object receiver){
@@ -529,13 +534,7 @@ public class Java5 implements VMPlugin {
     }
 
     @Override
-    public int getVersion() {
-        return 5;
-    }
-
-    @Override
     public Object invokeHandle(Object handle, Object[] args) throws Throwable {
         throw new GroovyBugError("invokeHandle requires at least JDK 7");
     }
 }
-
