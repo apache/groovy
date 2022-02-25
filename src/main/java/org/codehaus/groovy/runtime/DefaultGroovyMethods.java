@@ -8701,6 +8701,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * to <code>get(key)</code>. If an unknown key is found, a default value will be
      * stored into the Map before being returned. The default value stored will be the
      * result of calling the supplied Closure with the key as the parameter to the Closure.
+     *
      * Example usage:
      * <pre class="groovyTestCase">
      * def map = [a:1, b:2].withDefault{ k {@code ->} k.toCharacter().isLowerCase() ? 10 : -10 }
@@ -8716,9 +8717,61 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param init a Closure which is passed the unknown key
      * @return the wrapped Map
      * @since 1.7.1
+     * @see #withDefault(Map, boolean, boolean, Closure)
      */
     public static <K, V> Map<K, V> withDefault(Map<K, V> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<V> init) {
-        return MapWithDefault.newInstance(self, init);
+        return MapWithDefault.newInstance(self, true, false, init);
+    }
+
+    /**
+     * Wraps a map using the decorator pattern with a wrapper that intercepts all calls
+     * to <code>get(key)</code> and <code>put(key, value)</code>.
+     * If an unknown key is found for <code>get</code>, a default value will be returned.
+     * The default value will be the result of calling the supplied Closure with the key
+     * as the parameter to the Closure.
+     * If <code>autoGrow</code> is set, the value will be stored into the map.
+     *
+     * If <code>autoShrink</code> is set, then an attempt to <code>put</code> the default value
+     * into the map is ignored and indeed any existing value would be removed.
+     *
+     * If you wish the backing map to be as small as possible, consider setting <code>autoGrow</code>
+     * to <code>false</code> and <code>autoShrink</code> to <code>true</code>.
+     * This keeps the backing map as small as possible, i.e. sparse, but also means that
+     * <code>containsKey</code>, <code>keySet</code>, <code>size</code>, and other methods
+     * will only reflect the sparse values.
+     *
+     * If you are wrapping an immutable map, you should set <code>autoGrow</code>
+     * and <code>autoShrink</code> to <code>false</code>.
+     * In this scenario, the <code>get</code> method is essentially a shorthand
+     * for calling <code>getOrDefault</code> with the default value supplied once as a Closure.
+     *
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * // sparse map example
+     * def answers = [life: 100].withDefault(false, true){ 42 }
+     * assert answers.size() == 1
+     * assert answers.foo == 42
+     * assert answers.size() == 1
+     * answers.life = 42
+     * answers.putAll(universe: 42, everything: 42)
+     * assert answers.size() == 0
+     *
+     * // immutable map example
+     * def certainties = [death: true, taxes: true].asImmutable().withDefault(false, false){ false }
+     * assert certainties.size() == 2
+     * assert certainties.wealth == false
+     * assert certainties.size() == 2
+     * </pre>
+     *
+     * @param self a Map
+     * @param autoGrow whether calling get could potentially grow the map if the key isn't found
+     * @param autoShrink whether calling put with the default value could potentially shrink the map
+     * @param init a Closure which is passed the unknown key
+     * @return the wrapped Map
+     * @since 4.0.1
+     */
+    public static <K, V> Map<K, V> withDefault(Map<K, V> self, boolean autoGrow, boolean autoShrink, @ClosureParams(FirstParam.FirstGenericType.class) Closure<V> init) {
+        return MapWithDefault.newInstance(self, autoGrow, autoShrink, init);
     }
 
     /**
