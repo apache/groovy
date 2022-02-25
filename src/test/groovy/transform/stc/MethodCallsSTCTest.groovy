@@ -25,8 +25,8 @@ import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
  * Unit tests for static type checking : method calls.
  */
 class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
-    private static final boolean IS_PRE_8
 
+    private static final boolean IS_PRE_8
     static {
         try {
             Class.forName("java.util.function.Predicate")
@@ -38,13 +38,11 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
 
     @Override
     protected void configure() {
-        final ImportCustomizer ic = new ImportCustomizer()
+        def ic = new ImportCustomizer()
         ic.addImport('A','groovy.transform.stc.MethodCallsSTCTest.MyMethodCallTestClass')
         ic.addImport('B','groovy.transform.stc.MethodCallsSTCTest.MyMethodCallTestClass2')
         ic.addImport('C','groovy.transform.stc.MethodCallsSTCTest.MyMethodCallTestClass3')
-        config.addCompilationCustomizers(
-                ic
-        )
+        config.addCompilationCustomizers(ic)
     }
 
     void testMethodCallOnInstance() {
@@ -301,7 +299,6 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             }
         '''
     }
-
 
     void testShouldFindStaticMethod() {
         assertScript '''
@@ -727,7 +724,6 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-
     void testEqualsCalledOnInterface() {
         assertScript '''
             Serializable ser = (Serializable) new Integer(1)
@@ -1121,6 +1117,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         assert a( 'tim' ) { 0 } == 0
         '''
     }
+
     // GROOVY-5743
     void testClosureAsParameterWithDefaultValue() {
         assertScript '''
@@ -1220,7 +1217,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-5883 and GROOVY-6270
+    // GROOVY-5883, GROOVY-6270
     void testClosureUpperBound() {
         assertScript '''
             class Test<T> {
@@ -1302,7 +1299,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             '''
     }
 
-    //GROOVY-7813
+    // GROOVY-7813
     void testNonStaticOuterMethodCannotBeCalledFromStaticClass() {
         shouldFailWithMessages '''
             class Foo {
@@ -1349,45 +1346,53 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8445
-    void testGroovy8445() {
+    void testCoerceClosureToFunctionalInterface1() {
         if (IS_PRE_8) return
 
         assertScript '''
-        import groovy.transform.CompileStatic
-        import java.util.stream.Collectors
-        import java.util.stream.Stream
+            import java.util.stream.Collectors
+            import java.util.stream.Stream
 
-        @CompileStatic
-        public class Test1 {
-            public static void main(String[] args) {
-                p();
-            }
+            public class Test1 {
+                public static void main(String[] args) {
+                    p();
+                }
 
-            public static void p() {
-                assert 13 == [1, 2, 3].stream().reduce(7, {Integer r, Integer e -> r + e});
+                public static void p() {
+                    assert 13 == [1, 2, 3].stream().reduce(7, {Integer r, Integer e -> r + e});
+                }
             }
-        }
         '''
     }
 
     // GROOVY-8138
-    void testGroovy8138() {
+    void testCoerceClosureToFunctionalInterface2() {
         if (IS_PRE_8) return
 
         assertScript '''
-        import groovy.transform.CompileStatic
+            import static java.util.stream.Collectors.toList
 
-        import static java.util.stream.Collectors.toList
-
-        @CompileStatic
-        class Test {
-            static void main(String[] args) {
-                List<String> tables = ['a', 'b']
-                assert ['a'] == tables.stream().filter { tableName -> tableName.contains('a') }.collect(toList())
+            class Test {
+                static void main(String[] args) {
+                    List<String> tables = ['a', 'b']
+                    assert ['a'] == tables.stream().filter { tableName -> tableName.contains('a') }.collect(toList())
+                }
             }
-        }
         '''
     }
+
+    @groovy.transform.NotYetImplemented
+    void testCoerceReturnValueToMethodReturnType() {
+        assertScript '''
+            enum E { FOO, BAR }
+
+            E[] m() {
+                return E.values().toList() // values() returns an array...
+            }
+        '''
+    }
+
+    //--------------------------------------------------------------------------
 
     static class MyMethodCallTestClass {
 
@@ -1406,7 +1411,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         T[] identity(T... args) { args }
     }
 
-    static class MyMethodCallTestClass3 extends MyMethodCallTestClass2<String> {}
+    static class MyMethodCallTestClass3 extends MyMethodCallTestClass2<String> {
+    }
 
     static class GroovyPage {
         public final void printHtmlPart(final int partNumber) {}
