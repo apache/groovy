@@ -39,7 +39,9 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.HashMap;
@@ -221,8 +223,14 @@ public class ClosureWriter {
         if (controller.isInScriptBody()) {
             answer.setScriptBody(true);
         }
-        MethodNode method =
-                answer.addMethod("doCall", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, parameters, ClassNode.EMPTY_ARRAY, expression.getCode());
+        // GROOVY-9971: closure return type is mapped to Groovy cast by classgen
+        ClassNode returnType = expression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
+        if (returnType == null) returnType = ClassHelper.OBJECT_TYPE; // not STC or unknown path
+        else if (returnType.isPrimaryClassNode()) returnType = returnType.getPlainNodeReference();
+        else if (ClassHelper.isPrimitiveType(returnType)) returnType = ClassHelper.getWrapper(returnType);
+        else if (GenericsUtils.hasUnresolvedGenerics(returnType)) returnType = GenericsUtils.nonGeneric(returnType);
+
+        MethodNode method = answer.addMethod("doCall", ACC_PUBLIC, returnType, parameters, ClassNode.EMPTY_ARRAY, expression.getCode());
         method.setSourcePosition(expression);
 
         VariableScope varScope = expression.getVariableScope();
@@ -241,7 +249,7 @@ public class ClosureWriter {
             MethodNode call = new MethodNode(
                     "call",
                     ACC_PUBLIC,
-                    ClassHelper.OBJECT_TYPE,
+                    returnType,
                     parameters,
                     ClassNode.EMPTY_ARRAY,
                     returnS(callThisX("doCall", args(parameters))));

@@ -323,16 +323,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     protected final ReturnAdder.ReturnStatementListener returnListener = new ReturnAdder.ReturnStatementListener() {
+        @Override
         public void returnStatementAdded(final ReturnStatement returnStatement) {
-            if (isNullConstant(returnStatement.getExpression())) return;
-            checkReturnType(returnStatement);
-            if (typeCheckingContext.getEnclosingClosure() != null) {
-                addClosureReturnType(getType(returnStatement.getExpression()));
-            } else if (typeCheckingContext.getEnclosingMethod() != null) {
-            } else {
-                throw new GroovyBugError("Unexpected return statement at "
-                        + returnStatement.getLineNumber() + ":" + returnStatement.getColumnNumber()
-                        + " " + returnStatement.getText());
+            if (!isNullConstant(returnStatement.getExpression())) {
+                ClassNode returnType = checkReturnType(returnStatement);
+                if (typeCheckingContext.getEnclosingClosure() != null) {
+                    addClosureReturnType(returnType);
+                } else if (typeCheckingContext.getEnclosingMethod() != null) {
+                    // TODO
+                } else {
+                    throw new GroovyBugError("Unexpected return statement at " + returnStatement.getLineNumber() + ":" + returnStatement.getColumnNumber() + " " + returnStatement.getText());
+                }
             }
         }
     };
@@ -795,8 +796,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (ensureValidSetter(expression, leftExpression, rightExpression, setterInfo)) {
                     return;
                 }
-
             } else {
+                if (op == ASSIGN) { // GROOVY-9971
+                    ClassNode lType = getOriginalDeclarationType(leftExpression);
+                    if (isClosureWithType(lType) && rightExpression instanceof ClosureExpression) {
+                        storeInferredReturnType(rightExpression, getCombinedBoundType(lType.getGenericsTypes()[0]));
+                    }
+                }
                 rightExpression.visit(this);
             }
             ClassNode lType = getType(leftExpression);
@@ -994,6 +1000,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             addAssignmentError(firstSetterType, getType(newRightExpression), expression);
             return true;
         }
+    }
+
+    private static boolean isClosureWithType(final ClassNode type) {
+        return type.equals(CLOSURE_TYPE) && type.getGenericsTypes() != null && type.getGenericsTypes().length == 1;
     }
 
     private boolean isCompoundAssignment(Expression exp) {
@@ -2165,15 +2175,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected ClassNode checkReturnType(final ReturnStatement statement) {
         Expression expression = statement.getExpression();
-        ClassNode type = getType(expression);
 
+        ClassNode type;
+        // handle instanceof cases
+        if (expression instanceof VariableExpression && hasInferredReturnType(expression)) {
+            type = getInferredReturnType(expression);
+        } else {
+            type = getType(expression);
+        }
         if (typeCheckingContext.getEnclosingClosure() != null) {
+            ClassNode inferredReturnType = getInferredReturnType(typeCheckingContext.getEnclosingClosure().getClosureExpression());
+            if (STRING_TYPE.equals(inferredReturnType) && StaticTypeCheckingSupport.isGStringOrGStringStringLUB(type)) {
+                type = STRING_TYPE; // GROOVY-9971: implicit "toString()" before return
+            }
             return type;
         }
-        // handle instanceof cases
-        if ((expression instanceof VariableExpression) && hasInferredReturnType(expression)) {
-            type = expression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
-        }
+
         MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
         if (enclosingMethod != null && !enclosingMethod.isVoidMethod()) {
             ClassNode returnType = enclosingMethod.getReturnType();
@@ -2741,6 +2758,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
                     } else {
                         inferClosureParameterTypes(receiver, arguments, (ClosureExpression) expression, param, selectedMethod);
+                    }
+                    ClassNode targetType = param.getType();
+                    if (isClosureWithType(targetType)) { // GROOVY-9971
+                        storeInferredReturnType(expression, getCombinedBoundType(targetType.getGenericsTypes()[0]));
                     }
                 }
                 expression.visit(this);
