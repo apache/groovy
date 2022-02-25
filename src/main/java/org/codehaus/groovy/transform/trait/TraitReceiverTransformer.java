@@ -199,7 +199,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 method,
                 ArgumentListExpression.EMPTY_ARGUMENTS
         );
-        mce.setSourcePosition(exp);
+        mce.setSourcePosition(exp instanceof PropertyExpression ? ((PropertyExpression) exp).getProperty() : exp);
         mce.setImplicitThis(false);
         return mce;
     }
@@ -253,7 +253,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                         method,
                         new ArgumentListExpression(super.transform(rightExpression))
                 );
-                mce.setSourcePosition(exp);
+                mce.setSourcePosition(leftExpression instanceof PropertyExpression ? ((PropertyExpression) leftExpression).getProperty() : leftExpression);
                 mce.setImplicitThis(false);
                 markDynamicCall(mce, staticField, isStatic);
                 return mce;
@@ -327,7 +327,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         );
         newCall.setImplicitThis(false);
         newCall.setSafe(call.isSafe());
-        newCall.setSourcePosition(call);
+        newCall.getMethod().setSourcePosition(call.getMethod());
         newCall.setSpreadSafe(call.isSpreadSafe());
         return newCall;
     }

@@ -30,7 +30,6 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilePhase;
@@ -46,12 +45,12 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
 import static org.codehaus.groovy.antlr.AntlrParserPlugin.getDefaultValueForPrimitive;
-import static org.codehaus.groovy.ast.expr.ArgumentListExpression.EMPTY_ARGUMENTS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getGetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -218,17 +217,16 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
     }
 
     private Statement buildMethodBody(final ClassNode exception, final String message, final ClosureExpression code, final ClassNode returnType) {
-        BlockStatement body = new BlockStatement();
         if (code != null) {
-            body.addStatement(code.getCode());
-        } else if (exception != null) {
-            body.addStatement(throwS(ctorX(exception, message == null ? EMPTY_ARGUMENTS : constX(message))));
-        } else {
-            Expression result = getDefaultValueForPrimitive(returnType);
-            if (result != null) {
-                body.addStatement(returnS(result));
-            }
+            return code.getCode();
         }
-        return body;
+        if (exception != null) {
+            if (message == null) {
+                return throwS(ctorX(exception));
+            }
+            return throwS(ctorX(exception, constX(message)));
+        }
+        Expression value = getDefaultValueForPrimitive(returnType);
+        return (value != null ? returnS(value) : returnS(nullX()));
     }
 }

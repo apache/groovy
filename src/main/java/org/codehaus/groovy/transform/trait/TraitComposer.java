@@ -293,7 +293,7 @@ public abstract class TraitComposer {
                     // but add empty body for setter for legacy compatibility
                     MethodNode impl = new MethodNode(
                             methodNode.getName(),
-                            Opcodes.ACC_PUBLIC | isStatic,
+                            Opcodes.ACC_PUBLIC | isStatic | Opcodes.ACC_SYNTHETIC,
                             returnType,
                             newParams,
                             ClassNode.EMPTY_ARRAY,
@@ -341,8 +341,7 @@ public abstract class TraitComposer {
         // guaranteed to be always present
         boolean isHelperForStaticMethod = helperMethodParams[0].getOriginType().equals(ClassHelper.CLASS_Type);
         if (Modifier.isPrivate(access) && !isHelperForStaticMethod) {
-            // do not create forwarder for private methods
-            // see GROOVY-7213
+            // GROOVY-7213: do not create forwarder for private methods
             return;
         }
         if (!isHelperForStaticMethod) {
@@ -380,9 +379,7 @@ public abstract class TraitComposer {
         AnnotationNode bridgeAnnotation = new AnnotationNode(Traits.TRAITBRIDGE_CLASSNODE);
         bridgeAnnotation.addMember("traitClass", new ClassExpression(trait));
         bridgeAnnotation.addMember("desc", new ConstantExpression(BytecodeHelper.getMethodDescriptor(helperMethod.getReturnType(), traitMethodParams)));
-        forwarder.addAnnotation(
-                bridgeAnnotation
-        );
+        forwarder.addAnnotation(bridgeAnnotation);
 
         MethodNode existingMethod = findExistingMethod(targetNode, forwarder);
         if (existingMethod != null) {

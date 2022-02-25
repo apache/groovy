@@ -70,7 +70,6 @@ import java.util.List;
 import java.util.Set;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.transform.trait.SuperCallTraitTransformer.UNRESOLVED_HELPER_CLASS;
 
 /**
@@ -496,7 +495,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                         field.getOriginType(),
                         new Parameter[]{createSelfParameter(trait, field.isStatic())},
                         ClassNode.EMPTY_ARRAY,
-                        returnS(initCode.getExpression())
+                        GeneralUtils.returnS(initCode.getExpression())
                 );
                 helper.addMethod(fieldInitializer);
             } else {

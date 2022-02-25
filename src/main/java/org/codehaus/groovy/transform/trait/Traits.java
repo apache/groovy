@@ -147,8 +147,7 @@ public abstract class Traits {
             // precompiled trait
             try {
                 final ClassLoader classLoader = trait.getTypeClass().getClassLoader();
-                String helperClassName = Traits.helperClassName(trait);
-                helperClassNode = ClassHelper.make(Class.forName(helperClassName, false, classLoader));
+                helperClassNode = ClassHelper.make(Class.forName(Traits.helperClassName(trait), false, classLoader));
                 try {
                     fieldHelperClassNode = ClassHelper.make(classLoader.loadClass(Traits.fieldHelperClassName(trait)));
                     staticFieldHelperClassNode = ClassHelper.make(classLoader.loadClass(Traits.staticFieldHelperClassName(trait)));

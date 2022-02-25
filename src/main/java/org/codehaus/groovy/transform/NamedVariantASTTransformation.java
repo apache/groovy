@@ -277,7 +277,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         if (defaultValue == null && isPrimitiveType(type)) {
             defaultValue = defaultValueX(type);
         }
-        if (defaultValue != null) {
+        if (defaultValue != null) { // GROOVY-9158, GROOVY-9183
             if (isPrimitiveType(type)) { // handle null for primitive
                 value = ternaryX(notNullX(value), value, defaultValueX(type));
             }

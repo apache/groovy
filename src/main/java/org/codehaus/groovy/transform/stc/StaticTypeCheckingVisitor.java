@@ -690,12 +690,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return;
         }
 
-        // a dynamic variable is either an undeclared variable
-        // or a member of a class used in a 'with'
-        DynamicVariable dyn = (DynamicVariable) accessedVariable;
-        // first, we must check the 'with' context
-        String dynName = dyn.getName();
-        if (tryVariableExpressionAsProperty(vexp, dynName)) return;
+        // a dynamic variable is either a closure property, a class member referenced from a closure, or an undeclared variable
+        if (tryVariableExpressionAsProperty(vexp, vexp.getName())) return;
 
         if (!extension.handleUnresolvedVariableExpression(vexp)) {
             addStaticTypeError("The variable [" + vexp.getName() + "] is undeclared.", vexp);
@@ -3827,18 +3823,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         if (!typeCheckingContext.enclosingBlocks.isEmpty()) {
             BinaryExpression instanceOfExpression = findInstanceOfNotReturnExpression(ifElse);
-            if (instanceOfExpression == null) {
-                instanceOfExpression = findInstanceOfNotReturnExpression(ifElse);
-            }
-            if (instanceOfExpression != null) {
-                visitInstanceofNot(instanceOfExpression);
-            }
+            if (instanceOfExpression != null) visitInstanceofNot(instanceOfExpression);
         }
     }
 
     public void visitInstanceofNot(BinaryExpression be) {
         final BlockStatement currentBlock = typeCheckingContext.enclosingBlocks.getFirst();
-        assert currentBlock != null;
         if (typeCheckingContext.blockStatements2Types.containsKey(currentBlock)) {
             // another instanceOf_not was before, no need store vars
         } else {
@@ -4076,8 +4066,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         popAssignmentTracking(oldTracker);
     }
 
-    // currently just for empty literals, not for e.g. Collections.emptyList() at present
-    /// it seems attractive to want to do this for more cases but perhaps not all cases
     private ClassNode checkForTargetType(final Expression expr, final ClassNode type) {
         BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
         if (enclosingBinaryExpression instanceof DeclarationExpression
