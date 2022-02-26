@@ -93,9 +93,8 @@ public class StaticTypesWriterController extends DelegatingController {
             node = classNode.getOuterClass();
         }
 
-        isInStaticallyCheckedMethod = mn != null && (
-                StaticCompilationVisitor.isStaticallyCompiled(node)
-                        || classNode.implementsInterface(ClassHelper.GENERATED_CLOSURE_Type)&&classNode.getNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE)!=null);
+        isInStaticallyCheckedMethod = mn != null && (StaticCompilationVisitor.isStaticallyCompiled(node)
+                || classNode.implementsInterface(ClassHelper.GENERATED_CLOSURE_Type) && Boolean.TRUE.equals(classNode.getNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE)));
     }
 
     @Override
@@ -113,7 +112,7 @@ public class StaticTypesWriterController extends DelegatingController {
     @Override
     public CallSiteWriter getCallSiteWriter() {
         MethodNode methodNode = getMethodNode();
-        if (methodNode !=null && methodNode.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION)==Boolean.TRUE) {
+        if (methodNode != null && Boolean.TRUE.equals(methodNode.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION))) {
             return super.getCallSiteWriter();
         }
         if (isInStaticallyCheckedMethod) {

@@ -1006,17 +1006,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return type.equals(CLOSURE_TYPE) && type.getGenericsTypes() != null && type.getGenericsTypes().length == 1;
     }
 
-    private boolean isCompoundAssignment(Expression exp) {
+    private static boolean isCompoundAssignment(final Expression exp) {
         if (!(exp instanceof BinaryExpression)) return false;
         int type = ((BinaryExpression) exp).getOperation().getType();
         return isAssignment(type) && type != ASSIGN;
     }
 
-    private Token getOpWithoutEqual(Expression exp) {
-        if (!(exp instanceof BinaryExpression)) return null; // should never happen
+    private static Token getOpWithoutEqual(final Expression exp) {
+        if (!(exp instanceof BinaryExpression)) return null;
         Token op = ((BinaryExpression) exp).getOperation();
         int typeWithoutEqual = TokenUtil.removeAssignment(op.getType());
-        return new Token(typeWithoutEqual, op.getText() /* will do */, op.getStartLine(), op.getStartColumn());
+        return new Token(typeWithoutEqual, op.getText(), op.getStartLine(), op.getStartColumn());
     }
 
     protected ClassNode getOriginalDeclarationType(Expression lhs) {
