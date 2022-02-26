@@ -50,55 +50,63 @@ public class VariableExpression extends Expression implements Variable {
         this.accessedVariable = origin;
     }
 
-    public VariableExpression(String variable, ClassNode type) {
-        this.variable = variable;
+    public VariableExpression(String name, ClassNode type) {
+        variable = name;
         originType = type;
-        setType(ClassHelper.getWrapper(type));
+        setType(ClassHelper.isPrimitiveType(type) ? ClassHelper.getWrapper(type) : type);
     }
-    
+
     public VariableExpression(String variable) {
         this(variable, ClassHelper.DYNAMIC_TYPE);
     }
-    
+
     public VariableExpression(Variable variable) {
         this(variable.getName(), variable.getOriginType());
         setAccessedVariable(variable);
         setModifiers(variable.getModifiers());
     }
 
+    @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitVariableExpression(this);
     }
 
+    @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         return this;
     }
 
+    @Override
     public String getText() {
         return variable;
     }
-    
+
+    @Override
     public String getName() {
         return variable;
     }
 
+    @Override
     public String toString() {
         return super.toString() + "[variable: " + variable + (this.isDynamicTyped() ? "" : " type: " + getType()) + "]";
     }
 
+    @Override
     public Expression getInitialExpression() {
         return null;
     }
 
+    @Override
     public boolean hasInitialExpression() {
         return false;
     }
-    
+
+    @Override
     public boolean isInStaticContext() {
-        if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.isInStaticContext();
+        if (accessedVariable != null && accessedVariable != this) return accessedVariable.isInStaticContext();
         return inStaticContext;
     }
-    
+
     public void setInStaticContext(boolean inStaticContext) {
         this.inStaticContext = inStaticContext;
     }
@@ -108,15 +116,18 @@ public class VariableExpression extends Expression implements Variable {
      * the {@link #getAccessedVariable() accessed variable} is ({@link #isClosureSharedVariable() shared},
      * this operation is unsafe and may lead to a verify error at compile time. Instead, set the type of
      * the {@link #getAccessedVariable() accessed variable}
+     *
      * @param cn the type to be set on this variable
      */
-    public void setType(ClassNode cn){
+    @Override
+    public void setType(ClassNode cn) {
         super.setType(cn);
-        isDynamicTyped |= ClassHelper.DYNAMIC_TYPE==cn;
+        isDynamicTyped |= (cn == ClassHelper.DYNAMIC_TYPE);
     }
-    
+
+    @Override
     public boolean isDynamicTyped() {
-        if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.isDynamicTyped();
+        if (accessedVariable != null && accessedVariable != this) return accessedVariable.isDynamicTyped();
         return isDynamicTyped;
     }
 
@@ -127,10 +138,12 @@ public class VariableExpression extends Expression implements Variable {
      * def cl = { println str }
      * </pre>
      * The "str" variable is closure shared.
+     *
      * @return true if this variable is used in a closure
      */
+    @Override
     public boolean isClosureSharedVariable() {
-        if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.isClosureSharedVariable();
+        if (accessedVariable != null && accessedVariable != this) return accessedVariable.isClosureSharedVariable();
         return closureShare;
     }
 
@@ -141,12 +154,15 @@ public class VariableExpression extends Expression implements Variable {
      * </pre>
      * The "str" variable is closure shared. The variable expression inside the closure references an
      * accessed variable "str" which must have the closure shared flag set.
+     *
      * @param inClosure tells if this variable is later referenced in a closure
      */
+    @Override
     public void setClosureSharedVariable(boolean inClosure) {
-        closureShare = inClosure;        
+        closureShare = inClosure;
     }
 
+    @Override
     public int getModifiers() {
         return modifiers;
     }
@@ -154,12 +170,13 @@ public class VariableExpression extends Expression implements Variable {
     /**
      * For internal use only. This flag is used by compiler internals and should probably
      * be converted to a node metadata in future.
+     *
      * @param useRef
      */
     public void setUseReferenceDirectly(boolean useRef) {
-        this.useRef = useRef;        
+        this.useRef = useRef;
     }
-    
+
     /**
      * For internal use only. This flag is used by compiler internals and should probably
      * be converted to a node metadata in future.
@@ -167,19 +184,22 @@ public class VariableExpression extends Expression implements Variable {
     public boolean isUseReferenceDirectly() {
         return useRef;
     }
-    
+
+    @Override
     public ClassNode getType() {
-        if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.getType();
+        if (accessedVariable != null && accessedVariable != this) return accessedVariable.getType();
         return super.getType();
     }
 
     /**
      * Returns the type which was used when this variable expression was created. For example,
      * {@link #getType()} may return a boxed type while this method would return the primitive type.
+     *
      * @return the type which was used to define this variable expression
      */
+    @Override
     public ClassNode getOriginType() {
-        if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.getOriginType();
+        if (accessedVariable != null && accessedVariable != this) return accessedVariable.getOriginType();
         return originType;
     }
 
