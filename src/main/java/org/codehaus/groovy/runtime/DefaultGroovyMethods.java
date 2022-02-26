@@ -7865,12 +7865,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Looks up an item in a Map for the given key and returns the value - unless
-     * there is no entry for the given key in which case add the default value
-     * to the map and return that.
-     * <pre class="groovyTestCase">def map=[:]
+     * Looks up an item in a Map for the given key and returns the corresponding value.
+     * If there is no entry for the given key return instead the default value and
+     * also add the key and default value to the map.
+     * <pre class="groovyTestCase">
+     * def map=[:]
      * map.get("a", []) &lt;&lt; 5
-     * assert map == [a:[5]]</pre>
+     * assert map == [a:[5]]
+     * </pre>
+     * For a method which doesn't mutate the map, consider instead using {@link Map#getOrDefault(Object, Object)}
+     * or consider using Groovy's {@link MapWithDefault} often instantiated using {@link #withDefault(Map, Closure)}
+     * or with more options {@link #withDefault(Map, boolean, boolean, Closure)}.
      *
      * @param map          a Map
      * @param key          the key to lookup the value of
