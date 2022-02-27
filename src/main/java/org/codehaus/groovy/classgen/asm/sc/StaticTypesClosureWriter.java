@@ -96,7 +96,9 @@ public class StaticTypesClosureWriter extends ClosureWriter {
 
     private static Expression defaultArgument(final Parameter parameter) {
         Expression argument;
-        if (parameter.getType().isArray()) {
+        if (parameter.hasInitialExpression()) {
+            argument = parameter.getInitialExpression(); // GROOVY-10072
+        } else if (parameter.getType().isArray()) {
             ClassNode elementType = parameter.getType().getComponentType();
             argument = new ArrayExpression(elementType, null, Collections.singletonList(constX(0, true)));
         } else {
