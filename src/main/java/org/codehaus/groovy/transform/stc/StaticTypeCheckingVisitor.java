@@ -89,6 +89,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.ReturnAdder;
@@ -178,6 +179,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.declX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
@@ -203,7 +205,6 @@ import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_EQUAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_TO;
 import static org.codehaus.groovy.syntax.Types.DIVIDE;
 import static org.codehaus.groovy.syntax.Types.DIVIDE_EQUAL;
-import static org.codehaus.groovy.syntax.Types.EQUAL;
 import static org.codehaus.groovy.syntax.Types.FIND_REGEX;
 import static org.codehaus.groovy.syntax.Types.INTDIV;
 import static org.codehaus.groovy.syntax.Types.INTDIV_EQUAL;
@@ -221,7 +222,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Matche
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.NUMBER_OPS;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.UNKNOWN_PARAMETER_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.addMethodLevelDeclaredGenerics;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.allParametersAndArgumentsMatch;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.allParametersAndArgumentsMatchWithDefaultParams;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.applyGenericsConnections;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.applyGenericsContext;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.applyGenericsContextToParameterClass;
@@ -1250,7 +1251,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         ClassNode leftRedirect = leftExpressionType.redirect();
         // see if instanceof applies
-        if (rightExpression instanceof VariableExpression && hasInferredReturnType(rightExpression) && assignmentExpression.getOperation().getType() == EQUAL) {
+        if (rightExpression instanceof VariableExpression && hasInferredReturnType(rightExpression) && assignmentExpression.getOperation().getType() == ASSIGN) {
             inferredRightExpressionType = rightExpression.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE);
         }
         ClassNode wrappedRHS = adjustTypeForSpreading(inferredRightExpressionType, leftExpression);
@@ -1845,7 +1846,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         try {
             typeCheckingContext.isInStaticContext = node.isInStaticContext();
             currentProperty = node;
-            super.visitProperty(node);
+            visitAnnotations(node);
+            visitClassCodeContainer(node.getGetterBlock());
+            visitClassCodeContainer(node.getSetterBlock());
         } finally {
             currentProperty = null;
             typeCheckingContext.isInStaticContext = osc;
@@ -1858,25 +1861,38 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         try {
             typeCheckingContext.isInStaticContext = node.isInStaticContext();
             currentField = node;
-            super.visitField(node);
-            Expression init = node.getInitialExpression();
-            if (init != null) {
-                FieldExpression left = new FieldExpression(node);
-                BinaryExpression bexp = binX(
-                        left,
-                        Token.newSymbol("=", node.getLineNumber(), node.getColumnNumber()),
-                        init
-                );
-                bexp.setSourcePosition(init);
-                typeCheckAssignment(bexp, left, node.getOriginType(), init, getType(init));
-                if (init instanceof ConstructorCallExpression) {
-                    inferDiamondType((ConstructorCallExpression) init, node.getOriginType());
-                }
-            }
+            visitAnnotations(node);
+            visitInitialExpression(node.getInitialExpression(), new FieldExpression(node), node);
         } finally {
             currentField = null;
             typeCheckingContext.isInStaticContext = osc;
         }
+    }
+
+    private void visitInitialExpression(final Expression value, final Expression target, final ASTNode position) {
+        if (value != null) {
+            ClassNode lType = target.getType();
+            if (isClosureWithType(lType) && value instanceof ClosureExpression) {
+                storeInferredReturnType(value, getCombinedBoundType(lType.getGenericsTypes()[0]));
+            }
+
+            typeCheckingContext.pushEnclosingBinaryExpression(assignX(target, value, position));
+
+            value.visit(this);
+            ClassNode rType = getType(value);
+            if (value instanceof ConstructorCallExpression) {
+                inferDiamondType((ConstructorCallExpression) value, lType);
+            }
+
+            BinaryExpression dummy = typeCheckingContext.popEnclosingBinaryExpression();
+            typeCheckAssignment(dummy, target, lType, value, getResultType(lType, ASSIGN, rType, dummy));
+        }
+    }
+
+    private static BinaryExpression assignX(final Expression lhs, final Expression rhs, final ASTNode pos) {
+        BinaryExpression exp = (BinaryExpression) GeneralUtils.assignX(lhs, rhs);
+        exp.setSourcePosition(pos);
+        return exp;
     }
 
     @Override
@@ -2162,11 +2178,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private ClassNode infer(ClassNode target, ClassNode source) {
-        DeclarationExpression virtualDecl = new DeclarationExpression(
-                varX("{target}", target),
-                Token.newSymbol(EQUAL, -1, -1),
-                varX("{source}", source)
-        );
+        Expression virtualDecl = declX(varX("{target}", target), varX("{source}", source));
         virtualDecl.visit(this);
         ClassNode newlyInferred = (ClassNode) virtualDecl.getNodeMetaData(INFERRED_TYPE);
 
@@ -2431,6 +2443,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         typeCheckingContext.isInStaticContext = oldStaticContext;
         for (Parameter parameter : getParametersSafe(expression)) {
             typeCheckingContext.controlStructureVariables.remove(parameter);
+            // GROOVY-10072: visit param default argument expression if present
+            visitInitialExpression(parameter.getInitialExpression(), varX(parameter), parameter);
         }
     }
 
@@ -3794,7 +3808,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected void typeCheckClosureCall(final Expression arguments, final ClassNode[] argumentTypes, final Parameter[] parameters) {
-        if (allParametersAndArgumentsMatch(parameters, argumentTypes) < 0 && lastArgMatchesVarg(parameters, argumentTypes) < 0) {
+        if (allParametersAndArgumentsMatchWithDefaultParams(parameters, argumentTypes) < 0 && lastArgMatchesVarg(parameters, argumentTypes) < 0) {
             addStaticTypeError("Cannot call closure that accepts " + formatArgumentList(extractTypesFromParameters(parameters)) + "with " + formatArgumentList(argumentTypes), arguments);
         }
     }
