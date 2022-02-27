@@ -52,7 +52,7 @@ import static org.codehaus.groovy.ast.ClassHelper.isNumberType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
-import static org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
+
 /**
  * This class provides helper methods to determine the type from a widening
  * operation for example for a plus operation.
@@ -298,13 +298,13 @@ public class WideningCategories {
         ClassNode superClass = source.getUnresolvedSuperClass();
         // copy generic type information if available
         if (superClass!=null && superClass.isUsingGenerics()) {
-            Map<GenericsTypeName, GenericsType> genericsTypeMap = GenericsUtils.extractPlaceholders(source);
+            Map<GenericsType.GenericsTypeName, GenericsType> genericsTypeMap = GenericsUtils.extractPlaceholders(source);
             GenericsType[] genericsTypes = superClass.getGenericsTypes();
             if (genericsTypes!=null) {
                 GenericsType[] copyTypes = new GenericsType[genericsTypes.length];
                 for (int i = 0; i < genericsTypes.length; i++) {
                     GenericsType genericsType = genericsTypes[i];
-                    GenericsTypeName gtn = new GenericsTypeName(genericsType.getName());
+                    GenericsType.GenericsTypeName gtn = new GenericsType.GenericsTypeName(genericsType.getName());
                     if (genericsType.isPlaceholder() && genericsTypeMap.containsKey(gtn)) {
                         copyTypes[i] = genericsTypeMap.get(gtn);
                     } else {
@@ -658,10 +658,7 @@ public class WideningCategories {
 
         @Override
         public int hashCode() {
-            int result = super.hashCode();
-//            result = 31 * result + (compileTimeClassNode != null ? compileTimeClassNode.hashCode() : 0);
-            result = 31 * result + (name != null ? name.hashCode() : 0);
-            return result;
+            return 31 * super.hashCode() + (name != null ? name.hashCode() : 0);
         }
 
         @Override

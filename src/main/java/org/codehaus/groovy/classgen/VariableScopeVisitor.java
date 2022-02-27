@@ -199,6 +199,8 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             for (ClassNode in : cn.getAllInterfaces()) {
                 FieldNode fn = in.getDeclaredField(name);
                 if (fn != null) return fn;
+                PropertyNode pn = in.getProperty(name);
+                if (pn != null) return pn;
             }
         }
 
@@ -505,13 +507,12 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             visitAnnotations(field); // GROOVY-7033
             Expression initExpression = field.getInitialExpression();
             if (initExpression != null) {
-                pushState(field.isStatic());
                 if (initExpression.isSynthetic() && initExpression instanceof VariableExpression
                         && ((VariableExpression) initExpression).getAccessedVariable() instanceof Parameter) {
                     // GROOVY-6834: accessing a parameter which is not yet seen in scope
-                    popState();
                     continue;
                 }
+                pushState(field.isStatic());
                 initExpression.visit(this);
                 popState();
             }

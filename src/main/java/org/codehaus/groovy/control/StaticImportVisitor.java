@@ -257,16 +257,18 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (mce.isImplicitThis()) {
             String name = mce.getMethodAsString();
             boolean thisOrSuperMethod = staticWrtCurrent ? hasPossibleStaticMethod(currentClass, name, args, true) : currentClass.tryFindPossibleMethod(name, args) != null;
-            if (!thisOrSuperMethod && currentClass.getOuterClasses().stream().noneMatch(oc -> oc.tryFindPossibleMethod(name, args) != null)) {
+            if (!thisOrSuperMethod && currentClass.getOuterClasses().stream().noneMatch(oc -> oc.tryFindPossibleMethod(name, args) != null)) { // GROOVY-5239
                 Expression result = findStaticMethodImportFromModule(method, args);
                 if (result != null) {
-                    setSourcePosition(result, mce);
+                    result.setSourcePosition(mce);
                     return result;
                 }
                 if (name != null && !inLeftExpression) { // maybe a closure field
                     result = findStaticFieldOrPropAccessorImportFromModule(name);
                     if (result != null) {
+                        setSourcePosition(result, method);
                         result = new MethodCallExpression(result, "call", args);
+                        ((MethodCallExpression) result).setImplicitThis(false);
                         result.setSourcePosition(mce);
                         return result;
                     }
@@ -319,7 +321,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         }
 
         MethodCallExpression result = new MethodCallExpression(object, method, args);
-        result.setGenericsTypes(mce.getGenericsTypes());
+        result.setGenericsTypes(mce.getGenericsTypes()); // GROOVY-6757
         result.setMethodTarget(mce.getMethodTarget());
         result.setImplicitThis(mce.isImplicitThis());
         result.setSpreadSafe(mce.isSpreadSafe());

@@ -32,19 +32,19 @@ public class RangeExpression extends Expression {
     private final Expression to;
     private final boolean inclusive;
 
-    public RangeExpression(Expression from, Expression to, boolean inclusive) {
+    public RangeExpression(final Expression from, final Expression to, final boolean inclusive) {
         this.from = from;
         this.to = to;
         this.inclusive = inclusive;
-        setType(ClassHelper.RANGE_TYPE);
+        setType(ClassHelper.RANGE_TYPE.getPlainNodeReference());
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void visit(final GroovyCodeVisitor visitor) {
         visitor.visitRangeExpression(this);
     }
 
-    public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new RangeExpression(transformer.transform(from), transformer.transform(to), inclusive);
+    public Expression transformExpression(final ExpressionTransformer transformer) {
+        Expression ret = new RangeExpression(transformer.transform(getFrom()), transformer.transform(getTo()), isInclusive());
         ret.setSourcePosition(this);
         ret.copyNodeMetaData(this);
         return ret;
@@ -63,8 +63,6 @@ public class RangeExpression extends Expression {
     }
 
     public String getText() {
-        return "(" + from.getText() +
-               (!isInclusive()? "..<" : ".." ) +
-               to.getText() + ")";
+        return "(" + getFrom().getText() + (isInclusive() ? ".." : "..<") + getTo().getText() + ")";
     }
 }

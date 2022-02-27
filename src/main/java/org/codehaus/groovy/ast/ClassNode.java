@@ -47,9 +47,9 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.joining;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
 
@@ -401,7 +401,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      */
     public List<MethodNode> getAbstractMethods() {
         return getDeclaredMethodsMap().values().stream()
-            .filter(MethodNode::isAbstract).collect(Collectors.toList());
+            .filter(MethodNode::isAbstract).collect(toList());
     }
 
     public List<MethodNode> getAllDeclaredMethods() {
@@ -683,7 +683,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if (that == this) return true;
         if (!(that instanceof ClassNode)) return false;
         if (redirect != null) return redirect.equals(that);
-        return (((ClassNode) that).getText().equals(getText()));
+        if (componentType != null) return componentType.equals(((ClassNode) that).componentType);
+        return ((ClassNode) that).getText().equals(getText()); // arrays could be "T[]" or "[LT;"
     }
 
     public int hashCode() {
@@ -1122,8 +1123,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         boolean booleanReturnOnly = getterName.startsWith("is");
         for (MethodNode method : getDeclaredMethods(getterName)) {
             if (getterName.equals(method.getName())
-                    && ClassHelper.VOID_TYPE != method.getReturnType()
-                    && method.getParameters().length == 0
+                    && method.getParameters().length == 0 && !method.isVoidMethod()
                     && (!booleanReturnOnly || ClassHelper.Boolean_TYPE.equals(ClassHelper.getWrapper(method.getReturnType())))) {
                 // GROOVY-7363: There can be multiple matches for a getter returning a generic parameter type, due to
                 // the generation of a bridge method. The real getter is really the non-bridge, non-synthetic one as it
@@ -1153,8 +1153,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public MethodNode getSetterMethod(String setterName, boolean voidOnly) {
         for (MethodNode method : getDeclaredMethods(setterName)) {
             if (setterName.equals(method.getName())
-                    && (!voidOnly || ClassHelper.VOID_TYPE == method.getReturnType())
-                    && method.getParameters().length == 1) {
+                    && method.getParameters().length == 1
+                    && (!voidOnly || method.isVoidMethod())) {
                 return method;
             }
         }
@@ -1212,7 +1212,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             ret.append(">");
         }
         if (showRedirect && redirect != null) {
-            ret.append(" -> ").append(redirect.toString());
+            ret.append(" -> ").append(redirect);
         }
         return ret.toString();
     }

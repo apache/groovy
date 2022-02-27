@@ -132,13 +132,10 @@ public class CompilerConfiguration {
     public static final String[] ALLOWED_JDKS = JDK_TO_BYTECODE_VERSION_MAP.keySet().toArray(new String[JDK_TO_BYTECODE_VERSION_MAP.size()]);
 
     /**
-    * The ASM api version to use when loading/parsing classes, and generating proxy adapter classes.
-    */
+     * The ASM API version used when loading/parsing classes and generating proxy adapter classes.
+     */
     public static final int ASM_API_VERSION = Opcodes.ASM9;
 
-    /**
-     * The default source encoding.
-     */
     public static final String DEFAULT_SOURCE_ENCODING = "UTF-8";
 
     /**
@@ -446,21 +443,10 @@ public class CompilerConfiguration {
         defaultScriptExtension = getSystemPropertySafe("groovy.default.scriptExtension", ".groovy");
 
         optimizationOptions = new HashMap<>(4);
-        handleOptimizationOption(optimizationOptions, INVOKEDYNAMIC, "groovy.target.indy");
-        handleOptimizationOption(optimizationOptions, GROOVYDOC, "groovy.attach.groovydoc");
-        handleOptimizationOption(optimizationOptions, RUNTIME_GROOVYDOC, "groovy.attach.runtime.groovydoc");
-        handleOptimizationOption(optimizationOptions, PARALLEL_PARSE, "groovy.parallel.parse");
-    }
-
-    private void handleOptimizationOption(final Map<String, Boolean> options, final String optionName, final String sysOptionName) {
-        String propValue = getSystemPropertySafe(sysOptionName);
-        boolean optionEnabled = propValue == null
-                ? (DEFAULT != null && Boolean.TRUE.equals(DEFAULT.getOptimizationOptions().get(optionName)))
-                : Boolean.parseBoolean(propValue);
-
-        if (optionEnabled) {
-            options.put(optionName, Boolean.TRUE);
-        }
+        if (getBooleanSafe("groovy.target.indy"             )) optimizationOptions.put(INVOKEDYNAMIC    , Boolean.TRUE);
+        if (getBooleanSafe("groovy.attach.groovydoc"        )) optimizationOptions.put(GROOVYDOC        , Boolean.TRUE);
+        if (getBooleanSafe("groovy.attach.runtime.groovydoc")) optimizationOptions.put(RUNTIME_GROOVYDOC, Boolean.TRUE);
+        if (getBooleanSafe("groovy.parallel.parse"          )) optimizationOptions.put(PARALLEL_PARSE   , Boolean.TRUE);
     }
 
     /**
@@ -482,7 +468,7 @@ public class CompilerConfiguration {
     public CompilerConfiguration(final CompilerConfiguration configuration) {
         setWarningLevel(configuration.getWarningLevel());
         setTargetDirectory(configuration.getTargetDirectory());
-        setClasspathList(new LinkedList<String>(configuration.getClasspath()));
+        setClasspathList(configuration.getClasspath());
         setVerbose(configuration.getVerbose());
         setDebug(configuration.getDebug());
         setParameters(configuration.getParameters());
@@ -746,11 +732,7 @@ public class CompilerConfiguration {
      */
     @Deprecated
     public void setOutput(final PrintWriter output) {
-        if (output == null) {
-            this.output = new PrintWriter(NullWriter.DEFAULT);
-        } else {
-            this.output = output;
-        }
+        this.output = (output != null ? output : new PrintWriter(NullWriter.DEFAULT));
     }
 
     /**
@@ -758,6 +740,13 @@ public class CompilerConfiguration {
      */
     public File getTargetDirectory() {
         return this.targetDirectory;
+    }
+
+    /**
+     * Sets the target directory.
+     */
+    public void setTargetDirectory(final File directory) {
+        this.targetDirectory = directory;
     }
 
     /**
@@ -773,13 +762,6 @@ public class CompilerConfiguration {
         } else {
             this.targetDirectory = null;
         }
-    }
-
-    /**
-     * Sets the target directory.
-     */
-    public void setTargetDirectory(final File directory) {
-        this.targetDirectory = directory;
     }
 
     /**
@@ -936,8 +918,18 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Sets the bytecode compatibility level. The parameter can take one of the values
-     * in {@link #ALLOWED_JDKS}.
+     * Returns the compiler bytecode compatibility level. Defaults to the minimum
+     * officially supported bytecode version for any particular Groovy version.
+     *
+     * @return bytecode compatibility level
+     */
+    public String getTargetBytecode() {
+        return targetBytecode;
+    }
+
+    /**
+     * Sets the bytecode compatibility level. The parameter can take one of the
+     * values in {@link #ALLOWED_JDKS}.
      *
      * @param version the bytecode compatibility level
      */
@@ -949,16 +941,6 @@ public class CompilerConfiguration {
         if (JDK_TO_BYTECODE_VERSION_MAP.containsKey(version)) {
             this.targetBytecode = version;
         }
-    }
-
-    /**
-     * Retrieves the compiler bytecode compatibility level. Defaults to the minimum
-     * officially supported bytecode version for any particular Groovy version.
-     *
-     * @return bytecode compatibility level
-     */
-    public String getTargetBytecode() {
-        return this.targetBytecode;
     }
 
     /**
@@ -1075,23 +1057,20 @@ public class CompilerConfiguration {
      * Checks if invoke dynamic is enabled.
      */
     public boolean isIndyEnabled() {
-        Boolean indyEnabled = getOptimizationOptions().get(INVOKEDYNAMIC);
-        return Optional.ofNullable(indyEnabled).orElse(Boolean.FALSE);
+        return Boolean.TRUE.equals(getOptimizationOptions().get(INVOKEDYNAMIC));
     }
 
     /**
      * Checks if groovydoc is enabled.
      */
     public boolean isGroovydocEnabled() {
-        Boolean groovydocEnabled = getOptimizationOptions().get(GROOVYDOC);
-        return Optional.ofNullable(groovydocEnabled).orElse(Boolean.FALSE);
+        return Boolean.TRUE.equals(getOptimizationOptions().get(GROOVYDOC));
     }
 
     /**
      * Checks if runtime groovydoc is enabled.
      */
     public boolean isRuntimeGroovydocEnabled() {
-        Boolean runtimeGroovydocEnabled = getOptimizationOptions().get(RUNTIME_GROOVYDOC);
-        return Optional.ofNullable(runtimeGroovydocEnabled).orElse(Boolean.FALSE);
+        return Boolean.TRUE.equals(getOptimizationOptions().get(RUNTIME_GROOVYDOC));
     }
 }

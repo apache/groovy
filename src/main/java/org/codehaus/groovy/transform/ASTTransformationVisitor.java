@@ -205,6 +205,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
             GroovyClassVisitor visitor = new ASTTransformationCollectorCodeVisitor(source, compilationUnit.getTransformLoader());
             visitor.visitClass(classNode);
         }, Phases.SEMANTIC_ANALYSIS);
+
         for (CompilePhase phase : CompilePhase.values()) {
             switch (phase) {
                 case INITIALIZATION:
@@ -241,8 +242,8 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
             Enumeration<URL> globalServices = transformLoader.getResources("META-INF/services/org.codehaus.groovy.transform.ASTTransformation");
             while (globalServices.hasMoreElements()) {
                 URL service = globalServices.nextElement();
-                String className;
                 try (BufferedReader svcIn = new BufferedReader(new InputStreamReader(URLStreams.openUncachedStream(service), StandardCharsets.UTF_8))) {
+                    String className;
                     try {
                         className = svcIn.readLine();
                     } catch (IOException ioe) {
@@ -346,10 +347,10 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                         + entry.getValue().toExternalForm() + " is not an ASTTransformation.", null));
                 }
             } catch (Exception e) {
-                Throwable effectiveException = e instanceof InvocationTargetException ? e.getCause() : e;
+                Throwable t = e instanceof InvocationTargetException ? e.getCause() : e;
                 compilationUnit.getErrorCollector().addError(new SimpleMessage(
                     "Could not instantiate global transform class " + entry.getKey() + " specified at "
-                    + entry.getValue().toExternalForm() + "  because of exception " + effectiveException.toString(), null));
+                    + entry.getValue().toExternalForm() + "  because of exception " + t.toString(), null));
             }
         }
     }

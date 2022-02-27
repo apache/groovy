@@ -113,8 +113,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private VariableScope currentScope;
 
     private boolean isTopLevelProperty = true;
-    private boolean inPropertyExpression = false;
-    private boolean inClosure = false;
+    private boolean inPropertyExpression;
+    private boolean inClosure;
 
     private final Map<ClassNode, ClassNode> possibleOuterClassNodeMap = new HashMap<>();
     private Map<GenericsTypeName, GenericsType> genericParameterNames = new HashMap<>();
@@ -603,8 +603,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 tmp.className = savedName;
             } else {
                 String savedName = type.getName();
-                String replacedPointType = replaceLastPointWithDollar(savedName);
-                type.setName(replacedPointType);
+                type.setName(replaceLastPointWithDollar(savedName));
                 if (resolve(type, false, true, true)) return true;
                 type.setName(savedName);
             }
@@ -914,9 +913,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private static String lookupClassName(final PropertyExpression pe) {
         boolean doInitialClassTest = true;
         StringBuilder name = new StringBuilder(32);
-        // this loop builds a name from right to left each name part
-        // separated by "."
-        for (Expression expr = pe; expr != null; expr = ((PropertyExpression) expr).getObjectExpression()) {
+        // this loop builds a name from right to left each name part separated by "."
+        for (Expression expr = pe; expr != null && name != null; expr = ((PropertyExpression) expr).getObjectExpression()) {
             if (expr instanceof VariableExpression) {
                 VariableExpression ve = (VariableExpression) expr;
                 // stop at super and this
@@ -944,7 +942,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
             Tuple2<StringBuilder, Boolean> classNameInfo = makeClassName(doInitialClassTest, name, property);
             name = classNameInfo.getV1();
-            if (name == null) return null;
             doInitialClassTest = classNameInfo.getV2();
         }
 
@@ -1450,13 +1447,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
             for (ImportNode importNode : module.getStaticImports().values()) {
                 ClassNode type = importNode.getType();
-                if (resolve(type, true, true, true)) continue;
-                addError("unable to resolve class " + type.getName(), type);
+                if (!resolve(type, true, true, true))
+                    addError("unable to resolve class " + type.getName(), type);
             }
             for (ImportNode importNode : module.getStaticStarImports().values()) {
                 ClassNode type = importNode.getType();
-                if (resolve(type, true, true, true)) continue;
-                addError("unable to resolve class " + type.getName(), type);
+                if (!resolve(type, true, true, true))
+                    addError("unable to resolve class " + type.getName(), type);
             }
             module.setImportsResolved(true);
         }

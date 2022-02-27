@@ -45,6 +45,7 @@ public class UnicodeEscapingReader extends Reader {
 
     private static class DummyLexer extends CharScanner {
         private final Token t = new Token();
+        @Override
         public Token nextToken() throws TokenStreamException {
             return t;
         }
@@ -57,7 +58,7 @@ public class UnicodeEscapingReader extends Reader {
             return 0;
         }
     }
-    
+
     /**
      * Constructor.
      * @param reader The reader that this reader will filter over.
@@ -80,6 +81,7 @@ public class UnicodeEscapingReader extends Reader {
      * Reads characters from the underlying reader.
      * @see java.io.Reader#read(char[],int,int)
      */
+    @Override
     public int read(char cbuf[], int off, int len) throws IOException {
         int c = 0;
         int count = 0;
@@ -95,6 +97,7 @@ public class UnicodeEscapingReader extends Reader {
      * translating escapes as required.
      * @see java.io.Reader#close()
      */
+    @Override
     public int read() throws IOException {
         if (hasNextChar) {
             hasNextChar = false;
@@ -107,7 +110,7 @@ public class UnicodeEscapingReader extends Reader {
             numUnicodeEscapesFoundOnCurrentLine = 0;
             previousLine = lexer.getLine();
         }
-        
+
         int c = reader.read();
         if (c != '\\') {
             write(c);
@@ -143,12 +146,13 @@ public class UnicodeEscapingReader extends Reader {
         }
         int rv = Integer.parseInt(charNum.toString(), 16);
         write(rv);
-        
+
         numUnicodeEscapesFound += 4 + numberOfUChars;
         numUnicodeEscapesFoundOnCurrentLine += 4 + numberOfUChars;
 
         return rv;
     }
+
     private void write(int c) {
         if (sourceBuffer != null) {sourceBuffer.write(c);}
     }
@@ -185,6 +189,7 @@ public class UnicodeEscapingReader extends Reader {
      *
      * @see java.io.Reader#close()
      */
+    @Override
     public void close() throws IOException {
         reader.close();
     }

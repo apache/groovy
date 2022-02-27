@@ -197,7 +197,7 @@ public class BinaryExpressionTransformer {
             MethodNode adapter = StaticCompilationTransformer.BYTECODE_BINARY_ADAPTERS.get(operationType);
             if (adapter != null) {
                 Expression sba = classX(StaticCompilationTransformer.BYTECODE_ADAPTER_CLASS);
-                call = callX(sba, "compareEquals", args(expr, right));
+                call = callX(sba, adapter.getName(), args(expr, right));
                 call.setMethodTarget(adapter);
             } else {
                 call = callX(expr, name, args(right));

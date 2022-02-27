@@ -95,8 +95,8 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
         boolean isAic = isAnonymousInnerClass(enumClass);
         if (!isAic) {
             ClassNode enumRef = enumClass.getPlainNodeReference();
-
-            // create $VALUES field
+            minValue = new FieldNode("MIN_VALUE", ACC_FINAL | ACC_PUBLIC | ACC_STATIC, enumRef, enumClass, null);
+            maxValue = new FieldNode("MAX_VALUE", ACC_FINAL | ACC_PUBLIC | ACC_STATIC, enumRef, enumClass, null);
             values = new FieldNode("$VALUES", ACC_FINAL | ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, enumRef.makeArray(), enumClass, null);
             values.setSynthetic(true);
 
@@ -111,10 +111,6 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
 
             addMethods(enumClass, values);
             checkForAbstractMethods(enumClass);
-
-            // create MIN_VALUE and MAX_VALUE fields
-            minValue = new FieldNode("MIN_VALUE", ACC_FINAL | ACC_PUBLIC | ACC_STATIC, enumRef, enumClass, null);
-            maxValue = new FieldNode("MAX_VALUE", ACC_FINAL | ACC_PUBLIC | ACC_STATIC, enumRef, enumClass, null);
         }
 
         addInit(enumClass, minValue, maxValue, values, isAic);

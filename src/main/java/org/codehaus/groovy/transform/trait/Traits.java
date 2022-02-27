@@ -159,7 +159,7 @@ public abstract class Traits {
                 throw new GroovyBugError("Couldn't find trait helper classes on compile classpath!",e);
             }
         }
-        return new TraitHelpersTuple(helperClassNode,  fieldHelperClassNode, staticFieldHelperClassNode);
+        return new TraitHelpersTuple(helperClassNode, fieldHelperClassNode, staticFieldHelperClassNode);
     }
 
     /**
@@ -404,5 +404,4 @@ public abstract class Traits {
          */
         String desc();
     }
-
 }

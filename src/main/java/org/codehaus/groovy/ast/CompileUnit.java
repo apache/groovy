@@ -52,7 +52,7 @@ public class CompileUnit implements NodeMetaDataHandler {
     private final Map<String, ClassNode> classesToCompile = new LinkedHashMap<>();
     private final Map<String, SourceUnit> classNameToSource = new LinkedHashMap<>();
     private final Map<String, InnerClassNode> generatedInnerClasses = new LinkedHashMap<>();
-    private final Map<String, ConstructedOuterNestedClassNode> classesToResolve = new LinkedHashMap<>();
+
     private Map metaDataMap;
 
     public CompileUnit(GroovyClassLoader classLoader, CompilerConfiguration config) {
@@ -61,8 +61,8 @@ public class CompileUnit implements NodeMetaDataHandler {
 
     public CompileUnit(GroovyClassLoader classLoader, CodeSource codeSource, CompilerConfiguration config) {
         this.classLoader = classLoader;
-        this.config = config;
         this.codeSource = codeSource;
+        this.config = config;
     }
 
     public List<ModuleNode> getModules() {
@@ -153,7 +153,7 @@ public class CompileUnit implements NodeMetaDataHandler {
         classes.put(name, node);
 
         ClassNode cn = classesToCompile.get(name);
-        if (null != cn) {
+        if (cn != null) {
             cn.setRedirect(node);
             classesToCompile.remove(name);
         }
@@ -170,38 +170,47 @@ public class CompileUnit implements NodeMetaDataHandler {
         classNameToSource.put(nodeName, location);
     }
 
-    public SourceUnit getScriptSourceLocation(String className) {
-        return classNameToSource.get(className);
-    }
-
-    public boolean hasClassNodeToCompile() {
-        return !classesToCompile.isEmpty();
+    public Map<String, ClassNode> getClassesToCompile() {
+        return classesToCompile;
     }
 
     public Iterator<String> iterateClassNodeToCompile() {
         return classesToCompile.keySet().iterator();
     }
 
-    public InnerClassNode getGeneratedInnerClass(String name) {
-        return generatedInnerClasses.get(name);
+    public boolean hasClassNodeToCompile() {
+        return !classesToCompile.isEmpty();
     }
 
     public void addGeneratedInnerClass(InnerClassNode icn) {
         generatedInnerClasses.put(icn.getName(), icn);
     }
 
+    public InnerClassNode getGeneratedInnerClass(String name) {
+        return generatedInnerClasses.get(name);
+    }
+
     public Map<String, InnerClassNode> getGeneratedInnerClasses() {
         return Collections.unmodifiableMap(generatedInnerClasses);
     }
 
-    public Map<String, ClassNode> getClassesToCompile() {
-        return classesToCompile;
+    public SourceUnit getScriptSourceLocation(String scriptClassName) {
+        return classNameToSource.get(scriptClassName);
     }
 
-    @Deprecated
-    public Map<String, ConstructedOuterNestedClassNode> getClassesToResolve() {
-        return classesToResolve;
+    @Override
+    public Map<?, ?> getMetaDataMap() {
+        return metaDataMap;
     }
+
+    @Override
+    public void setMetaDataMap(Map<?, ?> metaDataMap) {
+        this.metaDataMap = metaDataMap;
+    }
+
+    //--------------------------------------------------------------------------
+
+    private final Map<String, ConstructedOuterNestedClassNode> classesToResolve = new LinkedHashMap<>();
 
     /**
      * Add a constructed class node as a placeholder to resolve outer nested class further.
@@ -213,14 +222,9 @@ public class CompileUnit implements NodeMetaDataHandler {
         classesToResolve.put(cn.getUnresolvedName(), cn);
     }
 
-    @Override
-    public Map<?, ?> getMetaDataMap() {
-        return metaDataMap;
-    }
-
-    @Override
-    public void setMetaDataMap(Map<?, ?> metaDataMap) {
-        this.metaDataMap = metaDataMap;
+    @Deprecated
+    public Map<String, ConstructedOuterNestedClassNode> getClassesToResolve() {
+        return classesToResolve;
     }
 
     /**

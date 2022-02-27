@@ -206,8 +206,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     public void visitClass(final ClassNode node) {
         this.classNode = node;
 
-        if (Traits.isTrait(node) // maybe possible to have this true in joint compilation mode
-                || classNode.isInterface()) {
+        if (classNode.isInterface()
+                || Traits.isTrait(node)) { // maybe possible to have this true in joint compilation mode
             //interfaces have no constructors, but this code expects one,
             //so create a dummy and don't add it to the class node
             ConstructorNode dummy = new ConstructorNode(0, null);
@@ -681,9 +681,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         Statement getterBlock = node.getGetterBlock();
         if (getterBlock == null) {
             MethodNode getter = classNode.getGetterMethod(getterName, !node.isStatic());
-            if (getter == null && ClassHelper.boolean_TYPE == node.getType()) {
-                String secondGetterName = "is" + capitalize(name);
-                getter = classNode.getGetterMethod(secondGetterName);
+            if (getter == null && node.getType().equals(ClassHelper.boolean_TYPE)) {
+                getter = classNode.getGetterMethod("is" + capitalize(name));
             }
             if (!node.isPrivate() && methodNeedsReplacement(getter)) {
                 getterBlock = createGetterBlock(node, field);

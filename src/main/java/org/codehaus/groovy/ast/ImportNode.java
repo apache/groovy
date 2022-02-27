@@ -144,7 +144,7 @@ public class ImportNode extends AnnotatedNode {
     }
 
     public void setType(final ClassNode type) {
-        this.type = type;
+        this.type = requireNonNull(type);
     }
 
     @Override

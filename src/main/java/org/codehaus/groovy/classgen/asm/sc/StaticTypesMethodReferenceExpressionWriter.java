@@ -302,7 +302,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     }
 
     private static Parameter[] removeFirstParameter(final Parameter[] parameters) {
-        return Arrays.stream(parameters).skip(1).toArray(Parameter[]::new);
+        return Arrays.copyOfRange(parameters, 1, parameters.length);
     }
 
     /**

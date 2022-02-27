@@ -176,8 +176,8 @@ public class ClassHelper {
     public static final String OBJECT = "java.lang.Object";
 
     public static ClassNode makeCached(Class c) {
-        final SoftReference<ClassNode> classNodeSoftReference = ClassHelperCache.classCache.get(c);
         ClassNode classNode;
+        final SoftReference<ClassNode> classNodeSoftReference = ClassHelperCache.classCache.get(c);
         if (classNodeSoftReference == null || (classNode = classNodeSoftReference.get()) == null) {
             classNode = new ClassNode(c);
             ClassHelperCache.classCache.put(c, new SoftReference<ClassNode>(classNode));
@@ -369,7 +369,7 @@ public class ClassHelper {
      */
     public static boolean isStaticConstantInitializerType(ClassNode cn) {
         cn = cn.redirect();
-        return cn == int_TYPE ||
+        return (cn == int_TYPE ||
                 cn == float_TYPE ||
                 cn == long_TYPE ||
                 cn == double_TYPE ||
@@ -377,12 +377,12 @@ public class ClassHelper {
                 // the next items require conversion to int when initializing
                 cn == byte_TYPE ||
                 cn == char_TYPE ||
-                cn == short_TYPE;
+                cn == short_TYPE);
     }
 
     public static boolean isNumberType(ClassNode cn) {
         cn = cn.redirect();
-        return cn == Byte_TYPE ||
+        return (cn == Byte_TYPE ||
                 cn == Short_TYPE ||
                 cn == Integer_TYPE ||
                 cn == Long_TYPE ||
@@ -393,7 +393,7 @@ public class ClassHelper {
                 cn == int_TYPE ||
                 cn == long_TYPE ||
                 cn == float_TYPE ||
-                cn == double_TYPE;
+                cn == double_TYPE);
     }
 
     public static ClassNode makeReference() {

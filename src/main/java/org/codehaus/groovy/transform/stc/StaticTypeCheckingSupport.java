@@ -241,6 +241,10 @@ public abstract class StaticTypeCheckingSupport {
         EXTENSION_METHOD_CACHE.cache.clearAll();
     }
 
+    public static void clearExtensionMethodCache(final ClassLoader loader) {
+        EXTENSION_METHOD_CACHE.cache.remove(loader);
+    }
+
     /**
      * Returns true for expressions of the form x[...]
      *
@@ -659,17 +663,17 @@ public abstract class StaticTypeCheckingSupport {
         }
 
         if (isNumberType(rightRedirect) || WideningCategories.isNumberCategory(rightRedirect)) {
-            if (BigDecimal_TYPE == leftRedirect || Number_TYPE == leftRedirect) {
+            if (BigDecimal_TYPE.equals(leftRedirect) || Number_TYPE.equals(leftRedirect)) {
                 // any number can be assigned to BigDecimal or Number
                 return true;
             }
-            if (BigInteger_TYPE == leftRedirect) {
+            if (BigInteger_TYPE.equals(leftRedirect)) {
                 return WideningCategories.isBigIntCategory(getUnwrapper(rightRedirect)) || rightRedirect.isDerivedFrom(BigInteger_TYPE);
             }
         }
 
         // anything can be assigned to an Object, String, [Bb]oolean or Class receiver; except null to boolean
-        if (isWildcardLeftHandSide(leftRedirect) && !(boolean_TYPE.equals(left) && isNullConstant(rightExpression))) return true;
+        if (isWildcardLeftHandSide(left) && !(leftRedirect == boolean_TYPE && isNullConstant(rightExpression))) return true;
 
         if (leftRedirect == char_TYPE && rightRedirect == Character_TYPE) return true;
         if (leftRedirect == Character_TYPE && rightRedirect == char_TYPE) return true;
@@ -678,7 +682,7 @@ public abstract class StaticTypeCheckingSupport {
         }
 
         // if left is Enum and right is String or GString we do valueOf
-        if (leftRedirect.isDerivedFrom(Enum_Type) && (rightRedirect == GSTRING_TYPE || rightRedirect == STRING_TYPE)) {
+        if (leftRedirect.isDerivedFrom(Enum_Type) && (rightRedirect.equals(STRING_TYPE) || rightRedirect.equals(GSTRING_TYPE))) {
             return true;
         }
 
@@ -830,11 +834,23 @@ public abstract class StaticTypeCheckingSupport {
         return joiner.toString();
     }
 
-    static String prettyPrintType(ClassNode type) {
-        if (type.isArray()) {
-            return prettyPrintType(type.getComponentType()) + "[]";
-        }
+    /**
+     * Returns string representation of type with generics. Arrays are indicated
+     * with trailing "[]".
+     */
+    static String prettyPrintType(final ClassNode type) {
         return type.toString(false);
+    }
+
+    /**
+     * Returns string representation of type *no* generics. Arrays are indicated
+     * with trailing "[]".
+     */
+    static String prettyPrintTypeName(final ClassNode type) {
+        if (type.isArray()) {
+            return prettyPrintTypeName(type.getComponentType()) + "[]";
+        }
+        return type.isGenericsPlaceHolder() ? type.getUnresolvedName() : type.getText();
     }
 
     public static boolean implementsInterfaceOrIsSubclassOf(final ClassNode type, final ClassNode superOrInterface) {
@@ -1476,9 +1492,8 @@ public abstract class StaticTypeCheckingSupport {
         // we use the provided information to transform the parameter
         // into something that can exist in the callsite context
         type = applyGenericsContext(resolvedMethodGenerics, type);
-        // there of course transformed parameter type and argument must fit
-        failure = failure || !typeCheckMethodArgumentWithGenerics(type, wrappedArgument, lastArg);
-        return failure;
+        // then of course transformed parameter type and argument must fit
+        return failure || !typeCheckMethodArgumentWithGenerics(type, wrappedArgument, lastArg);
     }
 
     private static GenericsType buildWildcardType(final GenericsType origin) {
@@ -1560,7 +1575,7 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     static void applyGenericsConnections(final Map<GenericsTypeName, GenericsType> connections, final Map<GenericsTypeName, GenericsType> resolvedPlaceholders) {
-        if (connections == null) return;
+        if (connections == null || connections.isEmpty()) return;
         int count = 0;
         while (count++ < 10000) {
             boolean checkForMorePlaceholders = false;
@@ -1777,7 +1792,7 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     private static GenericsType[] applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final GenericsType[] gts) {
-        if (gts == null) return null;
+        if (gts == null || spec == null || spec.isEmpty()) return gts;
         GenericsType[] newGTs = new GenericsType[gts.length];
         for (int i = 0, n = gts.length; i < n; i += 1) {
             GenericsType gt = gts[i];

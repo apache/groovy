@@ -117,7 +117,8 @@ public interface GroovyCodeVisitor {
 
     void visitCatchStatement(CatchStatement statement);
 
-    default void visitEmptyStatement(EmptyStatement statement) {}
+    default void visitEmptyStatement(EmptyStatement statement) {
+    }
 
     //--------------------------------------------------------------------------
     // expressions
@@ -196,9 +197,10 @@ public interface GroovyCodeVisitor {
 
     void visitBytecodeExpression(BytecodeExpression expression);
 
-    default void visitEmptyExpression(EmptyExpression expression) {}
+    default void visitEmptyExpression(EmptyExpression expression) {
+    }
 
-    default void visitListOfExpressions(List<? extends Expression> list) {
+    default void visitListOfExpressions(final List<? extends Expression> list) {
         if (list != null) list.forEach(expr -> expr.visit(this));
     }
 }

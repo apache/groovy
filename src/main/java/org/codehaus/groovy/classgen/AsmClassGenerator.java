@@ -373,35 +373,34 @@ public class AsmClassGenerator extends ClassGenerator {
 
     @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
-        controller.resetLineNumber();
         Parameter[] parameters = node.getParameters();
-        String methodType = BytecodeHelper.getMethodDescriptor(node.getReturnType(), parameters);
-        String signature = BytecodeHelper.getGenericsMethodSignature(node);
-        int modifiers = node.getModifiers();
-        if (isVargs(node.getParameters())) modifiers |= ACC_VARARGS;
-        MethodVisitor mv = classVisitor.visitMethod(modifiers, node.getName(), methodType, signature, buildExceptions(node.getExceptions()));
+        MethodVisitor mv = classVisitor.visitMethod(
+                node.getModifiers() | (isVargs(parameters) ? ACC_VARARGS : 0), node.getName(),
+                BytecodeHelper.getMethodDescriptor(node.getReturnType(), parameters),
+                BytecodeHelper.getGenericsMethodSignature(node),
+                buildExceptions(node.getExceptions()));
         controller.setMethodVisitor(mv);
+        controller.resetLineNumber();
 
         visitAnnotations(node, mv);
         for (int i = 0, n = parameters.length; i < n; i += 1) {
             visitParameterAnnotations(parameters[i], i, mv);
         }
 
-        // add parameter names to the MethodVisitor (jdk8+ only)
+        // add parameter names to the MethodVisitor (JDK8+)
         if (Optional.ofNullable(controller.getClassNode().getCompileUnit())
                 .orElseGet(context::getCompileUnit).getConfig().getParameters()) {
             for (Parameter parameter : parameters) {
-                // TODO: handle ACC_SYNTHETIC for enum method parameters?
-                mv.visitParameter(parameter.getName(), 0);
+                mv.visitParameter(parameter.getName(), parameter.getModifiers());
             }
         }
 
         if (controller.getClassNode().isAnnotationDefinition() && !node.isStaticConstructor()) {
             visitAnnotationDefault(node, mv);
         } else if (!node.isAbstract()) {
-            Statement code = node.getCode();
             mv.visitCode();
 
+            Statement code = node.getCode();
             BytecodeInstruction instruction; // fast path for getters, setters, etc.
             if (code instanceof BytecodeSequence && (instruction = ((BytecodeSequence) code).getBytecodeInstruction()) != null) {
                instruction.visit(mv);
@@ -452,7 +451,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
             }
             if (!hasCallToSuper) {
-                // invokes the super class constructor
+                // add call to "super()"
                 mv.visitVarInsn(ALOAD, 0);
                 mv.visitMethodInsn(INVOKESPECIAL, controller.getInternalBaseClassName(), "<init>", "()V", false);
             }

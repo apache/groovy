@@ -417,7 +417,7 @@ public class CompileStack implements Opcodes {
         clear = false;
         pushVariableScope(scope);
         defineMethodVariables(parameters, scope.isInStaticContext());
-        this.className = BytecodeHelper.getTypeDescription(controller.getClassNode());
+        className = BytecodeHelper.getTypeDescription(controller.getClassNode());
     }
 
     /**

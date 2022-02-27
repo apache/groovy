@@ -238,8 +238,6 @@ public class SourceUnit extends ProcessingUnit {
             throw new GroovyBugError("SourceUnit not ready for convert()");
         }
 
-        //
-        // Build the AST
         buildAST();
 
         String property = (String) AccessController.doPrivileged((PrivilegedAction) () -> System.getProperty("groovy.ast"));
@@ -249,17 +247,17 @@ public class SourceUnit extends ProcessingUnit {
         }
     }
 
+    /**
+     * Builds the AST.
+     */
     public ModuleNode buildAST() {
-        if (null != this.ast) {
-            return this.ast;
-        }
-
+        if (this.ast == null)
         try {
             this.ast = parserPlugin.buildAST(this, this.classLoader, this.cst);
             this.ast.setDescription(this.name);
         } catch (SyntaxException e) {
             if (this.ast == null) {
-                // Create a dummy ModuleNode to represent a failed parse - in case a later phase attempts to use the ast
+                // create an empty ModuleNode to represent a failed parse, in case a later phase attempts to use the AST
                 this.ast = new ModuleNode(this);
             }
             getErrorCollector().addError(new SyntaxErrorMessage(e, this));

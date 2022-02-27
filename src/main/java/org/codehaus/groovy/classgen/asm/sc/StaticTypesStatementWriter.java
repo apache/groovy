@@ -261,7 +261,5 @@ public class StaticTypesStatementWriter extends StatementWriter {
 
         mv.visitJumpInsn(GOTO, continueLabel);
         mv.visitLabel(breakLabel);
-
     }
-
 }

@@ -296,7 +296,7 @@ public abstract class TraitComposer {
                     // but add empty body for setter for legacy compatibility
                     MethodNode impl = new MethodNode(
                             methodNode.getName(),
-                            Opcodes.ACC_PUBLIC | isStatic,
+                            Opcodes.ACC_PUBLIC | isStatic | Opcodes.ACC_SYNTHETIC,
                             returnType,
                             newParams,
                             ClassNode.EMPTY_ARRAY,
