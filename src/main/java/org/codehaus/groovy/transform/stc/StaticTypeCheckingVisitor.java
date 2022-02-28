@@ -326,6 +326,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode LINKEDHASHMAP_CLASSNODE = ClassHelper.make(LinkedHashMap.class);
     protected static final ClassNode CLOSUREPARAMS_CLASSNODE = ClassHelper.make(ClosureParams.class);
     protected static final ClassNode NAMED_PARAMS_CLASSNODE = ClassHelper.make(NamedParams.class);
+    protected static final ClassNode NAMED_PARAM_CLASSNODE = ClassHelper.make(NamedParam.class);
     protected static final ClassNode MAP_ENTRY_TYPE = ClassHelper.make(Map.Entry.class);
     protected static final ClassNode ENUMERATION_TYPE = ClassHelper.make(Enumeration.class);
 
@@ -2769,6 +2770,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             entries.put(key, entry.getValueExpression());
         }
+        List<String> collectedNames = new ArrayList<>();
         List<AnnotationNode> annotations = param.getAnnotations(NAMED_PARAMS_CLASSNODE);
         if (annotations != null && !annotations.isEmpty()) {
             AnnotationNode an = null;
@@ -2777,7 +2779,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     an = next;
                 }
             }
-            List<String> collectedNames = new ArrayList<>();
             if (an != null) {
                 Expression value = an.getMember("value");
                 if (value instanceof AnnotationConstantExpression) {
@@ -2790,10 +2791,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
                     }
                 }
-                for (Map.Entry<Object, Expression> entry : entries.entrySet()) {
-                    if (!collectedNames.contains(entry.getKey())) {
-                        addStaticTypeError("unexpected named arg: " + entry.getKey(), args);
-                    }
+            }
+        }
+        annotations = param.getAnnotations(NAMED_PARAM_CLASSNODE);
+        if (annotations != null && !annotations.isEmpty()) {
+            for (AnnotationNode next : annotations) {
+                if (next.getClassNode().getName().equals(NamedParam.class.getName())) {
+                    processNamedParam(next, entries, args, collectedNames);
+                }
+            }
+        }
+        if (!collectedNames.isEmpty()) {
+            for (Map.Entry<Object, Expression> entry : entries.entrySet()) {
+                if (!collectedNames.contains(entry.getKey())) {
+                    addStaticTypeError("unexpected named arg: " + entry.getKey(), args);
                 }
             }
         }
@@ -2802,6 +2813,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private void processNamedParam(final AnnotationConstantExpression value, final Map<Object, Expression> entries, final Expression expression, final List<String> collectedNames) {
         AnnotationNode namedParam = (AnnotationNode) value.getValue();
         if (!namedParam.getClassNode().getName().equals(NamedParam.class.getName())) return;
+        processNamedParam(namedParam, entries, expression, collectedNames);
+    }
+
+    private void processNamedParam(final AnnotationNode namedParam, final Map<Object, Expression> entries, final Expression expression, final List<String> collectedNames) {
         String name = null;
         boolean required = false;
         ClassNode expectedType = null;

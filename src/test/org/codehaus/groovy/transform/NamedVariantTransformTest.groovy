@@ -272,6 +272,7 @@ final class NamedVariantTransformTest {
 
     @Test
     void testNamedParamRequiredVersusOptional() {
+        // check dynamic case
         def err = shouldFail '''
             import groovy.transform.*
 
@@ -287,6 +288,23 @@ final class NamedVariantTransformTest {
             m(alpha: 123)
         '''
         assert err =~ /Missing required named argument 'color'/
+
+        // also check static error (GROOVY-10484)
+        err = shouldFail '''
+            import groovy.transform.*
+            class Color {
+                int r, g, b
+            }
+            @NamedVariant
+            String m(Color color, int alpha = 0) {
+                return [color, alpha].join(' ')
+            }
+            @TypeChecked
+            void test() {
+                m(alpha: 123)
+            }
+        '''
+        assert err =~ /required named param 'color' not found/
     }
 
     @Test // GROOVY-9183
